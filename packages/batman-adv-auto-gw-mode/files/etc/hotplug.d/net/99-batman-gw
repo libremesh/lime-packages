@@ -1,0 +1,26 @@
+#!/bin/sh
+
+dhcp4_discover () {
+	hostname=$(uci get system.@system[0].hostname)
+	/sbin/udhcpc -t 0 -i br-lan:ipv4 -b -p /var/run/dhcp4-br-lan.pid -h ${hostname}_ipv4 -R
+}
+
+dhcp4_kill () {
+	kill $(cat /var/run/dhcp4-br-lan.pid)
+}
+
+dnsmasq_start () {
+	/etc/init.d/dnsmasq start
+}
+
+dnsmasq_stop () {
+	/etc/init.d/dnsmasq stop
+}
+
+if [ "$BATTYPE" = "gw" ] ; then
+	case "$BATACTION" in
+		add) dnsmasq_stop ; dhcp4_discover ;;
+		del) dhcp4_kill ; dnsmasq_start ;;
+		change) dhcp4_kill ; sleep 5 ; dhcp4_discover ;;
+	esac
+fi
