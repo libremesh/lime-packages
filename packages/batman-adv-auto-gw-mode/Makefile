@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=batman-adv-auto-gw-mode
-PKG_VERSION:=1
+PKG_VERSION:=2
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -21,6 +21,7 @@ define Package/batman-adv-auto-gw-mode
   DEPENDS:= \
 	+kmod-batman-adv \
 	+watchping \
+	+netifd \
 	
 endef
 
