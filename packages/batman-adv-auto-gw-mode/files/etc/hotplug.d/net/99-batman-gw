@@ -2,7 +2,7 @@
 
 dhcp4_discover () {
 	hostname=$(uci get system.@system[0].hostname)
-	/sbin/udhcpc -i br-lan:ipv4 -p /var/run/dhcp4-br-lan.pid -s /lib/netifd/dhcp.script -h ${hostname} -R -b -t 0
+	/sbin/udhcpc -i br-lan:ipv4 -p /var/run/dhcp4-br-lan.pid -h ${hostname} -R -b -t 0
 }
 
 dhcp4_kill () {
