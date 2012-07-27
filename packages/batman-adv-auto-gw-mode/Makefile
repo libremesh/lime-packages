@@ -21,7 +21,6 @@ define Package/batman-adv-auto-gw-mode
   DEPENDS:= \
 	+kmod-batman-adv \
 	+watchping \
-	+dnsmasq \
 	
 endef
 
