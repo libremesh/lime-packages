@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2012 Guido Iribarren
+# Copyright (C) 2012 Gui Iribarren
 #
 # This is free software, licensed under the GNU General Public License v3.
 #
@@ -17,7 +17,7 @@ define Package/batman-adv-auto-gw-mode
   CATEGORY:=Network
   SUBMENU:=Routing and Redirection
   TITLE:=Changes batman-adv gw_mode to reflect internet availability
-  MAINTAINER:=Guido Iribarren <gui@altermundi.net>
+  MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   DEPENDS:= \
 	+kmod-batman-adv \
 	+watchping \
