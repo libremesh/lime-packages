@@ -2,11 +2,13 @@
 
 dhcp4_discover () {
 	hostname=$(uci get system.@system[0].hostname)
-	/sbin/udhcpc -i br-lan:ipv4 -p /var/run/dhcp4-br-lan.pid -h ${hostname} -R -b -t 0
+	ubus call network.interface.lan_dhcp add_device '{ "name": "br-lan" }'
+	cd /lib/netifd/proto/ && ./dhcp.sh dhcp setup lan_dhcp '{ "hostname": "'${hostname}'" }' br-lan
 }
 
 dhcp4_kill () {
-	kill $(cat /var/run/dhcp4-br-lan.pid)
+	ubus call network.interface.lan_dhcp down
+	ubus call network.interface.lan_dhcp remove_device '{ "name": "br-lan" }'
 }
 
 dnsmasq_start () {
