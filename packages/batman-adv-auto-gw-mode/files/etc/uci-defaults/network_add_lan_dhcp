@@ -1,0 +1,7 @@
+#!/bin/sh
+
+uci batch <<EOF
+set network.lan_dhcp=interface
+set network.lan_dhcp.proto=dhcp
+commit network
+EOF
