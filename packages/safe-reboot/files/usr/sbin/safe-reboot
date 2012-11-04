@@ -1,0 +1,151 @@
+#!/bin/sh
+#
+#       Copyleft 2012 Gui Iribarren <gui@altermundi.net>
+#       
+#       This program is free software; you can redistribute it and/or modify
+#       it under the terms of the GNU General Public License as published by
+#       the Free Software Foundation; either version 3 of the License, or
+#       (at your option) any later version.
+#       
+#       This program is distributed in the hope that it will be useful,
+#       but WITHOUT ANY WARRANTY; without even the implied warranty of
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#       GNU General Public License for more details.
+#       
+#       You should have received a copy of the GNU General Public License
+#       along with this program; if not, write to the Free Software
+#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#       MA 02110-1301, USA.
+#
+###  
+###  Usage: $0 [ [-w time] | now ] [-f time]
+###  
+###  $0 falls back to a last-known-good config after an ill-fated reboot.
+### 
+###  It makes a backup of /etc, and after the grace time reboots the system. 
+###    At the next boot, it waits again for a fallback timeout; if you can't
+###    login and delete the backup, it will restore it and reboot.
+###  This mechanism makes it possible to run $0, try risky operations (like 
+###    restarting the network), and if something goes wrong so you can't
+###    login, just wait for the fallback timeout.
+###  Even more, you can make actual changes to /etc config and reboot. If it
+###    comes up right, you can login and simply delete the backup directory
+###    /etc.last-good . But if something went wrong with the new /etc, 
+###    again just wait for the revert timeout.
+###  
+###  -w, --wait, --in TIME
+###        After backing up /overlay/etc, wait for TIME before reboot.
+###          Default: 5min
+###  -f, --fallback-after TIME
+###        After boot, wait for TIME before reverting /overlay/etc from 
+###        backup found in /overlay/etc.last-good
+###          Default: 10min
+###  now
+###        Do not make /overlay/etc backup; instead check that there's
+###        one already in place (/overlay/etc.last-good), then reboot
+###        and wait for fallback timeout.
+###  cancel
+###        Remove /overlay/etc.last-good/
+###        (useful after a successful reboot)
+### 
+###    TIME examples: 1hour 60min 60m 3600sec 3600
+###    (all of them are equivalent)
+###
+#
+#
+
+PIDFILE="/tmp/run/safe-reboot.pid"
+fallback_timeout=600
+grace_period=300
+dir_etc_lastgood="/overlay/etc.last-good/"
+dir_etc="/overlay/etc/"
+safe_fallback_script="/overlay/etc/uci-defaults/safe-fallback"
+
+usage () { reason="$*"
+  [ -n "$reason" ] && echo "$reason"
+  sed -n "/^### /{s///;s|\$0|$(basename "$0")|g;p}" "$0"
+  exit 1
+}
+
+timetoseconds() { # valid and equivalent input examples: 3600 3600s 3600sec 60minutes 1ho
+        local time="$1" ; local seconds
+
+        { [ "${time%s*}" -ge 0 ] 2> /dev/null && seconds="${time%s*}"; } \
+      ||{ [ "${time%m*}" -ge 0 ] 2> /dev/null && seconds="$((${time%m*}*60))"; } \
+      ||{ [ "${time%h*}" -ge 0 ] 2> /dev/null && seconds="$((${time%h*}*3600))"; }
+      
+        echo $seconds
+}
+backup_etc_exists () {
+  [ -d "$dir_etc_lastgood" ]
+}
+
+backup_etc () {
+  rm -rf "$dir_etc_lastgood"
+  cp -a "$dir_etc" "$dir_etc_lastgood"
+}
+
+write_safe_fallback_script () {
+  mkdir -p "$(dirname "$safe_fallback_script")"
+  rm -f "$safe_fallback_script"
+  touch "$safe_fallback_script"
+  chmod +x "$safe_fallback_script"
+  cat <<EOF > "$safe_fallback_script"
+#!/bin/sh
+( [ -d "$dir_etc_lastgood" ] \
+  && sleep $fallback_timeout & trap 'kill $! ; exit' TERM ; wait \
+  && if [ -d $dir_etc_lastgood ] ; then
+      rm -rf $dir_etc
+      mv -f $dir_etc_lastgood $dir_etc
+      reboot 
+  fi ) &
+echo $! > "$PIDFILE"
+EOF
+}
+
+reboot_after_grace_period () {
+  sleep $grace_period & trap 'kill $! ; exit' TERM ; wait
+  write_safe_fallback_script
+  reboot
+}
+
+action_cancel () {
+  rm -rf "$dir_etc_lastgood"
+  rm -f "$safe_fallback_script"
+  echo -n "Removed $dir_etc_lastgood, "
+  if [ -s "$PIDFILE" ] ; then
+    kill "$(cat "$PIDFILE")"
+    rm -f "$PIDFILE"
+    echo "and killed running timeout."
+  else
+    echo "no running timeout found."
+  fi
+}
+
+while [ -n "$1" ]; do
+  arg="$1"
+  shift
+  case "$arg" in
+    --in | in | --wait | wait | -w ) grace_period=$(timetoseconds "$1") ; shift
+      [ -z "$grace_period" ] && usage "Error with grace period value."
+    ;;
+    --fallback-after | -f ) fallback_timeout=$(timetoseconds "$1") ; shift
+      [ -z "$fallback_timeout" ] && usage "Error with fallback timeout value."
+    ;;
+    --cancel | cancel ) action_cancel ; exit ;;
+    now ) grace_period=0 ;;
+    --help | -h ) usage ;;
+  esac
+done
+
+if [ "$grace_period" -eq 0 ] ; then
+  backup_etc_exists || { echo "STOP! Directory $dir_etc_lastgood not found! Refusing to continue." ; exit 2 ; }
+else
+  backup_etc_exists && { echo "STOP! Directory $dir_etc_lastgood exists! You probably want to \`$0 now\`" ; exit 4 ; }
+  backup_etc || { echo "STOP! Backup failed. Refusing to continue." ; exit 8 ; }
+fi
+
+write_safe_fallback_script || { echo "STOP! Writing fallback script failed. Refusing to continue." ; exit 16 ; } 
+reboot_after_grace_period & { echo "Rebooting in $grace_period seconds..." ; }
+echo $! > "$PIDFILE"
+
