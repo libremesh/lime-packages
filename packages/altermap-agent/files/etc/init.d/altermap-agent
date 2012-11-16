@@ -25,12 +25,6 @@ generate_configfile() {
 EOF
 }
 
-send_boottime_queries () {
-        . /lib/altermap/functions.sh
-        update_device
-        update_interfaces
-}
-
 start() {
         if [ ! -f /etc/config/altermap ]; then
                 echo "Generate Config File [/etc/config/altermap]."
@@ -42,7 +36,6 @@ start() {
                 /etc/init.d/cron enable
                 /etc/init.d/cron start
         fi
-        send_boottime_queries
         /usr/sbin/altermap-agent
 }
 
