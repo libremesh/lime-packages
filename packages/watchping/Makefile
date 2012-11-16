@@ -25,10 +25,6 @@ define Package/watchping/description
   Configuration is done in /etc/config/system.
 endef
 
-define Package/watchping/conffiles
-/etc/config/system
-endef
-
 define Build/Compile
 endef
 
