@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2012 Gui Iribarren
 #
 # This is free software, licensed under the GNU General Public License v3.
@@ -20,7 +20,7 @@ define Package/watchping
 endef
 
 define Package/watchping/description
-  Checks reachability of given host(s) through particular interface(s) (e.g. 8.8.8.8 on WAN). 
+  Checks reachability of given host(s) through particular interface(s) (e.g. 8.8.8.8 on WAN).
   Action hooks are run from /etc/watchping/*.d/
   Configuration is done in /etc/config/system.
 endef
@@ -29,7 +29,7 @@ define Build/Compile
 endef
 
 define Package/watchping/install
-        $(INSTALL_DIR) $(1)/
+	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
 endef
 
