@@ -96,14 +96,14 @@ write_safe_fallback_script () {
 START=11
 start() {
   ( [ -s "$file_etc_lastgood" ] \
-    && sleep $fallback_timeout & trap 'kill $! ; exit' TERM ; wait \
+    && sleep $fallback_timeout & trap 'kill \$! ; exit' TERM ; wait \
     && if [ -s $file_etc_lastgood ] ; then
         rm -rf $dir_etc ; mkdir -p $dir_etc
         tar -xzf $file_etc_lastgood -C $dir_etc
         rm -f $file_etc_lastgood
         reboot
     fi ) &
-  echo $! > "$PIDFILE"
+  echo \$! > "$PIDFILE"
 }
 EOF
   $safe_fallback_script enable
