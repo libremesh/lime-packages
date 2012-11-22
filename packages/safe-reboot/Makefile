@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=safe-reboot
-PKG_VERSION:=1.9
+PKG_VERSION:=1.99
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk

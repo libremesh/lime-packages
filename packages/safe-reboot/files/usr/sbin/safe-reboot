@@ -60,6 +60,7 @@ grace_period=300
 file_etc_lastgood="/overlay/etc.last-good.tgz"
 dir_etc="/overlay/etc/"
 safe_fallback_script="/overlay/etc/init.d/safe-fallback"
+cmd_force_reboot="echo b > /proc/sysrq-trigger" # Immediately reboot the system without syncing or unmounting disks.
 
 usage () { reason="$*"
   [ -n "$reason" ] && echo "$reason"
@@ -101,7 +102,7 @@ start() {
         rm -rf $dir_etc ; mkdir -p $dir_etc
         tar -xzf $file_etc_lastgood -C $dir_etc
         rm -f $file_etc_lastgood
-        reboot
+        reboot ; sleep 10 ; $cmd_force_reboot
     fi ) &
   echo \$! > "$PIDFILE"
 }
@@ -112,7 +113,7 @@ EOF
 reboot_after_grace_period () {
   sleep $grace_period & trap 'kill $! ; exit' TERM ; wait
   write_safe_fallback_script
-  reboot
+  reboot ; sleep 10 ; $cmd_force_reboot
 }
 
 action_cancel () {
