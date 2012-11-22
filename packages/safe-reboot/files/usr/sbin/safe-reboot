@@ -59,7 +59,7 @@ fallback_timeout=600
 grace_period=300
 file_etc_lastgood="/overlay/etc.last-good.tgz"
 dir_etc="/overlay/etc/"
-safe_fallback_script="/overlay/etc/uci-defaults/safe-fallback"
+safe_fallback_script="/overlay/etc/init.d/safe-fallback"
 
 usage () { reason="$*"
   [ -n "$reason" ] && echo "$reason"
@@ -76,6 +76,7 @@ timetoseconds() { # valid and equivalent input examples: 3600 3600s 3600sec 60mi
       
         echo $seconds
 }
+
 backup_etc_exists () {
   [ -s "$file_etc_lastgood" ]
 }
@@ -91,17 +92,21 @@ write_safe_fallback_script () {
   touch "$safe_fallback_script"
   chmod +x "$safe_fallback_script"
   cat <<EOF > "$safe_fallback_script"
-#!/bin/sh
-( [ -s "$file_etc_lastgood" ] \
-  && sleep $fallback_timeout & trap 'kill $! ; exit' TERM ; wait \
-  && if [ -s $file_etc_lastgood ] ; then
-      rm -rf $dir_etc ; mkdir -p $dir_etc
-      tar -xzf $file_etc_lastgood -C $dir_etc
-      rm -f $file_etc_lastgood
-      reboot 
-  fi ) &
-echo $! > "$PIDFILE"
+#!/bin/sh /etc/rc.common
+START=11
+start() {
+  ( [ -s "$file_etc_lastgood" ] \
+    && sleep $fallback_timeout & trap 'kill $! ; exit' TERM ; wait \
+    && if [ -s $file_etc_lastgood ] ; then
+        rm -rf $dir_etc ; mkdir -p $dir_etc
+        tar -xzf $file_etc_lastgood -C $dir_etc
+        rm -f $file_etc_lastgood
+        reboot
+    fi ) &
+  echo $! > "$PIDFILE"
+}
 EOF
+  $safe_fallback_script enable
 }
 
 reboot_after_grace_period () {
