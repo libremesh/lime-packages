@@ -1,7 +1,11 @@
 #
-# Copyright (C) 2012 Gui Iribarren
+# Copyright (C) 2013 Santiago Piccinini
 #
-# This is free software, licensed under the GNU General Public License v3.
+# This is free software, licensed under the Apache License, Version 2.0 (the "License")
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 
 include $(TOPDIR)/rules.mk
@@ -15,13 +19,14 @@ include $(INCLUDE_DIR)/package.mk
 define Package/altermesh-webgui
   SECTION:=admin
   CATEGORY:=Administration
-  TITLE:=Web interface for AlterMesh nodes
-  MAINTAINER:=Gui Iribarren <gui@altermundi.net>
-  DEPENDS:= +uhttpd
+  TITLE:==Web interface for AlterMesh nodes
+  MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
+  DEPENDS:= +uhttpd +luci-theme-openwrt +libiwinfo-lua +luci-mod-admin-core
+
 endef
 
 define Package/altermesh-webgui/description
-Allows user to set hostname, and displays an external mapping application.
+Minimal and simple web app to configure an altermesh node.
 endef
 
 define Build/Compile
