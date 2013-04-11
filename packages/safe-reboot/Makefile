@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=safe-reboot
-PKG_VERSION:=1.99
+PKG_VERSION:=$(shell hg log --template "{date|shortdate}-{rev}\n" -l 1 .)
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk

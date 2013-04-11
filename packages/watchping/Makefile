@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=watchping
-PKG_VERSION:=1.1
+PKG_VERSION:=$(shell hg log --template "{date|shortdate}-{rev}\n" -l 1 .)
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
