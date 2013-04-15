@@ -30,7 +30,7 @@
 ###    login, just wait for the fallback timeout.
 ###  Even more, you can make actual changes to /etc config and reboot. If it
 ###    comes up right, you can login and simply delete the backup
-###    /etc.last-good.tgz . But if something went wrong with the new /etc, 
+###    /.etc.last-good.tgz . But if something went wrong with the new /etc, 
 ###    again just wait for the revert timeout.
 ###  
 ###  -w, --wait, --in TIME
@@ -38,14 +38,14 @@
 ###          Default: 5min
 ###  -f, --fallback-after TIME
 ###        After boot, wait for TIME before reverting /overlay/etc from 
-###        backup found in /overlay/etc.last-good.tgz
+###        backup found in /overlay/.etc.last-good.tgz
 ###          Default: 10min
 ###  now
 ###        Do not make /overlay/etc backup; instead check that there's
-###        one already in place (/overlay/etc.last-good.tgz), then reboot
+###        one already in place (/overlay/.etc.last-good.tgz), then reboot
 ###        and wait for fallback timeout.
 ###  cancel
-###        Remove /overlay/etc.last-good.tgz
+###        Remove /overlay/.etc.last-good.tgz
 ###        (useful after a successful reboot)
 ### 
 ###    TIME examples: 1hour 60min 60m 3600sec 3600
@@ -57,7 +57,7 @@
 PIDFILE="/tmp/run/safe-reboot.pid"
 fallback_timeout=600
 grace_period=300
-file_etc_lastgood="/overlay/etc.last-good.tgz"
+file_etc_lastgood="/overlay/.etc.last-good.tgz"
 dir_etc="/overlay/etc/"
 safe_fallback_script="/overlay/etc/init.d/safe-fallback"
 cmd_force_reboot="echo b > /proc/sysrq-trigger" # Immediately reboot the system without syncing or unmounting disks.
