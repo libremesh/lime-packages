@@ -60,6 +60,7 @@ grace_period=300
 file_etc_lastgood="/overlay/.etc.last-good.tgz"
 dir_etc="/overlay/etc/"
 safe_fallback_script="/overlay/etc/init.d/safe-fallback"
+safe_fallback_script_enable="ln -sf ../init.d/safe-fallback /overlay/etc/rc.d/S11safe-fallback"
 cmd_force_reboot="echo b > /proc/sysrq-trigger" # Immediately reboot the system without syncing or unmounting disks.
 
 usage () { reason="$*"
@@ -107,7 +108,7 @@ start() {
   echo \$! > "$PIDFILE"
 }
 EOF
-  $safe_fallback_script enable
+  $safe_fallback_script_enable
 }
 
 reboot_after_grace_period () {
