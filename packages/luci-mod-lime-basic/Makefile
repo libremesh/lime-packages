@@ -21,7 +21,7 @@ define Package/altermesh-webgui
   CATEGORY:=Administration
   TITLE:==Web interface for AlterMesh nodes
   MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
-  DEPENDS:= +uhttpd +luci-theme-openwrt +libiwinfo-lua +luci-mod-admin-core
+  DEPENDS:= +uhttpd +luci-theme-bootstrap +libiwinfo-lua +luci-mod-admin-core
 
 endef
 
