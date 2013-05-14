@@ -12,12 +12,16 @@ dhcp4_kill () {
 
 dnsmasq_start () {
 	uci revert -P/var/state dhcp.@dnsmasq[0].domainneeded
+	uci revert -P/var/state dhcp.@dnsmasq[0].boguspriv
+	uci revert -P/var/state dhcp.@dnsmasq[0].rebind_protection
 	uci revert -P/var/state dhcp.lan.ignore
-	/etc/init.d/dnsmasq start
+	/etc/init.d/dnsmasq restart
 }
 
 dnsmasq_stop () {
 	uci set -P/var/state dhcp.@dnsmasq[0].domainneeded=
+	uci set -P/var/state dhcp.@dnsmasq[0].boguspriv=
+	uci set -P/var/state dhcp.@dnsmasq[0].rebind_protection=0
 	uci set -P/var/state dhcp.lan.ignore=1
 	/etc/init.d/dnsmasq stop
 }
