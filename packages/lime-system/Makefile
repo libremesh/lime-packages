@@ -36,9 +36,9 @@ define Package/lime-system
   URL:=http://libre-mesh.org
   DEPENDS:=+uhttpd +luci +luci-app-bmx6 \
   +iwinfo +iw +netperf +mtr \
-  +bmx6 +bmx6-uci-config +bmx6-json +bmx6-sms +kmod-batadv \
+  +bmx6 +bmx6-uci-config +bmx6-json +bmx6-sms kmod-batman-adv \
   +wpad-mini +reghack \
-  +ip +iputils-ping
+  +ip +iputils-ping6
 endef
 
 define Package/lime-system/description
