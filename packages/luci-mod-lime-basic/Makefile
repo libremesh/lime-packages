@@ -37,4 +37,20 @@ define Package/altermesh-webgui/install
 	$(CP) ./files/* $(1)/
 endef
 
+define Package/altermesh-webgui/preinst
+#!/bin/sh
+echo "Patching link in bootstrap no-root-password warning"
+sed 's|admin/system/admin|altermesh/system/passwd|' \
+  -i $${IPKG_INSTROOT}/usr/lib/lua/luci/view/themes/bootstrap/header.htm
+exit 0
+endef
+
+define Package/altermesh-webgui/postrm
+#!/bin/sh
+echo "Reverting link in bootstrap no-root-password warning"
+sed 's|altermesh/system/passwd|admin/system/admin|' \
+  -i $${IPKG_INSTROOT}/usr/lib/lua/luci/view/themes/bootstrap/header.htm
+exit 0
+endef
+
 $(eval $(call BuildPackage,altermesh-webgui))
