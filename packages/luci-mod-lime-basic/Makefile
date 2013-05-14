@@ -37,7 +37,7 @@ define Package/altermesh-webgui/install
 	$(CP) ./files/* $(1)/
 endef
 
-define Package/altermesh-webgui/preinst
+define Package/altermesh-webgui/postinst
 #!/bin/sh
 echo "Patching link in bootstrap no-root-password warning"
 sed 's|admin/system/admin|altermesh/system/passwd|' \
@@ -45,7 +45,7 @@ sed 's|admin/system/admin|altermesh/system/passwd|' \
 exit 0
 endef
 
-define Package/altermesh-webgui/postrm
+define Package/altermesh-webgui/prerm
 #!/bin/sh
 echo "Reverting link in bootstrap no-root-password warning"
 sed 's|altermesh/system/passwd|admin/system/admin|' \
