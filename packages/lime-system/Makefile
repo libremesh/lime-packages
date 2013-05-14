@@ -36,13 +36,13 @@ define Package/lime-system
   URL:=http://libre-mesh.org
   DEPENDS:=+uhttpd +luci +luci-app-bmx6 \
   +iwinfo +iw +netperf +mtr \
-  +bmx6 +bmx6-uci-config +bmx6-json +bmx6-sms kmod-batman-adv \
+  +bmx6 +bmx6-uci-config +bmx6-json +bmx6-sms +kmod-batman-adv \
   +wpad-mini +reghack \
   +ip +iputils-ping6
 endef
 
 define Package/lime-system/description
- Basic system files for LiMe node
+	Basic system files for LiMe node
 endef
 
 define Package/lime-system/conffiles
@@ -61,11 +61,6 @@ define Build/Compile
 endef
 
 define Package/lime-system/install
-	$(SED) 's,$$$$BRANCH,$(BRANCH_GIT),g' $(1)/etc/uci-defaults/lime_banner
-	$(SED) 's,$$$$REV,$(REV_GIT),g' $(1)/etc/uci-defaults/lime_banner
-	$(SED) 's,$$$$COD,$(LIME_CODENAME),g' $(1)/etc/uci-defaults/lime_banner
-	$(SED) 's,$$$$REL,$(LIME_RELEASE),g' $(1)/etc/uci-defaults/lime_banner
-	$(SED) 's,$$$$DATE,$(LIME_BUILDDATE),g' $(1)/etc/uci-defaults/lime_banner
 	echo "LIME_ID=LiMe" > $(1)/etc/lime/lime.release
 	echo "LIME_CODENAME=$(LIME_CODENAME)" >> $(1)/etc/lime/lime.release
 	echo "LIME_RELEASE=$(LIME_RELEASE)" >> $(1)/etc/lime/lime.release
