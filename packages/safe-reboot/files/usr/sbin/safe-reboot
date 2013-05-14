@@ -108,6 +108,7 @@ start() {
   echo \$! > "$PIDFILE"
 }
 EOF
+  mkdir -p /overlay/etc/rc.d/
   $safe_fallback_script_enable
 }
 
