@@ -9,7 +9,6 @@ set network.lan_dhcp.auto=0
 set network.lan_dhcpv6=interface
 set network.lan_dhcpv6.ifname=@lan
 set network.lan_dhcpv6.proto=dhcpv6
-set network.lan_dhcpv6.reqprefix=no
 set network.lan_dhcpv6.auto=0
 commit network
 EOF
