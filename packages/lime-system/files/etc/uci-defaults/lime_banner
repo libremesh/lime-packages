@@ -1,0 +1,9 @@
+#!/bin/sh
+
+cat /etc/lime.banner >> /etc/banner
+echo " ---------------------------------------------------" >> /etc/banner
+echo " $COD ($REL, $BRANCH rev.$REV-$DATE)" >> /etc/banner
+echo " ---------------------------------------------------" >> /etc/banner
+echo "" >> /etc/banner
+echo " http://libre-mesh.org" >> /etc/banner
+echo " ---------------------------------------------------" >> /etc/banner
