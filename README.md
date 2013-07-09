@@ -1,3 +1,11 @@
+About the code structure
+-----------------------------------------------------------------------------------------------------------
+The Makefile found in the same directory of this README is for OpenWRT. It can be imported as a package.
+Inside the src/ directory the C code of dhcpdiscover can be found. 
+If you want to compile it for your computer execute: cd src && make
+
+-----------------------------------------------------------------------------------------------------------
+
 Program: dhcpdiscover $Revision: 2$
  *
  * License: GPL
