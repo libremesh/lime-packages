@@ -1,45 +1,26 @@
-About the code structure
------------------------------------------------------------------------------------------------------------
-The Makefile found in the same directory of this README is for OpenWRT. It can be imported as a package.
-Inside the src/ directory the C code of dhcpdiscover can be found. 
-If you want to compile it for your computer execute: cd src && make
+* Program: dhcpdiscover
+  
+  This program checks the existence and more details of a DHCP server
 
------------------------------------------------------------------------------------------------------------
+* About the code structure
 
-Program: dhcpdiscover $Revision: 2$
- *
- * License: GPL
- * Copyright (c) 2001-2004 Ethan Galstad (nagios@nagios.org)
- * Copyright (c) 2006-2013 OpenWRT.org 
- * ====================================================== 
- * Mike Gore 25 Aug 2005 
- *    Modified for standalone operation 
- * ====================================================== 
- * Pau Escrich Jun 2013 
- *    Added -b option and ported to OpenWRT 
- * ====================================================== 
- *
- ** License Information:
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: dhcpdiscover.c,v 2$
- *
+  The Makefile found in the directory of this README is for OpenWRT. It can be imported as a package. Inside the src/ directory the C code of dhcpdiscover can be found. If you want to compile it for your computer execute: cd src && make
 
-This program checks the existence and more details of a DHCP server
+* Licence information
 
+  Code under GPLv3
+  
+  Copyright (c) 2001-2004 Ethan Galstad (nagios@nagios.org), 2013 OpenWRT.org 
+
+* Contributors
+
+  Mike Gore 25 Aug 2005: Modified for standalone operation   
+  Pau Escrich Jun 2013: Added -b option and ported to OpenWRT 
+
+
+___________________________________________________________
+
+ 
 ```
 Usage: dhcpdiscover [-s serverip] [-r requestedip] [-m clientmac ] [-b bannedip] [-t timeout] [-i interface]
                   [-v] -s, --serverip=IPADDRESS
