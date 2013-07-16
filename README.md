@@ -40,6 +40,7 @@ Program: dhcpdiscover $Revision: 2$
 
 This program checks the existence and more details of a DHCP server
 
+```
 Usage: dhcpdiscover [-s serverip] [-r requestedip] [-m clientmac ] [-b bannedip] [-t timeout] [-i interface]
                   [-v] -s, --serverip=IPADDRESS
    IP address of DHCP server that we must hear from
@@ -61,3 +62,4 @@ Usage: dhcpdiscover [-s serverip] [-r requestedip] [-m clientmac ] [-b bannedip]
    Print version information
 
 Example: sudo ./dhcpdiscover -i eth0 -b 192.168.1.1
+```
