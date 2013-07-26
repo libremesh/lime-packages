@@ -31,8 +31,7 @@ window.setTimeout(
 
     function fetchData() {
       function onDataReceived(series) {
-        console.log("series " + series.length);
-        console.log("series0 " + series[0].tsf) ;
+//        console.log(series);
         var i;
         for (i=0;i<data.length;i++) {
           if ( data[i].color < 5 ) {
@@ -43,7 +42,6 @@ window.setTimeout(
           if (i==0) { var label = +series.samples[i].tsf / 1000000 ; } else { label = "" ; }
           data.push({ 'label': label, 'color': 0, 'data': series.samples[i].data });
         }
-        console.log("data " +data[0].color);
         data = data.slice(-60);
         $.plot($("#placeholder"), data, options);
       }
