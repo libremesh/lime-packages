@@ -1,0 +1,81 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+ <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Live spectral scan</title>
+    <script language="javascript" type="text/javascript" src="jquery.js"></script>
+    <script language="javascript" type="text/javascript" src="jquery.flot.js"></script>
+ </head>
+    <body>
+    <h1>Spectral Scan</h1>
+
+    <div id="placeholder" style="width:760px;height:300px;"></div>
+
+    <p>Time between updates: <input id="updateInterval" type="text" value="" style="text-align: right; width:5em"> milliseconds</p>
+
+<script type="text/javascript">
+window.setTimeout(
+  function () {
+    var options = {
+        lines: { show: true },
+        points: { show: false },
+        series: { shadowSize: 0 }, // drawing is faster without shadows
+        xaxis: { tickSize: 5, tickDecimals: 0, autoscaleMargin: 0.05 },
+        yaxis: { min: -150, max: 0 },
+        colors: [ "rgb(0,0,0)", "rgb(50,50,50)", "rgb(100,100,100)",
+                  "rgb(150,150,150)", "rgb(200,200,200)", "rgb(225,225,225)" ]
+
+    };
+    var data = [];
+    var placeholder = $("#placeholder");
+
+    function fetchData() {
+      function onDataReceived(series) {
+        console.log("series " + series.length);
+        console.log("series0 " + series[0].tsf) ;
+        var i;
+        for (i=0;i<data.length;i++) {
+          if ( data[i].color < 5 ) {
+            data[i].color = +data[i].color + 1;
+          }
+        }
+        for (i=0;i<series.length;i++) {
+          if (i==0) { var label = +series[i].tsf / 1000000 ; } else { label = "" ; }
+          data.push({ 'label': label, 'color': 0, 'data': series[i].data });
+        }
+        console.log("data " +data[0].color);
+        data = data.slice(-60);
+        $.plot($("#placeholder"), data, options);
+      }
+
+      $.ajax({
+        url: "cgi-bin/spectral_scan.json",
+        method: 'GET',
+        dataType: 'json',
+        success: onDataReceived
+      });
+
+      setTimeout(fetchData, updateInterval);
+    }
+
+    // setup control widget
+    var updateInterval = 2000;
+    $("#updateInterval").val(updateInterval).change(function () {
+        var v = $(this).val();
+        if (v && !isNaN(+v)) {
+            updateInterval = +v;
+            if (updateInterval < 100)
+                updateInterval = 100;
+            if (updateInterval > 10000)
+                updateInterval = 10000;
+            $(this).val("" + updateInterval);
+        }
+    });
+
+    fetchData();
+  }, 1000
+);
+</script>
+
+ </body>
+</html>
