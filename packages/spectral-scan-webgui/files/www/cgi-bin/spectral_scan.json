@@ -3,6 +3,7 @@ phy=phy0
 
 ### sample current channel only, no freq hopping
 echo manual > /sys/kernel/debug/ieee80211/$phy/ath9k/spectral_scan_ctl 
+echo 1 > /sys/kernel/debug/ieee80211/$phy/ath9k/spectral_count
 echo trigger > /sys/kernel/debug/ieee80211/$phy/ath9k/spectral_scan_ctl 
 
 ### grab samples over the whole spectrum
