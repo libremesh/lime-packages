@@ -15,7 +15,8 @@ echo Transfer-Encoding: chunked
 echo Content-Type: application/json
 echo Cache-Control: no-cache
 echo Expires: 0
+echo "Access-Control-Allow-Origin: *"
 echo
-echo '['
+echo "{ \"epoch\": $(date +%s), \"samples\":"
 fft_eval /sys/kernel/debug/ieee80211/$phy/ath9k/spectral_scan0 2>/dev/null
-echo ']'
+echo "}"

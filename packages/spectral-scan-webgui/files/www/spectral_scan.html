@@ -39,9 +39,9 @@ window.setTimeout(
             data[i].color = +data[i].color + 1;
           }
         }
-        for (i=0;i<series.length;i++) {
-          if (i==0) { var label = +series[i].tsf / 1000000 ; } else { label = "" ; }
-          data.push({ 'label': label, 'color': 0, 'data': series[i].data });
+        for (i=0;i<series.samples.length;i++) {
+          if (i==0) { var label = +series.samples[i].tsf / 1000000 ; } else { label = "" ; }
+          data.push({ 'label': label, 'color': 0, 'data': series.samples[i].data });
         }
         console.log("data " +data[0].color);
         data = data.slice(-60);
