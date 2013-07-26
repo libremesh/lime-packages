@@ -8,17 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=FFT_eval
-PKG_VERSION:=1
-PKG_RELEASE:=1
-PKG_REV:=236940c6b92f89a4cc8f77412b18a521ab9d9f8b
+PKG_VERSION:=2013-06-26
+PKG_RELEASE:=$(PKG_SOURCE_VERSION)
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://github.com/libre-mesh/FFT_eval.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=$(PKG_REV)
-PKG_SOURCE_PROTO:=git
-
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE_VERSION:=236940c6b92f89a4cc8f77412b18a521ab9d9f8b
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -28,11 +25,6 @@ define Package/fft-eval
   TITLE:=Evaluates FFT samples from ath9k driver
   DEPENDS:= +libc
 endef
-
-#define Build/Prepare
-#	mkdir -p $(PKG_BUILD_DIR)
-#	$(CP) ./src/* $(PKG_BUILD_DIR)/
-#endef
 
 TARGET_CFLAGS  += -ffunction-sections -fdata-sections -flto 
 
