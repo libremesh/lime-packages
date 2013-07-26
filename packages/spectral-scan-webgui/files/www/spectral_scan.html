@@ -39,7 +39,8 @@ window.setTimeout(
           }
         }
         for (i=0;i<series.samples.length;i++) {
-          if (i==0) { var label = +series.samples[i].tsf / 1000000 ; } else { label = "" ; }
+          var label ;
+          if (i==0) { console.log(+series.samples[i].tsf / 1000000 ) ; }
           data.push({ 'label': label, 'color': 0, 'data': series.samples[i].data });
         }
         data = data.slice(-60);
