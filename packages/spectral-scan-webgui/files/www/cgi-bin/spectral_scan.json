@@ -1,16 +1,8 @@
 #!/bin/sh
-echo HTTP/1.1 200 OK
-echo Transfer-Encoding: chunked
-echo Content-Type: application/json
-echo Cache-Control: no-cache
-echo Expires: 0
-echo "Access-Control-Allow-Origin: *"
-echo
-echo "{ \"epoch\": $(date +%s), \"samples\":"
-cat /tmp/spectral_scan.json
-echo "}"
-
+json_cache=/tmp/spectral_scan.json
+json_cache_timeout=2
 (
+  [ -f $json_cache ] && return
   phy=phy0
   path_ath9k="/sys/kernel/debug/ieee80211/$phy/ath9k"
 
@@ -28,5 +20,18 @@ echo "}"
   echo chanscan > $path_ath9k/spectral_scan_ctl
   iw wlan0 scan freq 2412 2422 2432 2442 2452 2462 2472 >/dev/null
   echo disable > $path_ath9k/spectral_scan_ctl
-  fft_eval $path_ath9k/spectral_scan0 2> /dev/null > /tmp/spectral_scan.json
+  fft_eval $path_ath9k/spectral_scan0 2> /dev/null > $json_cache
+  ( sleep $json_cache_timeout ; rm $json_cache ) &
 ) &
+
+echo HTTP/1.1 200 OK
+echo Transfer-Encoding: chunked
+echo Content-Type: application/json
+echo Cache-Control: no-cache
+echo Expires: 0
+echo "Access-Control-Allow-Origin: *"
+echo
+echo "{ \"epoch\": $(date +%s), \"samples\":"
+cat $json_cache
+echo "}"
+
