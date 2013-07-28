@@ -29,6 +29,8 @@ window.setTimeout(
     var data = [];
     var placeholder = $("#placeholder");
 
+    graph = $.plot(placeholder, data, options);
+
     function fetchData() {
       function onDataReceived(series) {
 //        console.log(series);
@@ -44,7 +46,9 @@ window.setTimeout(
           data.push({ 'label': label, 'color': 0, 'data': series.samples[i].data });
         }
         data = data.slice(-60);
-        $.plot($("#placeholder"), data, options);
+        graph.setData(data);
+        graph.setupGrid();
+        graph.draw();
       }
 
       $.ajax({
