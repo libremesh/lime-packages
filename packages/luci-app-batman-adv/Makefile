@@ -19,7 +19,7 @@ define Package/luci-app-batman-adv
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   SUBMENU:=3. Applications
   TITLE:=B.A.T.M.A.N.-Adv configuration and status module
-  DEPENDS:= +libc +kmod-batman-adv
+  DEPENDS:= +libc +kmod-batman-adv +luci-lib-jquery-1-4
 endef
 
 define Package/luci-app-batman-adv/description
