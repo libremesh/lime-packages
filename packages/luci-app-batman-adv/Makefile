@@ -7,8 +7,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-batman-adv
-PKG_VERSION:=20130629
-PKG_RELEASE:=1
+PKG_VERSION:=20130630
+PKG_RELEASE:=2
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -18,7 +18,7 @@ define Package/luci-app-batman-adv
   TITLE:=LuCI - Lua Configuration Interface
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   SUBMENU:=3. Applications
-  TITLE:=B.A.T.M.A.N.-Adv configuration and status module
+  TITLE:=B.A.T.M.A.N.-Adv status module
   DEPENDS:= +libc +kmod-batman-adv +luci-lib-jquery-1-4
 endef
 
