@@ -139,7 +139,7 @@ function act_json()
 				local m, s, q = l:match("^ *([^ ]+) +([%d%.]+)s +%( *(%d+)%)")
 				if m and s and q then
 					rv.originators[#rv.originators+1] = {
-						m:upper(),
+						m,
 						tonumber(s) * 1000,
 						tonumber(q)
 					}
@@ -164,9 +164,9 @@ function act_json()
 				if a and m and s and n and i and c and r then
 					rv.gateways[#rv.gateways+1] = {
 						#a > 0,
-						m:upper(),
+						m,
 						tonumber(s) * 1000,
-						n:upper(),
+						n,
 						i,
 						tonumber(c),
 						r
