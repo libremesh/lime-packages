@@ -27,22 +27,39 @@ $Id$
 		{
 			var g = new Graph();
 
+
+			var render = function(r, node) {
+				var color = Raphael.getColor();
+				var rect = r.rect(node.point[0]-50, node.point[1]-10, 100, 20)
+					   .attr({"fill": color, "stroke": color, "stroke-width": 2, r : "9px"})
+				var set = r.set().
+					push(rect).
+					push(r.text(node.point[0], node.point[1], node.label || node.id)
+						.attr({"fill": "#000"}));
+				return set;
+			    };
+
 			for (var i = 0; i < (data.length-1); i++)
 			{
 				// node->node
-				if (data[i].router && data[i].neighbor)
+				if (data[i].router && data[i].neighbor) {
+					g.addNode(data[i].router, { render: render });
+					g.addNode(data[i].neighbor, { render: render });
 					g.addEdge(data[i].router, data[i].neighbor,
-						{ label: data[i].label, directed: true, stroke: '#aaaaaa' });
-				// node->leaf
-				else if (data[i].router && data[i].gateway)
-					g.addEdge(data[i].router, data[i].gateway,
-						{ label: 'leaf', stroke: '#cccccc' });
-				// node primary
-				else if (data[i].primary)
-					g.addNode(data[i].primary);
+						{ label: parseFloat(data[i].label).toFixed(1),
+						 directed: true, stroke: '#aaaaaa' });
+					}
+//				// node->leaf // Creates too much clutter
+//				else if (data[i].router && data[i].gateway) {
+//					g.addNode(data[i].router, { render: render });
+//					g.addNode(data[i].gateway, { render: render });
+//					g.addEdge(data[i].router, data[i].gateway,
+//						{ label: 'leaf', stroke: '#cccccc' });
+//					}
 				// node secondary
 				else if (data[i].secondary) {
-					g.addNode(data[i].secondary);
+					g.addNode(data[i].secondary, { render: render });
+					g.addNode(data[i].of, { render: render });
 					g.addEdge(data[i].secondary, data[i].of,
 						{ fill: "#000" } );
 					}
