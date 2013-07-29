@@ -21,7 +21,7 @@ PKG_NAME:=reghack
 PKG_VERSION:=0.2
 PKG_RELEASE:=1
 
-LIBRE_MESH_NAME:="Libre Mesh"
+LIBRE_MESH_NAME:=Libre Mesh
 LIBRE_MESH_PREFIX:=lime
 
 include $(INCLUDE_DIR)/package.mk
