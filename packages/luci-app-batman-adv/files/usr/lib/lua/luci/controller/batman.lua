@@ -136,12 +136,14 @@ function act_json()
 		repeat
 			l = fd:read("*l")
 			if l then
-				local m, s, q = l:match("^ *([^ ]+) +([%d%.]+)s +%( *(%d+)%)")
+				local m, s, q, n, i = l:match("^ *([^ ]+) +([%d%.]+)s +%( *(%d+)%) +([^ ]+) +%[ *(%S+)%]:")
 				if m and s and q then
 					rv.originators[#rv.originators+1] = {
 						m,
 						tonumber(s) * 1000,
-						tonumber(q)
+						tonumber(q),
+						n,
+						i
 					}
 				end
 			end

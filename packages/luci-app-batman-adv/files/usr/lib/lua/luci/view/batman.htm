@@ -100,6 +100,8 @@ $Id$
 
 					tr.insertCell(-1).innerHTML = og[i][0];
 					tr.insertCell(-1).innerHTML = String.format('%dms', og[i][1]);
+					tr.insertCell(-1).innerHTML = og[i][4];
+					tr.insertCell(-1).innerHTML = og[i][3];
 				}
 
 				if (t.rows.length == 1)
@@ -204,6 +206,8 @@ $Id$
 			<th class="cbi-section-table-cell">&#160;</th>
 			<th class="cbi-section-table-cell"><%:MAC-Address%></th>
 			<th class="cbi-section-table-cell"><%:Last Seen%></th>
+			<th class="cbi-section-table-cell"><%:Interface%></th>
+			<th class="cbi-section-table-cell"><%:Next Hop%></th>
 		</tr>
 		<tr class="cbi-section-table-row">
 			<td colspan="3"><em><br /><%:Collecting data...%></em></td>
