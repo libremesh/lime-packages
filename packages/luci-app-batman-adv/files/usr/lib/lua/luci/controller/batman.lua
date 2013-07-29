@@ -136,7 +136,7 @@ function act_json()
 		repeat
 			l = fd:read("*l")
 			if l then
-				local m, s, q = l:match("^([a-f0-9:]+) +([%d%.]+)s +%((%d+)%)")
+				local m, s, q = l:match("^ *([^ ]+) +([%d%.]+)s +%( *(%d+)%)")
 				if m and s and q then
 					rv.originators[#rv.originators+1] = {
 						m:upper(),
@@ -160,7 +160,7 @@ function act_json()
 		repeat
 			l = fd:read("*l")
 			if l then
-				local a, m, s, n, i, c, r = l:match("^(%S*) +([a-f0-9:]+) +%((%d+)%) +([a-f0-9:]+) +%[ *(%S+)%]: +(%d+) +- +(%S+)")
+				local a, m, s, n, i, c, r = l:match("^(%S*) +([^ ]+) +%( *(%d+)%) +([^ ]+) +%[ *(%S+)%]: +(%d+) +- +(%S+)")
 				if a and m and s and n and i and c and r then
 					rv.gateways[#rv.gateways+1] = {
 						#a > 0,
