@@ -37,6 +37,15 @@ $Id$
 				else if (data[i].router && data[i].gateway)
 					g.addEdge(data[i].router, data[i].gateway,
 						{ label: 'leaf', stroke: '#cccccc' });
+				// node primary
+				else if (data[i].primary)
+					g.addNode(data[i].primary);
+				// node secondary
+				else if (data[i].secondary) {
+					g.addNode(data[i].secondary);
+					g.addEdge(data[i].secondary, data[i].of,
+						{ fill: "#000" } );
+					}
 			}
 
 			var canvas = document.getElementById('canvas');
