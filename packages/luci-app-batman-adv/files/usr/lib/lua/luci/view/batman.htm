@@ -76,7 +76,7 @@ $Id$
 				while (t.rows.length > 1)
 					t.rows[0].parentNode.deleteRow(1);
 
-				og.sort(function(a, b) { return a[0] > b[0] });
+				og.sort(function(a, b) { return parseInt(b[2]) - parseInt(a[2]) });
 
 				for (var i = 0; i < og.length; i++)
 				{
