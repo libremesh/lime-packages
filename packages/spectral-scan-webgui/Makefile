@@ -17,7 +17,7 @@ define Package/spectral-scan-webgui
   CATEGORY:=Utilities
   TITLE:=Realtime spectral scanner for ath9k (web-gui)
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
-  DEPENDS:= +fft-eval +uhttpd
+  DEPENDS:= +fft-eval +uhttpd +luci-lib-jquery-1-4
 endef
 
 define Package/spectral-scan-webgui/description
