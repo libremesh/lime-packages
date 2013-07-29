@@ -160,12 +160,12 @@ function act_json()
 		repeat
 			l = fd:read("*l")
 			if l then
-				local a, m, s, n, i, c, r = l:match("^(%S*) +([^ ]+) +%( *(%d+)%) +([^ ]+) +%[ *(%S+)%]: +(%d+) +- +(%S+)")
-				if a and m and s and n and i and c and r then
+				local a, m, q, n, i, c, r = l:match("^(%S*) +([^ ]+) +%( *(%d+)%) +([^ ]+) +%[ *(%S+)%]: +(%d+) +- +(%S+)")
+				if a and m and q and n and i and c and r then
 					rv.gateways[#rv.gateways+1] = {
 						#a > 0,
 						m,
-						tonumber(s) * 1000,
+						tonumber(q),
 						n,
 						i,
 						tonumber(c),
