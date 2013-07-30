@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-openairview
 PKG_VERSION:=20130629
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -19,7 +19,7 @@ define Package/luci-app-openairview
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   SUBMENU:=3. Applications
   TITLE:=Plots and tools that help visualize the spectrum and wifi neighbours
-  DEPENDS:= +libc +fft-eval +luci-lib-jquery-1-4
+  DEPENDS:= +libc +fft-eval +luci-lib-jquery-1-4 +luci-lib-json
 endef
 
 define Package/luci-app-openairview/description
