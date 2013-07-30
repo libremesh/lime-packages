@@ -1,0 +1,12 @@
+#!/bin/sh
+
+uci -q get system.@watchping[0] || {
+        uci batch <<EOF
+        add system watchping
+        set system.@watchping[0].interface=wan
+        set system.@watchping[0].timeout=2m
+        set system.@watchping[0].pinghosts=8.8.8.8
+        set system.@watchping[0].pinginterval=20s
+        commit system
+EOF
+}
