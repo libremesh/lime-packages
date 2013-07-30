@@ -14,11 +14,12 @@ You may obtain a copy of the License at
 module("luci.controller.openairview", package.seeall)
 
 function index()
-	local e
+	local page
 
-	e = entry({"admin", "survey"}, alias("admin", "survey", "index"), _("Survey"), 50)
-	e.index = true
+	page = entry({"admin", "openairview"}, alias("admin", "openairview", "survey"), _("OpenAirView"), 50)
+	page.index = true
 
-	entry({"admin", "survey", "index"}, template("openairview/survey"), _("General"), 1)
-	entry({"admin", "survey", "spectral_scan"}, template("openairview/spectral_scan"), _("Spectral Scan"), 1)
+	page = entry({"admin", "openairview", "survey"}, template("openairview/survey"), _("Neighbors"), 1)
+
+	page = entry({"admin", "openairview", "spectral_scan"}, template("openairview/spectral_scan"), _("Spectral Scan"), 1)
 end
