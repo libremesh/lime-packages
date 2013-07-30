@@ -13,15 +13,15 @@ You may obtain a copy of the License at
 $Id: system.lua 9655 2013-01-27 18:43:41Z jow $
 ]]--
 
-module("luci.controller.altermesh.system", package.seeall)
+module("luci.controller.lime.system", package.seeall)
 
 function index()
-	entry({"altermesh", "system"}, alias("altermesh", "system", "index"), _("System"), 40).index = true
-	entry({"altermesh", "system", "index"}, cbi("altermesh/system", {autoapply=true}), _("General"), 1)
-	entry({"altermesh", "system", "passwd"}, form("altermesh/passwd"), _("Admin Password"), 10)
-	entry({"altermesh", "system", "backup"}, call("action_backup"), _("Backup / Restore"), 80)
-	entry({"altermesh", "system", "upgrade"}, call("action_upgrade"), _("Flash Firmware"), 90)
-	entry({"altermesh", "system", "reboot"}, call("action_reboot"), _("Reboot"), 100)
+	entry({"lime", "system"}, alias("lime", "system", "index"), _("System"), 40).index = true
+	entry({"lime", "system", "index"}, cbi("lime/system", {autoapply=true}), _("General"), 1)
+	entry({"lime", "system", "passwd"}, form("lime/passwd"), _("Admin Password"), 10)
+	entry({"lime", "system", "backup"}, call("action_backup"), _("Backup / Restore"), 80)
+	entry({"lime", "system", "upgrade"}, call("action_upgrade"), _("Flash Firmware"), 90)
+	entry({"lime", "system", "reboot"}, call("action_reboot"), _("Reboot"), 100)
 end
 
 function action_backup()
@@ -49,7 +49,7 @@ function action_backup()
 	local reset  = reset_avail and luci.http.formvalue("reset")
 
 	if upload and #upload > 0 then
-		luci.template.render("altermesh/applyreboot")
+		luci.template.render("lime/applyreboot")
 		luci.sys.reboot()
 	elseif backup then
 		local reader = ltn12_popen(backup_cmd:format(_keep_pattern()))
@@ -58,16 +58,16 @@ function action_backup()
 		luci.http.prepare_content("application/x-targz")
 		luci.ltn12.pump.all(reader, luci.http.write)
 	elseif reset then
-		luci.template.render("altermesh/applyreboot")
+		luci.template.render("lime/applyreboot")
 		luci.util.exec("mtd -r erase rootfs_data")
 	else
-		luci.template.render("altermesh/backup", {reset_avail = reset_avail})
+		luci.template.render("lime/backup", {reset_avail = reset_avail})
 	end
 end
 
 function action_reboot()
 	local reboot = luci.http.formvalue("reboot")
-	luci.template.render("altermesh/reboot", {reboot=reboot})
+	luci.template.render("lime/reboot", {reboot=reboot})
 	if reboot then
 		luci.sys.reboot()
 	end
@@ -175,7 +175,7 @@ function action_upgrade()
 			nixio.fs.unlink(tmpfile)
 		end
 
-		luci.template.render("altermesh/upgrade", {
+		luci.template.render("lime/upgrade", {
 			step=1,
 			bad_image=(has_image and not has_support or false),
 			keepavail=keep_avail,
@@ -184,7 +184,7 @@ function action_upgrade()
 
 	-- Step 2: present uploaded file, show checksum, confirmation
 	elseif step == 2 then
-		luci.template.render("altermesh/upgrade", {
+		luci.template.render("lime/upgrade", {
 			step=2,
 			checksum=image_checksum(),
 			filesize=nixio.fs.stat(tmpfile).size,
@@ -194,7 +194,7 @@ function action_upgrade()
 
 	-- Step 3: load iframe which calls the actual flash procedure
 	elseif step == 3 then
-		luci.template.render("altermesh/upgrade", {
+		luci.template.render("lime/upgrade", {
 			step=3,
 			keepconfig=(keep_avail and luci.http.formvalue("keepcfg") == "1")
 		} )

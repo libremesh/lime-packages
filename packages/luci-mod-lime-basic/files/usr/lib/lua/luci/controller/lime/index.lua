@@ -13,34 +13,34 @@ You may obtain a copy of the License at
 
 ]]--
 
-module("luci.controller.altermesh.index", package.seeall)
+module("luci.controller.lime.index", package.seeall)
 
 function index()
 	local root = node()
 	if not root.lock then
-		root.target = alias("altermesh")
+		root.target = alias("lime")
 		root.index = true
 	end
 
-	local page   = entry({"altermesh"}, alias("altermesh", "index"), _("Essentials"), 10)
+	local page   = entry({"lime"}, alias("lime", "index"), _("Essentials"), 10)
 	page.sysauth = "root"
 	page.sysauth_authenticator = "htmlauth"
 	page.index = true
 
-	entry({"altermesh", "index"}, alias("altermesh", "index", "index"), _("Overview"), 10).index = true
-	entry({"altermesh", "index", "index"}, form("altermesh/index"), _("General"), 1).ignoreindex = true
-	entry({"altermesh", "index", "settings"}, cbi("altermesh/settings", {autoapply=true}), _("Settings"), 10)
-	entry({"altermesh", "index", "logout"}, call("action_logout"), _("Logout"))
+	entry({"lime", "index"}, alias("lime", "index", "index"), _("Overview"), 10).index = true
+	entry({"lime", "index", "index"}, form("lime/index"), _("General"), 1).ignoreindex = true
+	entry({"lime", "index", "settings"}, cbi("lime/settings", {autoapply=true}), _("Settings"), 10)
+	entry({"lime", "index", "logout"}, call("action_logout"), _("Logout"))
 
         require("nixio.fs")
 
         if nixio.fs.access( "/usr/lib/lua/luci/view/openairview/stations.htm" ) then
-		page = entry({"altermesh", "openairview"}, alias("altermesh", "openairview", "stations"), _("OpenAirView"), 50)
+		page = entry({"lime", "openairview"}, alias("lime", "openairview", "stations"), _("OpenAirView"), 50)
 		page.index = true
 
-		page = entry({"altermesh", "openairview", "stations"}, template("openairview/stations"), _("Stations"), 1)
+		page = entry({"lime", "openairview", "stations"}, template("openairview/stations"), _("Stations"), 1)
 
-		page = entry({"altermesh", "openairview", "spectral_scan"}, template("openairview/spectral_scan"), _("Spectral Scan"), 1)
+		page = entry({"lime", "openairview", "spectral_scan"}, template("openairview/spectral_scan"), _("Spectral Scan"), 1)
 	end
 end
 
