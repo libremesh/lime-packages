@@ -31,6 +31,17 @@ function index()
 	entry({"altermesh", "index", "index"}, form("altermesh/index"), _("General"), 1).ignoreindex = true
 	entry({"altermesh", "index", "settings"}, cbi("altermesh/settings", {autoapply=true}), _("Settings"), 10)
 	entry({"altermesh", "index", "logout"}, call("action_logout"), _("Logout"))
+
+        require("nixio.fs")
+
+        if nixio.fs.access( "/usr/lib/lua/luci/view/openairview/stations.htm" ) then
+		page = entry({"altermesh", "openairview"}, alias("altermesh", "openairview", "stations"), _("OpenAirView"), 50)
+		page.index = true
+
+		page = entry({"altermesh", "openairview", "stations"}, template("openairview/stations"), _("Stations"), 1)
+
+		page = entry({"altermesh", "openairview", "spectral_scan"}, template("openairview/spectral_scan"), _("Spectral Scan"), 1)
+	end
 end
 
 function action_logout()
