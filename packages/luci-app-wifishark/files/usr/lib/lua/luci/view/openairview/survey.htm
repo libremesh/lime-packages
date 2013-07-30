@@ -1,0 +1,97 @@
+<%#
+Copyright 2013 Nicolas Echaninz <nicoechaniz@altermundi.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: reboot.htm 5448 2009-10-31 15:54:11Z jow $
+
+-%>
+<%+header%>
+
+    <script language="javascript" type="text/javascript" src="/jquery-1.10.2.min.js"></script>
+    <script language="javascript" type="text/javascript" src="/jquery.flot.min.js"></script>
+        
+
+<h2><a id="content" name="content"><%:Survey%></a></h2>
+<p><%:Survey neighbors data and perform spectral scans%></p>
+
+
+<div id="placeholder" style="width:760px;height:400px;"></div>
+
+<div id="ref"></div>
+
+<script type="text/javascript">
+
+window.setTimeout(
+  function () {
+    var options = {
+      lines: { show: true },
+      points: { show: true },
+      series: { shadowSize: 0 },
+      xaxis: { show: false },
+      yaxis: { min: -100, max: 10 },
+      legend: {
+        position: "sw",
+        backgroundOpacity: 0
+//        container: "#ref"
+      }
+    };    
+    var placeholder = $("#placeholder");
+
+    graph = $.plot(placeholder, [], options);
+
+    var seriesCollection = {};
+    var round = 0;
+    var keep_rounds = 10;
+    var inactive_threshold = 1000;
+    var round_time = 500;
+
+    function fetchData() {
+      function onDataReceived(series) {
+        for (i=0;i<series.length;i++) {
+          if (seriesCollection[series[i].station_hostname] == undefined) {
+            seriesCollection[series[i].station_hostname] = [];
+          }
+          if (series[i].attributes.inactive < inactive_threshold){
+            seriesCollection[series[i].station_hostname].push([round, series[i].attributes.signal])
+          }          
+        }
+        var data = []
+
+        for (key in seriesCollection){
+          stationData = seriesCollection[key]
+          if (stationData.length>0){
+            while (stationData[0][0] < round - keep_rounds){
+              stationData.shift();
+            }
+            data.push({label: key, data: stationData});
+          }
+        }
+
+        graph.setData(data);
+        graph.setupGrid();
+        graph.draw();
+        round = round + 1;
+      }
+
+      $.ajax({
+        url: "/cgi-bin/survey",
+        method: 'GET',
+        dataType: 'json',
+        success: onDataReceived
+      });
+
+      setTimeout(fetchData, round_time);
+    }
+
+    fetchData();
+  }, 2000
+);
+
+</script>
+
+<%+footer%>
