@@ -11,7 +11,7 @@ You may obtain a copy of the License at
 
 ]]--
 
-module("luci.controller.openairview.survey", package.seeall)
+module("luci.controller.openairview", package.seeall)
 
 function index()
 	local e
