@@ -10,34 +10,34 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=altermesh-webgui
+PKG_NAME:=luci-mod-lime-basic
 PKG_VERSION:=2013-07-30-274
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/altermesh-webgui
+define Package/luci-mod-lime-basic
   SECTION:=admin
   CATEGORY:=Administration
-  TITLE:==Web interface for AlterMesh nodes
+  TITLE:==Web interface for Libre-Mesh nodes
   MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
   DEPENDS:= +uhttpd +luci-theme-bootstrap +libiwinfo-lua +luci-mod-admin-core
 
 endef
 
-define Package/altermesh-webgui/description
-Minimal and simple web app to configure an altermesh node.
+define Package/luci-mod-lime-basic/description
+Minimal and simple web app to configure a libre-mesh node.
 endef
 
 define Build/Compile
 endef
 
-define Package/altermesh-webgui/install
+define Package/luci-mod-lime-basic/install
 	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
 endef
 
-define Package/altermesh-webgui/postinst
+define Package/luci-mod-lime-basic/postinst
 #!/bin/sh
 echo "Patching link in bootstrap no-root-password warning"
 sed 's|admin/system/admin|altermesh/system/passwd|' \
@@ -45,7 +45,7 @@ sed 's|admin/system/admin|altermesh/system/passwd|' \
 exit 0
 endef
 
-define Package/altermesh-webgui/prerm
+define Package/luci-mod-lime-basic/prerm
 #!/bin/sh
 echo "Reverting link in bootstrap no-root-password warning"
 sed 's|altermesh/system/passwd|admin/system/admin|' \
@@ -53,4 +53,4 @@ sed 's|altermesh/system/passwd|admin/system/admin|' \
 exit 0
 endef
 
-$(eval $(call BuildPackage,altermesh-webgui))
+$(eval $(call BuildPackage,luci-mod-lime-basic))
