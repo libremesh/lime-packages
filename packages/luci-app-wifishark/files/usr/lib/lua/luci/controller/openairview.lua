@@ -16,10 +16,10 @@ module("luci.controller.openairview", package.seeall)
 function index()
 	local page
 
-	page = entry({"admin", "openairview"}, alias("admin", "openairview", "survey"), _("OpenAirView"), 50)
+	page = entry({"admin", "openairview"}, alias("admin", "openairview", "stations"), _("OpenAirView"), 50)
 	page.index = true
 
-	page = entry({"admin", "openairview", "survey"}, template("openairview/survey"), _("Neighbors"), 1)
+	page = entry({"admin", "openairview", "stations"}, template("openairview/stations"), _("Stations"), 1)
 
 	page = entry({"admin", "openairview", "spectral_scan"}, template("openairview/spectral_scan"), _("Spectral Scan"), 1)
 end
