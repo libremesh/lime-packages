@@ -26,8 +26,7 @@ $Id: reboot.htm 5448 2009-10-31 15:54:11Z jow $
 
 <script type="text/javascript">
 
-window.setTimeout(
-  function () {
+$(function () {
     var options = {
       lines: { show: true },
       points: { show: true },
@@ -89,8 +88,7 @@ window.setTimeout(
     }
 
     fetchData();
-  }, 2000
-);
+  });
 
 </script>
 
