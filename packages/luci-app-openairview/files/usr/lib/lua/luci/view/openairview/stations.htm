@@ -78,7 +78,7 @@ $(function () {
       }
 
       $.ajax({
-        url: "/cgi-bin/survey",
+        url: '<%=luci.dispatcher.build_url("openairview/json/stations")%>',
         method: 'GET',
         dataType: 'json',
         success: onDataReceived
