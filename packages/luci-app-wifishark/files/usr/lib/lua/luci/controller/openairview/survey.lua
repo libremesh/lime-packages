@@ -14,15 +14,11 @@ You may obtain a copy of the License at
 module("luci.controller.openairview.survey", package.seeall)
 
 function index()
-	entry({"admin", "survey"}, alias("admin", "survey", "index"), _("Survey"), 50).index = true
-	entry({"admin", "survey", "index"}, call("action_survey", {autoapply=true}), _("General"), 1)
-	entry({"admin", "survey", "spectral_scan"}, call("action_spectral_scan"), _("Spectral Scan"), 1)
-end
+	local e
 
-function action_survey()
-	luci.template.render("openairview/survey")
-end
+	e = entry({"admin", "survey"}, alias("admin", "survey", "index"), _("Survey"), 50)
+	e.index = true
 
-function action_spectral_scan()
-	luci.template.render("openairview/spectral_scan")
+	entry({"admin", "survey", "index"}, template("openairview/survey"), _("General"), 1)
+	entry({"admin", "survey", "spectral_scan"}, template("openairview/spectral_scan"), _("Spectral Scan"), 1)
 end
