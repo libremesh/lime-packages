@@ -42,10 +42,6 @@ function index()
 	page = node("batman", "graph")
 	page.target = template("batman_graph")
 	page.leaf   = true
-
-	page = node("batman", "gw")
-	page.target = call("act_gw")
-	page.leaf   = true
 end
 
 function act_vis(mode)
@@ -85,17 +81,6 @@ function act_topo(mode)
 		else
 			luci.http.status(500, "No data")
 		end
-	else
-		luci.http.status(500, "Bad mode")
-	end
-end
-
-function act_gw(mode, down, up)
-	local s = down and (up and #up and down .. "/" .. up or down) or ""
-	if mode == "client" or mode == "server" or mode == "off" then
-		luci.sys.call("batctl gw %s %s >/dev/null" %{ mode, s })
-		luci.http.prepare_content("application/json")
-		luci.http.write_json((luci.sys.exec("batctl gw"):match("%(.+: (%S+)%)")))
 	else
 		luci.http.status(500, "Bad mode")
 	end

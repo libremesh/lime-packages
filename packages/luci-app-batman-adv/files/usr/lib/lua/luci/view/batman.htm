@@ -14,8 +14,6 @@ $Id$
 
 <%
 	local cur_vm = luci.sys.exec("batctl vm"):trim()
-	local cur_gw = luci.sys.exec("batctl gw"):match("^(%S+)")
-	local cur_gv = luci.sys.exec("batctl gw"):match("%(.+: (%S+)%)");
 %>
 
 <%+header%>
@@ -170,31 +168,6 @@ $Id$
 		</span>
 	</div>
 	<div id="vis_apply" style="display:none">
-		<em><%:Applying change...%></em>
-	</div>
-</fieldset>
-
-<fieldset class="cbi-section">
-	<legend><%:Gateway Selection%></legend>
-	<div id="gw_form">
-		<input type="radio" name="gw" value="off" id="gw_off" onchange="gw_apply(this)"<%=ifattr(cur_gw == "off", "checked", "checked")%> />
-		<label for="gw_off"><%:Turn off%></label>
-		&#160; &#160;
-
-		<input type="radio" name="gw" value="client" id="gw_client" onchange="gw_apply(this)"<%=ifattr(cur_gw == "client", "checked", "checked")%> />
-		<label for="gw_client"><%:Act as client%></label>
-		&#160; &#160;
-
-		<input type="radio" name="gw" value="server" id="gw_gateway" onchange="gw_apply(this)"<%=ifattr(cur_gw == "server", "checked", "checked")%> />
-		<label for="gw_gateway"><%:Act as gateway%></label>
-		&#160; &#160;
-
-		<span<%=ifattr(cur_gw == "off", "style", "display:none")%>>
-			<label for="gw_form_val"><%:Bandwidth/Class%>:</label>
-			<input type="text" id="gw_form_val" value="<%=cur_gv%>" onfocus="this.select()" onkeypress="if (event.which == 13 || event.keyCode == 13) { gw_apply(this); this.blur() }" />
-		</span>
-	</div>
-	<div id="gw_apply" style="display:none">
 		<em><%:Applying change...%></em>
 	</div>
 </fieldset>
