@@ -17,7 +17,7 @@ define Package/altermap-agent
   CATEGORY:=Administration
   TITLE:=Send system information to an AlterMap server
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
-  DEPENDS:= +luci-lib-core, +luci-lib-httpclient, +luci-lib-json, +luci-lib-nixio, +libuci-lua
+  DEPENDS:= +luci-lib-core +luci-lib-httpclient +luci-lib-json +luci-lib-nixio +libuci-lua
 endef
 
 define Package/altermap-agent/description
