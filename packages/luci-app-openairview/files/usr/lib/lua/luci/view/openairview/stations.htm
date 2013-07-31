@@ -31,8 +31,8 @@ $(function () {
       lines: { show: true },
       points: { show: true },
       series: { shadowSize: 0 },
-      xaxis: { show: false },
-      yaxis: { min: -100, max: 10 },
+      xaxis: { show: false, autoscaleMargin: 0.02 },
+      yaxis: { minTickSize: 1, autoscaleMargin: 0.02 },
       legend: {
         position: "sw",
         backgroundOpacity: 0
@@ -45,7 +45,7 @@ $(function () {
 
     var seriesCollection = {};
     var round = 0;
-    var keep_rounds = 10;
+    var keep_rounds = 20;
     var inactive_threshold = 1000;
     var round_time = 500;
 
