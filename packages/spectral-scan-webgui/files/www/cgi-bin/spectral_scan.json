@@ -24,8 +24,6 @@ json_cache_timeout=2
   ( sleep $json_cache_timeout ; rm $json_cache ) &
 ) &
 
-echo HTTP/1.1 200 OK
-echo Transfer-Encoding: chunked
 echo Content-Type: application/json
 echo Cache-Control: no-cache
 echo Expires: 0
