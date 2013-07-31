@@ -1,0 +1,49 @@
+#!/bin/sh /etc/rc.common
+#
+# Copyright © 2012 Routek S.L.
+# This is free software, licensed under the GNU General Public License v3.
+#
+# Original Authors:
+#       Agustí Moll i Garcia
+#       Simó Albert i Beltran
+# Adapted by:
+#       Gui Iribarren
+#
+
+START=97
+STOP=10
+
+generate_configfile() {
+        uci import altermap </dev/null
+        uci batch <<EOF
+        set altermap.agent=altermap
+        set altermap.agent.enabled=0
+        set altermap.agent.server_url=http://map.mesh.altermundi.net/
+        set altermap.agent.network=YOUR_NETWORK
+        commit altermap
+EOF
+}
+
+start() {
+        if [ ! -f /etc/config/altermap ]; then
+                echo "Generate Config File [/etc/config/altermap]."
+                generate_configfile
+        fi
+        [ "$(uci -q get altermap.agent.enabled)" == "1" ] || return
+        if ! ( grep -q /usr/sbin/altermap-agent /etc/crontabs/root 2>/dev/null ) ; then
+                echo "0 * * * * /usr/sbin/altermap-agent > /tmp/log/altermap-agent.log" >> /etc/crontabs/root
+                /etc/init.d/cron enable
+                /etc/init.d/cron start
+        fi
+        /usr/sbin/altermap-agent
+}
+
+stop() {
+        sed -r -i -e '\|^([^\t ]+[\t ]+){5}/usr/sbin/altermap-agent > /tmp/log/altermap-agent.log$|d' /etc/crontabs/root
+        /etc/init.d/cron restart
+}
+
+reload() {
+        start
+}
+
