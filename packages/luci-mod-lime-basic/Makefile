@@ -12,16 +12,25 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-mod-lime-basic
 PKG_VERSION:=2013-07-30-274
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/luci-mod-lime-basic
   SECTION:=admin
   CATEGORY:=Administration
-  TITLE:==Web interface for Libre-Mesh nodes
+  TITLE:=Web interface for Libre-Mesh nodes
   MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
   DEPENDS:= +uhttpd +luci-theme-bootstrap +libiwinfo-lua +luci-mod-admin-core
+
+endef
+
+define Package/luci-mod-lime-basic-ssl
+  SECTION:=admin
+  CATEGORY:=Administration
+  TITLE:=Web interface for Libre-Mesh nodes (SSL support)
+  MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
+  DEPENDS:= +luci-mod-lime-basic +libustream-cyassl +px5g
 
 endef
 
@@ -35,6 +44,10 @@ endef
 define Package/luci-mod-lime-basic/install
 	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
+endef
+
+define Package/luci-mod-lime-basic-ssl/install
+	true
 endef
 
 define Package/luci-mod-lime-basic/postinst
@@ -54,3 +67,4 @@ exit 0
 endef
 
 $(eval $(call BuildPackage,luci-mod-lime-basic))
+$(eval $(call BuildPackage,luci-mod-lime-basic-ssl))
