@@ -19,7 +19,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=reghack
 PKG_VERSION:=20130625
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 LIBRE_MESH_NAME:=Libre Mesh
 LIBRE_MESH_PREFIX:=lime
@@ -39,17 +39,26 @@ define Package/$(PKG_NAME)
 endef
 
 define Package/$(PKG_NAME)/install
-	@mkdir -p $(1)/usr/bin
-	$(CP) build/reghack $(1)/usr/bin/reghack
-	@chmod +x $(1)/usr/bin/reghack
-	@mkdir -p $(1)/etc/uci-defaults
-	$(CP) src/reghack.sh $(1)/etc/uci-defaults/reghack.sh
-	@chmod +x $(1)/etc/uci-defaults/reghack.sh
+	$(INSTALL_DIR) $(1)/usr/bin $(1)/etc/uci-defaults
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/reghack $(1)/usr/bin/reghack
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/reghack.sh $(1)/etc/uci-defaults/00_unlock-regdomain
+endef
+
+define Package/$(PKG_NAME)/postinstall
+#!/bin/sh
+[ -z "$$IPKG_INSTROOT" ] || exit 0
+. /etc/uci-defaults/00_unlock-regdomain
+rm -f /etc/uci-defaults/00_unlock-regdomain
+exit 0
+endef
+
+define Build/Prepare
+	mkdir -p $(PKG_BUILD_DIR)
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
 define Build/Compile
-	@mkdir -p ./build || true
-	$(TARGET_CC) src/reghack.c -o build/reghack
+	$(TARGET_CC) -o $(PKG_BUILD_DIR)/reghack $(PKG_BUILD_DIR)/reghack.c
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
