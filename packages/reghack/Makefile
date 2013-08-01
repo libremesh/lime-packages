@@ -18,7 +18,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=reghack
-PKG_VERSION:=0.2
+PKG_VERSION:=20130625
 PKG_RELEASE:=1
 
 LIBRE_MESH_NAME:=Libre Mesh
