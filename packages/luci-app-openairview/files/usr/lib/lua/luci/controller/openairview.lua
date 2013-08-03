@@ -25,12 +25,12 @@ function index()
    node("openairview", "json")
 
    page = node("openairview", "json", "stations")
-   page.target = call("action_stations_json")
+   page.target = call("action_json_stations")
 
 end
 
 
-function action_stations_json()
+function action_json_stations()
 
    local netm = require "luci.model.network"
 
