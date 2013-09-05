@@ -59,6 +59,7 @@ endef
 
 define Build/Compile
 	$(TARGET_CC) -o $(PKG_BUILD_DIR)/reghack $(PKG_BUILD_DIR)/reghack.c
+	$(HOST_CC) -o $(PKG_BUILD_DIR)/reghack.host $(PKG_BUILD_DIR)/reghack.c
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
