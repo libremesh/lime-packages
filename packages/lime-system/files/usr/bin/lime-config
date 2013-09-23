@@ -177,8 +177,8 @@ function main()
 			x:set("network", net, "ip6addr", v6)
 
 			print("blah",protocols[n], net, ifn, vlans[n], v4, v6)
-			local cmd = string.format("sh /etc/lime/protos/%s.sh add %s %s.%d %s %s",
-				protocols[n], net, ifn, vlans[n], v4, v6)
+			local cmd = string.format("sh /etc/lime/protos/%s.sh add %s %s %s %s",
+				protocols[n], net, ifn, v4, v6)
 
 			batch[#batch+1] = cmd
 		end
