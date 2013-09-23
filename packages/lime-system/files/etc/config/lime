@@ -20,7 +20,7 @@ config lime network
 config lime wireless
 	option ssid LiMe
 	option mesh_bssid ca:fe:00:c0:ff:ee
-	option mesh_mcast_rate_2ghz 11000
+	option mesh_mcast_rate_2ghz 24000
 	option mesh_mcast_rate_5ghz 6000
 	list mesh_channel_2ghz 11
 	list mesh_channel_2ghz 6
