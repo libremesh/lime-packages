@@ -1,6 +1,5 @@
 #!/usr/bin/lua
 
-local crc = require "crc16"
 local fs  = require "nixio.fs"
 local uci = require "uci"
 local iw  = require "iwinfo"
