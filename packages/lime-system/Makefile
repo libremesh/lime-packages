@@ -22,7 +22,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=lime-system
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 LIME_BUILDDATE:=$(shell date +%Y%m%d_%H%M)
 LIME_CODENAME:=bigbang
@@ -50,10 +50,6 @@ define Package/lime-system/conffiles
 	/etc/config/lime-defaults
 endef
 
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-endef
-
 define Build/Configure
 endef
 
@@ -61,6 +57,8 @@ define Build/Compile
 endef
 
 define Package/lime-system/install
+	$(INSTALL_DIR) $(1)/etc/lime/
+	$(CP) ./files/* $(1)/
 	echo "LIME_ID=LiMe" > $(1)/etc/lime/lime.release
 	echo "LIME_CODENAME=$(LIME_CODENAME)" >> $(1)/etc/lime/lime.release
 	echo "LIME_RELEASE=$(LIME_RELEASE)" >> $(1)/etc/lime/lime.release
