@@ -28,7 +28,7 @@ local function network_id()
 end
 
 local function generate_address(p, n)
-	local id = (n * 10) + p
+	local id = n
 	local r1, r2, r3 = node_id()
 	local n1, n2, n3 = network_id()
 	local ipv4_template = assert(x:get("lime", "network", "ipv4_net"))
@@ -38,8 +38,8 @@ local function generate_address(p, n)
 
 	ipv6_template = ipv6_template:gsub("N1", hex(n1)):gsub("N2", hex(n2)):gsub("N3", hex(n3))
 
-	return ipv4_template:gsub("R1", r1):gsub("R2", r2):gsub("R3", r3),
-	       ipv6_template:gsub("R1", hex(r1)):gsub("R2", hex(r2)):gsub("R3", hex(r3))
+	return ipv4_template:gsub("R1", r1):gsub("R2", r2):gsub("R3", r3 + id),
+	       ipv6_template:gsub("R1", hex(r1)):gsub("R2", hex(r2)):gsub("R3", hex(r3 + id))
 end
 
 local function generate_ssid()
