@@ -1,0 +1,203 @@
+#!/usr/bin/lua
+
+local crc = require "crc16"
+local fs  = require "nixio.fs"
+local uci = require "uci"
+local iw  = require "iwinfo"
+
+local x = uci:cursor()
+
+local function split(string, sep)
+	local ret = {}
+	for token in string.gmatch(string, "[^"..sep.."]+") do
+		table.insert(ret, token)
+	end
+	return ret
+end
+
+local function node_id()
+	local dev = assert(x:get("lime", "network", "primary_dev"))
+	local mac = assert(fs.readfile("/sys/class/net/"..dev.."/address"))
+	local t = split(mac, ":")
+	local r1, r2, r3 = t[#t-2], t[#t-1], t[#t]
+	return r1, r2, r3
+end
+
+-- TODO: implement
+--[[local function network_id()
+	local N1, N2, N3 = hash3bytes(network_essid)
+end]]--
+
+local function generate_address(p, n)
+	local id = (n * 10) + p
+	local r1, r2, r3 = node_id()
+	local ipv4_template = assert(x:get("lime", "network", "ipv4_net"))
+	local ipv6_template = assert(x:get("lime", "network", "ipv6_net"))
+
+	local function hex(x) return string.format("%02x", x) end
+
+	return ipv4_template:gsub("R1", r1):gsub("R2", r2):gsub("R3", r3),
+	       ipv6_template:gsub("R1", hex(r1)):gsub("R2", hex(r2)):gsub("R3", hex(r3))
+end
+
+local function generate_ssid()
+	local id = assert(x:get("lime", "wireless", "ssid"))
+	local r1, r2, r3 = node_id()
+
+	return string.format("%02x%02x%02x.%s", r1, r2, r3, id)
+end
+
+local function set_hostname()
+	local r1, r2, r3 = node_id()
+	local hostname = string.format("%02x%02x%02x", r1, r2, r3)
+
+	x:foreach("system", "system", function(s)
+		x:set("system", s[".name"], "hostname", hostname)
+	end)
+	x:save("system")
+	x:commit("system")
+
+	fs.writefile("/proc/sys/kernel/hostname", hostname)
+end
+
+local function printf(fmt, ...)
+	print(string.format(fmt, ...))
+end
+
+function main()
+	local protocols = assert(x:get("lime", "network", "protos"))
+	local vlans = assert(x:get("lime", "network", "vlans"))
+	local r1, r2, r3 = node_id()
+	local batch = { }
+
+	print("Clearing network config...")
+	x:foreach("network", "interface", function(s)
+		if s[".name"]:match("^lime_") then
+			x:delete("network", s[".name"])
+		end
+	end)
+
+	x:set("network", "lan", "ifname", "eth0 bat0")
+
+	-- Add vlan interfaces on top of ethernet, for each proto. Eg. lime_batadv_eth
+	local n
+	for n = 1, #protocols do
+		local net = "lime_" .. protocols[n] .. "_eth"
+		local ifn = string.format("@eth1.%d", vlans[n])
+		local v4, v6 = generate_address(n, 0)
+
+		x:set("network", net, "interface")
+		x:set("network", net, "ifname", ifn)
+		x:set("network", net, "proto", "none")
+		x:set("network", net, "auto", "1")
+
+		local cmd = string.format("sh /etc/lime/protos/%s.sh add %s %s %s %s %d %d %d",
+			protocols[n], net, ifn, v4, v6, r1, r2, r3)
+
+		batch[#batch+1] = cmd
+	end
+
+	x:save("wireless")
+	x:save("network")
+	x:commit("wireless")
+	x:commit("network")
+
+	print("Clearing wireless config...")
+	x:foreach("wireless", "wifi-iface", function(s) x:delete("wireless", s[".name"]) end)
+
+	print("Preparing protocols...")
+	local _, p
+	for _, p in ipairs(protocols) do
+		local cmd = string.format("sh /etc/lime/protos/%s.sh prepare", p)
+		printf("-> Calling %s", cmd)
+		os.execute(cmd)
+	end
+
+	print("Defining wireless networks...")
+	local channel2 = assert(x:get("lime", "wireless", "mesh_channel_2ghz"))
+	local channel5 = assert(x:get("lime", "wireless", "mesh_channel_5ghz"))
+	local mcast_rate_2 = assert(x:get("lime", "wireless", "mesh_mcast_rate_2ghz"))
+	local mcast_rate_5 = assert(x:get("lime", "wireless", "mesh_mcast_rate_5ghz"))
+	local wifi_num = 1
+
+	x:foreach("wireless", "wifi-device", function(s)
+		local t = iw.type(s[".name"])
+		if not t then return end
+
+		local is_5ghz = iw[t].hwmodelist(s[".name"]).a
+		local ch = table.remove(is_5ghz and channel5 or channel2, 1)
+		local mcr = is_5ghz and mcast_rate_5 or mcast_rate_2
+		local id = string.format("mesh%d", wifi_num)
+		local net = id .. "_base"
+
+		if not ch then
+			printf("-> No channel defined for %dGHz %s", is_5ghz and 5 or 2, s[".name"])
+			return
+		end
+
+		local ht = ch:match("[-+]?$")
+
+		printf("-> Using channel %s for %dGHz %s", ch, is_5ghz and 5 or 2, s[".name"])
+		x:set("wireless", s[".name"], "channel", (ch:gsub("[-+]$", "")))
+
+		if x:get("wireless", s[".name"], "ht_capab") then
+			if ht == "+" or ht == "-" then
+				x:set("wireless", s[".name"], "htmode", "HT40"..ht)
+			else
+				x:set("wireless", s[".name"], "htmode", "HT20")
+			end
+		end
+
+		x:set("wireless", s[".name"], "disabled", 0)
+
+		x:set("wireless", id, "wifi-iface")
+		x:set("wireless", id, "mode", "adhoc")
+		x:set("wireless", id, "device", s[".name"])
+		x:set("wireless", id, "network", net)
+		x:set("wireless", id, "mcast_rate", mcr)
+		x:set("wireless", id, "ssid", generate_ssid())
+		x:set("wireless", id, "bssid", assert(x:get("lime", "wireless", "mesh_bssid")))
+
+		x:set("network", net, "interface")
+		x:set("network", net, "proto", "none")
+
+
+		-- Add vlan interfaces on top of wlans, for each proto. Eg. lime_batadv_mesh0
+		local n
+		for n = 1, #protocols do
+			local v4, v6 = generate_address(n, wifi_num)
+
+			net = "lime_" .. protocols[n] .. "_" .. id
+			x:set("network", net, "interface")
+			x:set("network", net, "proto", "static")
+			x:set("network", net, "ifname", string.format("@%s_base.%d", id, vlans[n]))
+			x:set("network", net, "ip6addr", v6)
+
+			print("blah",protocols[n], net, ifn, vlans[n], v4, v6)
+			local cmd = string.format("sh /etc/lime/protos/%s.sh add %s %s.%d %s %s",
+				protocols[n], net, ifn, vlans[n], v4, v6)
+
+			batch[#batch+1] = cmd
+		end
+
+		wifi_num = wifi_num + 1
+	end)
+
+	print("Committing config files...")
+	x:save("network")
+	x:save("wireless")
+	x:commit("network")
+	x:commit("wireless")
+
+	print("Configuring system...")
+	set_hostname()
+
+	print("Configuring protocols...")
+	local _, cmd
+	for _, cmd in ipairs(batch) do
+		printf("-> Calling %s", cmd)
+		os.execute(cmd)
+	end
+end
+
+main()

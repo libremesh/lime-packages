@@ -22,7 +22,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=lime-system
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 LIME_BUILDDATE:=$(shell date +%Y%m%d_%H%M)
 LIME_CODENAME:=bigbang
