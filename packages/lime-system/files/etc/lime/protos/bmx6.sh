@@ -67,10 +67,17 @@ prepare () {
 
 # Smart gateway search for IPV6
   
-  # Search for any IPv6 announcement in the mesh cloud
-  #uci set bmx6.ipv6=tunOut
-  #uci set bmx6.ipv6.tunOut=ipv6
-  #uci set bmx6.ipv6.network=::/0
+  # Search for internet IPv6 gateways in the mesh cloud
+  uci set bmx6.gw_v6=tunOut
+  uci set bmx6.gw_v6.tunOut=gw_v6
+  uci set bmx6.gw_v6.network=::/0
+  uci set bmx6.gw_v6.maxPrefixLen=0
+
+  # Search for other mesh cloud announcements
+  uci set bmx6.lime_ula=tunOut
+  uci set bmx6.lime_ula.tunOut=lime_ula
+  uci set bmx6.lime_ula.network=fdfd:fd00::/24
+  uci set bmx6.lime_ula.minPrefixLen=48
 
   uci commit bmx6
 }
