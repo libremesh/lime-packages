@@ -131,6 +131,7 @@ function main()
 		local mcr = is_5ghz and mcast_rate_5 or mcast_rate_2
 		local id = string.format("mesh%d", wifi_num)
 		local net = id .. "_base"
+		local ifn = string.format("mesh%d", wifi_num)
 
 		if not ch then
 			printf("-> No channel defined for %dGHz %s", is_5ghz and 5 or 2, s[".name"])
@@ -156,6 +157,7 @@ function main()
 		x:set("wireless", id, "mode", "adhoc")
 		x:set("wireless", id, "device", s[".name"])
 		x:set("wireless", id, "network", net)
+		x:set("wireless", id, "ifname", ifn)
 		x:set("wireless", id, "mcast_rate", mcr)
 		x:set("wireless", id, "ssid", generate_ssid())
 		x:set("wireless", id, "bssid", assert(x:get("lime", "wireless", "mesh_bssid")))
@@ -168,17 +170,16 @@ function main()
 		local n
 		for n = 1, #protocols do
 			local v4, v6 = generate_address(n, wifi_num)
-			local ifn = string.format("@%s_base.%d", id, vlans[n])
 
 			net = "lime_" .. protocols[n] .. "_" .. id
 			x:set("network", net, "interface")
 			x:set("network", net, "proto", "static")
-			x:set("network", net, "ifname", ifn)
+			x:set("network", net, "ifname", string.format("@%s_base.%d", id, vlans[n]))
 			x:set("network", net, "ip6addr", v6)
 
 			print("blah",protocols[n], net, ifn, vlans[n], v4, v6)
-			local cmd = string.format("sh /etc/lime/protos/%s.sh add %s %s %s %s",
-				protocols[n], net, ifn, v4, v6)
+			local cmd = string.format("sh /etc/lime/protos/%s.sh add %s %s.%d %s %s",
+				protocols[n], net, ifn, vlans[n], v4, v6)
 
 			batch[#batch+1] = cmd
 		end
