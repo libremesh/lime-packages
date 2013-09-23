@@ -31,6 +31,7 @@ add () {
   uci set network.${LOGICAL_INTERFACE}=interface
   uci set network.${LOGICAL_INTERFACE}.proto=batadv
   uci set network.${LOGICAL_INTERFACE}.mesh=bat0
+  uci set network.${LOGICAL_INTERFACE}.ip6addr=""
   uci set network.${LOGICAL_INTERFACE}.mtu=1528
   uci commit network
 }
