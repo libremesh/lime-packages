@@ -19,7 +19,7 @@ local function node_id()
 	local dev = assert(x:get("lime", "network", "primary_dev"))
 	local mac = assert(fs.readfile("/sys/class/net/"..dev.."/address"))
 	local t = split(mac, ":")
-	local r1, r2, r3 = t[#t-2], t[#t-1], t[#t]
+	local r1, r2, r3 = tonumber(t[#t-2], 16), tonumber(t[#t-1], 16), tonumber(t[#t], 16)
 	return r1, r2, r3
 end
 
@@ -166,11 +166,12 @@ function main()
 		local n
 		for n = 1, #protocols do
 			local v4, v6 = generate_address(n, wifi_num)
+			local ifn = string.format("@%s_base.%d", id, vlans[n])
 
 			net = "lime_" .. protocols[n] .. "_" .. id
 			x:set("network", net, "interface")
 			x:set("network", net, "proto", "static")
-			x:set("network", net, "ifname", string.format("@%s_base.%d", id, vlans[n]))
+			x:set("network", net, "ifname", ifn)
 			x:set("network", net, "ip6addr", v6)
 
 			print("blah",protocols[n], net, ifn, vlans[n], v4, v6)
