@@ -1,0 +1,27 @@
+config lime network
+	# primary network device to get the MAC addres
+	option primary_dev eth0
+
+	# first vlan tag for first protocol
+	list vlans 10
+	list vlans 200
+
+	# protocols available
+	list protos bmx6
+	list protos batadv
+
+	# ipv4_net and ipv6_net are the networks that each node will use for its own.
+	# P = protocol identifier (0,1,2...) + 10 for interface
+	# R1 = 8 bits random number, probably comming from MAC
+	# R2 = 8 bits random number, probably comming from MAC
+	option ipv4_net 10.P.R1.R2/16
+	option ipv6_net fdfd:fdN1:N2N3:1::R1:R2R3/64
+
+config lime wireless
+	option ssid LiMe
+	option mesh_bssid ca:fe:00:c0:ff:ee
+	option mesh_mcast_rate_2ghz 11000
+	option mesh_mcast_rate_5ghz 6000
+	list mesh_channel_2ghz 11
+	list mesh_channel_2ghz 6
+	list mesh_channel_5ghz 36+

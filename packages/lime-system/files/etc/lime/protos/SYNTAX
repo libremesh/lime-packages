@@ -1,0 +1,9 @@
+The next call is made (including the parameters) for each protocol script file
+
+protocol.sh < prepare | add <virtual_if> <actual_if> <IPv4/16> <IPv6/64> <R1> <R2> >
+
+Where action can be:
+
+- prepare: cleans the current configuration and leaves the protocol ready
+- add: adds a new interface with its IP addresses to the protocol
+
