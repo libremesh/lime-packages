@@ -15,7 +15,7 @@ config lime network
 	# R1 = 8 bits random number, probably comming from MAC
 	# R2 = 8 bits random number, probably comming from MAC
 	option ipv4_net 10.P.R1.R2/16
-	option ipv6_net fdfd:fdN1:N2N3:1::R1:R2R3/64
+	option ipv6_net fddf:caN1:N2N3:1::R1:R2R3/64
 
 config lime wireless
 	option ssid LiMe

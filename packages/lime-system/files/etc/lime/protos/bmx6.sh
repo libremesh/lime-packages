@@ -76,7 +76,7 @@ prepare () {
   # Search for other mesh cloud announcements
   uci set bmx6.lime_ula=tunOut
   uci set bmx6.lime_ula.tunOut=lime_ula
-  uci set bmx6.lime_ula.network=fdfd:fd00::/24
+  uci set bmx6.lime_ula.network=fddf:ca00::/24
   uci set bmx6.lime_ula.minPrefixLen=48
 
   uci commit bmx6
@@ -102,7 +102,7 @@ add () {
 # Accept incoming tunnels
 
   if ! uci -q get bmx6.general.tun6Address > /dev/null ; then
-    uci set bmx6.general.tun6Address=$( echo ${IPV6} | sed "s/\/.*/\/128/;s/fdfd:fd\(..:[^:]\+:\)/fdfd:fdca:cade:/" )
+    uci set bmx6.general.tun6Address=$( echo ${IPV6} | sed "s/\/.*/\/128/;s/fddf:ca\(..:[^:]\+:\)/fddf:caca:cade:/" )
     uci set bmx6.lime_own=tunInNet
     uci set bmx6.lime_own.tunInNet=$( echo ${IPV6} | sed "s/^\([^:]\+:[^:]\+:[^:]\+\):.*/\1::\/48/")
   fi
