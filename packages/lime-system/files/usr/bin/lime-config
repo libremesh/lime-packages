@@ -87,6 +87,8 @@ function main()
 		end
 	end)
 
+	local v4, v6 = generate_address(1, 0) -- for br-lan
+	x:set("network", "lan", "ip6addr", v6)
 	x:set("network", "lan", "ifname", "eth0 bat0")
 
 	-- Add vlan interfaces on top of ethernet, for each proto. Eg. lime_batadv_eth
@@ -181,9 +183,9 @@ function main()
 
 			net = "lime_" .. protocols[n] .. "_" .. id
 			x:set("network", net, "interface")
-			x:set("network", net, "proto", "static")
+			x:set("network", net, "proto", "none")
+			x:set("network", net, "auto", "1")
 			x:set("network", net, "ifname", string.format("@%s_base.%d", id, vlans[n]))
-			x:set("network", net, "ip6addr", v6)
 
 			print("blah",protocols[n], net, ifn, vlans[n], v4, v6)
 			local cmd = string.format("sh /etc/lime/protos/%s.sh add %s %s.%d %s %s",
