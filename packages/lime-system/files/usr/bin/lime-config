@@ -72,6 +72,14 @@ function main()
 	local r1, r2, r3 = node_id()
 	local batch = { }
 
+	print("Disabling v6 firewall")
+	fs.writefile("/etc/firewall.user", "ip6tables -P INPUT ACCEPT\nip6tables -P OUTPUT ACCEPT\nip6tables -P FORWARD ACCEPT\n")
+	x:foreach("firewall", "defaults", function(s)
+		x:set("firewall", s[".name"], "disable_ipv6", "1")
+	end)
+	x:save("firewall")
+	x:commit("firewall")
+
 	print("Clearing network config...")
 	x:foreach("network", "interface", function(s)
 		if s[".name"]:match("^lime_") then
