@@ -187,7 +187,6 @@ function main()
 			x:set("network", net, "auto", "1")
 			x:set("network", net, "ifname", string.format("@%s_base.%d", id, vlans[n]))
 
-			print("blah",protocols[n], net, ifn, vlans[n], v4, v6)
 			local cmd = string.format("sh /etc/lime/protos/%s.sh add %s %s.%d %s %s",
 				protocols[n], net, ifn, vlans[n], v4, v6)
 
