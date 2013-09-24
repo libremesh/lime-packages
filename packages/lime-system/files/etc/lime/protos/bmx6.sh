@@ -97,6 +97,16 @@ add () {
   #  uci set bmx6.general.tun4Address="$( echo ${IPV4} echo | sed s/"\/.*"/"\/32"/ )"
   #fi
 
+  # Announce own cloud network
+
+# Accept incoming tunnels
+
+  if ! uci -q get bmx6.general.tun6Address > /dev/null ; then
+    uci set bmx6.general.tun6Address=$( echo ${IPV6} | sed "s/\/.*/\/128/;s/fdfd:fd\(..:[^:]\+:\)/fdfd:fdca:cade:/" )
+    uci set bmx6.lime_own=tunInNet
+    uci set bmx6.lime_own.tunInNet=$( echo ${IPV6} | sed "s/^\([^:]\+:[^:]\+:[^:]\+\):.*/\1::\/48/")
+  fi
+
   uci commit bmx6
 }
 
