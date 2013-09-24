@@ -85,7 +85,7 @@ prepare () {
 add () {
   uci set bmx6.${LOGICAL_INTERFACE}=dev
   uci set bmx6.${LOGICAL_INTERFACE}.dev=${REAL_INTERFACE}
-  uci set bmx6.${LOGICAL_INTERFACE}.globalPrefix="$( echo ${IPV6} echo | sed s/"\/.*"/"\/128"/ )"
+  #uci set bmx6.${LOGICAL_INTERFACE}.globalPrefix="$( echo ${IPV6} echo | sed s/"\/.*"/"\/128"/ )"
 
   # To enable IPv4
 
