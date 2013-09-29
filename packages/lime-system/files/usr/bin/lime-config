@@ -250,6 +250,11 @@ function main()
 	print("Configuring system...")
 	set_hostname()
 
+	x:set("uhttpd", "main", "listen_http", "80")
+	x:set("uhttpd", "main", "listen_https", "443")
+	x:save("uhttpd")
+	x:commit("uhttpd")
+
 	print("Configuring protocols...")
 	local _, cmd
 	for _, cmd in ipairs(batch) do
