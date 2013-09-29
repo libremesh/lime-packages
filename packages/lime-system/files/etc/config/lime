@@ -4,7 +4,7 @@ config lime network
 
 	# first vlan tag for first protocol
 	list vlans 10
-	list vlans 200
+#	list vlans 200
 
 	# protocols available
 	list protos bmx6

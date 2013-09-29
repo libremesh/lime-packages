@@ -78,6 +78,7 @@ end
 function main()
 	local protocols = assert(x:get("lime", "network", "protos"))
 	local vlans = assert(x:get("lime", "network", "vlans"))
+	local n1, n2, n3 = network_id()
 	local r1, r2, r3 = node_id()
 	local batch = { }
 
@@ -99,6 +100,9 @@ function main()
 	local v4, v6 = generate_address(1, 0) -- for br-lan
 	x:set("network", "lan", "ip6addr", v6)
 	x:set("network", "lan", "ifname", "eth0 bat0")
+
+  -- For batadv use a vlan based off network_id, between 16 and 255, if uci doesn't specify a vlan
+	if not vlans[2] then vlans[2] = math.floor(16 + ((tonumber(n1) / 255) * (255 - 16))) end
 
 	-- Add vlan interfaces on top of ethernet, for each proto. Eg. lm_eth_batadv
 	local n
@@ -221,7 +225,6 @@ function main()
 	x:commit("wireless")
 
 	print("Ugly overwrite of /etc/rc.local to make it add macvlan interface...")
-	local n1, n2, n3 = network_id()
 	local anygw_mac = string.format("aa:aa:aa:%02x:%02x:%02x", n1, n2, n3)
 	local _, v6 = generate_address(1, 0) -- for anygw
 	local v6prefix = v6:match("^([^:]+:[^:]+:[^:]+):")
