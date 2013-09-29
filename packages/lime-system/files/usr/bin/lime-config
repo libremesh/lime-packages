@@ -23,8 +23,17 @@ local function node_id()
 end
 
 local function network_id()
-	--local N1, N2, N3 = hash3bytes(network_essid)
-	return 1, 2, 3
+	local network_essid = assert(x:get("lime", "wireless", "ssid"))
+	local n1, n2, n3
+	local fd = io.popen('echo "' .. network_essid .. '" | md5sum')
+	if fd then
+		local md5 = fd:read("*a")
+		n1 = tonumber(md5:match("^(..)"), 16)
+		n2 = tonumber(md5:match("^..(..)"), 16)
+		n3 = tonumber(md5:match("^....(..)"), 16)
+		fd:close()
+	end
+	return n1, n2, n3
 end
 
 local function generate_address(p, n)
