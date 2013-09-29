@@ -97,6 +97,9 @@ function main()
 		end
 	end)
 
+	print("Disabling 6relayd...")
+	fs.writefile("/etc/config/6relayd", "")
+
 	local v4, v6 = generate_address(1, 0) -- for br-lan
 	x:set("network", "lan", "ip6addr", v6)
 	x:set("network", "lan", "ifname", "eth0 bat0")
@@ -235,6 +238,13 @@ function main()
 	table.insert(content, "ip link set anygw up")
 	table.insert(content, "exit 0")
 	fs.writefile("/etc/rc.local", table.concat(content, "\n"))
+
+	print("Enabling RA in dnsmasq...")
+	content = { }
+	table.insert(content, "enable-ra")
+	table.insert(content, string.format("dhcp-range=%s::, ra-names", v6prefix))
+	table.insert(content, "dhcp-option=option6:domain-search, lan")
+	fs.writefile("/etc/dnsmasq.conf", table.concat(content, "\n").."\n")
 
 	print("Configuring system...")
 	set_hostname()
