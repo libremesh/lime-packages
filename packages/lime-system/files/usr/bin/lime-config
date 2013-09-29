@@ -220,6 +220,19 @@ function main()
 	x:commit("network")
 	x:commit("wireless")
 
+	print("Ugly overwrite of /etc/rc.local to make it add macvlan interface...")
+	local n1, n2, n3 = network_id()
+	local anygw_mac = string.format("aa:aa:aa:%02x:%02x:%02x", n1, n2, n3)
+	local _, v6 = generate_address(1, 0) -- for anygw
+	local v6prefix = v6:match("^([^:]+:[^:]+:[^:]+):")
+	local anygw_ipv6 = string.format(v6prefix .. "::1/64")
+	local content = { }
+	table.insert(content, "ip link add link br-lan anygw address " .. anygw_mac .. " type macvlan")
+	table.insert(content, "ip address add dev anygw " .. anygw_ipv6)
+	table.insert(content, "ip link set anygw up")
+	table.insert(content, "exit 0")
+	fs.writefile("/etc/rc.local", table.concat(content, "\n"))
+
 	print("Configuring system...")
 	set_hostname()
 
