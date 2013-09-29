@@ -237,7 +237,7 @@ function main()
 	table.insert(content, "ip address add dev anygw " .. anygw_ipv6)
 	table.insert(content, "ip link set anygw up")
 	table.insert(content, "exit 0")
-	fs.writefile("/etc/rc.local", table.concat(content, "\n"))
+	fs.writefile("/etc/rc.local", table.concat(content, "\n").."\n")
 
 	print("Enabling RA in dnsmasq...")
 	content = { }
