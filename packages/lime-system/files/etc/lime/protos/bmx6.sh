@@ -104,7 +104,7 @@ add () {
   if ! uci -q get bmx6.general.tun6Address > /dev/null ; then
     uci set bmx6.general.tun6Address=$( echo ${IPV6} | sed "s/\/.*/\/128/;s/fddf:ca\(..:[^:]\+:\)/fddf:caca:cade:/" )
     uci set bmx6.lime_own=tunInNet
-    uci set bmx6.lime_own.tunInNet=$( echo ${IPV6} | sed "s/^\([^:]\+:[^:]\+:[^:]\+\):.*/\1::\/48/")
+    uci set bmx6.lime_own.tunInNet=$( echo ${IPV6} | sed "s/^\([^:]\+:[^:]\+:[^:]\+\):.*/\1::\/64/")
   fi
 
   uci commit bmx6
