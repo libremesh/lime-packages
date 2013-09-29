@@ -139,7 +139,7 @@ function main()
 	local channel5 = assert(x:get("lime", "wireless", "mesh_channel_5ghz"))
 	local mcast_rate_2 = assert(x:get("lime", "wireless", "mesh_mcast_rate_2ghz"))
 	local mcast_rate_5 = assert(x:get("lime", "wireless", "mesh_mcast_rate_5ghz"))
-	local wifi_num = 1
+	local wifi_num = 0
 
 	x:foreach("wireless", "wifi-device", function(s)
 		local t = iw.type(s[".name"])
