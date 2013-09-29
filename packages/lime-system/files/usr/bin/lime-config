@@ -91,7 +91,7 @@ function main()
 
 	print("Clearing network config...")
 	x:foreach("network", "interface", function(s)
-		if s[".name"]:match("^lime_") then
+		if s[".name"]:match("^lm_") then
 			x:delete("network", s[".name"])
 		end
 	end)
@@ -100,10 +100,10 @@ function main()
 	x:set("network", "lan", "ip6addr", v6)
 	x:set("network", "lan", "ifname", "eth0 bat0")
 
-	-- Add vlan interfaces on top of ethernet, for each proto. Eg. lime_batadv_eth
+	-- Add vlan interfaces on top of ethernet, for each proto. Eg. lm_eth_batadv
 	local n
 	for n = 1, #protocols do
-		local net = "lime_" .. protocols[n] .. "_eth"
+		local net = "lm_eth_" .. protocols[n]
 		local ifn = string.format("eth1.%d", vlans[n])
 		local v4, v6 = generate_address(n, 0)
 
@@ -149,7 +149,7 @@ function main()
 		local ch = table.remove(is_5ghz and channel5 or channel2, 1)
 		local mcr = is_5ghz and mcast_rate_5 or mcast_rate_2
 		local id = string.format("mesh%d", wifi_num)
-		local net = id .. "_base"
+		local net = "lm_" .. id
 		local ifn = string.format("mesh%d", wifi_num)
 		local ifn_ap = string.format("wlan%dap", wifi_num)
 
@@ -194,16 +194,16 @@ function main()
 		x:set("network", net, "mtu", "1528")
 
 
-		-- Add vlan interfaces on top of wlans, for each proto. Eg. lime_batadv_mesh0
+		-- Add vlan interfaces on top of wlans, for each proto. Eg. lm_mesh0_batadv
 		local n
 		for n = 1, #protocols do
 			local v4, v6 = generate_address(n, wifi_num)
 
-			net = "lime_" .. protocols[n] .. "_" .. id
+			net = "lm_" .. id .. "_" .. protocols[n]
 			x:set("network", net, "interface")
 			x:set("network", net, "proto", "none")
 			x:set("network", net, "auto", "1")
-			x:set("network", net, "ifname", string.format("@%s_base.%d", id, vlans[n]))
+			x:set("network", net, "ifname", string.format("@lm_%s.%d", id, vlans[n]))
 
 			local cmd = string.format("sh /etc/lime/protos/%s.sh add %s %s.%d %s %s",
 				protocols[n], net, ifn, vlans[n], v4, v6)
