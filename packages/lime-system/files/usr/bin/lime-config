@@ -151,6 +151,7 @@ function main()
 		local id = string.format("mesh%d", wifi_num)
 		local net = id .. "_base"
 		local ifn = string.format("mesh%d", wifi_num)
+		local ifn_ap = string.format("wlan%dap", wifi_num)
 
 		if not ch then
 			printf("-> No channel defined for %dGHz %s", is_5ghz and 5 or 2, s[".name"])
@@ -180,6 +181,13 @@ function main()
 		x:set("wireless", id, "mcast_rate", mcr)
 		x:set("wireless", id, "ssid", generate_ssid())
 		x:set("wireless", id, "bssid", assert(x:get("lime", "wireless", "mesh_bssid")))
+
+		x:set("wireless", ifn_ap, "wifi-iface")
+		x:set("wireless", ifn_ap, "mode", "ap")
+		x:set("wireless", ifn_ap, "device", s[".name"])
+		x:set("wireless", ifn_ap, "network", "lan")
+		x:set("wireless", ifn_ap, "ifname", ifn_ap)
+		x:set("wireless", ifn_ap, "ssid", assert(x:get("lime", "wireless", "ssid")))
 
 		x:set("network", net, "interface")
 		x:set("network", net, "proto", "none")
