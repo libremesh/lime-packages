@@ -26,7 +26,7 @@ prepare () {
 # uci set bmx6.general.globalPrefix="fd11::/48"
 
   # Prevent syslog messages by default
-  uci set bmx6.general.syslog=0
+#  uci set bmx6.general.syslog=0
 
   # Some tunning for the WBM scenario
   uci set bmx6.general.dbgMuteTimeout=1000000
