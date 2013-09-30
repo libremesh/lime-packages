@@ -39,8 +39,8 @@ prepare () {
   uci set bmx6.config.plugin=bmx6_config.so
 
   # Enable de JSON plugin to get bmx6 information in json format
-#  uci set bmx6.json=plugin
-#  uci set bmx6.json.plugin=bmx6_json.so
+  uci set bmx6.json=plugin
+  uci set bmx6.json.plugin=bmx6_json.so
 
   # Disable ThrowRules because they are broken in IPv6 with current Linux Kernel
   uci set bmx6.ipVersion=ipVersion
