@@ -38,6 +38,7 @@ define Package/lime-system
   +iwinfo +iw +netperf +mtr \
   +bmx6 +bmx6-uci-config +bmx6-json +bmx6-sms +kmod-batman-adv \
   +wpad-mini +reghack \
+  +kmod-macvlan +ebtables \
   +ip +iputils-ping6
 endef
 
