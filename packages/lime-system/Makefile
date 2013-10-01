@@ -22,7 +22,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=lime-system
-PKG_RELEASE:=7
+PKG_RELEASE:=8
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 LIME_BUILDDATE:=$(shell date +%Y%m%d_%H%M)
 LIME_CODENAME:=bigbang
@@ -34,7 +34,7 @@ define Package/lime-system
   SECTION:=net
   CATEGORY:=LiMe
   URL:=http://libre-mesh.org
-  DEPENDS:=+uhttpd +luci +luci-app-bmx6 \
+  DEPENDS:=+uhttpd +luci +luci-app-bmx6 +luci-app-batman-adv\
   +iwinfo +iw +netperf +mtr \
   +bmx6 +bmx6-uci-config +bmx6-json +bmx6-sms +kmod-batman-adv \
   +wpad-mini +reghack \
