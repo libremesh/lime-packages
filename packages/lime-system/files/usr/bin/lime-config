@@ -46,6 +46,7 @@ local function generate_address(p, n)
 	local function hex(x) return string.format("%02x", x) end
 
 	ipv6_template = ipv6_template:gsub("N1", hex(n1)):gsub("N2", hex(n2)):gsub("N3", hex(n3))
+	ipv4_template = ipv4_template:gsub("N1", n1):gsub("N2", n2):gsub("N3", n3)
 
 	return ipv4_template:gsub("R1", r1):gsub("R2", r2):gsub("R3", r3 + id),
 	       ipv6_template:gsub("R1", hex(r1)):gsub("R2", hex(r2)):gsub("R3", hex(r3 + id))

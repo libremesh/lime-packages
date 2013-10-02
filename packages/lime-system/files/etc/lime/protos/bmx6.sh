@@ -34,6 +34,9 @@ prepare () {
 # uci set bmx6.general.linkPurgeTimeout=20000
 # uci set bmx6.general.dadTimeout=15000
 
+  uci set bmx6.tunDev=main
+  uci set bmx6.tunDev.tunDev=main
+  
   # Enable bmx6 uci config plugin
   uci set bmx6.config=plugin
   uci set bmx6.config.plugin=bmx6_config.so
@@ -45,39 +48,34 @@ prepare () {
   # Disable ThrowRules because they are broken in IPv6 with current Linux Kernel
   uci set bmx6.ipVersion=ipVersion
   uci set bmx6.ipVersion.ipVersion=6
-  uci set bmx6.ipVersion.throwRules=0
 
+  # Search for mesh node's IP
+  uci set bmx6.nodes=tunOut
+  uci set bmx6.nodes.tunOut=nodes
+  uci set bmx6.nodes.network=172.16.0.0/12
 
-  # Smart gateway search for IPV4
-
-  # Search for any announcement of 10/8 in the mesh cloud
-  #uci set bmx6.mesh=tunOut
-  #uci set bmx6.mesh.tunOut=mesh
-  #uci set bmx6.mesh.network=10.0.0.0/8
-  #uci set bmx6.mesh.minPrefixLen=24
-  #uci set bmx6.mesh.maxPrefixLen=32
-
-  # Search for internet in the mesh cloud
-  #uci set bmx6.inet=tunOut
-  #uci set bmx6.inet.tunOut=inet
-  #uci set bmx6.inet.network=0.0.0.0/0
-  #uci set bmx6.inet.minPrefixLen=0
-  #uci set bmx6.inet.maxPrefixLen=0
-
-
-# Smart gateway search for IPV6
+  # Search for clouds
+  uci set bmx6.clouds=tunOut
+  uci set bmx6.clouds.tunOut=clouds
+  uci set bmx6.clouds.network=10.0.0.0/8
   
+  # Search for internet in the mesh cloud
+  uci set bmx6.inet4=tunOut
+  uci set bmx6.inet4.tunOut=inet4
+  uci set bmx6.inet4.network=0.0.0.0/0
+  uci set bmx6.inet4.maxPrefixLen=0
+
   # Search for internet IPv6 gateways in the mesh cloud
-  uci set bmx6.gw_v6=tunOut
-  uci set bmx6.gw_v6.tunOut=gw_v6
-  uci set bmx6.gw_v6.network=::/0
-  uci set bmx6.gw_v6.maxPrefixLen=0
+  uci set bmx6.inet6=tunOut
+  uci set bmx6.inet6.tunOut=inet6
+  uci set bmx6.inet6.network=::/0
+  uci set bmx6.inet6.maxPrefixLen=0
 
   # Search for other mesh cloud announcements
-  uci set bmx6.lime_ula=tunOut
-  uci set bmx6.lime_ula.tunOut=lime_ula
-  uci set bmx6.lime_ula.network=fddf:ca00::/24
-  uci set bmx6.lime_ula.minPrefixLen=48
+  uci set bmx6.ula=tunOut
+  uci set bmx6.ula.tunOut=ula
+  uci set bmx6.ula.network=fddf:ca00::/24
+  uci set bmx6.ula.minPrefixLen=48
 
   uci commit bmx6
 }
@@ -85,28 +83,15 @@ prepare () {
 add () {
   uci set bmx6.${LOGICAL_INTERFACE}=dev
   uci set bmx6.${LOGICAL_INTERFACE}.dev=${REAL_INTERFACE}
-  #uci set bmx6.${LOGICAL_INTERFACE}.globalPrefix="$( echo ${IPV6} echo | sed s/"\/.*"/"\/128"/ )"
 
-  # To enable IPv4
+  # 10.N1.N2.R3/22
+  if ! uci -q get bmx6.main.tun4Address > /dev/null ; then
+    uci set bmx6.main.tun4Address="$(echo ${IPV4})"
+  fi
 
-  #if uci -q get bmx6.general.tun4Address > /dev/null ; then
-  #  uci set bmx6.tun_${LOGICAL_INTERFACE}=tunInNet
-  #  uci set bmx6.tun_${LOGICAL_INTERFACE}.tunInNet="$( echo ${IPV4} echo | sed s/"\/.*"/"\/32"/ )"
-  #  uci set bmx6.tun_${LOGICAL_INTERFACE}.bandwidth="128000000000"
-  #else
-  #  uci set bmx6.general.tun4Address="$( echo ${IPV4} echo | sed s/"\/.*"/"\/32"/ )"
-  #fi
-
-  # Announce own cloud network
-
-# Accept incoming tunnels
-
-  if ! uci -q get bmx6.general.tun6Address > /dev/null ; then
-    uci set bmx6.general.tun6Address=$( echo ${IPV6} | sed "s/\/.*/\/128/;s/fddf:ca\(..:[^:]\+:\)/fddf:caca:cade:/" )
-    uci set bmx6.lime_own_0=tunInNet
-    uci set bmx6.lime_own_0.tunInNet=$( echo ${IPV6} | sed "s/^\([^:]\+:[^:]\+:[^:]\+\):.*/\1::\/64/")
-    uci set bmx6.lime_own_1=tunInNet
-    uci set bmx6.lime_own_1.tunInNet=$( echo ${IPV6} | sed "s/^\([^:]\+:[^:]\+:[^:]\+\):.*/\1:1::\/64/")
+  if ! uci -q get bmx6.main.tun6Address > /dev/null ; then
+    local ipv6=$(echo ${IPV6} | sed "s/\/.*/\/63/")
+    uci set bmx6.main.tun6Address="$ipv6"
   fi
 
   uci commit bmx6
