@@ -87,7 +87,17 @@ function main()
 	fs.writefile("/etc/firewall.user", "ip6tables -P INPUT ACCEPT\nip6tables -P OUTPUT ACCEPT\nip6tables -P FORWARD ACCEPT\n")
 	x:foreach("firewall", "defaults", function(s)
 		x:set("firewall", s[".name"], "disable_ipv6", "1")
+		x:set("firewall", s[".name"], "input", "ACCEPT")
+		x:set("firewall", s[".name"], "output", "ACCEPT")
+		x:set("firewall", s[".name"], "forward", "ACCEPT")
 	end)
+
+	x:foreach("firewall", "zone", function(s)
+		x:set("firewall", s[".name"], "input", "ACCEPT")
+		x:set("firewall", s[".name"], "output", "ACCEPT")
+		x:set("firewall", s[".name"], "forward", "ACCEPT")
+	end)
+
 	x:save("firewall")
 	x:commit("firewall")
 
