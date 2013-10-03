@@ -113,7 +113,7 @@ function main()
 
 	local v4, v6 = generate_address(1, 0) -- for br-lan
 	x:set("network", "lan", "ip6addr", v6)
-	x:set("network", "lan", "ipaddr", v4:match("^([^/]+)")
+	x:set("network", "lan", "ipaddr", v4:match("^([^/]+)"))
 	x:set("network", "lan", "netmask", "255.255.255.0")
 	x:set("network", "lan", "ifname", "eth0 bat0")
 
