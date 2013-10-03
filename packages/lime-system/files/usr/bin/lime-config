@@ -59,6 +59,29 @@ local function generate_ssid()
 	return string.format("%02x%02x%02x.%s", r1, r2, r3, id)
 end
 
+local function configure_dhcp()
+	local r1, r2, r3 = node_id()
+	local start = (r3%236)+2
+	local limit = 16
+	
+	x:set("dhcp", "lan", "interface","lan")
+	x:set("dhcp", "lan", "start",start)
+	x:set("dhcp", "lan", "limit",limit)
+	x:set("dhcp", "lan", "leasetime","1800")
+	x:save("dhcp")
+	x:commit("dhcp")
+	
+	print("Enabling RA in dnsmasq...")
+	content = { }
+	table.insert(content, "enable-ra")
+	table.insert(content, string.format("dhcp-range=%s::, ra-names", v6prefix))
+	table.insert(content, "dhcp-option=option6:domain-search, lan")
+	table.insert(content, string.format("address=/anygw/%s::1", v6prefix))
+	table.insert(content, string.format("dhcp-option=option:router,%s.1", v4prefix))
+	table.insert(content, string.format("dhcp-option=option:dns-server,%s.1", v4prefix))
+	fs.writefile("/etc/dnsmasq.conf", table.concat(content, "\n").."\n")
+end
+
 local function set_hostname()
 	local r1, r2, r3 = node_id()
 	local hostname = string.format("%02x%02x%02x", r1, r2, r3)
@@ -256,16 +279,7 @@ function main()
 	table.insert(content, "exit 0")
 	fs.writefile("/etc/rc.local", table.concat(content, "\n").."\n")
 
-	print("Enabling RA in dnsmasq...")
-	content = { }
-	table.insert(content, "enable-ra")
-	table.insert(content, string.format("dhcp-range=%s::, ra-names", v6prefix))
-	table.insert(content, "dhcp-option=option6:domain-search, lan")
-	table.insert(content, string.format("address=/anygw/%s::1", v6prefix))
-	table.insert(content, string.format("dhcp-option=option:router,%s.1", v4prefix))
-	table.insert(content, string.format("dhcp-option=option:dns-server,%s.1", v4prefix))
-	fs.writefile("/etc/dnsmasq.conf", table.concat(content, "\n").."\n")
-
+	
 	print("Configuring system...")
 	set_hostname()
 
@@ -273,7 +287,10 @@ function main()
 	x:set("uhttpd", "main", "listen_https", "443")
 	x:save("uhttpd")
 	x:commit("uhttpd")
-
+	
+	print("Configuring dhcp server")
+	configure_dhcp()
+	
 	print("Configuring protocols...")
 	local _, cmd
 	for _, cmd in ipairs(batch) do
