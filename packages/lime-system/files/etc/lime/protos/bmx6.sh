@@ -77,6 +77,12 @@ prepare () {
   uci set bmx6.ula.network=fddf:ca00::/24
   uci set bmx6.ula.minPrefixLen=48
 
+  # Search for other mesh cloud announcements that have public ipv6
+  uci set bmx6.publicv6=tunOut
+  uci set bmx6.publicv6.tunOut=publicv6
+  uci set bmx6.publicv6.network=2000::/3
+  uci set bmx6.publicv6.maxPrefixLen=64
+
   uci commit bmx6
 }
 
