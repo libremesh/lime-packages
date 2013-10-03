@@ -34,8 +34,8 @@ prepare () {
 # uci set bmx6.general.linkPurgeTimeout=20000
 # uci set bmx6.general.dadTimeout=15000
 
-  uci set bmx6.tunDev=main
-  uci set bmx6.tunDev.tunDev=main
+  uci set bmx6.main=tunDev
+  uci set bmx6.main.tunDev=main
   
   # Enable bmx6 uci config plugin
   uci set bmx6.config=plugin
