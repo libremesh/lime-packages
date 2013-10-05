@@ -40,7 +40,7 @@ define Package/lime-system
   +kmod-batman-adv \
   +wpad-mini +reghack \
   +kmod-macvlan +ebtables \
-  +ip +iputils-ping6
+  +dhcpdiscover +ip +iputils-ping6
 endef
 
 define Package/lime-system/description
