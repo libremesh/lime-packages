@@ -78,9 +78,9 @@ function setup_anygw(v4, v6)
     -- IPv6 router advertisement for anygw interface
     print("Enabling RA in dnsmasq...")
     local content = { }
-    table.insert(content, "enable-ra")
+    table.insert(content,               "enable-ra")
     table.insert(content, string.format("dhcp-range=tag:anygw,%s::, ra-names", v6prefix))
-    table.insert(content, "dhcp-option=tag:anygw,option6:domain-search, lan")
+    table.insert(content,               "dhcp-option=tag:anygw,option6:domain-search, lan")
     table.insert(content, string.format("address=/anygw/%s::1", v6prefix))
     table.insert(content, string.format("dhcp-option=tag:anygw,option:router,%s.1", v4prefix))
     table.insert(content, string.format("dhcp-option=tag:anygw,option:dns-server,%s.1", v4prefix))
