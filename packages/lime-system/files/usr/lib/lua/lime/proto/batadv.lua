@@ -1,5 +1,7 @@
 #!/usr/bin/lua
 
+module(..., package.seeall)
+
 function clean()
     print("Clearing batman-adv config...")
     x:delete("batman-adv", "bat0")

@@ -1,5 +1,7 @@
 #!/usr/bin/lua
 
+module(..., package.seeall)
+
 function clean()
     print("Clearing wireless config...")
     x:foreach("wireless", "wifi-iface", function(s)

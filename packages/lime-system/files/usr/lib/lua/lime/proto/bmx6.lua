@@ -1,5 +1,7 @@
 #!/usr/bin/lua
 
+module(..., package.seeall)
+
 function clean()
     print("Clearing bmx6 config...")
     fs.writefile("/etc/config/bmx6", "")

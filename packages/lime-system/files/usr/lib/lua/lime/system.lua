@@ -1,5 +1,7 @@
 #!/usr/bin/lua
 
+module(..., package.seeall)
+
 function clean()
     -- nothing to clean
 end

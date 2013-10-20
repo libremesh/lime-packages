@@ -1,5 +1,7 @@
 #!/usr/bin/lua
 
+module(..., package.seeall)
+
 function clean()
     print("Clearing network config...")
     x:foreach("network", "interface", function(s)
