@@ -1,6 +1,16 @@
 #!/usr/bin/lua
 
+function clean()
+  -- nothing to clean
+end
+
+function init()
+  -- TODO
+end
+
 function configure()
+  clean()
+
 	print("Configuring system...")
 	set_hostname()
 

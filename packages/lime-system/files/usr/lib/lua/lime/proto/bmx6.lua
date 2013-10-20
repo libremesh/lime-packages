@@ -10,6 +10,8 @@ function init()
 end
 
 function configure(v4, v6)
+  clean()
+
   x:set("bmx6", "general", "bmx6")
   x:set("bmx6", "general", "dbgMuteTimeout", "1000000")
 

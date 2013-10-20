@@ -23,6 +23,8 @@ function configure()
 	local mcast_rate_5 = assert(x:get("lime", "wireless", "mesh_mcast_rate_5ghz"))
 	local wifi_num = 0
 
+  clean()
+
 	print("Defining wireless networks...")
 	x:foreach("wireless", "wifi-device", function(s)
 		local t = iw.type(s[".name"])

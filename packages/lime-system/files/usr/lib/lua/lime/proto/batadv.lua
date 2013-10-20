@@ -10,6 +10,8 @@ function init()
 end
 
 function configure()
+  clean()
+
 	x:set("batman-adv", "bat0", "mesh")
 	x:set("batman-adv", "bat0", "brige_loop_avoidance", "1")
 }

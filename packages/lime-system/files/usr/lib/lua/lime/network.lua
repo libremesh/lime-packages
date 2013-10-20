@@ -19,6 +19,8 @@ function configure(v4, v6)
 	local n1, n2, n3 = network_id()
 	local r1, r2, r3 = node_id()
 
+  clean()
+
   setup_lan(v4, v6)
   setup_anygw(v4, v6)
 
