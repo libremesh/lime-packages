@@ -71,6 +71,7 @@ function setup_anygw(v4, v6)
     table.insert(content, "ip address add dev anygw " .. anygw_ipv4)
     table.insert(content, "ip link set anygw up")
     table.insert(content, "ebtables -A FORWARD -j DROP -d " .. anygw_mac)
+    table.insert(content, "ebtables -t nat -A POSTROUTING -o bat0 -j DROP -s " .. anygw_mac)
     table.insert(content, "exit 0")
     fs.writefile("/etc/rc.local", table.concat(content, "\n").."\n")
 
