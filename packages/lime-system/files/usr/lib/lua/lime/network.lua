@@ -56,6 +56,8 @@ function setup_lan(v4, v6)
 end
 
 function setup_anygw(v4, v6)
+    local n1, n2, n3 = network_id()
+
     -- anygw macvlan interface
     print("Ugly overwrite of /etc/rc.local to make it add macvlan interface...")
     local anygw_mac = string.format("aa:aa:aa:%02x:%02x:%02x", n1, n2, n3)
