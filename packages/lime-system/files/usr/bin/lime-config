@@ -7,68 +7,68 @@ local iw  = require "iwinfo"
 local x = uci:cursor()
 
 local function split(string, sep)
-	local ret = {}
-	for token in string.gmatch(string, "[^"..sep.."]+") do
-		table.insert(ret, token)
-	end
-	return ret
+    local ret = {}
+    for token in string.gmatch(string, "[^"..sep.."]+") do
+        table.insert(ret, token)
+    end
+    return ret
 end
 
 local function node_id()
-	local dev = assert(x:get("lime", "network", "primary_dev"))
-	local mac = assert(fs.readfile("/sys/class/net/"..dev.."/address"))
-	local t = split(mac, ":")
-	local r1, r2, r3 = tonumber(t[#t-2], 16), tonumber(t[#t-1], 16), tonumber(t[#t], 16)
-	return r1, r2, r3
+    local dev = assert(x:get("lime", "network", "primary_dev"))
+    local mac = assert(fs.readfile("/sys/class/net/"..dev.."/address"))
+    local t = split(mac, ":")
+    local r1, r2, r3 = tonumber(t[#t-2], 16), tonumber(t[#t-1], 16), tonumber(t[#t], 16)
+    return r1, r2, r3
 end
 
 local function network_id()
-	local network_essid = assert(x:get("lime", "wireless", "ssid"))
-	local n1, n2, n3
-	local fd = io.popen('echo "' .. network_essid .. '" | md5sum')
-	if fd then
-		local md5 = fd:read("*a")
-		n1 = tonumber(md5:match("^(..)"), 16)
-		n2 = tonumber(md5:match("^..(..)"), 16)
-		n3 = tonumber(md5:match("^....(..)"), 16)
-		fd:close()
-	end
-	return n1, n2, n3
+    local network_essid = assert(x:get("lime", "wireless", "ssid"))
+    local n1, n2, n3
+    local fd = io.popen('echo "' .. network_essid .. '" | md5sum')
+    if fd then
+        local md5 = fd:read("*a")
+        n1 = tonumber(md5:match("^(..)"), 16)
+        n2 = tonumber(md5:match("^..(..)"), 16)
+        n3 = tonumber(md5:match("^....(..)"), 16)
+        fd:close()
+    end
+    return n1, n2, n3
 end
 
 local function generate_address(p, n)
-	local id = n
-	local r1, r2, r3 = node_id()
-	local n1, n2, n3 = network_id()
-	local ipv4_template = assert(x:get("lime", "network", "ipv4_net"))
-	local ipv6_template = assert(x:get("lime", "network", "ipv6_net"))
+    local id = n
+    local r1, r2, r3 = node_id()
+    local n1, n2, n3 = network_id()
+    local ipv4_template = assert(x:get("lime", "network", "ipv4_net"))
+    local ipv6_template = assert(x:get("lime", "network", "ipv6_net"))
 
-	local function hex(x) return string.format("%02x", x) end
+    local function hex(x) return string.format("%02x", x) end
 
-	ipv6_template = ipv6_template:gsub("N1", hex(n1)):gsub("N2", hex(n2)):gsub("N3", hex(n3))
-	ipv4_template = ipv4_template:gsub("N1", n1):gsub("N2", n2):gsub("N3", n3)
+    ipv6_template = ipv6_template:gsub("N1", hex(n1)):gsub("N2", hex(n2)):gsub("N3", hex(n3))
+    ipv4_template = ipv4_template:gsub("N1", n1):gsub("N2", n2):gsub("N3", n3)
 
-	return ipv4_template:gsub("R1", r1):gsub("R2", r2):gsub("R3", r3 + id),
-	       ipv6_template:gsub("R1", hex(r1)):gsub("R2", hex(r2)):gsub("R3", hex(r3 + id))
+    return ipv4_template:gsub("R1", r1):gsub("R2", r2):gsub("R3", r3 + id),
+           ipv6_template:gsub("R1", hex(r1)):gsub("R2", hex(r2)):gsub("R3", hex(r3 + id))
 end
 
 local function generate_ssid()
-	local id = assert(x:get("lime", "wireless", "ssid"))
-	local r1, r2, r3 = node_id()
+    local id = assert(x:get("lime", "wireless", "ssid"))
+    local r1, r2, r3 = node_id()
 
-	return string.format("%02x%02x%02x.%s", r1, r2, r3, id)
+    return string.format("%02x%02x%02x.%s", r1, r2, r3, id)
 end
 
 local function printf(fmt, ...)
-	print(string.format(fmt, ...))
+    print(string.format(fmt, ...))
 end
 
 function main()
-	local v4, v6 = generate_address(1, 0) -- for br-lan
-	network.configure(v4, v6)
-	wireless.configure()
-	firewall.configure()
-	system.configure()
+    local v4, v6 = generate_address(1, 0) -- for br-lan
+    network.configure(v4, v6)
+    wireless.configure()
+    firewall.configure()
+    system.configure()
 end
 
 main()
