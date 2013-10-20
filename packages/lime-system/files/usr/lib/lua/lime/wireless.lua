@@ -2,6 +2,13 @@
 
 module(..., package.seeall)
 
+function generate_ssid()
+    local id = assert(x:get("lime", "wireless", "ssid"))
+    local r1, r2, r3 = node_id()
+
+    return string.format("%02x%02x%02x.%s", r1, r2, r3, id)
+end
+
 function clean()
     print("Clearing wireless config...")
     x:foreach("wireless", "wifi-iface", function(s)
