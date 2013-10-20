@@ -79,11 +79,12 @@ function setup_anygw(v4, v6)
     print("Enabling RA in dnsmasq...")
     local content = { }
     table.insert(content, "enable-ra")
-    table.insert(content, string.format("dhcp-range=%s::, ra-names", v6prefix))
-    table.insert(content, "dhcp-option=option6:domain-search, lan")
+    table.insert(content, string.format("dhcp-range=tag:anygw,%s::, ra-names", v6prefix))
+    table.insert(content, "dhcp-option=tag:anygw,option6:domain-search, lan")
     table.insert(content, string.format("address=/anygw/%s::1", v6prefix))
-    table.insert(content, string.format("dhcp-option=option:router,%s.1", v4prefix))
-    table.insert(content, string.format("dhcp-option=option:dns-server,%s.1", v4prefix))
+    table.insert(content, string.format("dhcp-option=tag:anygw,option:router,%s.1", v4prefix))
+    table.insert(content, string.format("dhcp-option=tag:anygw,option:dns-server,%s.1", v4prefix))
+    table.insert(content,               "no-dhcp-interface=br-lan")
     fs.writefile("/etc/dnsmasq.conf", table.concat(content, "\n").."\n")
 
     -- and disable 6relayd
