@@ -82,7 +82,7 @@ function configure()
         x:set("network", net, "mtu", "1528")
 
         -- For layer2 use a vlan based off network_id, between 16 and 255, if uci doesn't specify a vlan
-        if not vlans then vlans = math.floor(16 + ((tonumber(n1) / 255) * (255 - 16))) end
+        if not vlans[2] then vlans[2] = math.floor(16 + ((tonumber(n1) / 255) * (255 - 16))) end
 
         -- Add vlan interfaces on top of wlans, for each proto. Eg. lm_mesh0_batadv
         local n
