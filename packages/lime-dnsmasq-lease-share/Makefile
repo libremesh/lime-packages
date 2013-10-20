@@ -20,6 +20,7 @@ define Package/$(PKG_NAME)
  SECTION:=net
  CATEGORY:=Network
  TITLE:=dnsmasq lease sharing accross batman-adv mesh
+ DEPENDS:=+alfred +lua
 endef
 
 define Package/$(PKG_NAME)/description
