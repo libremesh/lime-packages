@@ -34,7 +34,7 @@ function apply()
     os.execute("/etc/init.d/uhttpd reload")
 end
 
-local function set_hostname()
+function set_hostname()
     local r1, r2, r3 = node_id()
     local hostname = string.format("%02x%02x%02x", r1, r2, r3)
 

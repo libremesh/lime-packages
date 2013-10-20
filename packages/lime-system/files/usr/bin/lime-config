@@ -1,10 +1,17 @@
 #!/usr/bin/lua
 
-local fs  = require "nixio.fs"
 local uci = require "uci"
-local iw  = require "iwinfo"
+fs  = require "nixio.fs"
+iw  = require "iwinfo"
 
-local x = uci:cursor()
+firewall = require "lime.firewall"
+network = require "lime.network"
+wireless = require "lime.wireless"
+system = require "lime.system"
+
+package.path = "proto/?.lua;" .. package.path
+
+x = uci:cursor()
 
 local function split(string, sep)
     local ret = {}
@@ -14,7 +21,7 @@ local function split(string, sep)
     return ret
 end
 
-local function node_id()
+function node_id()
     local dev = assert(x:get("lime", "network", "primary_dev"))
     local mac = assert(fs.readfile("/sys/class/net/"..dev.."/address"))
     local t = split(mac, ":")
@@ -22,7 +29,7 @@ local function node_id()
     return r1, r2, r3
 end
 
-local function network_id()
+function network_id()
     local network_essid = assert(x:get("lime", "wireless", "ssid"))
     local n1, n2, n3
     local fd = io.popen('echo "' .. network_essid .. '" | md5sum')
@@ -36,7 +43,7 @@ local function network_id()
     return n1, n2, n3
 end
 
-local function generate_address(p, n)
+function generate_address(p, n)
     local id = n
     local r1, r2, r3 = node_id()
     local n1, n2, n3 = network_id()
@@ -52,14 +59,14 @@ local function generate_address(p, n)
            ipv6_template:gsub("R1", hex(r1)):gsub("R2", hex(r2)):gsub("R3", hex(r3 + id))
 end
 
-local function generate_ssid()
+function generate_ssid()
     local id = assert(x:get("lime", "wireless", "ssid"))
     local r1, r2, r3 = node_id()
 
     return string.format("%02x%02x%02x.%s", r1, r2, r3, id)
 end
 
-local function printf(fmt, ...)
+function printf(fmt, ...)
     print(string.format(fmt, ...))
 end
 
