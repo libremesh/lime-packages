@@ -1,4 +1,4 @@
-#    Copyright (C) 2013 libre-mesh.org
+#   Copyright (C) 2013 libre-mesh.org
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -40,7 +40,8 @@ define Package/lime-system
   +kmod-batman-adv \
   +wpad-mini +reghack \
   +kmod-macvlan +ebtables \
-  +ip +iputils-ping6
+  +dhcpdiscover +ip +iputils-ping6 \
+  +lime-dnsmasq-lease-share
 endef
 
 define Package/lime-system/description
