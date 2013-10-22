@@ -71,7 +71,7 @@ function bmx6.configure(v4, v6)
     x:save("bmx6")
 }
 
-function bmx6.setup_interface_bmx6(interface, ifname)
+function bmx6.setup_interface(interface, ifname)
     x:set("bmx6", interface, "dev")
     x:set("bmx6", interface, "dev", ifname)
     x:save("bmx6")

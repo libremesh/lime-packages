@@ -57,7 +57,7 @@ function network.configure()
         local ifname = string.format("eth1.%d", vlans[n])
         local v4, v6 = network.generate_address(n, 0)
 
-        assert(loadstring(protocols[n] .. ".setup_interface_" .. protocols[n] .. "(interface, ifname, v4, v6)"))
+        assert(loadstring(protocols[n] .. ".setup_interface(interface, ifname, v4, v6)"))
     end
 end
 

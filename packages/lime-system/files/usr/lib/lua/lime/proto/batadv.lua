@@ -22,7 +22,7 @@ function batadv.apply()
     -- TODO (i.e. /etc/init.d/network restart)
 end
 
-function batadv.setup_interface_batadv(interface, ifname)
+function batadv.setup_interface(interface, ifname)
     x:set("network", interface, "interface")
     x:set("network", interface, "ifname", ifname)
     x:set("network", interface, "proto", "batadv")
