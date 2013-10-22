@@ -95,7 +95,7 @@ function configure()
         for n = 1, #protocols do
             local interface = "lm_" .. id .. "_" .. protocols[n]
             local ifname = string.format("@lm_%s.%d", id, vlans[n])
-            local v4, v6 = generate_address(n, wifi_num)
+            local v4, v6 = network.generate_address(n, wifi_num)
 
             assert(loadstring("setup_interface_" .. protocols[n] .. "(interface, ifname, v4, v6)"))
         end

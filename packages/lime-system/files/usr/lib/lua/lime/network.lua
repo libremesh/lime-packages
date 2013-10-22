@@ -2,6 +2,22 @@
 
 module(..., package.seeall)
 
+function generate_address(p, n)
+    local id = n
+    local r1, r2, r3 = node_id()
+    local n1, n2, n3 = network_id()
+    local ipv4_template = assert(x:get("lime", "network", "ipv4_net"))
+    local ipv6_template = assert(x:get("lime", "network", "ipv6_net"))
+
+    local function hex(x) return string.format("%02x", x) end
+
+    ipv6_template = ipv6_template:gsub("N1", hex(n1)):gsub("N2", hex(n2)):gsub("N3", hex(n3))
+    ipv4_template = ipv4_template:gsub("N1", n1):gsub("N2", n2):gsub("N3", n3)
+
+    return ipv4_template:gsub("R1", r1):gsub("R2", r2):gsub("R3", r3 + id),
+           ipv6_template:gsub("R1", hex(r1)):gsub("R2", hex(r2)):gsub("R3", hex(r3 + id))
+end
+
 function clean()
     print("Clearing network config...")
     x:foreach("network", "interface", function(s)
@@ -15,11 +31,12 @@ function init()
     -- TODO
 end
 
-function configure(v4, v6)
+function configure()
     local protocols = assert(x:get("lime", "network", "protos"))
     local vlans = assert(x:get("lime", "network", "vlans"))
     local n1, n2, n3 = network_id()
     local r1, r2, r3 = node_id()
+    local v4, v6 = network.generate_address(1, 0) -- for br-lan
 
     clean()
 

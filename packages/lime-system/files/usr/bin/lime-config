@@ -43,29 +43,12 @@ function network_id()
     return n1, n2, n3
 end
 
-function generate_address(p, n)
-    local id = n
-    local r1, r2, r3 = node_id()
-    local n1, n2, n3 = network_id()
-    local ipv4_template = assert(x:get("lime", "network", "ipv4_net"))
-    local ipv6_template = assert(x:get("lime", "network", "ipv6_net"))
-
-    local function hex(x) return string.format("%02x", x) end
-
-    ipv6_template = ipv6_template:gsub("N1", hex(n1)):gsub("N2", hex(n2)):gsub("N3", hex(n3))
-    ipv4_template = ipv4_template:gsub("N1", n1):gsub("N2", n2):gsub("N3", n3)
-
-    return ipv4_template:gsub("R1", r1):gsub("R2", r2):gsub("R3", r3 + id),
-           ipv6_template:gsub("R1", hex(r1)):gsub("R2", hex(r2)):gsub("R3", hex(r3 + id))
-end
-
 function printf(fmt, ...)
     print(string.format(fmt, ...))
 end
 
 function main()
-    local v4, v6 = generate_address(1, 0) -- for br-lan
-    network.configure(v4, v6)
+    network.configure()
     wireless.configure()
     firewall.configure()
     system.configure()
