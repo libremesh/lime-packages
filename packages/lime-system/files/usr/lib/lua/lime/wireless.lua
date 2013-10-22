@@ -1,25 +1,25 @@
 #!/usr/bin/lua
 
-module(..., package.seeall)
+wireless = {}
 
-function generate_ssid()
+function wireless.generate_ssid()
     local r1, r2, r3 = node_id()
 
     return string.format("%02x%02x%02x.lime", r1, r2, r3)
 end
 
-function clean()
+function wireless.clean()
     print("Clearing wireless config...")
     x:foreach("wireless", "wifi-iface", function(s)
         x:delete("wireless", s[".name"])
     end)
 end
 
-function init()
+function wireless.init()
     -- TODO
 end
 
-function configure()
+function wireless.configure()
     local protocols = assert(x:get("lime", "network", "protos"))
     local vlans = assert(x:get("lime", "network", "vlans"))
     local n1, n2, n3 = network_id()
@@ -31,7 +31,7 @@ function configure()
     local mcast_rate_5 = assert(x:get("lime", "wireless", "mesh_mcast_rate_5ghz"))
     local wifi_num = 0
 
-    clean()
+    wireless.clean()
 
     print("Defining wireless networks...")
     x:foreach("wireless", "wifi-device", function(s)
@@ -72,7 +72,7 @@ function configure()
         x:set("wireless", id, "network", net)
         x:set("wireless", id, "ifname", ifn)
         x:set("wireless", id, "mcast_rate", mcr)
-        x:set("wireless", id, "ssid", generate_ssid())
+        x:set("wireless", id, "ssid", wireless.generate_ssid())
         x:set("wireless", id, "bssid", assert(x:get("lime", "wireless", "mesh_bssid")))
 
         x:set("wireless", ifn_ap, "wifi-iface")
@@ -104,6 +104,8 @@ function configure()
     end)
 end
 
-function apply()
+function wireless.apply()
     -- TODO (i.e. /etc/init.d/network restart)
 end
+
+return wireless

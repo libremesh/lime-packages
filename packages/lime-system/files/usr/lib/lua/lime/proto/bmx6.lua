@@ -1,18 +1,18 @@
 #!/usr/bin/lua
 
-module(..., package.seeall)
+bmx6 = {}
 
-function clean()
+function bmx6.clean()
     print("Clearing bmx6 config...")
     fs.writefile("/etc/config/bmx6", "")
 end
 
-function init()
+function bmx6.init()
     -- TODO
 end
 
-function configure(v4, v6)
-    clean()
+function bmx6.configure(v4, v6)
+    bmx6.clean()
 
     x:set("bmx6", "general", "bmx6")
     x:set("bmx6", "general", "dbgMuteTimeout", "1000000")
@@ -71,7 +71,7 @@ function configure(v4, v6)
     x:save("bmx6")
 }
 
-function setup_interface_bmx6(interface, ifname)
+function bmx6.setup_interface_bmx6(interface, ifname)
     x:set("bmx6", interface, "dev")
     x:set("bmx6", interface, "dev", ifname)
     x:save("bmx6")
@@ -83,7 +83,9 @@ function setup_interface_bmx6(interface, ifname)
     x:save("network")
 }
 
-function apply()
+function bmx6.apply()
     os.execute("killall bmx6 ; sleep 2 ; killall -9 bmx6")
     os.execute("bmx6")
 end
+
+return bmx6

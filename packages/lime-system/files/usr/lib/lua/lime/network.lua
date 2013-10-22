@@ -1,8 +1,8 @@
 #!/usr/bin/lua
 
-module(..., package.seeall)
+network = {}
 
-function generate_address(p, n)
+function network.generate_address(p, n)
     local id = n
     local r1, r2, r3 = node_id()
     local n1, n2, n3 = network_id()
@@ -18,7 +18,7 @@ function generate_address(p, n)
            ipv6_template:gsub("R1", hex(r1)):gsub("R2", hex(r2)):gsub("R3", hex(r3 + id))
 end
 
-function clean()
+function network.clean()
     print("Clearing network config...")
     x:foreach("network", "interface", function(s)
         if s[".name"]:match("^lm_") then
@@ -27,21 +27,21 @@ function clean()
     end)
 end
 
-function init()
+function network.init()
     -- TODO
 end
 
-function configure()
+function network.configure()
     local protocols = assert(x:get("lime", "network", "protos"))
     local vlans = assert(x:get("lime", "network", "vlans"))
     local n1, n2, n3 = network_id()
     local r1, r2, r3 = node_id()
     local v4, v6 = network.generate_address(1, 0) -- for br-lan
 
-    clean()
+    network.clean()
 
-    setup_lan(v4, v6)
-    setup_anygw(v4, v6)
+    network.setup_lan(v4, v6)
+    network.setup_anygw(v4, v6)
 
     -- For layer2 use a vlan based off network_id, between 16 and 255, if uci doesn't specify a vlan
     if not vlans[2] then vlans[2] = math.floor(16 + ((tonumber(n1) / 255) * (255 - 16))) end
@@ -55,24 +55,24 @@ function configure()
     for n = 1, #protocols do
         local interface = "lm_eth_" .. protocols[n]
         local ifname = string.format("eth1.%d", vlans[n])
-        local v4, v6 = generate_address(n, 0)
+        local v4, v6 = network.generate_address(n, 0)
 
-        assert(loadstring("setup_interface_" .. protocols[n] .. "(interface, ifname, v4, v6)"))
+        assert(loadstring(protocols[n] .. ".setup_interface_" .. protocols[n] .. "(interface, ifname, v4, v6)"))
     end
 end
 
-function apply()
+function network.apply()
     -- TODO (i.e. /etc/init.d/network restart)
 end
 
-function setup_lan(v4, v6)
+function network.setup_lan(v4, v6)
     x:set("network", "lan", "ip6addr", v6)
     x:set("network", "lan", "ipaddr", v4:match("^([^/]+)"))
     x:set("network", "lan", "netmask", "255.255.255.0")
     x:set("network", "lan", "ifname", "eth0 bat0")
 end
 
-function setup_anygw(v4, v6)
+function network.setup_anygw(v4, v6)
     local n1, n2, n3 = network_id()
 
     -- anygw macvlan interface
@@ -108,3 +108,5 @@ function setup_anygw(v4, v6)
     print("Disabling 6relayd...")
     fs.writefile("/etc/config/6relayd", "")
 end
+
+return network
