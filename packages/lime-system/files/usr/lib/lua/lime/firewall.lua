@@ -1,8 +1,8 @@
 #!/usr/bin/lua
 
-module(..., package.seeall)
+firewall = {}
 
-function configure()
+function firewall.configure()
     print("Disabling v6 firewall")
     fs.writefile("/etc/firewall.user", "ip6tables -P INPUT ACCEPT\nip6tables -P OUTPUT ACCEPT\nip6tables -P FORWARD ACCEPT\niptables -t mangle -A FORWARD -p tcp -o bmx+ -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n")
     x:foreach("firewall", "defaults", function(s)
@@ -18,3 +18,5 @@ function configure()
         x:set("firewall", s[".name"], "forward", "ACCEPT")
     end)
 end
+
+return firewall

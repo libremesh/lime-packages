@@ -1,20 +1,20 @@
 #!/usr/bin/lua
 
-module(..., package.seeall)
+system = {}
 
-function clean()
+function system.clean()
     -- nothing to clean
 end
 
-function init()
+function system.init()
     -- TODO
 end
 
-function configure()
-    clean()
+function system.configure()
+    system.clean()
 
     print("Configuring system...")
-    set_hostname()
+    system.set_hostname()
 
     print("Let uhttpd listen on IPv4/IPv6")
     x:set("uhttpd", "main", "listen_http", "80")
@@ -22,7 +22,7 @@ function configure()
     x:save("uhttpd")
 end
 
-function apply()
+function system.apply()
     -- apply hostname
     local hostname
     x:foreach("system", "system", function(s)
@@ -34,7 +34,7 @@ function apply()
     os.execute("/etc/init.d/uhttpd reload")
 end
 
-function set_hostname()
+function system.set_hostname()
     local r1, r2, r3 = node_id()
     local hostname = string.format("%02x%02x%02x", r1, r2, r3)
 
@@ -43,3 +43,5 @@ function set_hostname()
     end)
     x:save("system")
 end
+
+return system
