@@ -2,6 +2,24 @@
 
 network = {}
 
+local bit = require "nixio".bit
+
+local function split(string, sep)
+    local ret = {}
+    for token in string.gmatch(string, "[^"..sep.."]+") do table.insert(ret, token) end
+    return ret
+end
+
+function network.eui64(mac)
+    local function hex(x) return string.format("%02x", x) end
+    local function flip_7th_bit(x) return hex(bit.bxor(tonumber(x, 16), 2)) end
+
+    local t = split(mac, ":")
+    t[1] = flip_7th_bit(t[1])
+
+    return string.format("%s%s:%sff:fe%s:%s%s", t[1], t[2], t[3], t[4], t[5], t[6])
+end
+
 function network.generate_address(p, n)
     local id = n
     local r1, r2, r3 = node_id()
