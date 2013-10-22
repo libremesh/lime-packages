@@ -49,7 +49,7 @@ function network.setup_anygw(v4, v6)
     -- anygw macvlan interface
     print("Ugly overwrite of /etc/rc.local to make it add macvlan interface...")
     local anygw_mac = string.format("aa:aa:aa:%02x:%02x:%02x", n1, n2, n3)
-    local v6prefix = v6:match("^([^:]+:[^:]+:[^:]+):")
+    local v6prefix = v6:match("^([^:]+:[^:]+:[^:]+:[^:]+):")
     local v4prefix = v4:match("^([^.]+.[^.]+.[^.]+).")
     local anygw_ipv6 = string.format(v6prefix .. "::1/64")
     local anygw_ipv4 = string.format(v4prefix .. ".1/24")
