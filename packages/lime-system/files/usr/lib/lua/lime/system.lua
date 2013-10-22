@@ -2,6 +2,16 @@
 
 system = {}
 
+function system.set_hostname()
+    local r1, r2, r3 = node_id()
+    local hostname = string.format("%02x%02x%02x", r1, r2, r3)
+
+    x:foreach("system", "system", function(s)
+        x:set("system", s[".name"], "hostname", hostname)
+    end)
+    x:save("system")
+end
+
 function system.clean()
     -- nothing to clean
 end
@@ -32,16 +42,6 @@ function system.apply()
 
     -- apply uhttpd settings
     os.execute("/etc/init.d/uhttpd reload")
-end
-
-function system.set_hostname()
-    local r1, r2, r3 = node_id()
-    local hostname = string.format("%02x%02x%02x", r1, r2, r3)
-
-    x:foreach("system", "system", function(s)
-        x:set("system", s[".name"], "hostname", hostname)
-    end)
-    x:save("system")
 end
 
 return system
