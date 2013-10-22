@@ -2,6 +2,18 @@
 
 bmx6 = {}
 
+function bmx6.setup_interface(interface, ifname)
+    x:set("bmx6", interface, "dev")
+    x:set("bmx6", interface, "dev", ifname)
+    x:save("bmx6")
+
+    x:set("network", interface, "interface")
+    x:set("network", interface, "ifname", ifname)
+    x:set("network", interface, "proto", "none")
+    x:set("network", interface, "auto", "1")
+    x:save("network")
+}
+
 function bmx6.clean()
     print("Clearing bmx6 config...")
     fs.writefile("/etc/config/bmx6", "")
@@ -69,18 +81,6 @@ function bmx6.configure(v4, v6)
     x:set("bmx6", "publicv6", "maxPrefixLen", "64")
 
     x:save("bmx6")
-}
-
-function bmx6.setup_interface(interface, ifname)
-    x:set("bmx6", interface, "dev")
-    x:set("bmx6", interface, "dev", ifname)
-    x:save("bmx6")
-
-    x:set("network", interface, "interface")
-    x:set("network", interface, "ifname", ifname)
-    x:set("network", interface, "proto", "none")
-    x:set("network", interface, "auto", "1")
-    x:save("network")
 }
 
 function bmx6.apply()

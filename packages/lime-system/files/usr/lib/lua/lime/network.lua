@@ -18,6 +18,50 @@ function network.generate_address(p, n)
            ipv6_template:gsub("R1", hex(r1)):gsub("R2", hex(r2)):gsub("R3", hex(r3 + id))
 end
 
+function network.setup_lan(v4, v6)
+    x:set("network", "lan", "ip6addr", v6)
+    x:set("network", "lan", "ipaddr", v4:match("^([^/]+)"))
+    x:set("network", "lan", "netmask", "255.255.255.0")
+    x:set("network", "lan", "ifname", "eth0 bat0")
+end
+
+function network.setup_anygw(v4, v6)
+    local n1, n2, n3 = network_id()
+
+    -- anygw macvlan interface
+    print("Ugly overwrite of /etc/rc.local to make it add macvlan interface...")
+    local anygw_mac = string.format("aa:aa:aa:%02x:%02x:%02x", n1, n2, n3)
+    local v6prefix = v6:match("^([^:]+:[^:]+:[^:]+):")
+    local v4prefix = v4:match("^([^.]+.[^.]+.[^.]+).")
+    local anygw_ipv6 = string.format(v6prefix .. "::1/64")
+    local anygw_ipv4 = string.format(v4prefix .. ".1/24")
+    local content = { }
+    table.insert(content, "ip link add link br-lan anygw address " .. anygw_mac .. " type macvlan")
+    table.insert(content, "ip address add dev anygw " .. anygw_ipv6)
+    table.insert(content, "ip address add dev anygw " .. anygw_ipv4)
+    table.insert(content, "ip link set anygw up")
+    table.insert(content, "ebtables -A FORWARD -j DROP -d " .. anygw_mac)
+    table.insert(content, "ebtables -t nat -A POSTROUTING -o bat0 -j DROP -s " .. anygw_mac)
+    table.insert(content, "exit 0")
+    fs.writefile("/etc/rc.local", table.concat(content, "\n").."\n")
+
+    -- IPv6 router advertisement for anygw interface
+    print("Enabling RA in dnsmasq...")
+    local content = { }
+    table.insert(content,               "enable-ra")
+    table.insert(content, string.format("dhcp-range=tag:anygw,%s::, ra-names", v6prefix))
+    table.insert(content,               "dhcp-option=tag:anygw,option6:domain-search, lan")
+    table.insert(content, string.format("address=/anygw/%s::1", v6prefix))
+    table.insert(content, string.format("dhcp-option=tag:anygw,option:router,%s.1", v4prefix))
+    table.insert(content, string.format("dhcp-option=tag:anygw,option:dns-server,%s.1", v4prefix))
+    table.insert(content,               "no-dhcp-interface=br-lan")
+    fs.writefile("/etc/dnsmasq.conf", table.concat(content, "\n").."\n")
+
+    -- and disable 6relayd
+    print("Disabling 6relayd...")
+    fs.writefile("/etc/config/6relayd", "")
+end
+
 function network.clean()
     print("Clearing network config...")
     x:foreach("network", "interface", function(s)
@@ -63,50 +107,6 @@ end
 
 function network.apply()
     -- TODO (i.e. /etc/init.d/network restart)
-end
-
-function network.setup_lan(v4, v6)
-    x:set("network", "lan", "ip6addr", v6)
-    x:set("network", "lan", "ipaddr", v4:match("^([^/]+)"))
-    x:set("network", "lan", "netmask", "255.255.255.0")
-    x:set("network", "lan", "ifname", "eth0 bat0")
-end
-
-function network.setup_anygw(v4, v6)
-    local n1, n2, n3 = network_id()
-
-    -- anygw macvlan interface
-    print("Ugly overwrite of /etc/rc.local to make it add macvlan interface...")
-    local anygw_mac = string.format("aa:aa:aa:%02x:%02x:%02x", n1, n2, n3)
-    local v6prefix = v6:match("^([^:]+:[^:]+:[^:]+):")
-    local v4prefix = v4:match("^([^.]+.[^.]+.[^.]+).")
-    local anygw_ipv6 = string.format(v6prefix .. "::1/64")
-    local anygw_ipv4 = string.format(v4prefix .. ".1/24")
-    local content = { }
-    table.insert(content, "ip link add link br-lan anygw address " .. anygw_mac .. " type macvlan")
-    table.insert(content, "ip address add dev anygw " .. anygw_ipv6)
-    table.insert(content, "ip address add dev anygw " .. anygw_ipv4)
-    table.insert(content, "ip link set anygw up")
-    table.insert(content, "ebtables -A FORWARD -j DROP -d " .. anygw_mac)
-    table.insert(content, "ebtables -t nat -A POSTROUTING -o bat0 -j DROP -s " .. anygw_mac)
-    table.insert(content, "exit 0")
-    fs.writefile("/etc/rc.local", table.concat(content, "\n").."\n")
-
-    -- IPv6 router advertisement for anygw interface
-    print("Enabling RA in dnsmasq...")
-    local content = { }
-    table.insert(content,               "enable-ra")
-    table.insert(content, string.format("dhcp-range=tag:anygw,%s::, ra-names", v6prefix))
-    table.insert(content,               "dhcp-option=tag:anygw,option6:domain-search, lan")
-    table.insert(content, string.format("address=/anygw/%s::1", v6prefix))
-    table.insert(content, string.format("dhcp-option=tag:anygw,option:router,%s.1", v4prefix))
-    table.insert(content, string.format("dhcp-option=tag:anygw,option:dns-server,%s.1", v4prefix))
-    table.insert(content,               "no-dhcp-interface=br-lan")
-    fs.writefile("/etc/dnsmasq.conf", table.concat(content, "\n").."\n")
-
-    -- and disable 6relayd
-    print("Disabling 6relayd...")
-    fs.writefile("/etc/config/6relayd", "")
 end
 
 return network
