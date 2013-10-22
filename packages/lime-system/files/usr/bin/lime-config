@@ -15,9 +15,7 @@ x = uci:cursor()
 
 local function split(string, sep)
     local ret = {}
-    for token in string.gmatch(string, "[^"..sep.."]+") do
-        table.insert(ret, token)
-    end
+    for token in string.gmatch(string, "[^"..sep.."]+") do table.insert(ret, token) end
     return ret
 end
 
