@@ -3,8 +3,9 @@
 bmx6 = {}
 
 function bmx6.setup_interface(interface, ifname)
+    local real_ifname = ifname:gsub("^@lm_", "")
     x:set("bmx6", interface, "dev")
-    x:set("bmx6", interface, "dev", ifname)
+    x:set("bmx6", interface, "dev", real_ifname)
     x:save("bmx6")
 
     x:set("network", interface, "interface")
