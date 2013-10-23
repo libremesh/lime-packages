@@ -97,7 +97,8 @@ function wireless.configure()
             local ifname = string.format("@lm_%s.%d", id, vlans[n])
             local v4, v6 = network.generate_address(n, wifi_num)
 
-            assert(loadstring("setup_interface_" .. protocols[n] .. "(interface, ifname, v4, v6)"))
+            local proto = require("lime.proto." .. protocols[n])
+            proto.setup_interface(interface, ifname, v4, v6)
         end
 
         wifi_num = wifi_num + 1
