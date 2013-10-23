@@ -12,7 +12,7 @@ function bmx6.setup_interface(interface, ifname)
     x:set("network", interface, "proto", "none")
     x:set("network", interface, "auto", "1")
     x:save("network")
-}
+end
 
 function bmx6.clean()
     print("Clearing bmx6 config...")
@@ -81,7 +81,7 @@ function bmx6.configure(v4, v6)
     x:set("bmx6", "publicv6", "maxPrefixLen", "64")
 
     x:save("bmx6")
-}
+end
 
 function bmx6.apply()
     os.execute("killall bmx6 ; sleep 2 ; killall -9 bmx6")

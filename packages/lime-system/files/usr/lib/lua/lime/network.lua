@@ -41,6 +41,7 @@ function network.setup_lan(v4, v6)
     x:set("network", "lan", "ipaddr", v4:match("^([^/]+)"))
     x:set("network", "lan", "netmask", "255.255.255.0")
     x:set("network", "lan", "ifname", "eth0 bat0")
+    x:save("network")
 end
 
 function network.setup_anygw(v4, v6)
