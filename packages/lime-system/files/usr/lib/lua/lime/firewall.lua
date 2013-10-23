@@ -11,12 +11,12 @@ function firewall.configure()
         x:set("firewall", s[".name"], "output", "ACCEPT")
         x:set("firewall", s[".name"], "forward", "ACCEPT")
     end)
-
     x:foreach("firewall", "zone", function(s)
         x:set("firewall", s[".name"], "input", "ACCEPT")
         x:set("firewall", s[".name"], "output", "ACCEPT")
         x:set("firewall", s[".name"], "forward", "ACCEPT")
     end)
+    x:save("firewall")
 end
 
 return firewall

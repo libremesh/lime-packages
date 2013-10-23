@@ -103,6 +103,8 @@ function wireless.configure()
 
         wifi_num = wifi_num + 1
     end)
+    x:save("wireless")
+    x:save("network")
 end
 
 function wireless.apply()
