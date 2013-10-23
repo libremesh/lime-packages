@@ -9,8 +9,6 @@ network = require "lime.network"
 wireless = require "lime.wireless"
 system = require "lime.system"
 
-package.path = "proto/?.lua;" .. package.path
-
 x = uci:cursor()
 
 local function split(string, sep)
