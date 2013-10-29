@@ -3,6 +3,11 @@
 network = {}
 
 local bit = require "nixio".bit
+local ip = require "luci.ip"
+
+local function hex(x)
+    return string.format("%02x", x)
+end
 
 local function split(string, sep)
     local ret = {}
@@ -11,13 +16,33 @@ local function split(string, sep)
 end
 
 function network.eui64(mac)
-    local function hex(x) return string.format("%02x", x) end
     local function flip_7th_bit(x) return hex(bit.bxor(tonumber(x, 16), 2)) end
 
     local t = split(mac, ":")
     t[1] = flip_7th_bit(t[1])
 
     return string.format("%s%s:%sff:fe%s:%s%s", t[1], t[2], t[3], t[4], t[5], t[6])
+end
+
+function network.generate_host(ipprefix, hexsuffix)
+    -- use only the 8 rightmost nibbles for IPv4, or 32 nibbles for IPv6
+    hexsuffix = hexsuffix:sub((ipprefix[1] == 4) and -8 or -32)
+
+    -- convert hexsuffix into a cidr instance, using same prefix and family of ipprefix
+    local ipsuffix = ip.Hex(hexsuffix, ipprefix:prefix(), ipprefix[1])
+
+    local ipaddress = ipprefix
+    -- if it's a network prefix, fill in host bits with ipsuffix
+    if ipprefix:equal(ipprefix:network()) then
+        for i in ipairs(ipprefix[2]) do
+            -- reset ipsuffix netmask bits to 0
+            ipsuffix[2][i] = bit.bxor(ipsuffix[2][i],ipsuffix:network()[2][i])
+            -- fill in ipaddress host part, with ipsuffix bits
+            ipaddress[2][i] = bit.bor(ipaddress[2][i],ipsuffix[2][i])
+        end
+    end
+
+    return ipaddress
 end
 
 function network.generate_address(p, n)
@@ -27,13 +52,12 @@ function network.generate_address(p, n)
     local ipv4_template = assert(x:get("lime", "network", "ipv4_net"))
     local ipv6_template = assert(x:get("lime", "network", "ipv6_net"))
 
-    local function hex(x) return string.format("%02x", x) end
-
     ipv6_template = ipv6_template:gsub("N1", hex(n1)):gsub("N2", hex(n2)):gsub("N3", hex(n3))
     ipv4_template = ipv4_template:gsub("N1", n1):gsub("N2", n2):gsub("N3", n3)
 
-    return ipv4_template:gsub("R1", r1):gsub("R2", r2):gsub("R3", r3 + id),
-           ipv6_template:gsub("R1", hex(r1)):gsub("R2", hex(r2)):gsub("R3", hex(r3 + id))
+    hexsuffix = hex((r1 * 256*256 + r2 * 256 + r3) + id)
+    return network.generate_host(ip.IPv4(ipv4_template), hexsuffix):string(),
+           network.generate_host(ip.IPv6(ipv6_template), hexsuffix):string()
 end
 
 function network.setup_lan(v4, v6)
