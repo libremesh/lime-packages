@@ -47,7 +47,7 @@ end
 
 function network.generate_address(p, n)
     local id = n
-    local r1, r2, r3 = node_id()
+    local m4, m5, m6 = node_id()
     local n1, n2, n3 = network_id()
     local ipv4_template = assert(x:get("lime", "network", "ipv4_net"))
     local ipv6_template = assert(x:get("lime", "network", "ipv6_net"))
@@ -55,7 +55,7 @@ function network.generate_address(p, n)
     ipv6_template = ipv6_template:gsub("N1", hex(n1)):gsub("N2", hex(n2)):gsub("N3", hex(n3))
     ipv4_template = ipv4_template:gsub("N1", n1):gsub("N2", n2):gsub("N3", n3)
 
-    hexsuffix = hex((r1 * 256*256 + r2 * 256 + r3) + id)
+    hexsuffix = hex((m4 * 256*256 + m5 * 256 + m6) + id)
     return network.generate_host(ip.IPv4(ipv4_template), hexsuffix):string(),
            network.generate_host(ip.IPv6(ipv6_template), hexsuffix):string()
 end
@@ -122,7 +122,7 @@ function network.configure()
     local protocols = assert(x:get("lime", "network", "protos"))
     local vlans = assert(x:get("lime", "network", "vlans"))
     local n1, n2, n3 = network_id()
-    local r1, r2, r3 = node_id()
+    local m4, m5, m6 = node_id()
     local v4, v6 = network.generate_address(1, 0) -- for br-lan
 
     network.clean()
