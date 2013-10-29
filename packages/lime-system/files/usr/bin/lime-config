@@ -17,12 +17,15 @@ local function split(string, sep)
     return ret
 end
 
-function node_id()
+function primary_mac()
     local dev = assert(x:get("lime", "network", "primary_dev"))
     local mac = assert(fs.readfile("/sys/class/net/"..dev.."/address"))
-    local t = split(mac, ":")
-    local r1, r2, r3 = tonumber(t[#t-2], 16), tonumber(t[#t-1], 16), tonumber(t[#t], 16)
-    return r1, r2, r3
+    return split(mac, ":")
+end
+
+function node_id()
+    local m = primary_mac()
+    return tonumber(m[4], 16), tonumber(m[5], 16), tonumber(m[6], 16)
 end
 
 function network_id()
