@@ -4,7 +4,17 @@ firewall = {}
 
 function firewall.configure()
     print("Disabling v6 firewall")
-    fs.writefile("/etc/firewall.user", "ip6tables -P INPUT ACCEPT\nip6tables -P OUTPUT ACCEPT\nip6tables -P FORWARD ACCEPT\niptables -t mangle -A FORWARD -p tcp -o bmx+ -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n")
+
+    local content = { insert = table.insert, concat = table.concat }
+    for line in io.lines("/etc/firewall.user") do
+        if not line:match("^ip6?tables ") then content:insert(line) end
+    end
+    content:insert("ip6tables -P INPUT ACCEPT")
+    content:insert("ip6tables -P OUTPUT ACCEPT")
+    content:insert("ip6tables -P FORWARD ACCEPT")
+    content:insert("iptables -t mangle -A FORWARD -p tcp -o bmx+ -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu")
+    fs.writefile("/etc/firewall.user", content:concat("\n").."\n")
+
     uci:foreach("firewall", "defaults", function(s)
         uci:set("firewall", s[".name"], "disable_ipv6", "1")
         uci:set("firewall", s[".name"], "input", "ACCEPT")
