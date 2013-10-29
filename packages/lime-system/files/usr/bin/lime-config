@@ -1,6 +1,6 @@
 #!/usr/bin/lua
 
-local uci = require "uci"
+local libuci = require "uci"
 fs  = require "nixio.fs"
 iw  = require "iwinfo"
 
@@ -9,7 +9,7 @@ network = require "lime.network"
 wireless = require "lime.wireless"
 system = require "lime.system"
 
-x = uci:cursor()
+uci = libuci:cursor()
 
 local function split(string, sep)
     local ret = {}
@@ -18,7 +18,7 @@ local function split(string, sep)
 end
 
 function primary_mac()
-    local dev = assert(x:get("lime", "network", "primary_dev"))
+    local dev = assert(uci:get("lime", "network", "primary_dev"))
     local mac = assert(fs.readfile("/sys/class/net/"..dev.."/address"))
     return split(mac, ":")
 end
@@ -29,7 +29,7 @@ function node_id()
 end
 
 function network_id()
-    local network_essid = assert(x:get("lime", "wireless", "ssid"))
+    local network_essid = assert(uci:get("lime", "wireless", "ssid"))
     local n1, n2, n3
     local fd = io.popen('echo "' .. network_essid .. '" | md5sum')
     if fd then

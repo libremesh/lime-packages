@@ -3,17 +3,17 @@
 batadv = {}
 
 function batadv.setup_interface(interface, ifname)
-    x:set("network", interface, "interface")
-    x:set("network", interface, "ifname", ifname)
-    x:set("network", interface, "proto", "batadv")
-    x:set("network", interface, "mesh", "bat0")
-    x:set("network", interface, "mtu", "1528")
-    x:save("network")
+    uci:set("network", interface, "interface")
+    uci:set("network", interface, "ifname", ifname)
+    uci:set("network", interface, "proto", "batadv")
+    uci:set("network", interface, "mesh", "bat0")
+    uci:set("network", interface, "mtu", "1528")
+    uci:save("network")
 end
 
 function batadv.clean()
     print("Clearing batman-adv config...")
-    x:delete("batman-adv", "bat0")
+    uci:delete("batman-adv", "bat0")
 end
 
 function batadv.init()
@@ -23,9 +23,9 @@ end
 function batadv.configure()
     batadv.clean()
 
-    x:set("batman-adv", "bat0", "mesh")
-    x:set("batman-adv", "bat0", "brige_loop_avoidance", "1")
-    x:save("batman-adv")
+    uci:set("batman-adv", "bat0", "mesh")
+    uci:set("batman-adv", "bat0", "brige_loop_avoidance", "1")
+    uci:save("batman-adv")
 end
 
 function batadv.apply()
