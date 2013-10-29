@@ -3,9 +3,9 @@
 wireless = {}
 
 function wireless.generate_ssid()
-    local r1, r2, r3 = node_id()
+    local m4, m5, m6 = node_id()
 
-    return string.format("%02x%02x%02x.lime", r1, r2, r3)
+    return string.format("%02x%02x%02x.lime", m4, m5, m6)
 end
 
 function wireless.clean()
@@ -23,7 +23,7 @@ function wireless.configure()
     local protocols = assert(x:get("lime", "network", "protos"))
     local vlans = assert(x:get("lime", "network", "vlans"))
     local n1, n2, n3 = network_id()
-    local r1, r2, r3 = node_id()
+    local m4, m5, m6 = node_id()
 
     local channel2 = assert(x:get("lime", "wireless", "mesh_channel_2ghz"))
     local channel5 = assert(x:get("lime", "wireless", "mesh_channel_5ghz"))
