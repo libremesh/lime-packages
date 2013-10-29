@@ -14,6 +14,7 @@ end
 function batadv.clean()
     print("Clearing batman-adv config...")
     uci:delete("batman-adv", "bat0")
+    if not fs.lstat("/etc/config/batman-adv") then fs.writefile("/etc/config/batman-adv", "") end
 end
 
 function batadv.init()
@@ -24,7 +25,7 @@ function batadv.configure()
     batadv.clean()
 
     uci:set("batman-adv", "bat0", "mesh")
-    uci:set("batman-adv", "bat0", "brige_loop_avoidance", "1")
+    uci:set("batman-adv", "bat0", "bridge_loop_avoidance", "1")
     uci:save("batman-adv")
 end
 
