@@ -10,8 +10,8 @@ end
 
 function wireless.clean()
     print("Clearing wireless config...")
-    x:foreach("wireless", "wifi-iface", function(s)
-        x:delete("wireless", s[".name"])
+    uci:foreach("wireless", "wifi-iface", function(s)
+        uci:delete("wireless", s[".name"])
     end)
 end
 
@@ -20,21 +20,21 @@ function wireless.init()
 end
 
 function wireless.configure()
-    local protocols = assert(x:get("lime", "network", "protos"))
-    local vlans = assert(x:get("lime", "network", "vlans"))
+    local protocols = assert(uci:get("lime", "network", "protos"))
+    local vlans = assert(uci:get("lime", "network", "vlans"))
     local n1, n2, n3 = network_id()
     local m4, m5, m6 = node_id()
 
-    local channel2 = assert(x:get("lime", "wireless", "mesh_channel_2ghz"))
-    local channel5 = assert(x:get("lime", "wireless", "mesh_channel_5ghz"))
-    local mcast_rate_2 = assert(x:get("lime", "wireless", "mesh_mcast_rate_2ghz"))
-    local mcast_rate_5 = assert(x:get("lime", "wireless", "mesh_mcast_rate_5ghz"))
+    local channel2 = assert(uci:get("lime", "wireless", "mesh_channel_2ghz"))
+    local channel5 = assert(uci:get("lime", "wireless", "mesh_channel_5ghz"))
+    local mcast_rate_2 = assert(uci:get("lime", "wireless", "mesh_mcast_rate_2ghz"))
+    local mcast_rate_5 = assert(uci:get("lime", "wireless", "mesh_mcast_rate_5ghz"))
     local wifi_num = 0
 
     wireless.clean()
 
     print("Defining wireless networks...")
-    x:foreach("wireless", "wifi-device", function(s)
+    uci:foreach("wireless", "wifi-device", function(s)
         local t = iw.type(s[".name"])
         if not t then return end
 
@@ -54,38 +54,38 @@ function wireless.configure()
         local ht = ch:match("[-+]?$")
 
         printf("-> Using channel %s for %dGHz %s", ch, is_5ghz and 5 or 2, s[".name"])
-        x:set("wireless", s[".name"], "channel", (ch:gsub("[-+]$", "")))
+        uci:set("wireless", s[".name"], "channel", (ch:gsub("[-+]$", "")))
 
-        if x:get("wireless", s[".name"], "ht_capab") then
+        if uci:get("wireless", s[".name"], "ht_capab") then
             if ht == "+" or ht == "-" then
-                x:set("wireless", s[".name"], "htmode", "HT40"..ht)
+                uci:set("wireless", s[".name"], "htmode", "HT40"..ht)
             else
-                x:set("wireless", s[".name"], "htmode", "HT20")
+                uci:set("wireless", s[".name"], "htmode", "HT20")
             end
         end
 
-        x:set("wireless", s[".name"], "disabled", 0)
+        uci:set("wireless", s[".name"], "disabled", 0)
 
-        x:set("wireless", id, "wifi-iface")
-        x:set("wireless", id, "mode", "adhoc")
-        x:set("wireless", id, "device", s[".name"])
-        x:set("wireless", id, "network", net)
-        x:set("wireless", id, "ifname", ifn)
-        x:set("wireless", id, "mcast_rate", mcr)
-        x:set("wireless", id, "ssid", wireless.generate_ssid())
-        x:set("wireless", id, "bssid", assert(x:get("lime", "wireless", "mesh_bssid")))
+        uci:set("wireless", id, "wifi-iface")
+        uci:set("wireless", id, "mode", "adhoc")
+        uci:set("wireless", id, "device", s[".name"])
+        uci:set("wireless", id, "network", net)
+        uci:set("wireless", id, "ifname", ifn)
+        uci:set("wireless", id, "mcast_rate", mcr)
+        uci:set("wireless", id, "ssid", wireless.generate_ssid())
+        uci:set("wireless", id, "bssid", assert(uci:get("lime", "wireless", "mesh_bssid")))
 
-        x:set("wireless", ifn_ap, "wifi-iface")
-        x:set("wireless", ifn_ap, "mode", "ap")
-        x:set("wireless", ifn_ap, "device", s[".name"])
-        x:set("wireless", ifn_ap, "network", "lan")
-        x:set("wireless", ifn_ap, "ifname", ifn_ap)
-        x:set("wireless", ifn_ap, "ssid", assert(x:get("lime", "wireless", "ssid")))
+        uci:set("wireless", ifn_ap, "wifi-iface")
+        uci:set("wireless", ifn_ap, "mode", "ap")
+        uci:set("wireless", ifn_ap, "device", s[".name"])
+        uci:set("wireless", ifn_ap, "network", "lan")
+        uci:set("wireless", ifn_ap, "ifname", ifn_ap)
+        uci:set("wireless", ifn_ap, "ssid", assert(uci:get("lime", "wireless", "ssid")))
 
         -- base (untagged) wifi interface
-        x:set("network", net, "interface")
-        x:set("network", net, "proto", "none")
-        x:set("network", net, "mtu", "1528")
+        uci:set("network", net, "interface")
+        uci:set("network", net, "proto", "none")
+        uci:set("network", net, "mtu", "1528")
 
         -- For layer2 use a vlan based off network_id, between 16 and 255, if uci doesn't specify a vlan
         if not vlans[2] then vlans[2] = math.floor(16 + ((tonumber(n1) / 255) * (255 - 16))) end
@@ -103,8 +103,8 @@ function wireless.configure()
 
         wifi_num = wifi_num + 1
     end)
-    x:save("wireless")
-    x:save("network")
+    uci:save("wireless")
+    uci:save("network")
 end
 
 function wireless.apply()
