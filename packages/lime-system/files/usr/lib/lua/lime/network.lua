@@ -145,6 +145,7 @@ function network.configure()
         local v4, v6 = network.generate_address(n, 0)
 
         local proto = require("lime.proto." .. protocols[n])
+        proto.configure(v4, v6)
         proto.setup_interface(interface, ifname, v4, v6)
     end
 end
