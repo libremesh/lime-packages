@@ -12,6 +12,7 @@ function bmx6.setup_interface(interface, ifname)
     x:set("network", interface, "ifname", ifname)
     x:set("network", interface, "proto", "none")
     x:set("network", interface, "auto", "1")
+    x:set("network", interface, "mtu", "1350")
     x:save("network")
 end
 
