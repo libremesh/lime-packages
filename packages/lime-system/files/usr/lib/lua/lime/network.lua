@@ -91,11 +91,13 @@ function network.setup_anygw(v4, v6)
     uci:set("network", "lm_anygw_if", "ipaddr", anygw_ipv4:match("^([^/]+)"))
     uci:set("network", "lm_anygw_if", "netmask", "255.255.255.0")
 
-    local content = { }
-    table.insert(content, "ebtables -A FORWARD -j DROP -d " .. anygw_mac)
-    table.insert(content, "ebtables -t nat -A POSTROUTING -o bat0 -j DROP -s " .. anygw_mac)
-    table.insert(content, "exit 0")
-    fs.writefile("/etc/rc.local", table.concat(content, "\n").."\n")
+    local content = { insert = table.insert, concat = table.concat }
+    for line in io.lines("/etc/firewall.user") do
+        if not line:match("^ebtables ") then content:insert(line) end
+    end
+    content:insert("ebtables -A FORWARD -j DROP -d " .. anygw_mac)
+    content:insert("ebtables -t nat -A POSTROUTING -o bat0 -j DROP -s " .. anygw_mac)
+    fs.writefile("/etc/firewall.user", content:concat("\n").."\n")
 
     -- IPv6 router advertisement for anygw interface
     print("Enabling RA in dnsmasq...")
