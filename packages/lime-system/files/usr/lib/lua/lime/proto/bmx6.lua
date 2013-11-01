@@ -25,7 +25,7 @@ function bmx6.init()
     -- TODO
 end
 
-function bmx6.configure(v4, v6)
+function bmx6.configure(ipv4, ipv6)
     bmx6.clean()
 
     uci:set("bmx6", "general", "bmx6")
@@ -33,8 +33,8 @@ function bmx6.configure(v4, v6)
 
     uci:set("bmx6", "main", "tunDev")
     uci:set("bmx6", "main", "tunDev", "main")
-    uci:set("bmx6", "main", "tun4Address", v4)
-    uci:set("bmx6", "main", "tun6Address", v6)
+    uci:set("bmx6", "main", "tun4Address", ipv4:string())
+    uci:set("bmx6", "main", "tun6Address", ipv6:string())
 
     -- Enable bmx6 uci config plugin
     uci:set("bmx6", "config", "plugin")
