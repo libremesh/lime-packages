@@ -56,28 +56,29 @@ function network.generate_address(p, n)
     ipv4_template = ipv4_template:gsub("N1", n1):gsub("N2", n2):gsub("N3", n3)
 
     hexsuffix = hex((m4 * 256*256 + m5 * 256 + m6) + id)
-    return network.generate_host(ip.IPv4(ipv4_template), hexsuffix):string(),
-           network.generate_host(ip.IPv6(ipv6_template), hexsuffix):string()
+    return network.generate_host(ip.IPv4(ipv4_template), hexsuffix),
+           network.generate_host(ip.IPv6(ipv6_template), hexsuffix)
 end
 
-function network.setup_lan(v4, v6)
-    uci:set("network", "lan", "ip6addr", v6)
-    uci:set("network", "lan", "ipaddr", v4:match("^([^/]+)"))
-    uci:set("network", "lan", "netmask", "255.255.255.0")
+function network.setup_lan(ipv4, ipv6)
+    uci:set("network", "lan", "ip6addr", ipv6:string())
+    uci:set("network", "lan", "ipaddr", ipv4:host():string())
+    uci:set("network", "lan", "netmask", ipv4:mask():string())
     uci:set("network", "lan", "ifname", "eth0 bat0")
     uci:save("network")
 end
 
-function network.setup_anygw(v4, v6)
+function network.setup_anygw(ipv4, ipv6)
     local n1, n2, n3 = network_id()
 
     -- anygw macvlan interface
     print("Adding macvlan interface to uci network...")
     local anygw_mac = string.format("aa:aa:aa:%02x:%02x:%02x", n1, n2, n3)
-    local v6prefix = v6:match("^([^:]+:[^:]+:[^:]+:[^:]+):")
-    local v4prefix = v4:match("^([^.]+.[^.]+.[^.]+).")
-    local anygw_ipv6 = string.format(v6prefix .. "::1/64")
-    local anygw_ipv4 = string.format(v4prefix .. ".1/24")
+    local anygw_ipv6 = ipv6:minhost()
+    local anygw_ipv4 = ipv4:minhost()
+    anygw_ipv6[3] = 64 -- SLAAC only works with a /64, per RFC
+    anygw_ipv4[3] = ipv4:prefix()
+
     uci:set("network", "lm_anygw_dev", "device")
     uci:set("network", "lm_anygw_dev", "type", "macvlan")
     uci:set("network", "lm_anygw_dev", "name", "anygw")
@@ -87,9 +88,9 @@ function network.setup_anygw(v4, v6)
     uci:set("network", "lm_anygw_if", "interface")
     uci:set("network", "lm_anygw_if", "proto", "static")
     uci:set("network", "lm_anygw_if", "ifname", "anygw")
-    uci:set("network", "lm_anygw_if", "ip6addr", anygw_ipv6)
-    uci:set("network", "lm_anygw_if", "ipaddr", anygw_ipv4:match("^([^/]+)"))
-    uci:set("network", "lm_anygw_if", "netmask", "255.255.255.0")
+    uci:set("network", "lm_anygw_if", "ip6addr", anygw_ipv6:string())
+    uci:set("network", "lm_anygw_if", "ipaddr", anygw_ipv4:host():string())
+    uci:set("network", "lm_anygw_if", "netmask", anygw_ipv4:mask():string())
 
     local content = { insert = table.insert, concat = table.concat }
     for line in io.lines("/etc/firewall.user") do
@@ -103,11 +104,11 @@ function network.setup_anygw(v4, v6)
     print("Enabling RA in dnsmasq...")
     local content = { }
     table.insert(content,               "enable-ra")
-    table.insert(content, string.format("dhcp-range=tag:anygw,%s::, ra-names", v6prefix))
-    table.insert(content,               "dhcp-option=tag:anygw,option6:domain-search, lan")
-    table.insert(content, string.format("address=/anygw/%s::1", v6prefix))
-    table.insert(content, string.format("dhcp-option=tag:anygw,option:router,%s.1", v4prefix))
-    table.insert(content, string.format("dhcp-option=tag:anygw,option:dns-server,%s.1", v4prefix))
+    table.insert(content, string.format("dhcp-range=tag:anygw, %s, ra-names", anygw_ipv6:network(64):string()))
+    table.insert(content,               "dhcp-option=tag:anygw, option6:domain-search, lan")
+    table.insert(content, string.format("address=/anygw/%s", anygw_ipv6:host():string()))
+    table.insert(content, string.format("dhcp-option=tag:anygw, option:router, %s", anygw_ipv4:host():string()))
+    table.insert(content, string.format("dhcp-option=tag:anygw, option:dns-server, %s", anygw_ipv4:host():string()))
     table.insert(content,               "no-dhcp-interface=br-lan")
     fs.writefile("/etc/dnsmasq.conf", table.concat(content, "\n").."\n")
 
@@ -134,12 +135,12 @@ function network.configure()
     local vlans = assert(uci:get("lime", "network", "vlans"))
     local n1, n2, n3 = network_id()
     local m4, m5, m6 = node_id()
-    local v4, v6 = network.generate_address(1, 0) -- for br-lan
+    local ipv4, ipv6 = network.generate_address(1, 0) -- for br-lan
 
     network.clean()
 
-    network.setup_lan(v4, v6)
-    network.setup_anygw(v4, v6)
+    network.setup_lan(ipv4, ipv6)
+    network.setup_anygw(ipv4, ipv6)
 
     -- For layer2 use a vlan based off network_id, between 16 and 255, if uci doesn't specify a vlan
     if not vlans[2] then vlans[2] = math.floor(16 + ((tonumber(n1) / 255) * (255 - 16))) end
@@ -153,11 +154,11 @@ function network.configure()
     for n = 1, #protocols do
         local interface = "lm_eth_" .. protocols[n]
         local ifname = string.format("eth1.%d", vlans[n])
-        local v4, v6 = network.generate_address(n, 0)
+        local ipv4, ipv6 = network.generate_address(n, 0)
 
         local proto = require("lime.proto." .. protocols[n])
-        proto.configure(v4, v6)
-        proto.setup_interface(interface, ifname, v4, v6)
+        proto.configure(ipv4, ipv6)
+        proto.setup_interface(interface, ifname, ipv4, ipv6)
     end
 end
 
