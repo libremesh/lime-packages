@@ -25,7 +25,6 @@ along with this file. If not, see <http://www.gnu.org/licenses/>.
 
 --! root at OpenWrt:~# cat /var/dhcp.leases
 --! 946689575 00:00:00:00:00:05 192.168.1.155 wdt 01:00:00:00:00:00:05
---! 946689522 00:00:00:00:00:04 192.168.1.237 * 01:00:00:00:00:00:04
 --! 946689351 00:0f:b0:3a:b5:0b 192.168.1.208 colinux *
 --! 946689493 02:0f:b0:3a:b5:0b 192.168.1.199 * 01:02:0f:b0:3a:b5:0b
 
@@ -73,7 +72,7 @@ elseif command == "del" then
 	lease_file:write(leases);
 	lease_file:close();
 	update_alfred();
-    
+
 elseif command == "init" then
 	local stdout = io.popen("alfred -r " .. alfred_shared_lease_num,"r");
 	local raw_output = stdout:read("*a");
@@ -83,17 +82,17 @@ elseif command == "init" then
 		print("");
 		exit(0);
 	end
-	
+
 	json_output = {};
 	local lease_table = {};
 	-------------------------------- { added because alfred doesn't output valid json yet }
 	assert(loadstring("json_output = {" .. raw_output .. "}"))()
-	
+
 	for _, row in ipairs(json_output) do
 		local node_mac, value = unpack(row)
 		table.insert(lease_table, value:gsub("\x0a", "\n") .. "\n")
 	end
-	
+
 	print(table.concat(lease_table));
 
 end
