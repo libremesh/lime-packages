@@ -30,7 +30,7 @@ along with this file. If not, see <http://www.gnu.org/licenses/>.
 --! 946689493 02:0f:b0:3a:b5:0b 192.168.1.199 * 01:02:0f:b0:3a:b5:0b
 
 
-local local_lease_file = "/tmp/dnsmasq-lease-share/local_lease"
+local local_lease_file = "/tmp/dnsmasq-lease-share-local-lease"
 local alfred_shared_lease_num = "65"
 
 local command = arg[1];
@@ -39,8 +39,9 @@ local client_mac = arg[2];
 --! Tell alfred local dhcp lease changed
 function update_alfred()
 	local lease_file = io.open(local_lease_file, "r+");
-	local stdin = io.popen("afred -r " .. alfred_shared_lease_num,"w");
-	stdin.write(lease_file:read("*all"));
+	local stdin = io.popen("alfred -s " .. alfred_shared_lease_num,"w");
+	stdin:write(lease_file:read("*all"));
+	lease_file:close();
 	stdin:close();
 end
 
@@ -48,19 +49,20 @@ if command == "add" then
 	local lease_expiration = os.getenv("DNSMASQ_LEASE_EXPIRES");
 	local client_ip = arg[3];
 	local client_hostname;
-	if arg[4]:len() > 0 then client_hostname = arg[4] else client_hostname = "*" end;
+	if (arg[4] and (arg[4]:len() > 0)) then client_hostname = arg[4] else client_hostname = "*" end;
 	local client_id = os.getenv("DNSMASQ_CLIENT_ID");
-	if client_id:len() <= 0 then client_id = client_mac end; 
+	if ((not client_id) or (client_id:len() <= 0)) then client_id = client_mac end; 
 
-	local lease_line = lease_expiration .. " " .. client_mac .. " " .. client_ip .. " " .. client_hostname .. " " .. client_id;
+	local lease_line = lease_expiration .. " " .. client_mac .. " " .. client_ip .. " " .. client_hostname .. " " .. client_id .. "\n";
 
 	local lease_file = io.open(local_lease_file, "a");
-	lease_file:write(lease_file);
+	lease_file:write(lease_line);
+	lease_file:close();
 
 	update_alfred()
 
 elseif command == "del" then
-	local leases;
+	local leases = "";
 	local lease_file = io.open(local_lease_file, "r");
 	while lease_file:read(0) do
 		local lease_line = lease_file:read();
@@ -76,20 +78,22 @@ elseif command == "init" then
 	local stdout = io.popen("alfred -r " .. alfred_shared_lease_num,"r");
 	local raw_output = stdout:read("*a");
 	stdout:close();
-	if raw_output
-		then
-			local json_stdout = {};
-			local lease_table = {};
-			-------------------------------- { added because alfred doesn't output valid json yet }
-			assert(loadstring("json_stdout = {" .. raw_output .. "}"))()
 
-			for _, row in ipairs(json_stdout) do
-				local node_mac, value = unpack(row)
-				table.insert(lease_table, value:gsub("\x0a", "\n") .. "\n")
-			end
-			
-			print(table.concat(lease_table));
-		else
-			print("");
+	if (not raw_output) then
+		print("");
+		exit(0);
 	end
+	
+	json_output = {};
+	local lease_table = {};
+	-------------------------------- { added because alfred doesn't output valid json yet }
+	assert(loadstring("json_output = {" .. raw_output .. "}"))()
+	
+	for _, row in ipairs(json_output) do
+		local node_mac, value = unpack(row)
+		table.insert(lease_table, value:gsub("\x0a", "\n") .. "\n")
+	end
+	
+	print(table.concat(lease_table));
+
 end
