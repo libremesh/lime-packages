@@ -109,6 +109,7 @@ function network.setup_anygw(ipv4, ipv6)
     table.insert(content, string.format("address=/anygw/%s", anygw_ipv6:host():string()))
     table.insert(content, string.format("dhcp-option=tag:anygw, option:router, %s", anygw_ipv4:host():string()))
     table.insert(content, string.format("dhcp-option=tag:anygw, option:dns-server, %s", anygw_ipv4:host():string()))
+    table.insert(content,               "dhcp-broadcast=tag:anygw")
     table.insert(content,               "no-dhcp-interface=br-lan")
     fs.writefile("/etc/dnsmasq.conf", table.concat(content, "\n").."\n")
 
