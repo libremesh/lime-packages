@@ -1,0 +1,42 @@
+##########################
+# General options
+##########################
+
+config lime network
+	option primary_dev eth0
+	option main_ipv4
+	option main_ipv6
+
+config lime wifi
+	option public_essid 'LiMe'
+	option mesh_bssid 'ca:fe:00:c0:ff:ee'
+
+##########################
+# WiFi specific options
+##########################
+
+config wifi phy0
+	option channel '36+'
+	option mrate '6000'
+ 
+config wifi phy1
+	option channel '1'
+	option mrate '54000'
+
+##########################
+# Network specific options
+##########################
+
+config net eth1
+	list protocols 'bmx6'
+	list protocols 'wan'
+
+config net eth0
+	list protocols 'bmx6:12'
+	list protocols 'lan'
+	list protocols 'batadv:31'
+
+config net phy0
+	list protocols 'bmx6:12'
+	list protocols 'batadv:31'
+	list protocols 'lan'
