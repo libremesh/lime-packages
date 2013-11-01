@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lime-dnsmasq-lease-share
 PKG_VERSION:=0.1
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
@@ -37,7 +37,7 @@ endef
 define Build/Compile
 	@rm -rf ./build || true
 	@cp -r ./src ./build
-	@sed -i '/^--!.*/d' build/*.lua
+	@sed -i '/^--!.*/d' ./build/*.lua
 endef
 
 define Package/$(PKG_NAME)/install
