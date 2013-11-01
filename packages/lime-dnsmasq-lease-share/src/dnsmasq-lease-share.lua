@@ -71,6 +71,15 @@ elseif command == "del" then
     
 elseif command == "init" then
     local stdout = io.popen("afred -r " .. alfred_shared_lease_num,"r");
-    print(stdout:read("*all"));
+    local json_stdout;
+    local lease_table = {};
+    -------------------------------- { added because alfred doesn't output valid json yet }
+    assert(loadstring("json_stdout = {" .. stdout .. "}"))()
     
+    for _, row in ipairs(json_stdout) do
+	    local node_mac, value = unpack(row)
+	    table.insert(lease_table, value:gsub("\x0a", "\n") .. "\n")
+    end
+    
+    print(table.concat(lease_table));
 end
