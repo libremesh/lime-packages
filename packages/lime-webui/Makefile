@@ -53,9 +53,11 @@ define Package/lime-webui/install
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/model/cbi/lime
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/view/lime
+	$(INSTALL_DIR) $(1)/www/luci-static/resources/lime
 	$(CP) ./build/model/* $(1)/usr/lib/lua/luci/model/cbi/lime/
 	$(CP) ./build/controller/* $(1)/usr/lib/lua/luci/controller/
 	$(CP) ./build/view/* $(1)/usr/lib/lua/luci/view/lime/
+	$(CP) ./build/static/* $(1)/www/luci-static/resources/lime/
 endef
 
 $(eval $(call BuildPackage,lime-webui))
