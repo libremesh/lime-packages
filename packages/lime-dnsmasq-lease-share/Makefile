@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lime-dnsmasq-lease-share
 PKG_VERSION:=0.1
-PKG_RELEASE:=3
+PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
@@ -18,8 +18,9 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
  SECTION:=net
- CATEGORY:=Network
+ CATEGORY:=LiMe
  TITLE:=dnsmasq lease sharing accross batman-adv mesh
+ URL:=http://libre-mesh.org
  DEPENDS:=+alfred +lua +libuci-lua
 endef
 
