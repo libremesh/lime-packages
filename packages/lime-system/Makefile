@@ -34,7 +34,7 @@ define Package/lime-system
   SECTION:=net
   CATEGORY:=LiMe
   URL:=http://libre-mesh.org
-  DEPENDS:=+uhttpd +luci +luci-app-bmx6 +luci-app-batman-adv \
+  DEPENDS:=+lime-webui \
   +iwinfo +iw +netperf +mtr \
   +bmx6 +bmx6-uci-config +bmx6-json +bmx6-sms +bmx6-table \
   +kmod-batman-adv \
