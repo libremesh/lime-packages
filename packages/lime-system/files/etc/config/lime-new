@@ -2,6 +2,9 @@
 # General options
 ##########################
 
+config lime system
+	option hostname
+
 config lime network
 	option primary_dev eth0
 	option main_ipv4
