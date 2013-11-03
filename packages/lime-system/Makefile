@@ -35,7 +35,7 @@ define Package/lime-system
   CATEGORY:=LiMe
   URL:=http://libre-mesh.org
   DEPENDS:=+lime-webui \
-  +iwinfo +iw +netperf +mtr \
+  +iwinfo +iw +netperf +mtr +lime-dnsmasq-lease-share \
   +bmx6 +bmx6-uci-config +bmx6-json +bmx6-sms +bmx6-table \
   +kmod-batman-adv \
   +wpad-mini +reghack \
