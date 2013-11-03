@@ -28,6 +28,7 @@ along with this file. If not, see <http://www.gnu.org/licenses/>.
 --! 946689351 00:0f:b0:3a:b5:0b 192.168.1.208 colinux *
 --! 946689493 02:0f:b0:3a:b5:0b 192.168.1.199 * 01:02:0f:b0:3a:b5:0b
 
+require("uci");
 
 local local_lease_file = "/tmp/dnsmasq-lease-share-local-lease"
 local alfred_shared_lease_num = "65"
@@ -43,6 +44,21 @@ function update_alfred()
 	lease_file:close();
 	stdin:close();
 end
+
+function get_hostname()
+	local hostfile = io.open("/proc/sys/kernel/hostname", "r");
+	local ret_string = hostfile:read();
+	hostfile:close();
+	return ret_string;
+end
+
+function get_if_mac(ifname)
+	local macfile = io.open("/sys/class/net/" .. ifname .. "/address");
+	local ret_string = macfile:read();
+	macfile:close();
+	return ret_string;
+end
+
 
 if command == "add" then
 	local lease_expiration = os.getenv("DNSMASQ_LEASE_EXPIRES");
@@ -78,10 +94,15 @@ elseif command == "init" then
 	local raw_output = stdout:read("*a");
 	stdout:close();
 
-	if (not raw_output) then
-		print("");
-		exit(0);
-	end
+	local uci_conf = uci.cursor();
+
+	local own_hostname = get_hostname();
+	local own_ipv4 = uci_conf:get("network", "lan", "ipaddr");
+	local disposable_mac = get_if_mac("br-lan");
+
+	print("999999999 " ..  disposable_mac .. " " .. own_ipv4 .. " " .. own_hostname .. " " .. disposable_mac);
+	
+	if (not raw_output) then exit(0); end
 
 	json_output = {};
 	local lease_table = {};
