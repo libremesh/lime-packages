@@ -101,7 +101,7 @@ elseif command == "init" then
 	local disposable_mac = get_if_mac("br-lan");
 
 	print("999999999 " ..  disposable_mac .. " " .. own_ipv4 .. " " .. own_hostname .. " " .. disposable_mac);
-	
+
 	if (not raw_output) then exit(0); end
 
 	json_output = {};
