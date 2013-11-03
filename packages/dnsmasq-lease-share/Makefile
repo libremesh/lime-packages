@@ -8,7 +8,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=lime-dnsmasq-lease-share
+PKG_NAME:=dnsmasq-lease-share
 PKG_VERSION:=0.2
 PKG_RELEASE:=1
 
