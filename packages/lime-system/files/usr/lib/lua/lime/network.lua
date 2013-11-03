@@ -118,6 +118,22 @@ function network.setup_anygw(ipv4, ipv6)
     fs.writefile("/etc/config/6relayd", "")
 end
 
+function network.setup_rp_filter()
+	local sysctl_file_path = "/etc/sysctl.conf";
+	local sysctl_options = "";
+	local sysctl_file = io.open(sysctl_file_path, "r");
+	while sysctl_file:read(0) do
+		local sysctl_line = sysctl_file:read();
+		if not string.find(sysctl_line, ".rp_filter") then sysctl_options = sysctl_options .. sysctl_line .. "\n" end 
+	end
+	sysctl_file:close()
+	
+	sysctl_options = sysctl_options .. "net.ipv4.conf.default.rp_filter=2\nnet.ipv4.conf.all.rp_filter=2\n";
+	sysctl_file = io.open(sysctl_file_path, "w");
+	sysctl_file:write(sysctl_options);
+	sysctl_file:close();
+end
+
 function network.clean()
     print("Clearing network config...")
     uci:foreach("network", "interface", function(s)
@@ -140,6 +156,7 @@ function network.configure()
 
     network.clean()
 
+    network.setup_rp_filter()
     network.setup_lan(ipv4, ipv6)
     network.setup_anygw(ipv4, ipv6)
 
