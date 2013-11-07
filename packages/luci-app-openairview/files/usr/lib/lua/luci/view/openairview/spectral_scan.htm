@@ -1,20 +1,99 @@
 <%#
-Copyright 2013 Nicolas Echaniz <nicoechaniz@altermundi.net>
+LuCI - Lua Configuration Interface
+Copyright 2013 Gui Iribarren <gui@altermundi.net>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-	http://www.apache.org/licenses/LICENSE-2.0
+  http://www.apache.org/licenses/LICENSE-2.0
 
-$Id: reboot.htm 5448 2009-10-31 15:54:11Z jow $
+$Id$
 
 -%>
-<%+header%>
-<h2><a id="content" name="content"><%:Survey%></a></h2>
-<h3><%:Spectral Scan%></h3>
-<p><%:Show spectral scans from the router's radios%></p>
 
-<p>Flotiame</p>
+<%-
+  local ntm = require "luci.model.network".init()
+
+  local dev
+  local devices = { }
+  for _, dev in luci.util.vspairs(luci.sys.net.devices()) do
+    if dev:match("^wlan%d") or dev:match("^ath%d") or dev:match("^wl%d") then
+      devices[#devices+1] = dev
+    end
+  end
+
+  local curdev = luci.dispatcher.context.requestpath
+        curdev = curdev[#curdev] ~= "spectral_scan" and curdev[#curdev] or devices[1]
+
+  local wnet = ntm:get_wifinet(curdev)
+  local wdev = wnet and wnet:get_device()
+
+  local bands = ""
+  local bl = wdev.iwinfo.hwmodelist
+  if bl and next(bl) then
+    if bl.a then bands = bands .. "5ghz" end
+    if bl.b or bl.g then bands = bands .. "2ghz" end
+  end
+-%>
+
+<%+header%>
+
+<script language="javascript" type="text/javascript" src="<%=resource%>/jquery/jquery-1.4.js"></script>
+<script language="javascript" type="text/javascript" src="<%=resource%>/jquery.flot.min.js"></script>
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+window.setTimeout(
+  function () {
+    var options = {
+        lines: { show: true },
+        points: { show: false },
+        series: { shadowSize: 0 }, // drawing is faster without shadows
+        xaxis: { tickSize: 5, tickDecimals: 0, autoscaleMargin: 0.05 },
+        yaxis: { min: -150, max: 0 },
+        colors: [ "rgba(0,0,0,0.9)", "rgba(50,50,50,0.4)", "rgba(100,100,100,0.4)",
+                  "rgba(150,150,150,0.4)", "rgba(200,200,200,0.4)", "rgba(225,225,225,0.4)" ]
+
+    };
+    var data = [];
+    var placeholder = document.getElementById("placeholder");
+
+    graph = $.plot(placeholder, data, options);
+
+    /* render datasets, start update interval */
+    XHR.poll(3, '<%=build_url("openairview/json/spectral_scan", curdev, bands)%>', null,
+      function(x, series) {
+        console.log(x, series);
+        var i;
+        for (i=0;i<data.length;i++) {
+          if ( data[i].color < 5 ) {
+            data[i].color = +data[i].color + 1;
+          }
+        }
+        for (i=0;i<series.samples.length;i++) {
+          var label ;
+          if (i==0) { console.log(+series.samples[i].tsf / 1000000 ) ; }
+          data.push({ 'label': label, 'color': 0, 'data': series.samples[i].data });
+        }
+        data = data.slice(-60);
+        graph.setData(data);
+        graph.setupGrid();
+        graph.draw();
+      }
+    );
+  }, 1000
+);
+//]]></script>
+
+<h2><a id="content" name="content"><%:Spectral Scan%></a></h2>
+
+<ul class="cbi-tabmenu">
+    <% for _, dev in ipairs(devices) do %>
+        <li class="cbi-tab<%= dev == curdev and "" or "-disabled" %>"><a href="<%=build_url("admin/openairview/spectral_scan", dev)%>"><%=pcdata(dev)%></a></li>
+    <% end %>
+</ul>
+
+<div id="placeholder" style="width:100%; height:300px;"></div>
 
 <%+footer%>
