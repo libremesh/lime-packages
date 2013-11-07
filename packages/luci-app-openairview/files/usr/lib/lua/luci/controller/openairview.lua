@@ -19,13 +19,16 @@ function index()
    page.index = true
 
    entry({"admin", "openairview", "stations"}, template("openairview/stations"), _("Stations"), 1)
-   entry({"admin", "openairview", "spectral_scan"}, template("openairview/spectral_scan"), _("Spectral Scan"), 1)
+   entry({"admin", "openairview", "spectral_scan"}, template("openairview/spectral_scan"), _("Spectral Scan"), 2)
 
    node("openairview")
    node("openairview", "json")
 
    page = node("openairview", "json", "stations")
    page.target = call("action_json_stations")
+
+   page = node("openairview", "json", "spectral_scan")
+   page.target = call("action_json_spectral_scan")
 
 end
 
