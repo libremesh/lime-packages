@@ -8,11 +8,9 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=lime-dnsmasq-lease-share
-PKG_VERSION:=0.1
+PKG_NAME:=dnsmasq-lease-share
+PKG_VERSION:=0.2
 PKG_RELEASE:=1
-
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -29,22 +27,17 @@ define Package/$(PKG_NAME)/description
 endef
 
 define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-endef
-
-define Build/Configure
+	@cp -r ./src $(PKG_BUILD_DIR)/
 endef
 
 define Build/Compile
-	@rm -rf ./build || true
-	@cp -r ./src ./build
-	@sed -i '/^--!.*/d' ./build/*.lua
+	@sed -i '/^--!.*/d' $(PKG_BUILD_DIR)/src/*.lua
 endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(CP) ./build/$(PKG_NAME).lua $(1)/usr/bin/$(PKG_NAME)
-	@chmod +x $(1)/usr/bin/$(PKG_NAME)
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/dnsmasq-lease-share.lua $(1)/usr/bin/dnsmasq-lease-share
+	$(CP) ./files/* $(1)/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
