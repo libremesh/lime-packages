@@ -76,7 +76,7 @@ window.setTimeout(
     });
 
     /* render datasets, start update interval */
-    XHR.poll(20, '<%=build_url("openairview/json/spectral_scan", curdev, bands)%>', null,
+    XHR.poll(20, '<%=build_url("admin/openairview/json/spectral_scan", curdev, bands)%>', null,
       function(x, series) {
         console.log(x, series);
         var i;
