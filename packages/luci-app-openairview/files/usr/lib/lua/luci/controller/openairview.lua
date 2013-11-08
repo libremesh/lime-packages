@@ -18,7 +18,8 @@ function index()
    page = entry({"admin", "openairview"}, alias({"admin", "openairview", "stations"}), _("OpenAirView"), 50)
    page.index = true
 
-   entry({"admin", "openairview", "stations"}, template("openairview/stations"), _("Stations"), 1)
+   page = entry({"admin", "openairview", "stations"}, template("openairview/stations"), _("Stations"), 1)
+   page.leaf = true
 
    page = entry({"admin", "openairview", "spectral_scan"}, template("openairview/spectral_scan"), _("Spectral Scan"), 2)
    page.leaf = true
@@ -28,6 +29,7 @@ function index()
 
    page = node("openairview", "json", "stations")
    page.target = call("action_json_stations")
+   page.leaf = true
 
    page = node("openairview", "json", "spectral_scan")
    page.target = call("action_json_spectral_scan")
@@ -36,7 +38,7 @@ function index()
 end
 
 
-function action_json_stations()
+function action_json_stations(device)
 
    local netm = require "luci.model.network"
 
@@ -90,9 +92,8 @@ function action_json_stations()
    end   
 
    local ntm = netm.init()
-   local net = ntm:get_wifinet('wlan0-1')
+   local net = ntm:get_wifinet(device)
    local net_links = network_links(ntm, net)
-   local query_string = os.getenv([[QUERY_STRING]])
 
    luci.http.prepare_content("application/json")
    luci.http.write_json(net_links)

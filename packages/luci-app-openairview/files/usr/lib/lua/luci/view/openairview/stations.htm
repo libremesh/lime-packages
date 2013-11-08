@@ -11,6 +11,22 @@ You may obtain a copy of the License at
 $Id$
 
 -%>
+
+<%-
+  local ntm = require "luci.model.network".init()
+
+  local dev
+  local devices = { }
+  for _, dev in luci.util.vspairs(luci.sys.net.devices()) do
+    if dev:match("^wlan%d") or dev:match("^ath%d") or dev:match("^wl%d") then
+      devices[#devices+1] = dev
+    end
+  end
+
+  local curdev = luci.dispatcher.context.requestpath
+        curdev = curdev[#curdev] ~= "stations" and curdev[#curdev] or devices[1]
+-%>
+
 <%+header%>
 
     <script language="javascript" type="text/javascript" src="<%=resource%>/jquery/jquery-1.4.js"></script>
@@ -19,6 +35,11 @@ $Id$
 
 <h2><a id="content" name="content"><%:Stations%></a></h2>
 
+<ul class="cbi-tabmenu">
+    <% for _, dev in ipairs(devices) do %>
+        <li class="cbi-tab<%= dev == curdev and "" or "-disabled" %>"><a href="<%=build_url("admin/openairview/stations", dev)%>"><%=pcdata(dev)%></a></li>
+    <% end %>
+</ul>
 
 <div id="placeholder" style="width:100%; height:400px;"></div>
 
@@ -39,7 +60,7 @@ $(function () {
 //        container: "#ref"
       }
     };    
-    var placeholder = $("#placeholder");
+    var placeholder = document.getElementById("placeholder");
 
     graph = $.plot(placeholder, [], options);
 
@@ -47,10 +68,11 @@ $(function () {
     var round = 0;
     var keep_rounds = 20;
     var inactive_threshold = 1000;
-    var round_time = 500;
+    var round_time = 1;
 
-    function fetchData() {
-      function onDataReceived(series) {
+    /* render datasets, start update interval */
+    XHR.poll(round_time, '<%=build_url("openairview/json/stations", curdev)%>', null,
+      function(x, series) {
         for (i=0;i<series.length;i++) {
           if (seriesCollection[series[i].station_hostname] == undefined) {
             seriesCollection[series[i].station_hostname] = [];
@@ -76,18 +98,7 @@ $(function () {
         graph.draw();
         round = round + 1;
       }
-
-      $.ajax({
-        url: '<%=luci.dispatcher.build_url("openairview/json/stations")%>',
-        method: 'GET',
-        dataType: 'json',
-        success: onDataReceived
-      });
-
-      setTimeout(fetchData, round_time);
-    }
-
-    fetchData();
+    );
   });
 
 </script>
