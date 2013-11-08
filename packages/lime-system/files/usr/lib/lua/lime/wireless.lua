@@ -41,9 +41,9 @@ function wireless.configure()
         local is_5ghz = iw[t].hwmodelist(s[".name"]).a
         local ch = table.remove(is_5ghz and channel5 or channel2, 1)
         local mcr = is_5ghz and mcast_rate_5 or mcast_rate_2
-        local id = string.format("mesh%d", wifi_num)
+        local id = string.format("wlan%dah", wifi_num)
         local net = "lm_" .. id
-        local ifn = string.format("mesh%d", wifi_num)
+        local ifn = string.format("wlan%dah", wifi_num)
         local ifn_ap = string.format("wlan%dap", wifi_num)
 
         if not ch then
@@ -90,7 +90,7 @@ function wireless.configure()
         -- For layer2 use a vlan based off network_id, between 16 and 255, if uci doesn't specify a vlan
         if not vlans[2] then vlans[2] = math.floor(16 + ((tonumber(n1) / 255) * (255 - 16))) end
 
-        -- Add vlan interfaces on top of wlans, for each proto. Eg. lm_mesh0_batadv
+        -- Add vlan interfaces on top of wlans, for each proto. Eg. lm_wlan0ah_batadv
         local n
         for n = 1, #protocols do
             local interface = "lm_" .. id .. "_" .. protocols[n]
