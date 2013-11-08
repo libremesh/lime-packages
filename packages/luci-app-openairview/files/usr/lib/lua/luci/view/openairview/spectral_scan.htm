@@ -61,8 +61,22 @@ window.setTimeout(
 
     graph = $.plot(placeholder, data, options);
 
+    // setup control widget
+    var updateInterval = 3000;
+    $("#updateInterval").val(updateInterval).change(function () {
+        var v = $(this).val();
+        if (v && !isNaN(+v)) {
+            updateInterval = +v;
+            if (updateInterval < 10)
+                updateInterval = 10;
+            if (updateInterval > 10000)
+                updateInterval = 10000;
+            $(this).val("" + updateInterval);
+        }
+    });
+
     /* render datasets, start update interval */
-    XHR.poll(3, '<%=build_url("openairview/json/spectral_scan", curdev, bands)%>', null,
+    XHR.poll(20, '<%=build_url("openairview/json/spectral_scan", curdev, bands)%>', null,
       function(x, series) {
         console.log(x, series);
         var i;
@@ -80,6 +94,12 @@ window.setTimeout(
         graph.setData(data);
         graph.setupGrid();
         graph.draw();
+
+        function fetchData() {
+            XHR._t = 0; // reset run counter to force polling (unless it's busy)
+            if (XHR.running()) { XHR._r(); }
+        }
+        setTimeout(fetchData, updateInterval);
       }
     );
   }, 1000
@@ -95,5 +115,7 @@ window.setTimeout(
 </ul>
 
 <div id="placeholder" style="width:100%; height:300px;"></div>
+
+<p>Polling delay: <input id="updateInterval" type="text" value="" style="text-align: right; width:5em"> milliseconds</p>
 
 <%+footer%>

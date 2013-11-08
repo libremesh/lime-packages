@@ -43,6 +43,8 @@ $Id$
 
 <div id="placeholder" style="width:100%; height:400px;"></div>
 
+<p>Polling delay: <input id="updateInterval" type="text" value="" style="text-align: right; width:5em"> milliseconds</p>
+
 <div id="ref"></div>
 
 <script type="text/javascript">
@@ -68,10 +70,23 @@ $(function () {
     var round = 0;
     var keep_rounds = 20;
     var inactive_threshold = 1000;
-    var round_time = 1;
+
+    // setup control widget
+    var updateInterval = 500;
+    $("#updateInterval").val(updateInterval).change(function () {
+        var v = $(this).val();
+        if (v && !isNaN(+v)) {
+            updateInterval = +v;
+            if (updateInterval < 10)
+                updateInterval = 10;
+            if (updateInterval > 10000)
+                updateInterval = 10000;
+            $(this).val("" + updateInterval);
+        }
+    });
 
     /* render datasets, start update interval */
-    XHR.poll(round_time, '<%=build_url("openairview/json/stations", curdev)%>', null,
+    XHR.poll(20, '<%=build_url("openairview/json/stations", curdev)%>', null,
       function(x, series) {
         for (i=0;i<series.length;i++) {
           if (seriesCollection[series[i].station_hostname] == undefined) {
@@ -97,6 +112,12 @@ $(function () {
         graph.setupGrid();
         graph.draw();
         round = round + 1;
+
+        function fetchData() {
+            XHR._t = 0; // reset run counter to force polling (unless it's busy)
+            if (XHR.running()) { XHR._r(); }
+        }
+        setTimeout(fetchData, updateInterval);
       }
     );
   });
