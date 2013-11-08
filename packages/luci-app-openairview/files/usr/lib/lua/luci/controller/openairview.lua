@@ -31,10 +31,10 @@ function index()
    page.target = call("action_json_stations")
    page.leaf = true
 
-   page = node("openairview", "json", "spectral_scan")
+   node("admin", "openairview", "json")
+   page = node("admin", "openairview", "json", "spectral_scan")
    page.target = call("action_json_spectral_scan")
    page.leaf = true
-
 end
 
 
