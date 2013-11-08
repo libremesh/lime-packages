@@ -83,7 +83,7 @@ function action_json_stations(device)
             type = "wifi",
             station = station_mac,
             hostname = station_hostname,
-            station_hostname = bat_hosts[string.lower(station_mac)],
+            station_hostname = bat_hosts[string.lower(station_mac)] or station_mac,
             attributes = { signal = link_data.signal, channel = channel, inactive= link_data.inactive }
          }
          table.insert(station_links, wifilink)
