@@ -45,7 +45,7 @@ $Id$
 
 <p>Polling delay: <input id="updateInterval" type="text" value="" style="text-align: right; width:5em"> milliseconds</p>
 
-<div id="ref"></div>
+<div id="flotLegend" style="width: 0px"></div>
 
 <script type="text/javascript">
 
@@ -58,8 +58,8 @@ $(function () {
       yaxis: { minTickSize: 1, autoscaleMargin: 0.02 },
       legend: {
         position: "sw",
-        backgroundOpacity: 0
-//        container: "#ref"
+        backgroundOpacity: 0,
+        container: "#flotLegend"
       }
     };    
     var placeholder = document.getElementById("placeholder");
