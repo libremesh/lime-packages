@@ -26,6 +26,7 @@ function batadv.configure()
 
     uci:set("batman-adv", "bat0", "mesh")
     uci:set("batman-adv", "bat0", "bridge_loop_avoidance", "1")
+    uci:set("batman-adv", "bat0", "distributed_arp_table", "0")
     uci:save("batman-adv")
 end
 
