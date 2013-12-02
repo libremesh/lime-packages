@@ -19,7 +19,8 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=reghack
 PKG_VERSION:=20130625
-PKG_RELEASE:=2
+PKG_RELEASE=$(GIT_COMMIT_TSTAMP)
+GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
 LIBRE_MESH_NAME:=Libre Mesh
 LIBRE_MESH_PREFIX:=lime

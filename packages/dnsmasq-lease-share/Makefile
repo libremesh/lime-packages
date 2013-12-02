@@ -9,8 +9,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq-lease-share
-PKG_VERSION:=0.2
-PKG_RELEASE:=1
+PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
+GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
+GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
 include $(INCLUDE_DIR)/package.mk
 
