@@ -11,8 +11,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-mod-lime-basic
-PKG_VERSION:=2013-07-30-274
-PKG_RELEASE:=2
+PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
+GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
+GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
 include $(INCLUDE_DIR)/package.mk
 
