@@ -43,9 +43,6 @@ define Package/$(PKG_NAME)/conffiles
 	/etc/config/lime-defaults
 endef
 
-define Build/Configure
-endef
-
 define Build/Compile
 endef
 

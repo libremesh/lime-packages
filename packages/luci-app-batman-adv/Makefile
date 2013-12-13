@@ -23,9 +23,6 @@ define Package/$(PKG_NAME)
   DEPENDS:= +libc +kmod-batman-adv +luci-lib-jquery-1-4
 endef
 
-define Package/$(PKG_NAME)/description
-endef
-
 define Build/Compile
 endef
 

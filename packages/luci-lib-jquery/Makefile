@@ -21,9 +21,6 @@ define Package/$(PKG_NAME)
   TITLE:=jQuery library
 endef
 
-define Package/$(PKG_NAME)-1-4/description
-endef
-
 define Build/Compile
 endef
 

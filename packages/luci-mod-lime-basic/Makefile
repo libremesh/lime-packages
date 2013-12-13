@@ -27,7 +27,6 @@ define Package/$(PKG_NAME)-ssl
   TITLE:=Web interface for Libre-Mesh nodes (SSL support)
   MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
   DEPENDS:= +$(PKG_NAME) +libustream-cyassl +px5g
-
 endef
 
 define Package/$(PKG_NAME)/description
