@@ -1,15 +1,14 @@
 #
-# Copyright (C) 2013 OpenWrt.org
+# Copyright (C) 2006-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
 #
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=FFT_eval
+PKG_NAME:=fft-eval
 PKG_VERSION:=2013-06-26
-PKG_RELEASE:=$(PKG_SOURCE_VERSION)
+PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://github.com/libre-mesh/FFT_eval.git
@@ -19,10 +18,11 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/fft-eval
+define Package/$(PKG_NAME)
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Evaluates FFT samples from ath9k driver
+  MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   DEPENDS:= +libc
 endef
 
@@ -32,9 +32,9 @@ define Build/Compile
 	$(TARGET_CC) $(PKG_BUILD_DIR)/fft_eval.c -o $(PKG_BUILD_DIR)/fft_eval -lm
 endef
 
-define Package/fft-eval/install
+define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/fft_eval $(1)/usr/bin/fft_eval
 endef
 
-$(eval $(call BuildPackage,fft-eval))
+$(eval $(call BuildPackage,$(PKG_NAME)))
