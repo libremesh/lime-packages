@@ -2,15 +2,14 @@
 # Copyright (C) 2006-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
 #
-# Author: Gioacchino Mazzurco <gio@eigenlab.org>
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq-lease-share
-PKG_VERSION:=0.2
-PKG_RELEASE:=1
+PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
+GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
+GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -18,6 +17,7 @@ define Package/$(PKG_NAME)
  SECTION:=net
  CATEGORY:=LiMe
  TITLE:=dnsmasq lease sharing accross batman-adv mesh
+ MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
  URL:=http://libre-mesh.org
  DEPENDS:=+alfred +lua +libuci-lua
 endef
