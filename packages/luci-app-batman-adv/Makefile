@@ -13,7 +13,7 @@ GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/luci-app-batman-adv
+define Package/$(PKG_NAME)
   SECTION:=luci
   CATEGORY:=LuCI
   TITLE:=LuCI - Lua Configuration Interface
@@ -23,15 +23,15 @@ define Package/luci-app-batman-adv
   DEPENDS:= +libc +kmod-batman-adv +luci-lib-jquery-1-4
 endef
 
-define Package/luci-app-batman-adv/description
+define Package/$(PKG_NAME)/description
 endef
 
 define Build/Compile
 endef
 
-define Package/luci-app-batman-adv/install
+define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
 endef
 
-$(eval $(call BuildPackage,luci-app-batman-adv))
+$(eval $(call BuildPackage,$(PKG_NAME)))

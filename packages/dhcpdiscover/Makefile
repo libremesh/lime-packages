@@ -11,19 +11,17 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/dhcpdiscover
-
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-define Package/dhcpdiscover
+define Package/$(PKG_NAME)
  SECTION:=net
  CATEGORY:=Network
- TITLE:=dhcpdiscover
+ TITLE:=$(PKG_NAME)
  MAINTAINER:=p4u <pau@dabax.net>
 endef
 
-define Package/dhcpdiscover/description
+define Package/$(PKG_NAME)/description
  Brings some information about the existing DHCP servers in the network without getting a leasse
 endef
 
@@ -32,9 +30,9 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
-define Package/dhcpdiscover/install
+define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/dhcpdiscover $(1)/bin/
 endef
 
-$(eval $(call BuildPackage,dhcpdiscover))
+$(eval $(call BuildPackage,$(PKG_NAME)))

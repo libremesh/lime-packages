@@ -17,7 +17,7 @@ LIME_CODENAME:=bigbang
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/lime-webui
+define Package/$(PKG_NAME)
   TITLE:=libre-mesh web user interface based on LUCI
   SECTION:=net
   CATEGORY:=LiMe
@@ -26,7 +26,7 @@ define Package/lime-webui
   DEPENDS:=+luci +luci-app-bmx6 +luci-app-batman-adv
 endef
 
-define Package/lime-webui/description
+define Package/$(PKG_NAME)/description
 	Web interface for Libre-Mesh
 endef
 
@@ -39,7 +39,7 @@ define Build/Compile
 	@sed -i '/^--!.*/d' ./build/*.lua
 endef
 
-define Package/lime-webui/install
+define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/model/cbi/lime
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/view/lime
@@ -50,4 +50,4 @@ define Package/lime-webui/install
 	$(CP) ./build/static/* $(1)/www/luci-static/resources/lime/
 endef
 
-$(eval $(call BuildPackage,lime-webui))
+$(eval $(call BuildPackage,$(PKG_NAME)))
