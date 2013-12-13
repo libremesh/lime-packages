@@ -7,3 +7,5 @@ echo " ---------------------------------------------------" >> /etc/banner
 echo "" >> /etc/banner
 echo " http://libre-mesh.org" >> /etc/banner
 echo " ---------------------------------------------------" >> /etc/banner
+
+exit 0
