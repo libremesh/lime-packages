@@ -13,7 +13,7 @@ GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/altermap-agent
+define Package/$(PKG_NAME)
   SECTION:=admin
   CATEGORY:=Administration
   TITLE:=Send system information to an AlterMap server
@@ -21,16 +21,16 @@ define Package/altermap-agent
   DEPENDS:= +luci-lib-core +luci-lib-httpclient +luci-lib-json +luci-lib-nixio +libuci-lua
 endef
 
-define Package/altermap-agent/description
+define Package/$(PKG_NAME)/description
 Small script that collects info (network settings, wifi stations, etc) from a router, and sends it to a map server.
 endef
 
 define Build/Compile
 endef
 
-define Package/altermap-agent/install
+define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
 endef
 
-$(eval $(call BuildPackage,altermap-agent))
+$(eval $(call BuildPackage,$(PKG_NAME)))

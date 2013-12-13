@@ -13,7 +13,7 @@ GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/luci-app-openairview
+define Package/$(PKG_NAME)
   SECTION:=luci
   CATEGORY:=LuCI
   TITLE:=LuCI - Lua Configuration Interface
@@ -23,7 +23,7 @@ define Package/luci-app-openairview
   DEPENDS:= +libc +fft-eval +luci-lib-jquery-1-4 +luci-lib-json
 endef
 
-define Package/luci-app-openairview/description
+define Package/$(PKG_NAME)/description
 Includes a realtime spectral scan for ath9k chipsets,
 a realtime plot of wifi neighbours signal (think "iw station dump")
 and a site survey of wifi networks, with signal plots (think "iw scan")
@@ -32,9 +32,9 @@ endef
 define Build/Compile
 endef
 
-define Package/luci-app-openairview/install
+define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
 endef
 
-$(eval $(call BuildPackage,luci-app-openairview))
+$(eval $(call BuildPackage,$(PKG_NAME)))

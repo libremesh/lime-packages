@@ -13,7 +13,7 @@ GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/luci-mod-lime-basic
+define Package/$(PKG_NAME)
   SECTION:=admin
   CATEGORY:=Administration
   TITLE:=Web interface for Libre-Mesh nodes
@@ -21,32 +21,32 @@ define Package/luci-mod-lime-basic
   DEPENDS:= +uhttpd +luci-theme-bootstrap +libiwinfo-lua +luci-mod-admin-core
 endef
 
-define Package/luci-mod-lime-basic-ssl
+define Package/$(PKG_NAME)-ssl
   SECTION:=admin
   CATEGORY:=Administration
   TITLE:=Web interface for Libre-Mesh nodes (SSL support)
   MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
-  DEPENDS:= +luci-mod-lime-basic +libustream-cyassl +px5g
+  DEPENDS:= +$(PKG_NAME) +libustream-cyassl +px5g
 
 endef
 
-define Package/luci-mod-lime-basic/description
+define Package/$(PKG_NAME)/description
 Minimal and simple web app to configure a libre-mesh node.
 endef
 
 define Build/Compile
 endef
 
-define Package/luci-mod-lime-basic/install
+define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
 endef
 
-define Package/luci-mod-lime-basic-ssl/install
+define Package/$(PKG_NAME)-ssl/install
 	true
 endef
 
-define Package/luci-mod-lime-basic/postinst
+define Package/$(PKG_NAME)/postinst
 #!/bin/sh
 echo "Patching link in bootstrap no-root-password warning"
 sed 's|admin/system/admin|altermesh/system/passwd|' \
@@ -54,7 +54,7 @@ sed 's|admin/system/admin|altermesh/system/passwd|' \
 exit 0
 endef
 
-define Package/luci-mod-lime-basic/prerm
+define Package/$(PKG_NAME)/prerm
 #!/bin/sh
 echo "Reverting link in bootstrap no-root-password warning"
 sed 's|altermesh/system/passwd|admin/system/admin|' \
@@ -62,5 +62,5 @@ sed 's|altermesh/system/passwd|admin/system/admin|' \
 exit 0
 endef
 
-$(eval $(call BuildPackage,luci-mod-lime-basic))
-$(eval $(call BuildPackage,luci-mod-lime-basic-ssl))
+$(eval $(call BuildPackage,$(PKG_NAME)))
+$(eval $(call BuildPackage,$(PKG_NAME)-ssl))

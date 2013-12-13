@@ -18,7 +18,7 @@ LIME_CODENAME:=bigbang
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/lime-system
+define Package/$(PKG_NAME)
   TITLE:=libre-mesh system files
   SECTION:=net
   CATEGORY:=LiMe
@@ -34,11 +34,11 @@ define Package/lime-system
   +dnsmasq-lease-share
 endef
 
-define Package/lime-system/description
+define Package/$(PKG_NAME)/description
 	Basic system files for LiMe node
 endef
 
-define Package/lime-system/conffiles
+define Package/$(PKG_NAME)/conffiles
 	/etc/config/lime
 	/etc/config/lime-defaults
 endef
@@ -49,7 +49,7 @@ endef
 define Build/Compile
 endef
 
-define Package/lime-system/install
+define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/lime/
 	$(CP) ./files/* $(1)/
 	echo "LIME_ID=LiMe" > $(1)/etc/lime/lime.release
@@ -61,4 +61,4 @@ define Package/lime-system/install
 	echo "LIME_DESCRIPTION=\"LiMe $(LIME_CODENAME) $(LIME_RELEASE), $(BRANCH_GIT) rev.$(REV_GIT)-$(LIME_BUILDDATE)\"" >> $(1)/etc/lime/lime.release
 endef
 
-$(eval $(call BuildPackage,lime-system))
+$(eval $(call BuildPackage,$(PKG_NAME)))
