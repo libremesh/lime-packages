@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
   TITLE:=LuCI - Lua Configuration Interface
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   SUBMENU:=3. Applications
-  TITLE:=Plots and tools that help visualize the spectrum and wifi neighbours
+  TITLE:=Visualize the spectrum and wifi neighbours
   DEPENDS:= +libc +fft-eval +luci-lib-jquery-1-4 +luci-lib-json
 endef
 

@@ -12,7 +12,6 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 LIME_BUILDDATE:=$(shell date +%Y%m%d_%H%M)
 LIME_CODENAME:=bigbang
 
