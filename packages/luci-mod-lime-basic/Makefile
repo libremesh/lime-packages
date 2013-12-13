@@ -1,11 +1,7 @@
 #
-# Copyright (C) 2013 Santiago Piccinini
+# Copyright (C) 2006-2013 OpenWrt.org
 #
-# This is free software, licensed under the Apache License, Version 2.0 (the "License")
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
+# This is free software, licensed under the GNU General Public License v3.
 #
 
 include $(TOPDIR)/rules.mk
@@ -23,7 +19,6 @@ define Package/luci-mod-lime-basic
   TITLE:=Web interface for Libre-Mesh nodes
   MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
   DEPENDS:= +uhttpd +luci-theme-bootstrap +libiwinfo-lua +luci-mod-admin-core
-
 endef
 
 define Package/luci-mod-lime-basic-ssl

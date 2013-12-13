@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012 Gui Iribarren
+# Copyright (C) 2006-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v3.
 #
