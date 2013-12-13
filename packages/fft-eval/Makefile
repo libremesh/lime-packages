@@ -1,8 +1,7 @@
 #
-# Copyright (C) 2013 OpenWrt.org
+# Copyright (C) 2006-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
 #
 
 include $(TOPDIR)/rules.mk
@@ -23,6 +22,7 @@ define Package/fft-eval
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Evaluates FFT samples from ath9k driver
+  MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   DEPENDS:= +libc
 endef
 

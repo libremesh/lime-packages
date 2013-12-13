@@ -2,9 +2,7 @@
 # Copyright (C) 2006-2013 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
 #
-# Author: Gioacchino Mazzurco <gio@eigenlab.org>
 
 include $(TOPDIR)/rules.mk
 
@@ -19,6 +17,7 @@ define Package/$(PKG_NAME)
  SECTION:=net
  CATEGORY:=LiMe
  TITLE:=dnsmasq lease sharing accross batman-adv mesh
+ MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
  URL:=http://libre-mesh.org
  DEPENDS:=+alfred +lua +libuci-lua
 endef
