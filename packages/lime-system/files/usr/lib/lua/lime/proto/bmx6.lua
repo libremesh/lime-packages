@@ -12,7 +12,7 @@ function bmx6.setup_interface(interface, ifname)
     uci:set("network", interface, "ifname", ifname)
     uci:set("network", interface, "proto", "none")
     uci:set("network", interface, "auto", "1")
-    uci:set("network", interface, "mtu", "1350")
+    uci:set("network", interface, "mtu", "1398")
     uci:save("network")
 end
 
