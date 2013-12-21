@@ -40,13 +40,17 @@ define Package/lime-webui/description
 	Web interface for Libre-Mesh
 endef
 
+define Build/Prepare
+	@rm -rf $(PKG_BUILD_DIR) || true
+	mkdir -p $(PKG_BUILD_DIR)
+endef
+
 define Build/Configure
 endef
 
 define Build/Compile
-	@rm -rf ./build || true
-	@cp -r ./src ./build
-	@sed -i '/^--!.*/d' ./build/*.lua
+	@cp -r ./src/. $(PKG_BUILD_DIR)/
+	@find $(PKG_BUILD_DIR)/ -name "*.lua" -exec sed -i '/^--!.*/d' {} \;
 endef
 
 define Package/lime-webui/install
@@ -54,10 +58,10 @@ define Package/lime-webui/install
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/view/lime
 	$(INSTALL_DIR) $(1)/www/luci-static/resources/lime
-	$(CP) ./build/model/* $(1)/usr/lib/lua/luci/model/cbi/lime/
-	$(CP) ./build/controller/* $(1)/usr/lib/lua/luci/controller/
-	$(CP) ./build/view/* $(1)/usr/lib/lua/luci/view/lime/
-	$(CP) ./build/static/* $(1)/www/luci-static/resources/lime/
+	$(CP) $(PKG_BUILD_DIR)/model/* $(1)/usr/lib/lua/luci/model/cbi/lime/
+	$(CP) $(PKG_BUILD_DIR)/controller/* $(1)/usr/lib/lua/luci/controller/
+	$(CP) $(PKG_BUILD_DIR)/view/* $(1)/usr/lib/lua/luci/view/lime/
+	$(CP) $(PKG_BUILD_DIR)/static/* $(1)/www/luci-static/resources/lime/
 endef
 
 $(eval $(call BuildPackage,lime-webui))
