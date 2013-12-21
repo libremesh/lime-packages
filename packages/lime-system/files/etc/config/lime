@@ -10,13 +10,9 @@ config lime network
 	list protos bmx6
 	list protos batadv
 
-	# ipv4_net and ipv6_net are the networks that each node will use for its own.
-	# P = protocol identifier (0,1,2...) + 10 for interface
-	# R1 = 8 bits random number, probably comming from MAC
-	# R2 = 8 bits random number, probably comming from MAC
-	# R3 = 8 bits random number, probably comming from MAC
-	option ipv4_net 10.N1.N2.R3/24
-	option ipv6_net fddf:caN1:N2N3:0000::R1:R2R3/64
+	# Parametrizable adrresses Mn will be substituted with the n'th byte of the primary_dev MAC
+	option ipv4_address 100.64.M1.M2/24
+	option ipv6_address caca:d0:M1:M4M3::M6/64
 
 config lime wireless
 	option ssid LiMe
