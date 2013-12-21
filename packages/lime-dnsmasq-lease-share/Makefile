@@ -57,7 +57,7 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	@mv $(PKG_BUILD_DIR)/$(PKG_NAME).lua $(1)/usr/bin/$(PKG_NAME)
+	@cp $(PKG_BUILD_DIR)/$(PKG_NAME).lua $(1)/usr/bin/$(PKG_NAME)
 	@chmod +x $(1)/usr/bin/$(PKG_NAME)
 endef
 
