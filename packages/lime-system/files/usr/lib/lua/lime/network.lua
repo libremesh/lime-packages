@@ -135,6 +135,9 @@ end
 
 function network.clean()
     print("Clearing network config...")
+    
+    uci:delete("network", "globals", "ula_prefix")
+    
     uci:foreach("network", "interface", function(s)
         if s[".name"]:match("^lm_") then
             uci:delete("network", s[".name"])
