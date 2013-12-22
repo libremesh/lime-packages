@@ -51,12 +51,12 @@ function network.generate_address(p, n)
 	local ipv6_template = assert(uci:get("lime", "network", "ipv6_address"))
 	local pm = primary_mac()
 	
-	for i=1,1,6 do
+	for i=1,6,1 do
 		ipv6_template = ipv6_template:gsub("M" .. i, pm[i])
 		ipv4_template = ipv4_template:gsub("M" .. i, tonumber(pm[i], 16))
 	end
 
-	return ipv4_template, ipv6_template
+	return ip.IPv4(ipv4_template), ip.IPv6(ipv6_template)
 end
 
 function network.setup_lan(ipv4, ipv6)
