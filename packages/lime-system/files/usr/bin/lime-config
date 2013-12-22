@@ -19,7 +19,7 @@ end
 
 function primary_mac()
     local dev = assert(uci:get("lime", "network", "primary_dev"))
-    local mac = assert(fs.readfile("/sys/class/net/"..dev.."/address"))
+    local mac = assert(fs.readfile("/sys/class/net/"..dev.."/address")):gsub("\n","")
     return split(mac, ":")
 end
 
