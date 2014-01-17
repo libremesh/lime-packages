@@ -1,1 +1,55 @@
-# This file will contain default config, that each distro built upon would override editing /etc/config/lime
+
+# System option
+
+config lime system
+	option hostname LiMeNode
+
+
+# Network general option
+
+config lime network
+	option primary_dev eth0                                                # The mac address of this device will be used in different places
+	option main_ipv4_address 100.64.0.1/24                                 # Parametrizable main IPv4 address Mn will be substituted with the n'th byte of the primary_dev MAC
+	option main_ipv6_address caca::1/64                                    # Parametrizable main IPv6 address Mn will be substituted with the n'th byte of the primary_dev MAC
+	list protocols bmx6:12
+	list protocols batadv:11
+
+
+# WiFi general options
+
+config lime wifi
+	option public_essid 'LiMe'
+	option mesh_bssid 'ca:fe:00:c0:ff:ee'
+	list mesh_channel_2ghz '11'
+	list mesh_channel_2ghz '6'
+	list mesh_channel_5ghz '36+'
+	option mesh_mcast_rate_2ghz '24000'
+	option mesh_mcast_rate_5ghz '6000'
+
+
+# WiFi interface specific options ( override general option )
+
+config wifi phy0
+	option channel '36+'
+	option mrate '6000'
+ 
+config wifi phy1
+	option channel '1'
+	option mrate '54000'
+
+
+# Network interface specific options ( override general option )
+
+config net eth1
+	list protocols 'bmx6'
+	list protocols 'wan'
+
+config net eth0
+	list protocols 'bmx6:12'
+	list protocols 'lan'
+	list protocols 'batadv:31'
+
+config net phy0
+	list protocols 'bmx6:12'
+	list protocols 'batadv:31'
+	list protocols 'lan'

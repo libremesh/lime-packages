@@ -1,24 +1,47 @@
+
+# System option
+
+config lime system
+	option hostname LiMeNode
+
+
+# Network general option
+
 config lime network
-	# primary network device to get the MAC addres
-	option primary_dev eth0
+	option primary_dev eth0                                                # The mac address of this device will be used in different places
+	option main_ipv4_address 100.64.M1.M2/24                               # Parametrizable main IPv4 address Mn will be substituted with the n'th byte of the primary_dev MAC
+	option main_ipv6_address caca:d0:M1:M4M3::M6/64                        # Parametrizable main IPv6 address Mn will be substituted with the n'th byte of the primary_dev MAC
 
-	# first vlan tag for first protocol
-	list vlans 10
-#	list vlans 200
 
-	# protocols available
-	list protos bmx6
-	list protos batadv
+# WiFi general options
 
-	# Parametrizable adrresses Mn will be substituted with the n'th byte of the primary_dev MAC
-	option ipv4_address 100.64.M1.M2/24
-	option ipv6_address caca:d0:M1:M4M3::M6/64
+config lime wifi
+	option public_essid 'LiMe'
+	option mesh_bssid 'ca:fe:00:c0:ff:ee'
 
-config lime wireless
-	option ssid LiMe
-	option mesh_bssid ca:fe:00:c0:ff:ee
-	option mesh_mcast_rate_2ghz 24000
-	option mesh_mcast_rate_5ghz 6000
-	list mesh_channel_2ghz 11
-	list mesh_channel_2ghz 6
-	list mesh_channel_5ghz 36+
+
+# WiFi interface specific options ( override general option )
+
+config wifi phy0
+	option channel '36+'
+	option mrate '6000'
+ 
+config wifi phy1
+	option channel '1'
+	option mrate '54000'
+
+
+# Network interface specific options ( override general option )
+
+config net eth0
+	list protocols 'lan'
+
+config net eth1
+	list protocols 'bmx6:12'
+	list protocols 'wan'
+	list protocols 'batadv:31'
+
+config net phy0
+	list protocols 'bmx6:12'
+	list protocols 'batadv:31'
+	list protocols 'lan'
