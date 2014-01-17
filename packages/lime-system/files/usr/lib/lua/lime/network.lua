@@ -4,46 +4,25 @@ network = {}
 
 local bit = require "nixio".bit
 local ip = require "luci.ip"
+local config = require "lime.config"
+local utils = require "lime.utils"
 
-local function hex(x)
-    return string.format("%02x", x)
+function network.primary_interface()
+	return config:get("network", "primary_interface")
 end
 
-local function split(string, sep)
-    local ret = {}
-    for token in string.gmatch(string, "[^"..sep.."]+") do table.insert(ret, token) end
-    return ret
+function network.primary_mac()
+    local mac = assert(fs.readfile("/sys/class/net/"..network.primary_interface().."/address")):gsub("\n","")
+    return utils.split(mac, ":")
 end
 
 function network.eui64(mac)
-    local function flip_7th_bit(x) return hex(bit.bxor(tonumber(x, 16), 2)) end
+    local function flip_7th_bit(x) return utils.hex(bit.bxor(tonumber(x, 16), 2)) end
 
-    local t = split(mac, ":")
+    local t = utils.split(mac, ":")
     t[1] = flip_7th_bit(t[1])
 
     return string.format("%s%s:%sff:fe%s:%s%s", t[1], t[2], t[3], t[4], t[5], t[6])
-end
-
---! @DEPRECATED
-function network.generate_host(ipprefix, hexsuffix)
-    -- use only the 8 rightmost nibbles for IPv4, or 32 nibbles for IPv6
-    hexsuffix = hexsuffix:sub((ipprefix[1] == 4) and -8 or -32)
-
-    -- convert hexsuffix into a cidr instance, using same prefix and family of ipprefix
-    local ipsuffix = ip.Hex(hexsuffix, ipprefix:prefix(), ipprefix[1])
-
-    local ipaddress = ipprefix
-    -- if it's a network prefix, fill in host bits with ipsuffix
-    if ipprefix:equal(ipprefix:network()) then
-        for i in ipairs(ipprefix[2]) do
-            -- reset ipsuffix netmask bits to 0
-            ipsuffix[2][i] = bit.bxor(ipsuffix[2][i],ipsuffix:network()[2][i])
-            -- fill in ipaddress host part, with ipsuffix bits
-            ipaddress[2][i] = bit.bor(ipaddress[2][i],ipsuffix[2][i])
-        end
-    end
-
-    return ipaddress
 end
 
 function network.generate_address(p, n)
