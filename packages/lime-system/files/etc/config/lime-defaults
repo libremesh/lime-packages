@@ -1,3 +1,4 @@
+# Beware this file is not supposed to store specific configuration, like "config net eth0"
 
 # System option
 
@@ -8,7 +9,7 @@ config lime system
 # Network general option
 
 config lime network
-	option primary_dev eth0                                                # The mac address of this device will be used in different places
+	option primary_interface eth0                                          # The mac address of this device will be used in different places
 	option main_ipv4_address 100.64.0.1/24                                 # Parametrizable main IPv4 address Mn will be substituted with the n'th byte of the primary_dev MAC
 	option main_ipv6_address caca::1/64                                    # Parametrizable main IPv6 address Mn will be substituted with the n'th byte of the primary_dev MAC
 	list protocols bmx6:12
