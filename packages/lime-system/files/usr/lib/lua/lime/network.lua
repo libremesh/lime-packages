@@ -7,13 +7,30 @@ local ip = require "luci.ip"
 local config = require "lime.config"
 local utils = require "lime.utils"
 
+function network.get_mac(ifname)
+	local mac = assert(fs.readfile("/sys/class/net/"..ifname.."/address")):gsub("\n","")
+	return utils.split(mac, ":")
+end
+
 function network.primary_interface()
 	return config:get("network", "primary_interface")
 end
 
 function network.primary_mac()
-    local mac = assert(fs.readfile("/sys/class/net/"..network.primary_interface().."/address")):gsub("\n","")
-    return utils.split(mac, ":")
+	return network.get_mac(network.primary_interface())
+end
+
+function network.primary_address()
+	local ipv4_template = config:get("network", "ipv4_address")
+	local ipv6_template = config:get("network", "ipv6_address")
+	local pm = network.primary_mac()
+	
+	for i=1,6,1 do
+		ipv6_template = ipv6_template:gsub("M" .. i, pm[i])
+		ipv4_template = ipv4_template:gsub("M" .. i, tonumber(pm[i], 16))
+	end
+
+	return ip.IPv4(ipv4_template), ip.IPv6(ipv6_template) 
 end
 
 function network.eui64(mac)
@@ -25,27 +42,16 @@ function network.eui64(mac)
     return string.format("%s%s:%sff:fe%s:%s%s", t[1], t[2], t[3], t[4], t[5], t[6])
 end
 
-function network.generate_address(p, n)
-	local ipv4_template = assert(uci:get("lime", "network", "ipv4_address"))
-	local ipv6_template = assert(uci:get("lime", "network", "ipv6_address"))
-	local pm = primary_mac()
-	
-	for i=1,6,1 do
-		ipv6_template = ipv6_template:gsub("M" .. i, pm[i])
-		ipv4_template = ipv4_template:gsub("M" .. i, tonumber(pm[i], 16))
-	end
-
-	return ip.IPv4(ipv4_template), ip.IPv6(ipv6_template)
-end
-
+--@DEPRECATED We should implement a proto for this too
 function network.setup_lan(ipv4, ipv6)
-    uci:set("network", "lan", "ip6addr", ipv6:string())
-    uci:set("network", "lan", "ipaddr", ipv4:host():string())
-    uci:set("network", "lan", "netmask", ipv4:mask():string())
-    uci:set("network", "lan", "ifname", "eth0 bat0")
-    uci:save("network")
+	uci:set("network", "lan", "ip6addr", ipv6:string())
+	uci:set("network", "lan", "ipaddr", ipv4:host():string())
+	uci:set("network", "lan", "netmask", ipv4:mask():string())
+	uci:set("network", "lan", "ifname", "eth0 bat0")
+	uci:save("network")
 end
 
+--@DEPRECATED We should implement a proto for this too
 function network.setup_anygw(ipv4, ipv6)
     local n1, n2, n3 = network_id()
 
@@ -124,45 +130,75 @@ function network.clean()
     end)
 end
 
-function network.init()
-    -- TODO
+function network.scandevices()
+	devices = {}
+	local devList = {}
+	local devInd = 0
+	
+	-- Scan for plain ethernet interface
+	devList = utils.split(io.popen("ls -1 /sys/class/net/"):read("*a"), "\n")
+	for i=1,#devList do
+		if devList[i]:match("eth%d") then
+			devices[devInd] = devList[i]
+			devInd = devInd + 1
+		end
+	end
+	
+	-- Scan for mac80211 wifi devices
+	devList = utils.split(io.popen("ls -1 /sys/class/ieee80211/"):read("*a"), "\n")
+	for i=1,#devList do
+		if devList[i]:match("phy%d") then
+			devices[devInd] = devList[i]
+			devInd = devInd + 1
+		end
+	end
+	
+	-- When we will support other device type just scan for them here
+	
+	return devices
 end
 
 function network.configure()
-    local protocols = assert(uci:get("lime", "network", "protos"))
-    local vlans = assert(uci:get("lime", "network", "vlans"))
-    local n1, n2, n3 = network_id()
-    local m4, m5, m6 = node_id()
-    local ipv4, ipv6 = network.generate_address(1, 0) -- for br-lan
+	network.clean()
+	
+	local protocols = config:get("network", "protocols")
+	local ipv4, ipv6 = network.primary_address() -- for br-lan
 
-    network.clean()
+	network.setup_rp_filter()
+	network.setup_lan(ipv4, ipv6)
+	network.setup_anygw(ipv4, ipv6)
 
-    network.setup_rp_filter()
-    network.setup_lan(ipv4, ipv6)
-    network.setup_anygw(ipv4, ipv6)
-
-    -- For layer2 use a vlan based off network_id, between 16 and 255, if uci doesn't specify a vlan
-    if not vlans[2] then vlans[2] = math.floor(16 + ((tonumber(n1) / 255) * (255 - 16))) end
-
-    -- TODO:
-    -- for each net ; if protocols = wan or lan ; setup_network_interface_lan
-    --             elsif protocols = bmx6 or batadv ; setup_network_interface_ .. protocol
-    -- FIXME: currently adds vlan interfaces on top of ethernet, for each proto (batadv or bmx6).
-    --        Eg. lm_eth_batadv
-    local n
-    for n = 1, #protocols do
-        local interface = "lm_eth_" .. protocols[n]
-        local ifname = string.format("eth1.%d", vlans[n])
-        local ipv4, ipv6 = network.generate_address(n, 0)
-
-        local proto = require("lime.proto." .. protocols[n])
-        proto.configure(ipv4, ipv6)
-        proto.setup_interface(interface, ifname, ipv4, ipv6)
-    end
+	local specificIfaces = {};
+	config.foreach("net", function(iface) specificIfaces[iface[".name"]] = iface end)
+	
+	-- Scan for fisical devices, if there is a specific config apply that otherwise apply general config
+	local fisDev = network.scandevices()
+	for i=1,#fisDev do
+		local pif = specificIfaces[fisDev[i]]
+		if pif then
+			for j=1,#pif["protocols"] do
+				local args = utils.split(pif["protocols"][j], ":")
+				if args[1] == "manual" then break end -- If manual is specified do not configure interface
+				local proto = require("lime.proto."..args[1])
+				proto.setup_interface(fisDev[i], args)
+			end
+		else
+			local protos = config.get("net","protocols")
+			for p=1,#protos do
+				local args = utils.split(protos[p], ":")
+				local proto = require("lime.proto."..args[1])
+				proto.setup_interface(fisDev[i], args)
+			end
+		end
+	end
 end
 
 function network.apply()
     -- TODO (i.e. /etc/init.d/network restart)
+end
+
+function network.init()
+    -- TODO
 end
 
 return network
