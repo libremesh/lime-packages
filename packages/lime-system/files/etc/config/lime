@@ -41,6 +41,10 @@ config net eth1
 	list protocols 'wan'
 	list protocols 'batadv:31'
 
+config net eth5
+	option protocols 'manual'                                              # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
+
+
 config net phy0
 	list protocols 'bmx6:12'
 	list protocols 'batadv:31'
