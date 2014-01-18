@@ -4,7 +4,7 @@ batadv = {}
 
 function batadv.setup_interface(ifname, args)
 	local interface = network.limeIfNamePrefix..ifname.."_batadv"
-	local owrtFullIfname = "@"..network.limeIfNamePrefix..ifname; if args[2] then owrtFullIfname = owrtFullIfname..network.vlanSeparator..vlan
+	local owrtFullIfname = "@"..network.limeIfNamePrefix..ifname; if args[2] then owrtFullIfname = owrtFullIfname..network.vlanSeparator..vlan end
 
 	uci:set("network", interface, "interface")
 	uci:set("network", interface, "ifname", owrtFullIfname)
@@ -15,25 +15,25 @@ function batadv.setup_interface(ifname, args)
 end
 
 function batadv.clean()
-    print("Clearing batman-adv config...")
-    uci:delete("batman-adv", "bat0")
-    if not fs.lstat("/etc/config/batman-adv") then fs.writefile("/etc/config/batman-adv", "") end
+	print("Clearing batman-adv config...")
+	uci:delete("batman-adv", "bat0")
+	if not fs.lstat("/etc/config/batman-adv") then fs.writefile("/etc/config/batman-adv", "") end
 end
 
-function batadv.init()
-    -- TODO
-end
 
 function batadv.configure()
-    batadv.clean()
+	batadv.clean()
 
-    uci:set("batman-adv", "bat0", "mesh")
-    uci:set("batman-adv", "bat0", "bridge_loop_avoidance", "1")
-    uci:save("batman-adv")
+	uci:set("batman-adv", "bat0", "mesh")
+	uci:set("batman-adv", "bat0", "bridge_loop_avoidance", "1")
+
+	-- if anygw enabled disable DAT that doesn't play well with it
+	for _,proto in pairs(config.get("protocols")) do
+		if proto == "anygw" then uci:set("batman-adv", "bat0", "distributed_arp_table", "0") end
+	end
+	
+	uci:save("batman-adv")
 end
 
-function batadv.apply()
-    -- TODO (i.e. /etc/init.d/network restart)
-end
 
 return batadv
