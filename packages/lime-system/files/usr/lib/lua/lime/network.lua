@@ -79,30 +79,30 @@ function network.setup_anygw(ipv4, ipv6)
 	uci:set("network", pfr.."anygw_if", "ipaddr", anygw_ipv4:host():string())
 	uci:set("network", pfr.."anygw_if", "netmask", anygw_ipv4:mask():string())
 
-    local content = { insert = table.insert, concat = table.concat }
-    for line in io.lines("/etc/firewall.user") do
-        if not line:match("^ebtables ") then content:insert(line) end
-    end
-    content:insert("ebtables -A FORWARD -j DROP -d " .. anygw_mac)
-    content:insert("ebtables -t nat -A POSTROUTING -o bat0 -j DROP -s " .. anygw_mac)
-    fs.writefile("/etc/firewall.user", content:concat("\n").."\n")
+	local content = { insert = table.insert, concat = table.concat }
+	for line in io.lines("/etc/firewall.user") do
+		if not line:match("^ebtables ") then content:insert(line) end
+	end
+	content:insert("ebtables -A FORWARD -j DROP -d " .. anygw_mac)
+	content:insert("ebtables -t nat -A POSTROUTING -o bat0 -j DROP -s " .. anygw_mac)
+	fs.writefile("/etc/firewall.user", content:concat("\n").."\n")
 
-    -- IPv6 router advertisement for anygw interface
-    print("Enabling RA in dnsmasq...")
-    local content = { }
-    table.insert(content,               "enable-ra")
-    table.insert(content, string.format("dhcp-range=tag:anygw, %s, ra-names", anygw_ipv6:network(64):string()))
-    table.insert(content,               "dhcp-option=tag:anygw, option6:domain-search, lan")
-    table.insert(content, string.format("address=/anygw/%s", anygw_ipv6:host():string()))
-    table.insert(content, string.format("dhcp-option=tag:anygw, option:router, %s", anygw_ipv4:host():string()))
-    table.insert(content, string.format("dhcp-option=tag:anygw, option:dns-server, %s", anygw_ipv4:host():string()))
-    table.insert(content,               "dhcp-broadcast=tag:anygw")
-    table.insert(content,               "no-dhcp-interface=br-lan")
-    fs.writefile("/etc/dnsmasq.conf", table.concat(content, "\n").."\n")
+	-- IPv6 router advertisement for anygw interface
+	print("Enabling RA in dnsmasq...")
+	local content = { }
+	table.insert(content,               "enable-ra")
+	table.insert(content, string.format("dhcp-range=tag:anygw, %s, ra-names", anygw_ipv6:network(64):string()))
+	table.insert(content,               "dhcp-option=tag:anygw, option6:domain-search, lan")
+	table.insert(content, string.format("address=/anygw/%s", anygw_ipv6:host():string()))
+	table.insert(content, string.format("dhcp-option=tag:anygw, option:router, %s", anygw_ipv4:host():string()))
+	table.insert(content, string.format("dhcp-option=tag:anygw, option:dns-server, %s", anygw_ipv4:host():string()))
+	table.insert(content,               "dhcp-broadcast=tag:anygw")
+	table.insert(content,               "no-dhcp-interface=br-lan")
+	fs.writefile("/etc/dnsmasq.conf", table.concat(content, "\n").."\n")
 
-    -- and disable 6relayd
-    print("Disabling 6relayd...")
-    fs.writefile("/etc/config/6relayd", "")
+	-- and disable 6relayd
+	print("Disabling 6relayd...")
+	fs.writefile("/etc/config/6relayd", "")
 end
 
 function network.setup_rp_filter()
@@ -161,31 +161,33 @@ end
 function network.configure()
 	network.clean()
 	
-	local protocols = config:get("network", "protocols")
+	local generalProtocols = config:get("network", "protocols")
 	local ipv4, ipv6 = network.primary_address() -- for br-lan
 
 	network.setup_rp_filter()
 	network.setup_lan(ipv4, ipv6)
-	network.setup_anygw(ipv4, ipv6)
+	if generalProtocols["anygw"] then
+		network.setup_anygw(ipv4, ipv6)
+		generalProtocols["anygw"] = nil
+	end
 
 	local specificIfaces = {};
 	config.foreach("net", function(iface) specificIfaces[iface[".name"]] = iface end)
 	
 	-- Scan for fisical devices, if there is a specific config apply that otherwise apply general config
 	local fisDev = network.scandevices()
-	for i=1,#fisDev do
-		local pif = specificIfaces[fisDev[i]]
-		if pif then
-			for j=1,#pif["protocols"] do
-				local args = utils.split(pif["protocols"][j], ":")
+	for _,device pairs(fisDev) do
+		local owrtIf = specificIfaces[device]
+		if owrtIf then
+			for _,protoParams in pairs(owrtIf["protocols"]) do
+				local args = utils.split(protoParams, ":")
 				if args[1] == "manual" then break end -- If manual is specified do not configure interface
 				local proto = require("lime.proto."..args[1])
 				proto.setup_interface(fisDev[i], args)
 			end
 		else
-			local protos = config.get("net","protocols")
-			for p=1,#protos do
-				local args = utils.split(protos[p], ":")
+			for _,protoParams in pairs(generalProtocols) do
+				local args = utils.split(protoParams, ":")
 				local proto = require("lime.proto."..args[1])
 				proto.setup_interface(fisDev[i], args)
 			end
