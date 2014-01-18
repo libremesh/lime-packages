@@ -1,24 +1,28 @@
 #!/usr/bin/lua
 
+local network = require "lime.network"
+
 bmx6 = {}
 
-function bmx6.setup_interface(interface, ifname)
-    local real_ifname = ifname:gsub("^@lm_", "")
-    uci:set("bmx6", interface, "dev")
-    uci:set("bmx6", interface, "dev", real_ifname)
-    uci:save("bmx6")
+function bmx6.setup_interface(ifname, args)
+	local interface = network.limeIfNamePrefix..ifname
+	local linuxFullIfname = ifname; if args[2] then linuxFullIfname = linuxFullIfname..network.vlanSeparator..vlan
 
-    uci:set("network", interface, "interface")
-    uci:set("network", interface, "ifname", ifname)
-    uci:set("network", interface, "proto", "none")
-    uci:set("network", interface, "auto", "1")
-    uci:set("network", interface, "mtu", "1398")
-    uci:save("network")
+	uci:set("bmx6", interface, "dev")
+	uci:set("bmx6", interface, "dev", linuxFullIfname)
+	uci:save("bmx6")
+
+	uci:set("network", interface, "interface")
+	uci:set("network", interface, "ifname", linuxFullIfname)
+	uci:set("network", interface, "proto", "none")
+	uci:set("network", interface, "auto", "1")
+	uci:set("network", interface, "mtu", "1398")
+	uci:save("network")
 end
 
 function bmx6.clean()
-    print("Clearing bmx6 config...")
-    fs.writefile("/etc/config/bmx6", "")
+	print("Clearing bmx6 config...")
+	fs.writefile("/etc/config/bmx6", "")
 end
 
 function bmx6.init()

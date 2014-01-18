@@ -8,6 +8,8 @@ local config = require "lime.config"
 local utils = require "lime.utils"
 
 network.limeIfNamePrefix="lm_"
+network.protoParamsSeparator=":"
+network.vlanSeparator="."
 
 function network.get_mac(ifname)
 	local mac = assert(fs.readfile("/sys/class/net/"..ifname.."/address")):gsub("\n","")
@@ -180,14 +182,14 @@ function network.configure()
 		local owrtIf = specificIfaces[device]
 		if owrtIf then
 			for _,protoParams in pairs(owrtIf["protocols"]) do
-				local args = utils.split(protoParams, ":")
+				local args = utils.split(protoParams, network.protoParamsSeparator)
 				if args[1] == "manual" then break end -- If manual is specified do not configure interface
 				local proto = require("lime.proto."..args[1])
 				proto.setup_interface(fisDev[i], args)
 			end
 		else
 			for _,protoParams in pairs(generalProtocols) do
-				local args = utils.split(protoParams, ":")
+				local args = utils.split(protoParams, network.protoParamsSeparator)
 				local proto = require("lime.proto."..args[1])
 				proto.setup_interface(fisDev[i], args)
 			end
