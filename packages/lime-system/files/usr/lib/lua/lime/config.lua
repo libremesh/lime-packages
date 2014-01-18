@@ -11,5 +11,5 @@ function config.get(sectionname, option, default)
 end
 
 function config.foreach(configtype, callback)
-	config.uci:foreach("lime", configtype, callback)
+	return config.uci:foreach("lime", configtype, callback)
 end
