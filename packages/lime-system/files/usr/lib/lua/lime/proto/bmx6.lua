@@ -5,15 +5,15 @@ local network = require "lime.network"
 bmx6 = {}
 
 function bmx6.setup_interface(ifname, args)
-	local interface = network.limeIfNamePrefix..ifname
-	local linuxFullIfname = ifname; if args[2] then linuxFullIfname = linuxFullIfname..network.vlanSeparator..vlan
+	local interface = network.limeIfNamePrefix..ifname.."_bmx6"
+	local owrtFullIfname = "@"..network.limeIfNamePrefix..ifname; if args[2] then owrtFullIfname = owrtFullIfname..network.vlanSeparator..vlan
 
 	uci:set("bmx6", interface, "dev")
 	uci:set("bmx6", interface, "dev", linuxFullIfname)
 	uci:save("bmx6")
 
 	uci:set("network", interface, "interface")
-	uci:set("network", interface, "ifname", linuxFullIfname)
+	uci:set("network", interface, "ifname", owrtFullIfname)
 	uci:set("network", interface, "proto", "none")
 	uci:set("network", interface, "auto", "1")
 	uci:set("network", interface, "mtu", "1398")
