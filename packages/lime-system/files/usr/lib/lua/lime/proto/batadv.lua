@@ -3,11 +3,11 @@
 batadv = {}
 
 function batadv.setup_interface(ifname, args)
-	local interface = network.limeIfNamePrefix..ifname
-	local linuxFullIfname = ifname; if args[2] then linuxFullIfname = linuxFullIfname..network.vlanSeparator..vlan
+	local interface = network.limeIfNamePrefix..ifname.."_batadv"
+	local owrtFullIfname = "@"..network.limeIfNamePrefix..ifname; if args[2] then owrtFullIfname = owrtFullIfname..network.vlanSeparator..vlan
 
 	uci:set("network", interface, "interface")
-	uci:set("network", interface, "ifname", linuxFullIfname)
+	uci:set("network", interface, "ifname", owrtFullIfname)
 	uci:set("network", interface, "proto", "batadv")
 	uci:set("network", interface, "mesh", "bat0")
 	uci:set("network", interface, "mtu", "1528")
