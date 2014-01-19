@@ -16,3 +16,5 @@ end
 function utils.printf(fmt, ...)
     print(string.format(fmt, ...))
 end
+
+return utils

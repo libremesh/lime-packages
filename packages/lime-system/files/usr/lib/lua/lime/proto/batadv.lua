@@ -28,7 +28,7 @@ function batadv.configure()
 	uci:set("batman-adv", "bat0", "bridge_loop_avoidance", "1")
 
 	-- if anygw enabled disable DAT that doesn't play well with it
-	for _,proto in pairs(config.get("protocols")) do
+	for _,proto in pairs(config.get("network", "protocols")) do
 		if proto == "anygw" then uci:set("batman-adv", "bat0", "distributed_arp_table", "0") end
 	end
 	
