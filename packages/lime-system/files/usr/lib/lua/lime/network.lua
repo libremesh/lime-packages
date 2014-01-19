@@ -72,28 +72,22 @@ function network.clean()
 end
 
 function network.scandevices()
-	devices = {}
-	local devList = {}
-	local devInd = 0
-	
-	-- Scan for plain ethernet interface
-	devList = utils.split(io.popen("ls -1 /sys/class/net/"):read("*a"), "\n")
-	for i=1,#devList do
-		if devList[i]:match("eth%d") then
-			devices[devInd] = devList[i]
-			devInd = devInd + 1
+	local devices = {}
+
+	-- Scan for plain ethernet interfaces
+	for dev in string.gmatch(io.popen("ls -1 /sys/class/net/"):read("*a"), "\n") do
+		if dev:match("eth%d") then
+			table.insert(devices, dev)
 		end
 	end
-	
+
 	-- Scan for mac80211 wifi devices
-	devList = utils.split(io.popen("ls -1 /sys/class/ieee80211/"):read("*a"), "\n")
-	for i=1,#devList do
-		if devList[i]:match("phy%d") then
-			devices[devInd] = devList[i]
-			devInd = devInd + 1
+	for dev, in string.gmatch(io.popen("ls -1 /sys/class/ieee80211/"):read("*a"), "\n") do
+		if dev:match("phy%d") then
+			table.insert(devices, dev)
 		end
 	end
-	
+
 	-- When we will support other device type just scan for them here
 	
 	return devices

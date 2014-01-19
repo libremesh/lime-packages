@@ -2,6 +2,7 @@
 
 utils = {}
 
+-- Avoid this function as soon as you don't need a table
 function utils.split(string, sep)
     local ret = {}
     for token in string.gmatch(string, "[^"..sep.."]+") do table.insert(ret, token) end
