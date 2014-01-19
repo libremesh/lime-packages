@@ -17,7 +17,7 @@ function network.get_mac(ifname)
 end
 
 function network.primary_interface()
-	return config:get("network", "primary_interface")
+	return config.get("network", "primary_interface")
 end
 
 function network.primary_mac()
@@ -25,13 +25,13 @@ function network.primary_mac()
 end
 
 function network.primary_address()
-	local ipv4_template = config:get("network", "ipv4_address")
-	local ipv6_template = config:get("network", "ipv6_address")
+	local ipv4_template = config.get("network", "main_ipv4_address")
+	local ipv6_template = config.get("network", "main_ipv6_address")
 	local pm = network.primary_mac()
 	
 	for i=1,6,1 do
-		ipv6_template = ipv6_template:gsub("M" .. i, pm[i])
 		ipv4_template = ipv4_template:gsub("M" .. i, tonumber(pm[i], 16))
+		ipv6_template = ipv6_template:gsub("M" .. i, pm[i])
 	end
 
 	return ip.IPv4(ipv4_template), ip.IPv6(ipv6_template) 
@@ -82,7 +82,7 @@ function network.scandevices()
 	end
 
 	-- Scan for mac80211 wifi devices
-	for dev, in string.gmatch(io.popen("ls -1 /sys/class/ieee80211/"):read("*a"), "\n") do
+	for dev in string.gmatch(io.popen("ls -1 /sys/class/ieee80211/"):read("*a"), "\n") do
 		if dev:match("phy%d") then
 			table.insert(devices, dev)
 		end
@@ -98,9 +98,9 @@ function network.configure()
 	network.clean()
 	network.setup_rp_filter()
 
-	local generalProtocols = config:get("network", "protocols")
+	local generalProtocols = config.get("network", "protocols")
 	for _,protocol in pairs(generalProtocols) do
-		local proto = require("lime.proto"..protocol)
+		local proto = require("lime.proto."..utils.split(protocol,":")[1])
 		proto.configure()
 	end
 
@@ -109,7 +109,7 @@ function network.configure()
 	
 	-- Scan for fisical devices, if there is a specific config apply that otherwise apply general config
 	local fisDev = network.scandevices()
-	for _,device pairs(fisDev) do
+	for _,device in pairs(fisDev) do
 		local owrtIf = specificIfaces[device]
 		if owrtIf then
 			for _,protoParams in pairs(owrtIf["protocols"]) do

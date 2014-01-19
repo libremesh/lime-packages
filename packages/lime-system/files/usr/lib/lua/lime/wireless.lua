@@ -1,5 +1,7 @@
 #!/usr/bin/lua
 
+local config = requires("lime.config")
+
 wireless = {}
 
 function wireless.generate_ssid()
@@ -20,7 +22,7 @@ function wireless.init()
 end
 
 function wireless.configure()
-    local protocols = assert(uci:get("lime", "network", "protos"))
+    local protocols = assert(config.get("network", "protocols"))
     local vlans = assert(uci:get("lime", "network", "vlans"))
     local n1, n2, n3 = network_id()
     local m4, m5, m6 = node_id()
