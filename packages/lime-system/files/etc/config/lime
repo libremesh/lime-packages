@@ -17,19 +17,19 @@ config lime network
 # WiFi general options
 
 config lime wifi
-	option public_essid 'LiMe'
-	option mesh_bssid 'ca:fe:00:c0:ff:ee'
+	option ap_essid 'LiMe'
+	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
 
 
 # WiFi interface specific options ( override general option )
 
-config wifi phy0
-	option channel '36+'
-	option mrate '6000'
- 
-config wifi phy1
-	option channel '1'
-	option mrate '54000'
+config wifi radio1
+	option adhoc_channel_2ghz '11'
+	option adhoc_mcast_rate_2ghz '54000'
+	list modes 'adhoc'
+
+config wifi radio12
+	list modes 'manual'                                                    # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
 
 
 # Network interface specific options ( override general option )
@@ -46,7 +46,7 @@ config net eth1
 	list protocols 'batadv:31'
 
 config net eth5
-	option protocols 'manual'                                              # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
+	list protocols 'manual'                                                # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
 
 config net phy0
 	list protocols 'bmx6:12'

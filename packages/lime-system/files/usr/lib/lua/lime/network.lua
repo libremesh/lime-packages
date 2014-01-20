@@ -81,12 +81,8 @@ function network.scandevices()
 		end
 	end
 
-	-- Scan for mac80211 wifi devices
-	for dev in string.gmatch(io.popen("ls -1 /sys/class/ieee80211/"):read("*a"), "\n") do
-		if dev:match("phy%d") then
-			table.insert(devices, dev)
-		end
-	end
+	-- Scan for plain wireless interfaces
+	uci:foreach("wireless", "wifi-iface", function(s) table.insert(devices, s["ifname"]) end)
 
 	-- When we will support other device type just scan for them here
 	
@@ -104,7 +100,7 @@ function network.configure()
 		proto.configure()
 	end
 
-	local specificIfaces = {};
+	local specificIfaces = {}
 	config.foreach("net", function(iface) specificIfaces[iface[".name"]] = iface end)
 	
 	-- Scan for fisical devices, if there is a specific config apply that otherwise apply general config
