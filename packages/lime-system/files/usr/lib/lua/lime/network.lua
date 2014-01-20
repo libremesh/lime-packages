@@ -75,7 +75,7 @@ function network.scandevices()
 	local devices = {}
 
 	-- Scan for plain ethernet interfaces
-	for dev in string.gmatch(io.popen("ls -1 /sys/class/net/"):read("*a"), "\n") do
+	for _,dev in pairs(utils.split(io.popen("ls -1 /sys/class/net/"):read("*a"), "\n")) do
 		if dev:match("eth%d") then
 			table.insert(devices, dev)
 		end
@@ -112,13 +112,13 @@ function network.configure()
 				local args = utils.split(protoParams, network.protoParamsSeparator)
 				if args[1] == "manual" then break end -- If manual is specified do not configure interface
 				local proto = require("lime.proto."..args[1])
-				proto.setup_interface(fisDev[i], args)
+				proto.setup_interface(device, args)
 			end
 		else
 			for _,protoParams in pairs(generalProtocols) do
 				local args = utils.split(protoParams, network.protoParamsSeparator)
 				local proto = require("lime.proto."..args[1])
-				proto.setup_interface(fisDev[i], args)
+				proto.setup_interface(device, args)
 			end
 		end
 	end

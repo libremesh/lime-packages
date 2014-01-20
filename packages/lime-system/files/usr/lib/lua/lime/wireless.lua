@@ -1,6 +1,7 @@
 #!/usr/bin/lua
 
-local config = requires("lime.config")
+local config = require("lime.config")
+local network = require("lime.network")
 
 wireless = {}
 
@@ -39,35 +40,38 @@ function wireless.configure()
 
 	local allRadios = wireless.scandevices()
 	for _,radio in pairs(allRadios) do
+		
+		local radioName = radio[".name"] 
 
-		local phyIndex = radio:match("%d+")
+		for k,v in pairs(radio) do print(k,v) end
+		local phyIndex = radioName:match("%d+")
 
 		local freqSuffix = "_2ghz"
-		if wireless.is5Ghz(radio) then freqSuffix = "_5ghz" end
+		if wireless.is5Ghz(radioName) then freqSuffix = "_5ghz" end
 
 		local modes = config.get("wifi", "modes")
 		local options = config.get_all("wifi")
 
-		uci:set("wireless", radio, "disabled", 0)
+		uci:set("wireless", radioName, "disabled", 0)
 
-		local specRadio = specificRadios[radio]
+		local specRadio = specificRadios[radioName]
 		if specRadio then
 			modes = specRadio[modes]
 			options = specRadio
 		end
 
 		for _,mode in pairs(modes) do
-			if mode == "manual" break
+			if mode == "manual" then break end
 			
 			local ifname = "wlan"..phyIndex.."_"..mode
-			local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname.."_"..radio
+			local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname.."_"..radioName
 			local networkInterfaceName = network.limeIfNamePrefix..ifname
 
-			uci:set("wireless", ifName, "wifi-iface")
-			uci:set("wireless", ifName, "mode", mode)
-			uci:set("wireless", ifName, "device", radio)
-			uci:set("wireless", id, "network", networkInterfaceName)
-			uci:set("wireless", id, "ifname", ifname)
+			uci:set("wireless", wirelessInterfaceName, "wifi-iface")
+			uci:set("wireless", wirelessInterfaceName, "mode", mode)
+			uci:set("wireless", wirelessInterfaceName, "device", radioName)
+			uci:set("wireless", wirelessInterfaceName, "network", networkInterfaceName)
+			uci:set("wireless", wirelessInterfaceName, "ifname", ifname)
 
 			uci:set("network", networkInterfaceName, "interface")
 			uci:set("network", networkInterfaceName, "proto", "none")
