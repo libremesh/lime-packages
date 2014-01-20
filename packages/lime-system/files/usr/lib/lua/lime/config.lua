@@ -15,7 +15,7 @@ function config.foreach(configtype, callback)
 end
 
 function config.get_all(sectionname)
-	return uci:get_all("lime", sectionname)
+	return uci:get_all("lime", sectionname) or uci:get_all("lime-defaults", sectionname)
 end
 
 return config
