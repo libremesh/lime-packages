@@ -14,4 +14,8 @@ function config.foreach(configtype, callback)
 	return config.uci:foreach("lime", configtype, callback)
 end
 
+function config.get_all(sectionname)
+	return uci:get_all("lime", sectionname)
+end
+
 return config
