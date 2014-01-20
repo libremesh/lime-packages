@@ -31,6 +31,11 @@ function wireless.is5Ghz(radio)
 	return false
 end
 
+wireless.availableModes = { adhoc=true, ap=true }
+function wireless.isMode(m)
+	return wireless.availableModes[m]
+end
+
 function wireless.configure()
 
 	wireless.clean()
@@ -66,6 +71,14 @@ function wireless.configure()
 			local ifname = "wlan"..phyIndex.."_"..mode
 			local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname.."_"..radioName
 			local networkInterfaceName = network.limeIfNamePrefix..ifname
+			if mode == "ap" then
+				networkInterfaceName = "lan"
+			elseif mode == "adhoc" then
+				uci:set("network", networkInterfaceName, "interface")
+				uci:set("network", networkInterfaceName, "proto", "none")
+			end
+			
+			uci:set("network", networkInterfaceName, "mtu", "1532")
 
 			uci:set("wireless", wirelessInterfaceName, "wifi-iface")
 			uci:set("wireless", wirelessInterfaceName, "mode", mode)
@@ -73,13 +86,14 @@ function wireless.configure()
 			uci:set("wireless", wirelessInterfaceName, "network", networkInterfaceName)
 			uci:set("wireless", wirelessInterfaceName, "ifname", ifname)
 
-			uci:set("network", networkInterfaceName, "interface")
-			uci:set("network", networkInterfaceName, "proto", "none")
-			uci:set("network", networkInterfaceName, "mtu", "1532")
-
 			for key,value in pairs(options) do
-				if not key == "modes" then
-					uci:set("wireless", wirelessInterfaceName, key:gsub("^"..mode.."_", ""):gsub(freqSuffix.."$", ""), value)
+				-- print("reading:", key, value)
+				local keyPrefix = utils.split(key, "_")[1]
+				local isGoodOption = ( (key ~= "modes") and (not key:match("^%.")) and (not key:match("channel")) and (not (wireless.isMode(keyPrefix) and keyPrefix ~= mode)) )
+				if isGoodOption then
+					local nk = key:gsub("^"..mode.."_", ""):gsub(freqSuffix.."$", "")
+					-- print("writing:", "wireless", wirelessInterfaceName, nk, value)
+					uci:set("wireless", wirelessInterfaceName, nk, value)
 				end
 			end
 		end

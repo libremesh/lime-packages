@@ -4,7 +4,9 @@ batadv = {}
 
 function batadv.setup_interface(ifname, args)
 	local interface = network.limeIfNamePrefix..ifname.."_batadv"
-	local owrtFullIfname = "@"..network.limeIfNamePrefix..ifname; if args[2] then owrtFullIfname = owrtFullIfname..network.vlanSeparator..args[2] end
+	local owrtFullIfname = ifname
+	if ifname:match("^wlan") then owrtFullIfname = "@"..network.limeIfNamePrefix..owrtFullIfname end
+	if args[2] then owrtFullIfname = owrtFullIfname..network.vlanSeparator..args[2] end
 
 	uci:set("network", interface, "interface")
 	uci:set("network", interface, "ifname", owrtFullIfname)

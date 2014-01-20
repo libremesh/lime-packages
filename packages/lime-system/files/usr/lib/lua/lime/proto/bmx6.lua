@@ -6,7 +6,8 @@ bmx6 = {}
 
 function bmx6.setup_interface(ifname, args)
 	local interface = network.limeIfNamePrefix..ifname.."_bmx6"
-	local owrtFullIfname = "@"..network.limeIfNamePrefix..ifname; if args[2] then owrtFullIfname = owrtFullIfname..network.vlanSeparator..args[2] end
+	local owrtFullIfname = ifname
+	if args[2] then owrtFullIfname = owrtFullIfname..network.vlanSeparator..args[2] end
 
 	uci:set("bmx6", interface, "dev")
 	uci:set("bmx6", interface, "dev", owrtFullIfname)

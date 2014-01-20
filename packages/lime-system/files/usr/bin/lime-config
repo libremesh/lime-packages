@@ -21,7 +21,7 @@ end
 
 --@DEPRECATED avoid use this function and/or put it in the right place!!
 function network_id()
-    local network_essid = assert(config.get("wifi","ap_essid"))
+    local network_essid = assert(config.get("wifi","ap_ssid"))
     local n1, n2, n3
     local fd = io.popen('echo "' .. network_essid .. '" | md5sum')
     if fd then
