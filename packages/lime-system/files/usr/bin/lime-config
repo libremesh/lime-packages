@@ -39,8 +39,6 @@ function main()
 	wireless.configure()
 	firewall.configure()
 	system.configure()
-
-	uci:commit()
 end
 
 main()
