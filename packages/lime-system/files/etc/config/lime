@@ -14,13 +14,6 @@ config lime network
 	option main_ipv6_address caca:d0:M1:M4M3::M6/64                        # Parametrizable main IPv6 address Mn will be substituted with the n'th byte of the primary_dev MAC
 
 
-# WiFi general options
-
-config lime wifi
-	option ap_essid 'LiMe'
-	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
-
-
 # WiFi interface specific options ( override general option )
 
 config wifi radio1
@@ -37,18 +30,5 @@ config wifi radio12
 # proto:vlan_number works too ( something like bmx6:13 is supported )
 # If you use manual do not specify other protocols, may result in an unpredictable behavior/configuration (likely you loose connection to the node)
 
-config net eth0
-	list protocols 'lan'
-
-config net eth1
-	list protocols 'bmx6:12'
-	list protocols 'wan'
-	list protocols 'batadv:31'
-
 config net eth5
 	list protocols 'manual'                                                # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
-
-config net phy0
-	list protocols 'bmx6:12'
-	list protocols 'batadv:31'
-	list protocols 'lan'

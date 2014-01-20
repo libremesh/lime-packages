@@ -79,7 +79,7 @@ function wireless.configure()
 
 			for key,value in pairs(options) do
 				if not key == "modes" then
-					uci:set("wireless", ifName, key:gsub("^"..mode.."_", ""):gsub(freqSuffix.."$", ""), value)
+					uci:set("wireless", wirelessInterfaceName, key:gsub("^"..mode.."_", ""):gsub(freqSuffix.."$", ""), value)
 				end
 			end
 		end
