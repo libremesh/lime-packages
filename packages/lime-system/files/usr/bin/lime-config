@@ -35,10 +35,12 @@ function network_id()
 end
 
 function main()
-    network.configure()
-    wireless.configure()
-    firewall.configure()
-    system.configure()
+	network.configure()
+	wireless.configure()
+	firewall.configure()
+	system.configure()
+
+	uci:commit()
 end
 
 main()
