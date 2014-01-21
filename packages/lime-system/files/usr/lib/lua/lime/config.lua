@@ -15,7 +15,13 @@ function config.foreach(configtype, callback)
 end
 
 function config.get_all(sectionname)
-	return uci:get_all("lime", sectionname) or uci:get_all("lime-defaults", sectionname)
+	local ret = uci:get_all("lime", sectionname) or {}
+	for key,value in pairs(uci:get_all("lime-defaults", sectionname)) do
+		if (ret[key] == nil) then
+			ret[key] = value
+		end
+	end
+	return ret
 end
 
 return config
