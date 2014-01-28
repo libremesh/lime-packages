@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <byteswap.h>
+#include <limits.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
@@ -107,6 +108,15 @@ static const struct search_regdomain search_regdomains[] = {
 			.n_reg_rules = 5
 		}
 	}, {
+		.desc = "embedded 00 regdomain in cfg80211/regdb.o",
+		.reg  = {
+			.alpha2 = "00",
+			.reg_rules = {
+				REG_RULE(2402, 2472, 40, 3, 20, 0)
+			},
+			.n_reg_rules = 6
+		}
+	}, {
 		.desc = "embedded US regdomain in cfg80211/regdb.o",
 		.reg  = {
 			.alpha2 = "US",
@@ -114,6 +124,16 @@ static const struct search_regdomain search_regdomains[] = {
 				REG_RULE(2402, 2472, 40, 3, 27, 0)
 			},
 			.n_reg_rules = 6
+		}
+	}, {
+		.desc = "embedded US regdomain in cfg80211/regdb.o",
+		.reg  = {
+			.alpha2 = "US",
+			.dfs_region = 1,
+			.reg_rules = {
+				REG_RULE(2402, 2472, 40, 3, 27, 0)
+			},
+			.n_reg_rules = 7
 		}
 	},
 
@@ -220,6 +240,7 @@ static int patch_regdomain(struct ieee80211_regdomain *pos,
 		pos->reg_rules[0] = r2;
 		pos->reg_rules[1] = r5;
 		pos->n_reg_rules = 2;
+		pos->dfs_region = 0;
 
 		if (need_byteswap)
 		{
