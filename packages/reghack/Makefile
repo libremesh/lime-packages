@@ -51,5 +51,6 @@ for module in ath cfg80211 ; do
 	reghack /tmp/$${module}.ko && \
 	mv /tmp/$${module}.ko "$$IPKG_INSTROOT"/lib/modules/*/
 done
+exit 0
 endef
 $(eval $(call BuildPackage,$(PKG_NAME)))
