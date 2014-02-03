@@ -67,8 +67,8 @@ void client_insertvale(client * clients, char *id, time_t expire)
     c.id[23] = '\0';
     c.expire = expire;
     client_insert(clients, &c);
-    save_clients("/tmp/clients.new", clients);
-    rename("/tmp/clients.new", CLIENTS_FILE);
+    save_clients(CLIENTS_FILE".tmp", clients);
+    rename(CLIENTS_FILE".tmp", CLIENTS_FILE);
 }
 
 time_t client_timeleft(client * client)
@@ -142,8 +142,8 @@ void vale_used_insert(vale_used * used, vale_used * vale_used)
 
     memcpy(&used[i], vale_used, sizeof(*vale_used));
 
-    save_vale_used("/tmp/vale_used.new", used);
-    rename("/tmp/vale_used.new", VALE_USED_FILE);
+    save_vale_used(VALE_USED_FILE".tmp", used);
+    rename(VALE_USED_FILE".tmp", VALE_USED_FILE);
 }
 
 time_t vale_used_is(vale_used * used, char *valestr)
