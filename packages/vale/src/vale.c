@@ -1,7 +1,8 @@
-#define _XOPEN_SOURCE
+#define _XOPEN_SOURCE 600
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -29,15 +30,27 @@ int main(int argc, char **argv)
     group *groups = load_groups();
     vale_used *used = load_vale_used();
 
-    if (argc == 3 && b32dec(argv[2], &valebits) == VALE_BITS) {
+
+    if (argc == 3) {
+    char *valestr = vale_canon(argv[2]);
+    if (b32dec(valestr, &valebits) != VALE_BITS) 
+        return 1;
 	v = vale_decode(valebits);
 	key = vale_getkey(v, groups);
-	if (key != NULL && !vale_isauth(valebits, key) && !vale_used_is(used,argv[2]) ) {
-	    client_insertvale(argv[1], v, clients);
-        vale_used_insert(used,argv[1],argv[2]);
+	if (key != NULL && !vale_isauth(valebits, key)) {
+	    time_t used_when = vale_used_is(used, valestr);
+
+	    if (!used_when) {
+		vale_used *vale_used = vale_used_new(argv[1], valestr);
+		vale_used_insert(used, vale_used);
+		used_when = vale_used->when;
+	    }
+	    time_t expire = used_when + v->val * 24 * 3600;
+	    client_insertvale(clients, argv[1], expire);
+
 	}
     }
-    
+
     client *c = client_getbyid(clients, argv[1]);
 
 
@@ -45,17 +58,17 @@ int main(int argc, char **argv)
     return 1;
 }
 
-void client_insertvale(char *id, vale * v, client * clients)
+void client_insertvale(client * clients, char *id, time_t expire)
 {
     client c;
-    size_t idlen = strlen(id)+1;
+    size_t idlen = strlen(id) + 1;
     idlen = idlen > 24 - 1 ? 24 - 1 : idlen;
     memcpy(c.id, id, idlen);
     c.id[23] = '\0';
-    c.expire = time(NULL) + v->val * 24 * 3600;
+    c.expire = expire;
     client_insert(clients, &c);
-    save_clients("./clients.new",clients);
-    rename("./clients.new","./clients");
+    save_clients("/tmp/clients.new", clients);
+    rename("/tmp/clients.new", CLIENTS_FILE);
 }
 
 time_t client_timeleft(client * client)
@@ -106,30 +119,41 @@ vale *vale_decode(unsigned char *valebits)
     v->val = ((valebits[2] & 0x1F) << 8) | valebits[3];
     return v;
 }
-void vale_used_insert(vale_used *used, char *client_id, char *valestr) {
-    int i = 0;
-    vale_used vale_used;
-    while (used[i].when
-	   && strcasecmp((char *) used[i].valestr, valestr ))
-	i++;
-    vale_used.when = time(NULL);
-    strncpy(vale_used.client_id,client_id,24);
-    vale_used.client_id[24-1] = '\0';
-    strncpy(vale_used.valestr,valestr,VALE_CHARS);
-    vale_used.valestr[VALE_CHARS-1] = '\0';
-    memcpy(&used[i], &vale_used, sizeof(vale_used));
-    used[i + 1].when = 0;
-    save_vale_used("./vale_used.new",used);
-    rename("./vale_used.new","./vale_used");
+
+vale_used *vale_used_new(char *client_id, char *valestr)
+{
+    vale_used *vale_used = malloc(sizeof(*vale_used));
+    vale_used->when = time(NULL);
+    strncpy((char *) vale_used->client_id, client_id, 24);
+    vale_used->client_id[24 - 1] = '\0';
+    strncpy(vale_used->valestr, valestr, VALE_CHARS);
+    vale_used->valestr[VALE_CHARS - 1] = '\0';
+    return vale_used;
 }
 
-int vale_used_is(vale_used *used, char *valestr) {
+void vale_used_insert(vale_used * used, vale_used * vale_used)
+{
     int i = 0;
-   while (used[i].when
-	   && strcasecmp((char *) used[i].valestr, valestr ))
+    while (used[i].when
+	   /*&& strcasecmp((char *) used[i].valestr, valestr ) */ )
 	i++;
-   return(used[i].when);
+    if (used[i].when == 0)
+	used[i + 1].when = 0;
+
+    memcpy(&used[i], vale_used, sizeof(*vale_used));
+
+    save_vale_used("/tmp/vale_used.new", used);
+    rename("/tmp/vale_used.new", VALE_USED_FILE);
 }
+
+time_t vale_used_is(vale_used * used, char *valestr)
+{
+    int i = 0;
+    while (used[i].when && strcasecmp((char *) used[i].valestr, valestr))
+	i++;
+    return (used[i].when);
+}
+
 //xxx replace harcoded lengths for variables
 int vale_isauth(unsigned char *data, unsigned char *key)
 {
@@ -173,7 +197,7 @@ group *load_groups()
     group *groups;
     int i, g = 0;
     jsmntok_t *tokens;
-    char *data = parse_file("./config", &tokens);
+    char *data = parse_file(CONFIG_FILE, &tokens);
     if (data == NULL)
 	return NULL;
 
@@ -190,7 +214,6 @@ group *load_groups()
 	    groups[g].to = atoi(&data[tokens[i + 2].start]);
 	    groups[g].key = &data[tokens[i + 3].start];
 	    data[tokens[i + 3].end] = '\0';
-	    group *gr = &groups[g];
 	    g++;
 	}
 	if (tokens[i].type == JSMN_ARRAY || tokens[i].type == JSMN_OBJECT) {
@@ -202,28 +225,29 @@ group *load_groups()
     groups[g].from = -1;
     return groups;
 }
+
 vale_used *load_vale_used()
 {
     vale_used *used;
     int i, v = 0;
     jsmntok_t *tokens;
     struct tm tm;
-    char *data = parse_file("./vale_used",&tokens);
+    char *data = parse_file(VALE_USED_FILE, &tokens);
     if (data == NULL)
-        return NULL;
-        
+	return NULL;
+
     int total = tokens[0].size;
 
     if (total <= 0)
-        return NULL;
+	return NULL;
 //XXX +100, expand array 
     used = malloc(total + 100 * sizeof(vale_used));
     for (i = 1; i <= total; i++) {
- 	if (tokens[i].size == 3 && tokens[i].type == JSMN_ARRAY) {
+	if (tokens[i].size == 3 && tokens[i].type == JSMN_ARRAY) {
 	    size_t valelen = tokens[i + 1].end - tokens[i + 1].start;
-    	valelen = valelen > VALE_CHARS - 1 ? VALE_CHARS - 1 : valelen;
+	    valelen = valelen > VALE_CHARS - 1 ? VALE_CHARS - 1 : valelen;
 	    data[tokens[i + 1].start + valelen] = '\0';
-	    memcpy(used[v].valestr, &data[tokens[i + 1].start],valelen);
+	    memcpy(used[v].valestr, &data[tokens[i + 1].start], valelen);
 
 	    size_t idlen = tokens[i + 2].end - tokens[i + 2].start;
 	    idlen = idlen > 24 - 1 ? 24 - 1 : idlen;
@@ -232,9 +256,9 @@ vale_used *load_vale_used()
 
 	    memset(&tm, 0, sizeof(tm));
 	    if (!strptime(&data[tokens[i + 3].start], DATE_FORMAT, &tm))
-		    used[v].when = -1;
+		used[v].when = -1;
 	    else
-		    used[v].when = mktime(&tm);
+		used[v].when = my_timegm(&tm);	//mktime(&tm);
 	    v++;
 	}
 	if (tokens[i].type == JSMN_ARRAY || tokens[i].type == JSMN_OBJECT) {
@@ -246,20 +270,21 @@ vale_used *load_vale_used()
 
     return used;
 }
+
 client *load_clients()
 {
     client *clients;
     int i, c = 0;
     jsmntok_t *tokens;
     struct tm tm;
-    char *data = parse_file("./clients", &tokens);
+    char *data = parse_file(CLIENTS_FILE, &tokens);
     if (data == NULL)
 	return NULL;
 
     int total = tokens[0].size;
 
     if (total <= 0)
-	    return NULL;
+	return NULL;
 //XXX +100, expand array 
     clients = malloc(total + 100 * sizeof(client));
     for (i = 1; i <= total; i++) {
@@ -273,7 +298,7 @@ client *load_clients()
 	    if (!strptime(&data[tokens[i + 2].start], DATE_FORMAT, &tm))
 		clients[c].expire = -1;
 	    else
-		clients[c].expire = mktime(&tm);
+		clients[c].expire = my_timegm(&tm);	//mktime(&tm);
 	    c++;
 	}
 	if (tokens[i].type == JSMN_ARRAY || tokens[i].type == JSMN_OBJECT) {
@@ -316,15 +341,17 @@ int save_clients(char *path, client * clients)
     fclose(out);
     return 0;
 }
-int save_vale_used(char *path, vale_used *used) 
+
+int save_vale_used(char *path, vale_used * used)
 {
     FILE *out = fopen(path, "w");
     if (!out)
-	    return -1;
+	return -1;
     print_vale_used(out, used);
     fclose(out);
     return 0;
 }
+
 void print_clients(FILE * out, client * clients)
 {
     struct tm tm;
@@ -334,13 +361,14 @@ void print_clients(FILE * out, client * clients)
 	return;
     fprintf(out, "[\n");
     while (clients[i].expire) {
-	    gmtime_r(&clients[i].expire, &tm);
-	    strftime(buf, sizeof(buf), DATE_FORMAT, &tm);
-	    fprintf(out, "[\"%s\",\"%s\"],\n", clients[i].id, buf);
-	    i++;
+	gmtime_r(&clients[i].expire, &tm);
+	strftime(buf, sizeof(buf), DATE_FORMAT, &tm);
+	fprintf(out, "[\"%s\",\"%s\"],\n", clients[i].id, buf);
+	i++;
     }
     fprintf(out, "]\n");
 }
+
 void print_vale_used(FILE * out, vale_used * used)
 {
     struct tm tm;
@@ -350,14 +378,16 @@ void print_vale_used(FILE * out, vale_used * used)
 	return;
     fprintf(out, "[\n");
     while (used[i].when) {
-        
-	    gmtime_r(&used[i].when, &tm);
-	    strftime(buf, sizeof(buf), DATE_FORMAT, &tm);
-	    fprintf(out, "[\"%s\",\"%s\",\"%s\"],\n",used[i].valestr,used[i].client_id, buf);
-	    i++;
+
+	gmtime_r(&used[i].when, &tm);
+	strftime(buf, sizeof(buf), DATE_FORMAT, &tm);
+	fprintf(out, "[\"%s\",\"%s\",\"%s\"],\n", used[i].valestr,
+		used[i].client_id, buf);
+	i++;
     }
     fprintf(out, "]\n");
 }
+
 //xxx move to db.c
 char *load_file(char *path)
 {
@@ -387,7 +417,7 @@ char *load_file(char *path)
 
 int save_file(char *path, char *data, size_t size)
 {
-    int fd = open(path, O_CREAT | O_WRONLY | O_TRUNC);
+    int fd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
     if (fd == -1)
 	return fd;
 
@@ -432,6 +462,21 @@ void genb16table()
 	i++;
     }
 
+}
+
+char *vale_canon(char *in)
+{
+    char *i = in;
+    char *o = i;
+    while (*i) {
+	unsigned char fivebits = b32[*(unsigned char *)i];
+    i++;
+	if (fivebits >= 32)
+	    continue;
+    *o++ = charset[fivebits];
+    }
+    *o='\0';
+    return in;
 }
 
 int b32dec(char *in, unsigned char **outp)
@@ -482,4 +527,22 @@ int b16dec(char *in, unsigned char **outp)
 	*out++ |= b16[*p];
     }
     return (out - *outp) * 8;
+}
+
+//timegm is not standard and mktime makes timezone conversions
+time_t my_timegm(struct tm * tm)
+{
+    time_t ret;
+    char *tz;
+
+    tz = getenv("TZ");
+    setenv("TZ", "", 1);
+    tzset();
+    ret = mktime(tm);
+    if (tz)
+	setenv("TZ", tz, 1);
+    else
+	unsetenv("TZ");
+    tzset();
+    return ret;
 }
