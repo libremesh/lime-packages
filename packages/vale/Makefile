@@ -32,6 +32,7 @@ endef
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/bin $(1)/etc/nodogsplash/vale
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/vale $(1)/usr/bin/
+	$(INSTALL_BIN) ./files/usr/bin/vale-wrapper $(1)/usr/bin/
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/config $(1)/etc/nodogsplash/vale/config
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/vale_used $(1)/etc/nodogsplash/vale/vale_used
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/clients $(1)/etc/nodogsplash/vale/clients
