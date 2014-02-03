@@ -4,9 +4,9 @@
 #define VALE_CHARS (VALE_BITS+5)/5
 #define VALE_KEY_BITS 128
 #define DATE_FORMAT "%Y-%m-%d %H:%M:%S"
-#define CLIENTS_FILE "./clients"
-#define VALE_USED_FILE "./vale_used"
-#define CONFIG_FILE "./config"
+#define CLIENTS_FILE "/etc/nodogsplash/vale/clients"
+#define VALE_USED_FILE "/etc/nodogsplash/vale/vale_used"
+#define CONFIG_FILE "/etc/nodogsplash/vale/config"
 
 
 unsigned char charset[] = "abcdefghijklmnopqrstuvwxyz234567";
