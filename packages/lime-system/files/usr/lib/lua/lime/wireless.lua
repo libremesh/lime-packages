@@ -78,7 +78,7 @@ function wireless.configure()
 				uci:set("network", networkInterfaceName, "proto", "none")
 			end
 			
-			uci:set("network", networkInterfaceName, "mtu", "1532")
+			uci:set("network", networkInterfaceName, "mtu", "1536")
 
 			uci:set("wireless", wirelessInterfaceName, "wifi-iface")
 			uci:set("wireless", wirelessInterfaceName, "mode", mode)
