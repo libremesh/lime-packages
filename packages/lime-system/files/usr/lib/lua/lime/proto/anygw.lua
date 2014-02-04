@@ -4,6 +4,8 @@ anygw = {}
 
 function anygw.configure()
 	local network = require("lime.network")
+	local libuci = require "uci"
+	local uci = libuci:cursor()
 	
 	local ipv4, ipv6 = network.primary_address()
 	
