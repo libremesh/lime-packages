@@ -76,7 +76,7 @@ function network.scandevices()
 
 	-- Scan for plain ethernet interfaces
 	for _,dev in pairs(utils.split(io.popen("ls -1 /sys/class/net/"):read("*a"), "\n")) do
-		if dev:match("eth%d") then
+		if dev:match("^eth%d$") then
 			table.insert(devices, dev)
 		end
 	end
