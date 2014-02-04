@@ -5,14 +5,21 @@ batadv = {}
 function batadv.setup_interface(ifname, args)
 	local interface = network.limeIfNamePrefix..ifname.."_batadv"
 	local owrtFullIfname = ifname
-	if ifname:match("^wlan") then owrtFullIfname = "@"..network.limeIfNamePrefix..owrtFullIfname end
-	if args[2] then owrtFullIfname = owrtFullIfname..network.vlanSeparator..args[2] end
+	local mtu = 1500
+	if ifname:match("^wlan") then
+		owrtFullIfname = "@"..network.limeIfNamePrefix..owrtFullIfname
+		mtu = 1532
+	end
+	if args[2] then
+		owrtFullIfname = owrtFullIfname..network.vlanSeparator..args[2]
+		if ifname:match("^eth") then mtu = 1496 end 
+	end
 
 	uci:set("network", interface, "interface")
 	uci:set("network", interface, "ifname", owrtFullIfname)
 	uci:set("network", interface, "proto", "batadv")
 	uci:set("network", interface, "mesh", "bat0")
-	uci:set("network", interface, "mtu", "1528")
+	uci:set("network", interface, "mtu", mtu)
 	uci:save("network")
 end
 
