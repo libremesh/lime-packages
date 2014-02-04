@@ -3,9 +3,12 @@
 batadv = {}
 
 function batadv.setup_interface(ifname, args)
+	if ifname:match("^wlan%d_ap") then return end
+
 	local interface = network.limeIfNamePrefix..ifname.."_batadv"
 	local owrtFullIfname = ifname
 	local mtu = 1500
+
 	if ifname:match("^wlan") then
 		owrtFullIfname = "@"..network.limeIfNamePrefix..owrtFullIfname
 		mtu = 1532
