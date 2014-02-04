@@ -35,8 +35,8 @@ function network_id()
 end
 
 function main()
-	network.configure()
 	wireless.configure()
+	network.configure()
 	firewall.configure()
 	system.configure()
 end
