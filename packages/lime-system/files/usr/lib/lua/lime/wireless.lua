@@ -71,14 +71,7 @@ function wireless.configure()
 			local ifname = "wlan"..phyIndex.."_"..mode
 			local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname.."_"..radioName
 			local networkInterfaceName = network.limeIfNamePrefix..ifname
-			if mode == "ap" then
-				networkInterfaceName = "lan"
-			elseif mode == "adhoc" then
-				uci:set("network", networkInterfaceName, "interface")
-				uci:set("network", networkInterfaceName, "proto", "none")
-			end
-			
-			uci:set("network", networkInterfaceName, "mtu", "1536")
+			if mode == "ap" then networkInterfaceName = "lan" end
 
 			uci:set("wireless", wirelessInterfaceName, "wifi-iface")
 			uci:set("wireless", wirelessInterfaceName, "mode", mode)
@@ -100,7 +93,6 @@ function wireless.configure()
 	end
 
 	uci:save("wireless")
-	uci:save("network")
 end
 
 return wireless

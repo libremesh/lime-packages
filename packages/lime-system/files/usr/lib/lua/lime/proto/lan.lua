@@ -12,6 +12,7 @@ function lan.configure()
 	uci:set("network", "lan", "ipaddr", ipv4:host():string())
 	uci:set("network", "lan", "netmask", ipv4:mask():string())
 	uci:set("network", "lan", "proto", "static")
+	uci:set("network", "lan", "mtu", "1500")
 	uci:save("network")
 end
 
