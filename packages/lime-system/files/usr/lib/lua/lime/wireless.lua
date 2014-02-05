@@ -45,25 +45,19 @@ function wireless.configure()
 
 	local allRadios = wireless.scandevices()
 	for _,radio in pairs(allRadios) do
-		
 		local radioName = radio[".name"] 
-
-		for k,v in pairs(radio) do print(k,v) end
 		local phyIndex = radioName:match("%d+")
-
-		local freqSuffix = "_2ghz"
-		if wireless.is5Ghz(radioName) then freqSuffix = "_5ghz" end
-
+		local freqSuffix = "_2ghz"; if wireless.is5Ghz(radioName) then freqSuffix = "_5ghz" end
 		local modes = config.get("wifi", "modes")
 		local options = config.get_all("wifi")
-
-		uci:set("wireless", radioName, "disabled", 0)
 
 		local specRadio = specificRadios[radioName]
 		if specRadio then
 			modes = specRadio[modes]
 			options = specRadio
 		end
+
+		uci:set("wireless", radioName, "disabled", 0)
 
 		for _,mode in pairs(modes) do
 			if mode == "manual" then break end
@@ -80,12 +74,10 @@ function wireless.configure()
 			uci:set("wireless", wirelessInterfaceName, "ifname", ifname)
 
 			for key,value in pairs(options) do
-				-- print("reading:", key, value)
 				local keyPrefix = utils.split(key, "_")[1]
 				local isGoodOption = ( (key ~= "modes") and (not key:match("^%.")) and (not key:match("channel")) and (not (wireless.isMode(keyPrefix) and keyPrefix ~= mode)) )
 				if isGoodOption then
 					local nk = key:gsub("^"..mode.."_", ""):gsub(freqSuffix.."$", "")
-					-- print("writing:", "wireless", wirelessInterfaceName, nk, value)
 					uci:set("wireless", wirelessInterfaceName, nk, value)
 				end
 			end
