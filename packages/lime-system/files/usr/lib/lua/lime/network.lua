@@ -104,8 +104,8 @@ function network.configure()
 	config.foreach("net", function(iface) specificIfaces[iface[".name"]] = iface end)
 	
 	-- Scan for fisical devices, if there is a specific config apply that otherwise apply general config
-	local fisDev = network.scandevices()
-	for _,device in pairs(fisDev) do
+	local fisDevs = network.scandevices()
+	for _,device in pairs(fisDevs) do
 		local owrtIf = specificIfaces[device]
 		if owrtIf then
 			for _,protoParams in pairs(owrtIf["protocols"]) do
