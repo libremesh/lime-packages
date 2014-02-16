@@ -35,13 +35,19 @@ function index()
 	require("nixio.fs")
 
 	if nixio.fs.access( "/usr/lib/lua/luci/view/openairview/stations.htm" ) then
-		page = entry({"lime", "openairview"}, alias("lime", "openairview", "stations"), _("OpenAirView"), 50)
+		page = entry({"lime", "openairview"}, call("redirect_build_url", {"lime", "openairview", "stations"}), _("OpenAirView"), 50)
 		page.index = true
 
 		page = entry({"lime", "openairview", "stations"}, template("openairview/stations"), _("Stations"), 1)
+		page.leaf = true
 
 		page = entry({"lime", "openairview", "spectral_scan"}, template("openairview/spectral_scan"), _("Spectral Scan"), 1)
+		page.leaf = true
 	end
+end
+
+function redirect_build_url(...)
+	luci.http.redirect(luci.dispatcher.build_url(unpack(...)))
 end
 
 function action_logout()

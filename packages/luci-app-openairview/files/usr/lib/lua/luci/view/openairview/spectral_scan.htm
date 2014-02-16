@@ -110,7 +110,7 @@ window.setTimeout(
 
 <ul class="cbi-tabmenu">
     <% for _, dev in ipairs(devices) do %>
-        <li class="cbi-tab<%= dev == curdev and "" or "-disabled" %>"><a href="<%=build_url("admin/openairview/spectral_scan", dev)%>"><%=pcdata(dev)%></a></li>
+        <li class="cbi-tab<%= dev == curdev and "" or "-disabled" %>"><a href="spectral_scan/<%=dev%>"><%=pcdata(dev)%></a></li>
     <% end %>
 </ul>
 
