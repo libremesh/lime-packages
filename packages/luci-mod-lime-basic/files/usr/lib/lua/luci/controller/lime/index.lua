@@ -32,9 +32,9 @@ function index()
 	entry({"lime", "index", "settings"}, cbi("lime/settings", {autoapply=true}), _("Settings"), 10)
 	entry({"lime", "index", "logout"}, call("action_logout"), _("Logout"))
 
-        require("nixio.fs")
+	require("nixio.fs")
 
-        if nixio.fs.access( "/usr/lib/lua/luci/view/openairview/stations.htm" ) then
+	if nixio.fs.access( "/usr/lib/lua/luci/view/openairview/stations.htm" ) then
 		page = entry({"lime", "openairview"}, alias("lime", "openairview", "stations"), _("OpenAirView"), 50)
 		page.index = true
 
