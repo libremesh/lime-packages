@@ -1,24 +1,34 @@
+
+# System option
+
+config lime system
+	option hostname LiMeNode
+
+
+# Network general option
+# Available protocols: bmx6, batadv, wan, lan, anygw
+
 config lime network
-	# primary network device to get the MAC addres
-	option primary_dev eth0
+	option primary_interface eth0                                          # The mac address of this device will be used in different places
+	option main_ipv4_address 100.64.M1.M2/24                               # Parametrizable main IPv4 address Mn will be substituted with the n'th byte of the primary_dev MAC
+	option main_ipv6_address caca:d0:M1:M4M3::M6/64                        # Parametrizable main IPv6 address Mn will be substituted with the n'th byte of the primary_dev MAC
 
-	# first vlan tag for first protocol
-	list vlans 10
-#	list vlans 200
 
-	# protocols available
-	list protos bmx6
-	list protos batadv
+# WiFi interface specific options ( override general option )
 
-	# Parametrizable adrresses Mn will be substituted with the n'th byte of the primary_dev MAC
-	option ipv4_address 100.64.M1.M2/24
-	option ipv6_address caca:d0:M1:M4M3::M6/64
+config wifi radio1
+	option adhoc_channel_2ghz '11'
+	option adhoc_mcast_rate_2ghz '54000'
+	list modes 'adhoc'
 
-config lime wireless
-	option ssid LiMe
-	option mesh_bssid ca:fe:00:c0:ff:ee
-	option mesh_mcast_rate_2ghz 24000
-	option mesh_mcast_rate_5ghz 6000
-	list mesh_channel_2ghz 11
-	list mesh_channel_2ghz 6
-	list mesh_channel_5ghz 36+
+config wifi radio12
+	list modes 'manual'                                                    # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
+
+
+# Network interface specific options ( override general option )
+# Available protocols: bmx6, batadv, wan, lan, manual
+# proto:vlan_number works too ( something like bmx6:13 is supported )
+# If you use manual do not specify other protocols, may result in an unpredictable behavior/configuration (likely you loose connection to the node)
+
+config net eth5
+	list protocols 'manual'                                                # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
