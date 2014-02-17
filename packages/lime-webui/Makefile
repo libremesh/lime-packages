@@ -5,24 +5,26 @@
 #
 
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=lime-webui
-PKG_RELEASE:=1
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
+PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
+GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
+GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
+
 LIME_CODENAME:=bigbang
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/lime-webui
+define Package/$(PKG_NAME)
   TITLE:=libre-mesh web user interface based on LUCI
   SECTION:=net
   CATEGORY:=LiMe
+  MAINTAINER:=p4u <pau@dabax.net>
   URL:=http://libre-mesh.org
   DEPENDS:=+luci +luci-app-bmx6 +luci-app-batman-adv
 endef
 
-define Package/lime-webui/description
+define Package/$(PKG_NAME)/description
 	Web interface for Libre-Mesh
 endef
 
@@ -39,7 +41,7 @@ define Build/Compile
 	@find $(PKG_BUILD_DIR)/ -type f -name "*.lua" -exec sed -i '/^--!.*/d' {} \;
 endef
 
-define Package/lime-webui/install
+define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/model/cbi/lime
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/view/lime
@@ -50,4 +52,4 @@ define Package/lime-webui/install
 	$(CP) $(PKG_BUILD_DIR)/static/* $(1)/www/luci-static/resources/lime/
 endef
 
-$(eval $(call BuildPackage,lime-webui))
+$(eval $(call BuildPackage,$(PKG_NAME)))

@@ -1,0 +1,9 @@
+#!/bin/sh
+
+uci set dhcp.@dnsmasq[0].dhcpscript=/usr/bin/dnsmasq-lease-share
+#uci set dhcp.@dnsmasq[0].leasefilero=1
+## Workaround until proper uci support is patched
+echo leasefile-ro >> /etc/dnsmasq.conf
+uci commit dhcp
+
+echo 0
