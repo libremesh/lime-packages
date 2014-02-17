@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=reghack
-PKG_VERSION:=20130625
+PKG_VERSION:=20131203
 PKG_RELEASE=$(GIT_COMMIT_TSTAMP)
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
@@ -51,5 +51,6 @@ for module in ath cfg80211 ; do
 	reghack /tmp/$${module}.ko && \
 	mv /tmp/$${module}.ko "$$IPKG_INSTROOT"/lib/modules/*/
 done
+exit 0
 endef
 $(eval $(call BuildPackage,$(PKG_NAME)))
