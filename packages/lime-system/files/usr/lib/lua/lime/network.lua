@@ -24,6 +24,7 @@ function network.eui64(mac)
     return string.format("%s%s:%sff:fe%s:%s%s", t[1], t[2], t[3], t[4], t[5], t[6])
 end
 
+--! @DEPRECATED
 function network.generate_host(ipprefix, hexsuffix)
     -- use only the 8 rightmost nibbles for IPv4, or 32 nibbles for IPv6
     hexsuffix = hexsuffix:sub((ipprefix[1] == 4) and -8 or -32)
@@ -46,18 +47,16 @@ function network.generate_host(ipprefix, hexsuffix)
 end
 
 function network.generate_address(p, n)
-    local id = n
-    local m4, m5, m6 = node_id()
-    local n1, n2, n3 = network_id()
-    local ipv4_template = assert(uci:get("lime", "network", "ipv4_net"))
-    local ipv6_template = assert(uci:get("lime", "network", "ipv6_net"))
+	local ipv4_template = assert(uci:get("lime", "network", "ipv4_address"))
+	local ipv6_template = assert(uci:get("lime", "network", "ipv6_address"))
+	local pm = primary_mac()
+	
+	for i=1,6,1 do
+		ipv6_template = ipv6_template:gsub("M" .. i, pm[i])
+		ipv4_template = ipv4_template:gsub("M" .. i, tonumber(pm[i], 16))
+	end
 
-    ipv6_template = ipv6_template:gsub("N1", hex(n1)):gsub("N2", hex(n2)):gsub("N3", hex(n3))
-    ipv4_template = ipv4_template:gsub("N1", n1):gsub("N2", n2):gsub("N3", n3)
-
-    hexsuffix = hex((m4 * 256*256 + m5 * 256 + m6) + id)
-    return network.generate_host(ip.IPv4(ipv4_template), hexsuffix),
-           network.generate_host(ip.IPv6(ipv6_template), hexsuffix)
+	return ip.IPv4(ipv4_template), ip.IPv6(ipv6_template)
 end
 
 function network.setup_lan(ipv4, ipv6)
