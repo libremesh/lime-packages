@@ -85,7 +85,7 @@ function wireless.configure()
         -- base (untagged) wifi interface
         uci:set("network", net, "interface")
         uci:set("network", net, "proto", "none")
-        uci:set("network", net, "mtu", "1528")
+        uci:set("network", net, "mtu", "1532")
 
         -- For layer2 use a vlan based off network_id, between 16 and 255, if uci doesn't specify a vlan
         if not vlans[2] then vlans[2] = math.floor(16 + ((tonumber(n1) / 255) * (255 - 16))) end
