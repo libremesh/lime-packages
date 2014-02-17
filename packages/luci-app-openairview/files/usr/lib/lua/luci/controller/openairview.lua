@@ -15,6 +15,8 @@ module("luci.controller.openairview", package.seeall)
 
 function index()
    local page
+
+   node("admin")
    page = entry({"admin", "openairview"}, alias({"admin", "openairview", "stations"}), _("OpenAirView"), 50)
    page.index = true
 

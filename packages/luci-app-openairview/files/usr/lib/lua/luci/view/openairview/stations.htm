@@ -37,7 +37,7 @@ $Id$
 
 <ul class="cbi-tabmenu">
     <% for _, dev in ipairs(devices) do %>
-        <li class="cbi-tab<%= dev == curdev and "" or "-disabled" %>"><a href="<%=build_url("admin/openairview/stations", dev)%>"><%=pcdata(dev)%></a></li>
+        <li class="cbi-tab<%= dev == curdev and "" or "-disabled" %>"><a href="stations/<%=dev%>"><%=pcdata(dev)%></a></li>
     <% end %>
 </ul>
 

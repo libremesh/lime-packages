@@ -11,70 +11,69 @@ You may obtain a copy of the License at
 
 ]]--
 
-require "luci.config"
-local fs = require "nixio.fs"
-local uci = require "luci.model.uci".cursor()
+require("luci.sys")
+require("luci.sys.zoneinfo")
+require("luci.tools.webadmin")
 
--- Luci settings
 
-luci_map = Map("luci", translate("Web <abbr title=\"User Interface\">UI</abbr>"))
+m = Map("system", translate("System"))
 
--- force reload of global luci config namespace to reflect the changes
-function luci_map.commit_handler(self)
-	package.loaded["luci.config"] = nil
-	require "luci.config"
-end
-
-c = luci_map:section(NamedSection, "main", "core", translate("General"))
-
-l = c:option(ListValue, "lang", translate("Language"))
-l:value("auto")
-
-local i18ndir = luci.i18n.i18ndir .. "base."
-for k, v in luci.util.kspairs(luci.config.languages) do
-	local file = i18ndir .. k:gsub("_", "-")
-	if k:sub(1, 1) ~= "." and fs.access(file .. ".lmo") then
-		l:value(k, v)
-	end
-end
-
--- Network settings
-
-network_map = Map("network", translate("Network"))
-lan_section = network_map:section(NamedSection, "lan", "interface", translate("Local Network"))
-lan_section.addremove = false
-
-lan_section:option(Value, "ipaddr", translate("<abbr title=\"Internet Protocol Version 4\">IPv4</abbr>-Address"))
-
-nm = lan_section:option(Value, "netmask", translate("<abbr title=\"Internet Protocol Version 4\">IPv4</abbr>-Netmask"))
-nm:value("255.255.255.0")
-nm:value("255.255.0.0")
-nm:value("255.0.0.0")
-
-gw = lan_section:option(Value, "gateway", translate("<abbr title=\"Internet Protocol Version 4\">IPv4</abbr>-Gateway") .. translate(" (optional)"))
-gw.rmempty = true
-dns = lan_section:option(Value, "dns", translate("<abbr title=\"Domain Name System\">DNS</abbr>-Server") .. translate(" (optional)"))
-dns.rmempty = true
-
--- System settings
-
-system_map = Map("system", translate("System"))
-
-s = system_map:section(TypedSection, "system")
+s = m:section(TypedSection, "system", "")
+s.anonymous = true
 s.addremove = false
 
-hostname = s:option(Value, "hostname", translate("Hostname"))
-hostname.rmempty = false
-hostname.datatype = "hostname"
 
--- Altermap settings
+local system, model, memtotal, memcached, membuffers, memfree = luci.sys.sysinfo()
+local uptime = luci.sys.uptime()
 
-local altermap_url = uci:get("altermap", "agent", "server_url")
-altermap_map = Map("altermap", translate("Altermap"), translate("Here you can access the map of your network:") .. string.format("<a href='%s'>%s</a>", altermap_url, altermap_url))
+s:option(DummyValue, "_system", translate("System")).value = system
+s:option(DummyValue, "_cpu", translate("Processor")).value = model
 
-altermap_section = altermap_map:section(NamedSection, "agent", "altermap", translate("Altermap"))
-altermap_section.addremove = false
-altermap_section:option(Value, "server_url", translate("Map Server URL"))
-altermap_section:option(Flag, "enabled", translate("Enable agent"))
+local load1, load5, load15 = luci.sys.loadavg()
+s:option(DummyValue, "_la", translate("Load")).value =
+ string.format("%.2f, %.2f, %.2f", load1, load5, load15)
 
-return luci_map, system_map, network_map, altermap_map
+s:option(DummyValue, "_memtotal", translate("Memory")).value =
+ string.format("%.2f MB (%.0f%% %s, %.0f%% %s, %.0f%% %s)",
+  tonumber(memtotal) / 1024,
+  100 * memcached / memtotal,
+  tostring(translate("cached")),
+  100 * membuffers / memtotal,
+  tostring(translate("buffered")),
+  100 * memfree / memtotal,
+  tostring(translate("free"))
+)
+
+s:option(DummyValue, "_systime", translate("Local Time")).value =
+ os.date("%c")
+
+s:option(DummyValue, "_uptime", translate("Uptime")).value =
+ luci.tools.webadmin.date_format(tonumber(uptime))
+
+hn = s:option(Value, "hostname", translate("Hostname"))
+
+function hn.write(self, section, value)
+	Value.write(self, section, value)
+	luci.sys.hostname(value)
+end
+
+
+tz = s:option(ListValue, "zonename", translate("Timezone"))
+tz:value("UTC")
+
+for i, zone in ipairs(luci.sys.zoneinfo.TZ) do
+        tz:value(zone[1])
+end
+
+function tz.write(self, section, value)
+        local function lookup_zone(title)
+                for _, zone in ipairs(luci.sys.zoneinfo.TZ) do
+                        if zone[1] == title then return zone[2] end
+                end
+        end
+
+        AbstractValue.write(self, section, value)
+        self.map.uci:set("system", section, "timezone", lookup_zone(value) or "GMT0")
+end
+
+return m
