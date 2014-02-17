@@ -8,28 +8,20 @@ firewall = require "lime.firewall"
 network = require "lime.network"
 wireless = require "lime.wireless"
 system = require "lime.system"
+config = require "lime.config"
+utils = require "lime.utils"
 
 uci = libuci:cursor()
 
-local function split(string, sep)
-    local ret = {}
-    for token in string.gmatch(string, "[^"..sep.."]+") do table.insert(ret, token) end
-    return ret
-end
-
-function primary_mac()
-    local dev = assert(uci:get("lime", "network", "primary_dev"))
-    local mac = assert(fs.readfile("/sys/class/net/"..dev.."/address")):gsub("\n","")
-    return split(mac, ":")
-end
-
+--@DEPRECATED avoid use this function and/or put it in the right place!!
 function node_id()
-    local m = primary_mac()
+    local m = network.primary_mac()
     return tonumber(m[4], 16), tonumber(m[5], 16), tonumber(m[6], 16)
 end
 
+--@DEPRECATED avoid use this function and/or put it in the right place!!
 function network_id()
-    local network_essid = assert(uci:get("lime", "wireless", "ssid"))
+    local network_essid = assert(config.get("wifi","ap_ssid"))
     local n1, n2, n3
     local fd = io.popen('echo "' .. network_essid .. '" | md5sum')
     if fd then
@@ -42,15 +34,11 @@ function network_id()
     return n1, n2, n3
 end
 
-function printf(fmt, ...)
-    print(string.format(fmt, ...))
-end
-
 function main()
-    network.configure()
-    wireless.configure()
-    firewall.configure()
-    system.configure()
+	wireless.configure()
+	network.configure()
+	firewall.configure()
+	system.configure()
 end
 
 main()

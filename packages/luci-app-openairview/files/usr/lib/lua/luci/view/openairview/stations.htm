@@ -1,4 +1,5 @@
 <%#
+LuCI - Lua Configuration Interface
 Copyright 2013 Nicolas Echaniz <nicoechaniz@altermundi.net>
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -7,9 +8,25 @@ You may obtain a copy of the License at
 
 	http://www.apache.org/licenses/LICENSE-2.0
 
-$Id: reboot.htm 5448 2009-10-31 15:54:11Z jow $
+$Id$
 
 -%>
+
+<%-
+  local ntm = require "luci.model.network".init()
+
+  local dev
+  local devices = { }
+  for _, dev in luci.util.vspairs(luci.sys.net.devices()) do
+    if dev:match("^wlan%d") or dev:match("^ath%d") or dev:match("^wl%d") then
+      devices[#devices+1] = dev
+    end
+  end
+
+  local curdev = luci.dispatcher.context.requestpath
+        curdev = curdev[#curdev] ~= "stations" and curdev[#curdev] or devices[1]
+-%>
+
 <%+header%>
 
     <script language="javascript" type="text/javascript" src="<%=resource%>/jquery/jquery-1.4.js"></script>
@@ -17,12 +34,18 @@ $Id: reboot.htm 5448 2009-10-31 15:54:11Z jow $
         
 
 <h2><a id="content" name="content"><%:Stations%></a></h2>
-<p><%:Plot neighbors signal%></p>
 
+<ul class="cbi-tabmenu">
+    <% for _, dev in ipairs(devices) do %>
+        <li class="cbi-tab<%= dev == curdev and "" or "-disabled" %>"><a href="stations/<%=dev%>"><%=pcdata(dev)%></a></li>
+    <% end %>
+</ul>
 
-<div id="placeholder" style="width:760px;height:400px;"></div>
+<div id="placeholder" style="width:100%; height:400px;"></div>
 
-<div id="ref"></div>
+<p>Polling delay: <input id="updateInterval" type="text" value="" style="text-align: right; width:5em"> milliseconds</p>
+
+<div id="flotLegend" style="width: 0px"></div>
 
 <script type="text/javascript">
 
@@ -35,11 +58,11 @@ $(function () {
       yaxis: { minTickSize: 1, autoscaleMargin: 0.02 },
       legend: {
         position: "sw",
-        backgroundOpacity: 0
-//        container: "#ref"
+        backgroundOpacity: 0,
+        container: "#flotLegend"
       }
     };    
-    var placeholder = $("#placeholder");
+    var placeholder = document.getElementById("placeholder");
 
     graph = $.plot(placeholder, [], options);
 
@@ -47,10 +70,24 @@ $(function () {
     var round = 0;
     var keep_rounds = 20;
     var inactive_threshold = 1000;
-    var round_time = 500;
 
-    function fetchData() {
-      function onDataReceived(series) {
+    // setup control widget
+    var updateInterval = 500;
+    $("#updateInterval").val(updateInterval).change(function () {
+        var v = $(this).val();
+        if (v && !isNaN(+v)) {
+            updateInterval = +v;
+            if (updateInterval < 10)
+                updateInterval = 10;
+            if (updateInterval > 10000)
+                updateInterval = 10000;
+            $(this).val("" + updateInterval);
+        }
+    });
+
+    /* render datasets, start update interval */
+    XHR.poll(20, '<%=build_url("openairview/json/stations", curdev)%>', null,
+      function(x, series) {
         for (i=0;i<series.length;i++) {
           if (seriesCollection[series[i].station_hostname] == undefined) {
             seriesCollection[series[i].station_hostname] = [];
@@ -75,19 +112,14 @@ $(function () {
         graph.setupGrid();
         graph.draw();
         round = round + 1;
+
+        function fetchData() {
+            XHR._t = 0; // reset run counter to force polling (unless it's busy)
+            if (XHR.running()) { XHR._r(); }
+        }
+        setTimeout(fetchData, updateInterval);
       }
-
-      $.ajax({
-        url: '<%=luci.dispatcher.build_url("openairview/json/stations")%>',
-        method: 'GET',
-        dataType: 'json',
-        success: onDataReceived
-      });
-
-      setTimeout(fetchData, round_time);
-    }
-
-    fetchData();
+    );
   });
 
 </script>

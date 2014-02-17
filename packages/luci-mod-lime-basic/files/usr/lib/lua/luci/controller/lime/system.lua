@@ -16,12 +16,50 @@ $Id: system.lua 9655 2013-01-27 18:43:41Z jow $
 module("luci.controller.lime.system", package.seeall)
 
 function index()
-	entry({"lime", "system"}, alias("lime", "system", "index"), _("System"), 40).index = true
-	entry({"lime", "system", "index"}, cbi("lime/system", {autoapply=true}), _("General"), 1)
-	entry({"lime", "system", "passwd"}, form("lime/passwd"), _("Admin Password"), 10)
+	local root = node()
+	if not root.lock then
+		root.target = alias("lime")
+		root.index = true
+	end
+
+	require("nixio.fs")
+
+	if not nixio.fs.stat("/usr/lib/lua/luci/controller/admin/system.lua") then
+		node("admin")
+		node("admin", "system")
+		entry({"admin", "system", "admin"}, alias("lime", "system", "passwd"))
+	end
+
+	local page
+	page = entry({"lime"}, alias("lime", "system"), _("Essentials"), 10)
+	page.sysauth = "root"
+	page.sysauth_authenticator = "htmlauth"
+	page.index = true
+
+	entry({"lime", "system"}, alias("lime", "system", "settings"), _("System"), 40).index = true
+	entry({"lime", "system", "settings"}, cbi("lime/settings", {autoapply=true}), _("Settings"), 10)
+	entry({"lime", "system", "passwd"}, form("lime/passwd"), _("Admin Password"), 11)
 	entry({"lime", "system", "backup"}, call("action_backup"), _("Backup / Restore"), 80)
 	entry({"lime", "system", "upgrade"}, call("action_upgrade"), _("Flash Firmware"), 90)
 	entry({"lime", "system", "reboot"}, call("action_reboot"), _("Reboot"), 100)
+
+
+	if nixio.fs.stat("/usr/lib/lua/luci/view/openairview/stations.htm") then
+		page = entry({"lime", "openairview"}, call("redirect_build_url", {"lime", "openairview", "stations"}), _("OpenAirView"), 50)
+		page.index = true
+
+		page = entry({"lime", "openairview", "stations"}, template("openairview/stations"), _("Stations"), 1)
+		page.leaf = true
+
+		page = entry({"lime", "openairview", "spectral_scan"}, template("openairview/spectral_scan"), _("Spectral Scan"), 1)
+		page.leaf = true
+	end
+
+	entry({"lime", "logout"}, call("action_logout"), _("Logout"), 110)
+end
+
+function redirect_build_url(...)
+	luci.http.redirect(luci.dispatcher.build_url(unpack(...)))
 end
 
 function action_backup()
@@ -63,6 +101,18 @@ function action_backup()
 	else
 		luci.template.render("lime/backup", {reset_avail = reset_avail})
 	end
+end
+
+function action_logout()
+	local dsp = require "luci.dispatcher"
+	local sauth = require "luci.sauth"
+	if dsp.context.authsession then
+		sauth.kill(dsp.context.authsession)
+		dsp.context.urltoken.stok = nil
+	end
+
+	luci.http.header("Set-Cookie", "sysauth=; path=" .. dsp.build_url())
+	luci.http.redirect(luci.dispatcher.build_url())
 end
 
 function action_reboot()
