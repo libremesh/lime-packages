@@ -2,6 +2,8 @@
 
 local config = require("lime.config")
 local network = require("lime.network")
+local libuci = require "uci"
+local uci = libuci:cursor()
 
 wireless = {}
 
@@ -35,6 +37,30 @@ wireless.availableModes = { adhoc=true, ap=true }
 function wireless.isMode(m)
 	return wireless.availableModes[m]
 end
+ 
+function wireless.createBaseWirelessIface(radio, mode, extras)
+--! checks("table", "string", "?table")
+--! checks(...) come from http://lua-users.org/wiki/LuaTypeChecking -> https://github.com/fab13n/checks
+
+	local radioName = radio[".name"]
+	local phyIndex = radioName:match("%d+")
+	local ifname = "wlan"..phyIndex.."_"..mode
+	local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname.."_"..radioName
+--! move to modes	local networkInterfaceName = network.limeIfNamePrefix..ifname
+
+	uci:set("wireless", wirelessInterfaceName, "wifi-iface")
+	uci:set("wireless", wirelessInterfaceName, "mode", mode)
+	uci:set("wireless", wirelessInterfaceName, "device", radioName)
+	uci:set("wireless", wirelessInterfaceName, "ifname", ifname)
+
+	if extras then
+		for key, value in pairs(extras) do
+			uci:set("wireless", wirelessInterfaceName, key, value)
+		end
+	end
+
+	return uci:get_all("wireless", wirelessInterfaceName)
+end
 
 function wireless.configure()
 
@@ -45,7 +71,7 @@ function wireless.configure()
 
 	local allRadios = wireless.scandevices()
 	for _,radio in pairs(allRadios) do
-		local radioName = radio[".name"] 
+		local radioName = radio[".name"]
 		local phyIndex = radioName:match("%d+")
 		local freqSuffix = "_2ghz"; if wireless.is5Ghz(radioName) then freqSuffix = "_5ghz" end
 		local modes = config.get("wifi", "modes")
