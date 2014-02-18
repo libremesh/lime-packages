@@ -6,19 +6,19 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=lime-system
-PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
+LIME_BUILDDATE:=$(shell date +%Y%m%d_%H%M)
+LIME_CODENAME:=bigbang
+
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
-LIME_BUILDDATE:=$(shell date +%Y%m%d_%H%M)
-LIME_CODENAME:=bigbang
+PKG_NAME:=lime-system
+PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
   TITLE:=libre-mesh system files
-  SECTION:=net
   CATEGORY:=LiMe
   MAINTAINER:=p4u <pau@dabax.net>
   URL:=http://libre-mesh.org
