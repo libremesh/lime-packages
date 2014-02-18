@@ -19,7 +19,6 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
   TITLE:=libre-mesh system files
-  SECTION:=net
   CATEGORY:=LiMe
   MAINTAINER:=p4u <pau@dabax.net>
   URL:=http://libre-mesh.org

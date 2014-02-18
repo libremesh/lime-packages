@@ -18,10 +18,8 @@ PKG_RELEASE=$(GIT_COMMIT_TSTAMP)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)/template
-	SECTION:=admin
-	CATEGORY:=Administration
-	MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
-	SUBMENU:=$(LIBRE_MESH_NAME)
+	CATEGORY:=LiMe
+	MAINTAINER:=Gui Iribarren <gui@altermundi.net>
 endef
 
 define Package/$(PKG_NAME)
