@@ -6,13 +6,14 @@
 
 include $(TOPDIR)/rules.mk
 
+LIBRE_MESH_NAME:=Libre Mesh
+LIBRE_MESH_PREFIX:=lime
+
+GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
+
 PKG_NAME:=reghack
 PKG_VERSION:=20131203
 PKG_RELEASE=$(GIT_COMMIT_TSTAMP)
-GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
-
-LIBRE_MESH_NAME:=Libre Mesh
-LIBRE_MESH_PREFIX:=lime
 
 include $(INCLUDE_DIR)/package.mk
 
