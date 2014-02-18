@@ -2,11 +2,12 @@
 
 local config = require("lime.config")
 local network = require("lime.network")
-local libuci = require "uci"
+local libuci = require("uci")
 local uci = libuci:cursor()
 
 wireless = {}
 
+wireless.modeParamsSeparator=":"
 wireless.limeIfNamePrefix="lm_"
 
 function wireless.generate_ssid()
@@ -46,12 +47,13 @@ function wireless.createBaseWirelessIface(radio, mode, extras)
 	local phyIndex = radioName:match("%d+")
 	local ifname = "wlan"..phyIndex.."_"..mode
 	local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname.."_"..radioName
---! move to modes	local networkInterfaceName = network.limeIfNamePrefix..ifname
+	local networkInterfaceName = network.limeIfNamePrefix..ifname
 
 	uci:set("wireless", wirelessInterfaceName, "wifi-iface")
 	uci:set("wireless", wirelessInterfaceName, "mode", mode)
 	uci:set("wireless", wirelessInterfaceName, "device", radioName)
 	uci:set("wireless", wirelessInterfaceName, "ifname", ifname)
+	uci:set("wireless", wirelessInterfaceName, "network", networkInterfaceName)
 
 	if extras then
 		for key, value in pairs(extras) do
@@ -85,19 +87,14 @@ function wireless.configure()
 
 		uci:set("wireless", radioName, "disabled", 0)
 
-		for _,mode in pairs(modes) do
-			if mode == "manual" then break end
+		for _,modeArgs in pairs(modes) do
 			
-			local ifname = "wlan"..phyIndex.."_"..mode
-			local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname.."_"..radioName
-			local networkInterfaceName = network.limeIfNamePrefix..ifname
-			if mode == "ap" then networkInterfaceName = "lan" end
-
-			uci:set("wireless", wirelessInterfaceName, "wifi-iface")
-			uci:set("wireless", wirelessInterfaceName, "mode", mode)
-			uci:set("wireless", wirelessInterfaceName, "device", radioName)
-			uci:set("wireless", wirelessInterfaceName, "network", networkInterfaceName)
-			uci:set("wireless", wirelessInterfaceName, "ifname", ifname)
+			local args = utils.split(modeArgs, wireless.modeParamsSeparator)
+			
+			if args[1] == "manual" then break end
+			
+			local mode = require("lime.mode."..args[1])
+			mode.setup_radio(radio, args)
 
 			for key,value in pairs(options) do
 				local keyPrefix = utils.split(key, "_")[1]
