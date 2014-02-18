@@ -3,7 +3,6 @@
 local config = require("lime.config")
 local network = require("lime.network")
 local libuci = require("uci")
-local uci = libuci:cursor()
 
 wireless = {}
 
@@ -17,16 +16,20 @@ end
 
 function wireless.clean()
 	print("Clearing wireless config...")
+	local uci = libuci:cursor()
 	uci:foreach("wireless", "wifi-iface", function(s) uci:delete("wireless", s[".name"]) end)
+	uci:save()
 end
 
 function wireless.scandevices()
 	local devices = {}
+	local uci = libuci:cursor()
 	uci:foreach("wireless", "wifi-device", function(dev) devices[dev[".name"]] = dev end)
 	return devices
 end
 
 function wireless.is5Ghz(radio)
+	local uci = libuci:cursor()
 	local hwmode = uci:get("wireless", radio, "hwmode") or "11ng"
 	if hwmode:find("a") then
 		return true
@@ -49,6 +52,8 @@ function wireless.createBaseWirelessIface(radio, mode, extras)
 	local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname.."_"..radioName
 	local networkInterfaceName = network.limeIfNamePrefix..ifname
 
+	local uci = libuci:cursor()
+	
 	uci:set("wireless", wirelessInterfaceName, "wifi-iface")
 	uci:set("wireless", wirelessInterfaceName, "mode", mode)
 	uci:set("wireless", wirelessInterfaceName, "device", radioName)
@@ -60,6 +65,8 @@ function wireless.createBaseWirelessIface(radio, mode, extras)
 			uci:set("wireless", wirelessInterfaceName, key, value)
 		end
 	end
+
+	uci:save("wireless")
 
 	return uci:get_all("wireless", wirelessInterfaceName)
 end
@@ -85,7 +92,9 @@ function wireless.configure()
 			options = specRadio
 		end
 
+		local uci = libuci:cursor()
 		uci:set("wireless", radioName, "disabled", 0)
+		uci:save("wireless")
 
 		for _,modeArgs in pairs(modes) do
 			
@@ -96,6 +105,8 @@ function wireless.configure()
 			local mode = require("lime.mode."..args[1])
 			mode.setup_radio(radio, args)
 
+			local uci = libuci:cursor()
+			
 			for key,value in pairs(options) do
 				local keyPrefix = utils.split(key, "_")[1]
 				local isGoodOption = ( (key ~= "modes") and (not key:match("^%.")) and (not key:match("channel")) and (not (wireless.isMode(keyPrefix) and keyPrefix ~= mode)) )
@@ -104,10 +115,10 @@ function wireless.configure()
 					uci:set("wireless", wirelessInterfaceName, nk, value)
 				end
 			end
+			
+			uci:save("wireless")
 		end
 	end
-
-	uci:save("wireless")
 end
 
 return wireless
