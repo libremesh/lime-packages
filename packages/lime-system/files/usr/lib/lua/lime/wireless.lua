@@ -88,7 +88,7 @@ function wireless.configure()
 
 		local specRadio = specificRadios[radioName]
 		if specRadio then
-			modes = specRadio['modes']
+			modes = specRadio["modes"]
 			options = specRadio
 		end
 
