@@ -24,7 +24,7 @@ dnsmasq_stop () {
 	uci set -P/var/state dhcp.@dnsmasq[0].rebind_protection=0
 	uci set -P/var/state dhcp.lan.ignore=1
 	echo no-dhcp-interface=br-lan >> /var/etc/dnsmasq.conf
-	/etc/init.d/dnsmasq stop
+	/etc/init.d/dnsmasq restart
 }
 
 if [ "$BATTYPE" = "gw" ] ; then
