@@ -22,12 +22,12 @@ config lime network
 # WiFi general options
 
 config lime wifi
+	option channel_2ghz '11'
+	option channel_5ghz '36'
+	list modes 'ap'
+	list modes 'adhoc'
 	option ap_ssid 'LiMe'
 	option adhoc_ssid 'libre-mesh'
 	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
-	option adhoc_channel_2ghz '11'
-	option adhoc_channel_5ghz '36'
 	option adhoc_mcast_rate_2ghz '24000'
 	option adhoc_mcast_rate_5ghz '6000'
-	list modes 'ap'
-	list modes 'adhoc'
