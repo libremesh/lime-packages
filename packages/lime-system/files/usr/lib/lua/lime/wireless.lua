@@ -18,7 +18,7 @@ function wireless.clean()
 	print("Clearing wireless config...")
 	local uci = libuci:cursor()
 	uci:foreach("wireless", "wifi-iface", function(s) uci:delete("wireless", s[".name"]) end)
-	uci:save()
+	uci:save("wireless")
 end
 
 function wireless.scandevices()
@@ -99,19 +99,22 @@ function wireless.configure()
 		for _,modeArgs in pairs(modes) do
 			
 			local args = utils.split(modeArgs, wireless.modeParamsSeparator)
+			local modeName = args[1]
 			
-			if args[1] == "manual" then break end
+			if modeName == "manual" then break end
 			
-			local mode = require("lime.mode."..args[1])
-			mode.setup_radio(radio, args)
+			local mode = require("lime.mode."..modeName)
+			local wirelessInterfaceName = mode.setup_radio(radio, args)[".name"]
 
 			local uci = libuci:cursor()
 			
 			for key,value in pairs(options) do
 				local keyPrefix = utils.split(key, "_")[1]
-				local isGoodOption = ( (key ~= "modes") and (not key:match("^%.")) and (not key:match("channel")) and (not (wireless.isMode(keyPrefix) and keyPrefix ~= mode)) )
+				local isGoodOption = ( (key ~= "modes") and (not key:match("^%.")) and (not key:match("channel")) and (not (wireless.isMode(keyPrefix) and keyPrefix ~= modeName)) )
+
 				if isGoodOption then
-					local nk = key:gsub("^"..mode.."_", ""):gsub(freqSuffix.."$", "")
+					local nk = key:gsub("^"..modeName.."_", ""):gsub(freqSuffix.."$", "")
+
 					uci:set("wireless", wirelessInterfaceName, nk, value)
 				end
 			end
