@@ -10,8 +10,8 @@ config lime system
 
 config lime network
 	option primary_interface eth0                                          # The mac address of this device will be used in different places
-	option main_ipv4_address 100.64.M1.M2/24                               # Parametrizable main IPv4 address Mn will be substituted with the n'th byte of the primary_dev MAC
-	option main_ipv6_address caca:d0:M1:M4M3::M6/64                        # Parametrizable main IPv6 address Mn will be substituted with the n'th byte of the primary_dev MAC
+	option main_ipv4_address 100.64.0.M6/24                                # Parametrizable main IPv4 address Mn will be substituted with the n'th byte of the primary_dev MAC
+	option main_ipv6_address caca::M6/64                                   # Parametrizable main IPv6 address Mn will be substituted with the n'th byte of the primary_dev MAC
 
 
 # WiFi interface specific options ( override general option )
