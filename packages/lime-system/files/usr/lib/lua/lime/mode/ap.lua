@@ -2,12 +2,12 @@
 
 local ap = {}
 
-ap.modename="ap"
+ap.wifi_mode="ap"
 
 function ap.setup_radio(radio, args)
 --!	checks("table", "?table")
 
-	wireless.createBaseWirelessIface(radio, ap.wifi_mode, { network = "lan" })
+	return wireless.createBaseWirelessIface(radio, ap.wifi_mode, { network = "lan" })
 end
 
 return ap
