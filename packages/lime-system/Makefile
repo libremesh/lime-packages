@@ -22,7 +22,8 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=p4u <pau@dabax.net>
   URL:=http://libre-mesh.org
-  DEPENDS:= +bmx6 +bmx6-uci-config \
+  DEPENDS:=+lua +libuci-lua \
+  +bmx6 +bmx6-uci-config \
   +kmod-batman-adv \
   +kmod-macvlan +ebtables \
   +dnsmasq-lease-share
