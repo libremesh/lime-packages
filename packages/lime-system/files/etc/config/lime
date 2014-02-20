@@ -18,9 +18,9 @@ config lime network
 
 config wifi radio1
 	list modes 'adhoc'
+	option channel_2ghz '14'
+	option channel_5ghz '60'
 	option adhoc_mcast_rate '6000'
-	option adhoc_channel_2ghz '14'
-	option adhoc_channel_5ghz '60'
 	option adhoc_ssid 'libre-mesh'
 	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
 
