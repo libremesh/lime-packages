@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2013 OpenWrt.org
+# Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v3.
 #
@@ -12,21 +12,17 @@ LIME_CODENAME:=bigbang
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
-PKG_NAME:=lime-system
+PKG_NAME:=lime-proto-bmx6
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  TITLE:=libre-mesh system files
+  TITLE:=LiMe Bmx6 proto support
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libre-mesh.org
   DEPENDS:=+lime-system +lua +libuci-lua +bmx6 +bmx6-uci-config
-endef
-
-define Package/$(PKG_NAME)/description
-	Bmx6 proto support for LiMe node
 endef
 
 define Build/Compile
@@ -37,7 +33,7 @@ endef
 
 define Package/$(PKG_NAME)/install
 	@mkdir -p $(1)/usr/lib/lua/lime/proto || true
-	$(CP) ./build/bmx6.lua $(1)/usr/lib/lua/lime/proto/bmx6.lua
+	$(CP) ./build/bmx6.lua $(1)/usr/lib/lua/lime/proto/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
