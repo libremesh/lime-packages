@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2013 OpenWrt.org
+# Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v3.
 #
@@ -20,13 +20,9 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   TITLE:=libre-mesh system files
   CATEGORY:=LiMe
-  MAINTAINER:=p4u <pau@dabax.net>
+  MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libre-mesh.org
-  DEPENDS:=+lua +libuci-lua \
-  +bmx6 +bmx6-uci-config \
-  +kmod-batman-adv \
-  +kmod-macvlan +ebtables \
-  +dnsmasq-lease-share
+  DEPENDS:=+lua +libuci-lua +kmod-batman-adv
 endef
 
 define Package/$(PKG_NAME)/description
