@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libre-mesh.org
-  DEPENDS:=+lua +libuci-lua +kmod-batman-adv
+  DEPENDS:=+lua +libuci-lua
 endef
 
 define Package/$(PKG_NAME)/description
