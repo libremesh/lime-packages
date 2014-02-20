@@ -94,6 +94,7 @@ function wireless.configure()
 
 		local uci = libuci:cursor()
 		uci:set("wireless", radioName, "disabled", 0)
+		uci:set("wireless", radioName, "channel", options["channel"..freqSuffix])
 		uci:save("wireless")
 
 		for _,modeArgs in pairs(modes) do
