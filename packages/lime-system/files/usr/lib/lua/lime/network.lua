@@ -107,17 +107,15 @@ function network.configure()
 	local fisDevs = network.scandevices()
 	for _,device in pairs(fisDevs) do
 		local owrtIf = specificIfaces[device]
-		if owrtIf then
-			for _,protoParams in pairs(owrtIf["protocols"]) do
-				local args = utils.split(protoParams, network.protoParamsSeparator)
-				if args[1] == "manual" then break end -- If manual is specified do not configure interface
-				local proto = require("lime.proto."..args[1])
-				proto.setup_interface(device, args)
-			end
-		else
-			for _,protoParams in pairs(generalProtocols) do
-				local args = utils.split(protoParams, network.protoParamsSeparator)
-				local proto = require("lime.proto."..args[1])
+		local deviceProtos = generalProtocols
+		if owrtIf then deviceProtos = owrtIf["protocols"] end
+
+		for _,protoParams in pairs(deviceProtos) do
+			local args = utils.split(protoParams, network.protoParamsSeparator)
+			if args[1] == "manual" then break end -- If manual is specified do not configure interface
+			local protoModule = "lime.proto."..args[1]
+			if utils.isModuleAvailable(protoModule) then
+				local proto = require(protoModule)
 				proto.setup_interface(device, args)
 			end
 		end
