@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libre-mesh.org
-  DEPENDS:=+lua +libuci-lua +luci-lib-core
+  DEPENDS:=+lua +libuci-lua +luci-lib-core +luci-lib-nixio +luci-lib-web
 endef
 
 define Package/$(PKG_NAME)/description

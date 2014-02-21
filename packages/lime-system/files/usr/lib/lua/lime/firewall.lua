@@ -1,5 +1,8 @@
 #!/usr/bin/lua
 
+local libuci = require("uci")
+local fs = require("nixio.fs")
+
 firewall = {}
 
 function firewall.configure()
@@ -15,6 +18,7 @@ function firewall.configure()
     content:insert("iptables -t mangle -A FORWARD -p tcp -o bmx+ -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu")
     fs.writefile("/etc/firewall.user", content:concat("\n").."\n")
 
+    local uci = libuci:cursor()
     uci:foreach("firewall", "defaults", function(s)
         uci:set("firewall", s[".name"], "disable_ipv6", "1")
         uci:set("firewall", s[".name"], "input", "ACCEPT")
