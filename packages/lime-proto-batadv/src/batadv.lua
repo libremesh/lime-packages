@@ -1,7 +1,8 @@
 #!/usr/bin/lua
 
 local libuci = require("uci")
-local fs = require "nixio.fs"
+local fs = require("nixio.fs")
+local lan = require("lime.proto.lan")
 
 batadv = {}
 
@@ -50,7 +51,9 @@ function batadv.configure()
 	for _,proto in pairs(config.get("network", "protocols")) do
 		if proto == "anygw" then uci:set("batman-adv", "bat0", "distributed_arp_table", "0") end
 	end
-	
+
+	lan.setup_interface("bat0", nil)
+
 	uci:save("batman-adv")
 end
 
