@@ -23,7 +23,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libre-mesh.org
   DEPENDS:=+lua +libuci-lua +luci-lib-core +luci-lib-nixio +luci-lib-web
- # luci-lib-web isn't really needed but luci-lib-core.util dependes on it while not declared in Makefile ( moreover luci-lib-core shouldn't really depend on luci-lib-web)
+ # luci-lib-web isn't really needed but luci-lib-core.util dependes on it while not declaring it in Makefile ( moreover luci-lib-core shouldn't really depend on luci-lib-web)
 endef
 
 define Package/$(PKG_NAME)/description

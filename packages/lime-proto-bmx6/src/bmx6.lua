@@ -1,6 +1,8 @@
 #!/usr/bin/lua
 
-local network = require "lime.network"
+local network = require("lime.network")
+local fs = require("nixio.fs")
+local libuci = require("uci")
 
 bmx6 = {}
 
@@ -8,6 +10,8 @@ function bmx6.setup_interface(ifname, args)
 	local interface = network.limeIfNamePrefix..ifname.."_bmx6"
 	local owrtFullIfname = ifname
 	if args[2] then owrtFullIfname = owrtFullIfname..network.vlanSeparator..args[2] end
+
+	local uci = libuci:cursor()
 
 	uci:set("bmx6", interface, "dev")
 	uci:set("bmx6", interface, "dev", owrtFullIfname)
@@ -29,9 +33,11 @@ end
 function bmx6.configure()
 
 	bmx6.clean()
-	
+
 	local ipv4, ipv6 = network.primary_address() 
-	
+
+	local uci = libuci:cursor()
+
 	uci:set("bmx6", "general", "bmx6")
 	uci:set("bmx6", "general", "dbgMuteTimeout", "1000000")
 
