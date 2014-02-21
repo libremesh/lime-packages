@@ -2,7 +2,6 @@
 
 network = {}
 
-local bit = require "nixio".bit
 local ip = require "luci.ip"
 local config = require "lime.config"
 local utils = require "lime.utils"
@@ -35,15 +34,6 @@ function network.primary_address()
 	end
 
 	return ip.IPv4(ipv4_template), ip.IPv6(ipv6_template) 
-end
-
-function network.eui64(mac)
-    local function flip_7th_bit(x) return utils.hex(bit.bxor(tonumber(x, 16), 2)) end
-
-    local t = utils.split(mac, ":")
-    t[1] = flip_7th_bit(t[1])
-
-    return string.format("%s%s:%sff:fe%s:%s%s", t[1], t[2], t[3], t[4], t[5], t[6])
 end
 
 function network.setup_rp_filter()
