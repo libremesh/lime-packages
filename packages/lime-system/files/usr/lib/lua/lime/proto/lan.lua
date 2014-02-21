@@ -2,8 +2,8 @@
 
 lan = {}
 
-local network = require "lime.network"
-local libuci = require "uci"
+local network = require("lime.network")
+local libuci = require("uci")
 
 function lan.configure()
 	lan.clear()
