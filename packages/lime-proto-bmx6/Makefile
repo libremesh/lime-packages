@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libre-mesh.org
-  DEPENDS:=+lime-system +lua +libuci-lua +bmx6 +bmx6-uci-config
+  DEPENDS:=+lime-system +lua +libuci-lua +bmx6 +bmx6-uci-config +bmx6-json +bmx6-sms +bmx6-table
 endef
 
 define Build/Compile
