@@ -1,5 +1,8 @@
 #!/usr/bin/lua
 
+local libuci = require("uci")
+local fs = require "nixio.fs"
+
 batadv = {}
 
 function batadv.setup_interface(ifname, args)
@@ -18,6 +21,7 @@ function batadv.setup_interface(ifname, args)
 		if ifname:match("^eth") then mtu = 1496 end 
 	end
 
+	local uci = libuci:cursor()
 	uci:set("network", interface, "interface")
 	uci:set("network", interface, "ifname", owrtFullIfname)
 	uci:set("network", interface, "proto", "batadv")
@@ -28,7 +32,9 @@ end
 
 function batadv.clean()
 	print("Clearing batman-adv config...")
+	local uci = libuci:cursor()
 	uci:delete("batman-adv", "bat0")
+	uci:save("batman-adv")
 	if not fs.lstat("/etc/config/batman-adv") then fs.writefile("/etc/config/batman-adv", "") end
 end
 
@@ -36,6 +42,7 @@ end
 function batadv.configure()
 	batadv.clean()
 
+	local uci = libuci:cursor()
 	uci:set("batman-adv", "bat0", "mesh")
 	uci:set("batman-adv", "bat0", "bridge_loop_avoidance", "1")
 
