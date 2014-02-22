@@ -1,6 +1,7 @@
 #!/usr/bin/lua
 
 local network = require("lime.network")
+local config = require("lime.config")
 local fs = require("nixio.fs")
 local libuci = require("uci")
 
@@ -30,7 +31,7 @@ function bmx6.clean()
 	fs.writefile("/etc/config/bmx6", "")
 end
 
-function bmx6.configure()
+function bmx6.configure(args)
 
 	bmx6.clean()
 
@@ -91,6 +92,12 @@ function bmx6.configure()
 	uci:set("bmx6", "publicv6", "tunOut", "publicv6")
 	uci:set("bmx6", "publicv6", "network", "2000::/3")
 	uci:set("bmx6", "publicv6", "maxPrefixLen", "64")
+
+	if config.get_bool("network", "bmx6_over_batman") then
+		for _,protoArgs in pairs(config.get("network", "protocols")) do
+			if(utils.split(protoArgs, network.protoParamsSeparator)[1] == "batadv") then bmx6.setup_interface("bat0", args) end
+		end
+	end
 
 	uci:save("bmx6")
 end
