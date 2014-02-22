@@ -5,7 +5,7 @@ lan = {}
 local network = require("lime.network")
 local libuci = require("uci")
 
-function lan.configure()
+function lan.configure(args)
 	lan.clear()
 	
 	local ipv4, ipv6 = network.primary_address()

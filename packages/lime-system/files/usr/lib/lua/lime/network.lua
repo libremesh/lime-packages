@@ -96,7 +96,7 @@ function network.configure()
 		local protoModule = "lime.proto."..utils.split(protocol,":")[1]
 		if utils.isModuleAvailable(protoModule) then
 			local proto = require(protoModule)
-			proto.configure()
+			proto.configure(utils.split(protocol, network.protoParamsSeparator))
 		end
 	end
 
