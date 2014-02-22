@@ -24,4 +24,9 @@ function config.get_all(sectionname)
 	return ret
 end
 
+function config.get_bool(sectionname, option, default)
+	local val = config.get(sectionname, option, default)
+	return (val and ((val == '1') or (val == 'on') or (val == 'true') or (val == 'enabled')))
+end
+
 return config
