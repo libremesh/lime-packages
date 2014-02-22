@@ -40,7 +40,7 @@ function batadv.clean()
 end
 
 
-function batadv.configure()
+function batadv.configure(args)
 	batadv.clean()
 
 	local uci = libuci:cursor()
