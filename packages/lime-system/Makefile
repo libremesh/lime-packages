@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2013 OpenWrt.org
+# Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v3.
 #
@@ -20,16 +20,10 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   TITLE:=libre-mesh system files
   CATEGORY:=LiMe
-  MAINTAINER:=p4u <pau@dabax.net>
+  MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libre-mesh.org
-  DEPENDS:=+lime-webui \
-  +iwinfo +iw +netperf +mtr \
-  +bmx6 +bmx6-uci-config +bmx6-json +bmx6-sms +bmx6-table \
-  +kmod-batman-adv \
-  +wpad-mini +reghack \
-  +kmod-macvlan +ebtables \
-  +dhcpdiscover +ip +iputils-ping6 \
-  +dnsmasq-lease-share
+  DEPENDS:=+lua +libuci-lua +luci-lib-core +luci-lib-nixio +luci-lib-web
+ # luci-lib-web isn't really needed but luci-lib-core.util dependes on it while not declaring it in Makefile ( moreover luci-lib-core shouldn't really depend on luci-lib-web)
 endef
 
 define Package/$(PKG_NAME)/description
