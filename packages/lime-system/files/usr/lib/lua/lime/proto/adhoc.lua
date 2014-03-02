@@ -2,7 +2,7 @@
 
 local adhoc = {}
 
-function adhoc.configure() end
+function adhoc.configure(args) end
 
 function adhoc.setup_interface(ifname, args)
 	if ifname:match("^wlan%d_adhoc") then

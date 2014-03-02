@@ -2,12 +2,15 @@
 
 lan = {}
 
-local network = require "lime.network"
+local network = require("lime.network")
+local libuci = require("uci")
 
-function lan.configure()
+function lan.configure(args)
 	lan.clear()
 	
 	local ipv4, ipv6 = network.primary_address()
+	
+	local uci = libuci:cursor()
 	uci:set("network", "lan", "ip6addr", ipv6:string())
 	uci:set("network", "lan", "ipaddr", ipv4:host():string())
 	uci:set("network", "lan", "netmask", ipv4:mask():string())
@@ -19,6 +22,7 @@ end
 function lan.setup_interface(ifname, args)
 	if ifname:match("adhoc") then return end
 
+	local uci = libuci:cursor()
 	local bridgedIfs = {}
 	local oldIfs = uci:get("network", "lan", "ifname") or {}
 	if type(oldIfs) == "string" then oldIfs = utils.split(oldIfs, " ") end
@@ -31,7 +35,9 @@ function lan.setup_interface(ifname, args)
 end
 
 function lan.clear()
+	local uci = libuci:cursor()
 	uci:delete("network", "lan", "ifname")
+	uci:save("network")
 end
 
 return lan

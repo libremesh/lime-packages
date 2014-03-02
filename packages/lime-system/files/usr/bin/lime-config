@@ -1,17 +1,9 @@
 #!/usr/bin/lua
 
-local libuci = require "uci"
-fs  = require "nixio.fs"
-iw  = require "iwinfo"
-
-firewall = require "lime.firewall"
-network = require "lime.network"
-wireless = require "lime.wireless"
-system = require "lime.system"
-config = require "lime.config"
-utils = require "lime.utils"
-
-uci = libuci:cursor()
+local firewall = require "lime.firewall"
+local network = require "lime.network"
+local wireless = require "lime.wireless"
+local system = require "lime.system"
 
 --@DEPRECATED avoid use this function and/or put it in the right place!!
 function node_id()
@@ -35,10 +27,10 @@ function network_id()
 end
 
 function main()
-	wireless.configure()
-	network.configure()
-	firewall.configure()
-	system.configure()
+	local modules = { wireless, network, firewall, system }
+
+	for _,module in pairs(modules) do module.clean() end
+	for _,module in pairs(modules) do module.configure() end
 end
 
 main()
