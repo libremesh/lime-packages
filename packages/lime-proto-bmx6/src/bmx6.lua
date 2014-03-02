@@ -1,6 +1,9 @@
 #!/usr/bin/lua
 
-local network = require "lime.network"
+local network = require("lime.network")
+local config = require("lime.config")
+local fs = require("nixio.fs")
+local libuci = require("uci")
 
 bmx6 = {}
 
@@ -8,6 +11,8 @@ function bmx6.setup_interface(ifname, args)
 	local interface = network.limeIfNamePrefix..ifname.."_bmx6"
 	local owrtFullIfname = ifname
 	if args[2] then owrtFullIfname = owrtFullIfname..network.vlanSeparator..args[2] end
+
+	local uci = libuci:cursor()
 
 	uci:set("bmx6", interface, "dev")
 	uci:set("bmx6", interface, "dev", owrtFullIfname)
@@ -26,12 +31,14 @@ function bmx6.clean()
 	fs.writefile("/etc/config/bmx6", "")
 end
 
-function bmx6.configure()
+function bmx6.configure(args)
 
 	bmx6.clean()
-	
+
 	local ipv4, ipv6 = network.primary_address() 
-	
+
+	local uci = libuci:cursor()
+
 	uci:set("bmx6", "general", "bmx6")
 	uci:set("bmx6", "general", "dbgMuteTimeout", "1000000")
 
@@ -85,6 +92,12 @@ function bmx6.configure()
 	uci:set("bmx6", "publicv6", "tunOut", "publicv6")
 	uci:set("bmx6", "publicv6", "network", "2000::/3")
 	uci:set("bmx6", "publicv6", "maxPrefixLen", "64")
+
+	if config.get_bool("network", "bmx6_over_batman") then
+		for _,protoArgs in pairs(config.get("network", "protocols")) do
+			if(utils.split(protoArgs, network.protoParamsSeparator)[1] == "batadv") then bmx6.setup_interface("bat0", args) end
+		end
+	end
 
 	uci:save("bmx6")
 end

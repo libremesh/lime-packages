@@ -1,12 +1,12 @@
 #!/usr/bin/lua
 
+local fs = require("nixio.fs")
+local network = require("lime.network")
+local libuci = require "uci"
+
 anygw = {}
 
-function anygw.configure()
-	local network = require("lime.network")
-	local libuci = require "uci"
-	local uci = libuci:cursor()
-	
+function anygw.configure(args)
 	local ipv4, ipv6 = network.primary_address()
 	
 	-- anygw macvlan interface
@@ -19,6 +19,8 @@ function anygw.configure()
 	anygw_ipv4[3] = ipv4:prefix()
 
 	local pfr = network.limeIfNamePrefix
+	
+	local uci = libuci:cursor()
 	uci:set("network", pfr.."anygw_dev", "device")
 	uci:set("network", pfr.."anygw_dev", "type", "macvlan")
 	uci:set("network", pfr.."anygw_dev", "name", "anygw")
@@ -31,6 +33,7 @@ function anygw.configure()
 	uci:set("network", pfr.."anygw_if", "ip6addr", anygw_ipv6:string())
 	uci:set("network", pfr.."anygw_if", "ipaddr", anygw_ipv4:host():string())
 	uci:set("network", pfr.."anygw_if", "netmask", anygw_ipv4:mask():string())
+	uci:save("network")
 
 	local content = { insert = table.insert, concat = table.concat }
 	for line in io.lines("/etc/firewall.user") do
