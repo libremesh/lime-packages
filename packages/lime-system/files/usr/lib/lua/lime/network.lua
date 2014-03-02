@@ -65,6 +65,9 @@ function network.clean()
 	uci:foreach("network", "interface", function(s) if s[".name"]:match(network.limeIfNamePrefix) then uci:delete("network", s[".name"]) end end)
 
 	uci:save("network")
+
+	print("Disabling odhcpd")
+	io.popen("/etc/init.d/odhcpd disable || true"):close()
 end
 
 function network.scandevices()
@@ -88,7 +91,6 @@ end
 
 function network.configure()
 
-	network.clean()
 	network.setup_rp_filter()
 
 	local generalProtocols = config.get("network", "protocols")

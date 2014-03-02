@@ -5,9 +5,10 @@ local fs = require("nixio.fs")
 
 firewall = {}
 
-function firewall.configure()
-    print("Disabling v6 firewall")
+function firewall.clean()
+end
 
+function firewall.configure()
     local content = { insert = table.insert, concat = table.concat }
     for line in io.lines("/etc/firewall.user") do
         if not line:match("^ip6?tables ") then content:insert(line) end
