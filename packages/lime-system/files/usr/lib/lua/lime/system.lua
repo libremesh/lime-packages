@@ -21,8 +21,6 @@ function system.clean()
 end
 
 function system.configure()
-    system.clean()
-
     print("Configuring system...")
     system.set_hostname()
 

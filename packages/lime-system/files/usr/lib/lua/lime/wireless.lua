@@ -72,9 +72,6 @@ function wireless.createBaseWirelessIface(radio, mode, extras)
 end
 
 function wireless.configure()
-
-	wireless.clean()
-
 	local specificRadios = {}
 	config.foreach("wifi", function(radio) specificRadios[radio[".name"]] = radio end)
 

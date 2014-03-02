@@ -88,7 +88,6 @@ end
 
 function network.configure()
 
-	network.clean()
 	network.setup_rp_filter()
 
 	local generalProtocols = config.get("network", "protocols")
