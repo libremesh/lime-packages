@@ -54,7 +54,7 @@ function anygw.configure(args)
 	table.insert(content, "dhcp-option=tag:anygw, option:dns-server,"..anygw_ipv4:host():string())
 	table.insert(content, "dhcp-broadcast=tag:anygw")
 	table.insert(content, "no-dhcp-interface=br-lan")
-	fs.writefile("/etc/dnsmasq.conf", table.concat(content, "\n").."\n") -- WhyTF we do 'table.concat(content, "\n").."\n"' and not 'table.concat(content, "\n\n")' ?
+	fs.writefile("/etc/dnsmasq.conf", table.concat(content, "\n").."\n")
 
 	-- and disable 6relayd
 	print("Disabling 6relayd...")
