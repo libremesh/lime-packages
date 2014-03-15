@@ -12,7 +12,7 @@ LIBRE_MESH_PREFIX:=lime
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
 PKG_NAME:=reghack
-PKG_VERSION:=20131203
+PKG_VERSION:=20140207
 PKG_RELEASE=$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
