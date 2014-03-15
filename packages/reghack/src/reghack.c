@@ -31,6 +31,11 @@
 
 static int need_byteswap = 0;
 
+enum nl80211_dfs_regions {
+	NL80211_DFS_UNSET = 0,
+	NL80211_DFS_FCC = 1
+};
+
 struct ieee80211_freq_range {
     uint32_t start_freq_khz;
     uint32_t end_freq_khz;
@@ -48,10 +53,17 @@ struct ieee80211_reg_rule {
     uint32_t flags;
 };
 
-struct ieee80211_regdomain {
+struct ieee80211_regdomain_old {
     uint32_t n_reg_rules;
     char alpha2[2];
     uint8_t dfs_region;
+    struct ieee80211_reg_rule reg_rules[1];
+};
+
+struct ieee80211_regdomain {
+    uint32_t n_reg_rules;
+    char alpha2[2];
+    enum nl80211_dfs_regions dfs_region;
     struct ieee80211_reg_rule reg_rules[1];
 };
 
@@ -72,99 +84,58 @@ struct ieee80211_regdomain {
     .flags = reg_flags,             \
 }
 
+#define REG_MATCH(code, num, dfs, rule) \
+{ \
+	.alpha2 = code, \
+	.dfs_region = dfs, \
+	.n_reg_rules = num, \
+	.reg_rules = { \
+		rule \
+	} \
+}
+
 
 struct search_regdomain {
 	const char *desc;
 	struct ieee80211_regdomain reg;
+	struct ieee80211_regdomain_old old;
 };
 
 static const struct search_regdomain search_regdomains[] = {
 	/* cfg80211.ko matches */
 	{
 		.desc = "core world5 regdomain in cfg80211/reg.o",
-		.reg  = {
-			.alpha2 = "00",
-			.reg_rules = {
-				REG_RULE(2402, 2472, 40, 6, 20, 0)
-			},
-			.n_reg_rules = 5
-		}
+		.reg  = REG_MATCH("00", 5, NL80211_DFS_UNSET, REG_RULE(2402, 2472, 40, 6, 20, 0))
 	}, {
 		.desc = "core world6 regdomain in cfg80211/reg.o",
-		.reg  = {
-			.alpha2 = "00",
-			.reg_rules = {
-				REG_RULE(2402, 2472, 40, 6, 20, 0)
-			},
-			.n_reg_rules = 6
-		}
+		.reg  = REG_MATCH("00", 6, NL80211_DFS_UNSET, REG_RULE(2402, 2472, 40, 6, 20, 0))
 	}, {
 		.desc = "embedded 00 regdomain in cfg80211/regdb.o",
-		.reg  = {
-			.alpha2 = "00",
-			.reg_rules = {
-				REG_RULE(2402, 2472, 40, 3, 20, 0)
-			},
-			.n_reg_rules = 5
-		}
+		.reg  = REG_MATCH("00", 5, NL80211_DFS_UNSET, REG_RULE(2402, 2472, 40, 3, 20, 0))
 	}, {
 		.desc = "embedded 00 regdomain in cfg80211/regdb.o",
-		.reg  = {
-			.alpha2 = "00",
-			.reg_rules = {
-				REG_RULE(2402, 2472, 40, 3, 20, 0)
-			},
-			.n_reg_rules = 6
-		}
+		.reg  = REG_MATCH("00", 6, NL80211_DFS_UNSET, REG_RULE(2402, 2472, 40, 3, 20, 0))
 	}, {
 		.desc = "embedded US regdomain in cfg80211/regdb.o",
-		.reg  = {
-			.alpha2 = "US",
-			.reg_rules = {
-				REG_RULE(2402, 2472, 40, 3, 27, 0)
-			},
-			.n_reg_rules = 6
-		}
+		.reg  = REG_MATCH("US", 6, NL80211_DFS_UNSET, REG_RULE(2402, 2472, 40, 3, 27, 0))
 	}, {
 		.desc = "embedded US regdomain in cfg80211/regdb.o",
-		.reg  = {
-			.alpha2 = "US",
-			.dfs_region = 1,
-			.reg_rules = {
-				REG_RULE(2402, 2472, 40, 3, 27, 0)
-			},
-			.n_reg_rules = 7
-		}
+		.reg  = REG_MATCH("US", 7, NL80211_DFS_UNSET, REG_RULE(2402, 2472, 40, 3, 27, 0))
+	}, {
+		.desc = "embedded US regdomain in cfg80211/regdb.o",
+		.reg  = REG_MATCH("US", 7, NL80211_DFS_FCC, REG_RULE(2402, 2472, 40, 3, 27, 0))
 	},
 
 	/* ath.ko matches */
 	{
 		.desc = "ath world regdomain with 3 rules in ath/regd.o",
-		.reg  = {
-			.alpha2 = "99",
-			.reg_rules = {
-				REG_RULE(2402, 2472, 40, 0, 20, 0)
-			},
-			.n_reg_rules = 3
-		}
+		.reg  = REG_MATCH("99", 3, NL80211_DFS_UNSET, REG_RULE(2402, 2472, 40, 0, 20, 0))
 	}, {
 		.desc = "ath world regdomain with 4 rules in ath/regd.o",
-		.reg  = {
-			.alpha2 = "99",
-			.reg_rules = {
-				REG_RULE(2402, 2472, 40, 0, 20, 0)
-			},
-			.n_reg_rules = 4
-		}
+		.reg  = REG_MATCH("99", 4, NL80211_DFS_UNSET, REG_RULE(2402, 2472, 40, 0, 20, 0))
 	}, {
 		.desc = "ath world regdomain with 5 rules in ath/regd.o",
-		.reg  = {
-			.alpha2 = "99",
-			.reg_rules = {
-				REG_RULE(2402, 2472, 40, 0, 20, 0)
-			},
-			.n_reg_rules = 5
-		}
+		.reg  = REG_MATCH("99", 5, NL80211_DFS_UNSET, REG_RULE(2402, 2472, 40, 0, 20, 0))
 	}
 };
 
@@ -228,12 +199,20 @@ static int patch_regdomain(struct ieee80211_regdomain *pos,
 	struct ieee80211_reg_rule r2 = REG_RULE(2400, 2483, 40, 0, 30, 0);
 	struct ieee80211_reg_rule r5 = REG_RULE(5140, 5860, 40, 0, 30, 0);
 	struct ieee80211_regdomain pattern = *comp;
+	struct ieee80211_regdomain_old *pos2 = (struct ieee80211_regdomain_old *)pos;
+	struct ieee80211_regdomain_old pattern2 = { };
 
 	if (need_byteswap)
 	{
 		bswap_rule(&pattern.reg_rules[0]);
+		pattern.dfs_region = bswap_32(pattern.dfs_region);
 		pattern.n_reg_rules = bswap_32(pattern.n_reg_rules);
 	}
+
+	pattern2.dfs_region = pattern.dfs_region;
+	pattern2.n_reg_rules = pattern.n_reg_rules;
+	memcpy(&pattern2.alpha2, &pattern.alpha2, sizeof(pattern2.alpha2));
+	memcpy(&pattern2.reg_rules, &pattern.reg_rules, sizeof(pattern2.reg_rules));
 
 	if (!memcmp(pos, &pattern, sizeof(pattern)))
 	{
@@ -247,6 +226,22 @@ static int patch_regdomain(struct ieee80211_regdomain *pos,
 			bswap_rule(&pos->reg_rules[0]);
 			bswap_rule(&pos->reg_rules[1]);
 			pos->n_reg_rules = bswap_32(pos->n_reg_rules);
+		}
+
+		return 0;
+	}
+	else if (!memcmp(pos2, &pattern2, sizeof(pattern2)))
+	{
+		pos2->reg_rules[0] = r2;
+		pos2->reg_rules[1] = r5;
+		pos2->n_reg_rules = 2;
+		pos2->dfs_region = 0;
+
+		if (need_byteswap)
+		{
+			bswap_rule(&pos2->reg_rules[0]);
+			bswap_rule(&pos2->reg_rules[1]);
+			pos2->n_reg_rules = bswap_32(pos2->n_reg_rules);
 		}
 
 		return 0;
