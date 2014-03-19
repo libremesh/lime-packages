@@ -88,9 +88,14 @@ function bmx6.configure(args)
 	uci:set("bmx6", "publicv6", "maxPrefixLen", "64")
 
 	-- Announce local cloud
-	uci:set("bmx6", "localCloud", "tunIn")
-	uci:set("bmx6", "localCloud", "tunIn", "localCloud")
-	uci:set("bmx6", "localCloud", "network", ipv4:network():string().."/"..ipv4:prefix())
+	uci:set("bmx6", "local4", "tunIn")
+	uci:set("bmx6", "local4", "tunIn", "local4")
+	uci:set("bmx6", "local4", "network", ipv4:network():string().."/"..ipv4:prefix())
+
+	-- Announce local cloud
+	uci:set("bmx6", "local6", "tunIn")
+	uci:set("bmx6", "local6", "tunIn", "local6")
+	uci:set("bmx6", "local6", "network", ipv6:network():string().."/"..ipv6:prefix())
 
 	if config.get_bool("network", "bmx6_over_batman") then
 		for _,protoArgs in pairs(config.get("network", "protocols")) do
