@@ -87,12 +87,12 @@ function bmx6.configure(args)
 	uci:set("bmx6", "publicv6", "network", "2000::/3")
 	uci:set("bmx6", "publicv6", "maxPrefixLen", "64")
 
-	-- Announce local cloud
+	-- Announce local ipv4 cloud
 	uci:set("bmx6", "local4", "tunIn")
 	uci:set("bmx6", "local4", "tunIn", "local4")
 	uci:set("bmx6", "local4", "network", ipv4:network():string().."/"..ipv4:prefix())
 
-	-- Announce local cloud
+	-- Announce local ipv6 cloud
 	uci:set("bmx6", "local6", "tunIn")
 	uci:set("bmx6", "local6", "tunIn", "local6")
 	uci:set("bmx6", "local6", "network", ipv6:network():string().."/"..ipv6:prefix())
