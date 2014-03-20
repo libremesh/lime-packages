@@ -35,13 +35,12 @@ function anygw.configure(args)
 	uci:set("network", pfr.."anygw_if", "netmask", anygw_ipv4:mask():string())
 	uci:save("network")
 
-	local content = { insert = table.insert, concat = table.concat }
-	for line in io.lines("/etc/firewall.user") do
-		if not line:match("^ebtables ") then content:insert(line) end
-	end
-	content:insert("ebtables -A FORWARD -j DROP -d " .. anygw_mac)
-	content:insert("ebtables -t nat -A POSTROUTING -o bat0 -j DROP -s " .. anygw_mac)
-	fs.writefile("/etc/firewall.user", content:concat("\n").."\n")
+	fs.writefile(
+		"/etc/lime-firewall.d/20-anygw_local.start",
+		"\n" ..
+		"ebtables -A FORWARD -j DROP -d " .. anygw_mac .. "\n" ..
+		"ebtables -t nat -A POSTROUTING -o bat0 -j DROP -s " .. anygw_mac .. "\n"
+	)
 
 	-- IPv6 router advertisement for anygw interface
 	print("Enabling RA in dnsmasq...")

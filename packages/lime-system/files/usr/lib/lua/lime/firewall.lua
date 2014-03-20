@@ -14,17 +14,15 @@ end
 function firewall.configure()
 
 	fs.writefile(
-		"/etc/lime-firewall.d/10-accept.start", 
-		[[
-			iptables -P INPUT ACCEPT
-			iptables -P OUTPUT ACCEPT
-			iptables -P FORWARD ACCEPT
-			
-			ip6tables -P INPUT ACCEPT
-			ip6tables -P OUTPUT ACCEPT
-			ip6tables -P FORWARD ACCEPT
-		]]
-	)
+		"/etc/lime-firewall.d/10-accept.start", [[
+iptables -P INPUT ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD ACCEPT
+
+ip6tables -P INPUT ACCEPT
+ip6tables -P OUTPUT ACCEPT
+ip6tables -P FORWARD ACCEPT
+]])
 
 	fs.writefile(
 		"/etc/lime-firewall.d/15-mss_clamp.start",
