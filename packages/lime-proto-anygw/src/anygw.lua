@@ -36,7 +36,7 @@ function anygw.configure(args)
 	uci:save("network")
 
 	fs.writefile(
-		"/etc/lime-firewall.d/20-anygw_local.start",
+		"/etc/lime-init.d/20-anygw_local.start",
 		"\n" ..
 		"ebtables -A FORWARD -j DROP -d " .. anygw_mac .. "\n" ..
 		"ebtables -t nat -A POSTROUTING -o bat0 -j DROP -s " .. anygw_mac .. "\n"

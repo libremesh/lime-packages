@@ -1,10 +1,10 @@
 #!/bin/sh /etc/rc.common
 
-START=19
+START=89
 
 start()
 {
-	local hooks=/etc/lime-firewall.d/*.start
+	local hooks=/etc/lime-init.d/*.start
 	for hook in $hooks ; do
 	. $hook || true
 	done
@@ -12,7 +12,7 @@ start()
 
 stop()
 {
-	local hooks=/etc/lime-firewall.d/*.stop
+	local hooks=/etc/lime-init.d/*.stop
 	for hook in $hooks ; do
 	. $hook || true
 	done
