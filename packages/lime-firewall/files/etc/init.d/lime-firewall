@@ -1,0 +1,26 @@
+#!/bin/sh /etc/rc.common
+
+START=19
+
+start()
+{
+	local hooks=/etc/lime-firewall.d/*.start
+	for hook in $hooks ; do
+		$hook || true
+	done
+}
+
+stop()
+{
+	local hooks=/etc/lime-firewall.d/*.stop
+	for hook in $hooks ; do
+		$hook || true
+	done
+}
+
+restart()
+{
+	stop
+	sleep 3
+	start
+}
