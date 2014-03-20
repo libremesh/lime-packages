@@ -6,7 +6,7 @@ start()
 {
 	local hooks=/etc/lime-firewall.d/*.start
 	for hook in $hooks ; do
-		$hook || true
+	. $hook || true
 	done
 }
 
@@ -14,7 +14,7 @@ stop()
 {
 	local hooks=/etc/lime-firewall.d/*.stop
 	for hook in $hooks ; do
-		$hook || true
+	. $hook || true
 	done
 }
 
