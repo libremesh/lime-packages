@@ -26,4 +26,8 @@ define Package/$(PKG_NAME)/description
  Very simple modular firewall to permit easy and understendable configurations
 endef
 
+define Package/$(PKG_NAME)/install
+	$(CP) ./files/* $(1)/
+endef
+
 $(eval $(call BuildPackage,$(PKG_NAME)))
