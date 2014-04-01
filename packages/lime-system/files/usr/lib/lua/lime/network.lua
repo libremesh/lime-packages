@@ -54,6 +54,14 @@ function network.setup_rp_filter()
 	sysctl_file:close();
 end
 
+function network.setup_dns()
+	local content = {}
+	for _,server in pairs(config.get("network", "resolvers")) do
+		table.insert(content, "nameserver "..server)
+	end
+	fs.writefile("/etc/resolv.conf", table.concat(content, "\n").."\n")
+end
+
 function network.clean()
 	print("Clearing network config...")
 
@@ -68,6 +76,8 @@ function network.clean()
 
 	print("Disabling odhcpd")
 	io.popen("/etc/init.d/odhcpd disable || true"):close()
+
+	os.remove("/etc/resolv.conf")
 end
 
 function network.scandevices()
@@ -92,6 +102,8 @@ end
 function network.configure()
 
 	network.setup_rp_filter()
+
+	network.setup_dns()
 
 	local generalProtocols = config.get("network", "protocols")
 	for _,protocol in pairs(generalProtocols) do
