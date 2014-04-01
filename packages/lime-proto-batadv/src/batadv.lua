@@ -13,20 +13,36 @@ function batadv.setup_interface(ifname, args)
 	local owrtFullIfname = ifname
 	local mtu = 1500
 
+	local uci = libuci:cursor()
+	uci:set("network", interface, "interface")
+	uci:set("network", interface, "proto", "batadv")
+	uci:set("network", interface, "mesh", "bat0")
+
 	if ifname:match("^wlan") then
 		owrtFullIfname = "@"..network.limeIfNamePrefix..owrtFullIfname
 		mtu = 1532
 	end
 	if args[2] then
 		owrtFullIfname = owrtFullIfname..network.vlanSeparator..args[2]
-		if ifname:match("^eth") then mtu = 1496 end 
+		if ifname:match("^eth") then
+			mtu = 1496
+
+			-- BEGIN
+			-- Workaround to http://www.libre-mesh.org/issues/32
+			-- We create a new macaddress for ethernet vlan interface
+			-- We use 000049 Unicast MAC prefix reserved by Apricot Ltd
+			-- We change the 7nt bit to 1 to give it locally administered meaning
+			-- Then use it as the new mac address prefix "02:00:49"
+			local vlanMacAddr = utils.split(network.get_mac(ifname), ":")
+			vlanMacAddr[1] = "02"
+			vlanMacAddr[2] = "00"
+			vlanMacAddr[3] = "49"
+			uci:set("network", interface, "macaddr", table.concat(vlanMacAddr, ":"))
+			--- END
+		end
 	end
 
-	local uci = libuci:cursor()
-	uci:set("network", interface, "interface")
 	uci:set("network", interface, "ifname", owrtFullIfname)
-	uci:set("network", interface, "proto", "batadv")
-	uci:set("network", interface, "mesh", "bat0")
 	uci:set("network", interface, "mtu", mtu)
 	uci:save("network")
 end
