@@ -1,0 +1,18 @@
+
+config libremap
+	list api_url 'http://libremap.net/api/'
+	list api_url 'http://libremap.berlin.freifunk.net/api'
+	option fetch_by_name '0'
+	option community 'LiMe'
+
+config plugin 'location'
+	option enabled '1'
+	option latitude '90'
+	option longitude '0'
+	option elev '0'
+
+config plugin 'system'
+	option enabled '1'
+
+config plugin 'wireless'
+	option enabled '1'
