@@ -25,7 +25,6 @@ define Package/$(PKG_NAME)
   DEPENDS:=+lime-system +lime-debug \
 		+lime-proto-bmx6 +lime-proto-batadv +lime-proto-anygw \
 		+lime-webui +luci-app-batman-adv +luci-app-bmx6 \
-		+luci-app-openairview +spectral-scan-webgui \
 		+reghack +dnsmasq-lease-share
 endef
 
