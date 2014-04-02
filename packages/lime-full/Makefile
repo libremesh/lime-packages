@@ -22,10 +22,11 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Pau Escrich <p4u@dabax.net>
   URL:=http://libre-mesh.org
-  DEPENDS:=+lime-system +lime-debug \
-		+lime-proto-bmx6 +lime-proto-batadv +lime-proto-anygw \
+  DEPENDS:=+lime-system +lime-proto-bmx6 +lime-proto-batadv +lime-proto-anygw +dnsmasq-lease-share \
+		+libremap-agent +luci-lib-libremap-contact +luci-lib-libremap-location +luci-lib-libremap-system \
 		+lime-webui +luci-app-batman-adv +luci-app-bmx6 \
-		+reghack +dnsmasq-lease-share
+		+reghack \
+		+lime-debug
 endef
 
 define Package/$(PKG_NAME)/description
