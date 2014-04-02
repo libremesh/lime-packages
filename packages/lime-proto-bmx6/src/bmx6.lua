@@ -105,11 +105,14 @@ function bmx6.configure(args)
 
 	uci:save("bmx6")
 
+	-- BEGIN
+	-- Workaround to http://www.libre-mesh.org/issues/28
 	fs.writefile(
 		"/etc/lime-init.d/65-bmx6_dumb_workaround.start",
 		[[!/bin/sh
 ((sleep 45s && /etc/init.d/bmx6 restart))
 ]])
+	-- END
 
 end
 
