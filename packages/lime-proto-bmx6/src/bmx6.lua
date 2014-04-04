@@ -18,6 +18,9 @@ function bmx6.setup_interface(ifname, args)
 	uci:set("bmx6", interface, "dev", owrtFullIfname)
 	uci:save("bmx6")
 
+	-- This must go here because @ notation is not supported by bmx6 but is needed by netifd
+	if ifname:match("^wlan") then owrtFullIfname = "@lm_"..owrtFullIfname end
+
 	uci:set("network", interface, "interface")
 	uci:set("network", interface, "ifname", owrtFullIfname)
 	uci:set("network", interface, "proto", "none")
