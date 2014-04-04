@@ -1,10 +1,4 @@
 
-# System option
-
-config lime system
-	option hostname LiMeNode
-
-
 # Network general option
 # Available protocols: bmx6, batadv, wan, lan, anygw
 

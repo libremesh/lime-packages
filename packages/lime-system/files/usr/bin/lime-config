@@ -5,11 +5,6 @@ local network = require "lime.network"
 local wireless = require "lime.wireless"
 local system = require "lime.system"
 
---@DEPRECATED avoid use this function and/or put it in the right place!!
-function node_id()
-    local m = network.primary_mac()
-    return tonumber(m[4], 16), tonumber(m[5], 16), tonumber(m[6], 16)
-end
 
 --@DEPRECATED avoid use this function and/or put it in the right place!!
 function network_id()
