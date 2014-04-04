@@ -31,11 +31,13 @@ function utils.isModuleAvailable(name)
 	end
 end
 
-function utils.applyMacTemplate(template, mac)
-	for i=1,6,1 do
-		template = template:gsub("\\M"..i.."\\", mac[i])
-	end
+function utils.applyMacTemplate16(template, mac)
+	for i=1,6,1 do template = template:gsub("\\M"..i.."\\", mac[i]) end
+	return template
+end
 
+function utils.applyMacTemplate10(template, mac)
+	for i=1,6,1 do template = template:gsub("\\M"..i.."\\", tonumber(mac[i], 16)) end
 	return template
 end
 

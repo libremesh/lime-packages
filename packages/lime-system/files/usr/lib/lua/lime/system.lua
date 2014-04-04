@@ -11,7 +11,7 @@ local utils = require("lime.utils")
 system = {}
 
 function system.set_hostname()
-	local hostname = utils.applyMacTemplate(config.get("system", "hostname"), network.primary_mac())
+	local hostname = utils.applyMacTemplate16(config.get("system", "hostname"), network.primary_mac())
 
 	local uci = libuci:cursor()
 	uci:foreach("system", "system", function(s) uci:set("system", s[".name"], "hostname", hostname) end)
