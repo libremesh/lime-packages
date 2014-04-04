@@ -3,17 +3,19 @@
 local libuci = require("uci")
 local fs = require("nixio.fs")
 
+local config = require("lime.config")
+local network = require("lime.network")
+local utils = require("lime.utils")
+
+
 system = {}
 
 function system.set_hostname()
-    local m4, m5, m6 = node_id()
-    local hostname = string.format("%02x%02x%02x", m4, m5, m6)
+	local hostname = utils.applyMacTemplate(config.get("system", "hostname"), network.primary_mac())
 
-    local uci = libuci:cursor()
-    uci:foreach("system", "system", function(s)
-        uci:set("system", s[".name"], "hostname", hostname)
-    end)
-    uci:save("system")
+	local uci = libuci:cursor()
+	uci:foreach("system", "system", function(s) uci:set("system", s[".name"], "hostname", hostname) end)
+	uci:save("system")
 end
 
 function system.clean()
