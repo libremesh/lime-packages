@@ -33,7 +33,7 @@ end
 
 function utils.applyMacTemplate(template, mac)
 	for i=1,6,1 do
-		template = ipv4_template:gsub("\M"..i.."\\", tonumber(mac[i], 16))
+		template = template:gsub("\\M"..i.."\\", tonumber(mac[i], 16))
 	end
 
 	return template
