@@ -26,16 +26,11 @@ function network.primary_mac()
 end
 
 function network.primary_address()
-	local ipv4_template = config.get("network", "main_ipv4_address")
-	local ipv6_template = config.get("network", "main_ipv6_address")
 	local pm = network.primary_mac()
-	
-	for i=1,6,1 do
-		ipv4_template = ipv4_template:gsub("M" .. i, tonumber(pm[i], 16))
-		ipv6_template = ipv6_template:gsub("M" .. i, pm[i])
-	end
+	local ipv4_template = utils.applyMacTemplate10(config.get("network", "main_ipv4_address"), pm)
+	local ipv6_template = utils.applyMacTemplate16(config.get("network", "main_ipv6_address"), pm)
 
-	return ip.IPv4(ipv4_template), ip.IPv6(ipv6_template) 
+	return ip.IPv4(), ip.IPv6(ipv6_template) 
 end
 
 function network.setup_rp_filter()
