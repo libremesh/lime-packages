@@ -3,7 +3,7 @@
 # System option
 
 config lime system
-	option hostname LiMeNode
+	option hostname 'LiMeNode-\M4\\M5\\M6\'                                # Parametrizable hostname \Mn\ will be substituted with the n'th byte of the primary_dev MAC
 
 
 # Network general option
