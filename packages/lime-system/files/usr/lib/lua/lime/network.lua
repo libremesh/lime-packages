@@ -2,11 +2,12 @@
 
 network = {}
 
-local ip = require "luci.ip"
-local config = require "lime.config"
-local utils = require "lime.utils"
-local libuci = require "uci"
-local fs = require "nixio.fs"
+local ip = require("luci.ip")
+local libuci = require("uci")
+local fs = require("nixio.fs")
+
+local config = require("lime.config")
+local utils = require("lime.utils")
 
 network.limeIfNamePrefix="lm_"
 network.protoParamsSeparator=":"
@@ -30,7 +31,7 @@ function network.primary_address()
 	local ipv4_template = utils.applyMacTemplate10(config.get("network", "main_ipv4_address"), pm)
 	local ipv6_template = utils.applyMacTemplate16(config.get("network", "main_ipv6_address"), pm)
 
-	return ip.IPv4(), ip.IPv6(ipv6_template) 
+	return ip.IPv4(ipv4_template), ip.IPv6(ipv6_template) 
 end
 
 function network.setup_rp_filter()
