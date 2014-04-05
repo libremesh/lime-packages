@@ -47,8 +47,11 @@ define Package/$(PKG_NAME)/postinst
 #!/bin/sh
 for module in ath cfg80211 ; do
 	cp "$$IPKG_INSTROOT"/lib/modules/*/$${module}.ko /tmp/
-	reghack /tmp/$${module}.ko && \
-	mv /tmp/$${module}.ko "$$IPKG_INSTROOT"/lib/modules/*/
+	if reghack /tmp/$${module}.ko ; then
+		mv -f /tmp/$${module}.ko "$$IPKG_INSTROOT"/lib/modules/*/
+	else
+		rm -f /tmp/$${module}.ko
+	fi
 done
 exit 0
 endef
