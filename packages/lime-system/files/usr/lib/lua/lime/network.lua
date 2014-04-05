@@ -73,7 +73,17 @@ function network.clean()
 	print("Disabling odhcpd")
 	io.popen("/etc/init.d/odhcpd disable || true"):close()
 
+	print("Cleaning dnsmasq")
+	io.popen("/etc/init.d/dnsmasq disable || true"):close()
+
 	os.remove("/etc/resolv.conf")
+	fs.remove("/etc/dnsmasq.d")
+	fs.mkdirr("/etc/dnsmasq.d")
+	fs.writefile("/etc/config/dhcp", "config dnsmasq\n\toption leasefile\t'/tmp/dhcp.leases'")
+	fs.writefile("/etc/dnsmasq.conf", "conf-dir=/etc/dnsmasq.d")
+
+	print("Disabling 6relayd...")
+	fs.writefile("/etc/config/6relayd", "")
 end
 
 function network.scandevices()
