@@ -51,6 +51,7 @@ function anygw.configure(args)
 	table.insert(content, "dhcp-option=tag:anygw, option:router,"..anygw_ipv4:host():string())
 	table.insert(content, "dhcp-option=tag:anygw, option:dns-server,"..anygw_ipv4:host():string())
 	table.insert(content, "dhcp-broadcast=tag:anygw")
+	table.insert(content, "address=/anygw/"..anygw_ipv4:host():string())
 	fs.writefile("/etc/dnsmasq.d/lime-proto-anygw-10-ipv4.conf", table.concat(content, "\n").."\n")
 
 	content = { }
