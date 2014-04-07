@@ -9,6 +9,8 @@ function firewall.clean()
 	for _,file in pairs(fwcfg) do
 		fs.writefile(file,"")
 	end
+
+	io.popen("/etc/init.d/firewall disable || true"):close()
 end
 
 function firewall.configure()
