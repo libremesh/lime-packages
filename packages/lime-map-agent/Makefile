@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LiMe
 	MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
 	URL:=http://libre-mesh.org
-	DEPENDS:=+libremap-agent +luci-lib-libremap-location +luci-lib-libremap-system
+	DEPENDS:=+libremap-agent +luci-lib-libremap-location +luci-lib-libremap-system +luci-lib-libremap-wireless
 endef
 
 define Package/$(PKG_NAME)/description
