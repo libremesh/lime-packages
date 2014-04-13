@@ -12,7 +12,7 @@ LIBRE_MESH_PREFIX:=lime
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
 PKG_NAME:=reghack
-PKG_VERSION:=20131203
+PKG_VERSION:=20140207
 PKG_RELEASE=$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
@@ -45,11 +45,36 @@ endef
 
 define Package/$(PKG_NAME)/postinst
 #!/bin/sh
-for module in ath cfg80211 ; do
-	cp "$$IPKG_INSTROOT"/lib/modules/*/$${module}.ko /tmp/
-	reghack /tmp/$${module}.ko && \
-	mv /tmp/$${module}.ko "$$IPKG_INSTROOT"/lib/modules/*/
+
+workDir="/tmp/reghack-apply/"
+modules="ath cfg80211"
+modulesDir="$$IPKG_INSTROOT/lib/modules/"
+etcDir="$$IPKG_INSTROOT/etc/reghack/"
+statusFile="$${etcDir}/status"
+logFile="$${etcDir}/log"
+hackOk=0
+
+mkdir -p $${workDir}
+mkdir -p $${etcDir}
+
+for module in $${modules} ; do
+	cp $${modulesDir}/*/$${module}.ko $${workDir}
+	reghack $${workDir}/$${module}.ko >> $${logFile} 2>&1
+	hackOk=$$((hackOk+$$?))
 done
+
+if [ "$${hackOk}" -eq 0 ]
+	then
+		mv -f $${workDir}/*.ko "$${modulesDir}"/*/
+		echo "RegHack succeded on $${modules}" > $${statusFile}
+	else
+		echo "RegHack failed" > $${statusFile}
+fi
+
+rm -rf $${workDir}
+
 exit 0
+
 endef
+
 $(eval $(call BuildPackage,$(PKG_NAME)))
