@@ -2,11 +2,12 @@
 
 network = {}
 
-local ip = require "luci.ip"
-local config = require "lime.config"
-local utils = require "lime.utils"
-local libuci = require "uci"
-local fs = require "nixio.fs"
+local ip = require("luci.ip")
+local libuci = require("uci")
+local fs = require("nixio.fs")
+
+local config = require("lime.config")
+local utils = require("lime.utils")
 
 network.limeIfNamePrefix="lm_"
 network.protoParamsSeparator=":"
@@ -26,14 +27,9 @@ function network.primary_mac()
 end
 
 function network.primary_address()
-	local ipv4_template = config.get("network", "main_ipv4_address")
-	local ipv6_template = config.get("network", "main_ipv6_address")
 	local pm = network.primary_mac()
-	
-	for i=1,6,1 do
-		ipv4_template = ipv4_template:gsub("M" .. i, tonumber(pm[i], 16))
-		ipv6_template = ipv6_template:gsub("M" .. i, pm[i])
-	end
+	local ipv4_template = utils.applyMacTemplate10(config.get("network", "main_ipv4_address"), pm)
+	local ipv6_template = utils.applyMacTemplate16(config.get("network", "main_ipv6_address"), pm)
 
 	return ip.IPv4(ipv4_template), ip.IPv6(ipv6_template) 
 end
@@ -77,7 +73,17 @@ function network.clean()
 	print("Disabling odhcpd")
 	io.popen("/etc/init.d/odhcpd disable || true"):close()
 
+	print("Cleaning dnsmasq")
+	io.popen("/etc/init.d/dnsmasq disable || true"):close()
+
 	os.remove("/etc/resolv.conf")
+	fs.remove("/etc/dnsmasq.d")
+	fs.mkdirr("/etc/dnsmasq.d")
+	fs.writefile("/etc/config/dhcp", "config dnsmasq\n\toption leasefile\t'/tmp/dhcp.leases'\n")
+	fs.writefile("/etc/dnsmasq.conf", "conf-dir=/etc/dnsmasq.d\n")
+
+	print("Disabling 6relayd...")
+	fs.writefile("/etc/config/6relayd", "")
 end
 
 function network.scandevices()

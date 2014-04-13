@@ -1,37 +1,35 @@
 #!/usr/bin/lua
 
-local libuci = require("uci")
 local fs = require("nixio.fs")
 
 firewall = {}
 
 function firewall.clean()
+	local fwcfg = { "/etc/config/firewall", "/etc/lime-init.d/10-accept.start", "/etc/lime-init.d/15-mss_clamp.start" }
+	for _,file in pairs(fwcfg) do
+		fs.writefile(file,"")
+	end
+
+	io.popen("/etc/init.d/firewall disable || true"):close()
 end
 
 function firewall.configure()
-    local content = { insert = table.insert, concat = table.concat }
-    for line in io.lines("/etc/firewall.user") do
-        if not line:match("^ip6?tables ") then content:insert(line) end
-    end
-    content:insert("ip6tables -P INPUT ACCEPT")
-    content:insert("ip6tables -P OUTPUT ACCEPT")
-    content:insert("ip6tables -P FORWARD ACCEPT")
-    content:insert("iptables -t mangle -A FORWARD -p tcp -o bmx+ -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu")
-    fs.writefile("/etc/firewall.user", content:concat("\n").."\n")
 
-    local uci = libuci:cursor()
-    uci:foreach("firewall", "defaults", function(s)
-        uci:set("firewall", s[".name"], "disable_ipv6", "1")
-        uci:set("firewall", s[".name"], "input", "ACCEPT")
-        uci:set("firewall", s[".name"], "output", "ACCEPT")
-        uci:set("firewall", s[".name"], "forward", "ACCEPT")
-    end)
-    uci:foreach("firewall", "zone", function(s)
-        uci:set("firewall", s[".name"], "input", "ACCEPT")
-        uci:set("firewall", s[".name"], "output", "ACCEPT")
-        uci:set("firewall", s[".name"], "forward", "ACCEPT")
-    end)
-    uci:save("firewall")
+	fs.writefile(
+		"/etc/lime-init.d/10-accept.start", [[
+iptables -P INPUT ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD ACCEPT
+
+ip6tables -P INPUT ACCEPT
+ip6tables -P OUTPUT ACCEPT
+ip6tables -P FORWARD ACCEPT
+]])
+
+	fs.writefile(
+		"/etc/lime-init.d/15-mss_clamp.start",
+		"iptables -t mangle -A FORWARD -p tcp -o bmx+ -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu")
+
 end
 
 return firewall

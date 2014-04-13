@@ -9,11 +9,6 @@ wireless = {}
 wireless.modeParamsSeparator=":"
 wireless.limeIfNamePrefix="lm_"
 
-function wireless.generate_ssid()
-	local m4, m5, m6 = node_id()
-	return string.format("%02x%02x%02x.lime", m4, m5, m6)
-end
-
 function wireless.clean()
 	print("Clearing wireless config...")
 	local uci = libuci:cursor()
