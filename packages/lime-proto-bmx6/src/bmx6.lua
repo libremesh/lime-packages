@@ -8,6 +8,8 @@ local libuci = require("uci")
 bmx6 = {}
 
 function bmx6.setup_interface(ifname, args)
+	if ifname:match("^wlan%d_ap") then return end
+
 	local interface = network.limeIfNamePrefix..ifname.."_bmx6"
 	local owrtFullIfname = ifname
 	if args[2] then owrtFullIfname = owrtFullIfname..network.vlanSeparator..args[2] end
