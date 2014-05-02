@@ -114,7 +114,7 @@ function bmx6.configure(args)
 	-- Workaround to http://www.libre-mesh.org/issues/28
 	fs.writefile(
 		"/etc/lime-init.d/65-bmx6_dumb_workaround.start",
-		"((sleep 45s && /etc/init.d/bmx6 restart))\n")
+		"((sleep 45s && /etc/init.d/bmx6 restart)&)\n")
 	-- END
 
 end
