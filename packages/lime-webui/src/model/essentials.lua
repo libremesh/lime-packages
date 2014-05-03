@@ -27,7 +27,7 @@ system.addremove = true
 local network = m:section(NamedSection, "network", "lime","Network","Network")
 network.addremove = true
 
-local wifi = m:section(NamedSection, "wifi", "lime","WiFi","WiFi")
+local wifi = m:section(TypedSection, "wifi","WiFi","WiFi")
 wifi.addremove = true
 
 -- hostname
@@ -39,6 +39,10 @@ network:option(Value,"main_ipv6",translate("Main IPv6"),translate("The main IPv6
 
 -- wifi
 wifi:option(Value,"public_essid",translate("Public SSID"),translate("The SSID (WiFi network name) used for this node"))
+wifi:option(Value,"channel",translate("Channel"),translate("Channel used for this interface"))
+wifi:option(Value,"ap_essid",translate("AP SSID"),translate("The SSID (WiFi network name) used for the access point devices"))
+wifi:option(Value,"adhoc_essid",translate("Mesh SSID"),translate("The SSID (WiFi network name) used for the ad-hoc device"))
+wifi:option(Value,"adhoc_bssid",translate("Mesh BSSID"),translate("The BSSID (WiFi network identifier) used for the ad-hoc network"))
 
 -- commit
 function m.on_commit(self,map)
