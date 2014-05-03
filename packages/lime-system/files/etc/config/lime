@@ -1,3 +1,5 @@
+# System options
+config lime system
 
 # Network general option
 # Available protocols: bmx6, batadv, wan, lan, anygw
