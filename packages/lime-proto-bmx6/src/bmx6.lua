@@ -49,8 +49,8 @@ function bmx6.configure(args)
 
 	uci:set("bmx6", "main", "tunDev")
 	uci:set("bmx6", "main", "tunDev", "main")
-	uci:set("bmx6", "main", "tun4Address", ipv4:string())
-	uci:set("bmx6", "main", "tun6Address", ipv6:string())
+	uci:set("bmx6", "main", "tun4Address", ipv4:host():string().."/32")
+	uci:set("bmx6", "main", "tun6Address", ipv6:host():string().."/128")
 
 	-- Enable bmx6 uci config plugin
 	uci:set("bmx6", "config", "plugin")
