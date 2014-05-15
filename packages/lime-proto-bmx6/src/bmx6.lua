@@ -9,26 +9,34 @@ bmx6 = {}
 
 function bmx6.setup_interface(ifname, args)
 	if ifname:match("^wlan%d_ap") then return end
+	if not args[2] then return end
 
-	local interface = network.limeIfNamePrefix..ifname.."_bmx6"
-	local owrtFullIfname = ifname
-	if args[2] then owrtFullIfname = owrtFullIfname..network.vlanSeparator..args[2] end
+	local owrtDeviceName = network.limeIfNamePrefix..ifname.."_bmx6_dev"
+	local owrtInterfaceName = network.limeIfNamePrefix..ifname.."_bmx6_if"
+	local linuxBaseIfname = ifname
+	local vlanId = args[2]
+	local linux802adIfName = ifname.."."..vlanId
 
 	local uci = libuci:cursor()
 
-	uci:set("bmx6", interface, "dev")
-	uci:set("bmx6", interface, "dev", owrtFullIfname)
-	uci:save("bmx6")
+	uci:set("network", owrtDeviceName, "device")
+	uci:set("network", owrtDeviceName, "type", "8021ad")
+	uci:set("network", owrtDeviceName, "name", linux802adIfName)
+	uci:set("network", owrtDeviceName, "ifname", linuxBaseIfname)
+	uci:set("network", owrtDeviceName, "vid", vlanId)
 
-	-- This must go here because @ notation is not supported by bmx6 but is needed by netifd
-	if ifname:match("^wlan") then owrtFullIfname = "@lm_"..owrtFullIfname end
+	uci:set("network", owrtInterfaceName, "interface")
+	uci:set("network", owrtInterfaceName, "ifname", linux802adIfName)
+	uci:set("network", owrtInterfaceName, "proto", "none")
+	uci:set("network", owrtInterfaceName, "auto", "1")
+	uci:set("network", owrtInterfaceName, "mtu", "1398")
 
-	uci:set("network", interface, "interface")
-	uci:set("network", interface, "ifname", owrtFullIfname)
-	uci:set("network", interface, "proto", "none")
-	uci:set("network", interface, "auto", "1")
-	uci:set("network", interface, "mtu", "1398")
 	uci:save("network")
+
+	uci:set("bmx6", owrtInterfaceName, "dev")
+	uci:set("bmx6", owrtInterfaceName, "dev", linux802adIfName)
+
+	uci:save("bmx6")
 end
 
 function bmx6.clean()
