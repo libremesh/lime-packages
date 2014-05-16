@@ -11,31 +11,14 @@ function bmx6.setup_interface(ifname, args)
 	if ifname:match("^wlan%d_ap") then return end
 	if not args[2] then return end
 
-	local owrtDeviceName = network.limeIfNamePrefix..ifname.."_bmx6_dev"
-	local owrtInterfaceName = network.limeIfNamePrefix..ifname.."_bmx6_if"
-	local linuxBaseIfname = ifname
-	local vlanId = args[2]
-	local linux802adIfName = ifname.."."..vlanId
+	local owrtInterfaceName, linux802adIfName, _ = network.createVlanIface(ifname, args[2], "_bmx6")
 
 	local uci = libuci:cursor()
-
-	uci:set("network", owrtDeviceName, "device")
-	uci:set("network", owrtDeviceName, "type", "8021ad")
-	uci:set("network", owrtDeviceName, "name", linux802adIfName)
-	uci:set("network", owrtDeviceName, "ifname", linuxBaseIfname)
-	uci:set("network", owrtDeviceName, "vid", vlanId)
-
-	uci:set("network", owrtInterfaceName, "interface")
-	uci:set("network", owrtInterfaceName, "ifname", linux802adIfName)
-	uci:set("network", owrtInterfaceName, "proto", "none")
-	uci:set("network", owrtInterfaceName, "auto", "1")
 	uci:set("network", owrtInterfaceName, "mtu", "1398")
-
 	uci:save("network")
 
 	uci:set("bmx6", owrtInterfaceName, "dev")
 	uci:set("bmx6", owrtInterfaceName, "dev", linux802adIfName)
-
 	uci:save("bmx6")
 end
 
