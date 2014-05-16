@@ -142,4 +142,33 @@ function network.configure()
 	end
 end
 
+function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanProtocol)
+
+	vlanProtocol = vlanProtocol or "8021ad"
+	openwrtNameSuffix = openwrtNameSuffix or ""
+	
+	local owrtDeviceName = network.limeIfNamePrefix..linuxBaseIfname..openwrtNameSuffix.."_dev"
+	local owrtInterfaceName = network.limeIfNamePrefix..linuxBaseIfname..openwrtNameSuffix.."_if"
+	local vlanId = vid
+	--! Do not use . as separator as this will make netifd create an 802.1q interface anyway
+	local linux802adIfName = linuxBaseIfname.."-"..vlanId 
+
+	local uci = libuci:cursor()
+
+	uci:set("network", owrtDeviceName, "device")
+	uci:set("network", owrtDeviceName, "type", vlanProtocol)
+	uci:set("network", owrtDeviceName, "name", linux802adIfName)
+	uci:set("network", owrtDeviceName, "ifname", linuxBaseIfname)
+	uci:set("network", owrtDeviceName, "vid", vlanId)
+
+	uci:set("network", owrtInterfaceName, "interface")
+	uci:set("network", owrtInterfaceName, "ifname", linux802adIfName)
+	uci:set("network", owrtInterfaceName, "proto", "none")
+	uci:set("network", owrtInterfaceName, "auto", "1")
+
+	uci:save("network")
+
+	return owrtInterfaceName, linux802adIfName, owrtDeviceName
+end
+
 return network
