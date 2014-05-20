@@ -34,6 +34,6 @@ local uci = libuci:cursor()
 local domain = uci:get_first("dhcp", "dnsmasq", "domain")
 -%>
 <p><%:Please wait: Device rebooting...%></p>
-<script type="text/javascript">setTimeout("location='"+window.location.protocol+"//<%=hostname%>.<%=domain%><%=controller%>'", 60000)</script>
+<script type="text/javascript">setTimeout("location='"+window.location.protocol+"//<%=hostname%>.<%=domain%><%=controller%>'", 90000)</script>
 <%- end -%>
 <%+footer%>
