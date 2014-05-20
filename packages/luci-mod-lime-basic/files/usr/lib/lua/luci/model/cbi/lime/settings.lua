@@ -57,6 +57,22 @@ function hn.write(self, section, value)
 	luci.sys.hostname(value)
 end
 
+network_map = Map("network", translate("Network"))
+lan_section = network_map:section(NamedSection, "lan", "interface", "")
+lan_section.addremove = false
+
+ipv4 = lan_section:option(Value, "ipaddr", translate("<abbr title=\"Internet Protocol Version 4\">IPv4</abbr>-Address"))
+
+nm = lan_section:option(Value, "netmask", translate("<abbr title=\"Internet Protocol Version 4\">IPv4</abbr>-Netmask"))
+nm:value("255.255.255.0")
+nm:value("255.255.248.0")
+nm:value("255.255.0.0")
+nm:value("255.0.0.0")
+
+function ipv4.write(self, section, value)
+	Value.write(self, section, value)
+	luci.sys.exec("reboot")
+end
 
 tz = s:option(ListValue, "zonename", translate("Timezone"))
 tz:value("UTC")
@@ -76,4 +92,4 @@ function tz.write(self, section, value)
         self.map.uci:set("system", section, "timezone", lookup_zone(value) or "GMT0")
 end
 
-return m
+return m, network_map
