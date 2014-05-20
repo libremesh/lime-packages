@@ -14,6 +14,8 @@ You may obtain a copy of the License at
 require("luci.sys")
 require("luci.sys.zoneinfo")
 require("luci.tools.webadmin")
+require("luci.http")
+require("luci.dispatcher")
 
 
 m = Map("system", translate("System"))
@@ -55,6 +57,7 @@ hn = s:option(Value, "hostname", translate("Hostname"))
 function hn.write(self, section, value)
 	Value.write(self, section, value)
 	luci.sys.hostname(value)
+	luci.http.redirect(luci.dispatcher.build_url("lime/system/reboot"))
 end
 
 network_map = Map("network", translate("Network"))
@@ -71,7 +74,7 @@ nm:value("255.0.0.0")
 
 function ipv4.write(self, section, value)
 	Value.write(self, section, value)
-	luci.sys.exec("reboot")
+	luci.http.redirect(luci.dispatcher.build_url("lime/system/reboot"))
 end
 
 tz = s:option(ListValue, "zonename", translate("Timezone"))
