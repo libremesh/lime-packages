@@ -35,7 +35,7 @@ local hostname = sys.hostname()
 <script src="<%=resource%>/location/Google.js"></script>
 
 <h2><a id="content" name="content"><%:Location%></a></h2>
-<h3> <%=hostname%> at <%=community%></h3>
+<h3> <%=hostname%> <%:at%> <%=community%></h3>
 
 <div id="map" style="height: 280px"></div>
  
@@ -70,8 +70,8 @@ else{
     .bindPopup('<b><%=hostname%></b>'
                +'<br>latitude: '+ lat
                +'<br>longitude: '+ lon
-               +'<br><a href="<%=libremap_url%>/#bbox/'+ lat +','+ lon +','+ lat +','+ lon +'" target="_blank">view on LibreMap</a>'
-               +'<br><a href="javascript:select_location()">change location</a> '
+               +'<br><a href="<%=libremap_url%>/#bbox/'+ lat +','+ lon +','+ lat +','+ lon +'" target="_blank"><%:view on LibreMap%></a>'
+               +'<br><a href="javascript:select_location()"><%:change location%></a> '
                );
 }
 
