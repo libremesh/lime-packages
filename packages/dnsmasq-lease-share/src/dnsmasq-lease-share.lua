@@ -103,17 +103,19 @@ elseif command == "old" then
 	update_alfred()
 
 elseif command == "init" then
-	local stdout = io.popen("alfred -r " .. alfred_shared_lease_num,"r");
-	local raw_output = stdout:read("*a");
-	stdout:close();
-
 	local uci_conf = uci.cursor();
 
 	local own_hostname = get_hostname();
 	local own_ipv4 = uci_conf:get("network", "lan", "ipaddr");
-	local disposable_mac = get_if_mac("br-lan");
+	local own_mac = get_if_mac("br-lan");
 
-	print(os.time()+own_lease_lifetime .. " " ..  disposable_mac .. " " .. own_ipv4 .. " " .. own_hostname .. " " .. disposable_mac);
+	del_lease(own_mac)
+	add_lease(os.time()+own_lease_lifetime, own_mac, own_ipv4, own_hostname, own_mac);
+	update_alfred()
+
+	local stdout = io.popen("alfred -r " .. alfred_shared_lease_num,"r");
+	local raw_output = stdout:read("*a");
+	stdout:close();
 
 	if (not raw_output) then exit(0); end
 
