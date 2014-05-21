@@ -30,7 +30,7 @@ along with this file. If not, see <http://www.gnu.org/licenses/>.
 
 require("uci");
 
-local local_lease_file = "/tmp/dnsmasq-lease-share-local-lease"
+local local_lease_file = "/tmp/dhcp.leases_dnsmasq-lease-share"
 local alfred_shared_lease_num = "65"
 local own_lease_lifetime = "600" -- in seconds
 
