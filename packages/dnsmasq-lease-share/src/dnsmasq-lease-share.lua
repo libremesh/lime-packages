@@ -68,14 +68,16 @@ end
 function del_lease(client_mac)
 	local leases = "";
 	local lease_file = io.open(local_lease_file, "r");
-	while lease_file:read(0) do
-		local lease_line = lease_file:read();
-		if not string.find(lease_line, client_mac) then leases = leases .. lease_line .. "\n" end
+	if lease_file then
+		while lease_file:read(0) do
+			local lease_line = lease_file:read();
+			if not string.find(lease_line, client_mac) then leases = leases .. lease_line .. "\n" end
+		end
+		lease_file:close()
+		lease_file = io.open(local_lease_file, "w");
+		lease_file:write(leases);
+		lease_file:close();
 	end
-	lease_file:close()
-	lease_file = io.open(local_lease_file, "w");
-	lease_file:write(leases);
-	lease_file:close();
 end
 
 local command = arg[1];
