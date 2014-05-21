@@ -32,6 +32,7 @@ require("uci");
 
 local local_lease_file = "/tmp/dnsmasq-lease-share-local-lease"
 local alfred_shared_lease_num = "65"
+local own_lease_lifetime = "600" -- in seconds
 
 local command = arg[1];
 local client_mac = arg[2];
@@ -100,7 +101,7 @@ elseif command == "init" then
 	local own_ipv4 = uci_conf:get("network", "lan", "ipaddr");
 	local disposable_mac = get_if_mac("br-lan");
 
-	print("999999999 " ..  disposable_mac .. " " .. own_ipv4 .. " " .. own_hostname .. " " .. disposable_mac);
+	print(os.time()+own_lease_lifetime .. " " ..  disposable_mac .. " " .. own_ipv4 .. " " .. own_hostname .. " " .. disposable_mac);
 
 	if (not raw_output) then exit(0); end
 
