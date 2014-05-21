@@ -6,4 +6,4 @@ uci set dhcp.@dnsmasq[0].dhcpscript=/usr/bin/dnsmasq-lease-share
 echo leasefile-ro >> /etc/dnsmasq.conf
 uci commit dhcp
 
-echo 0
+exit 0
