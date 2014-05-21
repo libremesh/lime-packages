@@ -34,9 +34,6 @@ local local_lease_file = "/tmp/dhcp.leases_dnsmasq-lease-share"
 local alfred_shared_lease_num = "65"
 local own_lease_lifetime = "600" -- in seconds
 
-local command = arg[1];
-local client_mac = arg[2];
-
 --! Tell alfred local dhcp lease changed
 function update_alfred()
 	local lease_file = io.open(local_lease_file, "r+");
@@ -60,35 +57,48 @@ function get_if_mac(ifname)
 	return ret_string;
 end
 
-
-if command == "add" then
-	local lease_expiration = os.getenv("DNSMASQ_LEASE_EXPIRES");
-	local client_ip = arg[3];
-	local client_hostname;
-	if (arg[4] and (arg[4]:len() > 0)) then client_hostname = arg[4] else client_hostname = "*" end;
-	local client_id = os.getenv("DNSMASQ_CLIENT_ID");
-	if ((not client_id) or (client_id:len() <= 0)) then client_id = client_mac end; 
-
+function add_lease(lease_expiration, client_mac, client_ip, client_hostname, client_id)
 	local lease_line = lease_expiration .. " " .. client_mac .. " " .. client_ip .. " " .. client_hostname .. " " .. client_id .. "\n";
 
 	local lease_file = io.open(local_lease_file, "a");
 	lease_file:write(lease_line);
 	lease_file:close();
+end
 
-	update_alfred()
-
-elseif command == "del" then
+function del_lease(client_mac)
 	local leases = "";
 	local lease_file = io.open(local_lease_file, "r");
 	while lease_file:read(0) do
 		local lease_line = lease_file:read();
-		if not string.find(lease_line, client_mac) then leases = leases .. lease_line .. "\n" end 
+		if not string.find(lease_line, client_mac) then leases = leases .. lease_line .. "\n" end
 	end
 	lease_file:close()
 	lease_file = io.open(local_lease_file, "w");
 	lease_file:write(leases);
 	lease_file:close();
-	update_alfred();
+end
+
+local command = arg[1];
+local client_mac = arg[2];
+local client_ip = arg[3];
+local client_hostname;
+if (arg[4] and (arg[4]:len() > 0)) then client_hostname = arg[4] else client_hostname = "*" end;
+local lease_expiration = os.getenv("DNSMASQ_LEASE_EXPIRES");
+local client_id = os.getenv("DNSMASQ_CLIENT_ID");
+if ((not client_id) or (client_id:len() <= 0)) then client_id = client_mac end;
+
+if command == "add" then
+	add_lease(lease_expiration, client_mac, client_ip, client_hostname, client_id)
+	update_alfred()
+
+elseif command == "del" then
+	del_lease(client_mac)
+	update_alfred()
+
+elseif command == "old" then
+	del_lease(client_mac)
+	add_lease(lease_expiration, client_mac, client_ip, client_hostname, client_id)
+	update_alfred()
 
 elseif command == "init" then
 	local stdout = io.popen("alfred -r " .. alfred_shared_lease_num,"r");
