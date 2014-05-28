@@ -10,15 +10,13 @@ function batadv.setup_interface(ifname, args)
 	if ifname:match("^wlan%d_ap") then return end
 	if not args[2] then return end
 
-	local owrtInterfaceName, _, _ = network.createVlanIface(ifname, args[2], "_batadv")
+	local owrtInterfaceName, _, owrtDeviceName = network.createVlanIface(ifname, args[2], "_batadv")
 	local mtu = 1532
 	if ifname:match("^eth") then mtu = 1496 end
 
 	local uci = libuci:cursor()
 
-	uci:set("network", owrtInterfaceName, "proto", "batadv")
-	uci:set("network", owrtInterfaceName, "mesh", "bat0")
-	uci:set("network", owrtInterfaceName, "mtu", mtu)
+	uci:set("network", owrtDeviceName, "mtu", mtu)
 
 	-- BEGIN
 	-- Workaround to http://www.libre-mesh.org/issues/32
@@ -31,9 +29,12 @@ function batadv.setup_interface(ifname, args)
 		vlanMacAddr[1] = "02"
 		vlanMacAddr[2] = "00"
 		vlanMacAddr[3] = "49"
-		uci:set("network", owrtInterfaceName, "macaddr", table.concat(vlanMacAddr, ":"))
+		uci:set("network", owrtDeviceName, "macaddr", table.concat(vlanMacAddr, ":"))
 	end
 	--- END
+
+	uci:set("network", owrtInterfaceName, "proto", "batadv")
+	uci:set("network", owrtInterfaceName, "mesh", "bat0")
 
 	uci:save("network")
 end
