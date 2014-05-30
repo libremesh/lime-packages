@@ -11,7 +11,7 @@ local utils = require("lime.utils")
 
 network.limeIfNamePrefix="lm_"
 network.protoParamsSeparator=":"
-network.vlanSeparator="."
+network.protoVlanSeparator="-"
 
 function network.get_mac(ifname)
 	local mac = assert(fs.readfile("/sys/class/net/"..ifname.."/address")):gsub("\n","")
@@ -91,7 +91,7 @@ function network.scandevices()
 
 	-- Scan for plain ethernet interfaces
 	for _,dev in pairs(utils.split(io.popen("ls -1 /sys/class/net/"):read("*a"), "\n")) do
-		if dev:match("^eth%d$") then
+		if dev:match("^eth%d") and not dev:match(network.protoVlanSeparator.."%d$") then
 			table.insert(devices, dev)
 		end
 	end
@@ -151,7 +151,7 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 	local owrtInterfaceName = network.limeIfNamePrefix..linuxBaseIfname..openwrtNameSuffix.."_if"
 	local vlanId = vid
 	--! Do not use . as separator as this will make netifd create an 802.1q interface anyway
-	local linux802adIfName = linuxBaseIfname.."-"..vlanId 
+	local linux802adIfName = linuxBaseIfname..network.protoVlanSeparator..vlanId 
 
 	local uci = libuci:cursor()
 
