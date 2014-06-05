@@ -7,7 +7,6 @@ local lan = require("lime.proto.lan")
 batadv = {}
 
 function batadv.setup_interface(ifname, args)
-	if ifname:match("^wlan%d_ap") then return end
 	if not args[2] then return end
 
 	local owrtInterfaceName, _, owrtDeviceName = network.createVlanIface(ifname, args[2], "_batadv")
