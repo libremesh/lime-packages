@@ -22,12 +22,19 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libre-mesh.org
-  DEPENDS:=+iwinfo +iw +mtr +ip +iputils-ping6
+  DEPENDS:=+curl +iwinfo +iw +mtr +ip +iputils-ping6
 endef
 
 define Package/$(PKG_NAME)/description
 	Debug utilities for LiMe node
 endef
 
-$(eval $(call BuildPackage,$(PKG_NAME)))
+define Build/Compile
+endef
 
+define Package/$(PKG_NAME)/install
+	@mkdir -p $(1)/usr/bin/ || true
+	$(CP) ./src/sprunge.sh $(1)/usr/bin/sprunge
+endef
+
+$(eval $(call BuildPackage,$(PKG_NAME)))
