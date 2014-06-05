@@ -8,7 +8,6 @@ local libuci = require("uci")
 bmx6 = {}
 
 function bmx6.setup_interface(ifname, args)
-	if ifname:match("^wlan%d_ap") then return end
 	if not args[2] then return end
 
 	local owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(ifname, args[2], "_bmx6")
