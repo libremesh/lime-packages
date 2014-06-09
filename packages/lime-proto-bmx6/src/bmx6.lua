@@ -8,9 +8,11 @@ local libuci = require("uci")
 bmx6 = {}
 
 function bmx6.setup_interface(ifname, args)
-	if not args[2] then return end
+	vlanId = args[2] or 13
+	vlanProto = args[3] or "8021ad"
+	nameSuffix = args[4] or "_bmx6"
 
-	local owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(ifname, args[2], "_bmx6")
+	local owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 
 	local uci = libuci:cursor()
 	uci:set("network", owrtDeviceName, "mtu", "1398")
