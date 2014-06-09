@@ -16,7 +16,7 @@ config lime network
 	list protocols lan
 	list protocols anygw
 	list protocols batadv:11
-	list protocols bmx6:12
+	list protocols bmx6:13
 	list resolvers 8.8.8.8                                                 # DNS servers node will use
 	list resolvers 2001:4860:4860::8844
 
