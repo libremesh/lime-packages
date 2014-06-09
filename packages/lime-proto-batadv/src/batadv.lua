@@ -7,11 +7,13 @@ local lan = require("lime.proto.lan")
 batadv = {}
 
 function batadv.setup_interface(ifname, args)
-	if not args[2] then return end
-
-	local owrtInterfaceName, _, owrtDeviceName = network.createVlanIface(ifname, args[2], "_batadv")
+	local vlanId = args[2] or 11
+	local vlanProto = args[3] or "8021ad"
+	local nameSuffix = args[4] or "_batadv"
 	local mtu = 1532
 	if ifname:match("^eth") then mtu = 1496 end
+
+	local owrtInterfaceName, _, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 
 	local uci = libuci:cursor()
 
