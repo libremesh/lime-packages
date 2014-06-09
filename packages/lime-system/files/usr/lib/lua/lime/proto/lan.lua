@@ -21,6 +21,7 @@ end
 
 function lan.setup_interface(ifname, args)
 	if ifname:match("adhoc") then return end
+	if ifname:match(network.protoVlanSeparator.."%d+$") then return end
 
 	local uci = libuci:cursor()
 	local bridgedIfs = {}
