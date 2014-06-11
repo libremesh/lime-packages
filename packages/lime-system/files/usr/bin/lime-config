@@ -1,16 +1,12 @@
 #!/usr/bin/lua
 
-local firewall = require "lime.firewall"
-local network = require "lime.network"
-local wireless = require "lime.wireless"
-local system = require "lime.system"
-
-
 function main()
-	local modules = { wireless, network, firewall, system }
+	local modules_name = { "hardware_detection", "wireless", "network", "firewall", "system" }
+	local modules = {} 
 
-	for _,module in pairs(modules) do module.clean() end
-	for _,module in pairs(modules) do module.configure() end
+	for _, name in pairs(modules_name) do modules[name] = require("lime."..name) end
+	for _, module in pairs(modules) do module.clean() end
+	for _, module in pairs(modules) do module.configure() end
 end
 
 main()
