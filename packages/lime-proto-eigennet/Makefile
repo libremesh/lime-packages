@@ -12,29 +12,28 @@ LIME_CODENAME:=bigbang
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
-PKG_NAME:=lime-debug
+PKG_NAME:=lime-proto-eigennet
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  TITLE:=libre-mesh debug utils
+  TITLE:=LiMe eigennet legacy compatibility proto support
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libre-mesh.org
-  DEPENDS:=+batctl +curl +iwinfo +iw +mtr +ip +iputils-ping6
-endef
-
-define Package/$(PKG_NAME)/description
-	Debug utilities for LiMe node
+  DEPENDS:=+lua +libuci-lua +lime-system +lime-proto-batadv
 endef
 
 define Build/Compile
+	@rm -rf ./build || true
+	@cp -r ./src ./build
+	@sed -i '/^--!.*/d' build/*.lua
 endef
 
 define Package/$(PKG_NAME)/install
-	@mkdir -p $(1)/usr/bin/ || true
-	$(CP) ./src/sprunge.sh $(1)/usr/bin/sprunge
+	@mkdir -p $(1)/usr/lib/lua/lime/proto || true
+	$(CP) ./build/eigennet.lua $(1)/usr/lib/lua/lime/proto/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
