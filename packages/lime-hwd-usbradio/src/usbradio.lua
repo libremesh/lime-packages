@@ -40,7 +40,6 @@ function usbradio.detect_hardware()
 		uci:set("wireless", radioName, "path", phyPath)
 		uci:set("wireless", radioName, "htmode", "HT20")
 		uci:set("wireless", radioName, "disabled", "0")
-		uci:set("wireless", radioName, "ht_capab", { "LDPC", "SHORT-GI-20", "SHORT-GI-40", "TX-STBC", "RX-STBC1", "DSSS_CCK-40" }) --TODO: capabilities working on TP-WN722N; find a general way to detect capabilities on different usb devices
 
 		uci:save("wireless")
 	end
