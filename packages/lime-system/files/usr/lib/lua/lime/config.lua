@@ -22,13 +22,25 @@ function config.foreach(configtype, callback)
 end
 
 function config.get_all(sectionname)
-	local ret = config.uci:get_all("lime", sectionname) or {}
-	for key,value in pairs(config.uci:get_all("lime-defaults", sectionname)) do
-		if (ret[key] == nil) then
-			ret[key] = value
+	local lime_section = config.uci:get_all("lime", sectionname)
+	local lime_default_section = config.uci:get_all("lime-defaults", sectionname)
+	local section_exists = (lime_section ~= nil) or (lime_default_section ~= nil)
+
+	if section_exists then
+		local ret = lime_section or {}
+
+		if lime_default_section then
+			for key,value in pairs(lime_default_section) do
+				if (ret[key] == nil) then
+					ret[key] = value
+				end
+			end
 		end
+
+		return ret
 	end
-	return ret
+
+	return nil
 end
 
 function config.get_bool(sectionname, option, default)
