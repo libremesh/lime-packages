@@ -7,7 +7,7 @@ COMMAND="$0 $@"
 
 usage()
 {
-	echo -e "Suggested ways of using $0 are mainly 3\nyourCommand | $0\n$0 [ -c command ]\n$0 [ -f file ]" 1>&2 ; exit 0
+	echo -e "sprunge: command line paste bin\n\nSuggested ways of using $0 are mainly 4\nyourCommand arg1 arg2 | $0\n$0 [ -c \"yourCommand arg1 arg2\" ]\n$0 [ -f file ]\n$0; then EOF using Ctrl+D" 1>&2 ; exit 0
 }
 
 case "${1}" in
