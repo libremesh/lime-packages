@@ -27,8 +27,8 @@ endef
 define Build/Compile
 	@rm -rf ./build || true
 	@cp -r ./src ./build
-	@sed -i '/^--!.*/d' build/*.lua
-	@sed -i '/^#\[Doc\]/d' build/*.sh
+	@sed -i '/^\s*--!.*/d' build/*.lua
+	@sed -i '/^\s*#\[Doc\]/d' build/*.sh
 endef
 
 define Package/$(PKG_NAME)/install
