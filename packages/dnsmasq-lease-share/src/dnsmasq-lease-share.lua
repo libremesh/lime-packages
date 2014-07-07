@@ -80,6 +80,31 @@ function del_lease(client_mac)
 	end
 end
 
+function receive_dhcp_hosts()
+	local stdout = io.popen("alfred -r " .. alfred_shared_lease_num,"r");
+	local raw_output = stdout:read("*a");
+	stdout:close();
+
+	if (not raw_output) then exit(0); end
+
+	json_output = {};
+	local lease_table = {};
+	-------------------------------- { added because alfred doesn't output valid json yet }
+	assert(loadstring("json_output = {" .. raw_output .. "}"))()
+
+	for _, row in ipairs(json_output) do
+		local node_mac, value = unpack(row)
+		table.insert(lease_table, "# Node ".. node_mac .. "\n")
+		table.insert(lease_table, value:gsub("\x0a", "\n") .. "\n")
+	end
+
+	local hostsfile = io.open(dnsmasq_dhcp_hostsfile, "w");
+	if hostsfile then
+		hostsfile:write(table.concat(lease_table));
+		hostsfile:close();
+	end
+end
+
 local command = arg[1];
 local client_mac = arg[2];
 local client_ip = arg[3];
@@ -115,28 +140,7 @@ elseif command == nil then
 	update_alfred()
 
 --! and populate dhcp-hostsfile with incoming data
-	local stdout = io.popen("alfred -r " .. alfred_shared_lease_num,"r");
-	local raw_output = stdout:read("*a");
-	stdout:close();
-
-	if (not raw_output) then exit(0); end
-
-	json_output = {};
-	local lease_table = {};
-	-------------------------------- { added because alfred doesn't output valid json yet }
-	assert(loadstring("json_output = {" .. raw_output .. "}"))()
-
-	for _, row in ipairs(json_output) do
-		local node_mac, value = unpack(row)
-		table.insert(lease_table, "# Node ".. node_mac .. "\n")
-		table.insert(lease_table, value:gsub("\x0a", "\n") .. "\n")
-	end
-
-	local hostsfile = io.open(dnsmasq_dhcp_hostsfile, "w");
-	if hostsfile then
-		hostsfile:write(table.concat(lease_table));
-		hostsfile:close();
-	end
+	receive_dhcp_hosts()
 	reload_dnsmasq()
 
 end
