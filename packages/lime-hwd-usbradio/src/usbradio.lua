@@ -43,10 +43,9 @@ end
 
 --! Detect the usb radio and configurate it
 function usbradio.detect_hardware()
-	local stdOutput = io.popen("find /sys/devices | grep usb | grep ieee80211 | grep 'phy[0-9]*$'") --TODO: optimization rewrite it in lua maybe fs.glob would be useful
-
+	local stdOutput = io.popen("find /sys/devices | grep usb | grep ieee80211 | grep 'phy[0-9]*$'")
 	--! Repeat for each usb radio found
-	for _,path in pairs(utils.split(stdOutput:read("*a"), "\n")) do --TODO: read line by line instead of "*a"
+	for path in stdOutput:lines() do
 		--! Define useful variables
 		local endBasePath, phyEnd = string.find(path, "/ieee80211/phy")
 		local phyPath = string.sub(path, 14, endBasePath-1)
@@ -81,7 +80,7 @@ function usbradio.detect_hardware()
 			--! Configuration of an usb radio using general option in LiMe
 			for option_name, value in pairs(config.get_all("wifi")) do
 				--! Options that start with point are hidden option, we exclude them as they can cause problems
-				if not option_name:match("^%.") then --TODO: optimization instead of a match check if the first character is a point
+				if (option_name:sub(1,1) ~= ".") then
 					--! Needed a table or a string for config.set
 					if ( type(value) ~= "table" ) then value = tostring(value) end
 					config.set(radioName, option_name, value)
