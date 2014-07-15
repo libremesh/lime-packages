@@ -3,6 +3,7 @@
 --[[
 
 Copyright (C) 2013 Gioacchino Mazzurco <gio@eigenlab.org>
+Copyright (C) 2014 Gui Iribarren <gui@altermundi.net>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,101 +20,127 @@ along with this file. If not, see <http://www.gnu.org/licenses/>.
 
 -- PLEASE USE TAB NOT SPACE JUST FOR INDENTATION
 
+--! dhcp-hostsfile line format
+--! [<hwaddr>][,id:<client_id>|*][,set:<tag>][,<ipaddr>][,<hostname>][,<lease_time>][,ignore]
 
---! dhcp lease file lines format
---! <Time of lease expiry, in epoch time (seconds since 1970)> <Client MAC Address> <Client IP> <Client unqualified hostname if provided, * if not provided> <Client-ID, if known. The client-ID is used as the computer's unique-ID in preference to the MAC address, if it's available>
+require("uci")
 
---! root at OpenWrt:~# cat /var/dhcp.leases
---! 946689575 00:00:00:00:00:05 192.168.1.155 wdt 01:00:00:00:00:00:05
---! 946689351 00:0f:b0:3a:b5:0b 192.168.1.208 colinux *
---! 946689493 02:0f:b0:3a:b5:0b 192.168.1.199 * 01:02:0f:b0:3a:b5:0b
-
-require("uci");
-
-local local_lease_file = "/tmp/dnsmasq-lease-share-local-lease"
-local alfred_shared_lease_num = "65"
-
-local command = arg[1];
-local client_mac = arg[2];
+local local_lease_file = "/tmp/dhcp.hosts_local"
+local dnsmasq_dhcp_hostsfile = "/tmp/dhcp.hosts_remote"
+local alfred_shared_lease_num = "66"
 
 --! Tell alfred local dhcp lease changed
 function update_alfred()
-	local lease_file = io.open(local_lease_file, "r+");
-	local stdin = io.popen("alfred -s " .. alfred_shared_lease_num,"w");
-	stdin:write(lease_file:read("*all"));
-	lease_file:close();
-	stdin:close();
+	local lease_file = io.open(local_lease_file, "r+")
+	local stdin = io.popen("alfred -s " .. alfred_shared_lease_num,"w")
+	stdin:write(lease_file:read("*all"))
+	lease_file:close()
+	stdin:close()
+end
+
+--! Tell dnsmasq to reread dhcp-hostsfile
+function reload_dnsmasq()
+	os.execute("killall -HUP dnsmasq 2>/dev/null")
 end
 
 function get_hostname()
-	local hostfile = io.open("/proc/sys/kernel/hostname", "r");
-	local ret_string = hostfile:read();
-	hostfile:close();
-	return ret_string;
+	local hostfile = io.open("/proc/sys/kernel/hostname", "r")
+	local ret_string = hostfile:read()
+	hostfile:close()
+	return ret_string
 end
 
 function get_if_mac(ifname)
-	local macfile = io.open("/sys/class/net/" .. ifname .. "/address");
-	local ret_string = macfile:read();
-	macfile:close();
-	return ret_string;
+	local macfile = io.open("/sys/class/net/" .. ifname .. "/address")
+	local ret_string = macfile:read()
+	macfile:close()
+	return ret_string
 end
 
+function add_lease(client_mac, client_ip, client_hostname, client_id)
+	local lease_line = client_mac .. ",id:" .. client_id .. "," .. client_ip .. "," .. client_hostname .. "\n"
 
-if command == "add" then
-	local lease_expiration = os.getenv("DNSMASQ_LEASE_EXPIRES");
-	local client_ip = arg[3];
-	local client_hostname;
-	if (arg[4] and (arg[4]:len() > 0)) then client_hostname = arg[4] else client_hostname = "*" end;
-	local client_id = os.getenv("DNSMASQ_CLIENT_ID");
-	if ((not client_id) or (client_id:len() <= 0)) then client_id = client_mac end; 
-
-	local lease_line = lease_expiration .. " " .. client_mac .. " " .. client_ip .. " " .. client_hostname .. " " .. client_id .. "\n";
-
-	local lease_file = io.open(local_lease_file, "a");
-	lease_file:write(lease_line);
-	lease_file:close();
-
-	update_alfred()
-
-elseif command == "del" then
-	local leases = "";
-	local lease_file = io.open(local_lease_file, "r");
-	while lease_file:read(0) do
-		local lease_line = lease_file:read();
-		if not string.find(lease_line, client_mac) then leases = leases .. lease_line .. "\n" end 
-	end
+	local lease_file = io.open(local_lease_file, "a")
+	lease_file:write(lease_line)
 	lease_file:close()
-	lease_file = io.open(local_lease_file, "w");
-	lease_file:write(leases);
-	lease_file:close();
-	update_alfred();
+end
 
-elseif command == "init" then
-	local stdout = io.popen("alfred -r " .. alfred_shared_lease_num,"r");
-	local raw_output = stdout:read("*a");
-	stdout:close();
+function del_lease(client_mac)
+	local leases = ""
+	local lease_file = io.open(local_lease_file, "r")
+	if lease_file then
+		while lease_file:read(0) do
+			local lease_line = lease_file:read()
+			if not string.find(lease_line, client_mac) then leases = leases .. lease_line .. "\n" end
+		end
+		lease_file:close()
+		lease_file = io.open(local_lease_file, "w")
+		lease_file:write(leases)
+		lease_file:close()
+	end
+end
 
-	local uci_conf = uci.cursor();
+function receive_dhcp_hosts()
+	local stdout = io.popen("alfred -r " .. alfred_shared_lease_num,"r")
+	local raw_output = stdout:read("*a")
+	stdout:close()
 
-	local own_hostname = get_hostname();
-	local own_ipv4 = uci_conf:get("network", "lan", "ipaddr");
-	local disposable_mac = get_if_mac("br-lan");
+	if (not raw_output) then exit(0) end
 
-	print("999999999 " ..  disposable_mac .. " " .. own_ipv4 .. " " .. own_hostname .. " " .. disposable_mac);
-
-	if (not raw_output) then exit(0); end
-
-	json_output = {};
-	local lease_table = {};
+	json_output = {}
+	local lease_table = {}
 	-------------------------------- { added because alfred doesn't output valid json yet }
 	assert(loadstring("json_output = {" .. raw_output .. "}"))()
 
 	for _, row in ipairs(json_output) do
 		local node_mac, value = unpack(row)
+		table.insert(lease_table, "# Node ".. node_mac .. "\n")
 		table.insert(lease_table, value:gsub("\x0a", "\n") .. "\n")
 	end
 
-	print(table.concat(lease_table));
+	local hostsfile = io.open(dnsmasq_dhcp_hostsfile, "w")
+	if hostsfile then
+		hostsfile:write(table.concat(lease_table))
+		hostsfile:close()
+	end
+end
+
+local command = arg[1]
+local client_mac = arg[2]
+local client_ip = arg[3]
+local client_hostname
+if (arg[4] and (arg[4]:len() > 0)) then client_hostname = arg[4] else client_hostname = "" end
+local client_id = os.getenv("DNSMASQ_CLIENT_ID")
+if ((not client_id) or (client_id:len() <= 0)) then client_id = client_mac end
+
+if command == "add" then
+	add_lease(client_mac, client_ip, client_hostname, client_id)
+	update_alfred()
+
+elseif command == "del" then
+	del_lease(client_mac)
+	update_alfred()
+
+elseif command == "old" then
+	del_lease(client_mac)
+	add_lease(client_mac, client_ip, client_hostname, client_id)
+	update_alfred()
+
+elseif command == nil then
+--! ran from cron as an alfred facter,
+--! publish our own host details
+	local uci_conf = uci.cursor()
+
+	local own_hostname = get_hostname()
+	local own_ipv4 = uci_conf:get("network", "lan", "ipaddr")
+	local own_mac = get_if_mac("br-lan")
+
+	del_lease(own_mac)
+	add_lease(own_mac, own_ipv4, own_hostname, own_mac)
+	update_alfred()
+
+--! and populate dhcp-hostsfile with incoming data
+	receive_dhcp_hosts()
+	reload_dnsmasq()
 
 end
