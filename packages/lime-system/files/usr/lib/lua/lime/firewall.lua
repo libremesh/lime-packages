@@ -4,13 +4,6 @@ local fs = require("nixio.fs")
 
 firewall = {}
 
-function firewall.clean()
-	print("Clearing firewall config...")
-	local uci = libuci:cursor()
-	uci:delete("firewall", "bmxtun")
-	uci:save("firewall")
-end
-
 function firewall.configure()
 	local uci = libuci:cursor()
 
@@ -32,15 +25,6 @@ function firewall.configure()
 			end
 		end
 	)
-
-	uci:set("firewall", "bmxtun", "zone")
-	uci:set("firewall", "bmxtun", "name", "bmxtun")
-	uci:set("firewall", "bmxtun", "input", "ACCEPT")
-	uci:set("firewall", "bmxtun", "output", "ACCEPT")
-	uci:set("firewall", "bmxtun", "forward", "ACCEPT")
-	uci:set("firewall", "bmxtun", "mtu_fix", "1")
-	uci:set("firewall", "bmxtun", "device", "bmx+")
-	uci:set("firewall", "bmxtun", "family", "ipv4")
 
 	uci:save("firewall")
 
