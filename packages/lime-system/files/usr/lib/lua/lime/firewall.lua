@@ -1,5 +1,7 @@
 #!/usr/bin/lua
 
+local fs = require("nixio.fs")
+
 firewall = {}
 
 function firewall.clean()
@@ -41,6 +43,19 @@ function firewall.configure()
 	uci:set("firewall", "bmxtun", "family", "ipv4")
 
 	uci:save("firewall")
+
+	fs.writefile(
+		"/etc/firewall.user",
+		"# Put your custom iptables rules in a new file in /etc/firewall.user.d/\n" ..
+		"# they will be executed with each firewall (re-)start.\n" ..
+		"# They are interpreted as shell script.\n" ..
+		"for hook in /etc/firewall.user.d/* ; do\n" ..
+		"\t[ -s \"$hook\" ] && /bin/sh \"$hook\"\n" ..
+		"done\n" ..
+		"exit 0\n"
+	)
+
+
 end
 
 return firewall
