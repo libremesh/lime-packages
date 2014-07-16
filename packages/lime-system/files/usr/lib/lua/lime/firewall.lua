@@ -1,35 +1,46 @@
 #!/usr/bin/lua
 
-local fs = require("nixio.fs")
-
 firewall = {}
 
 function firewall.clean()
-	local fwcfg = { "/etc/config/firewall", "/etc/lime-init.d/10-accept.start", "/etc/lime-init.d/15-mss_clamp.start" }
-	for _,file in pairs(fwcfg) do
-		fs.writefile(file,"")
-	end
-
-	io.popen("/etc/init.d/firewall disable || true"):close()
+	print("Clearing firewall config...")
+	local uci = libuci:cursor()
+	uci:delete("firewall", "bmxtun")
+	uci:save("firewall")
 end
 
 function firewall.configure()
+	local uci = libuci:cursor()
 
-	fs.writefile(
-		"/etc/lime-init.d/10-accept.start", [[
-iptables -P INPUT ACCEPT
-iptables -P OUTPUT ACCEPT
-iptables -P FORWARD ACCEPT
+	uci:foreach("firewall", "defaults",
+		function(section)
+			uci:set("firewall", section[".name"], "input", "ACCEPT")
+			uci:set("firewall", section[".name"], "output", "ACCEPT")
+			uci:set("firewall", section[".name"], "forward", "ACCEPT")
+		end
+	)
 
-ip6tables -P INPUT ACCEPT
-ip6tables -P OUTPUT ACCEPT
-ip6tables -P FORWARD ACCEPT
-]])
+	uci:foreach("firewall", "zone",
+		function(section)
+			if uci:get("firewall", section[".name"], "name") == "wan"
+			or uci:get("firewall", section[".name"], "name") == "lan" then
+				uci:set("firewall", section[".name"], "input", "ACCEPT")
+				uci:set("firewall", section[".name"], "output", "ACCEPT")
+				uci:set("firewall", section[".name"], "forward", "ACCEPT")
+			end
+		end
+	)
 
-	fs.writefile(
-		"/etc/lime-init.d/15-mss_clamp.start",
-		"iptables -t mangle -A FORWARD -p tcp -o bmx+ -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu")
+	uci:set("firewall", "bmxtun", "zone")
+	uci:set("firewall", "bmxtun", "name", "bmxtun")
+	uci:set("firewall", "bmxtun", "input", "ACCEPT")
+	uci:set("firewall", "bmxtun", "output", "ACCEPT")
+	uci:set("firewall", "bmxtun", "forward", "ACCEPT")
+	uci:set("firewall", "bmxtun", "mtu_fix", "1")
+	uci:set("firewall", "bmxtun", "device", "bmx+")
+	uci:set("firewall", "bmxtun", "family", "ipv4")
 
+	uci:save("firewall")
 end
 
 return firewall
