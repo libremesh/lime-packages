@@ -53,9 +53,11 @@ end
 function network.setup_dns()
 	local content = {}
 	for _,server in pairs(config.get("network", "resolvers")) do
-		table.insert(content, "nameserver "..server)
+		table.insert(content, server)
 	end
-	fs.writefile("/etc/resolv.conf", table.concat(content, "\n").."\n")
+	uci:foreach("dhcp", "dnsmasq", function(s) uci:set_list("dhcp", s[".name"], "server", content) end)
+	uci:save("dhcp")
+	fs.writefile("/etc/dnsmasq.conf", "conf-dir=/etc/dnsmasq.d\n")
 end
 
 function network.clean()
@@ -74,13 +76,8 @@ function network.clean()
 	io.popen("/etc/init.d/odhcpd disable || true"):close()
 
 	print("Cleaning dnsmasq")
-	io.popen("/etc/init.d/dnsmasq disable || true"):close()
-
-	os.remove("/etc/resolv.conf")
-	fs.remove("/etc/dnsmasq.d")
-	fs.mkdirr("/etc/dnsmasq.d")
-	fs.writefile("/etc/config/dhcp", "config dnsmasq\n\toption leasefile\t'/tmp/dhcp.leases'\n")
-	fs.writefile("/etc/dnsmasq.conf", "conf-dir=/etc/dnsmasq.d\n")
+	uci:foreach("dhcp", "dnsmasq", function(s) uci:delete("dhcp", s[".name"], "server") end)
+	uci:save("dhcp")
 
 	print("Disabling 6relayd...")
 	fs.writefile("/etc/config/6relayd", "")
