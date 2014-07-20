@@ -1,32 +1,28 @@
 # 
-# Copyright (C) 2012 Gui Iribarren
+# Copyright (C) 2012-2014 Gui Iribarren
 #
 # This is free software, licensed under the GNU General Public License v3.
 #
 
 include $(TOPDIR)/rules.mk
 
+GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
+GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
+
 PKG_NAME:=batman-adv-auto-gw-mode
-PKG_VERSION:=$(shell hg log --template "{date|shortdate}-{rev}\n" -l 1 .)
-PKG_RELEASE:=1
+PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/batman-adv-auto-gw-mode
-  SECTION:=net
-  CATEGORY:=Network
-  SUBMENU:=Routing and Redirection
+define Package/$(PKG_NAME)
+  CATEGORY:=LiMe
   TITLE:=Changes batman-adv gw_mode to reflect internet availability
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
-  DEPENDS:= \
-	+kmod-batman-adv \
-	+watchping \
-	+netifd \
-	+ubus \
-	
+  URL:=http://libre-mesh.org
+  DEPENDS:= +kmod-batman-adv +watchping
 endef
 
-define Package/batman-adv-auto-gw-mode/description
+define Package/$(PKG_NAME)/description
 Adds watchping hooks that set 
 gw_mode=server when WAN port gets internet access
 gw_mode=client when connection is severed
@@ -44,9 +40,9 @@ endef
 define Build/Compile
 endef
 
-define Package/batman-adv-auto-gw-mode/install
+define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
 endef
 
-$(eval $(call BuildPackage,batman-adv-auto-gw-mode))
+$(eval $(call BuildPackage,$(PKG_NAME)))
