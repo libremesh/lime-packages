@@ -55,7 +55,8 @@ function network.setup_dns()
 	for _,server in pairs(config.get("network", "resolvers")) do
 		table.insert(content, server)
 	end
-	uci:foreach("dhcp", "dnsmasq", function(s) uci:set_list("dhcp", s[".name"], "server", content) end)
+	local uci = libuci:cursor()
+	uci:foreach("dhcp", "dnsmasq", function(s) uci:set("dhcp", s[".name"], "server", content) end)
 	uci:save("dhcp")
 	fs.writefile("/etc/dnsmasq.conf", "conf-dir=/etc/dnsmasq.d\n")
 end

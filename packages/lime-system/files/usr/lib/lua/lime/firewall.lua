@@ -1,6 +1,7 @@
 #!/usr/bin/lua
 
 local fs = require("nixio.fs")
+local libuci = require("uci")
 
 firewall = {}
 
