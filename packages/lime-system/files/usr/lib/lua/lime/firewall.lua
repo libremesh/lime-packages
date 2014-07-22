@@ -4,6 +4,10 @@ local fs = require("nixio.fs")
 
 firewall = {}
 
+function firewall.clean()
+	-- nothing to clean
+end
+
 function firewall.configure()
 	local uci = libuci:cursor()
 
