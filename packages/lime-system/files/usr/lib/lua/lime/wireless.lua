@@ -74,7 +74,13 @@ function wireless.configure()
 	for _,radio in pairs(allRadios) do
 		local radioName = radio[".name"]
 		local phyIndex = radioName:match("%d+")
-		local freqSuffix = "_2ghz"; if wireless.is5Ghz(radioName) then freqSuffix = "_5ghz" end
+		if wireless.is5Ghz(radioName) then
+			freqSuffix = "_5ghz"
+			ignoredSuffix = "_2ghz"
+		else
+			freqSuffix = "_2ghz"
+			ignoredSuffix = "_5ghz"
+		end
 		local modes = config.get("wifi", "modes")
 		local options = config.get_all("wifi")
 
@@ -103,7 +109,11 @@ function wireless.configure()
 			
 			for key,value in pairs(options) do
 				local keyPrefix = utils.split(key, "_")[1]
-				local isGoodOption = ( (key ~= "modes") and (not key:match("^%.")) and (not key:match("channel")) and (not (wireless.isMode(keyPrefix) and keyPrefix ~= modeName)) )
+				local isGoodOption = ( (key ~= "modes")
+				                   and (not key:match("^%."))
+				                   and (not key:match("channel"))
+				                   and (not (wireless.isMode(keyPrefix) and keyPrefix ~= modeName))
+				                   and (not key:match(ignoredSuffix)) )
 
 				if isGoodOption then
 					local nk = key:gsub("^"..modeName.."_", ""):gsub(freqSuffix.."$", "")
