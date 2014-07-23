@@ -85,22 +85,25 @@ function network.clean()
 	fs.writefile("/etc/config/6relayd", "")
 end
 
-function network.scandevices()
+function network.get_lan_devices()
 	local devices = {}
+	local uci = libuci:cursor()
 
-	-- Scan for plain ethernet interfaces
-	for _,dev in pairs(utils.split(io.popen("ls -1 /sys/class/net/"):read("*a"), "\n")) do
-		if dev:match("^eth%d") and not dev:match(network.protoVlanSeparator.."%d$") then
-			table.insert(devices, dev)
+	-- Look for ethernet interfaces that are already in "lan", put by a human
+	-- or by openwrt scripts
+	local lan_ifnames = uci:get("network", "lan", "ifname") or {}
+	 -- convert "option" string into "list" table
+	if type(lan_ifnames) == "string" then lan_ifnames = utils.split(lan_ifnames, " ") end
+	
+	for _,ifname in pairs(lan_ifnames) do
+		if ifname:match("^eth%d") and not ifname:match(network.protoVlanSeparator.."%d$") then
+			table.insert(devices, ifname)
 		end
 	end
 
 	-- Scan for plain wireless interfaces
-	local uci = libuci:cursor()
 	uci:foreach("wireless", "wifi-iface", function(s) table.insert(devices, s["ifname"]) end)
 
-	-- When we will support other device type just scan for them here
-	
 	return devices
 end
 
@@ -121,10 +124,9 @@ function network.configure()
 
 	local specificIfaces = {}
 	config.foreach("net", function(iface) specificIfaces[iface[".name"]] = iface end)
-	
-	-- Scan for fisical devices, if there is a specific config apply that otherwise apply general config
-	local fisDevs = network.scandevices()
-	for _,device in pairs(fisDevs) do
+
+	-- Scan for lan physical devices, if there is a specific config apply that otherwise apply general config
+	for _,device in pairs(network.get_lan_devices()) do
 		local owrtIf = specificIfaces[device]
 		local deviceProtos = generalProtocols
 		if owrtIf then deviceProtos = owrtIf["protocols"] end

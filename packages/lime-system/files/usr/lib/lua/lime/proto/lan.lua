@@ -6,8 +6,6 @@ local network = require("lime.network")
 local libuci = require("uci")
 
 function lan.configure(args)
-	lan.clear()
-	
 	local ipv4, ipv6 = network.primary_address()
 	
 	local uci = libuci:cursor()
@@ -28,16 +26,12 @@ function lan.setup_interface(ifname, args)
 	local oldIfs = uci:get("network", "lan", "ifname") or {}
 	if type(oldIfs) == "string" then oldIfs = utils.split(oldIfs, " ") end
 	for _,iface in pairs(oldIfs) do
-		table.insert(bridgedIfs, iface)
+		if iface ~= ifname then
+			table.insert(bridgedIfs, iface)
+		end
 	end
 	table.insert(bridgedIfs, ifname)
 	uci:set("network", "lan", "ifname", bridgedIfs)
-	uci:save("network")
-end
-
-function lan.clear()
-	local uci = libuci:cursor()
-	uci:delete("network", "lan", "ifname")
 	uci:save("network")
 end
 
