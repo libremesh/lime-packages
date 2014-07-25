@@ -147,12 +147,16 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 
 	vlanProtocol = vlanProtocol or "8021ad"
 	openwrtNameSuffix = openwrtNameSuffix or ""
-	
+
 	local owrtDeviceName = network.limeIfNamePrefix..linuxBaseIfname..openwrtNameSuffix.."_dev"
 	local owrtInterfaceName = network.limeIfNamePrefix..linuxBaseIfname..openwrtNameSuffix.."_if"
+	owrtDeviceName = owrtDeviceName:gsub("[^%w_]", "_") -- sanitize uci section name
+	owrtInterfaceName = owrtInterfaceName:gsub("[^%w_]", "_") -- sanitize uci section name
+
 	local vlanId = vid
 	--! Do not use . as separator as this will make netifd create an 802.1q interface anyway
-	local linux802adIfName = linuxBaseIfname..network.protoVlanSeparator..vlanId 
+	--! and sanitize linuxBaseIfName because it can contain dots as well (i.e. switch ports)
+	local linux802adIfName = linuxBaseIfname:gsub("[^%w_]", "_")..network.protoVlanSeparator..vlanId
 
 	local uci = libuci:cursor()
 
