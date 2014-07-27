@@ -55,6 +55,7 @@ function batadv.configure(args)
 	local uci = libuci:cursor()
 	uci:set("batman-adv", "bat0", "mesh")
 	uci:set("batman-adv", "bat0", "bridge_loop_avoidance", "1")
+	uci:set("batman-adv", "bat0", "multicast_mode", "0")
 
 	-- if anygw enabled disable DAT that doesn't play well with it
 	for _,proto in pairs(config.get("network", "protocols")) do
