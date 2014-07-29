@@ -1,8 +1,9 @@
 #!/bin/sh
 
-SPRUNGE_URL="http://sprunge.us"
+SPRUNGE_HOST="sprunge.us"
 
 TEMP_FILE="$(mktemp)"
+TEMP_FILE_ENCODED="$(mktemp)"
 COMMAND="$0 $@"
 
 usage()
@@ -18,6 +19,12 @@ case "${1}" in
 	*) tee <&0 "${TEMP_FILE}" ;;
 esac
 
-cat "${TEMP_FILE}" | curl -F 'sprunge=<-' "${SPRUNGE_URL}" 1>&2
+cat "${TEMP_FILE}" | hexdump -v -e '/1 "%02x"' | sed 's/\(..\)/%\1/g' > "${TEMP_FILE_ENCODED}"
 
-rm -f "${TEMP_FILE}"
+echo "POST / HTTP/1.0
+Host: ${SPRUNGE_HOST}
+Content-Length: $(( $(cat ${TEMP_FILE_ENCODED} | wc -m) + 8 ))
+
+sprunge=$(cat ${TEMP_FILE_ENCODED})" | nc "${SPRUNGE_HOST}" 80 | grep "${SPRUNGE_HOST}" 1>&2
+
+rm -f "${TEMP_FILE}" "${TEMP_FILE_ENCODED}"
