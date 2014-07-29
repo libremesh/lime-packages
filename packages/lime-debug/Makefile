@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libre-mesh.org
-  DEPENDS:=+batctl +iwinfo +iw +mtr +ip +iputils-ping6
+  DEPENDS:=+batctl +iwinfo +iw +mtr +ip +iputils-ping6 +sprunge
 endef
 
 define Package/$(PKG_NAME)/description
