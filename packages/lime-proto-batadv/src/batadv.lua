@@ -41,10 +41,6 @@ function batadv.setup_interface(ifname, args)
 end
 
 function batadv.clean()
-	print("Clearing batman-adv config...")
-	local uci = libuci:cursor()
-	uci:delete("batman-adv", "bat0")
-	uci:save("batman-adv")
 	if not fs.lstat("/etc/config/batman-adv") then fs.writefile("/etc/config/batman-adv", "") end
 end
 

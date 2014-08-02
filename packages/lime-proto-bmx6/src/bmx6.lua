@@ -26,6 +26,9 @@ end
 function bmx6.clean()
 	print("Clearing bmx6 config...")
 	fs.writefile("/etc/config/bmx6", "")
+	local uci = libuci:cursor()
+	uci:delete("firewall", "bmxtun")
+	uci:save("firewall")
 end
 
 function bmx6.configure(args)
@@ -107,10 +110,22 @@ function bmx6.configure(args)
 
 	uci:save("bmx6")
 
+	uci:set("firewall", "bmxtun", "zone")
+	uci:set("firewall", "bmxtun", "name", "bmxtun")
+	uci:set("firewall", "bmxtun", "input", "ACCEPT")
+	uci:set("firewall", "bmxtun", "output", "ACCEPT")
+	uci:set("firewall", "bmxtun", "forward", "ACCEPT")
+	uci:set("firewall", "bmxtun", "mtu_fix", "1")
+	uci:set("firewall", "bmxtun", "device", "bmx+")
+	uci:set("firewall", "bmxtun", "family", "ipv4")
+
+	uci:save("firewall")
+
 	-- BEGIN
 	-- Workaround to http://www.libre-mesh.org/issues/28
+	fs.mkdir("/etc/rc.local.d")
 	fs.writefile(
-		"/etc/lime-init.d/65-bmx6_dumb_workaround.start",
+		"/etc/rc.local.d/65-bmx6_dumb_workaround",
 		"((sleep 45s && /etc/init.d/bmx6 restart)&)\n")
 	-- END
 
