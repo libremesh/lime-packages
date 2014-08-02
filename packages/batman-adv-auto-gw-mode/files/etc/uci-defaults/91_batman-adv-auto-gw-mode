@@ -1,6 +1,9 @@
 #!/bin/sh
 
 uci batch <<EOF
+set batman-adv.bat0.gw_mode=client
+commit batman-adv
+
 set network.lan_dhcp=interface
 set network.lan_dhcp.ifname=@lan
 set network.lan_dhcp.proto=dhcp
