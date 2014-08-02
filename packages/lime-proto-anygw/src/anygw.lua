@@ -53,10 +53,13 @@ function anygw.configure(args)
 	uci:set("network", pfr.."anygw_route4", "table", "170")
 	uci:save("network")
 
+	fs.mkdir("/etc/firewall.user.d")
 	fs.writefile(
-		"/etc/lime-init.d/20-anygw-ebtables.start",
+		"/etc/firewall.user.d/20-anygw-ebtables",
 		"\n" ..
+		"ebtables -D FORWARD -j DROP -d " .. anygw_mac .. "\n" ..
 		"ebtables -A FORWARD -j DROP -d " .. anygw_mac .. "\n" ..
+		"ebtables -t nat -D POSTROUTING -o bat0 -j DROP -s " .. anygw_mac .. "\n" ..
 		"ebtables -t nat -A POSTROUTING -o bat0 -j DROP -s " .. anygw_mac .. "\n"
 	)
 
