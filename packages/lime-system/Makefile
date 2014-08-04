@@ -40,6 +40,9 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/lime/
+	$(INSTALL_DIR) $(1)/etc/init.d/
+	$(INSTALL_DIR) $(1)/etc/lime-defaults/
+	$(INSTALL_DIR) $(1)/etc/lime-rc.d/
 	$(CP) ./files/* $(1)/
 	echo "LIME_ID=LiMe" > $(1)/etc/lime/lime.release
 	echo "LIME_CODENAME=$(LIME_CODENAME)" >> $(1)/etc/lime/lime.release
