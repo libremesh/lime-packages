@@ -1,0 +1,5 @@
+#!/bin/sh
+echo "Configuring LiMe for first time..."
+lua /usr/bin/lime-config
+uci commit
+reboot
