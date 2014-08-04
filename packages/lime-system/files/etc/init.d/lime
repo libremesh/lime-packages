@@ -1,0 +1,49 @@
+#!/bin/sh /etc/rc.common
+#    Copyright (C) 2014 libre-mesh.org
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License along
+#    with this program; if not, write to the Free Software Foundation, Inc.,
+#    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+#    The full GNU General Public License is included in this distribution in
+#    the file called "COPYING".
+
+START=99
+STOP=99
+SERVICE_DAEMONIZE=1
+
+log() {
+	echo -e "$@" > /dev/console
+	echo -e "$@"
+}
+
+start() {
+	local script
+	for script in /etc/lime-defaults/*; do
+		log Executing lime-default script $script
+		$script
+		rm -f $script
+	done
+	for script in /etc/lime-rc.d/*; do
+		$script
+	done
+}
+
+stop() {
+	log Nothing to do
+}
+
+restart() {
+	stop
+	start
+}
