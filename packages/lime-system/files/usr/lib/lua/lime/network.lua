@@ -13,6 +13,7 @@ network.limeIfNamePrefix="lm_net_"
 network.protoParamsSeparator=":"
 network.protoVlanSeparator="_"
 
+
 function network.get_mac(ifname)
 	local mac = assert(fs.readfile("/sys/class/net/"..ifname.."/address")):gsub("\n","")
 	return utils.split(mac, ":")
@@ -91,7 +92,11 @@ function network.scandevices()
 
 	-- Scan for plain ethernet interfaces and switch_vlan interfaces
 	for _,dev in pairs(utils.split(io.popen("ls -1 /sys/class/net/"):read("*a"), "\n")) do
+<<<<<<< HEAD
 		if (dev:match("^eth%d+$") or dev:match("^eth%d+%.%d+$")) then
+=======
+		if dev:match("^eth%d") and not dev:match(network.protoVlanSeparator.."%d$") then
+>>>>>>> develop
 			table.insert(devices, dev)
 		end
 	end
