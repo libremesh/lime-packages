@@ -48,7 +48,7 @@ function wireless.createBaseWirelessIface(radio, mode, extras)
 	local networkInterfaceName = network.limeIfNamePrefix..ifname
 
 	local uci = libuci:cursor()
-	
+
 	uci:set("wireless", wirelessInterfaceName, "wifi-iface")
 	uci:set("wireless", wirelessInterfaceName, "mode", mode)
 	uci:set("wireless", wirelessInterfaceName, "device", radioName)
@@ -68,7 +68,7 @@ end
 
 function wireless.configure()
 	local specificRadios = {}
-	config.foreach("wifi", function(radio) specificRadios[radio[".name"]] = radio end)
+	config.foreach("wifi", function(radio) specificRadios[radio["radio_name"]] = radio end)
 
 	local allRadios = wireless.scandevices()
 	for _,radio in pairs(allRadios) do
@@ -96,17 +96,16 @@ function wireless.configure()
 		uci:save("wireless")
 
 		for _,modeArgs in pairs(modes) do
-			
 			local args = utils.split(modeArgs, wireless.modeParamsSeparator)
 			local modeName = args[1]
 			
 			if modeName == "manual" then break end
-			
+
 			local mode = require("lime.mode."..modeName)
 			local wirelessInterfaceName = mode.setup_radio(radio, args)[".name"]
 
 			local uci = libuci:cursor()
-			
+
 			for key,value in pairs(options) do
 				local keyPrefix = utils.split(key, "_")[1]
 				local isGoodOption = ( (key ~= "modes")
@@ -121,7 +120,7 @@ function wireless.configure()
 					uci:set("wireless", wirelessInterfaceName, nk, value)
 				end
 			end
-			
+
 			uci:save("wireless")
 		end
 	end
