@@ -6,6 +6,8 @@ local utils = require("lime.utils")
 
 hardware_detection = {}
 
+hardware_detection.sectionNamePrefix="lm_hwd_"
+
 --! Hardware detection module clean()
 --! Call clean() from all installed submodules
 function hardware_detection.clean()

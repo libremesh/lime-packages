@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
   TITLE:=LiMe hardware detection support for TP-LINK TL-WDR3600/4300/4310
   CATEGORY:=LiMe
   URL:=http://libre-mesh.org
-  DEPENDS:=+lime-system +lua +libuci-lua
+  DEPENDS:=+lime-system +lua +libuci-lua +ip
 endef
 
 define Build/Compile
