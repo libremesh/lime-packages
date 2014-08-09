@@ -54,9 +54,13 @@ end
 function network.setup_dns()
 	local content = {}
 	for _,server in pairs(config.get("network", "resolvers")) do
-		table.insert(content, "nameserver "..server)
+		table.insert(content, server)
 	end
-	fs.writefile("/etc/resolv.conf", table.concat(content, "\n").."\n")
+	local uci = libuci:cursor()
+	uci:foreach("dhcp", "dnsmasq", function(s) uci:set("dhcp", s[".name"], "server", content) end)
+	uci:save("dhcp")
+	fs.writefile("/etc/dnsmasq.conf", "conf-dir=/etc/dnsmasq.d\n")
+	fs.mkdir("/etc/dnsmasq.d")
 end
 
 function network.clean()
@@ -75,13 +79,8 @@ function network.clean()
 	io.popen("/etc/init.d/odhcpd disable || true"):close()
 
 	print("Cleaning dnsmasq")
-	io.popen("/etc/init.d/dnsmasq disable || true"):close()
-
-	os.remove("/etc/resolv.conf")
-	fs.remove("/etc/dnsmasq.d")
-	fs.mkdirr("/etc/dnsmasq.d")
-	fs.writefile("/etc/config/dhcp", "config dnsmasq\n\toption leasefile\t'/tmp/dhcp.leases'\n")
-	fs.writefile("/etc/dnsmasq.conf", "conf-dir=/etc/dnsmasq.d\n")
+	uci:foreach("dhcp", "dnsmasq", function(s) uci:delete("dhcp", s[".name"], "server") end)
+	uci:save("dhcp")
 
 	print("Disabling 6relayd...")
 	fs.writefile("/etc/config/6relayd", "")
@@ -91,22 +90,18 @@ function network.scandevices()
 	local devices = {}
 
 	-- Scan for plain ethernet interfaces and switch_vlan interfaces
-	for _,dev in pairs(utils.split(io.popen("ls -1 /sys/class/net/"):read("*a"), "\n")) do
-<<<<<<< HEAD
+	local stdOut = io.popen("ls -1 /sys/class/net/")
+	for dev in stdOut:lines() do
 		if (dev:match("^eth%d+$") or dev:match("^eth%d+%.%d+$")) then
-=======
-		if dev:match("^eth%d") and not dev:match(network.protoVlanSeparator.."%d$") then
->>>>>>> develop
 			table.insert(devices, dev)
 		end
 	end
+	stdOut:close()
 
 	-- Scan for plain wireless interfaces
 	local uci = libuci:cursor()
 	uci:foreach("wireless", "wifi-iface", function(s) table.insert(devices, s["ifname"]) end)
 
-	-- When we will support other device type just scan for them here
-	
 	return devices
 end
 
@@ -151,12 +146,16 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 
 	vlanProtocol = vlanProtocol or "8021ad"
 	openwrtNameSuffix = openwrtNameSuffix or ""
-	
+
 	local owrtDeviceName = network.limeIfNamePrefix..linuxBaseIfname..openwrtNameSuffix.."_dev"
 	local owrtInterfaceName = network.limeIfNamePrefix..linuxBaseIfname..openwrtNameSuffix.."_if"
+	owrtDeviceName = owrtDeviceName:gsub("[^%w_]", "_") -- sanitize uci section name
+	owrtInterfaceName = owrtInterfaceName:gsub("[^%w_]", "_") -- sanitize uci section name
+
 	local vlanId = vid
 	--! Do not use . as separator as this will make netifd create an 802.1q interface anyway
-	local linux802adIfName = linuxBaseIfname..network.protoVlanSeparator..vlanId 
+	--! and sanitize linuxBaseIfName because it can contain dots as well (i.e. switch ports)
+	local linux802adIfName = linuxBaseIfname:gsub("[^%w_]", "_")..network.protoVlanSeparator..vlanId
 
 	local uci = libuci:cursor()
 
