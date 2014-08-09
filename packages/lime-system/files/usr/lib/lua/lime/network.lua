@@ -89,9 +89,9 @@ end
 function network.scandevices()
 	local devices = {}
 
-	-- Scan for plain ethernet interfaces
+	-- Scan for plain ethernet interfaces and switch_vlan interfaces
 	for _,dev in pairs(utils.split(io.popen("ls -1 /sys/class/net/"):read("*a"), "\n")) do
-		if dev:match("^eth%d") and not dev:match(network.protoVlanSeparator.."%d$") then
+		if (dev:match("^eth%d+$") or dev:match("^eth%d+%.%d+$")) and not dev:match(network.protoVlanSeparator.."%d+$") then
 			table.insert(devices, dev)
 		end
 	end
@@ -121,7 +121,7 @@ function network.configure()
 	end
 
 	local specificIfaces = {}
-	config.foreach("net", function(iface) specificIfaces[iface[".name"]] = iface end)
+	config.foreach("net", function(iface) specificIfaces[iface["linux_name"]] = iface end)
 	
 	-- Scan for fisical devices, if there is a specific config apply that otherwise apply general config
 	local fisDevs = network.scandevices()
