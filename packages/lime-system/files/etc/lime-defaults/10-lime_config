@@ -1,4 +1,5 @@
 #!/bin/sh
+sleep 90s
 echo "Configuring LiMe for first time..."
 lua /usr/bin/lime-config
 uci commit
