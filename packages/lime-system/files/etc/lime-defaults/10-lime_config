@@ -1,6 +1,3 @@
 #!/bin/sh
-sleep 90s
-echo "Configuring LiMe for first time..."
-lua /usr/bin/lime-config
-uci commit
-reboot
+echo "Configuring LiMe for first time, will take apprex 2 minutes..."
+(sleep 90s ; lua /usr/bin/lime-config && uci commit && reboot)&);
