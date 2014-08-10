@@ -8,6 +8,7 @@ wireless = {}
 
 wireless.modeParamsSeparator=":"
 wireless.limeIfNamePrefix="lm_"
+wireless.ifnameModeSeparator="_"
 
 function wireless.clean()
 	print("Clearing wireless config...")
@@ -43,7 +44,7 @@ function wireless.createBaseWirelessIface(radio, mode, extras)
 
 	local radioName = radio[".name"]
 	local phyIndex = radioName:match("%d+")
-	local ifname = "wlan"..phyIndex.."_"..mode
+	local ifname = "wlan"..phyIndex..wireless.ifnameModeSeparator..mode
 	local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname.."_"..radioName
 	local networkInterfaceName = network.limeIfNamePrefix..ifname
 
