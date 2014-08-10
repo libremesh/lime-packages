@@ -9,4 +9,20 @@ function main()
 	for _, module in pairs(modules) do module.configure() end
 end
 
-main()
+
+local lockFilePath = "/var/run/lime-config.pid"
+local lockFile = io.open(lockFilePath,"r")
+if lockFile then
+	lockFile:close()
+	print("lime-config already running")
+else
+	lockFile = io.open(lockFilePath,"w")
+	local statFile = io.open("/proc/self/stat", "r")
+	lockFile:write(statFile:read("*n"))
+	statFile:close()
+
+	main()
+
+	lockFile:close()
+	os.remove(lockFilePath)
+end
