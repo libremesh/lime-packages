@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
   TITLE:=LiMe hardware detection usb radio support
   CATEGORY:=LiMe
   URL:=http://libre-mesh.org
-  DEPENDS:=+lime-system +lua +libuci-lua +kmod-ath9k-htc
+  DEPENDS:=+lime-system +lua +libuci-lua
 endef
 
 define Build/Compile
