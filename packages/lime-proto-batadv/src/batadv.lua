@@ -3,6 +3,7 @@
 local libuci = require("uci")
 local fs = require("nixio.fs")
 local lan = require("lime.proto.lan")
+local wireless = require("lime.wireless")
 
 batadv = {}
 
@@ -25,7 +26,7 @@ function batadv.setup_interface(ifname, args)
 	-- We use 000049 Unicast MAC prefix reserved by Apricot Ltd
 	-- We change the 7nt bit to 1 to give it locally administered meaning
 	-- Then use it as the new mac address prefix "02:00:49"
-	if ifname:match("^eth") then
+	if ifname:match("^eth") or ifname:match("^wlan%d+"..wireless.ifnameModeSeparator.."ap") then
 		local vlanMacAddr = network.get_mac(ifname)
 		vlanMacAddr[1] = "02"
 		vlanMacAddr[2] = "00"
