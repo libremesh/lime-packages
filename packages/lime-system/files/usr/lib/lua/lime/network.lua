@@ -15,7 +15,8 @@ network.protoVlanSeparator="_"
 
 
 function network.get_mac(ifname)
-	local mac = assert(fs.readfile("/sys/class/net/"..ifname.."/address")):gsub("\n","")
+	local path = "/sys/class/net/"..ifname.."/address"
+	local mac = assert(fs.readfile(path), "network.get_mac(...) failed reading: "..path):gsub("\n","")
 	return utils.split(mac, ":")
 end
 
