@@ -22,6 +22,7 @@ function tl_wdr3600.clean()
 
 	config.init_batch()
 	config.foreach("wifi", clean_lime_section)
+	config.foreach("net", clean_lime_section)
 	config.end_batch()
 end
 

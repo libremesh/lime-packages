@@ -12,13 +12,13 @@ LIME_CODENAME:=bigbang
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
-PKG_NAME:=lime-hwd-tl-wdr3600
+PKG_NAME:=lime-hwd-eth1-wan
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  TITLE:=LiMe hardware detection support for TP-LINK TL-WDR3600/4300/4310
+  TITLE:=Configure eth1 as wan interface if present
   CATEGORY:=LiMe
   URL:=http://libre-mesh.org
   DEPENDS:=+lime-system +lua +libuci-lua
@@ -33,8 +33,8 @@ endef
 
 define Package/$(PKG_NAME)/install
 	@mkdir -p $(1)/usr/lib/lua/lime/hwd || true
-	$(CP) ./build/tl_wdr3600.lua $(1)/usr/lib/lua/lime/hwd/tl_wdr3600.lua
-	@chmod +x $(1)/usr/lib/lua/lime/hwd/tl_wdr3600.lua
+	$(CP) ./build/eth1_wan.lua $(1)/usr/lib/lua/lime/hwd/eth1_wan.lua
+	@chmod +x $(1)/usr/lib/lua/lime/hwd/eth1_wan.lua
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
