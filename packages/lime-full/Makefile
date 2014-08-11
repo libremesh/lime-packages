@@ -26,7 +26,8 @@ define Package/$(PKG_NAME)
 		+dnsmasq-lease-share \
 		+lime-webui +luci-app-batman-adv +luci-app-bmx6 \
 		+lime-map-agent \
-		+lime-debug
+		+lime-debug \
+		+lime-hwd-eth1-wan +lime-hwd-tl-wdr3600
 endef
 
 define Package/$(PKG_NAME)/description
