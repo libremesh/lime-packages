@@ -22,12 +22,19 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libre-mesh.org
-  DEPENDS:=+iwinfo +iw +mtr +ip +iputils-ping6
+  DEPENDS:=+batctl +iwinfo +iw +mtr +ip +iputils-ping6 +sprunge \
+           +safe-reboot +netperf +rdisc6
 endef
 
 define Package/$(PKG_NAME)/description
 	Debug utilities for LiMe node
 endef
 
-$(eval $(call BuildPackage,$(PKG_NAME)))
+define Build/Compile
+endef
 
+define Package/$(PKG_NAME)/install
+        $(INSTALL_DIR) $(1)/
+endef
+
+$(eval $(call BuildPackage,$(PKG_NAME)))

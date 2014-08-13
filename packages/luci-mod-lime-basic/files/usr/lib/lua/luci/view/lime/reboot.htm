@@ -26,8 +26,14 @@ end
 if not reboot then 
 -%>
 <p><a href="<%=REQUEST_URI%>?reboot=1"><%:Perform reboot%></a></p>
-<%- else -%>
+<%-
+else
+local hostname = require("luci.sys").hostname()
+local libuci = require("luci.model.uci")
+local uci = libuci:cursor()
+local domain = uci:get_first("dhcp", "dnsmasq", "domain")
+-%>
 <p><%:Please wait: Device rebooting...%></p>
-<script type="text/javascript">setTimeout("location='<%=controller%>'", 60000)</script>
+<script type="text/javascript">setTimeout("location='"+window.location.protocol+"//<%=hostname%>.<%=domain%><%=controller%>'", 90000)</script>
 <%- end -%>
 <%+footer%>
