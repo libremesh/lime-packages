@@ -21,7 +21,10 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=p4u <pau@dabax.net>
   URL:=http://libre-mesh.org
-  DEPENDS:=+luci +luci-app-bmx6 +luci-app-batman-adv
+  DEPENDS:= +luci-mod-admin-full +luci-app-bmx6 \
+	+luci-app-batman-adv \
+	+uhttpd +libiwinfo-lua \
+	+luci-theme-bootstrap +luci-i18n-english
 endef
 
 define Package/$(PKG_NAME)/description

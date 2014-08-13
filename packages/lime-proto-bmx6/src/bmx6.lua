@@ -8,32 +8,27 @@ local libuci = require("uci")
 bmx6 = {}
 
 function bmx6.setup_interface(ifname, args)
-	if ifname:match("^wlan%d_ap") then return end
+	vlanId = args[2] or 13
+	vlanProto = args[3] or "8021ad"
+	nameSuffix = args[4] or "_bmx6"
 
-	local interface = network.limeIfNamePrefix..ifname.."_bmx6"
-	local owrtFullIfname = ifname
-	if args[2] then owrtFullIfname = owrtFullIfname..network.vlanSeparator..args[2] end
+	local owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 
 	local uci = libuci:cursor()
-
-	uci:set("bmx6", interface, "dev")
-	uci:set("bmx6", interface, "dev", owrtFullIfname)
-	uci:save("bmx6")
-
-	-- This must go here because @ notation is not supported by bmx6 but is needed by netifd
-	if ifname:match("^wlan") then owrtFullIfname = "@lm_"..owrtFullIfname end
-
-	uci:set("network", interface, "interface")
-	uci:set("network", interface, "ifname", owrtFullIfname)
-	uci:set("network", interface, "proto", "none")
-	uci:set("network", interface, "auto", "1")
-	uci:set("network", interface, "mtu", "1398")
+	uci:set("network", owrtDeviceName, "mtu", "1398")
 	uci:save("network")
+
+	uci:set("bmx6", owrtInterfaceName, "dev")
+	uci:set("bmx6", owrtInterfaceName, "dev", linux802adIfName)
+	uci:save("bmx6")
 end
 
 function bmx6.clean()
 	print("Clearing bmx6 config...")
 	fs.writefile("/etc/config/bmx6", "")
+	local uci = libuci:cursor()
+	uci:delete("firewall", "bmxtun")
+	uci:save("firewall")
 end
 
 function bmx6.configure(args)
@@ -49,8 +44,8 @@ function bmx6.configure(args)
 
 	uci:set("bmx6", "main", "tunDev")
 	uci:set("bmx6", "main", "tunDev", "main")
-	uci:set("bmx6", "main", "tun4Address", ipv4:string())
-	uci:set("bmx6", "main", "tun6Address", ipv6:string())
+	uci:set("bmx6", "main", "tun4Address", ipv4:host():string().."/32")
+	uci:set("bmx6", "main", "tun6Address", ipv6:host():string().."/128")
 
 	-- Enable bmx6 uci config plugin
 	uci:set("bmx6", "config", "plugin")
@@ -68,6 +63,11 @@ function bmx6.configure(args)
 	uci:set("bmx6", "nodes", "tunOut")
 	uci:set("bmx6", "nodes", "tunOut", "nodes")
 	uci:set("bmx6", "nodes", "network", "172.16.0.0/12")
+
+	-- Search for networks in 172.16.0.0/12
+	uci:set("bmx6", "nodes", "tunOut")
+	uci:set("bmx6", "nodes", "tunOut", "dummynodes")
+	uci:set("bmx6", "nodes", "network", "192.0.2.0/24")
 
 	-- Search for networks in 10.0.0.0/8
 	uci:set("bmx6", "clouds", "tunOut")
@@ -110,10 +110,22 @@ function bmx6.configure(args)
 
 	uci:save("bmx6")
 
+	uci:set("firewall", "bmxtun", "zone")
+	uci:set("firewall", "bmxtun", "name", "bmxtun")
+	uci:set("firewall", "bmxtun", "input", "ACCEPT")
+	uci:set("firewall", "bmxtun", "output", "ACCEPT")
+	uci:set("firewall", "bmxtun", "forward", "ACCEPT")
+	uci:set("firewall", "bmxtun", "mtu_fix", "1")
+	uci:set("firewall", "bmxtun", "device", "bmx+")
+	uci:set("firewall", "bmxtun", "family", "ipv4")
+
+	uci:save("firewall")
+
 	-- BEGIN
 	-- Workaround to http://www.libre-mesh.org/issues/28
+	fs.mkdir("/etc/rc.local.d")
 	fs.writefile(
-		"/etc/lime-init.d/65-bmx6_dumb_workaround.start",
+		"/etc/rc.local.d/65-bmx6_dumb_workaround",
 		"((sleep 45s && /etc/init.d/bmx6 restart)&)\n")
 	-- END
 

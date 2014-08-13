@@ -1,30 +1,32 @@
+### System options
 
-# Network general option
-# Available protocols: bmx6, batadv, wan, lan, anygw
+#config lime system
 
-config lime network
-	option primary_interface eth0                                          # The mac address of this device will be used in different places
-	option bmx6_over_batman false                                          # Disables Bmx6 meshing on top of batman
+### Network general option
+### Available protocols: bmx6, batadv, wan, lan, anygw
+
+#config lime network
+#	option primary_interface eth0                                          # The mac address of this device will be used in different places
+#	option bmx6_over_batman false                                          # Disables Bmx6 meshing on top of batman
+
+### WiFi interface specific options ( override general option )
+
+#config wifi radio1
+#	list modes 'adhoc'
+#	option channel_2ghz '1'
+#	option channel_5ghz '48'
+#	option adhoc_mcast_rate '6000'
+#	option adhoc_ssid 'libre-mesh'
+#	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
+
+#config wifi radio12
+#	list modes 'manual'                                                    # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
 
 
-# WiFi interface specific options ( override general option )
+### Network interface specific options ( override general option )
+### Available protocols: bmx6, batadv, wan, lan, manual
+### proto:vlan_number works too ( something like bmx6:13 is supported )
+### If you use manual do not specify other protocols, may result in an unpredictable behavior/configuration (likely you loose connection to the node)
 
-config wifi radio1
-	list modes 'adhoc'
-	option channel_2ghz '1'
-	option channel_5ghz '48'
-	option adhoc_mcast_rate '6000'
-	option adhoc_ssid 'libre-mesh'
-	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
-
-config wifi radio12
-	list modes 'manual'                                                    # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
-
-
-# Network interface specific options ( override general option )
-# Available protocols: bmx6, batadv, wan, lan, manual
-# proto:vlan_number works too ( something like bmx6:13 is supported )
-# If you use manual do not specify other protocols, may result in an unpredictable behavior/configuration (likely you loose connection to the node)
-
-config net eth5
-	list protocols 'manual'                                                # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
+#config net eth5
+#	list protocols 'manual'
