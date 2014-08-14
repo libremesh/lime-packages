@@ -31,17 +31,6 @@ function system.configure()
     uci:set("uhttpd", "main", "listen_http", "80")
     uci:set("uhttpd", "main", "listen_https", "443")
     uci:save("uhttpd")
-
-    fs.writefile(
-        "/etc/rc.local",
-        "# Put your custom commands in a new file in /etc/rc.local.d/\n" ..
-        "# that should be executed once the system init finished.\n" ..
-        "for hook in /etc/rc.local.d/* ; do\n" ..
-        "\t[ -s \"$hook\" ] && /bin/sh \"$hook\"\n" ..
-        "done\n" ..
-        "exit 0\n"
-    )
-
 end
 
 function system.apply()
