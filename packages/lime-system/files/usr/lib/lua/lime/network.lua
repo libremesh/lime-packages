@@ -118,7 +118,8 @@ function network.configure()
 		local protoModule = "lime.proto."..utils.split(protocol,":")[1]
 		if utils.isModuleAvailable(protoModule) then
 			local proto = require(protoModule)
-			proto.configure(utils.split(protocol, network.protoParamsSeparator))
+			xpcall(function() proto.configure(utils.split(protocol, network.protoParamsSeparator)) end,
+			       function(errmsg) print(errmsg) ; print(debug.traceback()) end)
 		end
 	end
 
@@ -137,7 +138,8 @@ function network.configure()
 			local protoModule = "lime.proto."..args[1]
 			if utils.isModuleAvailable(protoModule) then
 				local proto = require(protoModule)
-				proto.setup_interface(device, args)
+				xpcall(function() proto.setup_interface(device, args) end,
+				       function(errmsg) print(errmsg) ; print(debug.traceback()) end)
 			end
 		end
 	end

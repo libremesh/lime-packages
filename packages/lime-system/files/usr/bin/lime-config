@@ -9,8 +9,13 @@ local system = require "lime.system"
 function main()
 	local modules = { wireless, network, firewall, system }
 
-	for _,module in pairs(modules) do module.clean() end
-	for _,module in pairs(modules) do module.configure() end
+	for _,module in pairs(modules) do
+		xpcall(module.clean, function(errmsg) print(errmsg) ; print(debug.traceback()) end)
+	end
+
+	for _,module in pairs(modules) do
+		xpcall(module.configure, function(errmsg) print(errmsg) ; print(debug.traceback()) end)
+	end
 end
 
 main()
