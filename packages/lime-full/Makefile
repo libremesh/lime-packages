@@ -27,7 +27,7 @@ define Package/$(PKG_NAME)
 		+lime-webui +luci-app-batman-adv +luci-app-bmx6 \
 		+lime-map-agent \
 		+lime-debug \
-		+lime-hwd-eth1-wan +lime-hwd-tl-wdr3600
+		+lime-hwd-openwrt-wan +lime-hwd-tl-wdr3600
 endef
 
 define Package/$(PKG_NAME)/description

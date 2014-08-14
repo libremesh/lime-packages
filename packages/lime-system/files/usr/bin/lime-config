@@ -2,7 +2,7 @@
 
 function main()
 	local modules_name = { "hardware_detection", "wireless", "network", "firewall", "system" }
-	local modules = {} 
+	local modules = {}
 
 	for i, name in pairs(modules_name) do modules[i] = require("lime."..name) end
 	for _, module in pairs(modules) do module.clean() end
