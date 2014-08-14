@@ -43,11 +43,6 @@ function utils.applyMacTemplate10(template, mac)
 	return template
 end
 
-function utils.node_id()
-    local m = network.primary_mac()
-    return tonumber(m[4], 16), tonumber(m[5], 16), tonumber(m[6], 16)
-end
-
 function utils.network_id()
     local network_essid = config.get("wifi", "ap_ssid")
     local n1, n2, n3
