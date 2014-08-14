@@ -45,16 +45,28 @@ end
 
 function utils.network_id()
     local network_essid = config.get("wifi", "ap_ssid")
-    local n1, n2, n3
+    local netid = {}
     local fd = io.popen('echo "' .. network_essid .. '" | md5sum')
     if fd then
         local md5 = fd:read("*a")
-        n1 = tonumber(md5:match("^(..)"), 16)
-        n2 = tonumber(md5:match("^..(..)"), 16)
-        n3 = tonumber(md5:match("^....(..)"), 16)
+        netid[1] = md5:match("^(..)")
+        netid[2] = md5:match("^..(..)")
+        netid[3] = md5:match("^....(..)")
         fd:close()
     end
-    return n1, n2, n3
+    return netid
+end
+
+function utils.applyNetTemplate16(template)
+	local netid = utils.network_id()
+	for i=1,3,1 do template = template:gsub("%%N"..i, netid[i]) end
+	return template
+end
+
+function utils.applyNetTemplate10(template)
+	local netid = utils.network_id()
+	for i=1,3,1 do template = template:gsub("%%N"..i, tonumber(netid[i], 16)) end
+	return template
 end
 
 return utils
