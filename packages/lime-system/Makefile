@@ -6,14 +6,19 @@
 
 include $(TOPDIR)/rules.mk
 
-LIME_BUILDDATE:=$(shell date +%Y%m%d_%H%M)
-LIME_CODENAME:=bigbang
-
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
 PKG_NAME:=lime-system
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
+
+LIME_ID:=LiMe
+LIME_RELEASE:=14.08
+LIME_CODENAME:=bigbang
+LIME_BRANCH:=$(shell git branch | sed -n '/\* /s///p')
+LIME_REVISION:=$(shell git log -n 1 --pretty=%h)
+LIME_BUILDDATE:=$(shell date +%Y%m%d_%H%M)
+LIME_DESCRIPTION:=$(LIME_ID) $(LIME_RELEASE) $(LIME_CODENAME) ($(LIME_BRANCH) rev.$(LIME_REVISION) $(LIME_BUILDDATE))
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -38,16 +43,20 @@ endef
 define Build/Compile
 endef
 
+LIME_VERSION_SED:=$(SED)   's,%LIME_ID%,$(LIME_ID),g' \
+			-e 's,%LIME_RELEASE%,$(LIME_RELEASE),g' \
+			-e 's,%LIME_CODENAME%,$(LIME_CODENAME),g' \
+			-e 's,%LIME_BRANCH%,$(LIME_BRANCH),g' \
+			-e 's,%LIME_REVISION%,$(LIME_REVISION),g' \
+			-e 's,%LIME_BUILDDATE%,$(LIME_BUILDDATE),g' \
+			-e 's,%LIME_DESCRIPTION%,$(LIME_DESCRIPTION),g'
+
 define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/etc/lime/
+	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
-	echo "LIME_ID=LiMe" > $(1)/etc/lime/lime.release
-	echo "LIME_CODENAME=$(LIME_CODENAME)" >> $(1)/etc/lime/lime.release
-	echo "LIME_RELEASE=$(LIME_RELEASE)" >> $(1)/etc/lime/lime.release
-	echo "LIME_BRANCH=$(BRANCH_GIT)" >> $(1)/etc/lime/lime.release
-	echo "LIME_REVISION=$(REV_GIT)" >> $(1)/etc/lime/lime.release
-	echo "LIME_BUILDDATE=$(LIME_BUILDDATE)" >> $(1)/etc/lime/lime.release
-	echo "LIME_DESCRIPTION=\"LiMe $(LIME_CODENAME) $(LIME_RELEASE), $(BRANCH_GIT) rev.$(REV_GIT)-$(LIME_BUILDDATE)\"" >> $(1)/etc/lime/lime.release
+	$(LIME_VERSION_SED) \
+		$(1)/etc/lime_release \
+		$(1)/etc/uci-defaults/90_lime-banner
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
