@@ -57,8 +57,8 @@ function network.primary_address(offset)
     local ipv6_template = utils.applyMacTemplate16(config.get("network", "main_ipv6_address"), pm)
 
     local hex = utils.hex
-    ipv4_template = ipv4_template:gsub("N1", n1):gsub("N2", n2):gsub("N3", n3)
-    ipv6_template = ipv6_template:gsub("N1", hex(n1)):gsub("N2", hex(n2)):gsub("N3", hex(n3))
+    ipv4_template = ipv4_template:gsub("%%N1",     n1 ):gsub("%%N2",     n2 ):gsub("%%N3",     n3 )
+    ipv6_template = ipv6_template:gsub("%%N1", hex(n1)):gsub("%%N2", hex(n2)):gsub("%%N3", hex(n3))
 
     hexsuffix = hex((m4 * 256*256 + m5 * 256 + m6) + offset)
     return network.generate_host(ip.IPv4(ipv4_template), hexsuffix),
