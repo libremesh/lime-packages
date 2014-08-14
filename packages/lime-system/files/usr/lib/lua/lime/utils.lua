@@ -2,6 +2,8 @@
 
 utils = {}
 
+local config = require("lime.config")
+
 function utils.split(string, sep)
     local ret = {}
     for token in string.gmatch(string, "[^"..sep.."]+") do table.insert(ret, token) end
@@ -39,6 +41,25 @@ end
 function utils.applyMacTemplate10(template, mac)
 	for i=1,6,1 do template = template:gsub("\\M"..i.."\\", tonumber(mac[i], 16)) end
 	return template
+end
+
+function utils.node_id()
+    local m = network.primary_mac()
+    return tonumber(m[4], 16), tonumber(m[5], 16), tonumber(m[6], 16)
+end
+
+function utils.network_id()
+    local network_essid = config.get("wifi", "ap_ssid")
+    local n1, n2, n3
+    local fd = io.popen('echo "' .. network_essid .. '" | md5sum')
+    if fd then
+        local md5 = fd:read("*a")
+        n1 = tonumber(md5:match("^(..)"), 16)
+        n2 = tonumber(md5:match("^..(..)"), 16)
+        n3 = tonumber(md5:match("^....(..)"), 16)
+        fd:close()
+    end
+    return n1, n2, n3
 end
 
 return utils
