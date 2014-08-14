@@ -27,14 +27,6 @@ function network.primary_mac()
 	return network.get_mac(network.primary_interface())
 end
 
-function network.primary_address()
-	local pm = network.primary_mac()
-	local ipv4_template = utils.applyMacTemplate10(config.get("network", "main_ipv4_address"), pm)
-	local ipv6_template = utils.applyMacTemplate16(config.get("network", "main_ipv6_address"), pm)
-
-	return ip.IPv4(ipv4_template), ip.IPv6(ipv6_template) 
-end
-
 function network.generate_host(ipprefix, hexsuffix)
     -- use only the 8 rightmost nibbles for IPv4, or 32 nibbles for IPv6
     hexsuffix = hexsuffix:sub((ipprefix[1] == 4) and -8 or -32)
@@ -56,18 +48,19 @@ function network.generate_host(ipprefix, hexsuffix)
     return ipaddress
 end
 
-function network.generate_address(n)
-    local id = n or 0
-    local m4, m5, m6 = utils.node_id()
+function network.primary_address(offset)
+    local offset = offset or 0
+    local pm = network.primary_mac()
+    local m4, m5, m6 = tonumber(pm[4], 16), tonumber(pm[5], 16), tonumber(pm[6], 16)
     local n1, n2, n3 = utils.network_id()
-    local ipv4_template = config.get("network", "main_ipv4_address")
-    local ipv6_template = config.get("network", "main_ipv6_address")
+    local ipv4_template = utils.applyMacTemplate10(config.get("network", "main_ipv4_address"), pm)
+    local ipv6_template = utils.applyMacTemplate16(config.get("network", "main_ipv6_address"), pm)
 
     local hex = utils.hex
-    ipv6_template = ipv6_template:gsub("N1", hex(n1)):gsub("N2", hex(n2)):gsub("N3", hex(n3))
     ipv4_template = ipv4_template:gsub("N1", n1):gsub("N2", n2):gsub("N3", n3)
+    ipv6_template = ipv6_template:gsub("N1", hex(n1)):gsub("N2", hex(n2)):gsub("N3", hex(n3))
 
-    hexsuffix = hex((m4 * 256*256 + m5 * 256 + m6) + id)
+    hexsuffix = hex((m4 * 256*256 + m5 * 256 + m6) + offset)
     return network.generate_host(ip.IPv4(ipv4_template), hexsuffix),
            network.generate_host(ip.IPv6(ipv6_template), hexsuffix)
 end
