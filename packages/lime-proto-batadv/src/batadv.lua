@@ -3,16 +3,22 @@
 local libuci = require("uci")
 local fs = require("nixio.fs")
 local lan = require("lime.proto.lan")
+local utils = require("lime.utils")
 
 batadv = {}
 
 function batadv.setup_interface(ifname, args)
 	if ifname:match("^wlan%d_ap") then return end
-	local vlanId = args[2] or 11
+	local vlanId = args[2] or "%N1"
 	local vlanProto = args[3] or "8021ad"
 	local nameSuffix = args[4] or "_batadv"
 	local mtu = 1532
 	if ifname:match("^eth") then mtu = 1496 end
+
+	-- Unless a specific integer is passed, parse network_id (%N1) template
+	-- and use that number + 16 to get a vlanId between 16 and 271 for batadv
+	-- (to avoid overlapping with other protocols)
+	if not tonumber(vlanId) then vlanId = 16 + utils.applyNetTemplate10(vlanId) end
 
 	local owrtInterfaceName, _, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 
