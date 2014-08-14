@@ -120,15 +120,6 @@ function bmx6.configure(args)
 	uci:set("firewall", "bmxtun", "family", "ipv4")
 
 	uci:save("firewall")
-
-	-- BEGIN
-	-- Workaround to http://www.libre-mesh.org/issues/28
-	fs.mkdir("/etc/rc.local.d")
-	fs.writefile(
-		"/etc/rc.local.d/65-bmx6_dumb_workaround",
-		"((sleep 45s && /etc/init.d/bmx6 restart)&)\n")
-	-- END
-
 end
 
 function bmx6.apply()
