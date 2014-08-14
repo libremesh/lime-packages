@@ -1,23 +1,27 @@
 # Beware this file is not supposed to store specific configuration, like "config net eth0"
 
+# The options marked with "# Parametrizable with \Mn\"
+# can include \Mn\ templates that will be substituted
+# with the n'th byte of the primary_interface MAC
+
 # System option
 
 config lime system
-	option hostname 'LiMeNode-\M4\\M5\\M6\'                                # Parametrizable hostname \Mn\ will be substituted with the n'th byte of the primary_dev MAC
+	option hostname 'LiMeNode-\M4\\M5\\M6\'             # Parametrizable with \Mn\
 
 
 # Network general option
 
 config lime network
-	option primary_interface eth0                                          # The mac address of this device will be used in different places
-	option main_ipv4_address '10.N1.N2.0/24'
-	option main_ipv6_address 'fddf:caN1:N2N3:0000::/64'
+	option primary_interface eth0                       # The mac address of this device will be used in different places
+	option main_ipv4_address '10.N1.N2.0/24'            # Parametrizable with \Mn\
+	option main_ipv6_address 'fddf:caN1:N2N3:0000::/64' # Parametrizable with \Mn\
 	list protocols adhoc
 	list protocols lan
 	list protocols anygw
 	list protocols batadv:11
 	list protocols bmx6:13
-	list resolvers 8.8.8.8                                                 # DNS servers node will use
+	list resolvers 8.8.8.8                              # DNS servers node will use
 	list resolvers 2001:4860:4860::8844
 
 
