@@ -26,7 +26,7 @@ function batadv.setup_interface(ifname, args)
 	-- We change the 7nt bit to 1 to give it locally administered meaning
 	-- Then use it as the new mac address prefix "02:00:49"
 	if ifname:match("^eth") then
-		local vlanMacAddr = network.get_mac(ifname)
+		local vlanMacAddr = network.get_mac(ifname:gsub("%..*", ""))
 		vlanMacAddr[1] = "02"
 		vlanMacAddr[2] = "00"
 		vlanMacAddr[3] = "49"
