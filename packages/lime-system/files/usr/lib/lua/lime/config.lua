@@ -7,7 +7,7 @@
 --! parallelism as this is just some configuration stuff
 --! and is not performance critical.
 
-local libuci = require "uci"
+local libuci = require("uci")
 
 config = {}
 
