@@ -197,7 +197,7 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 	uci:set("network", owrtDeviceName, "device")
 	uci:set("network", owrtDeviceName, "type", vlanProtocol)
 	uci:set("network", owrtDeviceName, "name", linux802adIfName)
-	uci:set("network", owrtDeviceName, "ifname", linuxBaseIfname)
+	uci:set("network", owrtDeviceName, "ifname", "@"..network.limeIfNamePrefix..linuxBaseIfname)
 	uci:set("network", owrtDeviceName, "vid", vlanId)
 
 	uci:set("network", owrtInterfaceName, "interface")
