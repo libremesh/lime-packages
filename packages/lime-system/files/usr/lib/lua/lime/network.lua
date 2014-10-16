@@ -193,7 +193,7 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 	--! and sanitize linuxBaseIfName because it can contain dots as well (i.e. switch ports)
 	local linux802adIfName = linuxBaseIfname:gsub("[^%w_]", "_")..network.protoVlanSeparator..vlanId
 	local ifname = linuxBaseIfname
-	if string.sub(linuxBaseIfname, 1, 4) == "wlan" then ifname = "@"..network.limeIfNamePrefix..linuxBaseIfname end
+	if utils.stringStarts(linuxBaseIfname, "wlan") then ifname = "@"..network.limeIfNamePrefix..linuxBaseIfname end
 
 	local uci = libuci:cursor()
 
