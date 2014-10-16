@@ -3,15 +3,22 @@
 local libuci = require("uci")
 local fs = require("nixio.fs")
 local lan = require("lime.proto.lan")
+local utils = require("lime.utils")
 
 batadv = {}
 
 function batadv.setup_interface(ifname, args)
-	local vlanId = args[2] or 11
+	if ifname:match("^wlan%d_ap") then return end
+	local vlanId = args[2] or "%N1"
 	local vlanProto = args[3] or "8021ad"
 	local nameSuffix = args[4] or "_batadv"
 	local mtu = 1532
 	if ifname:match("^eth") then mtu = 1496 end
+
+	-- Unless a specific integer is passed, parse network_id (%N1) template
+	-- and use that number + 16 to get a vlanId between 16 and 271 for batadv
+	-- (to avoid overlapping with other protocols)
+	if not tonumber(vlanId) then vlanId = 16 + utils.applyNetTemplate10(vlanId) end
 
 	local owrtInterfaceName, _, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 
@@ -22,14 +29,11 @@ function batadv.setup_interface(ifname, args)
 	-- BEGIN
 	-- Workaround to http://www.libre-mesh.org/issues/32
 	-- We create a new macaddress for ethernet vlan interface
-	-- We use 000049 Unicast MAC prefix reserved by Apricot Ltd
 	-- We change the 7nt bit to 1 to give it locally administered meaning
-	-- Then use it as the new mac address prefix "02:00:49"
+	-- Then use it as the new mac address prefix "02"
 	if ifname:match("^eth") then
-		local vlanMacAddr = network.get_mac(ifname)
+		local vlanMacAddr = network.get_mac(ifname:gsub("%..*", ""))
 		vlanMacAddr[1] = "02"
-		vlanMacAddr[2] = "00"
-		vlanMacAddr[3] = "49"
 		uci:set("network", owrtDeviceName, "macaddr", table.concat(vlanMacAddr, ":"))
 	end
 	--- END

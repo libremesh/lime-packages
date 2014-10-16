@@ -36,7 +36,7 @@ define Build/Compile
 endef
 
 define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/etc/lime/
+	$(INSTALL_DIR) $(1)/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
