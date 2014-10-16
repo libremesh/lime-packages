@@ -12,33 +12,33 @@ LIME_CODENAME:=bigbang
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
-PKG_NAME:=lime-full
+PKG_NAME:=lime-hwd-usbradio
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  TITLE:=libre-mesh metapackage
+  TITLE:=LiMe hardware detection usb radio support
   CATEGORY:=LiMe
-  MAINTAINER:=Pau Escrich <p4u@dabax.net>
   URL:=http://libre-mesh.org
-  DEPENDS:=+lime-system +lime-proto-bmx6 +lime-proto-batadv +lime-proto-anygw +lime-proto-wan\
-		+dnsmasq-lease-share \
-		+lime-webui +luci-app-batman-adv +luci-app-bmx6 \
-		+lime-map-agent \
-		+lime-debug \
-		+lime-hwd-openwrt-wan +lime-hwd-tl-wdr3600
-endef
-
-define Package/$(PKG_NAME)/description
-	Metapackage depending on all the required to run a full libre-mesh node
+  DEPENDS:=+lime-system +lua +libuci-lua
 endef
 
 define Build/Compile
+	@rm -rf ./build || true
+	@cp -r ./src ./build
+	@sed -i '/^\s*--!.*/d' build/*.lua
+	@sed -i '/^\s*#\[Doc\]/d' build/*.sh
 endef
 
 define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/
+	@mkdir -p $(1)/usr/lib/lua/lime/hwd || true
+	@mkdir -p $(1)/etc/hotplug.d/usb || true
+	$(CP) ./build/usbradio.lua $(1)/usr/lib/lua/lime/hwd/usbradio.lua
+	$(CP) ./build/hotplug-hook.sh $(1)/etc/hotplug.d/usb/60-lime-hwd-usbradio
+	@chmod +x $(1)/usr/lib/lua/lime/hwd/usbradio.lua
+	@chmod +x $(1)/etc/hotplug.d/usb/60-lime-hwd-usbradio
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
+

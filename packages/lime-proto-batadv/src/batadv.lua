@@ -4,6 +4,7 @@ local libuci = require("uci")
 local fs = require("nixio.fs")
 local lan = require("lime.proto.lan")
 local utils = require("lime.utils")
+local wireless = require("lime.wireless")
 
 batadv = {}
 
@@ -31,8 +32,13 @@ function batadv.setup_interface(ifname, args)
 	-- We create a new macaddress for ethernet vlan interface
 	-- We change the 7nt bit to 1 to give it locally administered meaning
 	-- Then use it as the new mac address prefix "02"
+	local vlanMacAddr = nil
 	if ifname:match("^eth") then
-		local vlanMacAddr = network.get_mac(ifname:gsub("%..*", ""))
+		vlanMacAddr = network.get_mac(ifname)
+	elseif ifname:match("^wlan%d+"..wireless.ifnameModeSeparator.."ap") then
+		vlanMacAddr = wireless.get_phy_mac("phy"..ifname:match("%d+"))
+	end
+	if vlanMacAddr then
 		vlanMacAddr[1] = "02"
 		uci:set("network", owrtDeviceName, "macaddr", table.concat(vlanMacAddr, ":"))
 	end
