@@ -3,11 +3,19 @@
 local config = require("lime.config")
 local network = require("lime.network")
 local libuci = require("uci")
+local fs = require("nixio.fs")
 
 wireless = {}
 
 wireless.modeParamsSeparator=":"
 wireless.limeIfNamePrefix="lm_"
+wireless.ifnameModeSeparator="_"
+
+function wireless.get_phy_mac(phy)
+	local path = "/sys/class/ieee80211/"..phy.."/macaddress"
+	local mac = assert(fs.readfile(path), "wireless.get_phy_mac(..) failed reading: "..path):gsub("\n","")
+	return utils.split(mac, ":")
+end
 
 function wireless.clean()
 	print("Clearing wireless config...")
@@ -43,12 +51,12 @@ function wireless.createBaseWirelessIface(radio, mode, extras)
 
 	local radioName = radio[".name"]
 	local phyIndex = radioName:match("%d+")
-	local ifname = "wlan"..phyIndex.."_"..mode
+	local ifname = "wlan"..phyIndex..wireless.ifnameModeSeparator..mode
 	local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname.."_"..radioName
 	local networkInterfaceName = network.limeIfNamePrefix..ifname
 
 	local uci = libuci:cursor()
-	
+
 	uci:set("wireless", wirelessInterfaceName, "wifi-iface")
 	uci:set("wireless", wirelessInterfaceName, "mode", mode)
 	uci:set("wireless", wirelessInterfaceName, "device", radioName)
@@ -68,7 +76,7 @@ end
 
 function wireless.configure()
 	local specificRadios = {}
-	config.foreach("wifi", function(radio) specificRadios[radio[".name"]] = radio end)
+	config.foreach("wifi", function(radio) specificRadios[radio["radio_name"]] = radio end)
 
 	local allRadios = wireless.scandevices()
 	for _,radio in pairs(allRadios) do
@@ -96,17 +104,16 @@ function wireless.configure()
 		uci:save("wireless")
 
 		for _,modeArgs in pairs(modes) do
-			
 			local args = utils.split(modeArgs, wireless.modeParamsSeparator)
 			local modeName = args[1]
 			
 			if modeName == "manual" then break end
-			
+
 			local mode = require("lime.mode."..modeName)
 			local wirelessInterfaceName = mode.setup_radio(radio, args)[".name"]
 
 			local uci = libuci:cursor()
-			
+
 			for key,value in pairs(options) do
 				local keyPrefix = utils.split(key, "_")[1]
 				local isGoodOption = ( (key ~= "modes")
@@ -121,7 +128,7 @@ function wireless.configure()
 					uci:set("wireless", wirelessInterfaceName, nk, value)
 				end
 			end
-			
+
 			uci:save("wireless")
 		end
 	end

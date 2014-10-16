@@ -1,14 +1,10 @@
 #!/usr/bin/lua
 
-local firewall = require "lime.firewall"
-local network = require "lime.network"
-local wireless = require "lime.wireless"
-local system = require "lime.system"
-
-
 function main()
-	local modules = { wireless, network, firewall, system }
+	local modules_name = { "hardware_detection", "wireless", "network", "firewall", "system" }
+	local modules = {}
 
+	for i, name in pairs(modules_name) do modules[i] = require("lime."..name) end
 	for _,module in pairs(modules) do
 		xpcall(module.clean, function(errmsg) print(errmsg) ; print(debug.traceback()) end)
 	end
@@ -18,4 +14,20 @@ function main()
 	end
 end
 
-main()
+
+local lockFilePath = "/var/run/lime-config.pid"
+local lockFile = io.open(lockFilePath,"r")
+if lockFile then
+	lockFile:close()
+	print("lime-config already running")
+else
+	lockFile = io.open(lockFilePath,"w")
+	local statFile = io.open("/proc/self/stat", "r")
+	lockFile:write(statFile:read("*n"))
+	statFile:close()
+
+	main()
+
+	lockFile:close()
+	os.remove(lockFilePath)
+end

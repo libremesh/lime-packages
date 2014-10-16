@@ -10,6 +10,15 @@ function utils.split(string, sep)
     return ret
 end
 
+function utils.stringStarts(string, start)
+   return (string.sub(string, 1, string.len(start)) == start)
+end
+
+function utils.stringEnds(string, _end)
+   return ( _end == '' or string.sub( string, -string.len(_end) ) == _end)
+end
+
+
 function utils.hex(x)
     return string.format("%02x", x)
 end
