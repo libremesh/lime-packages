@@ -1,3 +1,0 @@
-#!/bin/sh
-echo "Configuring LiMe for first time, will take apprex 2 minutes..."
-(sleep 90s ; cp -r /etc/config /etc/lime/config.original ; lua /usr/bin/lime-config && uci commit && reboot)&);
