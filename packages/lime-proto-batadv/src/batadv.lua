@@ -4,7 +4,6 @@ local libuci = require("uci")
 local fs = require("nixio.fs")
 local lan = require("lime.proto.lan")
 local utils = require("lime.utils")
-local wireless = require("lime.wireless")
 
 batadv = {}
 
