@@ -4,6 +4,7 @@ local network = require("lime.network")
 local config = require("lime.config")
 local fs = require("nixio.fs")
 local libuci = require("uci")
+local wireless = require("lime.wireless")
 
 bmx6 = {}
 
@@ -17,6 +18,17 @@ function bmx6.setup_interface(ifname, args)
 
 	local uci = libuci:cursor()
 	uci:set("network", owrtDeviceName, "mtu", "1398")
+	
+	-- BEGIN [Workaround issue 38]
+	if ifname:match("^wlan%d+") then
+		local macAddr = wireless.get_phy_mac("phy"..ifname:match("%d+"))
+		local vlanIp = { 169, 254, tonumber(macAddr[5], 16), tonumber(macAddr[6], 16) }
+		uci:set("network", owrtInterfaceName, "proto", "static")
+		uci:set("network", owrtInterfaceName, "ipaddr", table.concat(vlanIp, "."))
+		uci:set("network", owrtInterfaceName, "netmask", "255.255.255.255")
+	end
+	--- END [Workaround issue 38]
+	
 	uci:save("network")
 
 	uci:set("bmx6", owrtInterfaceName, "dev")

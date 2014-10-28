@@ -3,11 +3,18 @@
 local config = require("lime.config")
 local network = require("lime.network")
 local libuci = require("uci")
+local fs = require("nixio.fs")
 
 wireless = {}
 
 wireless.modeParamsSeparator=":"
 wireless.limeIfNamePrefix="lm_"
+
+function wireless.get_phy_mac(phy)
+	local path = "/sys/class/ieee80211/"..phy.."/macaddress"
+	local mac = assert(fs.readfile(path), "wireless.get_phy_mac(..) failed reading: "..path):gsub("\n","")
+	return utils.split(mac, ":")
+end
 
 function wireless.clean()
 	print("Clearing wireless config...")
