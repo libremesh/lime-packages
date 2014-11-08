@@ -1,0 +1,59 @@
+### System options
+
+#config lime system
+#	option hostname 'LiMeNode-%M4%M5%M6'                                   # Parametrizable with %Mn, %Nn
+
+
+### Network general option
+
+#config lime network
+#	option primary_interface eth0                                          # The mac address of this device will be used in different places
+#	option bmx6_over_batman false                                          # Disables Bmx6 meshing on top of batman
+#	option main_ipv4_address '192.0.2.0/24'                                # Parametrizable with %Mn, %Nn
+#	option main_ipv6_address '2001:db8::%M5:%M6/64'                        # Parametrizable with %Mn, %Nn
+#	list protocols adhoc                                                   # List of protocols configured by LiMe
+#	list protocols lan
+#	list protocols anygw
+#	list protocols batadv:%N1                                              # Parametrizable with %Nn
+#	list protocols bmx6:13
+#	list resolvers 8.8.8.8                                                 # DNS servers node will use
+#	list resolvers 2001:4860:4860::8844
+
+
+### WiFi general options
+
+#config lime wifi
+#	option channel_2ghz '11'
+#	option channel_5ghz '48'
+#	list modes 'ap'
+#	list modes 'adhoc'
+#	option ap_ssid 'LiMe'
+#	option adhoc_ssid 'libre-mesh'
+#	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
+#	option adhoc_mcast_rate_2ghz '24000'
+#	option adhoc_mcast_rate_5ghz '6000'
+#	option mesh_mesh_fwding '0'
+#	option mesh_mesh_id 'LiMe'
+
+
+### WiFi interface specific options ( override general option )
+
+#config wifi radio11
+#	list modes 'adhoc'
+#	option channel_2ghz '1'
+#	option channel_5ghz '48'
+#	option adhoc_mcast_rate '6000'
+#	option adhoc_ssid 'libre-mesh'
+#	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
+
+#config wifi radio12
+#	list modes 'manual'                                                    # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
+
+
+### Network interface specific options ( override general option )
+### Available protocols: bmx6, batadv, wan, lan, manual
+### proto:vlan_number works too ( something like bmx6:13 is supported )
+### If you use manual do not specify other protocols, may result in an unpredictable behavior/configuration (likely you loose connection to the node)
+
+#config net eth5
+#	list protocols 'manual'
