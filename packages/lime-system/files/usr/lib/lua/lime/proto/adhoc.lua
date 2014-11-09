@@ -7,7 +7,7 @@ local adhoc = {}
 function adhoc.configure(args) end
 
 function adhoc.setup_interface(ifname, args)
-	if ifname:match("^wlan%d_"..adhoc_mode.wifi_mode) then
+	if ifname:match("^wlan%d+_"..adhoc_mode.wifi_mode) then
 		local libuci = require "uci"
 		local uci = libuci:cursor()
 

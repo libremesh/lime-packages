@@ -7,7 +7,7 @@ local ieee80211s = {}
 function ieee80211s.configure(args) end
 
 function ieee80211s.setup_interface(ifname, args)
-	if ifname:match("^wlan%d_"..ieee80211s_mode.wifi_mode) then
+	if ifname:match("^wlan%d+_"..ieee80211s_mode.wifi_mode) then
 		local libuci = require "uci"
 		local uci = libuci:cursor()
 

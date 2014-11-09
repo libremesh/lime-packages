@@ -8,7 +8,7 @@ local utils = require("lime.utils")
 batadv = {}
 
 function batadv.setup_interface(ifname, args)
-	if ifname:match("^wlan%d_ap") then return end
+	if ifname:match("^wlan%d+_ap") then return end
 	local vlanId = args[2] or "%N1"
 	local vlanProto = args[3] or "8021ad"
 	local nameSuffix = args[4] or "_batadv"
