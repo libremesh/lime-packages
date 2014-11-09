@@ -7,9 +7,9 @@ local libuci = require("uci")
 eigennet = {}
 
 function eigennet.setup_interface(ifname, args)
-	if ifname:match("^wlan%d_ap") then return end
+	if ifname:match("^wlan%d+_ap") then return end
 
-	if ifname:match("^eth%d$") then
+	if ifname:match("^eth%d+$") then
 		args[2] = args[2] or 10
 		args[3] = args[3] or "8021q"
 		args[4] = args[4] or "_eigennet"
@@ -18,7 +18,7 @@ function eigennet.setup_interface(ifname, args)
 		return
 	end
 
-	if ifname:match("^wlan%d_adhoc$") then
+	if ifname:match("^wlan%d+_adhoc$") then
 		local owrtInterfaceName = network.limeIfNamePrefix..ifname
 
 		local uci = libuci:cursor()

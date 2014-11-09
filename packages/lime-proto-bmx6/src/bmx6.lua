@@ -9,7 +9,7 @@ local wireless = require("lime.wireless")
 bmx6 = {}
 
 function bmx6.setup_interface(ifname, args)
-	if ifname:match("^wlan%d_ap") then return end
+	if ifname:match("^wlan%d+_ap") then return end
 	vlanId = args[2] or 13
 	vlanProto = args[3] or "8021ad"
 	nameSuffix = args[4] or "_bmx6"
