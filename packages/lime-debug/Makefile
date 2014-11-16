@@ -18,23 +18,28 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  TITLE:=libre-mesh debug utils
-  CATEGORY:=LiMe
-  MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
-  URL:=http://libre-mesh.org
-  DEPENDS:=+batctl +iwinfo +iw +mtr +ip +iputils-ping6 +sprunge \
-           +safe-reboot +netperf +rdisc6
+	TITLE:=libre-mesh debug utils
+	CATEGORY:=LiMe
+	MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
+	URL:=http://libre-mesh.org
+	DEPENDS:=+batctl +iwinfo +iw +mtr +ip +iputils-ping6 +sprunge \
+		 +safe-reboot +netperf +rdisc6
 endef
 
 define Package/$(PKG_NAME)/description
 	Debug utilities for LiMe node
 endef
 
+define Package/$(PKG_NAME)/config
+	select BUSYBOX_CONFIG_NC
+	select BUSYBOX_CONFIG_NC_SERVER
+endef
+
 define Build/Compile
 endef
 
 define Package/$(PKG_NAME)/install
-        $(INSTALL_DIR) $(1)/
+	$(INSTALL_DIR) $(1)/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
