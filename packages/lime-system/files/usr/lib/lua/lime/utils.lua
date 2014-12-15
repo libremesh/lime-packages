@@ -3,7 +3,7 @@
 utils = {}
 
 local config = require("lime.config")
-local system = require("lime.system")
+
 
 function utils.split(string, sep)
     local ret = {}
@@ -54,6 +54,7 @@ function utils.applyMacTemplate10(template, mac)
 end
 
 function utils.applyHostnameTemplate(template)
+	local system = require("lime.system")
 	return template:gsub("%%H", system.get_hostname())
 end
 
