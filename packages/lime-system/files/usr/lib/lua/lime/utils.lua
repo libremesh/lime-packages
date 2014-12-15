@@ -3,6 +3,7 @@
 utils = {}
 
 local config = require("lime.config")
+local system = require("lime.system")
 
 function utils.split(string, sep)
     local ret = {}
@@ -50,6 +51,10 @@ end
 function utils.applyMacTemplate10(template, mac)
 	for i=1,6,1 do template = template:gsub("%%M"..i, tonumber(mac[i], 16)) end
 	return template
+end
+
+function utils.applyHostnameTemplate(template)
+	return template:gsub("%%H", system.get_hostname())
 end
 
 function utils.network_id()
