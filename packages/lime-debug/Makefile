@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LiMe
 	MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
 	URL:=http://libre-mesh.org
-	DEPENDS:=+batctl +iwinfo +iw +mtr +ip +iputils-ping6 +sprunge \
+	DEPENDS:=+batctl +busybox +iwinfo +iw +mtr +ip +iputils-ping6 +sprunge \
 		 +safe-reboot +netperf +rdisc6
 endef
 
@@ -31,6 +31,7 @@ define Package/$(PKG_NAME)/description
 endef
 
 define Package/$(PKG_NAME)/config
+	select BUSYBOX_CUSTOM
 	select BUSYBOX_CONFIG_NC
 	select BUSYBOX_CONFIG_NC_SERVER
 endef
