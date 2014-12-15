@@ -1,35 +1,20 @@
 # Beware this file is not supposed to being edited, look at /etc/config/lime
 # Beware this file is not supposed to store specific configuration, like "config net eth0"
 
-# The options marked with "# Parametrizable with %Mn, %Nn"
-# can include %Mn templates that will be substituted
-# with the n'th byte of the primary_interface MAC
-# and %Nn templates that will be replaced by a "network-identifier" byte,
-# calculated from the hash of the ap_ssid value, so that all the nodes that
-# form a mesh cloud (share the same ap_ssid) will produce the same value
-
-# System option
-
 config lime system
-	option hostname 'LiMeNode-%M4%M5%M6'                   # Parametrizable with %Mn, %Nn
-
-
-# Network general option
+	option hostname 'LiMeNode-%M4%M5%M6'
 
 config lime network
-	option primary_interface eth0                          # The mac address of this device will be used in different places
-	option main_ipv4_address '192.0.2.0/24'                # Parametrizable with %Mn, %Nn
-	option main_ipv6_address '2001:db8::%M5:%M6/64'        # Parametrizable with %Mn, %Nn
+	option primary_interface eth0
+	option main_ipv4_address '192.0.2.0/24'
+	option main_ipv6_address '2001:db8::%M5:%M6/64'
 	list protocols adhoc
 	list protocols lan
 	list protocols anygw
-	list protocols batadv:%N1                              # Parametrizable with %Nn
+	list protocols batadv:%N1
 	list protocols bmx6:13
-	list resolvers 8.8.8.8                                 # DNS servers node will use
+	list resolvers 8.8.8.8
 	list resolvers 2001:4860:4860::8844
-
-
-# WiFi general options
 
 config lime wifi
 	option channel_2ghz '11'
