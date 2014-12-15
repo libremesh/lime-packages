@@ -4,6 +4,7 @@ utils = {}
 
 local config = require("lime.config")
 
+
 function utils.split(string, sep)
     local ret = {}
     for token in string.gmatch(string, "[^"..sep.."]+") do table.insert(ret, token) end
@@ -50,6 +51,11 @@ end
 function utils.applyMacTemplate10(template, mac)
 	for i=1,6,1 do template = template:gsub("%%M"..i, tonumber(mac[i], 16)) end
 	return template
+end
+
+function utils.applyHostnameTemplate(template)
+	local system = require("lime.system")
+	return template:gsub("%%H", system.get_hostname())
 end
 
 function utils.network_id()

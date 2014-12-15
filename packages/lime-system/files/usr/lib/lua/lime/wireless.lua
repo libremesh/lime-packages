@@ -2,6 +2,7 @@
 
 local config = require("lime.config")
 local network = require("lime.network")
+local utils = require("lime.utils")
 local libuci = require("uci")
 local fs = require("nixio.fs")
 
@@ -124,6 +125,11 @@ function wireless.configure()
 
 				if isGoodOption then
 					local nk = key:gsub("^"..modeName.."_", ""):gsub(freqSuffix.."$", "")
+					if nk == "ssid" then
+						value = utils.applyHostnameTemplate(value)
+						value = utils.applyMacTemplate16(value, network.primary_mac())
+						value = string.sub(value, 1, 31)
+					end
 
 					uci:set("wireless", wirelessInterfaceName, nk, value)
 				end
