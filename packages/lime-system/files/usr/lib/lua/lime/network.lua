@@ -126,8 +126,16 @@ function network.scandevices()
 	--! Scan for plain ethernet interfaces and switch_vlan interfaces
 	local stdOut = io.popen("ls -1 /sys/class/net/")
 	for dev in stdOut:lines() do
-		if (dev:match("^eth%d+$") or dev:match("^eth%d+%.%d+$")) then
-			table.insert(devices, dev)
+		if dev:match("^eth%d+$") then
+			local insert = true
+			for d,_ in pairs(devices) do if d:match("^"..dev..".%d+$") then insert = false ; break; end end
+			if insert then devices[dev] = dev end
+		end
+		
+		if dev:match("^eth%d+%.%d+$") then
+			local rawif = dev:match("^eth%d+") 
+			devices[rawif] = nil
+			devices[dev] = dev
 		end
 	end
 	stdOut:close()
