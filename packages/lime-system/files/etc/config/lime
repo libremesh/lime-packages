@@ -69,10 +69,10 @@
 
 
 ### Ground routing specific sections
+### One section for each ground routing link
 
 #config hwd_gr link1
-#	option basedev 'eth0'
-#	option switch 'switch0'
-#	list switch_ports '0'
+#	option physdev 'switch0'                                               # Can be a switch or a plain ethernet port, if it is a switch you must specify ports if not you must not specify them
+#	list switch_ports '0'                                                  # Refer to switch port map of your device on openwrt wiki to know port index
 #	list switch_ports '4'
-#	option vlan '173'
+#	option vlan '173'                                                      # 802.1q vlan vid to use for this ground routing link

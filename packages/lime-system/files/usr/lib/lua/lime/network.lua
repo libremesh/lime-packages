@@ -148,6 +148,11 @@ function network.scandevices()
 		if ( type(ifn) == "table" ) then for _,v in pairs(ifn) do dev_parser(v) end end
 	end
 
+	function owrt_device_parser(section)
+		dev_parser(section["name"])
+		dev_parser(section["ifname"])
+	end
+
 	function owrt_switch_vlan_parser(section)
 		local rawif_index = section["device"]:match("%d+$")
 		local vlan_index = section["vlan"]
@@ -161,12 +166,11 @@ function network.scandevices()
 
 	--! Scrape from uci network
 	uci:foreach("network", "interface", owrt_ifname_parser)
-
-	--! Scrape switch_vlan form uci
+	uci:foreach("network", "device", owrt_device_parser)
 	uci:foreach("network", "switch_vlan", owrt_switch_vlan_parser)
 
-	--! Scrape from /sys/class/net/
-	local stdOut = io.popen("ls -1 /sys/class/net/")
+	--! Scrape plain ethernet devices from /sys/class/net/
+	local stdOut = io.popen("ls -1 /sys/class/net/ | grep -x 'eth[0-9][0-9]*'")
 	for dev in stdOut:lines() do dev_parser(dev) end
 	stdOut:close()
 
