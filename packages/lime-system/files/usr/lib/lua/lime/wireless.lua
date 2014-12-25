@@ -128,7 +128,7 @@ function wireless.configure()
 					if nk == "ssid" then
 						value = utils.applyHostnameTemplate(value)
 						value = utils.applyMacTemplate16(value, network.primary_mac())
-						value = string.sub(value, 1, 31)
+						value = string.sub(value, 1, 32)
 					end
 
 					uci:set("wireless", wirelessInterfaceName, nk, value)
