@@ -66,3 +66,13 @@
 
 #config net eth5
 #	list protocols 'manual'
+
+
+### Ground routing specific sections
+
+#config hwd_gr link1
+#	option basedev 'eth0'
+#	option switch 'switch0'
+#	list switch_ports '0'
+#	list switch_ports '4'
+#	option vlan '173'
