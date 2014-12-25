@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libre-mesh.org
-  DEPENDS:=+ebtables +lime-system +lua +libuci-lua +kmod-macvlan +dnsmasq-lease-share +dnsmasq-dhcpv6 @(!PACKAGE_dnsmasq)
+  DEPENDS:=+ebtables +lime-system +lua +libuci-lua +kmod-macvlan +dnsmasq-lease-share +dnsmasq-dhcpv6 @(!PACKAGE_dnsmasq) +firewall
 endef
 
 define Build/Compile
