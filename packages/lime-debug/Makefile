@@ -23,7 +23,7 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
 	URL:=http://libre-mesh.org
 	DEPENDS:=+batctl +busybox +iwinfo +iw +mtr +ip +iputils-ping6 +sprunge \
-		 +safe-reboot +netperf +rdisc6
+		 +safe-reboot +netperf +pv +rdisc6
 endef
 
 define Package/$(PKG_NAME)/description
