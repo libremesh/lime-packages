@@ -66,3 +66,14 @@
 
 #config net eth5
 #	list protocols 'manual'
+
+
+### Ground routing specific sections
+### One section for each ground routing link
+
+#config hwd_gr link1
+#	option net_dev 'eth0'                                               # Plain ethernet device on top of which 802.1q vlan will be constructed
+#	option vlan '5'                                                     # Vlan id to use for this ground routing link, use little one because cheap switch doesn't supports big ids, this will bi used also as 802.1q vid
+#	option switch_dev 'switch0'                                         # If your ethernet device is connected to a switch chip you must specify it
+#	option switch_cpu_port '0'                                          # Refer to switch port map of your device on openwrt wiki to know CPU port index
+#	list switch_ports '4'                                               # List switch ports on with you want the vlan being passed
