@@ -3,3 +3,4 @@
 sleep 5s
 cp -r /etc/config /etc/lime/config.original
 lua /usr/bin/lime-config && uci commit
+/etc/init.d/lime-rc enable
