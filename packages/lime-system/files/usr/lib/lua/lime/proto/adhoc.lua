@@ -4,7 +4,11 @@ local adhoc_mode = require("lime.mode.adhoc")
 
 local adhoc = {}
 
-function adhoc.configure(args) end
+adhoc.configured = false
+
+function adhoc.configure(args)
+	adhoc.configured = true
+end
 
 function adhoc.setup_interface(ifname, args)
 	if ifname:match("^wlan%d+_"..adhoc_mode.wifi_mode) then

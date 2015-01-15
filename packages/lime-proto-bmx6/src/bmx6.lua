@@ -8,49 +8,16 @@ local wireless = require("lime.wireless")
 
 bmx6 = {}
 
-function bmx6.setup_interface(ifname, args)
-	if ifname:match("^wlan%d+_ap") then return end
-	vlanId = args[2] or 13
-	vlanProto = args[3] or "8021ad"
-	nameSuffix = args[4] or "_bmx6"
-
-	local owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
-
-	local uci = libuci:cursor()
-	uci:set("network", owrtDeviceName, "mtu", "1398")
-	
-	-- BEGIN [Workaround issue 38]
-	if ifname:match("^wlan%d+") then
-		local macAddr = wireless.get_phy_mac("phy"..ifname:match("%d+"))
-		local vlanIp = { 169, 254, tonumber(macAddr[5], 16), tonumber(macAddr[6], 16) }
-		uci:set("network", owrtInterfaceName, "proto", "static")
-		uci:set("network", owrtInterfaceName, "ipaddr", table.concat(vlanIp, "."))
-		uci:set("network", owrtInterfaceName, "netmask", "255.255.255.255")
-	end
-	--- END [Workaround issue 38]
-	
-	uci:save("network")
-
-	uci:set("bmx6", owrtInterfaceName, "dev")
-	uci:set("bmx6", owrtInterfaceName, "dev", linux802adIfName)
-	uci:save("bmx6")
-end
-
-function bmx6.clean()
-	print("Clearing bmx6 config...")
-	fs.writefile("/etc/config/bmx6", "")
-	local uci = libuci:cursor()
-	uci:delete("firewall", "bmxtun")
-	uci:save("firewall")
-end
+bmx6.configured = false
 
 function bmx6.configure(args)
-
-	bmx6.clean()
-
-	local ipv4, ipv6 = network.primary_address()
+	if bmx6.configured then return end
+	bmx6.configured = true
 
 	local uci = libuci:cursor()
+	local ipv4, ipv6 = network.primary_address()
+
+	fs.writefile("/etc/config/bmx6", "")
 
 	uci:set("bmx6", "general", "bmx6")
 	uci:set("bmx6", "general", "dbgMuteTimeout", "1000000")
@@ -123,6 +90,9 @@ function bmx6.configure(args)
 
 	uci:save("bmx6")
 
+
+	uci:delete("firewall", "bmxtun")
+
 	uci:set("firewall", "bmxtun", "zone")
 	uci:set("firewall", "bmxtun", "name", "bmxtun")
 	uci:set("firewall", "bmxtun", "input", "ACCEPT")
@@ -133,6 +103,34 @@ function bmx6.configure(args)
 	uci:set("firewall", "bmxtun", "family", "ipv4")
 
 	uci:save("firewall")
+end
+
+function bmx6.setup_interface(ifname, args)
+	if ifname:match("^wlan%d+_ap") then return end
+	vlanId = args[2] or 13
+	vlanProto = args[3] or "8021ad"
+	nameSuffix = args[4] or "_bmx6"
+
+	local owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
+
+	local uci = libuci:cursor()
+	uci:set("network", owrtDeviceName, "mtu", "1398")
+	
+	-- BEGIN [Workaround issue 38]
+	if ifname:match("^wlan%d+") then
+		local macAddr = wireless.get_phy_mac("phy"..ifname:match("%d+"))
+		local vlanIp = { 169, 254, tonumber(macAddr[5], 16), tonumber(macAddr[6], 16) }
+		uci:set("network", owrtInterfaceName, "proto", "static")
+		uci:set("network", owrtInterfaceName, "ipaddr", table.concat(vlanIp, "."))
+		uci:set("network", owrtInterfaceName, "netmask", "255.255.255.255")
+	end
+	--- END [Workaround issue 38]
+	
+	uci:save("network")
+
+	uci:set("bmx6", owrtInterfaceName, "dev")
+	uci:set("bmx6", owrtInterfaceName, "dev", linux802adIfName)
+	uci:save("bmx6")
 end
 
 function bmx6.apply()
