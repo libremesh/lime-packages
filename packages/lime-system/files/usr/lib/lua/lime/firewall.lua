@@ -41,7 +41,7 @@ function firewall.configure()
         )
         uci:save("firewall")
     else
-        os.execute("ln -s /etc/firewall.user /etc/lime-rc.d/50-firewall.user")
+        os.execute("ln -s /etc/firewall.user /etc/lime-rc.d/50-firewall.user 2>/dev/null")
         os.execute("chmod +x /etc/firewall.user")
     end
     
