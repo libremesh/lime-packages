@@ -211,7 +211,7 @@ function network.configure()
 			for k,v in pairs(flags) do args[k] = v end
 			if utils.isModuleAvailable(protoModule) then
 				local proto = require(protoModule)
-				xpcall(function() proto.setup_interface(device, args) end,
+				xpcall(function() proto.configure(args) ; proto.setup_interface(device, args) end,
 				       function(errmsg) print(errmsg) ; print(debug.traceback()) end)
 			end
 		end
