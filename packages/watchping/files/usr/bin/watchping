@@ -4,6 +4,7 @@ local interface="${1:?}"
 local timeout="${2:?}"
 local pinghosts="${3:?}"
 local pinginterval="${4:?}"
+local hookname="${5:?}"
 
 run_hooks () {
 	reason="$1"
@@ -15,17 +16,15 @@ run_hooks () {
 }
 
 watchping_ping() {
-	local interface="$1"; local timeout="$2"; local pinghosts="$3"; local pinginterval="$4"
+	local ifname="$1"; local timeout="$2"; local pinghosts="$3"; local pinginterval="$4"; local hookname="$5"
 	local last_hooks_run="fail"
 	
-	if [ -r "/sys/class/net/$interface/ifindex" ] ; then
-		ifname="$interface"
-	else
-		ifname="$(uci -q get network.$interface.ifname)"
-		[ "${ifname% *}" != "$ifname" ] && ifname="br-$interface"
-		[ -r "/sys/class/net/$ifname/ifindex" ] || { echo "Interface $interface unsupported!" ; exit 1 ; }
-	fi	
+	if [ ! -r "/sys/class/net/$ifname/ifindex" ] ; then
+		echo "Interface $ifname unsupported or not found!"
+		exit 1
+	fi
 
+	[ -z "$hookname" ] && hookname="$ifname"
 	time_now="$(cat /proc/uptime)"
 	time_now="${time_now%%.*}"
 	time_lastcheck="$time_now"
@@ -55,13 +54,13 @@ watchping_ping() {
 		done
 		
 		if [ "$time_diff" -ge "$timeout" ] && [ "$last_hooks_run" != "fail" ] ; then
-			logger -p daemon.info -t "watchping[$$]" "no ping reply for $time_diff seconds. Running $interface-fail.d hooks..." 		
-			run_hooks fail "$interface"
+			logger -p daemon.info -t "watchping[$$]" "no ping reply for $time_diff seconds. Running $hookname-fail.d hooks..."
+			run_hooks fail "$hookname"
 		elif [ "$time_lastcheck_withinternet" == "$time_now" ] && [ "$last_hooks_run" != "ok" ] ; then 
-			logger -p daemon.info -t "watchping[$$]" "ping reply. Running $interface-ok.d hooks..." 		
-			run_hooks ok "$interface"
+			logger -p daemon.info -t "watchping[$$]" "ping reply. Running $hookname-ok.d hooks..."
+			run_hooks ok "$hookname"
 		fi
 	done
 }
 
-watchping_ping "$interface" "$timeout" "$pinghosts" "$pinginterval"
+watchping_ping "$interface" "$timeout" "$pinghosts" "$pinginterval" "$hookname"

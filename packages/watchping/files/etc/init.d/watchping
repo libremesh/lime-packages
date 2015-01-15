@@ -33,9 +33,8 @@ load_watchping() {
 	
 	error=""
 
-	ifname="$(uci -q get network.$interface.ifname)"
-	[ "${ifname% *}" != "$ifname" ] && ifname="br-$interface"
-	[ -r "/sys/class/net/$ifname/ifindex" ] || [ -r "/sys/class/net/$interface/ifindex" ] \
+	ifname="$(uci_get_state network "$interface" ifname "$interface")"
+	[ -r "/sys/class/net/$ifname/ifindex" ] \
 		|| append_string "error" "interface $interface not found or unsupported" "; "
 
 	timetoseconds "$timeout"
@@ -62,8 +61,8 @@ load_watchping() {
 
 	[ -n "$error" ] && { logger -p user.err -t "watchping" "daemon $1 not started - $error"; return; }
 
-	/usr/bin/watchping "$interface" "$timeout" "$pinghosts" "$pinginterval" &
-	logger -p user.info -t "watchping" "started task (interface=$interface;timeout=$timeout;pinghosts=$pinghosts;pinginterval=$pinginterval)" 
+	/usr/bin/watchping "$ifname" "$timeout" "$pinghosts" "$pinginterval" "$interface" &
+	logger -p user.info -t "watchping" "started task (interface=$ifname;timeout=$timeout;pinghosts=$pinghosts;pinginterval=$pinginterval;hookname=$interface)"
 
 	echo $! >> "${PIDFILE}.pids"
 }
