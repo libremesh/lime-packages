@@ -5,9 +5,13 @@ lan = {}
 local network = require("lime.network")
 local libuci = require("uci")
 
-function lan.configure(args)
-	local ipv4, ipv6 = network.primary_address()
+lan.configured = false
 
+function lan.configure(args)
+	if lan.configured then return end
+	lan.configured = true
+
+	local ipv4, ipv6 = network.primary_address()
 	local uci = libuci:cursor()
 	uci:set("network", "lan", "ip6addr", ipv6:string())
 	uci:set("network", "lan", "ipaddr", ipv4:host():string())
