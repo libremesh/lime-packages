@@ -6,6 +6,15 @@ local libuci = require("uci")
 
 eigennet = {}
 
+eigennet.configured = false
+
+function eigennet.configure(args)
+	if eigennet.configured then return end
+	eigennet.configured = true
+
+	batadv.configure(args)
+end
+
 function eigennet.setup_interface(ifname, args)
 	if ifname:match("^wlan%d+_ap") then return end
 
@@ -31,14 +40,6 @@ function eigennet.setup_interface(ifname, args)
 
 		uci:save("network")
 	end
-end
-
-function eigennet.clean()
-	batadv.clean()
-end
-
-function eigennet.configure(args)
-	batadv.configure(args)
 end
 
 

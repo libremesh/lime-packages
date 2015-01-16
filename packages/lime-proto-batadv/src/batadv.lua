@@ -7,6 +7,29 @@ local utils = require("lime.utils")
 
 batadv = {}
 
+batadv.configured = false
+
+function batadv.configure(args)
+	if batadv.configured then return end
+	batadv.configured = true
+
+	if not fs.lstat("/etc/config/batman-adv") then fs.writefile("/etc/config/batman-adv", "") end
+
+	local uci = libuci:cursor()
+	uci:set("batman-adv", "bat0", "mesh")
+	uci:set("batman-adv", "bat0", "bridge_loop_avoidance", "1")
+	uci:set("batman-adv", "bat0", "multicast_mode", "0")
+
+	-- if anygw enabled disable DAT that doesn't play well with it
+	for _,proto in pairs(config.get("network", "protocols")) do
+		if proto == "anygw" then uci:set("batman-adv", "bat0", "distributed_arp_table", "0") end
+	end
+
+	lan.setup_interface("bat0", nil)
+
+	uci:save("batman-adv")
+end
+
 function batadv.setup_interface(ifname, args)
 	if ifname:match("^wlan%d+_ap") then return end
 	local vlanId = args[2] or "%N1"
@@ -27,29 +50,6 @@ function batadv.setup_interface(ifname, args)
 	uci:set("network", owrtInterfaceName, "proto", "batadv")
 	uci:set("network", owrtInterfaceName, "mesh", "bat0")
 	uci:save("network")
-end
-
-function batadv.clean()
-	if not fs.lstat("/etc/config/batman-adv") then fs.writefile("/etc/config/batman-adv", "") end
-end
-
-
-function batadv.configure(args)
-	batadv.clean()
-
-	local uci = libuci:cursor()
-	uci:set("batman-adv", "bat0", "mesh")
-	uci:set("batman-adv", "bat0", "bridge_loop_avoidance", "1")
-	uci:set("batman-adv", "bat0", "multicast_mode", "0")
-
-	-- if anygw enabled disable DAT that doesn't play well with it
-	for _,proto in pairs(config.get("network", "protocols")) do
-		if proto == "anygw" then uci:set("batman-adv", "bat0", "distributed_arp_table", "0") end
-	end
-
-	lan.setup_interface("bat0", nil)
-
-	uci:save("batman-adv")
 end
 
 
