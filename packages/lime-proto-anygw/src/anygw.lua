@@ -6,7 +6,12 @@ local libuci = require "uci"
 
 anygw = {}
 
+anygw.configured = false
+
 function anygw.configure(args)
+	if anygw.configured then return end
+	anygw.configured = true
+
 	local ipv4, ipv6 = network.primary_address()
 	
 	-- anygw macvlan interface
