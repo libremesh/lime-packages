@@ -2,7 +2,7 @@
 # Copyright (C) 2012 Gui Iribarren
 # This is free software, licensed under the GNU General Public License v3.
 
-START=97
+START=99
 
 PIDFILE="/tmp/run/watchping"
 
@@ -33,9 +33,17 @@ load_watchping() {
 	
 	error=""
 
-	ifname="$(uci_get_state network "$interface" ifname "$interface")"
-	[ -r "/sys/class/net/$ifname/ifindex" ] \
-		|| append_string "error" "interface $interface not found or unsupported" "; "
+	ifname="$(uci_get_state network "$interface" ifname)"
+
+	[ -z "$ifname" ] && {
+		logger -p user.info -t "watchping" "interface $interface does not exist (yet?) waiting 10 seconds to try again"
+		sleep 10
+		ifname="$(uci_get_state network "$interface" ifname)"
+		[ -z "$ifname" ] && {
+			logger -p user.info -t "watchping" "interface $interface does not exist in openwrt but continuing..."
+			ifname="$interface"
+		}
+	}
 
 	timetoseconds "$timeout"
 	timeout="$seconds"
@@ -61,10 +69,10 @@ load_watchping() {
 
 	[ -n "$error" ] && { logger -p user.err -t "watchping" "daemon $1 not started - $error"; return; }
 
-	/usr/bin/watchping "$ifname" "$timeout" "$pinghosts" "$pinginterval" "$interface" &
-	logger -p user.info -t "watchping" "started task (interface=$ifname;timeout=$timeout;pinghosts=$pinghosts;pinginterval=$pinginterval;hookname=$interface)"
 
+	/usr/bin/watchping "$ifname" "$timeout" "$pinghosts" "$pinginterval" "$interface" 2>/tmp/watchping.err.log &
 	echo $! >> "${PIDFILE}.pids"
+	logger -p user.info -t "watchping" "started task (interface=$ifname;timeout=$timeout;pinghosts=$pinghosts;pinginterval=$pinginterval;hookname=$interface)"
 }
 
 stop() {
@@ -74,7 +82,8 @@ stop() {
 
 		while read pid
 		do
-			kill "$pid"
+			logger -p user.info -t "watchping" "killing pid $pid"
+			kill -9 "$pid"
 		done < "${PIDFILE}.pids"
 
 		rm "${PIDFILE}.pids"
@@ -87,6 +96,7 @@ stop() {
 
 start() {
 	[ -f "${PIDFILE}.pids" ] && stop
+        while pgrep -f mac80211.sh ; do sleep 1; done
 
 	config_load system
 	if [ -n "$(uci show system.@watchping[0])" ] # at least one watchping section exists
