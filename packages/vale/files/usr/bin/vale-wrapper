@@ -1,26 +1,49 @@
 #!/bin/sh
 
-free_keyword=gratis
-free_time=3600 #seconds
-free_limit_down=512 #kbps
-free_limit_up=128 #kbps
-blacklist=/etc/nodogsplash/vale/blacklist_$(date +%Y%m%d).log
-
 action="$1"
-mac="$2"
+client_mac="$2"
 voucher="$3"
 
-# echo "$(date +%s)" "$@" >> /tmp/vale.log
+free_keyword=HoyBuscoUno
+free_secs=108000 #seconds
+free_limit_down=512 #kbps
+free_limit_up=128 #kbps
+vale_blacklist=/etc/nodogsplash/vale/blacklist_$(date +%Y%m).log
+vale_clients=/etc/nodogsplash/vale/clients
 
-if [ "$action" == "auth_voucher" ] || [ "$action" == "auth_status" ] ; then
-  if [ "$voucher" == "$free_keyword" ] ; then
-    if ( grep -q "$mac" "$blacklist" ) ; then
-      echo 0 0 0 ; exit 0
-    else
-      echo "$(date +%s)" "$mac" >> $blacklist
-      echo "$free_time" "$free_limit_down" "$free_limit_up"
-    fi
+now_epoch="$(date +%s)"
+free_first_use_epoch="$(cat "$vale_blacklist" | grep "$client_mac" | cut -d ' ' -f 1 | head -n 1)"
+free_expire_epoch="$(($free_first_use_epoch + $free_secs))"
+free_remaining_secs="$(($free_expire_epoch - $now_epoch))"
+vale_expire_date="$(cat "$vale_clients" | grep "$client_mac" | cut -d \" -f 4)"
+[ -n "$vale_expire_date" ] && vale_expire_epoch="$(date +%s -d "$vale_expire_date")"
+vale_remaining_secs="$(($vale_expire_epoch - $now_epoch))"
+
+tolower() {
+  echo "$@" | tr ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz
+}
+
+echo "$now_epoch" "$@" | grep -v auth_status >> /etc/nodogsplash/vale/vale-wrapper.log
+
+if [ "$action" == "auth_voucher" ] ; then
+
+  if [ "$vale_remaining_secs" -gt 0 ] ; then
+    echo "$vale_remaining_secs" 102400 102400
   else
-    echo $(/usr/bin/vale "$mac" $voucher) 102400 102400
+    if [ "$free_remaining_secs" -gt 0 ] ; then
+      echo "$free_remaining_secs" "$free_limit_down" "$free_limit_up"
+    else
+      if [ "$(tolower "$voucher")" == "$(tolower "$free_keyword")" ] ; then
+        echo "$now_epoch" "$client_mac" >> $vale_blacklist
+        echo "$free_secs" "$free_limit_down" "$free_limit_up"
+      else
+        vale_time=$(/usr/bin/vale "$client_mac" $voucher)
+        echo ${vale_time:-0} 102400 102400
+      fi
+    fi
   fi
+
+elif [ "$action" == "auth_status" ] ; then
+  # do nothing, captive portal should be seen once a day minimum
+  true
 fi
