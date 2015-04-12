@@ -1,0 +1,54 @@
+#!/bin/sh
+echo "Status: 200 OK"
+echo "Transfer-Encoding: chunked"
+echo "Content-Type: text/html"
+echo "Cache-Control: no-cache"
+echo "Expires: 0"
+echo "Access-Control-Allow-Origin: *"
+echo
+
+gatewayname="$HTTP_HOST"
+client_ip="$REMOTE_ADDR"
+
+arping -q -I br-lan -f "$client_ip"
+client_mac=$(cat /proc/net/arp | egrep "^$client_ip\>" | grep -o ..:..:..:..:..:..)
+
+. /usr/bin/vale-wrapper check "$client_mac"
+
+if [ "$vale_expire_epoch" -gt "$now_epoch" ] ; then
+  message="Tu vale sigue vigente, hasta $(date +'el dia <b>%F</b> a las %T' -d @$vale_expire_epoch)"
+  message="$message<br>Simplemente dale al botón de OK (sin poner código)."
+else
+  message="No tenés ningún vale asociado a este dispositivo."
+  if [ -n "$free_first_use_epoch" ] ; then
+    message="$message<br>Este mes ya usaste el código <em>$free_keyword</em><br>$(date +'el día %F a las %T' -d @$free_first_use_epoch)."
+    if [ "$free_remaining_secs" -gt 0 ] ; then
+      message="$message<br>Podés seguir navegando todavía durante unas <b>$(($free_remaining_secs/3600)) horas</b><br>(hasta $(date +'el día %F a las %T' -d @$free_expire_epoch))."
+      message="$message<br>Simplemente dale al botón de OK (sin poner código)."
+    else
+      message="$message<br>Es fundamental mantener al menos un <b>mínimo</b> compromiso<br> y <b>vínculo social</b> con la comunidad, por lo tanto<br><b>no podés navegar hasta que no consigas un vale</b>."
+    fi
+  else
+    message="$message<br>Si estás en apuros, podés navegar 24hs con el código <b>$free_keyword</b>,<br>pero sólo podés aprovechar tal excepción 1 vez por mes."
+  fi
+fi
+
+cat <<EOF
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>$title</title>
+<meta HTTP-EQUIV='Pragma' CONTENT='no-cache'>
+<link rel="stylesheet" href="http://$gatewayname/nds/splash.css">
+</head>
+<body class="bg-c2b6">
+<div id="bienvenida-page">
+  <div class="acentro" style="text-align: center">$message</div>
+</div>
+<script type="text/javascript" src="http://$gatewayname/nds/iframeResizer.contentWindow.min.js"></script>
+</body>
+</html>
+EOF
+
+exit 1
