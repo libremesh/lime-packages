@@ -47,7 +47,9 @@ vale() { client_mac="$1" ; voucher="$2"
   echo "$vale_remaining_secs"
 }
 
-echo "$now_epoch" "$@" | grep -v auth_status >> /etc/nodogsplash/vale/vale-wrapper.log
+client_hostname="$(grep " $client_mac " /tmp/dhcp.leases | cut -d ' ' -f 4 | grep -v '\*')"
+[ -n "$client_hostname" ] && log_info="($client_hostname)"
+echo "$now_epoch" "$@" "$log_info" | grep -v auth_status >> /etc/nodogsplash/vale/vale-wrapper.log
 
 #sanitize input, forcing lowercase and allowing only alphanum
 voucher="$(tolower "$voucher" | tr -c -d abcdefghijklmnopqrstuvwxyz1234567890)"
