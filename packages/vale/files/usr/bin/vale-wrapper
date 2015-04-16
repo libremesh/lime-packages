@@ -63,8 +63,12 @@ if [ "$action" == "auth_voucher" ] ; then
       echo "$free_remaining_secs" "$free_limit_down" "$free_limit_up"
     else
       if [ "$(tolower "$voucher")" == "$(tolower "$free_keyword")" ] ; then
-        echo "$now_epoch" "$client_mac" >> $vale_blacklist
-        echo "$free_secs" "$free_limit_down" "$free_limit_up"
+        if ( grep -q "$client_mac" "$vale_blacklist" ) ; then
+          echo 0 0 0 ; exit 0
+        else
+          echo "$now_epoch" "$client_mac" >> $vale_blacklist
+          echo "$free_secs" "$free_limit_down" "$free_limit_up"
+        fi
       else
         vale_time=$(vale "$client_mac" "$voucher")
         echo ${vale_time:-0} 102400 102400
