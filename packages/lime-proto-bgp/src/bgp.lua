@@ -16,8 +16,7 @@ function proto.configure(args)
 	proto.configured = true
 
 	local ipv4, ipv6 = network.primary_address()
-	local localAS = 97922
-	local bgpPeers = {{ip="10.1.152.10", as=37922}}
+	local bgpPeers = {{remoteIP="10.1.152.10", remoteAS=37922, localAS=97922}}
 
 	local base_template = [[
 router id $1;
@@ -35,7 +34,7 @@ protocol bgp {
 	export all;
 
 	local as $localAS;
-	neighbor $1 as $2;
+	neighbor $remoteIP as $remoteAS;
 }
 ]]
 
