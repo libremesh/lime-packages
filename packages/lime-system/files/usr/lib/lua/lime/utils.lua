@@ -114,7 +114,11 @@ function utils.expandVars(s, ...)
 						code = code:sub(2, -2)
 					else
 						local n = tonumber(code)
-						if n then v = args[n] end
+						if n then
+							v = args[n]
+						else
+							v = args[code]
+						end
 					end
 					if not v then
 						v, err = loadstring("return "..code)
