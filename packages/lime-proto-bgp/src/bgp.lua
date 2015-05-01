@@ -21,6 +21,10 @@ function proto.configure(args)
 	local base_template = [[
 router id $1;
 
+protocol device {
+        scan time 10;
+}
+
 protocol kernel {
 	learn;
 	scan time 20;
