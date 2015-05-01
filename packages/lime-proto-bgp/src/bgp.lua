@@ -46,6 +46,17 @@ protocol bgp {
 		base_template = base_template .. utils.expandVars(peer_template, peer)
 	end
 
+	for _,proto in pairs(config.get("network", "protocols")) do
+		if proto == "lan" then
+			base_template = base_template .. [[
+protocol direct {
+        interface "br-lan";
+}
+]]
+			break
+		end
+	end
+
 	fs.writefile("/etc/bird4.conf", utils.expandVars(base_template, ipv4:host():string()))
 end
 
