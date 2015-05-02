@@ -66,6 +66,7 @@
 ### If you use manual do not specify other protocols, may result in an unpredictable behavior/configuration (likely you loose connection to the node)
 
 #config net eth5
+#	option linux_name 'eth5'                                               # Should use this because interface name can contains dots like eth0.2 while uci section names cannot
 #	list protocols 'manual'
 
 

@@ -33,13 +33,32 @@ protocol kernel {
 ]]
 
 	for _,proto in pairs(config.get("network", "protocols")) do
-		if proto == "lan" then
+		if proto:match("^lan") then
 			base_template = base_template .. [[
 protocol direct {
         interface "br-lan";
 }
 ]]
-			break
+		elseif proto:match("^bmx") then
+			base_template = base_template .. [[
+table tobmx;
+
+protocol pipe {
+	table master;
+	peer table tobmx;
+	import all;
+	export all;
+}
+
+protocol kernel
+{
+	scan time 20;
+	table tobmx;
+	kernel table 200;
+	import all;
+	export all;
+}
+]]
 		end
 	end
 	
@@ -65,7 +84,6 @@ protocol bgp {
 		end
 	end
 	config.foreach("bgp_peer", apply_peer_template)
-
 
 	fs.writefile("/etc/bird4.conf", bird4_config)
 	fs.writefile("/etc/bird6.conf", bird6_config)
