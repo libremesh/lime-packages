@@ -88,6 +88,15 @@ function bmx6.configure(args)
 		end
 	end
 
+	for _,proto in pairs(config.get("network", "protocols")) do
+		if proto:match("^bgp") then
+			uci:set("bmx6", "fromBird", "redistTable")
+			uci:set("bmx6", "fromBird", "redistTable", "fromBird")
+			uci:set("bmx6", "fromBird", "table", "200")
+			uci:set("bmx6", "fromBird", "bandwidth", "100")
+		end
+	end
+
 	uci:save("bmx6")
 
 
