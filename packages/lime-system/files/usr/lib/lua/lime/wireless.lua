@@ -77,7 +77,7 @@ end
 
 function wireless.configure()
 	local specificRadios = {}
-	config.foreach("wifi", function(radio) specificRadios[radio["radio_name"]] = radio end)
+	config.foreach("wifi", function(radio) specificRadios[radio[".name"]] = radio end)
 
 	local allRadios = wireless.scandevices()
 	for _,radio in pairs(allRadios) do
