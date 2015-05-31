@@ -1,4 +1,5 @@
-# Beware this file is not supposed to being edited, look at /etc/config/lime
+# Beware this file is NOT supposed to be edited by the end user, modify /etc/config/lime instead
+# If the same configuration is contained in both /etc/config/lime and lime-defaults file, the former will prevail
 # Beware this file is not supposed to store specific configuration, like "config net eth0"
 
 config lime system
