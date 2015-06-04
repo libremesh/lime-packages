@@ -36,8 +36,4 @@ function index()
 		page.index = true
 	end
 
-	if nixio.fs.stat(luci.util.libpath() .. "/controller/bmx6.lua") then
-		page = entry({"status", "bmx6"}, template("status/bmx6"), _("BMX6"), 11)
-		page.index = true
-	end
 end
