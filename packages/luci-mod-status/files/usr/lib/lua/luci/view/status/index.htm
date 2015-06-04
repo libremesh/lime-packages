@@ -467,8 +467,7 @@ You may obtain a copy of the License at
 					tr.insertCell(-1).innerHTML = assoclist[i].bssid;
 
 					tr.insertCell(-1).innerHTML = String.format(
-						'<a href="%s">%s</a>',
-							assoclist[i].link,
+						'%s',
 							'%h'.format(assoclist[i].name).nobr()
 					);
 
@@ -509,47 +508,6 @@ You may obtain a copy of the License at
 			if (e = document.getElementById('loadavg'))
 				e.innerHTML = String.format('%.02f, %.02f, %.02f',
 					info.loadavg[0], info.loadavg[1], info.loadavg[2]);
-
-			if (e = document.getElementById('memtotal'))
-				e.innerHTML = progressbar(
-					(info.memfree + info.membuffers + info.memcached) + " <%:kB%>",
-					info.memtotal + " <%:kB%>"
-				);
-
-			if (e = document.getElementById('memfree'))
-				e.innerHTML = progressbar(
-					info.memfree + " <%:kB%>", info.memtotal + " <%:kB%>"
-				);
-
-			if (e = document.getElementById('memcache'))
-				e.innerHTML = progressbar(
-					info.memcached + " <%:kB%>", info.memtotal + " <%:kB%>"
-				);
-
-			if (e = document.getElementById('membuff'))
-				e.innerHTML = progressbar(
-					info.membuffers + " <%:kB%>", info.memtotal + " <%:kB%>"
-				);
-
-			if (e = document.getElementById('swapcache'))
-				e.innerHTML = progressbar(
-					info.swapcached + " <%:kB%>", info.swaptotal + " <%:kB%>"
-				);
-
-			if (e = document.getElementById('swaptotal'))
-				e.innerHTML = progressbar(
-					(info.swapfree + info.swapcached) + " <%:kB%>",
-					info.swaptotal + " <%:kB%>"
-				);
-
-			if (e = document.getElementById('swapfree'))
-				e.innerHTML = progressbar(
-					info.swapfree + " <%:kB%>", info.swaptotal + " <%:kB%>"
-				);
-
-			if (e = document.getElementById('conns'))
-				e.innerHTML = progressbar(info.conncount, info.connmax);
-
 		}
 	);
 //]]></script>
@@ -560,43 +518,17 @@ You may obtain a copy of the License at
 	<legend><%:System%></legend>
 
 	<table width="100%" cellspacing="10">
-		<tr><td width="33%"><%:Hostname%></td><td><%=luci.sys.hostname() or "?"%></td></tr>
 		<tr><td width="33%"><%:Model%></td><td><%=pcdata(model or "?")%></td></tr>
 		<tr><td width="33%"><%:Firmware Version%></td><td>
 			<%=pcdata(luci.version.distname)%> <%=pcdata(luci.version.distversion)%> /
 			<%=pcdata(luci.version.luciname)%> (<%=pcdata(luci.version.luciversion)%>)
 		</td></tr>
-		<tr><td width="33%"><%:Kernel Version%></td><td><%=luci.sys.exec("uname -r")%></td></tr>
 		<tr><td width="33%"><%:Local Time%></td><td id="localtime">-</td></tr>
 		<tr><td width="33%"><%:Uptime%></td><td id="uptime">-</td></tr>
-		<tr><td width="33%"><%:Load Average%></td><td id="loadavg">-</td></tr>
 	</table>
 </fieldset>
 
-<fieldset class="cbi-section">
-	<legend><%:Memory%></legend>
-
-	<table width="100%" cellspacing="10">
-		<tr><td width="33%"><%:Total Available%></td><td id="memtotal">-</td></tr>
-		<tr><td width="33%"><%:Free%></td><td id="memfree">-</td></tr>
-		<tr><td width="33%"><%:Cached%></td><td id="memcache">-</td></tr>
-		<tr><td width="33%"><%:Buffered%></td><td id="membuff">-</td></tr>
-	</table>
-</fieldset>
-
-<% if has_swap then %>
-<fieldset class="cbi-section">
-	<legend><%:Swap%></legend>
-
-	<table width="100%" cellspacing="10">
-		<tr><td width="33%"><%:Total Available%></td><td id="swaptotal">-</td></tr>
-		<tr><td width="33%"><%:Free%></td><td id="swapfree">-</td></tr>
-		<tr><td width="33%"><%:Cached%></td><td id="swapcache">-</td></tr>
-	</table>
-</fieldset>
-<% end %>
-
-<fieldset class="cbi-section">
+<fieldset class="cbi-section" style="display:none">
 	<legend><%:Network%></legend>
 
 	<table width="100%" cellspacing="10">
@@ -667,7 +599,7 @@ You may obtain a copy of the License at
 <% end %>
 
 <% if has_wifi then %>
-<fieldset class="cbi-section">
+<fieldset class="cbi-section" style="display: none;">
 	<legend><%:Wireless%></legend>
 
 	<table id="wifi_status_table" width="100%" cellspacing="10">
@@ -694,20 +626,5 @@ You may obtain a copy of the License at
 	</table>
 </fieldset>
 <% end %>
-
-<%-
-	require "luci.util"
-	require "nixio.fs"
-
-	local plugins = nixio.fs.dir(luci.util.libpath() .. "/view/admin_status/index")
-	if plugins then
-		local inc
-		for inc in plugins do
-			if inc:match("%.htm$") then
-				include("admin_status/index/" .. inc:gsub("%.htm$", ""))
-			end
-		end
-	end
--%>
 
 <%+footer%>
