@@ -64,7 +64,8 @@
 ### proto:vlan_number works too ( something like bmx6:13 is supported )
 ### If you use manual do not specify other protocols, may result in an unpredictable behavior/configuration (likely you loose connection to the node)
 
-#config net eth5
+#config net port5
+#	option linux_name 'eth1.5'
 #	list protocols 'manual'
 
 
