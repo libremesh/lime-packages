@@ -33,6 +33,13 @@ function bmx6.setup_interface(ifname, args)
 
 	uci:set("bmx6", owrtInterfaceName, "dev")
 	uci:set("bmx6", owrtInterfaceName, "dev", linux802adIfName)
+
+	-- BEGIN [Workaround issue 40]
+	if ifname:match("^wlan%d+") then
+		uci:set("bmx6", owrtInterfaceName, "rateMax", "54000")
+	end
+	--- END [Workaround issue 40]
+
 	uci:save("bmx6")
 end
 
