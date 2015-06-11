@@ -81,7 +81,7 @@ function anygw.configure(args)
 
 	content = { }
 	table.insert(content, "enable-ra")
-	table.insert(content, "dhcp-range=tag:anygw,"..ipv6:network():string()..",ra-names")
+	table.insert(content, "dhcp-range=tag:anygw,"..ipv6:network():string()..",ra-names,24h")
 	table.insert(content, "dhcp-option=tag:anygw,option6:domain-search,lan")
 	table.insert(content, "dhcp-option=tag:anygw,option6:dns-server,"..anygw_ipv6:host():string())
 	table.insert(content, "address=/anygw/"..anygw_ipv6:host():string())
