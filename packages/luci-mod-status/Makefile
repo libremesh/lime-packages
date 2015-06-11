@@ -6,7 +6,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=luci-app-openairview
+PKG_NAME:=luci-mod-status
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
@@ -14,19 +14,19 @@ GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  SECTION:=luci
-  CATEGORY:=LuCI
-  TITLE:=LuCI - Lua Configuration Interface
+  SECTION:=admin
+  CATEGORY:=Administration
+  TITLE:=LuCI status - provides read-only status info without login
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
-  SUBMENU:=3. Applications
-  TITLE:=Visualize the spectrum and wifi neighbours
-  DEPENDS:= +libc +fft-eval +luci-lib-jquery-1-4 +luci-lib-jquery-flot-0-8 +luci-lib-json
+  DEPENDS:= +uhttpd +luci-base +libiwinfo-lua +luci-lib-jquery-1-4 +luci-lib-jquery-flot-0-8 +luci-lib-json
 endef
 
 define Package/$(PKG_NAME)/description
-Includes a realtime spectral scan for ath9k chipsets,
-a realtime plot of wifi neighbours signal (think "iw station dump")
-and a site survey of wifi networks, with signal plots (think "iw scan")
+Minimal and simple web app to view some status info:
+ * a realtime plot of wifi neighbours signal (think "iw station dump")
+ * batman-adv mesh nodes (if luci-app-batman-adv is installed)
+ * bmx6 mesh nodes (if luci-app-bmx6 is installed)
+ * ethernet switch ports status
 endef
 
 define Build/Compile

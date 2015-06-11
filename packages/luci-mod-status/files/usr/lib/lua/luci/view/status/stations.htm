@@ -25,6 +25,7 @@ $Id$
 
   local curdev = luci.dispatcher.context.requestpath
         curdev = curdev[#curdev] ~= "stations" and curdev[#curdev] or devices[1]
+  local base_uri = REQUEST_URI:gsub("/stations.*$", "")
 -%>
 
 <%+header%>
@@ -34,10 +35,9 @@ $Id$
         
 
 <h2><a id="content" name="content"><%:Stations%></a></h2>
-
 <ul class="cbi-tabmenu">
     <% for _, dev in ipairs(devices) do %>
-        <li class="cbi-tab<%= dev == curdev and "" or "-disabled" %>"><a href="stations/<%=dev%>"><%=pcdata(dev)%></a></li>
+        <li class="cbi-tab<%= dev == curdev and "" or "-disabled" %>"><a href="<%=base_uri%>/stations/<%=dev%>"><%=pcdata(dev)%></a></li>
     <% end %>
 </ul>
 
@@ -86,7 +86,7 @@ $(function () {
     });
 
     /* render datasets, start update interval */
-    XHR.poll(20, '<%=build_url("openairview/json/stations", curdev)%>', null,
+    XHR.poll(20, '<%=build_url("status/json/stations", curdev)%>', null,
       function(x, series) {
         for (i=0;i<series.length;i++) {
           if (seriesCollection[series[i].station_hostname] == undefined) {
