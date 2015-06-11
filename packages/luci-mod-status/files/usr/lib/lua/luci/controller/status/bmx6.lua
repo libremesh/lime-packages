@@ -20,19 +20,24 @@
     the file called "COPYING".
 --]]
 
-local bmx6json = require("luci.model.bmx6json")
-
 module("luci.controller.status.bmx6", package.seeall)
+
+local fs = require("nixio.fs")
+
+local bmx6json
+-- check if luci-app-bmx6 is installed
+if fs.stat(luci.util.libpath() .. "/model/bmx6json.lua") then
+	bmx6json = require("luci.model.bmx6json")
+end
 
 function index()
 	local place = {}
 	local ucim = require "luci.model.uci"
 	local uci = ucim.cursor()
-
-	require("nixio.fs")
+	local fs = require("nixio.fs")
 
 	-- checking if luci-app-bmx6 is installed
-	if not nixio.fs.stat(luci.util.libpath() .. "/controller/bmx6.lua") then
+	if not fs.stat(luci.util.libpath() .. "/controller/bmx6.lua") then
 		return nil
 	end
 
