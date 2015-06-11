@@ -12,7 +12,7 @@ local utils = require("lime.utils")
 
 network.limeIfNamePrefix="lm_"
 network.protoParamsSeparator=":"
-network.protoVlanSeparator="-"
+network.protoVlanSeparator="_"
 
 function network.get_mac(ifname)
 	local mac = assert(fs.readfile("/sys/class/net/"..ifname.."/address")):gsub("\n","")
@@ -182,17 +182,17 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 	vlanProtocol = vlanProtocol or "8021ad"
 	openwrtNameSuffix = openwrtNameSuffix or ""
 
-	local owrtDeviceName = network.limeIfNamePrefix..linuxBaseIfname..openwrtNameSuffix.."_dev"
-	local owrtInterfaceName = network.limeIfNamePrefix..linuxBaseIfname..openwrtNameSuffix.."_if"
-	owrtDeviceName = owrtDeviceName:gsub("[^%w_]", "_") -- sanitize uci section name
-	owrtInterfaceName = owrtInterfaceName:gsub("[^%w_]", "_") -- sanitize uci section name
+	--! sanitize passed linuxBaseIfName for constructing uci section name
+	--! because only alphanumeric and underscores are allowed
+	local owrtDeviceName = network.limeIfNamePrefix..linuxBaseIfname:gsub("[^%w_]", "_")..openwrtNameSuffix.."_dev"
+	local owrtInterfaceName = network.limeIfNamePrefix..linuxBaseIfname:gsub("[^%w_]", "_")..openwrtNameSuffix.."_if"
 
 	local vlanId = vid
 	--! Do not use . as separator as this will make netifd create an 802.1q interface anyway
 	--! and sanitize linuxBaseIfName because it can contain dots as well (i.e. switch ports)
-	local linux802adIfName = linuxBaseIfname:gsub("[^%w_]", "_")..network.protoVlanSeparator..vlanId
+	local linux802adIfName = linuxBaseIfname:gsub("[^%w-]", "-")..network.protoVlanSeparator..vlanId
 	local ifname = linuxBaseIfname
-	if string.sub(linuxBaseIfname, 1, 4) == "wlan" then ifname = "@"..network.limeIfNamePrefix..linuxBaseIfname end
+	if ifname:match("^wlan") then ifname = "@"..network.limeIfNamePrefix..linuxBaseIfname:gsub("[^%w_]", "_") end
 
 	local uci = libuci:cursor()
 

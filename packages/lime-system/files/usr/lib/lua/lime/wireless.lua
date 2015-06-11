@@ -9,6 +9,7 @@ wireless = {}
 
 wireless.modeParamsSeparator=":"
 wireless.limeIfNamePrefix="lm_"
+wireless.wifiModeSeparator="-"
 
 function wireless.get_phy_mac(phy)
 	local path = "/sys/class/ieee80211/"..phy.."/macaddress"
@@ -50,9 +51,11 @@ function wireless.createBaseWirelessIface(radio, mode, extras)
 
 	local radioName = radio[".name"]
 	local phyIndex = radioName:match("%d+")
-	local ifname = "wlan"..phyIndex.."_"..mode
-	local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname.."_"..radioName
-	local networkInterfaceName = network.limeIfNamePrefix..ifname
+	local ifname = "wlan"..phyIndex..wireless.wifiModeSeparator..mode
+	--! sanitize generated ifname for constructing uci section name
+	--! because only alphanumeric and underscores are allowed
+	local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname:gsub("[^%w_]", "_").."_"..radioName
+	local networkInterfaceName = network.limeIfNamePrefix..ifname:gsub("[^%w_]", "_")
 
 	local uci = libuci:cursor()
 	
