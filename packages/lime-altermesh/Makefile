@@ -26,6 +26,7 @@ define Package/$(PKG_NAME)
            +watchping +batman-adv-auto-gw-mode \
            +dnsmasq-dhcpv6 +dnsmasq-lease-share \
            +luci-app-batman-adv +luci-app-openairview \
+           +luci-mod-status +luci-mod-lime-basic-ssl \
            +libremap-agent +luci-lib-libremap-wireless \
            +luci-lib-libremap-location +luci-lib-libremap-system
 endef
