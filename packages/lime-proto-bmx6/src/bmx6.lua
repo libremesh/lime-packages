@@ -65,8 +65,8 @@ function bmx6.configure(args)
 
 	uci:set("bmx6", "main", "tunDev")
 	uci:set("bmx6", "main", "tunDev", "main")
-	uci:set("bmx6", "main", "tun4Address", ipv4:host():string().."/32")
-	uci:set("bmx6", "main", "tun6Address", ipv6:host():string().."/128")
+	uci:set("bmx6", "main", "tun4Address", ipv4:string())
+	uci:set("bmx6", "main", "tun6Address", ipv6:string())
 
 	-- Enable bmx6 uci config plugin
 	uci:set("bmx6", "config", "plugin")
@@ -107,16 +107,6 @@ function bmx6.configure(args)
 	uci:set("bmx6", "publicv6", "tunOut", "publicv6")
 	uci:set("bmx6", "publicv6", "network", "2000::/3")
 	uci:set("bmx6", "publicv6", "maxPrefixLen", "64")
-
-	-- Announce local ipv4 cloud
-	uci:set("bmx6", "local4", "tunIn")
-	uci:set("bmx6", "local4", "tunIn", "local4")
-	uci:set("bmx6", "local4", "network", ipv4:network():string().."/"..ipv4:prefix())
-
-	-- Announce local ipv6 cloud
-	uci:set("bmx6", "local6", "tunIn")
-	uci:set("bmx6", "local6", "tunIn", "local6")
-	uci:set("bmx6", "local6", "network", ipv6:network():string().."/"..ipv6:prefix())
 
 	if config.get_bool("network", "bmx6_over_batman") then
 		for _,protoArgs in pairs(config.get("network", "protocols")) do
