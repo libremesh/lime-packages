@@ -132,6 +132,7 @@ function bmx6.configure(args)
 	uci:set("firewall", "bmxtun", "output", "ACCEPT")
 	uci:set("firewall", "bmxtun", "forward", "ACCEPT")
 	uci:set("firewall", "bmxtun", "mtu_fix", "1")
+	uci:set("firewall", "bmxtun", "conntrack", "1")
 	uci:set("firewall", "bmxtun", "device", "bmx+")
 	uci:set("firewall", "bmxtun", "family", "ipv4")
 
