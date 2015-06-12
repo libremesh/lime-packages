@@ -23,6 +23,7 @@ define Package/$(PKG_NAME)
   URL:=http://libre-mesh.org
   DEPENDS:= +luci-mod-admin-full +luci-app-bmx6 \
 	+luci-app-batman-adv \
+	+luci-mod-status \
 	+uhttpd +libiwinfo-lua \
 	+luci-theme-bootstrap +luci-i18n-english
 endef
