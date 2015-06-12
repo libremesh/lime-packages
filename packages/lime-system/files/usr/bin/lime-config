@@ -55,5 +55,7 @@ main()
 
 if not opts["no-commit"] and not opts["n"] then
 	local uci = require("uci"):cursor()
-	uci:commit()
+	for config,_ in pairs(uci:changes()) do
+		uci:commit(config)
+	end
 end
