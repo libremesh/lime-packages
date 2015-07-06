@@ -27,6 +27,7 @@ require("uci")
 
 local local_lease_file = "/tmp/dhcp.hosts_local"
 local dnsmasq_dhcp_hostsfile = "/tmp/dhcp.hosts_remote"
+local dnsmasq_addn_hostsfile = "/tmp/hosts/dnsmasq-lease-share"
 local alfred_shared_lease_num = "66"
 
 --! Tell alfred local dhcp lease changed
@@ -38,7 +39,7 @@ function update_alfred()
 	stdin:close()
 end
 
---! Tell dnsmasq to reread dhcp-hostsfile
+--! Tell dnsmasq to reread dhcp-hostsfile and addn-hosts
 function reload_dnsmasq()
 	os.execute("killall -HUP dnsmasq 2>/dev/null")
 end
@@ -100,9 +101,15 @@ function receive_dhcp_hosts()
 	io.input():seek("set")
 
 	local lease_table = {}
+	local addnhosts = {}
 	for line in io.lines() do
 		--! populating a table like this ensures every line is unique
 		lease_table[line] = 1
+
+		local ip, hostname = line:match("[^,]+,[^,]+,([^,]+),([^,]+)")
+		if ip and hostname then
+			addnhosts[ip .. "\t" .. hostname] = 1
+		end
 	end
 
 	local hostsfile = io.open(dnsmasq_dhcp_hostsfile, "w")
@@ -111,6 +118,14 @@ function receive_dhcp_hosts()
 			hostsfile:write(line .. "\n")
 		end
 		hostsfile:close()
+	end
+
+	local addnhostsfile = io.open(dnsmasq_addn_hostsfile, "w")
+	if addnhostsfile then
+		for line, _ in pairs(addnhosts) do
+			addnhostsfile:write(line .. "\n")
+		end
+		addnhostsfile:close()
 	end
 end
 
