@@ -88,19 +88,28 @@ function receive_dhcp_hosts()
 	if (not raw_output) then exit(0) end
 
 	json_output = {}
-	local lease_table = {}
 	-------------------------------- { added because alfred doesn't output valid json yet }
 	assert(loadstring("json_output = {" .. raw_output .. "}"))()
 
+	--! write down unpacked output on a tmpfile, to iterate over it later with io.lines()
+	io.input(io.output(io.tmpfile()))
 	for _, row in ipairs(json_output) do
 		local node_mac, value = unpack(row)
-		table.insert(lease_table, "# Node ".. node_mac .. "\n")
-		table.insert(lease_table, value:gsub("\x0a", "\n") .. "\n")
+		io.write(value:gsub("\x0a", "\n") .. "\n")
+	end
+	io.input():seek("set")
+
+	local lease_table = {}
+	for line in io.lines() do
+		--! populating a table like this ensures every line is unique
+		lease_table[line] = 1
 	end
 
 	local hostsfile = io.open(dnsmasq_dhcp_hostsfile, "w")
 	if hostsfile then
-		hostsfile:write(table.concat(lease_table))
+		for line, _ in pairs(lease_table) do
+			hostsfile:write(line .. "\n")
+		end
 		hostsfile:close()
 	end
 end
