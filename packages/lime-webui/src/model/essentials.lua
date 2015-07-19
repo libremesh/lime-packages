@@ -34,8 +34,8 @@ wifi.addremove = true
 system:option(Value,"hostname",translate("Hostname"),translate("Name for this node"))
 
 -- network
-network:option(Value,"main_ipv4",translate("Main IPv4"),translate("The main IPv4 configured for this node"))
-network:option(Value,"main_ipv6",translate("Main IPv6"),translate("The main IPv6 configured for this node"))
+network:option(Value,"main_ipv4_address",translate("Main IPv4"),translate("The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"))
+network:option(Value,"main_ipv6_address",translate("Main IPv6"),translate("The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"))
 
 -- wifi
 wifi:option(Value,"public_essid",translate("Public SSID"),translate("The SSID (WiFi network name) used for this node"))
