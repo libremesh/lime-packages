@@ -30,6 +30,12 @@ local dnsmasq_dhcp_hostsfile = "/tmp/dhcp.hosts_remote"
 local dnsmasq_addn_hostsfile = "/tmp/hosts/dnsmasq-lease-share"
 local alfred_shared_lease_num = "66"
 
+function split(string, sep)
+    local ret = {}
+    for token in string.gmatch(string, "[^"..sep.."]+") do table.insert(ret, token) end
+    return ret
+end
+
 --! Tell alfred local dhcp lease changed
 function update_alfred()
 	local lease_file = io.open(local_lease_file, "r+")
@@ -107,12 +113,17 @@ function receive_dhcp_hosts()
 	local lease_table = {}
 	local addnhosts = {}
 	for line in io.lines() do
-		--! populating a table like this ensures every line is unique
-		lease_table[line] = 1
+		client_mac, client_id, client_ip, client_hostname = unpack(split(line, ","))
+		if client_ip and client_hostname then
+			--! populating a table like this ensures every line is unique
+			addnhosts[client_ip .. " " .. client_hostname] = 1
+		end
 
-		local ip, hostname = line:match("[^,]+,[^,]+,([^,]+),([^,]+)")
-		if ip and hostname then
-			addnhosts[ip .. "\t" .. hostname] = 1
+		if client_mac and client_id and client_ip then
+			--! IPv6 addresses must be enclosed in brackets
+			if client_ip:find(":") then client_ip = "[" .. client_ip .. "]" end
+			--! ensure client_id is prefixed with "id:" once and only once
+			lease_table[client_mac .. ",id:" .. client_id:gsub("^id:") .. "," .. client_ip] = 1
 		end
 	end
 
