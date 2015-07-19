@@ -92,11 +92,15 @@ function receive_dhcp_hosts()
 	-------------------------------- { added because alfred doesn't output valid json yet }
 	assert(loadstring("json_output = {" .. raw_output .. "}"))()
 
+	local own_mac = get_if_mac("br-lan")
+
 	--! write down unpacked output on a tmpfile, to iterate over it later with io.lines()
 	io.input(io.output(io.tmpfile()))
 	for _, row in ipairs(json_output) do
 		local node_mac, value = unpack(row)
-		io.write(value:gsub("\x0a", "\n") .. "\n")
+		if node_mac ~= own_mac then
+			io.write(value:gsub("\x0a", "\n") .. "\n")
+		end
 	end
 	io.input():seek("set")
 
