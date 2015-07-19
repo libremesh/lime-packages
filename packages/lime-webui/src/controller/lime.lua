@@ -29,18 +29,30 @@ function index()
 	root.index  = true
 
 	-- Main window with auth enabled
-	status = entry({"lime"}, template("admin_status/index"), "lime", 1)
+	status = entry({"lime"}, firstchild(), _("Simple Config"), 9.5)
 	status.dependent = false
 	status.sysauth = "root"
 	status.sysauth_authenticator = "htmlauth"
 
 	-- Rest of entries
-	entry({"lime","status"}, template("admin_status/index"), "Status", 2).dependent=false
-	entry({"lime","essentials"}, cbi("lime/essentials"), "Essentials", 3).dependent=false
-	entry({"lime","about"}, call("action_about"), "About", 9).dependent=false
+	entry({"lime","essentials"}, cbi("lime/essentials"), _("Advanced"), 70).dependent=false
+	entry({"lime","about"}, call("action_about"), _("About"), 80).dependent=false
+	entry({"lime","logout"}, call("action_logout"), _("Logout"), 90)
 end
 
 function action_about()
 --	package.path = package.path .. ";/etc/lime/?.lua"
 	luci.template.render("lime/about",{})
+end
+
+function action_logout()
+	local dsp = require "luci.dispatcher"
+	local sauth = require "luci.sauth"
+	if dsp.context.authsession then
+		sauth.kill(dsp.context.authsession)
+		dsp.context.urltoken.stok = nil
+	end
+
+	luci.http.header("Set-Cookie", "sysauth=; path=" .. dsp.build_url())
+	luci.http.redirect(luci.dispatcher.build_url())
 end
