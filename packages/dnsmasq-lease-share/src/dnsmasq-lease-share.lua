@@ -66,13 +66,13 @@ function add_lease(client_mac, client_ip, client_hostname, client_id)
 	lease_file:close()
 end
 
-function del_lease(client_mac)
+function del_lease(client_mac, client_ip)
 	local leases = ""
 	local lease_file = io.open(local_lease_file, "r")
 	if lease_file then
 		while lease_file:read(0) do
 			local lease_line = lease_file:read()
-			if not string.find(lease_line, client_mac) then leases = leases .. lease_line .. "\n" end
+			if not (lease_line:find("^"..client_mac) and lease_line:find(client_ip, 0, true)) then leases = leases .. lease_line .. "\n" end
 		end
 		lease_file:close()
 		lease_file = io.open(local_lease_file, "w")
@@ -142,11 +142,11 @@ if command == "add" then
 	update_alfred()
 
 elseif command == "del" then
-	del_lease(client_mac)
+	del_lease(client_mac, client_ip)
 	update_alfred()
 
 elseif command == "old" then
-	del_lease(client_mac)
+	del_lease(client_mac, client_ip)
 	add_lease(client_mac, client_ip, client_hostname, client_id)
 	update_alfred()
 
@@ -159,7 +159,7 @@ elseif command == nil then
 	local own_ipv4 = uci_conf:get("network", "lan", "ipaddr")
 	local own_mac = get_if_mac("br-lan")
 
-	del_lease(own_mac)
+	del_lease(own_mac, own_ipv4)
 	add_lease(own_mac, own_ipv4, own_hostname, own_mac)
 	update_alfred()
 
