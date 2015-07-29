@@ -123,7 +123,7 @@ function receive_dhcp_hosts()
 			--! IPv6 addresses must be enclosed in brackets
 			if client_ip:find(":") then client_ip = "[" .. client_ip .. "]" end
 			--! ensure client_id is prefixed with "id:" once and only once
-			lease_table[client_mac .. ",id:" .. client_id:gsub("^id:") .. "," .. client_ip] = 1
+			lease_table[client_mac .. ",id:" .. client_id:gsub("^id:", "") .. "," .. client_ip] = 1
 		end
 	end
 
