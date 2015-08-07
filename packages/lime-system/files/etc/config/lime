@@ -5,7 +5,8 @@
 # calculated from the hash of the ap_ssid value, so that all the nodes that
 # form a mesh cloud (share the same ap_ssid) will produce the same value
 # and %H template that will be replaced by hostname
-
+# For setting a specific WAN port, don't set it globally in section "config lime network", set it in interface specific configuration "config net ..." and install the lime-proto-wan package
+# For setting the WAN port on the default WAN port (according OpenWRT), no configuration here is needed, just install the lime-hwd-openwrt-wan package.
 
 ### System options
 
@@ -18,12 +19,12 @@
 #config lime network
 #	option primary_interface eth0                                          # The mac address of this device will be used in different places
 #	option bmx6_over_batman false                                          # Disables Bmx6 meshing on top of batman
-#	option main_ipv4_address '192.0.2.0/24'                                # Parametrizable with %Mn, %Nn
-#	option main_ipv6_address '2001:db8::%M5:%M6/64'                        # Parametrizable with %Mn, %Nn
-#	list protocols adhoc                                                   # List of protocols configured by LiMe
+#	option main_ipv4_address '192.0.2.0/24'                                # Parametrizable also with %Mn, %Nn. If just a network address is specified, like "192.0.2.0/24", it gets also parametrized. This works even with netmasks other than /24 or /16...
+#	option main_ipv6_address '2001:db8::%M5:%M6/64'                        # Parametrizable with %Mn, %Nn or with trailing zeroes as for IPv4
+#	list protocols adhoc                                                   # List of protocols configured by LiMe, some of these require the relative package "lime-proto-...". Note that if you set here some protocols, you overwrite the whole list of protocols set in /etc/config/lime-defaults
 #	list protocols lan
 #	list protocols anygw
-#	list protocols batadv:%N1                                              # Parametrizable with %Nn
+#	list protocols batadv:%N1                                              # Parametrizable with %Nn (which depends from ap_ssid), note that this will range between 16 and 272
 #	list protocols bmx6:13
 #	list resolvers 8.8.8.8                                                 # DNS servers node will use
 #	list resolvers 2001:4860:4860::8844
@@ -33,15 +34,15 @@
 
 #config lime wifi
 #	option channel_2ghz '11'
-#	option channel_5ghz '48'
+#	option channel_5ghz '48'                                               # Check for allowed channels on https://en.wikipedia.org/wiki/List_of_WLAN_channels#5.C2.A0GHz_.28802.11a.2Fh.2Fj.2Fn.2Fac.29.5B16.5D
 #	list modes 'ap'
 #	list modes 'adhoc'
-#	option ap_ssid 'LiMe'
-#	option adhoc_ssid 'libre-mesh'                                         # Parametrizable with %M, %H
+#	option ap_ssid 'libre-mesh.org'
+#	option adhoc_ssid '%H'                                                 # Parametrizable with %M, %H
 #	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
 #	option adhoc_mcast_rate_2ghz '24000'
 #	option adhoc_mcast_rate_5ghz '6000'
-#	option mesh_mesh_fwding '0'
+#	option mesh_mesh_fwding '0'                                            # Settings needed only for 802.11s
 #	option mesh_mesh_id 'LiMe'
 
 
@@ -64,9 +65,9 @@
 ### proto:vlan_number works too ( something like bmx6:13 is supported )
 ### If you use manual do not specify other protocols, may result in an unpredictable behavior/configuration (likely you loose connection to the node)
 
-#config net port5
-#	option linux_name 'eth1.5'
-#	list protocols 'manual'
+#config net port5                                                           # Do not put any "." in the section name
+#	option linux_name 'eth1.5'                                          # Put here the actual name of the interface
+#	list protocols 'wan'                                                # Some of these protocols require the relative package "lime-proto-..."
 
 
 ### Ground routing specific sections
@@ -74,7 +75,7 @@
 
 #config hwd_gr link1
 #	option net_dev 'eth0'                                               # Plain ethernet device on top of which 802.1q vlan will be constructed
-#	option vlan '5'                                                     # Vlan id to use for this ground routing link, use little one because cheap switch doesn't supports big ids, this will bi used also as 802.1q vid
+#	option vlan '5'                                                     # Vlan id to use for this ground routing link, use little one because cheap switch doesn't supports big ids, this will be used also as 802.1q vid
 #	option switch_dev 'switch0'                                         # If your ethernet device is connected to a switch chip you must specify it
 #	option switch_cpu_port '0'                                          # Refer to switch port map of your device on openwrt wiki to know CPU port index
 #	list switch_ports '4'                                               # List switch ports on with you want the vlan being passed
