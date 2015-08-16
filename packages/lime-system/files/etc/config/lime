@@ -26,6 +26,8 @@
 #	list protocols anygw
 #	list protocols batadv:%N1                                              # Parametrizable with %Nn (which depends from ap_ssid), note that this will range between 16 and 272
 #	list protocols bmx6:13
+#	list protocols olsr:14
+#	list protocols olsr6:15
 #	list resolvers 8.8.8.8                                                 # DNS servers node will use
 #	list resolvers 2001:4860:4860::8844
 
@@ -61,7 +63,7 @@
 
 
 ### Network interface specific options ( override general option )
-### Available protocols: bmx6, batadv, wan, lan, manual
+### Available protocols: bmx6, batadv, olsr, olsr6, wan, lan, manual
 ### proto:vlan_number works too ( something like bmx6:13 is supported )
 ### If you use manual do not specify other protocols, may result in an unpredictable behavior/configuration (likely you loose connection to the node)
 
