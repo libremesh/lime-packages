@@ -20,8 +20,18 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   TITLE:=Manage 802.1q VLANs for ground routing
   CATEGORY:=LiMe
-  URL:=http://libre-mesh.org
+  URL:=http://libre-mesh.org/projects/libre-mesh/wiki/Ground_routing
   DEPENDS:=+lime-system +lua +libuci-lua
+endef
+
+define Package/$(PKG_NAME)/description
+	This package helps you to configure setups involving ground routing.
+	With ground routing we mean setups having Libre-Mesh on a router
+	which is connected via cable(s), eventually through a switch,
+	to some wireless routers running the original firmware in WDS
+	(transparent bridge) Ap/Sta mode. Configuring ground routing you
+	will set up an interface with a different vlan or on a different
+	switch port for each connected device in WDS mode.
 endef
 
 define Build/Compile

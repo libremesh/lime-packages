@@ -74,10 +74,13 @@
 
 ### Ground routing specific sections
 ### One section for each ground routing link
+### With ground routing we mean setups having Libre-Mesh on a router which is connected via cable(s), eventually through a switch, to some wireless routers running the original firmware in WDS (transparent bridge) Ap/Sta mode.
+### Likely you want to configure as many sections of ground routing with different vlan numbers or different switch ports as many connected devices in WDS mode.
+### For a detailed description have a look at http://libre-mesh.org/projects/libre-mesh/wiki/Ground_routing
 
 #config hwd_gr link1
-#	option net_dev 'eth0'                                               # Plain ethernet device on top of which 802.1q vlan will be constructed
+#	option net_dev 'eth0'                                               # Plain ethernet device on top of which 802.1q vlan will be constructed. In case of doubts rely on wiki.openwrt.org
 #	option vlan '5'                                                     # Vlan id to use for this ground routing link, use little one because cheap switch doesn't supports big ids, this will be used also as 802.1q vid
-#	option switch_dev 'switch0'                                         # If your ethernet device is connected to a switch chip you must specify it
-#	option switch_cpu_port '0'                                          # Refer to switch port map of your device on openwrt wiki to know CPU port index
-#	list switch_ports '4'                                               # List switch ports on with you want the vlan being passed
+#	option switch_dev 'switch0'                                         # These options regarding switch need to be set only if your ethernet device is connected to a switch chip. If the switch exists you can read its name (like switch0) in /etc/config/network file
+#	option switch_cpu_port '0'                                          # Refer to switch port map of your device on wiki.openwrt.org to know CPU port index
+#	list switch_ports '4'                                               # List switch ports on which you want the vlan being passed, refer to wiki.openwrt.org for correspondence with physical ports
