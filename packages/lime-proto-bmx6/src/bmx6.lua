@@ -98,6 +98,8 @@ function bmx6.configure(args)
 			uci:set("bmx6", "fromBird", "redistTable", "fromBird")
 			uci:set("bmx6", "fromBird", "table", "200")
 			uci:set("bmx6", "fromBird", "bandwidth", "100")
+			uci:set("bmx6", "fromBird", "all", "1")
+			uci:set("bmx6", "fromBird", "sys", "12")
 		end
 	end
 
