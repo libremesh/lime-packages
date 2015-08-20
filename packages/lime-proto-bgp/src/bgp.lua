@@ -22,13 +22,34 @@ function proto.configure(args)
 router id $1;
 
 protocol device {
-        scan time 10;
+	scan time 10;
+}
+
+filter toBgp {
+	if net ~ $4 then {
+		if proto ~ "kernelFrom*" then {
+			bgp_path.prepend($2);
+			bgp_path.prepend($2);
+			bgp_path.prepend($2);
+			bgp_path.prepend($2);
+			bgp_path.prepend($2);
+			bgp_path.prepend($2);
+			bgp_path.prepend($2);
+			bgp_path.prepend($2);
+		}
+		accept;
+	}
+	reject;
+}
+
+filter fromBgp {
+	if net ~ $4 then accept;
+	reject;
 }
 
 protocol kernel {
-	learn;
 	scan time 20;
-        export all;
+	export all;
 }
 ]]
 
@@ -36,7 +57,7 @@ protocol kernel {
 		if proto:match("^lan") then
 			base_template = base_template .. [[
 protocol direct {
-        interface "br-lan";
+	interface "br-lan";
 }
 ]]
 		elseif proto:match("^bmx") then
@@ -58,17 +79,33 @@ protocol kernel
 	import all;
 	export all;
 }
+
+filter fromBmx {
+	if ifname = "$3" then accept;
+	reject;
+}
+
+protocol kernel kernelFromBmx {
+	learn;
+	scan time 20;
+	export all;
+	import filter fromBmx;
+}
+
+protocol direct {
+	interface "$3";
+}
 ]]
 		end
 	end
 	
-	local bird4_config = utils.expandVars(base_template, ipv4:host():string())
-	local bird6_config = utils.expandVars(base_template, ipv6:host():string())
+	local bird4_config = utils.expandVars(base_template, ipv4:host():string(), localAS, "bmxC4main", "10.0.0.0/8")
+	local bird6_config = utils.expandVars(base_template, ipv6:host():string(), localAS, "bmxC6main", "2000::/3")
 
 	local peer_template = [[
 protocol bgp {
-	import all;
-	export all;
+	import filter fromBgp;
+	export filter toBgp;
 
 	local as $localAS;
 	neighbor $remoteIP as $remoteAS;
