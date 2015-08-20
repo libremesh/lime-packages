@@ -4,7 +4,6 @@ local network = require("lime.network")
 local config = require("lime.config")
 local fs = require("nixio.fs")
 local utils = require("lime.utils")
-local wireless = require("lime.wireless")
 
 
 proto = {}
@@ -17,25 +16,32 @@ function proto.configure(args)
 
 	local ipv4, ipv6 = network.primary_address()
 	local localAS = args[2] or 64496
+	local bgp_exchanges = args[3]
+	if bgp_exchanges then bgp_exchanges = utils.split(bgp_exchanges,",")
+	else bgp_exchanges = {} end
+	local meshPenalty = args[4] or 8
+
+	local mp = "bgp_path.prepend("..localAS..");\n"
+	for i=1,meshPenalty do
+		mp = mp .. "\t\t\tbgp_path.prepend("..localAS..");\n"
+	end
+
+	local templateVarsIPv4 = { localIp=ipv4:host():string(),
+		localAS=localAS, acceptedNet="10.0.0.0/8", meshPenalty=mp }
+	local templateVarsIPv6 = { localIp=ipv6:host():string(),
+		localAS=localAS, acceptedNet="2000::0/3", meshPenalty=mp }
 
 	local base_template = [[
-router id $1;
+router id $localIp;
 
 protocol device {
 	scan time 10;
 }
 
 filter toBgp {
-	if net ~ $4 then {
-		if proto ~ "kernelFrom*" then {
-			bgp_path.prepend($2);
-			bgp_path.prepend($2);
-			bgp_path.prepend($2);
-			bgp_path.prepend($2);
-			bgp_path.prepend($2);
-			bgp_path.prepend($2);
-			bgp_path.prepend($2);
-			bgp_path.prepend($2);
+	if net ~ $acceptedNet then {
+		if proto ~ "kernel*" then {
+			$meshPenalty
 		}
 		accept;
 	}
@@ -43,64 +49,30 @@ filter toBgp {
 }
 
 filter fromBgp {
-	if net ~ $4 then accept;
+	if net ~ $acceptedNet then accept;
 	reject;
 }
 
 protocol kernel {
-	scan time 20;
-	export all;
-}
-]]
-
-	for _,proto in pairs(config.get("network", "protocols")) do
-		if proto:match("^lan") then
-			base_template = base_template .. [[
-protocol direct {
-	interface "br-lan";
-}
-]]
-		elseif proto:match("^bmx") then
-			base_template = base_template .. [[
-table tobmx;
-
-protocol pipe {
-	table master;
-	peer table tobmx;
-	import all;
-	export all;
-}
-
-protocol kernel
-{
-	scan time 20;
-	table tobmx;
-	kernel table 200;
-	import all;
-	export all;
-}
-
-filter fromBmx {
-	if ifname = "$3" then accept;
-	reject;
-}
-
-protocol kernel kernelFromBmx {
 	learn;
 	scan time 20;
 	export all;
-	import filter fromBmx;
-}
-
-protocol direct {
-	interface "$3";
 }
 ]]
+
+	for _,protocol in pairs(bgp_exchanges) do
+		local protoModule = "lime.proto."..protocol
+		if utils.isModuleAvailable(protoModule) then
+			local proto = require(protoModule)
+			local snippet = nil
+			xpcall( function() snippet = proto.bgp_conf(templateVarsIPv4, templateVarsIPv6) end,
+			       function(errmsg) print(errmsg) ; print(debug.traceback()) ; snippet = nil end)
+			if snippet then base_template = base_template .. snippet end
 		end
 	end
-	
-	local bird4_config = utils.expandVars(base_template, ipv4:host():string(), localAS, "bmxC4main", "10.0.0.0/8")
-	local bird6_config = utils.expandVars(base_template, ipv6:host():string(), localAS, "bmxC6main", "2000::/3")
+
+	local bird4_config = utils.expandVars(base_template, templateVarsIPv4)
+	local bird6_config = utils.expandVars(base_template, templateVarsIPv6)
 
 	local peer_template = [[
 protocol bgp {

@@ -153,4 +153,32 @@ function bmx6.apply()
     os.execute("bmx6")
 end
 
+function bmx6.bgp_conf(templateVarsIPv4, templateVarsIPv6)
+	local base_conf = [[
+table tobmx;
+
+protocol pipe {
+	table master;
+	peer table tobmx;
+	import all;
+	export all;
+}
+
+protocol kernel
+{
+	scan time 20;
+	table tobmx;
+	kernel table 200;
+	import all;
+	export all;
+}
+
+protocol direct {
+	interface "bmx*";
+}
+
+]]
+	return base_conf
+end
+
 return bmx6
