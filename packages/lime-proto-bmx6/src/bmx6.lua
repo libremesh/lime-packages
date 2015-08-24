@@ -35,10 +35,6 @@ function bmx6.configure(args)
 	uci:set("bmx6", "json", "plugin")
 	uci:set("bmx6", "json", "plugin", "bmx6_json.so")
 
-	-- Enable Routing Table Redistribution plugin
-	uci:set("bmx6", "table", "plugin")
-	uci:set("bmx6", "table", "plugin", "bmx6_table.so")
-
 	-- Disable ThrowRules because they are broken in IPv6 with current Linux Kernel
 	uci:set("bmx6", "ipVersion", "ipVersion")
 	uci:set("bmx6", "ipVersion", "ipVersion", "6")
@@ -89,17 +85,6 @@ function bmx6.configure(args)
 	if config.get_bool("network", "bmx6_over_batman") then
 		for _,protoArgs in pairs(config.get("network", "protocols")) do
 			if(utils.split(protoArgs, network.protoParamsSeparator)[1] == "batadv") then bmx6.setup_interface("bat0", args) end
-		end
-	end
-
-	for _,proto in pairs(config.get("network", "protocols")) do
-		if proto:match("^bgp") then
-			uci:set("bmx6", "fromBird", "redistTable")
-			uci:set("bmx6", "fromBird", "redistTable", "fromBird")
-			uci:set("bmx6", "fromBird", "table", "200")
-			uci:set("bmx6", "fromBird", "bandwidth", "100")
-			uci:set("bmx6", "fromBird", "all", "1")
-			uci:set("bmx6", "fromBird", "sys", "12")
 		end
 	end
 
@@ -154,7 +139,28 @@ function bmx6.apply()
 end
 
 function bmx6.bgp_conf(templateVarsIPv4, templateVarsIPv6)
-	local base_conf = [[
+	local uci = libuci:cursor()
+
+	-- Enable Routing Table Redistribution plugin
+	uci:set("bmx6", "table", "plugin")
+	uci:set("bmx6", "table", "plugin", "bmx6_table.so")
+
+	-- Redistribute routes from table 200
+	uci:set("bmx6", "fromBird", "redistTable")
+	uci:set("bmx6", "fromBird", "redistTable", "fromBird")
+	uci:set("bmx6", "fromBird", "table", "200")
+	uci:set("bmx6", "fromBird", "bandwidth", "100")
+	uci:set("bmx6", "fromBird", "all", "1")
+	uci:set("bmx6", "fromBird", "sys", "12")
+	uci:set("bmx6", "fromBird", "aggregatePrefixLen", "128")
+
+	-- Aggregate routing changes in time in slots of 60s
+	uci:set("bmx6", "general", "redistTableDelay", "60000")
+
+	uci:save("bmx6")
+
+
+	local base_bgp_conf = [[
 table tobmx;
 
 protocol pipe {
@@ -178,7 +184,7 @@ protocol direct {
 }
 
 ]]
-	return base_conf
+	return base_bgp_conf
 end
 
 return bmx6
