@@ -22,16 +22,16 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Pau Escrich <p4u@dabax.net>
   URL:=http://libre-mesh.org
-  DEPENDS:=+lime-system +lime-proto-bmx6 +lime-proto-batadv +lime-proto-anygw +lime-proto-wan \
+  DEPENDS:=+lime-system +lime-proto-olsr +lime-proto-olsr6 +lime-proto-batadv +lime-proto-anygw +lime-proto-wan \
 		+dnsmasq-lease-share \
-		+lime-webui +luci-app-batman-adv +luci-app-bmx6 \
+		+lime-webui +luci-app-batman-adv +luci-app-olsr \
 		+lime-map-agent \
 		+lime-debug \
-		+lime-hwd-openwrt-wan +bmx6-auto-gw-mode
+		+lime-hwd-openwrt-wan
 endef
 
 define Package/$(PKG_NAME)/description
-	Metapackage depending on all the required to run a full libre-mesh node
+	Metapackage depending on all the required to run a full libre-mesh node using OLSR as layer 3 routing protocol
 endef
 
 define Build/Compile

@@ -14,7 +14,6 @@ config lime network
 	list protocols lan
 	list protocols anygw
 	list protocols batadv:%N1
-	list protocols bmx6:13
 	list protocols olsr:14
 	list protocols olsr6:15
 	list resolvers 8.8.8.8
