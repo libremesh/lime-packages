@@ -97,4 +97,13 @@ end
 
 function anygw.setup_interface(ifname, args) end
 
+function anygw.bgp_conf(templateVarsIPv4, templateVarsIPv6)
+	local base_conf = [[
+protocol direct {
+	interface "anygw";
+}
+]]
+	return base_conf
+end
+
 return anygw
