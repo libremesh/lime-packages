@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Example Community Network</title>
+    <link rel="stylesheet" href="http://$gatewayname/nds/splash.css">
+  </head>
+  <body class="bg-c2b6">
+    <div id="bienvenida-page">
+      <div id="bienvenida" class="cajauno">
+        <h1 class="c2 acentro">Welcome to Example Community Network</h1>
+        <p class="dest acentro">This is a network built and maintained by the local community, interconnected to the global Internet</p>
+        <h3>Inside the local network (<em>our</em> segment of the Internet) you can freely reach:</h3>
+        <ul>
+          <li><a href="https://example-service.local/">Example content</a></li>
+        </ul>
+        <h3>We mutually regulate our usage of the Internet link, by means of a voucher system.</h3>
+        <form method="GET" action="$authaction" class="c1">
+          <input type="hidden" name="tok" value="$tok">
+          <input type="hidden" name="redir" value="$redir">
+          <fieldset class="acentro c2">
+            <iframe src="http://$gatewayname/cgi-bin/vale" width="100%" frameborder=0 scrolling="no" id="iFrameResizer0"></iframe>
+            <input type="text" name="voucher" id="voucher" autocomplete="off" placeholder="insert voucher" value="" size="12" class="dest" />
+            <input type="submit" value="OK" /><br/>
+          </fieldset>
+        </form>
+        <p>
+          To get a voucher, you can:
+          <ul>
+            <li>ask in the example local store</li>
+            <li>ask a neighbor for more information</li>
+          </ul>
+        </p>
+      </div>
+    </div>
+    <script type="text/javascript" src="http://$gatewayname/nds/iframeResizer.min.js"></script>
+    <script type="text/javascript"> iFrameResize({log: true}); </script>
+  </body>
+</html>
