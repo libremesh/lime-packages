@@ -10,8 +10,8 @@ echo
 gatewayname="$HTTP_HOST"
 client_ip="$REMOTE_ADDR"
 
-arping -q -I br-lan -f "$client_ip"
-client_mac=$(cat /proc/net/arp | egrep "^$client_ip\>" | grep -o ..:..:..:..:..:..)
+arping -q -w 5 -I br-lan -f "$client_ip"
+client_mac=$(cat /proc/net/arp | egrep "^$client_ip\>" | grep -o ..:..:..:..:..:.. | head -n 1)
 
 . /usr/bin/vale-wrapper check "$client_mac"
 
