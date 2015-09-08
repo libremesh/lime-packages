@@ -13,7 +13,7 @@ client_ip="$REMOTE_ADDR"
 arping -q -w 5 -I br-lan -f "$client_ip"
 client_mac=$(cat /proc/net/arp | egrep "^$client_ip\>" | grep -o ..:..:..:..:..:.. | head -n 1)
 
-. /usr/bin/vale-wrapper check "$client_mac"
+. /usr/bin/vale.sh check "$client_mac"
 
 if [ "$vale_expire_epoch" -gt "$now_epoch" ] ; then
   message="Tu vale sigue vigente, hasta $(date +'el dia <b>%F</b> a las %T' -d @$vale_expire_epoch)"

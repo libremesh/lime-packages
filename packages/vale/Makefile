@@ -28,8 +28,8 @@ define Build/Compile
 endef
 
 define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/usr/bin $(1)/etc/nodogsplash/vale
-	$(INSTALL_BIN) ./files/usr/bin/vale-wrapper $(1)/usr/bin/
+	$(INSTALL_DIR) $(1)/
+	$(CP) ./files/* $(1)/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
