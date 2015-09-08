@@ -4,7 +4,7 @@ action="$1"
 client_mac="${2:-unknown_mac}"
 voucher="$3"
 
-free_keyword=HoyBuscoUno
+free_keyword=JustForToday
 free_secs=108000 #seconds = 30 hours
 free_limit_down=512 #kbps
 free_limit_up=128 #kbps
@@ -31,7 +31,7 @@ vale() { client_mac="$1" ; voucher="$2"
       vale_used_epoch=$now_epoch
       vale_used_macs=$client_mac
     elif echo "$vale_row" | grep -iq "^${voucher}," ; then
-      vale_used_epoch=$(grep -i "$voucher" "$vale_db" | cut -d , -f 3)
+      vale_used_epoch="$(grep -i "$voucher" "$vale_db" | cut -d , -f 3)"
       vale_used_macs="$(grep -i "$voucher" "$vale_db" | cut -d , -f 4)"
       if ! (echo $vale_used_macs | grep -q $client_mac) ; then
         vale_used_macs="$vale_used_macs+$client_mac"
@@ -39,7 +39,6 @@ vale() { client_mac="$1" ; voucher="$2"
     fi
     vale_expire_epoch="$(($vale_used_epoch + $vale_secs))"
     sed -i "s/$voucher.*$/$voucher,$vale_used_epoch,$vale_used_macs/i" "$vale_db"
-    echo '["'$client_mac'","'"$(date +'%F %T' -d @$vale_expire_epoch)"'"],'>> $vale_clients
     vale_remaining_secs="$(($vale_expire_epoch - $now_epoch))"
   fi
 
