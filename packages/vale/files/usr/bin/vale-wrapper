@@ -1,7 +1,7 @@
 #!/bin/sh
 
 action="$1"
-client_mac="$2"
+client_mac="${2:-unknown_mac}"
 voucher="$3"
 
 free_keyword=HoyBuscoUno
@@ -16,7 +16,7 @@ now_epoch="$(date +%s)"
 free_first_use_epoch="$(cat "$vale_blacklist" | grep "$client_mac" | cut -d ' ' -f 1 | head -n 1)"
 free_expire_epoch="$(($free_first_use_epoch + $free_secs))"
 free_remaining_secs="$(($free_expire_epoch - $now_epoch))"
-vale_used_epoch="$(egrep -i "$client_mac" "$vale_db" | cut -d , -f 3)"
+vale_used_epoch="$(egrep -i "$client_mac" "$vale_db" | cut -d , -f 3 | sort -nr | head -n 1)"
 vale_expire_epoch="$(($vale_used_epoch + $vale_secs))"
 vale_remaining_secs="$(($vale_expire_epoch - $now_epoch))"
 
