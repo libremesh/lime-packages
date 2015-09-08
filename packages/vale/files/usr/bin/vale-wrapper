@@ -9,7 +9,7 @@ free_secs=108000 #seconds = 30 hours
 free_limit_down=512 #kbps
 free_limit_up=128 #kbps
 vale_blacklist=/etc/nodogsplash/vale/blacklist_$(date +%Y%m).log
-vale_db=/etc/nodogsplash/vale/db
+vale_db=/etc/nodogsplash/vale/db.csv
 vale_secs=2592000 #seconds = 30 days
 
 now_epoch="$(date +%s)"
@@ -49,7 +49,7 @@ vale() { client_mac="$1" ; voucher="$2"
 
 client_hostname="$(grep " $client_mac " /tmp/dhcp.leases | cut -d ' ' -f 4 | grep -v '\*')"
 [ -n "$client_hostname" ] && log_info="($client_hostname)"
-echo "$now_epoch" "$@" "$log_info" | grep -v auth_status >> /etc/nodogsplash/vale/vale-wrapper.log
+echo "$now_epoch" "$@" "$log_info" | grep -v auth_status >> /etc/nodogsplash/vale/debug.log
 
 #sanitize input, forcing lowercase and allowing only alphanum
 voucher="$(tolower "$voucher" | tr -c -d abcdefghijklmnopqrstuvwxyz1234567890)"
