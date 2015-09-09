@@ -16,26 +16,31 @@ client_mac=$(cat /proc/net/arp | egrep "^$client_ip\>" | grep -o ..:..:..:..:..:
 . /usr/bin/vale.sh check "$client_mac"
 
 if [ "$vale_expire_epoch" -gt "$now_epoch" ] ; then
-  message="Tu vale sigue vigente, hasta $(date +'el dia <b>%F</b> a las %T' -d @$vale_expire_epoch)"
-  message="$message<br>Simplemente dale al botón de OK (sin poner código)."
+  message="Your voucher is still valid, until $(date +'<b>%F</b> at %T' -d @$vale_expire_epoch)"
+  message="$message<br>Just click OK (no need to type anything)."
 else
-  message="No tenés ningún vale asociado a este dispositivo."
+  message="There's no voucher linked to this device."
   if [ -n "$free_first_use_epoch" ] ; then
-    message="$message<br>Este mes ya usaste el código <em>$free_keyword</em><br>$(date +'el día %F a las %T' -d @$free_first_use_epoch)."
+    message="$message<br>You already used the <em>$free_keyword</em> voucher this month"
+    message="$message<br>$(date +'on date %F at %T' -d @$free_first_use_epoch)."
     if [ "$free_remaining_secs" -gt 0 ] ; then
-      message="$message<br>Podés seguir navegando todavía durante unas <b>$(($free_remaining_secs/3600)) horas</b><br>(hasta $(date +'el día %F a las %T' -d @$free_expire_epoch))."
-      message="$message<br>Simplemente dale al botón de OK (sin poner código)."
+      message="$message<br>You can continue browsing for <b>$(($free_remaining_secs/3600)) hours</b>"
+      message="$message<br>(until $(date +'%F at %T' -d @$free_expire_epoch))."
+      message="$message<br>Just click OK (no need to type anything)."
     else
-      message="$message<br>Es fundamental mantener al menos un <b>mínimo</b> compromiso<br> y <b>vínculo social</b> con la comunidad, por lo tanto<br><b>no podés navegar hasta que no consigas un vale</b>."
+      message="$message<br>It's vital to have at least a <b>minimum</b> engagement"
+      message="$message<br>and <b>social ties</b> with the community, therefore"
+      message="$message<br><b>your web browsing is blocked until you obtain a voucher</b>."
     fi
   else
-    message="$message<br>Si estás en apuros, podés navegar 24hs con el código <b>$free_keyword</b>,<br>pero sólo podés aprovechar tal excepción 1 vez por mes."
+    message="$message<br>If you're in a hurry, get 24hs of web browsing with the special voucher <b>$free_keyword</b>,"
+    message="$message<br>but note you can only enjoy this privilege once a month."
   fi
 fi
 
 cat <<EOF
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <title>$title</title>
