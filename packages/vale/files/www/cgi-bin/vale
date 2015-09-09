@@ -1,0 +1,59 @@
+#!/bin/sh
+echo "Status: 200 OK"
+echo "Transfer-Encoding: chunked"
+echo "Content-Type: text/html"
+echo "Cache-Control: no-cache"
+echo "Expires: 0"
+echo "Access-Control-Allow-Origin: *"
+echo
+
+gatewayname="$HTTP_HOST"
+client_ip="$REMOTE_ADDR"
+
+arping -q -w 5 -I br-lan -f "$client_ip"
+client_mac=$(cat /proc/net/arp | egrep "^$client_ip\>" | grep -o ..:..:..:..:..:.. | head -n 1)
+
+. /usr/bin/vale.sh check "$client_mac"
+
+if [ "$vale_expire_epoch" -gt "$now_epoch" ] ; then
+  message="Your voucher is still valid, until $(date +'<b>%F</b> at %T' -d @$vale_expire_epoch)"
+  message="$message<br>Just click OK (no need to type anything)."
+else
+  message="There's no voucher linked to this device."
+  if [ -n "$free_first_use_epoch" ] ; then
+    message="$message<br>You already used the <em>$free_keyword</em> voucher this month"
+    message="$message<br>$(date +'on date %F at %T' -d @$free_first_use_epoch)."
+    if [ "$free_remaining_secs" -gt 0 ] ; then
+      message="$message<br>You can continue browsing for <b>$(($free_remaining_secs/3600)) hours</b>"
+      message="$message<br>(until $(date +'%F at %T' -d @$free_expire_epoch))."
+      message="$message<br>Just click OK (no need to type anything)."
+    else
+      message="$message<br>It's vital to have at least a <b>minimum</b> engagement"
+      message="$message<br>and <b>social ties</b> with the community, therefore"
+      message="$message<br><b>your web browsing is blocked until you obtain a voucher</b>."
+    fi
+  else
+    message="$message<br>If you're in a hurry, get 24hs of web browsing with the special voucher <b>$free_keyword</b>,"
+    message="$message<br>but note you can only enjoy this privilege once a month."
+  fi
+fi
+
+cat <<EOF
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>$title</title>
+<meta HTTP-EQUIV='Pragma' CONTENT='no-cache'>
+<link rel="stylesheet" href="http://$gatewayname/nds/splash.css">
+</head>
+<body class="bg-c2b6">
+<div id="bienvenida-page">
+  <div class="acentro" style="text-align: center">$message</div>
+</div>
+<script type="text/javascript" src="http://$gatewayname/nds/iframeResizer.contentWindow.min.js"></script>
+</body>
+</html>
+EOF
+
+exit 1
