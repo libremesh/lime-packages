@@ -145,45 +145,34 @@ function bmx6.bgp_conf(templateVarsIPv4, templateVarsIPv6)
 	uci:set("bmx6", "table", "plugin")
 	uci:set("bmx6", "table", "plugin", "bmx6_table.so")
 
-	-- Redistribute routes from table 200
+	-- Redistribute proto bird routes
 	uci:set("bmx6", "fromBird", "redistTable")
 	uci:set("bmx6", "fromBird", "redistTable", "fromBird")
-	uci:set("bmx6", "fromBird", "table", "200")
+	uci:set("bmx6", "fromBird", "table", "254")
 	uci:set("bmx6", "fromBird", "bandwidth", "100")
 	uci:set("bmx6", "fromBird", "all", "1")
 	uci:set("bmx6", "fromBird", "sys", "12")
+
+	-- Avoid aggregation as it use lot of CPU with huge number of routes
 	uci:set("bmx6", "fromBird", "aggregatePrefixLen", "128")
 
-	-- Aggregate routing changes in time in slots of 60s
-	uci:set("bmx6", "general", "redistTableDelay", "60000")
+	-- Disable proactive tunnels announcement as it use lot of CPU with
+	-- huge number of routes
+	uci:set("bmx6", "general", "proactiveTunRoutes", "0")
+
+	-- BMX6 security features are at moment not used by LiMe, disable hop
+	-- by hop links signature as it consume a lot of CPU expecially in
+	-- setups with multiples interfaces  and lot of routes like LiMe
+	uci:set("bmx6", "general", "linkSignatureLen", "0")
 
 	uci:save("bmx6")
 
-
 	local base_bgp_conf = [[
-table tobmx;
-
-protocol pipe {
-	table master;
-	peer table tobmx;
-	import all;
-	export all;
-}
-
-protocol kernel
-{
-	scan time 20;
-	table tobmx;
-	kernel table 200;
-	import all;
-	export all;
-}
-
 protocol direct {
 	interface "bmx*";
 }
-
 ]]
+
 	return base_bgp_conf
 end
 
