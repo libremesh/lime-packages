@@ -47,7 +47,7 @@ function olsr.setup_interface(ifname, args)
 	local owrtInterfaceName, linux802adIfName, owrtDeviceName
 	owrtInterfaceName = ifname
 
-	if vlanId ~= 0 then
+	if vlanId ~= '0' then
 		owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 	end
 
