@@ -150,8 +150,7 @@ function bmx6.bgp_conf(templateVarsIPv4, templateVarsIPv6)
 	uci:set("bmx6", "fromBird", "redistTable", "fromBird")
 	uci:set("bmx6", "fromBird", "table", "254")
 	uci:set("bmx6", "fromBird", "bandwidth", "100")
-	uci:set("bmx6", "fromBird", "all", "1")
-	uci:set("bmx6", "fromBird", "sys", "12")
+	uci:set("bmx6", "fromBird", "proto", "12")
 
 	-- Avoid aggregation as it use lot of CPU with huge number of routes
 	uci:set("bmx6", "fromBird", "aggregatePrefixLen", "128")
