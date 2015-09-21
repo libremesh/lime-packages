@@ -44,7 +44,7 @@ function bmx6.configure(args)
 	uci:set("bmx6", "nodes", "tunOut", "nodes")
 	uci:set("bmx6", "nodes", "network", "172.16.0.0/12")
 
-	-- Search for networks in 172.16.0.0/12
+	-- Search for networks in 192.0.2.0/24 (for testing purpose)
 	uci:set("bmx6", "nodes", "tunOut")
 	uci:set("bmx6", "nodes", "tunOut", "dummynodes")
 	uci:set("bmx6", "nodes", "network", "192.0.2.0/24")
