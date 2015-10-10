@@ -1,0 +1,3 @@
+### Remove all repos from /etc/opkg.conf and add only LiMe official, which includes a frozen snapshot of upstreams
+sed -i.vanilla '\|^src/gz |d' /etc/opkg.conf
+echo "src/gz barrier_breaker_lime http://chef.altermundi.net/downloads/biggest_bang/15.09/ar71xx/packages/" >> /etc/opkg.conf
