@@ -172,10 +172,16 @@ elseif command == nil then
 
 	local own_hostname = get_hostname()
 	local own_ipv4 = uci_conf:get("network", "lan", "ipaddr")
+	local own_ipv6 = uci_conf:get("network", "lan", "ip6addr")
 	local own_mac = get_if_mac("br-lan")
 
 	del_lease(own_mac, own_ipv4)
 	add_lease(own_mac, own_ipv4, own_hostname, own_mac)
+	if own_ipv6 then
+		own_ipv6 = own_ipv6:gsub("/.*$", "")
+		del_lease(own_mac, own_ipv6)
+		add_lease(own_mac, own_ipv6, own_hostname, own_mac)
+	end
 	update_alfred()
 
 --! and populate dhcp-hostsfile with incoming data
