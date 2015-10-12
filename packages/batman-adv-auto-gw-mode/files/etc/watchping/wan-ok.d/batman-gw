@@ -6,3 +6,11 @@ if grep -q "^=>" /sys/kernel/debug/batman_adv/bat0/gateways ; then
   BATTYPE=gw BATACTION=del /etc/hotplug.d/net/99-batman-gw
 fi
 batctl gw_mode server
+[ $? -eq 0 ] && {
+	# Adds a NAT rule if it does not already exist
+	iface="$(ip route get 8.8.8.8 | awk '{print $5}' | tr -d '\n')"
+	if ! iptables -v -n -L POSTROUTING -t nat | grep MASQUERADE  | grep 0.0.0.0/0 | grep -q $iface
+	then
+		iptables -A POSTROUTING -t nat -o $iface -j MASQUERADE
+	fi
+}
