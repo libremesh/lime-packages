@@ -35,6 +35,10 @@ function bmx6.configure(args)
 	uci:set("bmx6", "json", "plugin")
 	uci:set("bmx6", "json", "plugin", "bmx6_json.so")
 
+	-- Enable tun plugin, DISCLAIMER: this must be positioned before table plugin if used.
+	uci:set("bmx6", "ptun", "plugin")
+	uci:set("bmx6", "ptun", "plugin", "bmx6_tun.so")
+
 	-- Disable ThrowRules because they are broken in IPv6 with current Linux Kernel
 	uci:set("bmx6", "ipVersion", "ipVersion")
 	uci:set("bmx6", "ipVersion", "ipVersion", "6")
