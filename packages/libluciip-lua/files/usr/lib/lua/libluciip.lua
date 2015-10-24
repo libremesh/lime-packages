@@ -12,10 +12,13 @@ You may obtain a copy of the License at
 
 $Id$
 
+Original version can be found on
+http://git.openwrt.org/?p=project/luci.git;a=blob;f=modules/base/luasrc/ip.lua;hb=refs/heads/luci-0.12
+
 ]]--
 
 --- LuCI IP calculation library.
-module( "lime.ipl", package.seeall )
+module( "libluciip", package.seeall )
 
 require "nixio"
 local bit  = nixio.bit
@@ -36,14 +39,14 @@ FAMILY_INET6  = 0x06
 
 local function __bless(x)
 	return setmetatable( x, {
-		__index	= lime.ipl.cidr,
-		__add   = lime.ipl.cidr.add,
-		__sub   = lime.ipl.cidr.sub,
-		__lt	= lime.ipl.cidr.lower,
-		__eq	= lime.ipl.cidr.equal,
+		__index	= libluciip.cidr,
+		__add   = libluciip.cidr.add,
+		__sub   = libluciip.cidr.sub,
+		__lt	= libluciip.cidr.lower,
+		__eq	= libluciip.cidr.equal,
 		__le	=
 			function(...)
-				return lime.ipl.cidr.equal(...) or lime.ipl.cidr.lower(...)
+				return libluciip.cidr.equal(...) or libluciip.cidr.lower(...)
 			end
 	} )
 end
@@ -92,6 +95,10 @@ end
 
 
 --- Convert given short value to network byte order on little endian hosts
+-- @param x	Unsigned integer value between 0x0000 and 0xFFFF
+-- @return	Byte-swapped value
+-- @see		htonl
+-- @see		ntohs
 function htons(x)
 	if LITTLE_ENDIAN then
 		return bit.bor(
@@ -104,6 +111,10 @@ function htons(x)
 end
 
 --- Convert given long value to network byte order on little endian hosts
+-- @param x	Unsigned integer value between 0x00000000 and 0xFFFFFFFF
+-- @return	Byte-swapped value
+-- @see		htons
+-- @see		ntohl
 function htonl(x)
 	if LITTLE_ENDIAN then
 		return bit.bor(
@@ -116,13 +127,34 @@ function htonl(x)
 end
 
 --- Convert given short value to host byte order on little endian hosts
+-- @class	function
+-- @name	ntohs
+-- @param x	Unsigned integer value between 0x0000 and 0xFFFF
+-- @return	Byte-swapped value
+-- @see		htonl
+-- @see		ntohs
 ntohs = htons
 
 --- Convert given short value to host byte order on little endian hosts
+-- @class	function
+-- @name	ntohl
+-- @param x	Unsigned integer value between 0x00000000 and 0xFFFFFFFF
+-- @return	Byte-swapped value
+-- @see		htons
+-- @see		ntohl
 ntohl = htonl
 
 
 --- Parse given IPv4 address in dotted quad or CIDR notation. If an optional
+-- netmask is given as second argument and the IP address is encoded in CIDR
+-- notation then the netmask parameter takes precedence. If neither a CIDR
+-- encoded prefix nor a netmask parameter is given, then a prefix length of
+-- 32 bit is assumed.
+-- @param address	IPv4 address in dotted quad or CIDR notation
+-- @param netmask	IPv4 netmask in dotted quad notation (optional)
+-- @return			libluciip.cidr instance or nil if given address was invalid
+-- @see				IPv6
+-- @see				Hex
 function IPv4(address, netmask)
 	address = address or "0.0.0.0/0"
 
@@ -162,6 +194,15 @@ function IPv4(address, netmask)
 end
 
 --- Parse given IPv6 address in full, compressed, mixed or CIDR notation.
+-- If an optional netmask is given as second argument and the IP address is
+-- encoded in CIDR notation then the netmask parameter takes precedence.
+-- If neither a CIDR encoded prefix nor a netmask parameter is given, then a
+-- prefix length of 128 bit is assumed.
+-- @param address	IPv6 address in full/compressed/mixed or CIDR notation
+-- @param netmask	IPv6 netmask in full/compressed/mixed notation (optional)
+-- @return			libluciip.cidr instance or nil if given address was invalid
+-- @see				IPv4
+-- @see				Hex
 function IPv6(address, netmask)
 	address = address or "::/0"
 
@@ -242,7 +283,15 @@ function IPv6(address, netmask)
 	end
 end
 
---- Transform given hex-encoded value to luci.ip.cidr instance of specified
+--- Transform given hex-encoded value to libluciip.cidr instance of specified
+-- address family.
+-- @param hex		String containing hex encoded value
+-- @param prefix	Prefix length of CIDR instance (optional, default is 32/128)
+-- @param family	Address family, either libluciip.FAMILY_INET4 or FAMILY_INET6
+-- @param swap		Bool indicating whether to swap byteorder on low endian host
+-- @return			libluciip.cidr instance or nil if given value was invalid
+-- @see				IPv4
+-- @see				IPv6
 function Hex( hex, prefix, family, swap )
 	family = ( family ~= nil ) and family or FAMILY_INET4
 	swap   = ( swap   == nil ) and true   or swap
@@ -276,15 +325,21 @@ function Hex( hex, prefix, family, swap )
 end
 
 
---- LEGACY IP Library / CIDR instances
+--- LuCI IP Library / CIDR instances
+-- @class	module
+-- @cstyle	instance
+-- @name	libluciip.cidr
 cidr = util.class()
 
 --- Test whether the instance is a IPv4 address.
+-- @return	Boolean indicating a IPv4 address type
+-- @see		cidr.is6
 function cidr.is4( self )
 	return self[1] == FAMILY_INET4
 end
 
 --- Test whether this instance is an IPv4 RFC1918 private address
+-- @return	Boolean indicating whether this instance is an RFC1918 address
 function cidr.is4rfc1918( self )
 	if self[1] == FAMILY_INET4 then
 		return ((self[2][1] >= 0x0A00) and (self[2][1] <= 0x0AFF)) or
@@ -295,6 +350,7 @@ function cidr.is4rfc1918( self )
 end
 
 --- Test whether this instance is an IPv4 link-local address (Zeroconf)
+-- @return	Boolean indicating whether this instance is IPv4 link-local
 function cidr.is4linklocal( self )
 	if self[1] == FAMILY_INET4 then
 		return (self[2][1] == 0xA9FE)
@@ -303,11 +359,14 @@ function cidr.is4linklocal( self )
 end
 
 --- Test whether the instance is a IPv6 address.
+-- @return	Boolean indicating a IPv6 address type
+-- @see		cidr.is4
 function cidr.is6( self )
 	return self[1] == FAMILY_INET6
 end
 
 --- Test whether this instance is an IPv6 link-local address
+-- @return	Boolean indicating whether this instance is IPv6 link-local
 function cidr.is6linklocal( self )
 	if self[1] == FAMILY_INET6 then
 		return (self[2][1] >= 0xFE80) and (self[2][1] <= 0xFEBF)
@@ -316,6 +375,9 @@ function cidr.is6linklocal( self )
 end
 
 --- Return a corresponding string representation of the instance.
+-- If the prefix length is lower then the maximum possible prefix length for the
+-- corresponding address type then the address is returned in CIDR notation,
+-- otherwise the prefix will be left out.
 function cidr.string( self )
 	local str
 	if self:is4() then
@@ -337,6 +399,12 @@ function cidr.string( self )
 end
 
 --- Test whether the value of the instance is lower then the given address.
+-- This function will throw an exception if the given address has a different
+-- family than this instance.
+-- @param addr	A libluciip.cidr instance to compare against
+-- @return		Boolean indicating whether this instance is lower
+-- @see			cidr.higher
+-- @see			cidr.equal
 function cidr.lower( self, addr )
 	assert( self[1] == addr[1], "Can't compare IPv4 and IPv6 addresses" )
 	local i
@@ -349,6 +417,12 @@ function cidr.lower( self, addr )
 end
 
 --- Test whether the value of the instance is higher then the given address.
+-- This function will throw an exception if the given address has a different
+-- family than this instance.
+-- @param addr	A libluciip.cidr instance to compare against
+-- @return		Boolean indicating whether this instance is higher
+-- @see			cidr.lower
+-- @see			cidr.equal
 function cidr.higher( self, addr )
 	assert( self[1] == addr[1], "Can't compare IPv4 and IPv6 addresses" )
 	local i
@@ -361,6 +435,12 @@ function cidr.higher( self, addr )
 end
 
 --- Test whether the value of the instance is equal to the given address.
+-- This function will throw an exception if the given address is a different
+-- family than this instance.
+-- @param addr	A libluciip.cidr instance to compare against
+-- @return		Boolean indicating whether this instance is equal
+-- @see			cidr.lower
+-- @see			cidr.higher
 function cidr.equal( self, addr )
 	assert( self[1] == addr[1], "Can't compare IPv4 and IPv6 addresses" )
 	local i
@@ -373,6 +453,8 @@ function cidr.equal( self, addr )
 end
 
 --- Return the prefix length of this CIDR instance.
+-- @param mask	Override instance prefix with given netmask (optional)
+-- @return		Prefix length in bit
 function cidr.prefix( self, mask )
 	local prefix = self[3]
 
@@ -404,7 +486,13 @@ function cidr.prefix( self, mask )
 	return prefix
 end
 
---- Return a corresponding CIDR representing the network address of this instance
+--- Return a corresponding CIDR representing the network address of this
+-- instance.
+-- @param bits	Override prefix length of this instance (optional)
+-- @return		CIDR instance containing the network address
+-- @see			cidr.host
+-- @see			cidr.broadcast
+-- @see			cidr.mask
 function cidr.network( self, bits )
 	local data = { }
 	bits = bits or self[3]
@@ -426,11 +514,21 @@ function cidr.network( self, bits )
 end
 
 --- Return a corresponding CIDR representing the host address of this
+-- instance. This is intended to extract the host address from larger subnet.
+-- @return		CIDR instance containing the network address
+-- @see			cidr.network
+-- @see			cidr.broadcast
+-- @see			cidr.mask
 function cidr.host( self )
 	return __bless({ self[1], self[2], __maxlen(self[1]) })
 end
 
 --- Return a corresponding CIDR representing the netmask of this instance.
+-- @param bits	Override prefix length of this instance (optional)
+-- @return		CIDR instance containing the netmask
+-- @see			cidr.network
+-- @see			cidr.host
+-- @see			cidr.broadcast
 function cidr.mask( self, bits )
 	local data = { }
 	bits = bits or self[3]
@@ -451,6 +549,10 @@ function cidr.mask( self, bits )
 end
 
 --- Return CIDR containing the broadcast address of this instance.
+-- @return		CIDR instance containing the netmask, always nil for IPv6
+-- @see			cidr.network
+-- @see			cidr.host
+-- @see			cidr.mask
 function cidr.broadcast( self )
 	-- IPv6 has no broadcast addresses (XXX: assert() instead?)
 	if self[1] == FAMILY_INET4 then
@@ -467,6 +569,8 @@ function cidr.broadcast( self )
 end
 
 --- Test whether this instance fully contains the given CIDR instance.
+-- @param addr	CIDR instance to test against
+-- @return		Boolean indicating whether this instance contains the given CIDR
 function cidr.contains( self, addr )
 	assert( self[1] == addr[1], "Can't compare IPv4 and IPv6 addresses" )
 
@@ -478,6 +582,10 @@ function cidr.contains( self, addr )
 end
 
 --- Add specified amount of hosts to this instance.
+-- @param amount	Number of hosts to add to this instance
+-- @param inplace	Boolen indicating whether to alter values inplace (optional)
+-- @return			CIDR representing the new address or nil on overflow error
+-- @see				cidr.sub
 function cidr.add( self, amount, inplace )
 	local pos
 	local data   = { unpack(self[2]) }
@@ -506,6 +614,10 @@ function cidr.add( self, amount, inplace )
 end
 
 --- Substract specified amount of hosts from this instance.
+-- @param amount	Number of hosts to substract from this instance
+-- @param inplace	Boolen indicating whether to alter values inplace (optional)
+-- @return			CIDR representing the new address or nil on underflow error
+-- @see				cidr.add
 function cidr.sub( self, amount, inplace )
 	local pos
 	local data   = { unpack(self[2]) }
@@ -534,6 +646,8 @@ function cidr.sub( self, amount, inplace )
 end
 
 --- Return CIDR containing the lowest available host address within this subnet.
+-- @return		CIDR containing the host address, nil if subnet is too small
+-- @see			cidr.maxhost
 function cidr.minhost( self )
 	if self[3] <= __sublen(self[1]) then
 		-- 1st is Network Address in IPv4 and Subnet-Router Anycast Adresse in IPv6
@@ -542,6 +656,8 @@ function cidr.minhost( self )
 end
 
 --- Return CIDR containing the highest available host address within the subnet.
+-- @return		CIDR containing the host address, nil if subnet is too small
+-- @see			cidr.minhost
 function cidr.maxhost( self )
 	if self[3] <= __sublen(self[1]) then
 		local i
