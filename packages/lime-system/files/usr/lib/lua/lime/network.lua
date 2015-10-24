@@ -56,6 +56,11 @@ function network.primary_address(offset)
     local ipv4_template = config.get("network", "main_ipv4_address")
     local ipv6_template = config.get("network", "main_ipv6_address")
 
+    local ipv4_maskbits = ipv4_template:match("[^/]+/(%d+)")
+    ipv4_template = ipv4_template:gsub("/%d-/","/")
+    local ipv6_maskbits = ipv6_template:match("[^/]+/(%d+)")
+    ipv6_template = ipv6_template:gsub("/%d-/","/")
+
     ipv4_template = utils.applyMacTemplate10(ipv4_template, pm)
     ipv6_template = utils.applyMacTemplate16(ipv6_template, pm)
 
@@ -64,8 +69,13 @@ function network.primary_address(offset)
 
     local m4, m5, m6 = tonumber(pm[4], 16), tonumber(pm[5], 16), tonumber(pm[6], 16)
     local hexsuffix = utils.hex((m4 * 256*256 + m5 * 256 + m6) + offset)
-    return network.generate_host(ip.IPv4(ipv4_template), hexsuffix),
-           network.generate_host(ip.IPv6(ipv6_template), hexsuffix)
+    ipv4_template = network.generate_host(ip.IPv4(ipv4_template), hexsuffix)
+    ipv6_template = network.generate_host(ip.IPv6(ipv6_template), hexsuffix)
+
+    ipv4_template[3] = tonumber(ipv4_maskbits)
+    ipv6_template[3] = tonumber(ipv6_maskbits)
+    
+    return ipv4_template, ipv6_template
 end
 
 function network.setup_rp_filter()

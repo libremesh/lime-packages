@@ -1,7 +1,7 @@
 # The options marked with "# Parametrizable with %Mn, %Nn, %H"
 # can include %Mn templates that will be substituted
 # with the n'th byte of the primary_interface MAC
-# and %Nn templates that will be replaced by the n'th network-identifier byte,
+# and %Nn templates that will be replaced by the n'th (n = 1,2,3) network-identifier byte,
 # calculated from the hash of the ap_ssid value, so that all the nodes that
 # form a mesh cloud (share the same ap_ssid) will produce the same value
 # and %H template that will be replaced by hostname
@@ -19,9 +19,9 @@
 #config lime network
 #	option primary_interface eth0                                          # The mac address of this device will be used in different places
 #	option bmx6_over_batman false                                          # Disables Bmx6 meshing on top of batman
-#	option main_ipv4_address '192.0.2.0/24'                                # Parametrizable also with %Mn, %Nn. If just a network address is specified, like "192.0.2.0/24", it gets also parametrized. This works even with netmasks other than /24 or /16...
-#	option main_ipv6_address '2001:db8::%M5:%M6/64'                        # Parametrizable with %Mn, %Nn or with trailing zeroes as for IPv4
-#	list protocols adhoc                                                   # List of protocols configured by LiMe, some of these require the relative package "lime-proto-...". Note that if you set here some protocols, you overwrite the whole list of protocols set in /etc/config/lime-defaults
+#	option main_ipv4_address '192.0.2.0/24'                                # Here you have 4 possibilities: set a static IP and the subnet, like '192.0.2.1/16'; parametrize with %Mn and %Nn, and set the subnet, like '192.%N1.%M5.%M6/16'; set a whole network address (so not a specific IP) for getting the IP autocompleted in that network with bits from MAC address, this works also with netmasks other than /24 or /16, like '192.0.128.0/17' (but not valid network addresses, for example '192.0.128.0/16' or '192.0.129.0/17', won't get parametrized); set two different parameters, the first for subnet and the second for IP parametrization, like '192.0.128.0/16/17', this results in /16 subnet but IP parametrized in a /17 range.
+#	option main_ipv6_address '2001:db8::%M5:%M6/64'                        # Parametrizable in the same way as main_ipv4_address. If used, the IP autocompletion will fill maximum the last 24 bits, so specifying an IP autocompletion range bigger than /104 is not useful.
+#	list protocols adhoc                                                   # List of protocols configured by LiMe, some of these require the relative package "lime-proto-...". Note that if you set here some protocols, you overwrite the *whole* list of protocols set in /etc/config/lime-defaults
 #	list protocols lan
 #	list protocols anygw
 #	list protocols batadv:%N1                                              # Parametrizable with %Nn (which depends from ap_ssid), note that this will range between 16 and 272
