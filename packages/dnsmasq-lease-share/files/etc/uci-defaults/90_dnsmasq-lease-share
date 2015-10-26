@@ -3,5 +3,7 @@
 uci set dhcp.@dnsmasq[0].dhcpscript=/etc/alfred/dnsmasq-lease-share.lua
 uci set dhcp.@dnsmasq[0].dhcphostsfile=/tmp/dhcp.hosts_remote
 uci commit dhcp
+uci set alfred.alfred.disabled=0
+uci commit alfred
 
 exit 0
