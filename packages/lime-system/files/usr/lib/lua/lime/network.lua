@@ -2,7 +2,6 @@
 
 network = {}
 
-local bit = require("bit")
 local ip = require("luci.ip")
 local libuci = require("uci")
 local fs = require("nixio.fs")
@@ -30,24 +29,14 @@ function network.primary_mac()
 end
 
 function network.generate_host(ipprefix, hexsuffix)
-    -- use only the 8 rightmost nibbles for IPv4, or 32 nibbles for IPv6
-    hexsuffix = hexsuffix:sub((ipprefix[1] == 4) and -8 or -32)
+	local num = 0
+	-- If it's a network prefix calculate offset to add
+	if ipprefix:equal(ipprefix:network()) then
+		local addr_len = ipprefix:is4() and 32 or ipprefix:is6() and 128
+		num = tonumber(hexsuffix,16) % 2^(addr_len - ipprefix:prefix())
+	end
 
-    -- convert hexsuffix into a cidr instance, using same prefix and family of ipprefix
-    local ipsuffix = ip.Hex(hexsuffix, ipprefix:prefix(), ipprefix[1])
-
-    local ipaddress = ipprefix
-    -- if it's a network prefix, fill in host bits with ipsuffix
-    if ipprefix:equal(ipprefix:network()) then
-        for i in ipairs(ipprefix[2]) do
-            -- reset ipsuffix netmask bits to 0
-            ipsuffix[2][i] = bit.bxor(ipsuffix[2][i],ipsuffix:network()[2][i])
-            -- fill in ipaddress host part, with ipsuffix bits
-            ipaddress[2][i] = bit.bor(ipaddress[2][i],ipsuffix[2][i])
-        end
-    end
-
-    return ipaddress
+	return ipprefix:add(num)
 end
 
 function network.primary_address(offset)
