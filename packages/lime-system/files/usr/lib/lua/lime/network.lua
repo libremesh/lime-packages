@@ -61,8 +61,8 @@ function network.primary_address(offset)
     ipv4_template = network.generate_host(ip.IPv4(ipv4_template), hexsuffix)
     ipv6_template = network.generate_host(ip.IPv6(ipv6_template), hexsuffix)
 
-    ipv4_template[3] = tonumber(ipv4_maskbits)
-    ipv6_template[3] = tonumber(ipv6_maskbits)
+    ipv4_template:prefix(tonumber(ipv4_maskbits))
+    ipv6_template:prefix(tonumber(ipv6_maskbits))
     
     return ipv4_template, ipv6_template
 end
