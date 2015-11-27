@@ -13,49 +13,43 @@ function anygw.configure(args)
 	anygw.configured = true
 
 	local ipv4, ipv6 = network.primary_address()
-	
-	-- anygw macvlan interface
-	print("Adding macvlan interface to uci network...")
 	local anygw_mac = "aa:aa:aa:aa:aa:aa"
 	local anygw_ipv6 = ipv6:minhost()
 	local anygw_ipv4 = ipv4:minhost()
 	anygw_ipv6:prefix(64) -- SLAAC only works with a /64, per RFC
 	anygw_ipv4:prefix(ipv4:prefix())
+	local baseIfname = "@lan"
+	local argsDev = { macaddr = anygw_mac }
+	local argsIf = { proto = "static" }
+	argsIf.ip6addr = anygw_ipv6:string()
+	argsIf.ipaddr = anygw_ipv4:host():string()
+	argsIf.netmask = anygw_ipv4:mask():string()
 
-	local pfr = network.limeIfNamePrefix
-	
+	local owrtInterfaceName, _, _ = network.createMacvlanIface( baseIfname,
+		"anygw", argsDev, argsIf )
+
 	local uci = libuci:cursor()
-	uci:set("network", pfr.."anygw_dev", "device")
-	uci:set("network", pfr.."anygw_dev", "type", "macvlan")
-	uci:set("network", pfr.."anygw_dev", "name", "anygw")
-	uci:set("network", pfr.."anygw_dev", "ifname", "@lan")
-	uci:set("network", pfr.."anygw_dev", "macaddr", anygw_mac)
+	local pfr = network.limeIfNamePrefix.."anygw_"
+	
+	uci:set("network", pfr.."rule6", "rule6")
+	uci:set("network", pfr.."rule6", "src", anygw_ipv6:host():string().."/128")
+	uci:set("network", pfr.."rule6", "lookup", "170") -- 0xaa in decimal
 
-	uci:set("network", pfr.."anygw_if", "interface")
-	uci:set("network", pfr.."anygw_if", "proto", "static")
-	uci:set("network", pfr.."anygw_if", "ifname", "anygw")
-	uci:set("network", pfr.."anygw_if", "ip6addr", anygw_ipv6:string())
-	uci:set("network", pfr.."anygw_if", "ipaddr", anygw_ipv4:host():string())
-	uci:set("network", pfr.."anygw_if", "netmask", anygw_ipv4:mask():string())
+	uci:set("network", pfr.."route6", "route6")
+	uci:set("network", pfr.."route6", "interface", owrtInterfaceName)
+	uci:set("network", pfr.."route6", "target", anygw_ipv6:network():string().."/"..anygw_ipv6:prefix())
+	uci:set("network", pfr.."route6", "table", "170")
 
-	uci:set("network", pfr.."anygw_rule6", "rule6")
-	uci:set("network", pfr.."anygw_rule6", "src", anygw_ipv6:host():string().."/128")
-	uci:set("network", pfr.."anygw_rule6", "lookup", "170") -- 0xaa in decimal
+	uci:set("network", pfr.."rule4", "rule")
+	uci:set("network", pfr.."rule4", "src", anygw_ipv4:host():string().."/32")
+	uci:set("network", pfr.."rule4", "lookup", "170")
 
-	uci:set("network", pfr.."anygw_route6", "route6")
-	uci:set("network", pfr.."anygw_route6", "interface", pfr.."anygw_if")
-	uci:set("network", pfr.."anygw_route6", "target", anygw_ipv6:network():string().."/"..anygw_ipv6:prefix())
-	uci:set("network", pfr.."anygw_route6", "table", "170")
+	uci:set("network", pfr.."route4", "route")
+	uci:set("network", pfr.."route4", "interface", owrtInterfaceName)
+	uci:set("network", pfr.."route4", "target", anygw_ipv4:network():string())
+	uci:set("network", pfr.."route4", "netmask", anygw_ipv4:mask():string())
+	uci:set("network", pfr.."route4", "table", "170")
 
-	uci:set("network", pfr.."anygw_rule4", "rule")
-	uci:set("network", pfr.."anygw_rule4", "src", anygw_ipv4:host():string().."/32")
-	uci:set("network", pfr.."anygw_rule4", "lookup", "170")
-
-	uci:set("network", pfr.."anygw_route4", "route")
-	uci:set("network", pfr.."anygw_route4", "interface", pfr.."anygw_if")
-	uci:set("network", pfr.."anygw_route4", "target", anygw_ipv4:network():string())
-	uci:set("network", pfr.."anygw_route4", "netmask", anygw_ipv4:mask():string())
-	uci:set("network", pfr.."anygw_route4", "table", "170")
 	uci:save("network")
 
 	fs.mkdir("/etc/firewall.user.d")
