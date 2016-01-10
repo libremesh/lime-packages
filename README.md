@@ -8,7 +8,7 @@ The firmware (the main piece) will allow simple deployment of auto-configurable,
 
 ## Building a firmware image
 
-The Libre-Mesh firmware can be compiled either manually adding the feed to a [OpenWrt buildroot][1] environment or using the easy to use [lime-build][2] tool.
+The Libre-Mesh firmware can be compiled either manually, adding the feed to a [OpenWrt buildroot][1] environment or by using the easy to use [lime-build][2] tool.
 
 ### Using OpenWrt buildroot
 
