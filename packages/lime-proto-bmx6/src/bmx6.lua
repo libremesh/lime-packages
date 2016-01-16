@@ -36,6 +36,10 @@ function bmx6.configure(args)
 	uci:set("bmx6", "json", "plugin")
 	uci:set("bmx6", "json", "plugin", "bmx6_json.so")
 
+	-- Enable tun plugin, DISCLAIMER: this must be positioned before table plugin if used.
+	uci:set("bmx6", "ptun", "plugin")
+	uci:set("bmx6", "ptun", "plugin", "bmx6_tun.so")
+
 	-- Disable ThrowRules because they are broken in IPv6 with current Linux Kernel
 	uci:set("bmx6", "ipVersion", "ipVersion")
 	uci:set("bmx6", "ipVersion", "ipVersion", "6")
@@ -45,7 +49,7 @@ function bmx6.configure(args)
 	uci:set("bmx6", "nodes", "tunOut", "nodes")
 	uci:set("bmx6", "nodes", "network", "172.16.0.0/12")
 
-	-- Search for networks in 172.16.0.0/12
+	-- Search for networks in 192.0.2.0/24 (for testing purpose)
 	uci:set("bmx6", "nodes", "tunOut")
 	uci:set("bmx6", "nodes", "tunOut", "dummynodes")
 	uci:set("bmx6", "nodes", "network", "192.0.2.0/24")
@@ -137,6 +141,43 @@ end
 function bmx6.apply()
     os.execute("killall bmx6 ; sleep 2 ; killall -9 bmx6")
     os.execute("bmx6")
+end
+
+function bmx6.bgp_conf(templateVarsIPv4, templateVarsIPv6)
+	local uci = libuci:cursor()
+
+	-- Enable Routing Table Redistribution plugin
+	uci:set("bmx6", "table", "plugin")
+	uci:set("bmx6", "table", "plugin", "bmx6_table.so")
+
+	-- Redistribute proto bird routes
+	uci:set("bmx6", "fromBird", "redistTable")
+	uci:set("bmx6", "fromBird", "redistTable", "fromBird")
+	uci:set("bmx6", "fromBird", "table", "254")
+	uci:set("bmx6", "fromBird", "bandwidth", "100")
+	uci:set("bmx6", "fromBird", "proto", "12")
+
+	-- Avoid aggregation as it use lot of CPU with huge number of routes
+	uci:set("bmx6", "fromBird", "aggregatePrefixLen", "128")
+
+	-- Disable proactive tunnels announcement as it use lot of CPU with
+	-- huge number of routes
+	uci:set("bmx6", "general", "proactiveTunRoutes", "0")
+
+	-- BMX6 security features are at moment not used by LiMe, disable hop
+	-- by hop links signature as it consume a lot of CPU expecially in
+	-- setups with multiples interfaces  and lot of routes like LiMe
+	uci:set("bmx6", "general", "linkSignatureLen", "0")
+
+	uci:save("bmx6")
+
+	local base_bgp_conf = [[
+protocol direct {
+	interface "bmx*";
+}
+]]
+
+	return base_bgp_conf
 end
 
 return bmx6

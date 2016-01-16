@@ -41,4 +41,13 @@ function lan.setup_interface(ifname, args)
 	uci:save("network")
 end
 
+function lan.bgp_conf(templateVarsIPv4, templateVarsIPv6)
+	local base_conf = [[
+protocol direct {
+	interface "br-lan";
+}
+]]
+	return base_conf
+end
+
 return lan
