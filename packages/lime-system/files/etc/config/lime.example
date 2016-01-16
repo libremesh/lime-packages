@@ -87,3 +87,14 @@ config lime wifi
 #	option switch_dev 'switch0'                                         # These options regarding switch need to be set only if your ethernet device is connected to a switch chip. If the switch exists you can read its name (like switch0) in /etc/config/network file
 #	option switch_cpu_port '0'                                          # Refer to switch port map of your device on wiki.openwrt.org to know CPU port index
 #	list switch_ports '4'                                               # List switch ports on which you want the vlan being passed, refer to wiki.openwrt.org for correspondence with physical ports
+
+### Proto BGP specific sections
+### One section for each BGP peer
+
+#config bgp_peer peer1
+#	option remoteIP '192.0.2.6'
+#	option remoteAS '65550'
+
+#config bgp_peer peer2
+#	option remoteIP '2001:db8::c001'
+#	option remoteAS '65549'
