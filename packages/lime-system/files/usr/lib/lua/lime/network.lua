@@ -252,4 +252,49 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 	return owrtInterfaceName, linux802adIfName, owrtDeviceName
 end
 
+function network.createMacvlanIface(baseIfname, linuxName, argsDev, argsIf)
+	--! baseIfname can be a linux interface name like eth0 or an openwrt
+	--! interface name like @lan of the base interface;
+	--! linuxName is the linux name of the new interface;
+	--! argsDev optional additional arguments for device like
+	--! { macaddr="aa:aa:aa:aa:aa:aa", mode="vepa" };
+	--! argsIf optional additional arguments for ifname like
+	--! { proto="static", ip6addr="2001:db8::1/64" }
+	--!
+	--! Although this function is defined here lime-system may not depend
+	--! on macvlan if it doesn't use this function directly. Instead a
+	--! lime.proto which want to use macvlan so this function should depend
+	--! on its own on kmod-macvlan as needed.
+
+	argsDev = argsDev or {}
+	argsIf = argsIf or {}
+
+	local owrtDeviceName = network.limeIfNamePrefix..baseIfname.."_"..linuxName.."_dev"
+	local owrtInterfaceName = network.limeIfNamePrefix..baseIfname.."_"..linuxName.."_if"
+	owrtDeviceName = owrtDeviceName:gsub("[^%w_]", "_") -- sanitize uci section name
+	owrtInterfaceName = owrtInterfaceName:gsub("[^%w_]", "_") -- sanitize uci section name
+
+	local uci = libuci:cursor()
+
+	uci:set("network", owrtDeviceName, "device")
+	uci:set("network", owrtDeviceName, "type", "macvlan")
+	uci:set("network", owrtDeviceName, "name", linuxName)
+	uci:set("network", owrtDeviceName, "ifname", baseIfname)
+	for k,v in pairs(argsDev) do
+		uci:set("network", owrtDeviceName, k, v)
+	end
+
+	uci:set("network", owrtInterfaceName, "interface")
+	uci:set("network", owrtInterfaceName, "proto", "none")
+	uci:set("network", owrtInterfaceName, "ifname", linuxName)
+	uci:set("network", owrtInterfaceName, "auto", "1")
+	for k,v in pairs(argsIf) do
+		uci:set("network", owrtInterfaceName, k, v)
+	end
+
+	uci:save("network")
+
+	return owrtInterfaceName, linuxName, owrtDeviceName
+end
+
 return network
