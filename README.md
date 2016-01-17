@@ -12,7 +12,7 @@ The Libre-Mesh firmware can be compiled either manually adding the feed to a [Op
 
 ### Using OpenWrt buildroot
 
-For a full and detailed compilation guide refer to [our wiki][6].
+For a more detailed compilation guide refer to [our wiki][6].
 
 Clone OpenWRT stable repository, nowadays is version 14.07 (Barrier Breaker).
 
