@@ -103,7 +103,7 @@ start() {
         rm -rf $dir_etc ; mkdir -p $dir_etc
         tar -xzf $file_etc_lastgood -C $dir_etc
         rm -f $file_etc_lastgood
-        reboot ; sleep 10 ; $cmd_force_reboot
+        reboot ; sleep 10 ; eval "$cmd_force_reboot"
     fi ) &
   echo \$! > "$PIDFILE"
 }
@@ -115,7 +115,7 @@ EOF
 reboot_after_grace_period () {
   sleep $grace_period & trap 'kill $! ; exit' TERM ; wait
   write_safe_fallback_script
-  reboot ; sleep 10 ; $cmd_force_reboot
+  reboot ; sleep 10 ; eval "$cmd_force_reboot"
 }
 
 action_cancel () {

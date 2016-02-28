@@ -13,7 +13,6 @@ network.limeIfNamePrefix="lm_net_"
 network.protoParamsSeparator=":"
 network.protoVlanSeparator="_"
 
-
 function network.get_mac(ifname)
 	local path = "/sys/class/net/"..ifname.."/address"
 	local mac = assert(fs.readfile(path), "network.get_mac(...) failed reading: "..path):gsub("\n","")
@@ -90,6 +89,7 @@ function network.setup_dns()
 	end
 	local uci = libuci:cursor()
 	uci:foreach("dhcp", "dnsmasq", function(s) uci:set("dhcp", s[".name"], "server", content) end)
+	uci:set("dhcp", "lan", "leasetime", "1h")
 	uci:save("dhcp")
 	fs.writefile("/etc/dnsmasq.conf", "conf-dir=/etc/dnsmasq.d\n")
 	fs.mkdir("/etc/dnsmasq.d")
@@ -222,17 +222,17 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 	vlanProtocol = vlanProtocol or "8021ad"
 	openwrtNameSuffix = openwrtNameSuffix or ""
 
-	local owrtDeviceName = network.limeIfNamePrefix..linuxBaseIfname..openwrtNameSuffix.."_dev"
-	local owrtInterfaceName = network.limeIfNamePrefix..linuxBaseIfname..openwrtNameSuffix.."_if"
-	owrtDeviceName = owrtDeviceName:gsub("[^%w_]", "_") -- sanitize uci section name
-	owrtInterfaceName = owrtInterfaceName:gsub("[^%w_]", "_") -- sanitize uci section name
+	--! sanitize passed linuxBaseIfName for constructing uci section name
+	--! because only alphanumeric and underscores are allowed
+	local owrtDeviceName = network.limeIfNamePrefix..linuxBaseIfname:gsub("[^%w_]", "_")..openwrtNameSuffix.."_dev"
+	local owrtInterfaceName = network.limeIfNamePrefix..linuxBaseIfname:gsub("[^%w_]", "_")..openwrtNameSuffix.."_if"
 
 	local vlanId = vid
 	--! Do not use . as separator as this will make netifd create an 802.1q interface anyway
 	--! and sanitize linuxBaseIfName because it can contain dots as well (i.e. switch ports)
-	local linux802adIfName = linuxBaseIfname:gsub("[^%w_]", "_")..network.protoVlanSeparator..vlanId
+	local linux802adIfName = linuxBaseIfname:gsub("[^%w-]", "-")..network.protoVlanSeparator..vlanId
 	local ifname = linuxBaseIfname
-	if utils.stringStarts(linuxBaseIfname, "wlan") then ifname = "@"..network.limeIfNamePrefix..linuxBaseIfname end
+	if ifname:match("^wlan") then ifname = "@"..network.limeIfNamePrefix..linuxBaseIfname:gsub("[^%w_]", "_") end
 
 	local uci = libuci:cursor()
 

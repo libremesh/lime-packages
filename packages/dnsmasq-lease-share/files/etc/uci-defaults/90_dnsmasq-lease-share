@@ -6,4 +6,7 @@ uci commit dhcp
 uci set alfred.alfred.disabled=0
 uci commit alfred
 
+uci set alfred.alfred.disabled=
+uci commit alfred
+
 exit 0

@@ -1,0 +1,143 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2012 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id$
+
+-%>
+
+<%+header%>
+
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript">//<![CDATA[
+	XHR.poll(5, '<%=luci.dispatcher.build_url("batman/json")%>', null,
+		function(x, info)
+		{
+			var t;
+
+			var og = info.originators;
+			var gw = info.gateways;
+
+			if (!!(t = document.getElementById('originator_table')))
+			{
+				/* clear all rows */
+				while (t.rows.length > 1)
+					t.rows[0].parentNode.deleteRow(1);
+
+				og.sort(function(a, b) { return parseInt(b[2]) - parseInt(a[2]) });
+
+				for (var i = 0; i < og.length; i++)
+				{
+					var tr = t.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row cbi-rowstyle-' + (1 + (i % 2));
+
+					var icon;
+					if (og[i][2] < 64)
+						icon = "<%=resource%>/icons/signal-0-25.png";
+					else if (og[i][2] < 128)
+						icon = "<%=resource%>/icons/signal-25-50.png";
+					else if (og[i][2] < 192)
+						icon = "<%=resource%>/icons/signal-50-75.png";
+					else
+						icon = "<%=resource%>/icons/signal-75-100.png";
+
+					tr.insertCell(-1).innerHTML = String.format(
+						'<img src="%s" title="<%:Quality%>: %d / 255" style="vertical-align:middle" /> %d/255',
+						icon, og[i][2], og[i][2]
+					);
+
+					tr.insertCell(-1).innerHTML = og[i][0];
+					tr.insertCell(-1).innerHTML = String.format('%dms', og[i][1]);
+					tr.insertCell(-1).innerHTML = og[i][4];
+					tr.insertCell(-1).innerHTML = og[i][3];
+				}
+
+				if (t.rows.length == 1)
+				{
+					var tr = t.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row';
+
+					var td = tr.insertCell(-1);
+						td.colSpan = 3;
+						td.innerHTML = '<br /><em><%:There are no active neighbors%></em>';
+				}
+			}
+
+			if (!!(t = document.getElementById('gateway_table')))
+			{
+				/* clear all rows */
+				while (t.rows.length > 1)
+					t.rows[0].parentNode.deleteRow(1);
+
+				gw.sort(function(a, b) { return a[0] > b[0] });
+
+				for (var i = 0; i < gw.length; i++)
+				{
+					var tr = t.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row cbi-rowstyle-' + (1 + (i % 2));
+
+					tr.insertCell(-1).innerHTML = gw[i][0]
+						? String.format('<strong>%s (active)</strong>', gw[i][1])
+						: gw[i][1];
+
+					tr.insertCell(-1).innerHTML = gw[i][6];
+					tr.insertCell(-1).innerHTML = String.format('%dms', gw[i][2]);
+					tr.insertCell(-1).innerHTML = gw[i][4];
+					tr.insertCell(-1).innerHTML = gw[i][3];
+				}
+
+				if (t.rows.length == 1)
+				{
+					var tr = t.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row';
+
+					var td = tr.insertCell(-1);
+						td.colSpan = 3;
+						td.innerHTML = '<br /><em><%:There are no active mesh gateways%></em>';
+				}
+			}
+		}
+	);
+//]]></script>
+
+<h2><a id="content" name="content"><%:B.A.T.M.A.N. Status%></a></h2>
+
+<fieldset class="cbi-section">
+	<legend><%:Originators%></legend>
+	<table class="cbi-section-table" id="originator_table">
+		<tr class="cbi-section-table-titles">
+			<th class="cbi-section-table-cell">&#160;</th>
+			<th class="cbi-section-table-cell"><%:MAC-Address%></th>
+			<th class="cbi-section-table-cell"><%:Last Seen%></th>
+			<th class="cbi-section-table-cell"><%:Interface%></th>
+			<th class="cbi-section-table-cell"><%:Next Hop%></th>
+		</tr>
+		<tr class="cbi-section-table-row">
+			<td colspan="3"><em><br /><%:Collecting data...%></em></td>
+		</tr>
+	</table>
+</fieldset>
+
+<fieldset class="cbi-section">
+	<legend><%:Gateways%></legend>
+	<table class="cbi-section-table" id="gateway_table">
+		<tr class="cbi-section-table-titles">
+			<th class="cbi-section-table-cell"><%:MAC-Address%></th>
+			<th class="cbi-section-table-cell"><%:Speed%></th>
+			<th class="cbi-section-table-cell"><%:Last Seen%></th>
+			<th class="cbi-section-table-cell"><%:Interface%></th>
+			<th class="cbi-section-table-cell"><%:Next Hop%></th>
+		</tr>
+		<tr class="cbi-section-table-row">
+			<td colspan="3"><em><br /><%:Collecting data...%></em></td>
+		</tr>
+	</table>
+</fieldset>
+
+<%+footer%>

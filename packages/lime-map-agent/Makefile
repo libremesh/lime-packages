@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LiMe
 	MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
 	URL:=http://libre-mesh.org
-	DEPENDS:=+libremap-agent +luci-lib-libremap-location +luci-lib-libremap-system +luci-lib-libremap-wireless
+	DEPENDS:=+libremap-agent +luci-lib-libremap-location +luci-lib-libremap-system +luci-lib-libremap-wireless +luci-lib-libremap-bmx6 +luci-app-lime-location
 endef
 
 define Package/$(PKG_NAME)/description
@@ -33,7 +33,7 @@ define Build/Compile
 endef
 
 define Package/$(PKG_NAME)/install
-	$(CP) ./files/* $(1)/
+        $(INSTALL_DIR) $(1)/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))

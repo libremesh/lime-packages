@@ -25,8 +25,8 @@ function bmx6.configure(args)
 
 	uci:set("bmx6", "main", "tunDev")
 	uci:set("bmx6", "main", "tunDev", "main")
-	uci:set("bmx6", "main", "tun4Address", ipv4:host():string().."/32")
-	uci:set("bmx6", "main", "tun6Address", ipv6:host():string().."/128")
+	uci:set("bmx6", "main", "tun4Address", ipv4:string())
+	uci:set("bmx6", "main", "tun6Address", ipv6:string())
 
 	-- Enable bmx6 uci config plugin
 	uci:set("bmx6", "config", "plugin")
@@ -48,11 +48,6 @@ function bmx6.configure(args)
 	uci:set("bmx6", "nodes", "tunOut")
 	uci:set("bmx6", "nodes", "tunOut", "nodes")
 	uci:set("bmx6", "nodes", "network", "172.16.0.0/12")
-
-	-- Search for networks in 192.0.2.0/24 (for testing purpose)
-	uci:set("bmx6", "nodes", "tunOut")
-	uci:set("bmx6", "nodes", "tunOut", "dummynodes")
-	uci:set("bmx6", "nodes", "network", "192.0.2.0/24")
 
 	-- Search for networks in 10.0.0.0/8
 	uci:set("bmx6", "clouds", "tunOut")
@@ -77,16 +72,6 @@ function bmx6.configure(args)
 	uci:set("bmx6", "publicv6", "network", "2000::/3")
 	uci:set("bmx6", "publicv6", "maxPrefixLen", "64")
 
-	-- Announce local ipv4 cloud
-	uci:set("bmx6", "local4", "tunIn")
-	uci:set("bmx6", "local4", "tunIn", "local4")
-	uci:set("bmx6", "local4", "network", ipv4:network():string().."/"..ipv4:prefix())
-
-	-- Announce local ipv6 cloud
-	uci:set("bmx6", "local6", "tunIn")
-	uci:set("bmx6", "local6", "tunIn", "local6")
-	uci:set("bmx6", "local6", "network", ipv6:network():string().."/"..ipv6:prefix())
-
 	if config.get_bool("network", "bmx6_over_batman") then
 		for _,protoArgs in pairs(config.get("network", "protocols")) do
 			if(utils.split(protoArgs, network.protoParamsSeparator)[1] == "batadv") then bmx6.setup_interface("bat0", args) end
@@ -104,6 +89,7 @@ function bmx6.configure(args)
 	uci:set("firewall", "bmxtun", "output", "ACCEPT")
 	uci:set("firewall", "bmxtun", "forward", "ACCEPT")
 	uci:set("firewall", "bmxtun", "mtu_fix", "1")
+	uci:set("firewall", "bmxtun", "conntrack", "1")
 	uci:set("firewall", "bmxtun", "device", "bmx+")
 	uci:set("firewall", "bmxtun", "family", "ipv4")
 
@@ -111,7 +97,7 @@ function bmx6.configure(args)
 end
 
 function bmx6.setup_interface(ifname, args)
-	if ifname:match("^wlan%d+_ap") then return end
+	if ifname:match("^wlan%d+.ap") then return end
 	vlanId = args[2] or 13
 	vlanProto = args[3] or "8021ad"
 	nameSuffix = args[4] or "_bmx6"
@@ -135,6 +121,13 @@ function bmx6.setup_interface(ifname, args)
 
 	uci:set("bmx6", owrtInterfaceName, "dev")
 	uci:set("bmx6", owrtInterfaceName, "dev", linux802adIfName)
+
+	-- BEGIN [Workaround issue 40]
+	if ifname:match("^wlan%d+") then
+		uci:set("bmx6", owrtInterfaceName, "rateMax", "54000")
+	end
+	--- END [Workaround issue 40]
+
 	uci:save("bmx6")
 end
 
