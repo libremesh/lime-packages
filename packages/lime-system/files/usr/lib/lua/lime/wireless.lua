@@ -10,7 +10,7 @@ wireless = {}
 
 wireless.modeParamsSeparator=":"
 wireless.limeIfNamePrefix="lm_"
-wireless.ifnameModeSeparator="_"
+wireless.wifiModeSeparator="-"
 
 function wireless.get_phy_mac(phy)
 	local path = "/sys/class/ieee80211/"..phy.."/macaddress"
@@ -52,9 +52,11 @@ function wireless.createBaseWirelessIface(radio, mode, extras)
 
 	local radioName = radio[".name"]
 	local phyIndex = radioName:match("%d+")
-	local ifname = "wlan"..phyIndex..wireless.ifnameModeSeparator..mode
-	local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname.."_"..radioName
-	local networkInterfaceName = network.limeIfNamePrefix..ifname
+	local ifname = "wlan"..phyIndex..wireless.wifiModeSeparator..mode
+	--! sanitize generated ifname for constructing uci section name
+	--! because only alphanumeric and underscores are allowed
+	local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname:gsub("[^%w_]", "_").."_"..radioName
+	local networkInterfaceName = network.limeIfNamePrefix..ifname:gsub("[^%w_]", "_")
 
 	local uci = libuci:cursor()
 
@@ -101,6 +103,7 @@ function wireless.configure()
 
 		local uci = libuci:cursor()
 		uci:set("wireless", radioName, "disabled", 0)
+		uci:set("wireless", radioName, "distance", 10000) -- up to 10km links
 		uci:set("wireless", radioName, "channel", options["channel"..freqSuffix])
 		uci:save("wireless")
 

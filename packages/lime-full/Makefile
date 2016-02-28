@@ -23,7 +23,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Pau Escrich <p4u@dabax.net>
   URL:=http://libre-mesh.org
   DEPENDS:=+lime-system +lime-proto-bmx6 +lime-proto-batadv +lime-proto-anygw +lime-proto-wan \
-		+dnsmasq-lease-share \
+		+dnsmasq-lease-share +dnsmasq-distributed-hosts \
 		+lime-webui +luci-app-batman-adv +luci-app-bmx6 \
 		+lime-map-agent \
 		+lime-debug \

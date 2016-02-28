@@ -15,18 +15,14 @@ $Id$
 module("luci.controller.batman", package.seeall)
 
 function index()
-	local root, page
+	local page
 
-	root = node()
-	if not root.target then
-		root.target = alias("batman")
-		root.index = true
-	end
-
-	page = node("batman")
+	page = node("admin", "network", "batman")
 	page.target = template("batman")
-	page.title  = _("B.A.T.M.A.N. Advanced")
+	page.title  = _("BATMAN-Adv")
 	page.order  = 1
+
+	node("batman")
 
 	page = node("batman", "json")
 	page.target = call("act_json")

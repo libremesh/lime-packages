@@ -18,7 +18,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=Administration
   TITLE:=Web interface for Libre-Mesh nodes
   MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
-  DEPENDS:= +uhttpd +luci-theme-bootstrap +libiwinfo-lua +luci-mod-admin-core
+  DEPENDS:= +uhttpd +luci-theme-bootstrap +libiwinfo-lua +luci-base
 endef
 
 define Package/$(PKG_NAME)-ssl
