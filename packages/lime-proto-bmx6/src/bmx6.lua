@@ -10,6 +10,7 @@ local opkg = require("luci.model.ipkg")
 bmx6 = {}
 
 bmx6.configured = false
+bmx6.f = "bmx7"
 
 function bmx6.configure(args)
 	if bmx6.configured then return end
@@ -18,60 +19,60 @@ function bmx6.configure(args)
 	local uci = libuci:cursor()
 	local ipv4, ipv6 = network.primary_address()
 
-	fs.writefile("/etc/config/bmx6", "")
+	fs.writefile("/etc/config/"..bmx6.f, "")
 
-	uci:set("bmx6", "general", "bmx6")
-	uci:set("bmx6", "general", "dbgMuteTimeout", "1000000")
-	uci:set("bmx6", "general", "tunOutTimeout", "100000")
+	uci:set(bmx6.f, "general", "bmx6")
+	uci:set(bmx6.f, "general", "dbgMuteTimeout", "1000000")
+	uci:set(bmx6.f, "general", "tunOutTimeout", "100000")
 
-	uci:set("bmx6", "main", "tunDev")
-	uci:set("bmx6", "main", "tunDev", "main")
-	uci:set("bmx6", "main", "tun4Address", ipv4:string())
-	uci:set("bmx6", "main", "tun6Address", ipv6:string())
+	uci:set(bmx6.f, "main", "tunDev")
+	uci:set(bmx6.f, "main", "tunDev", "main")
+	uci:set(bmx6.f, "main", "tun4Address", ipv4:string())
+	uci:set(bmx6.f, "main", "tun6Address", ipv6:string())
 
 	-- Enable bmx6 uci config plugin
-	uci:set("bmx6", "config", "plugin")
-	uci:set("bmx6", "config", "plugin", "bmx6_config.so")
+	uci:set(bmx6.f, "config", "plugin")
+	uci:set(bmx6.f, "config", "plugin", "bmx7_config.so")
 
 	-- Enable JSON plugin to get bmx6 information in json format
-	uci:set("bmx6", "json", "plugin")
-	uci:set("bmx6", "json", "plugin", "bmx6_json.so")
+	uci:set(bmx6.f, "json", "plugin")
+	uci:set(bmx6.f, "json", "plugin", "bmx7_json.so")
 
 	-- Enable tun plugin, DISCLAIMER: this must be positioned before table plugin if used.
-	uci:set("bmx6", "ptun", "plugin")
-	uci:set("bmx6", "ptun", "plugin", "bmx6_tun.so")
+	uci:set(bmx6.f, "ptun", "plugin")
+	uci:set(bmx6.f, "ptun", "plugin", "bmx7_tun.so")
 
 	-- Disable ThrowRules because they are broken in IPv6 with current Linux Kernel
-	uci:set("bmx6", "ipVersion", "ipVersion")
-	uci:set("bmx6", "ipVersion", "ipVersion", "6")
+	uci:set(bmx6.f, "ipVersion", "ipVersion")
+	uci:set(bmx6.f, "ipVersion", "ipVersion", "6")
 
 	-- Search for networks in 172.16.0.0/12
-	uci:set("bmx6", "nodes", "tunOut")
-	uci:set("bmx6", "nodes", "tunOut", "nodes")
-	uci:set("bmx6", "nodes", "network", "172.16.0.0/12")
+	uci:set(bmx6.f, "nodes", "tunOut")
+	uci:set(bmx6.f, "nodes", "tunOut", "nodes")
+	uci:set(bmx6.f, "nodes", "network", "172.16.0.0/12")
 
 	-- Search for networks in 10.0.0.0/8
-	uci:set("bmx6", "clouds", "tunOut")
-	uci:set("bmx6", "clouds", "tunOut", "clouds")
-	uci:set("bmx6", "clouds", "network", "10.0.0.0/8")
+	uci:set(bmx6.f, "clouds", "tunOut")
+	uci:set(bmx6.f, "clouds", "tunOut", "clouds")
+	uci:set(bmx6.f, "clouds", "network", "10.0.0.0/8")
 
 	-- Search for internet in the mesh cloud
-	uci:set("bmx6", "inet4", "tunOut")
-	uci:set("bmx6", "inet4", "tunOut", "inet4")
-	uci:set("bmx6", "inet4", "network", "0.0.0.0/0")
-	uci:set("bmx6", "inet4", "maxPrefixLen", "0")
+	uci:set(bmx6.f, "inet4", "tunOut")
+	uci:set(bmx6.f, "inet4", "tunOut", "inet4")
+	uci:set(bmx6.f, "inet4", "network", "0.0.0.0/0")
+	uci:set(bmx6.f, "inet4", "maxPrefixLen", "0")
 
 	-- Search for internet IPv6 gateways in the mesh cloud
-	uci:set("bmx6", "inet6", "tunOut")
-	uci:set("bmx6", "inet6", "tunOut", "inet6")
-	uci:set("bmx6", "inet6", "network", "::/0")
-	uci:set("bmx6", "inet6", "maxPrefixLen", "0")
+	uci:set(bmx6.f, "inet6", "tunOut")
+	uci:set(bmx6.f, "inet6", "tunOut", "inet6")
+	uci:set(bmx6.f, "inet6", "network", "::/0")
+	uci:set(bmx6.f, "inet6", "maxPrefixLen", "0")
 
 	-- Search for other mesh cloud announcements that have public ipv6
-	uci:set("bmx6", "publicv6", "tunOut")
-	uci:set("bmx6", "publicv6", "tunOut", "publicv6")
-	uci:set("bmx6", "publicv6", "network", "2000::/3")
-	uci:set("bmx6", "publicv6", "maxPrefixLen", "64")
+	uci:set(bmx6.f, "publicv6", "tunOut")
+	uci:set(bmx6.f, "publicv6", "tunOut", "publicv6")
+	uci:set(bmx6.f, "publicv6", "network", "2000::/3")
+	uci:set(bmx6.f, "publicv6", "maxPrefixLen", "64")
 
 	if config.get_bool("network", "bmx6_over_batman") then
 		for _,protoArgs in pairs(config.get("network", "protocols")) do
@@ -79,7 +80,7 @@ function bmx6.configure(args)
 		end
 	end
 
-	uci:save("bmx6")
+	uci:save(bmx6.f)
 
 	if opkg.installed("firewall") then
 		uci:delete("firewall", "bmxtun")
@@ -129,50 +130,50 @@ function bmx6.setup_interface(ifname, args)
 
 	uci:save("network")
 
-	uci:set("bmx6", owrtInterfaceName, "dev")
-	uci:set("bmx6", owrtInterfaceName, "dev", linux802adIfName)
+	uci:set(bmx6.f, owrtInterfaceName, "dev")
+	uci:set(bmx6.f, owrtInterfaceName, "dev", linux802adIfName)
 
 	-- BEGIN [Workaround issue 40]
 	if ifname:match("^wlan%d+") then
-		uci:set("bmx6", owrtInterfaceName, "rateMax", "54000")
+		uci:set(bmx6.f, owrtInterfaceName, "rateMax", "54000")
 	end
 	--- END [Workaround issue 40]
 
-	uci:save("bmx6")
+	uci:save(bmx6.f)
 end
 
 function bmx6.apply()
-    os.execute("killall bmx6 ; sleep 2 ; killall -9 bmx6")
-    os.execute("bmx6")
+	os.execute("killall bmx7 ; sleep 2 ; killall -9 bmx7")
+	os.execute(bmx6.f)
 end
 
 function bmx6.bgp_conf(templateVarsIPv4, templateVarsIPv6)
 	local uci = libuci:cursor()
 
 	-- Enable Routing Table Redistribution plugin
-	uci:set("bmx6", "table", "plugin")
-	uci:set("bmx6", "table", "plugin", "bmx6_table.so")
+	uci:set(bmx6.f, "table", "plugin")
+	uci:set(bmx6.f, "table", "plugin", "bmx7_table.so")
 
 	-- Redistribute proto bird routes
-	uci:set("bmx6", "fromBird", "redistTable")
-	uci:set("bmx6", "fromBird", "redistTable", "fromBird")
-	uci:set("bmx6", "fromBird", "table", "254")
-	uci:set("bmx6", "fromBird", "bandwidth", "100")
-	uci:set("bmx6", "fromBird", "proto", "12")
+	uci:set(bmx6.f, "fromBird", "redistTable")
+	uci:set(bmx6.f, "fromBird", "redistTable", "fromBird")
+	uci:set(bmx6.f, "fromBird", "table", "254")
+	uci:set(bmx6.f, "fromBird", "bandwidth", "100")
+	uci:set(bmx6.f, "fromBird", "proto", "12")
 
 	-- Avoid aggregation as it use lot of CPU with huge number of routes
-	uci:set("bmx6", "fromBird", "aggregatePrefixLen", "128")
+	uci:set(bmx6.f, "fromBird", "aggregatePrefixLen", "128")
 
 	-- Disable proactive tunnels announcement as it use lot of CPU with
 	-- huge number of routes
-	uci:set("bmx6", "general", "proactiveTunRoutes", "0")
+	uci:set(bmx6.f, "general", "proactiveTunRoutes", "0")
 
 	-- BMX6 security features are at moment not used by LiMe, disable hop
 	-- by hop links signature as it consume a lot of CPU expecially in
 	-- setups with multiples interfaces  and lot of routes like LiMe
-	uci:set("bmx6", "general", "linkSignatureLen", "0")
+	uci:set(bmx6.f, "general", "linkSignatureLen", "0")
 
-	uci:save("bmx6")
+	uci:save(bmx6.f)
 
 	local base_bgp_conf = [[
 protocol direct {
