@@ -123,6 +123,7 @@ end
 function network.scandevices()
 	local devices = {}
 	local switch_vlan = {}
+	local wireless = require("lime.wireless")
 
 	function dev_parser(dev)
 		if dev:match("^eth%d+$") then
@@ -135,7 +136,7 @@ function network.scandevices()
 			devices[dev] = {}
 		end
 
-		if dev:match("^wlan%d+_%w+$") then
+		if dev:match("^wlan%d+"..wireless.wifiModeSeparator.."%w+$") then
 			devices[dev] = {}
 		end
 	end
