@@ -6,12 +6,12 @@
 # and on https://libre-mesh.org
 
 config lime system
-	option hostname 'LiMeNode-%M4%M5%M6'
+	option hostname 'LiMe-%M4%M5%M6'
 
 config lime network
 	option primary_interface eth0
-	option main_ipv4_address '192.0.2.0/24'
-	option main_ipv6_address '2001:db8::%M5:%M6/64'
+	option main_ipv4_address '10.%N1.0.0/16'
+	option main_ipv6_address '2a00:1508:0a%N1:%N200::/64'
 	list protocols adhoc
 	list protocols lan
 	list protocols anygw
@@ -19,15 +19,16 @@ config lime network
 	list protocols bmx6:13
 	list protocols olsr:14
 	list protocols olsr6:15
-	list resolvers 8.8.8.8
-	list resolvers 2001:4860:4860::8844
+	list resolvers 4.2.2.2   # b.resolvers.Level3.net
+	list resolvers 141.1.1.1 # cns1.cw.net
+	list resolvers 2001:470:20::2 # ordns.he.net
 
 config lime wifi
 	option channel_2ghz '11'
-	option channel_5ghz '48'
+	option channel_5ghz '157'
 	list modes 'ap'
 	list modes 'adhoc'
-	option ap_ssid 'libre-mesh.org'
+	option ap_ssid 'Libre-Mesh.org'
 	option adhoc_ssid '%H'
 	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
 	option adhoc_mcast_rate_2ghz '24000'
