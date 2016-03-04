@@ -61,6 +61,8 @@ else
 	main()
 
 	opts = getopt( arg, "" )
+	--! using --no-commit doesn't guarantee filesystem will not be changed
+	--! mainly because many config files are not uci-based
 	if not opts["no-commit"] and not opts["n"] then
 		local uci = require("uci"):cursor()
 		for config,_ in pairs(uci:changes()) do
