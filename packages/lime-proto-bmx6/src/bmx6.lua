@@ -5,6 +5,7 @@ local config = require("lime.config")
 local fs = require("nixio.fs")
 local libuci = require("uci")
 local wireless = require("lime.wireless")
+local opkg = require("luci.model.ipkg")
 
 bmx6 = {}
 
@@ -80,20 +81,29 @@ function bmx6.configure(args)
 
 	uci:save("bmx6")
 
+	if opkg.installed("firewall") then
+		uci:delete("firewall", "bmxtun")
 
-	uci:delete("firewall", "bmxtun")
+		uci:set("firewall", "bmxtun", "zone")
+		uci:set("firewall", "bmxtun", "name", "bmxtun")
+		uci:set("firewall", "bmxtun", "input", "ACCEPT")
+		uci:set("firewall", "bmxtun", "output", "ACCEPT")
+		uci:set("firewall", "bmxtun", "forward", "ACCEPT")
+		uci:set("firewall", "bmxtun", "mtu_fix", "1")
+		uci:set("firewall", "bmxtun", "conntrack", "1")
+		uci:set("firewall", "bmxtun", "device", "bmx+")
+		uci:set("firewall", "bmxtun", "family", "ipv4")
 
-	uci:set("firewall", "bmxtun", "zone")
-	uci:set("firewall", "bmxtun", "name", "bmxtun")
-	uci:set("firewall", "bmxtun", "input", "ACCEPT")
-	uci:set("firewall", "bmxtun", "output", "ACCEPT")
-	uci:set("firewall", "bmxtun", "forward", "ACCEPT")
-	uci:set("firewall", "bmxtun", "mtu_fix", "1")
-	uci:set("firewall", "bmxtun", "conntrack", "1")
-	uci:set("firewall", "bmxtun", "device", "bmx+")
-	uci:set("firewall", "bmxtun", "family", "ipv4")
-
-	uci:save("firewall")
+		uci:save("firewall")
+	else
+		fs.mkdir("/etc/firewall.user.d")
+		fs.writefile(
+			"/etc/firewall.user.d/20-bmxtun-mtu_fix",
+			"\n" ..
+			"iptables -t mangle -D FORWARD -o bmx+ -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" ..
+			"iptables -t mangle -A FORWARD -o bmx+ -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" ..
+		)
+	end
 end
 
 function bmx6.setup_interface(ifname, args)
