@@ -22,7 +22,8 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LiMe
 	MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
 	URL:=http://libre-mesh.org
-	DEPENDS:=+batctl +busybox +ethtool +iwinfo +iw +mtr +ip +iputils-ping6 \
+	DEPENDS:=+PACKAGE_lime-proto-batadv:batctl \
+       		+busybox +ethtool +iwinfo +iw +mtr +ip +iputils-ping6 \
 		+sprunge +safe-reboot +netperf +pv +rdisc6 +tcpdump-mini
 endef
 
