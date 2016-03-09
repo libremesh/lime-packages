@@ -108,7 +108,7 @@ function bmx6.configure(args)
 end
 
 function bmx6.setup_interface(ifname, args)
-	if ifname:match("^wlan%d+.ap") then return end
+	if not args["specific"] and ifname:match("^wlan%d+.ap") then return end
 	vlanId = args[2] or 13
 	vlanProto = args[3] or "8021ad"
 	nameSuffix = args[4] or "_bmx6"

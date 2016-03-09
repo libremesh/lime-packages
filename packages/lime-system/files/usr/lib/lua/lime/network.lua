@@ -202,7 +202,10 @@ function network.configure()
 	for device,flags in pairs(fisDevs) do
 		local owrtIf = specificIfaces[device]
 		local deviceProtos = generalProtocols
-		if owrtIf then deviceProtos = owrtIf["protocols"] end
+		if owrtIf then
+			deviceProtos = owrtIf["protocols"]
+			device["specific"] = true
+		end
 
 		for _,protoParams in pairs(deviceProtos) do
 			local args = utils.split(protoParams, network.protoParamsSeparator)
