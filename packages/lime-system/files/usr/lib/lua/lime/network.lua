@@ -204,7 +204,7 @@ function network.configure()
 		local deviceProtos = generalProtocols
 		if owrtIf then
 			deviceProtos = owrtIf["protocols"]
-			device["specific"] = true
+			flags["specific"] = true
 		end
 
 		for _,protoParams in pairs(deviceProtos) do
