@@ -8,7 +8,7 @@ local wireless = require("lime.wireless")
 local utils = require("lime.utils")
 local ip = require("luci.ip")
 
-olsr = {}
+local olsr = {}
 
 olsr.configured = false
 
@@ -34,8 +34,6 @@ function olsr.configure(args)
 	uci:set("olsrd", "limehna", "netmask", ipv4:mask():string())
 
 	uci:save("olsrd")
-
-
 end
 
 function olsr.setup_interface(ifname, args)
@@ -59,7 +57,6 @@ function olsr.setup_interface(ifname, args)
 
 	uci:set("olsrd", owrtInterfaceName, "Interface")
 	uci:set("olsrd", owrtInterfaceName, "interface", owrtInterfaceName)
-
 	uci:save("olsrd")
 end
 
