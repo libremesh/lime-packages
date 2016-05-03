@@ -6,8 +6,9 @@ local fs = require("nixio.fs")
 local libuci = require("uci")
 local wireless = require("lime.wireless")
 local utils = require("lime.utils")
+local ip = require("luci.ip")
 
-olsr = {}
+local olsr = {}
 
 olsr.configured = false
 
@@ -33,36 +34,30 @@ function olsr.configure(args)
 	uci:set("olsrd", "limehna", "netmask", ipv4:mask():string())
 
 	uci:save("olsrd")
-
-
 end
 
 function olsr.setup_interface(ifname, args)
-	if ifname:match("^wlan%d+_ap") then return end
-	vlanId = args[2] or 14
-	vlanProto = args[3] or "8021ad"
-	nameSuffix = args[4] or "_olsr"
-
-	local uci = libuci:cursor()
-	local owrtInterfaceName, linux802adIfName, owrtDeviceName
-	owrtInterfaceName = ifname
-
-	if vlanId ~= '0' then
-		owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
+	if not args["specific"] then
+		if ifname:match("^wlan%d+.ap") then return end
 	end
 
+	local vlanId = args[2] or 14
+	local vlanProto = args[3] or "8021ad"
+	local nameSuffix = args[4] or "_olsr"
+	local ipPrefixTemplate = args[5] or "169.254.%M5.%M6/16"
+	local owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 	local macAddr = network.get_mac(utils.split(ifname, ".")[1])
-	local ipAddr = { utils.applyMacTemplate10("169.254.%M5.%M6/16", macAddr) }
+	local ipAddr = ip.IPv4(utils.applyMacTemplate10(ipPrefixTemplate, macAddr))
+
+	local uci = libuci:cursor()
 	uci:set("network", owrtInterfaceName, "proto", "static")
-	uci:set("network", owrtInterfaceName, "ipaddr", ipAddr)
-	uci:set("network", owrtInterfaceName, "netmask", "255.255.0.0")
+	uci:set("network", owrtInterfaceName, "ipaddr", ipAddr:host():string())
+	uci:set("network", owrtInterfaceName, "netmask", ipAddr:mask():string())
 	uci:save("network")
 
 	uci:set("olsrd", owrtInterfaceName, "Interface")
 	uci:set("olsrd", owrtInterfaceName, "interface", owrtInterfaceName)
-
 	uci:save("olsrd")
-
 end
 
 
