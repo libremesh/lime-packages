@@ -30,7 +30,7 @@ function anygw.configure(args)
 
 	local uci = libuci:cursor()
 	local pfr = network.limeIfNamePrefix.."anygw_"
-	
+
 	uci:set("network", pfr.."rule6", "rule6")
 	uci:set("network", pfr.."rule6", "src", anygw_ipv6:host():string().."/128")
 	uci:set("network", pfr.."rule6", "lookup", "170") -- 0xaa in decimal
