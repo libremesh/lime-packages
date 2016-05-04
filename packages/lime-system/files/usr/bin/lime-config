@@ -51,7 +51,11 @@ local lockFilePath = "/var/run/lime-config.pid"
 local lockFile = io.open(lockFilePath,"r")
 if lockFile then
 	lockFile:close()
-	print("lime-config already running")
+	print("Cannot acquire lock on "..lockFilePath)
+	print("This may be caused by lime-config already running or unexpectedly crashed.")
+	print("If it is the latter case (check carefully!) try by deleting the lock file with:")
+	print("# rm -rf "..lockFilePath)
+	print("Before running lime-config again")
 else
 	lockFile = io.open(lockFilePath,"w")
 	local statFile = io.open("/proc/self/stat", "r")
