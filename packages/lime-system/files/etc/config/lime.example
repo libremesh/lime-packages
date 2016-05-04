@@ -31,6 +31,7 @@ config lime network
 	list protocols bmx6:13
 #	list protocols olsr:14
 #	list protocols olsr6:15
+#	list protocols olsr2:16
 #	list resolvers 8.8.8.8                                                 # DNS servers node will use
 #	list resolvers 2001:4860:4860::8844
 
