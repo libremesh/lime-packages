@@ -24,7 +24,7 @@ define Package/$(PKG_NAME)
   URL:=http://libre-mesh.org
   DEPENDS:=+lime-system +lime-proto-bmx6 +lime-proto-batadv +lime-proto-anygw +lime-proto-wan \
 		+dnsmasq-lease-share +dnsmasq-distributed-hosts \
-		+lime-webui +luci-app-batman-adv +luci-app-bmx6 \
+		+lime-webui +luci-app-batman-adv \
 		+lime-map-agent \
 		+lime-debug \
 		+lime-hwd-openwrt-wan +bmx6-auto-gw-mode
