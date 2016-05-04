@@ -19,7 +19,8 @@ define Package/$(PKG_NAME)
   TITLE:=Set batman-adv gw_mode by internet availability
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   URL:=http://libre-mesh.org
-  DEPENDS:= +kmod-batman-adv +watchping +dnsmasq-dhcpv6 +lime-eb-ip-tables +ip
+  DEPENDS:= +kmod-batman-adv +watchping +dnsmasq-dhcpv6 +lime-eb-ip-tables +ip \
+	  +PACKAGE_lime-system:lime-proto-batadv
 endef
 
 define Package/$(PKG_NAME)/description
