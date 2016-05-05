@@ -4,6 +4,7 @@ local libuci = require("uci")
 local fs = require("nixio.fs")
 local lan = require("lime.proto.lan")
 local utils = require("lime.utils")
+local network = require("lime.network")
 
 batadv = {}
 
@@ -16,6 +17,7 @@ function batadv.configure(args)
 	if not fs.lstat("/etc/config/batman-adv") then fs.writefile("/etc/config/batman-adv", "") end
 
 	local uci = libuci:cursor()
+
 	uci:set("batman-adv", "bat0", "mesh")
 	uci:set("batman-adv", "bat0", "bridge_loop_avoidance", "1")
 	uci:set("batman-adv", "bat0", "multicast_mode", "0")
@@ -24,10 +26,22 @@ function batadv.configure(args)
 	for _,proto in pairs(config.get("network", "protocols")) do
 		if proto == "anygw" then uci:set("batman-adv", "bat0", "distributed_arp_table", "0") end
 	end
-
+	uci:save("batman-adv")
 	lan.setup_interface("bat0", nil)
 
-	uci:save("batman-adv")
+	--! Avoid dmesg flooding caused by BLA. Create a dummy0 interface with
+	--! custom MAC, as dummy0 is created very soon on boot it is added as
+	--! first and then main interface to batman so BLA messages are sent
+	--! from that MAC avoiding generating warning like:  
+	--! br-lan: received packet on bat0 with own address as source address
+	local owrtInterfaceName = network.limeIfNamePrefix.."batadv_dummy_if"
+	local dummyMac = network.primary_mac(); dummyMac[1] = "aa"
+	uci:set("network", owrtInterfaceName, "interface")
+	uci:set("network", owrtInterfaceName, "ifname", "dummy0")
+	uci:set("network", owrtInterfaceName, "macaddr", table.concat(dummyMac, ":"))
+	uci:set("network", owrtInterfaceName, "proto", "batadv")
+	uci:set("network", owrtInterfaceName, "mesh", "bat0")
+	uci:save("network")
 end
 
 function batadv.setup_interface(ifname, args)
