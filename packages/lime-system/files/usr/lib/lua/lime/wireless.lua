@@ -104,6 +104,7 @@ function wireless.configure()
 		local uci = libuci:cursor()
 		uci:set("wireless", radioName, "disabled", 0)
 		uci:set("wireless", radioName, "distance", 10000) -- up to 10km links
+		uci:set("wireless", radioName, "noscan", 1)
 		uci:set("wireless", radioName, "channel", options["channel"..freqSuffix])
 
 		local country = options["country"]
