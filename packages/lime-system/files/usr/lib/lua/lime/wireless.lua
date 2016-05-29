@@ -104,7 +104,19 @@ function wireless.configure()
 		local uci = libuci:cursor()
 		uci:set("wireless", radioName, "disabled", 0)
 		uci:set("wireless", radioName, "distance", 10000) -- up to 10km links
+		uci:set("wireless", radioName, "noscan", 1)
 		uci:set("wireless", radioName, "channel", options["channel"..freqSuffix])
+
+		local country = options["country"]
+		if country then
+			uci:set("wireless", radioName, "country", country)
+		end
+
+		local htmode = options["htmode"..freqSuffix]
+		if htmode then
+			uci:set("wireless", radioName, "htmode", htmode)
+		end
+
 		uci:save("wireless")
 
 		for _,modeArgs in pairs(modes) do
@@ -123,6 +135,8 @@ function wireless.configure()
 				local isGoodOption = ( (key ~= "modes")
 				                   and (not key:match("^%."))
 				                   and (not key:match("channel"))
+				                   and (not key:match("country"))
+				                   and (not key:match("htmode"))
 				                   and (not (wireless.isMode(keyPrefix) and keyPrefix ~= modeName))
 				                   and (not key:match(ignoredSuffix)) )
 
