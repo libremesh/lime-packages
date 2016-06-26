@@ -10,7 +10,7 @@ local opkg = require("luci.model.ipkg")
 bmx6 = {}
 
 bmx6.configured = false
-bmx6.f = "bmx7"
+bmx6.f = "bmx6"
 
 function bmx6.configure(args)
 	if bmx6.configured then return end
@@ -32,15 +32,15 @@ function bmx6.configure(args)
 
 	-- Enable bmx6 uci config plugin
 	uci:set(bmx6.f, "config", "plugin")
-	uci:set(bmx6.f, "config", "plugin", "bmx7_config.so")
+	uci:set(bmx6.f, "config", "plugin", "bmx6_config.so")
 
 	-- Enable JSON plugin to get bmx6 information in json format
 	uci:set(bmx6.f, "json", "plugin")
-	uci:set(bmx6.f, "json", "plugin", "bmx7_json.so")
+	uci:set(bmx6.f, "json", "plugin", "bmx6_json.so")
 
 	-- Enable tun plugin, DISCLAIMER: this must be positioned before table plugin if used.
-	uci:set(bmx6.f, "ptun", "plugin")
-	uci:set(bmx6.f, "ptun", "plugin", "bmx7_tun.so")
+--	uci:set(bmx6.f, "ptun", "plugin")
+--	uci:set(bmx6.f, "ptun", "plugin", "bmx6_tun.so")
 
 	-- Disable ThrowRules because they are broken in IPv6 with current Linux Kernel
 	uci:set(bmx6.f, "ipVersion", "ipVersion")
@@ -143,7 +143,7 @@ function bmx6.setup_interface(ifname, args)
 end
 
 function bmx6.apply()
-	os.execute("killall bmx7 ; sleep 2 ; killall -9 bmx7")
+	os.execute("killall bmx6 ; sleep 2 ; killall -9 bmx6")
 	os.execute(bmx6.f)
 end
 
@@ -152,7 +152,7 @@ function bmx6.bgp_conf(templateVarsIPv4, templateVarsIPv6)
 
 	-- Enable Routing Table Redistribution plugin
 	uci:set(bmx6.f, "table", "plugin")
-	uci:set(bmx6.f, "table", "plugin", "bmx7_table.so")
+	uci:set(bmx6.f, "table", "plugin", "bmx6_table.so")
 
 	-- Redistribute proto bird routes
 	uci:set(bmx6.f, "fromBird", "redistTable")
