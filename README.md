@@ -1,6 +1,6 @@
 [![tip for next commit](http://tip4commit.com/projects/804.svg)](http://tip4commit.com/projects/804)
 
-# Libre-Mesh packages "Big Bang" release (14.07)
+# [Libre-Mesh][5] packages "Big Bang" release (14.07)
 
 [Libre-Mesh project][5] includes the development of several tools used for deploying libre/free mesh networks, check the [objectives and agreements][3].
 
@@ -43,9 +43,26 @@ The resulting files will be present in bin/ directory.
 
 Refer to [lime-build][2] documentation.
 
+## Get in Touch with Libre-Mesh Community
+
+### Mailing Lists
+
+The project offers the following mailing lists
+
+* [dev@lists.libre-mesh.org][7] - This list is used for general development related work.
+* [users@lists.libre-mesh.org][8] - This list is used for project organisational purposes. And for user specific questions.
+
+### IRC Channel
+
+The project uses an IRC channel on freenode
+
+* #libre-mesh - a public channel for everyone to join and participate
+
 [1]: http://wiki.openwrt.org/doc/start#building_openwrt
 [2]: https://github.com/libre-mesh/lime-build
 [3]: http://libre-mesh.org/projects/libre-mesh/wiki/Objectives
 [4]: http://libre-mesh.org/projects/libre-mesh/wiki/Network_Architecture
 [5]: http://libre-mesh.org/
 [6]: http://libre-mesh.org/projects/libre-mesh/wiki/Compile_Manually
+[7]: https://lists.libre-mesh.org/mailman/listinfo/dev
+[8]: https://lists.libre-mesh.org/mailman/listinfo/users
