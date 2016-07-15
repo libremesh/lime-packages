@@ -1,30 +1,36 @@
 <%#
-LuCI - Lua Configuration Interface
-Copyright 2008 Steven Barth <steven@midlink.org>
-Copyright 2008-2011 Jo-Philipp Wich <xm@subsignal.org>
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-	http://www.apache.org/licenses/LICENSE-2.0
-
+ Copyright 2008 Steven Barth <steven@midlink.org>
+ Copyright 2008-2011 Jo-Philipp Wich <jow@openwrt.org>
+ Licensed to the public under the Apache License 2.0.
 -%>
 
 <%
-	require "luci.fs"
-	require "luci.tools.status"
+	local fs = require "nixio.fs"
+	local util = require "luci.util"
+	local stat = require "luci.tools.status"
+	local ver = require "luci.version"
 
-	local has_ipv6 = luci.fs.access("/proc/net/ipv6_route")
-	local has_dhcp = luci.fs.access("/etc/config/dhcp")
-	local has_wifi = luci.fs.stat("/etc/config/wireless")
-	      has_wifi = has_wifi and has_wifi.size > 0
-	local _, _, memtotal, memcached, membuffers, memfree, _, swaptotal, swapcached, swapfree = luci.sys.sysinfo()
-	local has_swap
-	if swaptotal > 0 then
-		has_swap = 1
-	end
-	local has_dsl = luci.fs.stat("/etc/init.d/dsl_control")
+	local has_ipv6 = fs.access("/proc/net/ipv6_route")
+	local has_dhcp = fs.access("/etc/config/dhcp")
+	local has_wifi = ((fs.stat("/etc/config/wireless", "size") or 0) > 0)
+
+	local sysinfo = luci.util.ubus("system", "info") or { }
+	local boardinfo = luci.util.ubus("system", "board") or { }
+	local unameinfo = nixio.uname() or { }
+
+	local meminfo = sysinfo.memory or {
+		total = 0,
+		free = 0,
+		buffered = 0,
+		shared = 0
+	}
+
+	local swapinfo = sysinfo.swap or {
+		total = 0,
+		free = 0
+	}
+
+	local has_dsl = fs.access("/etc/init.d/dsl_control")
 
 	if luci.http.formvalue("status") == "1" then
 		local ntm = require "luci.model.network".init()
@@ -42,21 +48,16 @@ You may obtain a copy of the License at
 			""):match("%d+")) or 4096
 
 		local rv = {
-			uptime     = luci.sys.uptime(),
+			uptime     = sysinfo.uptime or 0,
 			localtime  = os.date(),
-			loadavg    = { luci.sys.loadavg() },
-			memtotal   = memtotal,
-			memcached  = memcached,
-			membuffers = membuffers,
-			memfree    = memfree,
-			swaptotal  = swaptotal,
-			swapcached = swapcached,
-			swapfree   = swapfree,
+			loadavg    = sysinfo.load or { 0, 0, 0 },
+			memory     = meminfo,
+			swap       = swapinfo,
 			connmax    = conn_max,
 			conncount  = conn_count,
-			leases     = luci.tools.status.dhcp_leases(),
-			leases6    = luci.tools.status.dhcp6_leases(),
-			wifinets   = luci.tools.status.wifi_networks()
+			leases     = stat.dhcp_leases(),
+			leases6    = stat.dhcp6_leases(),
+			wifinets   = stat.wifi_networks()
 		}
 
 		if wan then
@@ -87,7 +88,9 @@ You may obtain a copy of the License at
 		if has_dsl then
 			local dsl_stat = luci.sys.exec("/etc/init.d/dsl_control lucistat")
 			local dsl_func = loadstring(dsl_stat)
-			rv.dsl = dsl_func()
+			if dsl_func then
+				rv.dsl = dsl_func()
+			end
 		end
 
 		luci.http.prepare_content("application/json")
@@ -95,8 +98,6 @@ You may obtain a copy of the License at
 
 		return
 	end
-
-	local system, model = luci.sys.sysinfo()
 -%>
 
 <%+header%>
@@ -244,7 +245,7 @@ You may obtain a copy of the License at
 				dsl_s.innerHTML = String.format('<small>%s</small>', s);
 				dsl_i.innerHTML = String.format(
 					'<img src="<%=resource%>/icons/ethernet.png" />' +
-					'<br /><small>ADSL</small>'
+					'<br /><small>xDSL</small>'
 				);
 			<% end %>
 
@@ -353,7 +354,7 @@ You may obtain a copy of the License at
 					for (var nidx = 0; nidx < dev.networks.length; nidx++)
 					{
 						var net = dev.networks[nidx];
-						var is_assoc = (net.bssid != '00:00:00:00:00:00' && net.channel);
+						var is_assoc = (net.bssid != '00:00:00:00:00:00' && net.channel && !net.disabled);
 
 						var icon;
 						if (!is_assoc)
@@ -467,7 +468,8 @@ You may obtain a copy of the License at
 					tr.insertCell(-1).innerHTML = assoclist[i].bssid;
 
 					tr.insertCell(-1).innerHTML = String.format(
-						'%s',
+						'<a href="%s">%s</a>',
+							assoclist[i].link,
 							'%h'.format(assoclist[i].name).nobr()
 					);
 
@@ -506,8 +508,46 @@ You may obtain a copy of the License at
 				e.innerHTML = String.format('%t', info.uptime);
 
 			if (e = document.getElementById('loadavg'))
-				e.innerHTML = String.format('%.02f, %.02f, %.02f',
-					info.loadavg[0], info.loadavg[1], info.loadavg[2]);
+				e.innerHTML = String.format(
+					'%.02f, %.02f, %.02f',
+					info.loadavg[0] / 65535.0,
+					info.loadavg[1] / 65535.0,
+					info.loadavg[2] / 65535.0
+				);
+
+			if (e = document.getElementById('memtotal'))
+				e.innerHTML = progressbar(
+					((info.memory.free + info.memory.buffered) / 1024) + " <%:kB%>",
+					(info.memory.total / 1024) + " <%:kB%>"
+				);
+
+			if (e = document.getElementById('memfree'))
+				e.innerHTML = progressbar(
+					(info.memory.free / 1024) + " <%:kB%>",
+					(info.memory.total / 1024) + " <%:kB%>"
+				);
+
+			if (e = document.getElementById('membuff'))
+				e.innerHTML = progressbar(
+					(info.memory.buffered / 1024) + " <%:kB%>",
+					(info.memory.total / 1024) + " <%:kB%>"
+				);
+
+			if (e = document.getElementById('swaptotal'))
+				e.innerHTML = progressbar(
+					(info.swap.free / 1024) + " <%:kB%>",
+					(info.swap.total / 1024) + " <%:kB%>"
+				);
+
+			if (e = document.getElementById('swapfree'))
+				e.innerHTML = progressbar(
+					(info.swap.free / 1024) + " <%:kB%>",
+					(info.swap.total / 1024) + " <%:kB%>"
+				);
+
+			if (e = document.getElementById('conns'))
+				e.innerHTML = progressbar(info.conncount, info.connmax);
+
 		}
 	);
 //]]></script>
@@ -519,17 +559,40 @@ You may obtain a copy of the License at
 
 	<table width="100%" cellspacing="10">
 		<tr><td width="33%"><%:Hostname%></td><td><%=luci.sys.hostname() or "?"%></td></tr>
-		<tr><td width="33%"><%:Model%></td><td><%=pcdata(model or "?")%></td></tr>
+		<tr><td width="33%"><%:Model%></td><td><%=pcdata(boardinfo.model or boardinfo.system or "?")%></td></tr>
 		<tr><td width="33%"><%:Firmware Version%></td><td>
-			<%=pcdata(luci.version.distname)%> <%=pcdata(luci.version.distversion)%> /
-			<%=pcdata(luci.version.luciname)%> (<%=pcdata(luci.version.luciversion)%>)
+			<%=pcdata(ver.distname)%> <%=pcdata(ver.distversion)%> /
+			<%=pcdata(ver.luciname)%> (<%=pcdata(ver.luciversion)%>)
 		</td></tr>
+		<tr><td width="33%"><%:Kernel Version%></td><td><%=unameinfo.release or "?"%></td></tr>
 		<tr><td width="33%"><%:Local Time%></td><td id="localtime">-</td></tr>
 		<tr><td width="33%"><%:Uptime%></td><td id="uptime">-</td></tr>
+		<tr><td width="33%"><%:Load Average%></td><td id="loadavg">-</td></tr>
 	</table>
 </fieldset>
 
-<fieldset class="cbi-section" style="display:none">
+<fieldset class="cbi-section">
+	<legend><%:Memory%></legend>
+
+	<table width="100%" cellspacing="10">
+		<tr><td width="33%"><%:Total Available%></td><td id="memtotal">-</td></tr>
+		<tr><td width="33%"><%:Free%></td><td id="memfree">-</td></tr>
+		<tr><td width="33%"><%:Buffered%></td><td id="membuff">-</td></tr>
+	</table>
+</fieldset>
+
+<% if swapinfo.total > 0 then %>
+<fieldset class="cbi-section">
+	<legend><%:Swap%></legend>
+
+	<table width="100%" cellspacing="10">
+		<tr><td width="33%"><%:Total Available%></td><td id="swaptotal">-</td></tr>
+		<tr><td width="33%"><%:Free%></td><td id="swapfree">-</td></tr>
+	</table>
+</fieldset>
+<% end %>
+
+<fieldset class="cbi-section">
 	<legend><%:Network%></legend>
 
 	<table width="100%" cellspacing="10">
@@ -587,9 +650,9 @@ You may obtain a copy of the License at
 
 <% if has_dsl then %>
 <fieldset class="cbi-section">
-       <legend><%:ADSL%></legend>
+       <legend><%:xDSL%></legend>
        <table width="100%" cellspacing="10">
-               <tr><td width="33%" style="vertical-align:top"><%:ADSL Status%></td><td>
+               <tr><td width="33%" style="vertical-align:top"><%:xDSL Status%></td><td>
                        <table><tr>
                                <td id="dsl_i" style="width:16px; text-align:center; padding:3px"><img src="<%=resource%>/icons/ethernet_disabled.png" /><br /><small>?</small></td>
                                <td id="dsl_s" style="vertical-align:middle; padding: 3px"><em><%:Collecting data...%></em></td>
@@ -600,7 +663,7 @@ You may obtain a copy of the License at
 <% end %>
 
 <% if has_wifi then %>
-<fieldset class="cbi-section" style="display: none;">
+<fieldset class="cbi-section">
 	<legend><%:Wireless%></legend>
 
 	<table id="wifi_status_table" width="100%" cellspacing="10">
@@ -627,5 +690,17 @@ You may obtain a copy of the License at
 	</table>
 </fieldset>
 <% end %>
+
+<%-
+	local incdir = util.libpath() .. "/view/admin_status/index/"
+	if fs.access(incdir) then
+		local inc
+		for inc in fs.dir(incdir) do
+			if inc:match("%.htm$") then
+				include("admin_status/index/" .. inc:gsub("%.htm$", ""))
+			end
+		end
+	end
+-%>
 
 <%+footer%>
