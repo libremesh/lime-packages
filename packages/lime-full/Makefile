@@ -26,7 +26,7 @@ define Package/$(PKG_NAME)
 		+dnsmasq-lease-share +dnsmasq-distributed-hosts \
 		+lime-webui +luci-app-batman-adv \
 		+lime-map-agent \
-		+lime-debug \
+		+lime-debug +lime-hwd-ground-routing \
 		+lime-hwd-openwrt-wan +bmx6-auto-gw-mode
 endef
 
