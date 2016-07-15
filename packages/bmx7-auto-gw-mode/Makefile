@@ -9,22 +9,22 @@ include $(TOPDIR)/rules.mk
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
-PKG_NAME:=bmx6-auto-gw-mode
+PKG_NAME:=bmx7-auto-gw-mode
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
   CATEGORY:=LiMe
-  TITLE:=bmx6 auto Internet gateway module 
+  TITLE:=bmx7 auto Internet gateway module 
   MAINTAINER:=Pau Escrich <p4u@dabax.et>
   URL:=http://libre-mesh.org
-  DEPENDS:= bmx6 +watchping +lime-eb-ip-tables +ip \
-	  +PACKAGE_lime-system:lime-proto-bmx6
+  DEPENDS:= bmx7 +watchping +lime-eb-ip-tables +ip \
+	  +PACKAGE_lime-system:lime-proto-bmx7
 endef
 
 define Package/$(PKG_NAME)/description
-	Watchping hooks to set bmx6 Internet automatic announcements
+	Watchping hooks to set bmx7 Internet automatic announcements
 endef
 
 define Build/Compile

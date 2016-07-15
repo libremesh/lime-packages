@@ -1,0 +1,4 @@
+#!/bin/sh
+logger -t bmx7-auto-gw "Searching Internet access into the mesh"
+bmx7 -c tunIn -inet4
+bmx7 -c tunOut inet4 /network 0.0.0.0/0 /maxPrefixLen 0
