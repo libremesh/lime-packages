@@ -102,8 +102,12 @@ function wireless.configure()
 		end
 
 		local uci = libuci:cursor()
+		local distance = options["distance"..freqSuffix]
+		if not distance then
+			distance = 10000 -- up to 10km links by default
+		end
 		uci:set("wireless", radioName, "disabled", 0)
-		uci:set("wireless", radioName, "distance", 10000) -- up to 10km links
+		uci:set("wireless", radioName, "distance", distance)
 		uci:set("wireless", radioName, "noscan", 1)
 		uci:set("wireless", radioName, "channel", options["channel"..freqSuffix])
 
