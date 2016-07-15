@@ -1,0 +1,12 @@
+#!/bin/sh
+logger -t bmx7-auto-gw "We got Internet access, announcing it to the mesh"
+bmx7 -c tunOut -inet4
+bmx7 -c tunIn inet4 /n 0.0.0.0/0
+[ $? -eq 0 ] && {
+	# Adds a NAT rule if it does not already exist
+	iface="$(ip route get 8.8.8.8 | awk '{print $5}' | tr -d '\n')"
+	if ! iptables -v -n -L POSTROUTING -t nat | grep MASQUERADE  | grep 0.0.0.0/0 | grep -q $iface
+	then
+		iptables -A POSTROUTING -t nat -o $iface -j MASQUERADE
+	fi
+}
