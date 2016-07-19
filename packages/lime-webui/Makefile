@@ -25,7 +25,8 @@ define Package/$(PKG_NAME)
 	+PACKAGE_lime-proto-batadv:luci-app-batman-adv \
 	+luci-mod-status \
 	+uhttpd +libiwinfo-lua \
-	+luci-theme-bootstrap +luci-i18n-english
+	+luci-theme-bootstrap +luci-i18n-english \
+	+lime-system
 endef
 
 define Package/$(PKG_NAME)/description
