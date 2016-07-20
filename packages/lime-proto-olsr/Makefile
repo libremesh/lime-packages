@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LiMe
 	MAINTAINER:=leonaard <leone@inventati.org>
 	URL:=http://libre-mesh.org
-	DEPENDS:=+lua +libuci-lua +lime-system +olsrd +olsrd-mod-jsoninfo
+	DEPENDS:=+lua +libuci-lua +lime-system +olsrd +olsrd-mod-jsoninfo +kmod-ipip
 endef
 
 define Build/Compile
