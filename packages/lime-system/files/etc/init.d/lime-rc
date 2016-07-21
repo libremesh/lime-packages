@@ -19,7 +19,7 @@
 #    the file called "COPYING".
 
 START=99
-RCDIR=/etc/lime-rc.d
+RCDIR=/etc/lime/rc.d
 
 start() {
 	for s in $RCDIR/*; do
