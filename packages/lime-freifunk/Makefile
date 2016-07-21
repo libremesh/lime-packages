@@ -22,7 +22,10 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
   URL:=http://libre-mesh.org
-  DEPENDS:=+lime-system +lime-proto-batadv +batctl +lime-proto-bmx6 +lime-proto-anygw +dnsmasq-lease-share +dnsmasq-distributed-hosts +lime-eb-ip-tables +bmx6-auto-gw-mode +lime-webui
+  DEPENDS:=+lime-system +lime-proto-batadv +batctl +lime-proto-bmx6 \
+	+lime-proto-anygw +dnsmasq-lease-share +dnsmasq-distributed-hosts \
+	+lime-eb-ip-tables +bmx6-auto-gw-mode +lime-webui \
+	+lime-hwd-openwrt-wan
 
 endef
 
