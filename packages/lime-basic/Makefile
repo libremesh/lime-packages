@@ -12,7 +12,7 @@ LIME_CODENAME:=biggestbang
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
-PKG_NAME:=lime-mini
+PKG_NAME:=lime-basic
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
@@ -32,7 +32,7 @@ define Package/$(PKG_NAME)
 endef
 
 define Package/$(PKG_NAME)/description
-	Metapackage depending on all the required to run a minimal standard libre-mesh node
+	Metapackage depending on all the required to run a basic standard libre-mesh node
 endef
 
 define Build/Compile

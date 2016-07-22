@@ -24,7 +24,7 @@ define Package/$(PKG_NAME)
   SUBMENU:=Collections
   MAINTAINER:=Pau Escrich <p4u@dabax.net>
   URL:=http://libre-mesh.org
-  DEPENDS:=+lime-mini +lime-debug
+  DEPENDS:=+lime-basic +lime-debug
 endef
 
 define Package/$(PKG_NAME)/description
