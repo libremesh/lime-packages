@@ -24,7 +24,7 @@ define Package/$(PKG_NAME)
   SUBMENU:=Collections
   MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
   URL:=http://libre-mesh.org
-  DEPENDS:=+lime-mini
+  DEPENDS:=+lime-basic
 endef
 
 define Package/$(PKG_NAME)/description
