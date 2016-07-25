@@ -1,0 +1,30 @@
+#!/bin/sh
+TMP_DIR="/tmp/auto-ap"
+mkdir -p $TMP_DIR                                        
+                                                         
+[ -f $TMP_DIR/autoAP.ok-state ] && logger -t autoAP "Already in OK state, doing nothing" && exit 0
+     
+set_ap_ok() {
+  uci_url=$(echo $1 | cut -d= -f1)
+  ssid=$(echo $1 | cut -d= -f2 | tr -d \')
+  ap_name=$(echo $1 | cut -d. -f2)
+
+  ssid=$(cat $TMP_DIR/$ap_name 2>/dev/null)
+  [ -z "$ssid" ] && return
+
+  # Set original essid
+  uci set ${uci_url}=$ssid
+  logger -t autoAP "Change AP ssid from $ap_name to $ssid"
+  rm -f $TMP_DIR/$ap_name
+}
+
+# Get original ssid and uci url                                      
+for ap in $(uci show wireless | egrep "lm_.*_ap_.*ssid" | cut -d= -f1)
+ do
+   set_ap_ok $ap
+ done
+
+# Apply changes
+rm -f $TMP_DIR/autoAP.fail-state  
+touch $TMP_DIR/autoAP.ok-state
+wifi

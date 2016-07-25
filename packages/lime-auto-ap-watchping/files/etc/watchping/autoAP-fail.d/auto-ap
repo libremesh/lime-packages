@@ -1,0 +1,27 @@
+#!/bin/sh
+FAIL_SSID_TEMPLATE="#hostname-down"
+TMP_DIR="/tmp/auto-ap"
+mkdir -p $TMP_DIR
+
+[ -f $TMP_DIR/autoAP.fail-state ] && echo "Already in fail state, doing nothing" && exit 0
+
+set_ap_fail() {
+  uci_url=$(echo $1 | cut -d= -f1)
+  ssid=$(echo $1 | cut -d= -f2 | tr -d \')
+  ap_name=$(echo $1 | cut -d. -f2)
+  # Save original SSID
+  echo $ssid > $TMP_DIR/$ap_name
+  # Set fail essid
+  fail_ssid=$(echo $FAIL_SSID_TEMPLATE | sed s/#hostname/$HOSTNAME/g)
+  uci set ${uci_url}=$fail_ssid
+  logger -t autoAP "Change AP ssid for $ap_name to $fail_ssid"
+}
+
+# Get ssid and uci url from APs                                             
+for ap in $(uci show wireless | egrep "lm_.*_ap_.*ssid")
+  do 
+    set_ap_fail $ap
+  done
+rm -f $TMP_DIR/autoAP.ok-state
+touch $TMP_DIR/autoAP.fail-state
+wifi
