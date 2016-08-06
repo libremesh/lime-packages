@@ -61,7 +61,7 @@ function network.primary_address(offset)
     ipv6_template = network.generate_host(ip.IPv6(ipv6_template), hexsuffix)
 
 	ipv4_template:prefix(tonumber(ipv4_maskbits))
-	local m4 = ipv4_template:mihost()
+	local m4 = ipv4_template:minhost()
 	--! Generated address is network address like 192.0.2.0/24 ?
 	local invalid = ipv4_template:equal(m4:network())
 	--! Generated address is the one reserved for anygw like 192.0.2.1/24 ?
