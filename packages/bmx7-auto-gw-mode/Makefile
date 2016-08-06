@@ -19,8 +19,7 @@ define Package/$(PKG_NAME)
   TITLE:=bmx7 auto Internet gateway module 
   MAINTAINER:=Pau Escrich <p4u@dabax.et>
   URL:=http://libre-mesh.org
-  DEPENDS:= bmx7 +watchping +lime-eb-ip-tables +ip \
-	  +PACKAGE_lime-system:lime-proto-bmx7
+  DEPENDS:= bmx7 +watchping +lime-eb-ip-tables +ip
 endef
 
 define Package/$(PKG_NAME)/description
