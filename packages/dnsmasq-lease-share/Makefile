@@ -19,8 +19,7 @@ define Package/$(PKG_NAME)
  TITLE:=dnsmasq lease sharing accross batman-adv mesh
  MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
  URL:=http://libre-mesh.org
- DEPENDS:=+alfred +lua +libuci-lua \
-	 +PACKAGE_lime-system:lime-proto-batadv
+ DEPENDS:=+alfred +lua +libuci-lua
 endef
 
 define Package/$(PKG_NAME)/description
