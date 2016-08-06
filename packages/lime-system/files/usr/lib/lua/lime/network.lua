@@ -191,7 +191,13 @@ end
 
 function network.configure()
 	local specificIfaces = {}
-	config.foreach("net", function(iface) specificIfaces[iface["linux_name"]] = iface end)
+
+	config.foreach("net", function(iface)
+		if iface["linux_name"] then
+			specificIfaces[iface["linux_name"]] = iface
+		end
+	end)
+
 	local fisDevs = network.scandevices()
 
 	network.setup_rp_filter()
