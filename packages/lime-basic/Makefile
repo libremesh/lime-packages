@@ -18,17 +18,17 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  TITLE:=libre-mesh standard metapackage with minimal requirements
-  SECTION:=lime
-  CATEGORY:=LiMe
-  SUBMENU:=Collections
-  MAINTAINER:=Pau Escrich <p4u@dabax.net>
-  URL:=http://libre-mesh.org
-  DEPENDS:=+lime-system +lime-proto-bmx6 +lime-proto-batadv +lime-proto-anygw +lime-proto-wan \
-		+dnsmasq-lease-share +dnsmasq-distributed-hosts \
-		+lime-webui +luci-app-batman-adv \
-		+lime-map-agent +lime-eb-ip-tables \
-		+lime-hwd-openwrt-wan +bmx6-auto-gw-mode
+	TITLE:=libre-mesh standard metapackage with minimal requirements
+	SECTION:=lime
+	CATEGORY:=LiMe
+	SUBMENU:=Collections
+	MAINTAINER:=Pau Escrich <p4u@dabax.net>
+	URL:=http://libre-mesh.org
+	DEPENDS:=+lime-system +lime-proto-bmx6 +lime-proto-batadv \
+	         +lime-proto-anygw +lime-proto-wan +dnsmasq-lease-share \
+	         +dnsmasq-distributed-hosts +lime-webui +luci-app-batman-adv \
+	         +lime-map-agent +lime-eb-ip-tables +lime-hwd-openwrt-wan \
+	         +bmx6-auto-gw-mode +lime-hwd-ground-routing
 endef
 
 define Package/$(PKG_NAME)/description
