@@ -45,8 +45,10 @@ config lime wifi
 #	option htmode_2ghz 'HT20'
 #	option htmode_5ghz 'HT40'
 #	list modes 'ap'
+#	list modes 'apname'
 #	list modes 'adhoc'
 	option ap_ssid 'libre-mesh.org'
+	option apname_ssid '%H'
 #	option adhoc_ssid '%H'                                                 # Parametrizable with %M, %H
 #	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
 #	option adhoc_mcast_rate_2ghz '24000'
