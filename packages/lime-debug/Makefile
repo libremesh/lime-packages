@@ -23,7 +23,7 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
 	URL:=http://libre-mesh.org
 	DEPENDS:=+PACKAGE_lime-proto-batadv:batctl \
-       		+busybox +ethtool +iwinfo +iw +mtr +ip +iputils-ping6 \
+       		+busybox +ethtool +iwinfo +iw +mtr +ip +iputils-ping6 +iputils-ping \
 		+sprunge +safe-reboot +netperf +pv +rdisc6 +tcpdump-mini
 endef
 
