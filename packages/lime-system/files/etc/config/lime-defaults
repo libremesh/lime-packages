@@ -26,7 +26,7 @@ config lime network
 
 config lime wifi
 	option channel_2ghz '11'
-	option channel_5ghz '157'
+	option channel_5ghz '48'
 	list modes 'ap'
 	list modes 'apname'
 	list modes 'adhoc'
