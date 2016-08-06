@@ -13,7 +13,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Pau Escrich <p4u@dabax.net>
   URL:=http://libre-mesh.org
-  DEPENDS:= +kmod-ipt-nat +kmod-ipt-nat-extra +kmod-ebtables +iptables +ebtables
+  DEPENDS:= +kmod-ipt-nat +kmod-ebtables +iptables +ebtables
 endef
 
 define Package/$(PKG_NAME)/description
