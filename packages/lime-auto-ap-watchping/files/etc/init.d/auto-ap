@@ -1,0 +1,46 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2016 libre-mesh.org
+# This is free software, licensed under the GNU General Public License v3.
+
+START=99
+
+PIDFILE="/tmp/run/autoAP"
+
+load_autoAP() {
+	config_load lime
+	config_get enabled network autoap_enabled
+	config_get hosts network autoap_hosts
+	[ -z "$enabled" -o $enabled -eq 0 ] && {
+		echo "autoAP disabled in lime config"
+		exit 0
+	}
+	pinghosts=${hosts:-8.8.8.8 8.8.4.4}
+	timeout=120
+	pinginterval=20
+	interface=autoAP
+	/usr/bin/watchping none "$timeout" "$pinghosts" "$pinginterval" "$interface" 2>/tmp/autoAP.err.log &
+	[ $? -eq 0 ] && {
+		echo $! >> "${PIDFILE}"
+		echo "autoAP wathcping started"
+		logger -t autoAP "watchping started"
+	} || {
+		echo "error starting watchping"
+		logger -t autoAP "error starting watchping"
+	}
+}
+
+stop() {
+	[ -f "$PIDFILE" ] && {
+		kill -9 $(cat $PIDFILE)
+		rm -f "$PIDFILE"
+		logger -t autoAP "Stopped"
+	}
+}
+
+start() {
+	[ -f "$PIDFILE" ] && {
+		echo "Already started"
+		exit 1
+	}
+	load_autoAP
+}
