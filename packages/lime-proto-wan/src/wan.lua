@@ -1,6 +1,8 @@
 #!/usr/bin/lua
 
 local libuci = require("uci")
+local fs = require("nixio.fs")
+local opkg = require("luci.model.ipkg")
 
 wan = {}
 
