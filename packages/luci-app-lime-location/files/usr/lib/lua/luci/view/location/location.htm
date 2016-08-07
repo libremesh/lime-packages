@@ -54,6 +54,7 @@ if (isNaN(lat) || isNaN(lon)){
   if (isNaN(community_lat) || isNaN(community_lon)){
 // if neither community nor node coordinates are set, try to center the map to the user geolocation
     map.locate({setView: true, maxZoom: 16});
+    map.setView([0, 0], 0);
   }
 // if the node position is not set, use the community coordinates to center the map
   else {
@@ -83,7 +84,7 @@ function markerPointer(){
 
 function onMapClick(e) {
   xmlhttp=new XMLHttpRequest();
-  xmlhttp.open("GET","location/set_location/"+e.latlng.lat+"/"+e.latlng.lng, false);
+  xmlhttp.open("GET",window.location.href.replace(/[\/]*location[\/]*$/,"")+"/location/set_location/"+e.latlng.lat+"/"+e.latlng.lng, false);
   xmlhttp.send();
   console.log(e.latlng.toString())
   window.location.reload();
