@@ -1,0 +1,12 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2013-2014 OpenWrt.org
+
+START=99
+
+boot() {
+        if ! /etc/init.d/firewall enabled 2> /dev/null ; then
+          echo "$0: Firewall is not enabled. Executing /etc/firewall.lime script."
+          /bin/sh /etc/firewall.lime
+        fi
+}
+
