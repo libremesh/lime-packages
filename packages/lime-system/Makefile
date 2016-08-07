@@ -58,4 +58,9 @@ define Package/$(PKG_NAME)/install
 		$(1)/etc/uci-defaults/90_lime-banner
 endef
 
+define Package/$(PKG_NAME)/postinst
+#!/bin/sh
+[ -n "$${IPKG_INSTROOT}" ] || /etc/init.d/firewall-lime enable || true
+endef
+
 $(eval $(call BuildPackage,$(PKG_NAME)))
