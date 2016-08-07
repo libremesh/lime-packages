@@ -39,40 +39,40 @@ function network.generate_host(ipprefix, hexsuffix)
 end
 
 function network.primary_address(offset)
-    local offset = offset or 0
-    local pm = network.primary_mac()
-    local ipv4_template = config.get("network", "main_ipv4_address")
-    local ipv6_template = config.get("network", "main_ipv6_address")
+	local offset = offset or 0
+	local pm = network.primary_mac()
+	local ipv4_template = config.get("network", "main_ipv4_address")
+	local ipv6_template = config.get("network", "main_ipv6_address")
 
-    local ipv4_maskbits = ipv4_template:match("[^/]+/(%d+)")
-    ipv4_template = ipv4_template:gsub("/%d-/","/")
-    local ipv6_maskbits = ipv6_template:match("[^/]+/(%d+)")
-    ipv6_template = ipv6_template:gsub("/%d-/","/")
+	local ipv4_maskbits = ipv4_template:match("[^/]+/(%d+)")
+	ipv4_template = ipv4_template:gsub("/%d-/","/")
+	local ipv6_maskbits = ipv6_template:match("[^/]+/(%d+)")
+	ipv6_template = ipv6_template:gsub("/%d-/","/")
 
-    ipv4_template = utils.applyMacTemplate10(ipv4_template, pm)
-    ipv6_template = utils.applyMacTemplate16(ipv6_template, pm)
+	ipv4_template = utils.applyMacTemplate10(ipv4_template, pm)
+	ipv6_template = utils.applyMacTemplate16(ipv6_template, pm)
 
-    ipv4_template = utils.applyNetTemplate10(ipv4_template)
-    ipv6_template = utils.applyNetTemplate16(ipv6_template)
+	ipv4_template = utils.applyNetTemplate10(ipv4_template)
+	ipv6_template = utils.applyNetTemplate16(ipv6_template)
 
-    local m4, m5, m6 = tonumber(pm[4], 16), tonumber(pm[5], 16), tonumber(pm[6], 16)
-    local hexsuffix = utils.hex((m4 * 256*256 + m5 * 256 + m6) + offset)
-    ipv4_template = network.generate_host(ip.IPv4(ipv4_template), hexsuffix)
-    ipv6_template = network.generate_host(ip.IPv6(ipv6_template), hexsuffix)
+	local m4, m5, m6 = tonumber(pm[4], 16), tonumber(pm[5], 16), tonumber(pm[6], 16)
+	local hexsuffix = utils.hex((m4 * 256*256 + m5 * 256 + m6) + offset)
+	ipv4_template = network.generate_host(ip.IPv4(ipv4_template), hexsuffix)
+	ipv6_template = network.generate_host(ip.IPv6(ipv6_template), hexsuffix)
 
 	ipv4_template:prefix(tonumber(ipv4_maskbits))
-	local m4 = ipv4_template:minhost()
+	local mc = ipv4_template
 	--! Generated address is network address like 192.0.2.0/24 ?
-	local invalid = ipv4_template:equal(m4:network())
+	local invalid = ipv4_template:equal(mc:network())
 	--! Generated address is the one reserved for anygw like 192.0.2.1/24 ?
-	invalid = invalid or ipv4_template:equal(m4)
+	invalid = invalid or ipv4_template:equal(mc:minhost())
 	--! Generated address is the broadcast address like 192.0.2.255/24 ?
-	invalid = invalid or ipv4_template:equal(m4:broadcast())
-	if invalid then ipv4_template = ipv4_template:maxhost() end
+	invalid = invalid or ipv4_template:equal(mc:broadcast())
+	if invalid then ipv4_template = mc:maxhost() end
 
-    ipv6_template:prefix(tonumber(ipv6_maskbits))
+	ipv6_template:prefix(tonumber(ipv6_maskbits))
 
-    return ipv4_template, ipv6_template
+	return ipv4_template, ipv6_template
 end
 
 function network.setup_rp_filter()
