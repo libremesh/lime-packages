@@ -1,6 +1,6 @@
 [![tip for next commit](http://tip4commit.com/projects/804.svg)](http://tip4commit.com/projects/804)
 
-# [Libre-Mesh][5] packages "Big Bang" release (14.07)
+# [Libre-Mesh][5] packages "Community Chaos" release (16.07)
 
 [Libre-Mesh project][5] includes the development of several tools used for deploying libre/free mesh networks, check the [objectives and agreements][3].
 
@@ -14,9 +14,9 @@ The Libre-Mesh firmware can be compiled either manually adding the feed to a [Op
 
 For a more detailed compilation guide refer to [our wiki][6].
 
-Clone OpenWRT stable repository, nowadays is version 14.07 (Barrier Breaker).
+Clone OpenWRT stable repository, nowadays is version 15.05 (Chaos Calmer).
 
-    git clone git://git.openwrt.org/14.07/openwrt.git
+    git clone git://git.openwrt.org/15.05/openwrt.git
 
 Add lime-packages feed to the default ones.
 
