@@ -1,0 +1,7 @@
+# Essential LiMe eb/iptables rules are placed in /etc/firewall.lime.d/
+# they will be executed during each firewall (re-)start
+# or, if firewall package is not installed, just during boot.
+# They are interpreted as shell script.
+for hook in /etc/firewall.lime.d/* ; do
+        [ -s "$hook" ] && /bin/sh "$hook"
+done
