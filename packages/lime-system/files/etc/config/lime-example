@@ -15,6 +15,7 @@
 
 config lime system
 	option hostname 'LiMeNode-%M4%M5%M6'                                   # Parametrizable with %Mn
+	option domain 'lan'                                                    # DNS domain for the L2 cloud it could be something like mycloud.mynetwork.tld, hosts that get their IP by DHCP will also get a fully qualified domain name like hostname.mycloud.mynetwork.tld
 
 
 ### Network general option
