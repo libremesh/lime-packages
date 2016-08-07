@@ -16,7 +16,6 @@
 config lime system
 	option hostname 'LiMe-%M4%M5%M6'                                       # Parametrizable with %Mn
 
-
 ### Network general option
 
 config lime network
@@ -56,7 +55,6 @@ config lime wifi
 #	option mesh_mesh_fwding '0'                                            # Settings needed only for 802.11s
 #	option mesh_mesh_id 'LiMe'
 
-
 ### WiFi interface specific options ( override general option )
 
 #config wifi radio11
@@ -70,7 +68,6 @@ config lime wifi
 #config wifi radio12
 #	list modes 'manual'                                                    # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
 
-
 ### Network interface specific options ( override general option )
 ### Available protocols: bmx6, batadv, olsr, olsr6, wan, lan, manual
 ### proto:vlan_number works too ( something like bmx6:13 is supported )
@@ -79,7 +76,6 @@ config lime wifi
 #config net port5                                                           # Do not put any "." in the section name
 #	option linux_name 'eth1.5'                                          # Put here the actual name of the interface
 #	list protocols 'wan'                                                # Some of these protocols require the relative package "lime-proto-..."
-
 
 ### Ground routing specific sections
 ### One section for each ground routing link
