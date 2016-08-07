@@ -84,7 +84,7 @@ function markerPointer(){
 
 function onMapClick(e) {
   xmlhttp=new XMLHttpRequest();
-  xmlhttp.open("GET","location/set_location/"+e.latlng.lat+"/"+e.latlng.lng, false);
+  xmlhttp.open("GET",window.location.href.replace(/[\/]*location[\/]*$/,"")+"/location/set_location/"+e.latlng.lat+"/"+e.latlng.lng, false);
   xmlhttp.send();
   console.log(e.latlng.toString())
   window.location.reload();
