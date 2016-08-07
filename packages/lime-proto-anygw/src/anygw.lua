@@ -52,9 +52,9 @@ function anygw.configure(args)
 
 	uci:save("network")
 
-	fs.mkdir("/etc/firewall.user.d")
+	fs.mkdir("/etc/firewall.lime.d")
 	fs.writefile(
-		"/etc/firewall.user.d/20-anygw-ebtables",
+		"/etc/firewall.lime.d/20-anygw-ebtables",
 		"\n" ..
 		"ebtables -D FORWARD -j DROP -d " .. anygw_mac .. "\n" ..
 		"ebtables -A FORWARD -j DROP -d " .. anygw_mac .. "\n" ..

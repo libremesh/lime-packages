@@ -15,7 +15,7 @@ end
 function openwrt_wan.detect_hardware()
 	if config.autogenerable(openwrt_wan.sectionName) then
 		local uci_o = libuci:cursor()
-		uci_o:set_confdir("/etc/lime/config.original")
+		uci_o:set_confdir("/etc/lime-config-firstboot")
 		uci_o:set_savedir("/dev/null")
 		local ifname = uci_o:get("network", "wan", "ifname")
 		uci_o = nil

@@ -53,10 +53,14 @@ LIME_VERSION_SED:=$(SED)   's,%LIME_ID%,$(LIME_ID),g' \
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
-	$(INSTALL_DIR) $(1)/etc/lime/
 	$(LIME_VERSION_SED) \
-		$(1)/etc/lime/release \
-		$(1)/etc/uci-defaults/90-lime-banner
+		$(1)/etc/lime_release \
+		$(1)/etc/uci-defaults/90_lime-banner
+endef
+
+define Package/$(PKG_NAME)/postinst
+#!/bin/sh
+[ -n "$${IPKG_INSTROOT}" ] || /etc/init.d/firewall-lime enable || true
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))

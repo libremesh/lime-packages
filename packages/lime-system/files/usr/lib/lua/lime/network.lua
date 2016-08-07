@@ -129,7 +129,7 @@ function network.clean()
 	uci:save("network")
 
 	print("Disabling odhcpd")
-	io.popen("/etc/init.d/odhcpd disable || true"):close()
+	io.popen("/etc/init.d/odhcpd disable 2>/dev/null || true"):close()
 
 	print("Cleaning dnsmasq")
 	uci:foreach("dhcp", "dnsmasq", function(s) uci:delete("dhcp", s[".name"], "server") end)
