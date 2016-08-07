@@ -8,7 +8,6 @@ local fs = require("nixio.fs")
 
 wireless = {}
 
-wireless.modeParamsSeparator=":"
 wireless.limeIfNamePrefix="lm_"
 wireless.wifiModeSeparator="-"
 
@@ -41,7 +40,7 @@ function wireless.is5Ghz(radio)
 	return false
 end
 
-wireless.availableModes = { adhoc=true, ap=true, apname=true }
+wireless.availableModes = { adhoc=true, ap=true, apname=true, ieee80211s=true }
 function wireless.isMode(m)
 	return wireless.availableModes[m]
 end
@@ -80,7 +79,6 @@ end
 function wireless.configure()
 	local specificRadios = {}
 	config.foreach("wifi", function(radio) specificRadios[radio[".name"]] = radio end)
-	local uci = libuci:cursor()
 
 	local allRadios = wireless.scandevices()
 	for _,radio in pairs(allRadios) do
@@ -108,18 +106,18 @@ function wireless.configure()
 			local distance = options["distance"..freqSuffix] or options["distance"] or 10000
 			local htmode = options["htmode"..freqSuffix] or options["htmode"]
 
+			local uci = libuci:cursor()
 			uci:set("wireless", radioName, "disabled", 0)
 			uci:set("wireless", radioName, "distance", distance)
 			uci:set("wireless", radioName, "noscan", 1)
 			uci:set("wireless", radioName, "channel", options["channel"..freqSuffix])
 			if options["country"] then uci:set("wireless", radioName, "country", options["country"]) end
 			if htmode then uci:set("wireless", radioName, "htmode", htmode) end
+			uci:save("wireless")
 
-			for _,modeArgs in pairs(modes) do
-				local args = utils.split(modeArgs, wireless.modeParamsSeparator)
-				local modeName = args[1]
+			for _,modeName in pairs(modes) do
+				local args = {}
 				local mode = require("lime.mode."..modeName)
-				local wirelessInterfaceName = mode.setup_radio(radio, args)[".name"]
 
 				for key,value in pairs(options) do
 					local keyPrefix = utils.split(key, "_")[1]
@@ -130,7 +128,6 @@ function wireless.configure()
 					                and (not key:match("htmode"))
 					                and (not (wireless.isMode(keyPrefix) and keyPrefix ~= modeName))
 					                and (not key:match(ignoredSuffix)) )
-
 					if isGoodOption then
 						local nk = key:gsub("^"..modeName.."_", ""):gsub(freqSuffix.."$", "")
 						if nk == "ssid" then
@@ -139,14 +136,14 @@ function wireless.configure()
 							value = string.sub(value, 1, 32)
 						end
 
-						uci:set("wireless", wirelessInterfaceName, nk, value)
+						args[nk] = value
 					end
 				end
+
+				mode.setup_radio(radio, args)
 			end
 		end
 	end
-
-	uci:save("wireless")
 end
 
 return wireless
