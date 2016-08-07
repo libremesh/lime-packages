@@ -96,10 +96,12 @@ function bmx7.configure(args)
 		uci:set("firewall", "bmxtun", "family", "ipv4")
 
 		uci:save("firewall")
+
+		fs.remove("/etc/firewall.lime.d/20-bmxtun-mtu_fix")
 	else
-		fs.mkdir("/etc/firewall.user.d")
+		fs.mkdir("/etc/firewall.lime.d")
 		fs.writefile(
-			"/etc/firewall.user.d/20-bmxtun-mtu_fix",
+			"/etc/firewall.lime.d/20-bmxtun-mtu_fix",
 			"\n" ..
 			"iptables -t mangle -D FORWARD -o bmx+ -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" ..
 			"iptables -t mangle -A FORWARD -o bmx+ -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"

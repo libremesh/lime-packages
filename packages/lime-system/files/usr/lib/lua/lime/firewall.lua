@@ -10,16 +10,6 @@ function firewall.clean()
 end
 
 function firewall.configure()
-	fs.writefile(
-		"/etc/firewall.user",
-		"# Put your custom iptables rules in a new file in /etc/firewall.user.d/\n" ..
-		"# they will be executed with each firewall (re-)start.\n" ..
-		"# They are interpreted as shell script.\n" ..
-		"for hook in /etc/firewall.user.d/* ; do\n" ..
-		"\t[ -s \"$hook\" ] && /bin/sh \"$hook\"\n" ..
-		"done\n"
-	)
-
     if opkg.installed("firewall") then
         local uci = libuci:cursor()
         uci:foreach("firewall", "defaults",
@@ -39,10 +29,10 @@ function firewall.configure()
                 end
             end
         )
+	uci:set("firewall", "include_firewall_lime", "include")
+	uci:set("firewall", "include_firewall_lime", "path", "/etc/firewall.lime")
+
         uci:save("firewall")
-    else
-        os.execute("ln -s /etc/firewall.user /etc/lime-rc.d/50-firewall.user 2>/dev/null")
-        os.execute("chmod +x /etc/firewall.user")
     end
     
 end
