@@ -56,7 +56,7 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/lime/
 	$(LIME_VERSION_SED) \
 		$(1)/etc/lime/release \
-		$(1)/etc/uci-defaults/90-lime-banner
+		$(1)/etc/uci-defaults/90_lime-banner
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
