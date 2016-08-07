@@ -49,24 +49,29 @@ function get_if_mac(ifname)
 end
 
 function receive_static_hosts()
-	local stdout = io.popen("alfred -r " .. alfred_static_hosts_num,"r")
-	local raw_output = stdout:read("*a")
-	stdout:close()
+	for n = 1, 3 do -- try 3 times ("alfred -r" can fail in slave nodes)
+		local stdout = io.popen("alfred -r " .. alfred_static_hosts_num,"r")
+		local raw_output = stdout:read("*a")
+		stdout:close()
 
-	if (not raw_output) then exit(0) end
+		if raw_output ~= "" then
+			json_output = {}
+			-------------------------------- { added because alfred doesn't output valid json yet }
+			assert(loadstring("json_output = {" .. raw_output .. "}"))()
 
-	json_output = {}
-	-------------------------------- { added because alfred doesn't output valid json yet }
-	assert(loadstring("json_output = {" .. raw_output .. "}"))()
+			local own_mac = get_if_mac("br-lan")
 
-	local own_mac = get_if_mac("br-lan")
+			for _, row in ipairs(json_output) do
+				local node_mac, value = unpack(row)
+				if node_mac ~= own_mac then
+					io.output(dnsmasq_addn_hostsdir..node_mac, "w")
+					io.write(value:gsub("\x0a", "\n"):gsub("\x09", "\t") .. "\n")
+					io.close()
+				end
+			end
 
-	for _, row in ipairs(json_output) do
-		local node_mac, value = unpack(row)
-		if node_mac ~= own_mac then
-			io.output(dnsmasq_addn_hostsdir..node_mac, "w")
-			io.write(value:gsub("\x0a", "\n"):gsub("\x09", "\t") .. "\n")
-			io.close()
+			reload_dnsmasq()
+			break
 		end
 	end
 end
@@ -77,4 +82,3 @@ update_alfred()
 
 --! and populate addn-hostsfile with incoming data
 receive_static_hosts()
-reload_dnsmasq()

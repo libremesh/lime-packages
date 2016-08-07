@@ -88,59 +88,64 @@ function del_lease(client_mac, client_ip)
 end
 
 function receive_dhcp_hosts()
-	local stdout = io.popen("alfred -r " .. alfred_shared_lease_num,"r")
-	local raw_output = stdout:read("*a")
-	stdout:close()
+	for n = 1, 3 do -- try 3 times ("alfred -r" can fail in slave nodes)
+		local stdout = io.popen("alfred -r " .. alfred_shared_lease_num,"r")
+		local raw_output = stdout:read("*a")
+		stdout:close()
 
-	if (not raw_output) then exit(0) end
+		if raw_output ~= "" then
+			json_output = {}
+			-------------------------------- { added because alfred doesn't output valid json yet }
+			assert(loadstring("json_output = {" .. raw_output .. "}"))()
 
-	json_output = {}
-	-------------------------------- { added because alfred doesn't output valid json yet }
-	assert(loadstring("json_output = {" .. raw_output .. "}"))()
+			local own_mac = get_if_mac("br-lan")
 
-	local own_mac = get_if_mac("br-lan")
+			--! write down unpacked output on a tmpfile, to iterate over it later with io.lines()
+			io.input(io.output(io.tmpfile()))
+			for _, row in ipairs(json_output) do
+				local node_mac, value = unpack(row)
+				if node_mac ~= own_mac then
+					io.write(value:gsub("\x0a", "\n") .. "\n")
+				end
+			end
+			io.input():seek("set")
 
-	--! write down unpacked output on a tmpfile, to iterate over it later with io.lines()
-	io.input(io.output(io.tmpfile()))
-	for _, row in ipairs(json_output) do
-		local node_mac, value = unpack(row)
-		if node_mac ~= own_mac then
-			io.write(value:gsub("\x0a", "\n") .. "\n")
+			local lease_table = {}
+			local addnhosts = {}
+			for line in io.lines() do
+				client_mac, client_id, client_ip, client_hostname = unpack(split(line, ","))
+				if client_ip and client_hostname then
+					--! populating a table like this ensures every line is unique
+					addnhosts[client_ip .. " " .. client_hostname] = 1
+				end
+
+				if client_mac and client_id and client_ip then
+					--! IPv6 addresses must be enclosed in brackets
+					if client_ip:find(":") then client_ip = "[" .. client_ip .. "]" end
+					--! ensure client_id is prefixed with "id:" once and only once
+					lease_table[client_mac .. ",id:" .. client_id:gsub("^id:", "") .. "," .. client_ip] = 1
+				end
+			end
+
+			local hostsfile = io.open(dnsmasq_dhcp_hostsfile, "w")
+			if hostsfile then
+				for line, _ in pairs(lease_table) do
+					hostsfile:write(line .. "\n")
+				end
+				hostsfile:close()
+			end
+
+			local addnhostsfile = io.open(dnsmasq_addn_hostsfile, "w")
+			if addnhostsfile then
+				for line, _ in pairs(addnhosts) do
+					addnhostsfile:write(line .. "\n")
+				end
+				addnhostsfile:close()
+			end
+
+			reload_dnsmasq()
+			break
 		end
-	end
-	io.input():seek("set")
-
-	local lease_table = {}
-	local addnhosts = {}
-	for line in io.lines() do
-		client_mac, client_id, client_ip, client_hostname = unpack(split(line, ","))
-		if client_ip and client_hostname then
-			--! populating a table like this ensures every line is unique
-			addnhosts[client_ip .. " " .. client_hostname] = 1
-		end
-
-		if client_mac and client_id and client_ip then
-			--! IPv6 addresses must be enclosed in brackets
-			if client_ip:find(":") then client_ip = "[" .. client_ip .. "]" end
-			--! ensure client_id is prefixed with "id:" once and only once
-			lease_table[client_mac .. ",id:" .. client_id:gsub("^id:", "") .. "," .. client_ip] = 1
-		end
-	end
-
-	local hostsfile = io.open(dnsmasq_dhcp_hostsfile, "w")
-	if hostsfile then
-		for line, _ in pairs(lease_table) do
-			hostsfile:write(line .. "\n")
-		end
-		hostsfile:close()
-	end
-
-	local addnhostsfile = io.open(dnsmasq_addn_hostsfile, "w")
-	if addnhostsfile then
-		for line, _ in pairs(addnhosts) do
-			addnhostsfile:write(line .. "\n")
-		end
-		addnhostsfile:close()
 	end
 end
 
@@ -186,6 +191,5 @@ elseif command == nil then
 
 --! and populate dhcp-hostsfile with incoming data
 	receive_dhcp_hosts()
-	reload_dnsmasq()
 
 end
