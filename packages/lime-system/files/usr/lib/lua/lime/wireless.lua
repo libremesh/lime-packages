@@ -8,7 +8,6 @@ local fs = require("nixio.fs")
 
 wireless = {}
 
-wireless.modeParamsSeparator=":"
 wireless.limeIfNamePrefix="lm_"
 wireless.wifiModeSeparator="-"
 
@@ -41,7 +40,7 @@ function wireless.is5Ghz(radio)
 	return false
 end
 
-wireless.availableModes = { adhoc=true, ap=true, apname=true }
+wireless.availableModes = { adhoc=true, ap=true, apname=true, ieee80211s=true }
 function wireless.isMode(m)
 	return wireless.availableModes[m]
 end
@@ -84,79 +83,65 @@ function wireless.configure()
 	local allRadios = wireless.scandevices()
 	for _,radio in pairs(allRadios) do
 		local radioName = radio[".name"]
-		local phyIndex = radioName:match("%d+")
-		if wireless.is5Ghz(radioName) then
-			freqSuffix = "_5ghz"
-			ignoredSuffix = "_2ghz"
-		else
-			freqSuffix = "_2ghz"
-			ignoredSuffix = "_5ghz"
-		end
+		local specRadio = specificRadios[radioName]
 		local modes = config.get("wifi", "modes")
 		local options = config.get_all("wifi")
 
-		local specRadio = specificRadios[radioName]
 		if specRadio then
 			modes = specRadio["modes"]
 			options = specRadio
 		end
 
-		local uci = libuci:cursor()
-		local distance = options["distance"..freqSuffix]
-		if not distance then
-			distance = 10000 -- up to 10km links by default
-		end
-		uci:set("wireless", radioName, "disabled", 0)
-		uci:set("wireless", radioName, "distance", distance)
-		uci:set("wireless", radioName, "noscan", 1)
-		uci:set("wireless", radioName, "channel", options["channel"..freqSuffix])
-
-		local country = options["country"]
-		if country then
-			uci:set("wireless", radioName, "country", country)
-		end
-
-		local htmode = options["htmode"..freqSuffix]
-		if htmode then
-			uci:set("wireless", radioName, "htmode", htmode)
-		end
-
-		uci:save("wireless")
-
-		for _,modeArgs in pairs(modes) do
-			local args = utils.split(modeArgs, wireless.modeParamsSeparator)
-			local modeName = args[1]
-			
-			if modeName == "manual" then break end
-
-			local mode = require("lime.mode."..modeName)
-			local wirelessInterfaceName = mode.setup_radio(radio, args)[".name"]
-
-			local uci = libuci:cursor()
-
-			for key,value in pairs(options) do
-				local keyPrefix = utils.split(key, "_")[1]
-				local isGoodOption = ( (key ~= "modes")
-				                   and (not key:match("^%."))
-				                   and (not key:match("channel"))
-				                   and (not key:match("country"))
-				                   and (not key:match("htmode"))
-				                   and (not (wireless.isMode(keyPrefix) and keyPrefix ~= modeName))
-				                   and (not key:match(ignoredSuffix)) )
-
-				if isGoodOption then
-					local nk = key:gsub("^"..modeName.."_", ""):gsub(freqSuffix.."$", "")
-					if nk == "ssid" then
-						value = utils.applyHostnameTemplate(value)
-						value = utils.applyMacTemplate16(value, network.primary_mac())
-						value = string.sub(value, 1, 32)
-					end
-
-					uci:set("wireless", wirelessInterfaceName, nk, value)
-				end
+		--! If manual mode is used toghether with other modes it results in an
+		--! unpredictable behaviour
+		if modes[1] ~= "manual" then
+			local freqSuffix = "_2ghz"
+			local ignoredSuffix = "_5ghz"
+			if wireless.is5Ghz(radioName) then
+				freqSuffix = "_5ghz"
+				ignoredSuffix = "_2ghz"
 			end
 
+			--! up to 10km links by default
+			local distance = options["distance"..freqSuffix] or options["distance"] or 10000
+			local htmode = options["htmode"..freqSuffix] or options["htmode"]
+
+			local uci = libuci:cursor()
+			uci:set("wireless", radioName, "disabled", 0)
+			uci:set("wireless", radioName, "distance", distance)
+			uci:set("wireless", radioName, "noscan", 1)
+			uci:set("wireless", radioName, "channel", options["channel"..freqSuffix])
+			if options["country"] then uci:set("wireless", radioName, "country", options["country"]) end
+			if htmode then uci:set("wireless", radioName, "htmode", htmode) end
 			uci:save("wireless")
+
+			for _,modeName in pairs(modes) do
+				local args = {}
+				local mode = require("lime.mode."..modeName)
+
+				for key,value in pairs(options) do
+					local keyPrefix = utils.split(key, "_")[1]
+					local isGoodOption = ( (key ~= "modes")
+					                and (not key:match("^%."))
+					                and (not key:match("channel"))
+					                and (not key:match("country"))
+					                and (not key:match("htmode"))
+					                and (not (wireless.isMode(keyPrefix) and keyPrefix ~= modeName))
+					                and (not key:match(ignoredSuffix)) )
+					if isGoodOption then
+						local nk = key:gsub("^"..modeName.."_", ""):gsub(freqSuffix.."$", "")
+						if nk == "ssid" then
+							value = utils.applyHostnameTemplate(value)
+							value = utils.applyMacTemplate16(value, network.primary_mac())
+							value = string.sub(value, 1, 32)
+						end
+
+						args[nk] = value
+					end
+				end
+
+				mode.setup_radio(radio, args)
+			end
 		end
 	end
 end

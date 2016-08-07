@@ -24,7 +24,8 @@ define Package/$(PKG_NAME)
 	URL:=http://libre-mesh.org
 	DEPENDS:=+PACKAGE_lime-proto-batadv:batctl \
        		+busybox +ethtool +iwinfo +iw +mtr +ip +iputils-ping6 +iputils-ping \
-		+sprunge +safe-reboot +netperf +pv +rdisc6 +tcpdump-mini
+		+sprunge +safe-reboot +netperf +pv +rdisc6 +tcpdump-mini \
+		+bwm-ng
 endef
 
 define Package/$(PKG_NAME)/description
