@@ -1,6 +1,6 @@
 ### Remove all repos from /etc/opkg/distfeeds.conf and add only LiMe official, which includes a frozen snapshot of upstreams
 sed -i.vanilla '\|^src/gz |d' /etc/opkg/distfeeds.conf
-echo "src/gz chaos_calmer_lime http://downloads.libremesh.org/community_chaos/16.07/ar71xx/generic/packages/" >> /etc/opkg/distfeeds.conf
+echo "src/gz chaos_calmer_lime http://downloads.libre-mesh.org/community_chaos/16.07/ar71xx/generic/packages/" >> /etc/opkg/distfeeds.conf
 
 ### Set check_signature=0 :( until we have a proper key signing scheme set up
 sed -i 's/^option check_signature 1/option check_signature 0/' /etc/opkg.conf
