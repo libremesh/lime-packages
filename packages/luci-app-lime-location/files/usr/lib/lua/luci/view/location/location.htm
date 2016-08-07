@@ -54,6 +54,7 @@ if (isNaN(lat) || isNaN(lon)){
   if (isNaN(community_lat) || isNaN(community_lon)){
 // if neither community nor node coordinates are set, try to center the map to the user geolocation
     map.locate({setView: true, maxZoom: 16});
+    map.setView([0, 0], 0);
   }
 // if the node position is not set, use the community coordinates to center the map
   else {
