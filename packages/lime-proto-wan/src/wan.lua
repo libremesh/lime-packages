@@ -20,6 +20,17 @@ function wan.setup_interface(ifname, args)
 	local uci = libuci:cursor()
 	uci:set("network", "wan", "ifname", ifname)
 	uci:save("network")
+
+	if opkg.installed("firewall") then
+		fs.remove("/etc/firewall.lime.d/20-wan-out-masquerade")
+	else
+		fs.mkdir("/etc/firewall.lime.d")
+		fs.writefile(
+			"/etc/firewall.lime.d/20-wan-out-masquerade",
+			"iptables -t nat -D POSTROUTING -o " .. ifname .. " -j MASQUERADE\n" ..
+			"iptables -t nat -A POSTROUTING -o " .. ifname .. " -j MASQUERADE\n"
+		)
+	end
 end
 
 return wan
