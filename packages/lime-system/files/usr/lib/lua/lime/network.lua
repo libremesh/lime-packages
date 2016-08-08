@@ -95,16 +95,16 @@ function network.setup_dns()
 	local cloudDomain = config.get("system", "domain")
 	local resolvers = config.get("network", "resolvers")
 
-	local function setup_dnsmasq(s)
-		uci:set("dhcp", s[".name"], "domain", cloudDomain)
-		uci:set("dhcp", s[".name"], "local", "/"..cloudDomain.."/")
-		uci:set("dhcp", s[".name"], "expandhosts", "1")
-		uci:set("dhcp", s[".name"], "domainneeded", "1")
-		uci:set("dhcp", s[".name"], "server", resolvers)
-	end
-
 	local uci = libuci:cursor()
-	uci:foreach("dhcp", "dnsmasq", setup_dnsmasq)
+	uci:foreach("dhcp", "dnsmasq",
+		function(s)
+			uci:set("dhcp", s[".name"], "domain", cloudDomain)
+			uci:set("dhcp", s[".name"], "local", "/"..cloudDomain.."/")
+			uci:set("dhcp", s[".name"], "expandhosts", "1")
+			uci:set("dhcp", s[".name"], "domainneeded", "1")
+			uci:set("dhcp", s[".name"], "server", resolvers)
+		end
+	)
 	uci:set("dhcp", "lan", "leasetime", "1h")
 	uci:save("dhcp")
 
