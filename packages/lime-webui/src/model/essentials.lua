@@ -72,8 +72,7 @@ bssid.optional = true
 
 -- commit
 function lime.on_commit(self,map)
-  luci.sys.call('(/usr/bin/lime-config > /tmp/lime-config.log 2>&1 && reload_config) &')
-  luci.sys.call('((/etc/init.d/bmx6 restart &> /dev/null)&)')
+  luci.sys.call('(/usr/bin/lime-config > /tmp/lime-config.log 2>&1 && reboot) &')
 end
 
 -- LibreMap.org config
