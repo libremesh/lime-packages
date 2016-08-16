@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libre-mesh.org
-  DEPENDS:=+lime-system +lua +libuci-lua +kmod-ipt-nat +iptables
+  DEPENDS:=+lime-system +lua +libuci-lua +kmod-ipt-nat +iptables +udhcpc
 endef
 
 define Build/Compile
