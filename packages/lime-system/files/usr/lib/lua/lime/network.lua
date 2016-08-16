@@ -236,7 +236,7 @@ function network.configure()
 		local owrtIf = specificIfaces[device]
 		local deviceProtos = generalProtocols
 		if owrtIf then
-			deviceProtos = owrtIf["protocols"]
+			deviceProtos = owrtIf["protocols"] or {"manual"}
 			flags["specific"] = true
 		end
 
