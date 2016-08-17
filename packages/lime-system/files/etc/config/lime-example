@@ -48,6 +48,7 @@ config lime wifi
 #	list modes 'ap'
 #	list modes 'apname'
 #	list modes 'adhoc'
+#	list modes 'client'
 	option ap_ssid 'libre-mesh.org'
 	option apname_ssid '%H'
 #	option adhoc_ssid '%H'                                                 # Parametrizable with %M, %H
@@ -71,6 +72,12 @@ config lime wifi
 #config wifi radio12
 #	list modes 'manual'                                                    # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
 
+#config wifi radio13
+#  list modes 'client'
+#  option channel_2ghz 'auto'
+#  option client_ssid 'SomeWiFiNetwork'
+#  option client_key 'SomeWPApskPassword'
+#  option client_encryption 'psk'
 
 ### Network interface specific options ( override general option )
 ### Available protocols: bmx6, batadv, olsr, olsr6, wan, lan, manual
