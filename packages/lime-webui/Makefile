@@ -22,9 +22,8 @@ define Package/$(PKG_NAME)
   MAINTAINER:=p4u <pau@dabax.net>
   URL:=http://libre-mesh.org
   DEPENDS:= +luci-mod-admin-full \
-	+luci-app-bmx6 +luci-app-batman-adv \
-	+luci-mod-status \
-	+uhttpd +libiwinfo-lua \
+	+PACKAGE_lime-proto-bmx6:luci-app-bmx6 +PACKAGE_lime-proto-batadv:luci-app-batman-adv \
+	+luci-mod-status +uhttpd +libiwinfo-lua \
 	+luci-theme-bootstrap +luci-i18n-english \
 	+lime-system
 endef
