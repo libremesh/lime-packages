@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
   TITLE:=LiMe BGP proto support
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@diveni.re>
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:=+bird4 +bird6 +lime-system +lua
 endef
 

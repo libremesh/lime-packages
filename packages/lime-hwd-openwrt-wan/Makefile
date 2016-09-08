@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   TITLE:=Respect openwrt wan interface as default
   CATEGORY:=LiMe
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:=+lime-system +lua +libuci-lua +lime-proto-wan
 endef
 

@@ -1,5 +1,5 @@
 # The /etc/config/lime-defaults file contains the default configuration.
-# To configure Libre-Mesh insert options in /etc/config/lime file, these will override the default ones.
+# To configure LibreMesh insert options in /etc/config/lime file, these will override the default ones.
 #
 # The options marked with "Parametrizable with %Mn, %Nn, %H"
 # can include %Mn templates that will be substituted
@@ -48,7 +48,7 @@ config lime wifi
 #	list modes 'ap'
 #	list modes 'apname'
 #	list modes 'adhoc'
-	option ap_ssid 'libre-mesh.org'
+	option ap_ssid 'libremesh.org'
 	option apname_ssid '%H'
 #	option adhoc_ssid '%H'                                                 # Parametrizable with %M, %H
 #	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
@@ -65,7 +65,7 @@ config lime wifi
 #	option channel_2ghz '1'
 #	option channel_5ghz '48'
 #	option adhoc_mcast_rate '6000'
-#	option adhoc_ssid 'libre-mesh'
+#	option adhoc_ssid 'libremesh'
 #	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
 
 #config wifi radio12
@@ -84,9 +84,9 @@ config lime wifi
 
 ### Ground routing specific sections
 ### One section for each ground routing link
-### With ground routing we mean setups having Libre-Mesh on a router which is connected via cable(s), eventually through a switch, to some wireless routers running the original firmware in WDS (transparent bridge) Ap/Sta mode.
+### With ground routing we mean setups having LibreMesh on a router which is connected via cable(s), eventually through a switch, to some wireless routers running the original firmware in WDS (transparent bridge) Ap/Sta mode.
 ### Likely you want to configure as many sections of ground routing with different vlan numbers or different switch ports as many connected devices in WDS mode.
-### For a detailed description have a look at http://libre-mesh.org/projects/libre-mesh/wiki/Ground_routing
+### For a detailed description have a look at http://libremesh.org/projects/libremesh/wiki/Ground_routing
 
 #config hwd_gr link1
 #	option net_dev 'eth0'                                               # Plain ethernet device on top of which 802.1q vlan will be constructed. In case of doubts rely on wiki.openwrt.org

@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   SECTION:=admin
   CATEGORY:=Administration
-  TITLE:=Web interface for Libre-Mesh nodes
+  TITLE:=Web interface for LibreMesh nodes
   MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
   DEPENDS:= +uhttpd +luci-theme-bootstrap +libiwinfo-lua +luci-base
 endef
@@ -24,13 +24,13 @@ endef
 define Package/$(PKG_NAME)-ssl
   SECTION:=admin
   CATEGORY:=Administration
-  TITLE:=Web interface for Libre-Mesh nodes (SSL support)
+  TITLE:=Web interface for LibreMesh nodes (SSL support)
   MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
   DEPENDS:= +$(PKG_NAME) +libustream-cyassl +px5g
 endef
 
 define Package/$(PKG_NAME)/description
-Minimal and simple web app to configure a libre-mesh node.
+Minimal and simple web app to configure a libremesh node.
 endef
 
 define Build/Compile

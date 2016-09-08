@@ -18,10 +18,10 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-	TITLE:=libre-mesh debug utils
+	TITLE:=libremesh debug utils
 	CATEGORY:=LiMe
 	MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
-	URL:=http://libre-mesh.org
+	URL:=http://libremesh.org
 	DEPENDS:=+PACKAGE_lime-proto-batadv:batctl \
        		+busybox +ethtool +iwinfo +iw +mtr +ip +iputils-ping6 +iputils-ping \
 		+sprunge +safe-reboot +netperf +pv +tcpdump-mini \
