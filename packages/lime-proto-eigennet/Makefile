@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
   TITLE:=LiMe eigennet legacy compatibility proto support
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:=+lua +libuci-lua +lime-system +lime-proto-batadv
 endef
 

@@ -23,10 +23,10 @@ LIME_DESCRIPTION:=$(LIME_ID) $(LIME_RELEASE) $(LIME_CODENAME) ($(LIME_BRANCH) re
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  TITLE:=libre-mesh system files
+  TITLE:=libremesh system files
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:=+lua +libuci-lua +luci-base +luci-lib-ip +luci-lib-nixio
 endef
 

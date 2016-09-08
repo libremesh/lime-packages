@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
   TITLE:=LiMe anygw proto support
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:=+ebtables +lime-system +lua +libuci-lua +kmod-macvlan +dnsmasq-lease-share +dnsmasq-dhcpv6 @(!PACKAGE_dnsmasq)
 endef
 

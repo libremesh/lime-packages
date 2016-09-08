@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2016 Libre-Mesh.org
+# Copyright (C) 2016 LibreMesh.org
 #
 # This is free software, licensed under the GNU General Public License v3.
 #
@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
   SECTION:=lime
   CATEGORY:=LiMe
   MAINTAINER:=Pau Escrich <p4u@dabax.et>
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:=+watchping 
 endef
 

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2016 Libre-Mesh.org
+# Copyright (C) 2013-2016 LibreMesh.org
 #
 # This is free software, licensed under the GNU General Public License v3.
 #
@@ -23,12 +23,12 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   SUBMENU:=Collections
   MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:=+lime-basic
 endef
 
 define Package/$(PKG_NAME)/description
-	Metapackage depending on all the required to run a freifunk/libre-mesh node
+	Metapackage depending on all the required to run a freifunk/libremesh node
 endef
 
 define Build/Compile

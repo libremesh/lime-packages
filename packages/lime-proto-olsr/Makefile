@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
 	TITLE:=LiMe OLSR proto support (IPv4)
 	CATEGORY:=LiMe
 	MAINTAINER:=leonaard <leone@inventati.org>
-	URL:=http://libre-mesh.org
+	URL:=http://libremesh.org
 	DEPENDS:=+lua +libuci-lua +lime-system +olsrd +olsrd-mod-jsoninfo +kmod-ipip
 endef
 

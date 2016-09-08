@@ -18,7 +18,7 @@ define Package/$(PKG_NAME)
  CATEGORY:=LiMe
  TITLE:=/etc/hosts sharing accross batman-adv mesh
  MAINTAINER:=Gui Iribarren <gui@altermundi.net>
- URL:=http://libre-mesh.org
+ URL:=http://libremesh.org
  DEPENDS:=+alfred +lua +libuci-lua
 endef
 

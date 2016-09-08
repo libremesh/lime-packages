@@ -3,7 +3,7 @@
 # Beware this file is not supposed to store interface specific configuration, like "config net eth0"
 
 # Read the documentation in /etc/config/lime.example file
-# and on https://libre-mesh.org
+# and on https://libremesh.org
 
 config lime system
 	option hostname 'LiMe-%M4%M5%M6'
@@ -32,8 +32,8 @@ config lime wifi
 	list modes 'ap'
 	list modes 'apname'
 	list modes 'adhoc'
-	option ap_ssid 'Libre-Mesh.org'
-	option apname_ssid 'Libre-Mesh.org/%H'
+	option ap_ssid 'LibreMesh.org'
+	option apname_ssid 'LibreMesh.org/%H'
 	option adhoc_ssid 'LiMe'
 	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
 	option adhoc_mcast_rate_2ghz '24000'

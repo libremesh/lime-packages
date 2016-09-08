@@ -16,11 +16,11 @@ LIME_CODENAME:=bigbang
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  TITLE:=libre-mesh web user interface based on LUCI
+  TITLE:=libremesh web user interface based on LUCI
   SECTION:=net
   CATEGORY:=LiMe
   MAINTAINER:=p4u <pau@dabax.net>
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:= +luci-mod-admin-full \
 	+PACKAGE_lime-proto-bmx6:luci-app-bmx6 +PACKAGE_lime-proto-batadv:luci-app-batman-adv \
 	+luci-mod-status +uhttpd +libiwinfo-lua \
@@ -29,7 +29,7 @@ define Package/$(PKG_NAME)
 endef
 
 define Package/$(PKG_NAME)/description
-	Web interface for Libre-Mesh
+	Web interface for LibreMesh
 endef
 
 define Build/Prepare

@@ -6,7 +6,7 @@ will keep trying to use it, but their network connection will be broken.
 Instead, lime-auto-ap-watchping provides a simple ICMP based whatching system
 which changes the AP SSID to let other nodes working handle the clients.
 By default the new SSID will be $HOSTNAME-down, so it will be easy to find and fix it if possible.
-Because of the layer2 batman-adv roaming feature included in libre-mesh,
+Because of the layer2 batman-adv roaming feature included in libremesh,
 clients won't even notice the difference if there is another neighbour node which can handle them.
 
 There are two options available in lime.network config file:

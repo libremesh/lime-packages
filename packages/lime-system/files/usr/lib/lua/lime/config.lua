@@ -1,6 +1,6 @@
 #!/usr/bin/lua
 
---! Libre-Mesh is modular but this doesn't mean parallel,
+--! LibreMesh is modular but this doesn't mean parallel,
 --! modules are executed sequencially, so we don't need
 --! to worry about transaction and all other stuff that
 --! affects parrallels database, at moment we don't need

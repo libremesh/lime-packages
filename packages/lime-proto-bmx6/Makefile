@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
   TITLE:=LiMe Bmx6 proto support
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:=+bmx6 +bmx6-json +bmx6-sms +bmx6-table +bmx6-uci-config +iptables +lime-system +lua +libuci-lua
 endef
 

@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
   TITLE:=LiMe batman-adv proto support
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:=+lime-system +lua +libuci-lua +kmod-batman-adv +kmod-dummy
 endef
 

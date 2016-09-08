@@ -1,14 +1,14 @@
 [![tip for next commit](http://tip4commit.com/projects/804.svg)](http://tip4commit.com/projects/804)
 
-# [Libre-Mesh][5] packages "Community Chaos" release (16.07)
+# [LibreMesh][5] packages "Community Chaos" release (16.07)
 
-[Libre-Mesh project][5] includes the development of several tools used for deploying libre/free mesh networks, check the [objectives and agreements][3].
+[LibreMesh project][5] includes the development of several tools used for deploying libre/free mesh networks, check the [objectives and agreements][3].
 
 The firmware (the main piece) will allow simple deployment of auto-configurable, yet versatile, multi-radio mesh networks. Check the [Network Architecture][4] to see the basic ideas.
 
 ## Building a firmware image
 
-The Libre-Mesh firmware can be compiled either manually adding the feed to a [OpenWrt buildroot][1] environment or using the easy to use [lime-build][2] tool.
+The LibreMesh firmware can be compiled either manually adding the feed to a [OpenWrt buildroot][1] environment or using the easy to use [lime-build][2] tool.
 
 ### Using OpenWrt buildroot
 
@@ -22,7 +22,7 @@ Add lime-packages feed to the default ones.
 
     cd openwrt
     cp feeds.conf.default feeds.conf
-    echo "src-git lime https://github.com/libre-mesh/lime-packages.git" >> feeds.conf
+    echo "src-git lime https://github.com/libremesh/lime-packages.git" >> feeds.conf
 
 Download the new packages.
 
@@ -43,7 +43,7 @@ The resulting files will be present in bin/ directory.
 
 Refer to [lime-build][2] documentation.
 
-## Get in Touch with Libre-Mesh Community
+## Get in Touch with LibreMesh Community
 
 ### Mailing Lists
 
@@ -56,13 +56,13 @@ The project offers the following mailing lists
 
 The project uses an IRC channel on freenode
 
-* #libre-mesh - a public channel for everyone to join and participate
+* #libremesh - a public channel for everyone to join and participate
 
 [1]: http://wiki.openwrt.org/doc/start#building_openwrt
-[2]: https://github.com/libre-mesh/lime-build
-[3]: http://libre-mesh.org/projects/libre-mesh/wiki/Objectives
-[4]: http://libre-mesh.org/projects/libre-mesh/wiki/Network_Architecture
-[5]: http://libre-mesh.org/
-[6]: http://libre-mesh.org/projects/libre-mesh/wiki/Compile_Manually
+[2]: https://github.com/libremesh/lime-build
+[3]: http://libremesh.org/projects/libremesh/wiki/Objectives
+[4]: http://libremesh.org/projects/libremesh/wiki/Network_Architecture
+[5]: http://libremesh.org/
+[6]: http://libremesh.org/projects/libremesh/wiki/Compile_Manually
 [7]: https://lists.libre-mesh.org/mailman/listinfo/dev
 [8]: https://lists.libre-mesh.org/mailman/listinfo/users

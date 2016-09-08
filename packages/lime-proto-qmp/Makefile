@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
   TITLE:=LiMe qmp proto legacy compatibility support
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:=+lime-system +lime-proto-bmx6 +lua +libuci-lua
 endef
 
