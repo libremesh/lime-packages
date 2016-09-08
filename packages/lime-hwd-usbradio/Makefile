@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   TITLE:=LiMe hardware detection usb radio support
   CATEGORY:=LiMe
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:=+lime-system +lua +libuci-lua
 endef
 

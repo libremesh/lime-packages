@@ -18,7 +18,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   TITLE:=bmx6 auto Internet gateway module 
   MAINTAINER:=Pau Escrich <p4u@dabax.et>
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:= bmx6 +watchping +lime-eb-ip-tables +ip
 endef
 

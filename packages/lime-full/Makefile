@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2016 Libre-Mesh.org
+# Copyright (C) 2013-2016 LibreMesh.org
 #
 # This is free software, licensed under the GNU General Public License v3.
 #
@@ -18,17 +18,17 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  TITLE:=libre-mesh standard metapackage
+  TITLE:=libremesh standard metapackage
   SECTION:=lime
   CATEGORY:=LiMe
   SUBMENU:=Collections
   MAINTAINER:=Pau Escrich <p4u@dabax.net>
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:=+lime-basic +lime-debug
 endef
 
 define Package/$(PKG_NAME)/description
-	Metapackage depending on all the required to run a full standard libre-mesh node
+	Metapackage depending on all the required to run a full standard libremesh node
 endef
 
 define Build/Compile

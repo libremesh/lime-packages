@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
   TITLE:=LiMe Bmx7 proto support
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:=+bmx7 +bmx7-json +bmx7-sms +bmx7-table +bmx7-uci-config +bmx7-tun +iptables +lime-system +lua +libuci-lua
 endef
 

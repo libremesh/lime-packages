@@ -1,5 +1,5 @@
 --[[
-    Copyright (C) 2016 Libre-Mesh.org
+    Copyright (C) 2016 LibreMesh.org
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,10 +19,10 @@
     the file called "COPYING".
 --]]
 
--- Libre-Mesh.org config
+-- LibreMesh.org config
 
 require("luci.sys")
-local lime = Map("lime", "Libre-Mesh")
+local lime = Map("lime", "LibreMesh")
 local config = require("lime.config")
 
 -- Create sections

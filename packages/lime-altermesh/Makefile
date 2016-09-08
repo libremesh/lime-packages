@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
   TITLE:=AlterMesh metapackage using LiMe codebase
   CATEGORY:=LiMe
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:=+lime-system +lime-proto-batadv +reghack \
            +watchping +batman-adv-auto-gw-mode \
            +dnsmasq-dhcpv6 +dnsmasq-lease-share \

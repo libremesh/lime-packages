@@ -18,7 +18,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   TITLE:=Set batman-adv gw_mode by internet availability
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
-  URL:=http://libre-mesh.org
+  URL:=http://libremesh.org
   DEPENDS:= +kmod-batman-adv +watchping +dnsmasq-dhcpv6 +lime-eb-ip-tables +ip
 endef
 
