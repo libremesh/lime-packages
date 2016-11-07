@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
   TITLE:=Set batman-adv gw_mode by internet availability
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   URL:=http://libremesh.org
-  DEPENDS:= +kmod-batman-adv +watchping +dnsmasq-dhcpv6 +lime-eb-ip-tables +ip
+  DEPENDS:= +kmod-batman-adv +watchping +dnsmasq-dhcpv6 +ip
 endef
 
 define Package/$(PKG_NAME)/description

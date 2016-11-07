@@ -24,7 +24,7 @@ define Package/$(PKG_NAME)
   DEPENDS:= +luci-mod-admin-full \
 	+PACKAGE_lime-proto-bmx6:luci-app-bmx6 +PACKAGE_lime-proto-batadv:luci-app-batman-adv \
 	+luci-mod-status +uhttpd +libiwinfo-lua \
-	+luci-theme-bootstrap +luci-i18n-english \
+	+luci-theme-bootstrap +luci-i18n-base-en \
 	+lime-system
 endef
 
