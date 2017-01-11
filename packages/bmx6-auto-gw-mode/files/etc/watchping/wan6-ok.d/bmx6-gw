@@ -1,0 +1,13 @@
+#!/bin/sh
+logger -t bmx6-auto-gw "We got IPv6 Internet access"
+netstatus="$(ubus call network.interface dump)"
+prefix="$( jsonfilter -s "$netstatus" -e "@.interface[*]['ipv6-prefix'][*]['address']" )"
+mask="$( jsonfilter -s "$netstatus" -e "@.interface[*]['ipv6-prefix'][*]['mask']" )"
+[ "$prefix" -a "$mask" ] || exit 0
+logger -t bmx6-auto-gw "Announcing prefix $prefix/$mask to the mesh"
+
+bmx6 -c tunDev main /tun6Address ${prefix}1/$mask /ingress6Prefix ${prefix}/$mask
+bmx6 -c tunOut -inet6
+bmx6 -c tunOut=6 /n=${prefix}/${mask} /minPrefixLen=64
+bmx6 -c tunIn inet6 /n=2000::/3
+

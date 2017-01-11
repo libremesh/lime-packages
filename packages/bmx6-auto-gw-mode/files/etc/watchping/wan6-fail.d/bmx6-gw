@@ -1,0 +1,4 @@
+#!/bin/sh
+logger -t bmx6-auto-gw "Searching IPv6 Internet access into the mesh"
+bmx6 -c tunIn -inet6
+bmx6 -c tunOut inet6 /network 2000::/3 /maxPrefixLen 64
