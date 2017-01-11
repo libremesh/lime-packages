@@ -1,0 +1,3 @@
+# All executable files in this directory are processed
+# when watchping can get a reply through wan6 ('interface')
+# from any of the hosts listed in 'pinghosts'
