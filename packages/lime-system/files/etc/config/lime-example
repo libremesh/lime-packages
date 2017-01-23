@@ -79,6 +79,14 @@ config lime wifi
 #  option client_key 'SomeWPApskPassword'
 #  option client_encryption 'psk'
 
+#config wifi radio14
+#  list modes 'ap'
+#  option channel_2ghz '1'
+#  option channel_5ghz '36'
+#  option ap_ssid 'MyPrivateSSID'
+#  option ap_key 'WPA2PskKey'
+
+
 ### Network interface specific options ( override general option )
 ### Available protocols: bmx6, batadv, olsr, olsr6, wan, lan, manual
 ### proto:vlan_number works too ( something like bmx6:13 is supported )
