@@ -1,10 +1,10 @@
 #!/bin/sh 
 
-local interface="${1:?}"
-local timeout="${2:?}"
-local pinghosts="${3:?}"
-local pinginterval="${4:?}"
-local hookname="${5:?}"
+interface="${1:?}"
+timeout="${2:?}"
+pinghosts="${3:?}"
+pinginterval="${4:?}"
+hookname="${5:?}"
 
 run_hooks () {
 	reason="$1"
