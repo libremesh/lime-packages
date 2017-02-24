@@ -24,6 +24,7 @@ function bmx6.configure(args)
 	uci:set(bmx6.f, "general", "bmx6")
 	uci:set(bmx6.f, "general", "dbgMuteTimeout", "1000000")
 	uci:set(bmx6.f, "general", "tunOutTimeout", "100000")
+	uci:set(bmx6.f, "general", "configSync", "0")
 
 	uci:set(bmx6.f, "main", "tunDev")
 	uci:set(bmx6.f, "main", "tunDev", "main")
