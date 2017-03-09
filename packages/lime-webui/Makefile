@@ -11,7 +11,7 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
-LIME_CODENAME:=bigbang
+LIME_CODENAME:=communitychaos
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -35,13 +35,14 @@ endef
 define Build/Prepare
 	@rm -rf $(PKG_BUILD_DIR) || true
 	mkdir -p $(PKG_BUILD_DIR)
+	./build_i18n.sh
 endef
 
 define Build/Configure
 endef
 
 define Build/Compile
-	@cp -r ./src/. $(PKG_BUILD_DIR)/
+	@cp -r ./luasrc/. $(PKG_BUILD_DIR)/
 	@find $(PKG_BUILD_DIR)/ -type f -name "*.lua" -exec sed -i '/^--!.*/d' {} \;
 endef
 
@@ -50,10 +51,12 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/view/lime
 	$(INSTALL_DIR) $(1)/www/luci-static/resources/lime
+	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/i18n
 	$(CP) $(PKG_BUILD_DIR)/model/* $(1)/usr/lib/lua/luci/model/cbi/lime/
 	$(CP) $(PKG_BUILD_DIR)/controller/* $(1)/usr/lib/lua/luci/controller/
 	$(CP) $(PKG_BUILD_DIR)/view/* $(1)/usr/lib/lua/luci/view/lime/
 	$(CP) $(PKG_BUILD_DIR)/static/* $(1)/www/luci-static/resources/lime/
+	$(CP) $(PKG_BUILD_DIR)/i18n/* $(1)/usr/lib/lua/luci/i18n/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))

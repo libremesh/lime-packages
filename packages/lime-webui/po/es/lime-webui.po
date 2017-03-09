@@ -1,0 +1,111 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+msgid "About"
+msgstr "Sobre"
+
+msgid "Access Point ESSID (usually name of your network)"
+msgstr "ESSID del punto de acceso (normalmente nombre de la red)"
+
+msgid "Advanced"
+msgstr "Avanzado"
+
+msgid "Channel 2.4 GHz"
+msgstr "Canal 2.4GHz"
+
+msgid "Channel 5 GHz"
+msgstr "Canal 5GHz"
+
+msgid "Community name"
+msgstr "Nombre de la comunidad"
+
+msgid "Contact"
+msgstr "Contacto"
+
+msgid "Contact information"
+msgstr "Información de contacto"
+
+msgid "Country code"
+msgstr "Código del país"
+
+msgid "Country code used for WiFi radios"
+msgstr "Código del país usado para las radios WiFi"
+
+msgid "Default channel used for 2.4 GHz radios"
+msgstr "Canal por defecto usado para las radios de 2.4GHz"
+
+msgid "Default channel used for 5 GHz radios"
+msgstr "Canal por defecto usado para las radios de 5GHz"
+
+msgid "Email"
+msgstr "Correo"
+
+msgid "General"
+msgstr "General"
+
+msgid "Hostname"
+msgstr "Nombre de la máquina"
+
+msgid "Latitude"
+msgstr "Latitud"
+
+msgid "Latitude (this can be also configured in location tab)"
+msgstr "Latitud (puede ser configurada también en la sección Localización)"
+
+msgid "Location"
+msgstr "Localización"
+
+msgid "Logout"
+msgstr "Salir"
+
+msgid "Longitude"
+msgstr "Longitud"
+
+msgid "Longitude (this can be also configured in location tab)"
+msgstr "Longitud (puede ser configurada también en la sección Localización)"
+
+msgid "Main IPv4"
+msgstr "Dirección principal IPv4"
+
+msgid "Main IPv6"
+msgstr "Dirección principal IPv6"
+
+msgid "Map location"
+msgstr "Localización en mapa"
+
+msgid "Mesh BSSID"
+msgstr "BSSID de la Mesh"
+
+msgid "Name"
+msgstr "Nombre"
+
+msgid "Name for this node"
+msgstr "Nombre para este nodo"
+
+msgid "Network SSID"
+msgstr "SSID de la red"
+
+msgid "Simple Config"
+msgstr "Configuración simple"
+
+msgid "The BSSID (WiFi network identifier) used for the mesh network"
+msgstr "El BSSID (identificador de la red WiFi) usado para la mesh"
+
+msgid ""
+"The main IPv4 configured for this node, with slash notation (for ex. "
+"1.2.3.4/24)"
+msgstr "La IPv4 principal para este nodo, con notación de barra (p.e 1.2.3.4/24)"
+
+msgid ""
+"The main IPv6 configured for this node, with slash notation (for ex. 2001:"
+"db8::1/64)"
+msgstr "La IPv6 principal para este nodo, con notación de barra (p.e 2001:db8::1/64)"
+
+msgid "The name of your network community"
+msgstr "Nombre para la red comunitaria"
+
+msgid "Your email (not required)"
+msgstr "Tu correo electrónico (no obligatorio)"
+
+msgid "Your name or alias (not required)"
+msgstr "Tu nombre o alias (no obligatorio)"
