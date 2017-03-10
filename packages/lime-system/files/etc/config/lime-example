@@ -30,12 +30,14 @@ config lime network
 	list protocols anygw
 	list protocols batadv:%N1                                              # Parametrizable with %Nn (which depends from ap_ssid), note that this will range between 16 and 272
 	list protocols bmx6:13
+# 	list protocols batadv:0                                                # If 0 VLAN tags are disabled and the routing is done on the raw interface
 #	list protocols olsr:14
 #	list protocols olsr6:15
 #	list protocols olsr2:16
 #	list resolvers 8.8.8.8                                                 # DNS servers node will use
 #	list resolvers 2001:4860:4860::8844
-
+# 	option autoap_enabled 0                                                # Requires lime-ap-watchping installed. If enabled AP SSID is changed to ERROR when network issues
+# 	option autoap_hosts "8.8.8.8 141.1.1.1"                                # Requires lime-ap-watchping installed. Hosts used to check if the network is working fine
 
 ### WiFi general options
 
