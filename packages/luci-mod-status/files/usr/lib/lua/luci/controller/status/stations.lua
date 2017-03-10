@@ -65,9 +65,9 @@ function action_json_stations(device)
 
    local function network_links(ntm, net)
       local station_links = {}
-      local macaddr = ntm:get_interface(net.iwdata.ifname):mac()
+      local macaddr = ntm:get_interface(net:ifname()):mac()
       local channel = net:channel()
-      local assoclist = net.iwinfo.assoclist
+      local assoclist = net:assoclist()
       local bat_hosts = dict_from_file("/etc/bat-hosts")
       for station_mac, link_data in pairs(assoclist) do
          local wifilink = {
@@ -82,7 +82,7 @@ function action_json_stations(device)
       return station_links
    end   
 
-   local ntm = netm.init()
+   local ntm = require "luci.model.network".init()
    local net = ntm:get_wifinet(device)
    local net_links = network_links(ntm, net)
 
