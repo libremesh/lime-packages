@@ -2,6 +2,8 @@
 
 # [LibreMesh][5] packages "Community Chaos" release (16.07)
 
+[![LibreMesh logo](https://raw.githubusercontent.com/libremesh/lime-web/master/logo/logo.png)](http://libremesh.org)
+
 [LibreMesh project][5] includes the development of several tools used for deploying libre/free mesh networks.
 
 The firmware (the main piece) will allow simple deployment of auto-configurable, yet versatile, multi-radio mesh networks. Check the [Network Architecture][4] to see the basic ideas.
