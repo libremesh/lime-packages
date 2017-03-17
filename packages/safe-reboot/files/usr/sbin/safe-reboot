@@ -34,18 +34,18 @@
 ###    again just wait for the revert timeout.
 ###  
 ###  -w, --wait, --in TIME
-###        After backing up /overlay/etc, wait for TIME before reboot.
+###        After backing up /overlay/upper/etc, wait for TIME before reboot.
 ###          Default: 5min
 ###  -f, --fallback-after TIME
-###        After boot, wait for TIME before reverting /overlay/etc from 
-###        backup found in /overlay/.etc.last-good.tgz
+###        After boot, wait for TIME before reverting /overlay/upper/etc from
+###        backup found in /overlay/upper/.etc.last-good.tgz
 ###          Default: 10min
 ###  now
-###        Do not make /overlay/etc backup; instead check that there's
-###        one already in place (/overlay/.etc.last-good.tgz), then reboot
+###        Do not make /overlay/upper/etc backup; instead check that there's
+###        one already in place (/overlay/upper/.etc.last-good.tgz), then reboot
 ###        and wait for fallback timeout.
 ###  cancel
-###        Remove /overlay/.etc.last-good.tgz
+###        Remove /overlay/upper/.etc.last-good.tgz
 ###        (useful after a successful reboot)
 ### 
 ###    TIME examples: 1hour 60min 60m 3600sec 3600
@@ -57,10 +57,10 @@
 PIDFILE="/tmp/run/safe-reboot.pid"
 fallback_timeout=600
 grace_period=300
-file_etc_lastgood="/overlay/.etc.last-good.tgz"
-dir_etc="/overlay/etc/"
-safe_fallback_script="/overlay/etc/init.d/safe-fallback"
-safe_fallback_script_enable="ln -sf ../init.d/safe-fallback /overlay/etc/rc.d/S11safe-fallback"
+file_etc_lastgood="/overlay/upper/.etc.last-good.tgz"
+dir_etc="/overlay/upper/etc/"
+safe_fallback_script="/overlay/upper/etc/init.d/safe-fallback"
+safe_fallback_script_enable="ln -sf ../init.d/safe-fallback /overlay/upper/etc/rc.d/S11safe-fallback"
 cmd_force_reboot="echo b > /proc/sysrq-trigger" # Immediately reboot the system without syncing or unmounting disks.
 
 usage () { reason="$*"
@@ -108,7 +108,7 @@ start() {
   echo \$! > "$PIDFILE"
 }
 EOF
-  mkdir -p /overlay/etc/rc.d/
+  mkdir -p "$dir_etc"/rc.d/
   $safe_fallback_script_enable
 }
 
