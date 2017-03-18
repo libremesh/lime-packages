@@ -6,12 +6,14 @@ local fs = require("nixio.fs")
 local config = require("lime.config")
 local network = require("lime.network")
 local utils = require("lime.utils")
+local networkutils = require("network-utils")
 
 
 system = {}
 
 function system.get_hostname()
-	 return utils.applyMacTemplate16(config.get("system", "hostname"), network.primary_mac())
+        local system_hostname = utils.applyMacTemplate16(config.get("system", "hostname"), network.primary_mac())
+        return networkutils.sanitize_hostname(system_hostname)
 end
 
 function system.set_hostname()
