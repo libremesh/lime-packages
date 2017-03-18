@@ -11,7 +11,8 @@ local utils = require("lime.utils")
 system = {}
 
 function system.get_hostname()
-	 return utils.applyMacTemplate16(config.get("system", "hostname"), network.primary_mac())
+        local system_hostname = utils.applyMacTemplate16(config.get("system", "hostname"), network.primary_mac())
+        return utils.sanitize_hostname(system_hostname)
 end
 
 function system.set_hostname()
