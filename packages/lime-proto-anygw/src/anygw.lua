@@ -91,7 +91,6 @@ function anygw.configure(args)
 	table.insert(content, "enable-ra")
 	table.insert(content, "dhcp-range=tag:anygw,"..ipv6:network():string()..",ra-names,24h")
 	table.insert(content, "dhcp-option=tag:anygw,option6:domain-search,lan")
-	table.insert(content, "dhcp-option=tag:anygw,option6:dns-server,"..anygw_ipv6:host():string())
 	fs.writefile("/etc/dnsmasq.d/lime-proto-anygw-20-ipv6.conf", table.concat(content, "\n").."\n")
 
 	io.popen("/etc/init.d/dnsmasq enable || true"):close()
