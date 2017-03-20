@@ -87,10 +87,12 @@ function anygw.configure(args)
 
 	uci:save("dhcp")
 
+	local cloudDomain = config.get("system", "domain")
+
 	local content = { }
 	table.insert(content, "enable-ra")
 	table.insert(content, "dhcp-range=tag:anygw,"..ipv6:network():string()..",ra-names,24h")
-	table.insert(content, "dhcp-option=tag:anygw,option6:domain-search,lan")
+	table.insert(content, "dhcp-option=tag:anygw,option6:domain-search,"..cloudDomain)
 	fs.writefile("/etc/dnsmasq.d/lime-proto-anygw-20-ipv6.conf", table.concat(content, "\n").."\n")
 
 	io.popen("/etc/init.d/dnsmasq enable || true"):close()
