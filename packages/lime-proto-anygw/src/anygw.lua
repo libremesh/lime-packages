@@ -62,22 +62,30 @@ function anygw.configure(args)
 		"ebtables -t nat -A POSTROUTING -o bat0 -j DROP -s " .. anygw_mac .. "\n"
 	)
 
-	local content = { }
-
 	uci:set("dhcp", "lan", "ignore", "1")
+
+	uci:set("dhcp", "lm_net_br_lan_anygw_dhcp", "dhcp")
+	uci:set("dhcp", "lm_net_br_lan_anygw_dhcp", "interface", "lm_net_br_lan_anygw_if")
+	uci:set("dhcp", "lm_net_br_lan_anygw_dhcp", "start", "2")
+	uci:set("dhcp", "lm_net_br_lan_anygw_dhcp", "limit", (2 ^ (32 - anygw_ipv4:prefix()))) -- use whole network
+	uci:set("dhcp", "lm_net_br_lan_anygw_dhcp", "leasetime", "1h")
+
+	uci:set("dhcp", "lm_net_br_lan_anygw_if", "tag")
+	uci:set("dhcp", "lm_net_br_lan_anygw_if", "dhcp_option", { "option:mtu,1350" } )
+	uci:set("dhcp", "lm_net_br_lan_anygw_if", "force", "1")
+
+	uci:foreach("dhcp", "dnsmasq",
+		function(s)
+			uci:set("dhcp", s[".name"], "address", {
+						"/anygw/"..anygw_ipv4:host():string(),
+						"/thisnode.info/"..anygw_ipv4:host():string()
+			})
+		end
+	)
 
 	uci:save("dhcp")
 
-	content = { }
-	table.insert(content, "dhcp-range=tag:anygw,"..anygw_ipv4:add(1):host():string()..","..ipv4:maxhost():string())
-	table.insert(content, "dhcp-option=tag:anygw,option:router,"..anygw_ipv4:host():string())
-	table.insert(content, "dhcp-option=tag:anygw,option:dns-server,"..anygw_ipv4:host():string())
-	table.insert(content, "dhcp-option-force=tag:anygw,option:mtu,1350")
-	table.insert(content, "address=/anygw/"..anygw_ipv4:host():string())
-	table.insert(content, "address=/thisnode.info/"..anygw_ipv4:host():string())
-	fs.writefile("/etc/dnsmasq.d/lime-proto-anygw-10-ipv4.conf", table.concat(content, "\n").."\n")
-
-	content = { }
+	local content = { }
 	table.insert(content, "enable-ra")
 	table.insert(content, "dhcp-range=tag:anygw,"..ipv6:network():string()..",ra-names,24h")
 	table.insert(content, "dhcp-option=tag:anygw,option6:domain-search,lan")
