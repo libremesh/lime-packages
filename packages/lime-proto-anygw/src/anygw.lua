@@ -63,8 +63,10 @@ function anygw.configure(args)
 	)
 
 	local content = { }
-	table.insert(content, "no-dhcp-interface=br-lan")
-	fs.writefile("/etc/dnsmasq.d/lime-proto-anygw-00-interfaces.conf", table.concat(content, "\n").."\n")
+
+	uci:set("dhcp", "lan", "ignore", "1")
+
+	uci:save("dhcp")
 
 	content = { }
 	table.insert(content, "dhcp-range=tag:anygw,"..anygw_ipv4:add(1):host():string()..","..ipv4:maxhost():string())
