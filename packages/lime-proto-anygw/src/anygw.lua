@@ -64,15 +64,15 @@ function anygw.configure(args)
 
 	uci:set("dhcp", "lan", "ignore", "1")
 
-	uci:set("dhcp", "lm_net_br_lan_anygw_dhcp", "dhcp")
-	uci:set("dhcp", "lm_net_br_lan_anygw_dhcp", "interface", "lm_net_br_lan_anygw_if")
-	uci:set("dhcp", "lm_net_br_lan_anygw_dhcp", "start", "2")
-	uci:set("dhcp", "lm_net_br_lan_anygw_dhcp", "limit", (2 ^ (32 - anygw_ipv4:prefix()))) -- use whole network
-	uci:set("dhcp", "lm_net_br_lan_anygw_dhcp", "leasetime", "1h")
+	uci:set("dhcp", owrtInterfaceName.."_dhcp", "dhcp")
+	uci:set("dhcp", owrtInterfaceName.."_dhcp", "interface", owrtInterfaceName)
+	uci:set("dhcp", owrtInterfaceName.."_dhcp", "start", "2")
+	uci:set("dhcp", owrtInterfaceName.."_dhcp", "limit", (2 ^ (32 - anygw_ipv4:prefix()))) -- use whole network
+	uci:set("dhcp", owrtInterfaceName.."_dhcp", "leasetime", "1h")
 
-	uci:set("dhcp", "lm_net_br_lan_anygw_if", "tag")
-	uci:set("dhcp", "lm_net_br_lan_anygw_if", "dhcp_option", { "option:mtu,1350" } )
-	uci:set("dhcp", "lm_net_br_lan_anygw_if", "force", "1")
+	uci:set("dhcp", owrtInterfaceName, "tag")
+	uci:set("dhcp", owrtInterfaceName, "dhcp_option", { "option:mtu,1350" } )
+	uci:set("dhcp", owrtInterfaceName, "force", "1")
 
 	uci:foreach("dhcp", "dnsmasq",
 		function(s)
