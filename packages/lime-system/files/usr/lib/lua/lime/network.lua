@@ -105,7 +105,6 @@ function network.setup_dns()
 			uci:set("dhcp", s[".name"], "server", resolvers)
 		end
 	)
-	uci:set("dhcp", "lan", "leasetime", "1h")
 	uci:save("dhcp")
 
 	fs.writefile("/etc/dnsmasq.conf", "conf-dir=/etc/dnsmasq.d\n")
