@@ -23,8 +23,13 @@ function batadv.configure(args)
 	uci:set("batman-adv", "bat0", "multicast_mode", "0")
 
 	-- if anygw enabled disable DAT that doesn't play well with it
+	-- and set gw_mode=client everywhere. Since there's no gw_mode=server, this makes bat0 never forward requests
+	-- so a rogue DHCP server doesn't affect whole network (DHCP requests are always answered locally)
 	for _,proto in pairs(config.get("network", "protocols")) do
-		if proto == "anygw" then uci:set("batman-adv", "bat0", "distributed_arp_table", "0") end
+		if proto == "anygw" then
+			uci:set("batman-adv", "bat0", "distributed_arp_table", "0")
+			uci:set("batman-adv", "bat0", "gw_mode", "client")
+		end
 	end
 	uci:save("batman-adv")
 	lan.setup_interface("bat0", nil)
