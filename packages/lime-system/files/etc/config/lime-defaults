@@ -8,6 +8,7 @@
 config lime system
 	option hostname 'LiMe-%M4%M5%M6'
 	option domain 'lan'
+	option keep_on_upgrade 'libremesh base-files-essential'
 
 config lime network
 	option primary_interface eth0

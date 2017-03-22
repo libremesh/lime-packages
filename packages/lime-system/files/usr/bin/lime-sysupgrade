@@ -1,0 +1,47 @@
+#!/bin/sh
+FIRMWARE="$1"                                     
+shift                                             
+BACKUP_FILES="$@" 
+
+add_file() {
+  for l in `cat $1 | sed -e s/#.*$// -e /^$/d`; do
+    BACKUP_FILES="$BACKUP_FILES $l"
+  done
+}
+
+usage() {
+  echo "Usage: lime-sysupgrade <firmware> [backup_file1 backup_file2 ...]"
+  echo "Use system variable FORCE=1 for not being asked for confirmation"
+  echo ""
+  echo "In addition to the user specified backup files, the content of the following lists will also be included:"
+  for f in `uci get lime-defaults.system.keep_on_upgrade`; do 
+    echo " -> /lib/upgrade/keep.d/$f"
+  done
+  exit 0
+}
+
+[ ! -f "$FIRMWARE" ] && usage
+
+for f in `uci get lime-defaults.system.keep_on_upgrade`; do
+  file="/lib/upgrade/keep.d/$f"
+  [ -f "$file" ] && add_file $file || echo "Warning: Cannot read $file file"
+done
+
+tar czf /tmp/upgrade.tar.gz $BACKUP_FILES 2>/dev/null || { 
+  echo "Error: Cannot create tar.gz backup file"
+  exit 1
+}
+echo "Upgrading the system..."
+echo ""
+echo "Files to be saved"
+echo "------------------"
+for l in $BACKUP_FILES; do echo $l; done
+echo "------------------"
+echo ""
+echo "The device model is $(cat /tmp/sysinfo/model)"
+echo "The md5sum of the new firmware is $(md5sum $FIRMWARE | awk '{print $1}')"
+echo "Ready to perform the upgrade. Press [ENTER] to continue or CTRL+C to cancel"
+[ "$FORCE" == "1" ] || read
+echo ""
+
+sysupgrade -f /tmp/upgrade.tar.gz $FIRMWARE &
