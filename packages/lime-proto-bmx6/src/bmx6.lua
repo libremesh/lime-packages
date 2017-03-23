@@ -25,6 +25,7 @@ function bmx6.configure(args)
 	uci:set(bmx6.f, "general", "dbgMuteTimeout", "1000000")
 	uci:set(bmx6.f, "general", "tunOutTimeout", "100000")
 	uci:set(bmx6.f, "general", "configSync", "0")
+	uci:set(bmx6.f, "general", "syslog", "0")
 
 	uci:set(bmx6.f, "main", "tunDev")
 	uci:set(bmx6.f, "main", "tunDev", "main")
@@ -38,6 +39,11 @@ function bmx6.configure(args)
 	-- Enable JSON plugin to get bmx6 information in json format
 	uci:set(bmx6.f, "json", "plugin")
 	uci:set(bmx6.f, "json", "plugin", "bmx6_json.so")
+
+  -- Enable sms plugin
+	uci:set(bmx6.f, "sms", "plugin")
+	uci:set(bmx6.f, "sms", "plugin", "bmx6_sms.so")
+
 
 	-- Enable tun plugin, DISCLAIMER: this must be positioned before table plugin if used.
 --	uci:set(bmx6.f, "ptun", "plugin")
