@@ -1,0 +1,76 @@
+<%+header%>
+
+<div id="wait" style="text-align: center">
+<br /><br />
+<img src="/luci-static/resources/icons/loading.gif" />
+Collecting data...
+
+</div>
+
+<table>
+<tr class="header"></tr>
+<tr class="data"></tr>
+</table>
+
+<script>
+// http://typicode.github.io/pegasus/
+function pegasus(a,b,c){return c=new XMLHttpRequest,c.open("GET",a),a=[],pegasus.timeout&&(c.timeout=pegasus.timeout),c.ontimeout=function(a){b=a},c.onreadystatechange=c.then=function(d,e,f,g){if(d&&d.call&&(a=[,d,e]),b&&a[2]&&a[2](b,c),4==c.readyState&&(f=a[0|c.status/200])){try{g=JSON.parse(c.responseText)}catch(a){g=null}f(g,c)}},c.send(),c}
+request = pegasus;
+</script>
+
+<script>
+setTimeout(refreshSwitchState, 3000);
+
+function refreshSwitchState() {
+  request("/cgi-bin/luci/status/json/switch")
+    .then(processResponse);
+}
+
+function processResponse(response) {
+  var processedResponse;
+
+  processedResponse = response.switch0.map(function(sw) {
+    return {
+      link: sw.link,
+      port: sw.port,
+      speed: sw.speed
+    };
+  });
+
+  showSwitchData(processedResponse);
+  document.getElementById('wait').hidden = true;
+  setTimeout(refreshSwitchState, 3000);
+}
+
+function showSwitchData(portsData) {
+  var iport, port, dataNode, header, node, textnode;
+
+  portsData.sort(function(p1, p2) {p1.port < p2.port;});
+
+  header = document.querySelectorAll('table tr.header')[0];
+  header.innerHTML = '';
+  for(iport = 0; iport < portsData.length; iport++) {
+    node = document.createElement("th");
+    textnode = document.createTextNode("Port " + iport);
+    node.appendChild(textnode);
+    header.appendChild(node);
+  }
+
+  dataNode = document.querySelectorAll('table tr.data')[0];
+  dataNode.innerHTML = '';
+
+  for(iport = 0; iport < portsData.length; iport++) {
+    port = portsData[iport];
+    node = document.createElement("th");
+    node.innerHTML = (
+        "<small>" +
+          "<img src=\"/luci-static/resources/icons/port_" + ( port.link ? 'up' : 'down') +".png\"><br>" +
+          (port.speed > 0 ? port.speed+'baseT<br>full-duplex' : 'no link') +
+        "</small>");
+    dataNode.appendChild(node);
+  }
+};
+
+</script>
+
+<%+footer%>
