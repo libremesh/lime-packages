@@ -20,7 +20,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   SUBMENU:=3. Applications
   TITLE:=B.A.T.M.A.N.-Adv status module
-  DEPENDS:= +libc +kmod-batman-adv +luci-lib-jquery-1-4 +batctl
+  DEPENDS:= +libc +kmod-batman-adv +luci-lib-jquery-1-4 +luci-lib-dracula +batctl
 endef
 
 define Build/Compile
