@@ -1,0 +1,3 @@
+#!/bin/sh
+echo "adding bmx6 IPv6 addresses to it's own hosts file"
+echo "*/5 * * * * bmx2hosts > /var/hosts/bmx6" >> /etc/crontabs/root
