@@ -253,6 +253,39 @@ function network.configure()
 	end
 end
 
+function network.sanitizeIfaceName(ifName)
+	return network.limeIfNamePrefix..ifName:gsub("[^%w_]", "_")
+end
+
+-- Creates a network Interface with static protocol
+-- ipAddr can be IPv4 or IPv6
+-- the function can be called twice to set both IPv4 and IPv6
+function network.createStaticIface(linuxBaseIfname, openwrtNameSuffix, ipAddr)
+	local openwrtNameSuffix = openwrtNameSuffix or ""
+	local owrtInterfaceName = network.sanitizeIfaceName(linuxBaseIfname) .. openwrtNameSuffix
+	local uci = libuci:cursor()
+
+	uci:set("network", owrtInterfaceName, "interface")
+	uci:set("network", owrtInterfaceName, "proto", "static")
+	uci:set("network", owrtInterfaceName, "auto", "1")
+	uci:set("network", owrtInterfaceName, "ifname", linuxBaseIfname)
+
+	local addr = luci.ip.new(ipAddr)
+	local host = addr:host():string()
+
+	if addr:is4() then
+		local mask = addr:mask():string()
+		uci:set("network", owrtInterfaceName, "ipaddr", host)
+		uci:set("network", owrtInterfaceName, "netmask", mask)
+	elseif addr:is6() then
+		uci:set("network", owrtInterfaceName, "ip6addr", addr:string())
+	else
+		uci:delete("network", owrtInterfaceName, "interface")
+	end
+
+	uci:save("network")
+end
+
 function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanProtocol)
 	vlanProtocol = vlanProtocol or "8021ad"
 	openwrtNameSuffix = openwrtNameSuffix or ""
@@ -260,7 +293,7 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 	
 	--! sanitize passed linuxBaseIfName for constructing uci section name
 	--! because only alphanumeric and underscores are allowed
-	local owrtInterfaceName = network.limeIfNamePrefix..linuxBaseIfname:gsub("[^%w_]", "_")
+	local owrtInterfaceName = network.sanitizeIfaceName(linuxBaseIfname)
 	local owrtDeviceName = owrtInterfaceName
 	local linux802adIfName = linuxBaseIfname
 
@@ -271,10 +304,10 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 		--! sanitize passed linuxBaseIfName for constructing uci section name
 		--! because only alphanumeric and underscores are allowed
 		owrtInterfaceName = owrtInterfaceName..openwrtNameSuffix.."_if"
-		owrtDeviceName = network.limeIfNamePrefix..linuxBaseIfname:gsub("[^%w_]", "_")..openwrtNameSuffix.."_dev"
+		owrtDeviceName = network.limeIfNamePrefix..network.sanitizeIfaceName(linuxBaseIfname)..openwrtNameSuffix.."_dev"
 
 		if linuxBaseIfname:match("^wlan") then
-			linuxBaseIfname = "@"..network.limeIfNamePrefix..linuxBaseIfname:gsub("[^%w_]", "_")
+			linuxBaseIfname = "@"..network.sanitizeIfaceName(linuxBaseIfname)
 		end
 
 		--! Do not use . as separator as this will make netifd create an 802.1q interface anyway

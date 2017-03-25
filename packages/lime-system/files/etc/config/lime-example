@@ -99,7 +99,7 @@ config lime wifi
 #config net port5                                                           # Do not put any "." in the section name
 #	option linux_name 'eth1.5'                                          # Put here the actual name of the interface
 #	list protocols 'wan'                                                # Some of these protocols require the relative package "lime-proto-..."
-
+#	list protocols 'static:172.23.0.1/24'                               # Set up a static IP (both IPv4 and IPv6 supported, specify twice one per IP type)'
 
 ### Ground routing specific sections
 ### One section for each ground routing link
