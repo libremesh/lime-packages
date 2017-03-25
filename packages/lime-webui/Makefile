@@ -83,11 +83,13 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/view/lime
 	$(INSTALL_DIR) $(1)/www/luci-static/resources/lime
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/i18n
+	$(INSTALL_DIR) $(1)/etc/profile.d
 	$(CP) $(PKG_BUILD_DIR)/model/* $(1)/usr/lib/lua/luci/model/cbi/lime/
 	$(CP) $(PKG_BUILD_DIR)/controller/* $(1)/usr/lib/lua/luci/controller/
 	$(CP) $(PKG_BUILD_DIR)/view/* $(1)/usr/lib/lua/luci/view/lime/
 	$(CP) $(PKG_BUILD_DIR)/static/* $(1)/www/luci-static/resources/lime/
 	$(foreach TR, $(TRANSLATIONS), $(CP) $(PKG_BUILD_DIR)/i18n/*.$(TR).lmo $(1)/usr/lib/lua/luci/i18n/ )
+	$(CP) $(PKG_BUILD_DIR)/etc/profile.d/* $(1)/etc/profile.d/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
