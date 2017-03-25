@@ -34,8 +34,8 @@ endef
 define Package/$(PKG_NAME)/install
 	@mkdir -p $(1)/usr/lib/lua/lime/proto || true
 	$(CP) ./build/bmx6.lua $(1)/usr/lib/lua/lime/proto/
-        $(INSTALL_BIN) ./build/bmx2hosts $(1)/usr/bin/
-        $(INSTALL_BIN) ./build/85-add-bmx6-addresses-to-hosts $(1)/etc/uci-defaults/
+	$(INSTALL_BIN) ./build/bmx2hosts $(1)/usr/bin/
+	$(INSTALL_BIN) ./build/85-add-bmx6-addresses-to-hosts $(1)/etc/uci-defaults/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
