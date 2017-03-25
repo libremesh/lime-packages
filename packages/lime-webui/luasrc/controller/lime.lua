@@ -36,6 +36,7 @@ function index()
 
 	-- Rest of entries
 	entry({"lime","essentials"}, cbi("lime/essentials"), _("Advanced"), 70).dependent=false
+	entry({"lime","Notes"}, cbi("lime/notes"), _("Notes"), 70).dependent=false
 	entry({"lime","about"}, call("action_about"), _("About"), 80).dependent=false
 	entry({"lime","logout"}, call("action_logout"), _("Logout"), 90)
 end
