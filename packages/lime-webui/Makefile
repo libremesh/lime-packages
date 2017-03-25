@@ -89,7 +89,7 @@ define Package/$(PKG_NAME)/install
 	$(CP) $(PKG_BUILD_DIR)/view/* $(1)/usr/lib/lua/luci/view/lime/
 	$(CP) $(PKG_BUILD_DIR)/static/* $(1)/www/luci-static/resources/lime/
 	$(foreach TR, $(TRANSLATIONS), $(CP) $(PKG_BUILD_DIR)/i18n/*.$(TR).lmo $(1)/usr/lib/lua/luci/i18n/ )
-	$(CP) $(PKG_BUILD_DIR)/etc/profile.d/* $(1)/etc/profile.d/
+	$(CP) ./files/* $(1)/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
