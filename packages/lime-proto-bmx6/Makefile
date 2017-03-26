@@ -36,8 +36,9 @@ define Package/$(PKG_NAME)/install
 	$(CP) ./build/bmx6.lua $(1)/usr/lib/lua/lime/proto/
 	$(INSTALL_DIR) $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/etc/uci-defaults/
-	$(INSTALL_BIN) ./build/bmx2hosts $(1)/usr/bin/
+	$(INSTALL_BIN) ./build/bmx6hosts $(1)/usr/bin/
 	$(INSTALL_BIN) ./build/85-add-bmx6-addresses-to-hosts $(1)/etc/uci-defaults/
+	$(INSTALL_BIN) ./build/bmx6hosts_dnsmasq_update $(1)/usr/bin/bmx6hosts_dnsmasq_update
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
