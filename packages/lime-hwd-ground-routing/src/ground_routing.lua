@@ -66,7 +66,9 @@ function ground_routing.detect_hardware()
 
 			local sw_secname = ground_routing.sectionNamePrefix..link_name.."_sw_"..switch_dev.."_"..vlan
 			local ports = switch_cpu_port.."t"
-			for _,p in pairs(section["switch_ports"]) do ports = ports.." "..p.."t" end
+			for _,p in pairs(section["switch_ports"]) do
+				ports = ports.." "..p
+			end
 
 			uci:set("network", sw_secname, "switch_vlan")
 			uci:set("network", sw_secname, "device", switch_dev)
