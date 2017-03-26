@@ -110,10 +110,10 @@ config lime wifi
 
 #config hwd_gr link1
 #	option net_dev 'eth0'                                               # Plain ethernet device on top of which 802.1q vlan will be constructed. In case of doubts rely on wiki.openwrt.org
-#	option vlan '5'                                                     # Vlan id to use for this ground routing link, use little one because cheap switch doesn't supports big ids, this will be used also as 802.1q vid
+#	option vlan '5'                                                     # Vlan id to use for this ground routing link, use little one because cheap switch doesn't supports big ids, this will be used also as 802.1q vid on tagged ports
 #	option switch_dev 'switch0'                                         # These options regarding switch need to be set only if your ethernet device is connected to a switch chip. If the switch exists you can read its name (like switch0) in /etc/config/network file
 #	option switch_cpu_port '0'                                          # Refer to switch port map of your device on wiki.openwrt.org to know CPU port index
-#	list switch_ports '4'                                               # List switch ports on which you want the vlan being passed, refer to wiki.openwrt.org for correspondence with physical ports
+#	list switch_ports '4t'                                              # List switch ports on which you want the vlan being passed, use the 't' suffix to specify the port being tagged, refer to wiki.openwrt.org for correspondence with physical ports
 
 ### Proto BGP specific sections
 ### One section for each BGP peer
