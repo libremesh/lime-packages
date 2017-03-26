@@ -1,6 +1,6 @@
 #!/bin/sh
-
-echo System Notes
-echo ============
-cat /etc/banner.notes
-echo
+echo ""
+echo "=== System Notes ====================================="
+[ -f /etc/banner.notes ] && cat /etc/banner.notes
+echo "======================================================"
+echo ""
