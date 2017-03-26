@@ -72,7 +72,7 @@ for i=1, o_count do
 
     local ips = get_ipv6_ips(readAll(filename))
     for k, ip in ipairs(ips) do
-      print (ip.."    "..hostname)
+      print (ip.."    "..hostname..'.mesh')
     end
 end
 
