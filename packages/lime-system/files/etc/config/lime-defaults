@@ -14,6 +14,7 @@ config lime network
 	option primary_interface eth0
 	option main_ipv4_address '10.%N1.0.0/16'
 	option main_ipv6_address '2a00:1508:0a%N1:%N200::/64'
+	option bmx6_mtu '1398'
 	list protocols adhoc
 	list protocols lan
 	list protocols anygw

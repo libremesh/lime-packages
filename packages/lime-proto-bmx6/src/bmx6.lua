@@ -125,7 +125,9 @@ function bmx6.setup_interface(ifname, args)
 	local owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 
 	local uci = libuci:cursor()
-	uci:set("network", owrtDeviceName, "mtu", "1398")
+
+	local mtu = config.get("network","bmx6_mtu") or "1398"
+	uci:set("network", owrtDeviceName, "mtu", mtu)
 
 	-- BEGIN [Workaround issue 38]
 	if ifname:match("^wlan%d+") then
