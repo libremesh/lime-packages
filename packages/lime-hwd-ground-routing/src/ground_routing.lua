@@ -9,6 +9,12 @@ local ground_routing = {}
 
 ground_routing.sectionNamePrefix = hardware_detection.sectionNamePrefix.."ground_routing_"
 
+function ground_routing.delete_all_switch_vlan_sections()
+	local uci = libuci:cursor()
+	uci:foreach("network", "switch_vlan", function(s) uci:delete("network", s[".name"]) end )
+	uci:save("network")
+end
+
 function ground_routing.clean()
 	local uci = libuci:cursor()
 
@@ -66,7 +72,9 @@ function ground_routing.detect_hardware()
 
 			local sw_secname = ground_routing.sectionNamePrefix..link_name.."_sw_"..switch_dev.."_"..vlan
 			local ports = switch_cpu_port.."t"
-			for _,p in pairs(section["switch_ports"]) do ports = ports.." "..p.."t" end
+			for _,p in pairs(section["switch_ports"]) do
+				ports = ports.." "..p
+			end
 
 			uci:set("network", sw_secname, "switch_vlan")
 			uci:set("network", sw_secname, "device", switch_dev)
@@ -78,6 +86,10 @@ function ground_routing.detect_hardware()
 
 		uci:save("network")
 	end
+
+	local clean_needed -- if there are no hwd_gr sections defined, don't clean all switch_vlan sections
+	config.foreach("hwd_gr", function(s) clean_needed = true end)
+	if clean_needed then ground_routing.delete_all_switch_vlan_sections() end
 
 	config.foreach("hwd_gr", parse_gr)
 end
