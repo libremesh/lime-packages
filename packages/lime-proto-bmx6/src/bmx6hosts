@@ -34,7 +34,12 @@ end
  end
 
 local function extract_ips(HNA6_EXTENSION)
-  return HNA6_EXTENSION.address
+  -- Workaround to avoid bmx6 special IP
+  if string.find(HNA6_EXTENSION.address,"fd66:66:66:ff00:") then
+    return nil
+  else
+    return HNA6_EXTENSION.address
+  end
 end
 
 local function only_HNA6_EXTENSION(obj)
@@ -72,7 +77,7 @@ for i=1, o_count do
 
     local ips = get_ipv6_ips(readAll(filename))
     for k, ip in ipairs(ips) do
-      print (ip.."    "..hostname..'.mesh')
+      if ip ~= nil then print (ip.."    "..hostname..'.mesh') end
     end
 end
 
