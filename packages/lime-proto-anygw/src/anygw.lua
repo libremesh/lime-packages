@@ -69,6 +69,7 @@ function anygw.configure(args)
 	uci:set("dhcp", owrtInterfaceName.."_dhcp", "start", "2")
 	uci:set("dhcp", owrtInterfaceName.."_dhcp", "limit", (2 ^ (32 - anygw_ipv4:prefix()))) -- use whole network
 	uci:set("dhcp", owrtInterfaceName.."_dhcp", "leasetime", "1h")
+	uci:set("dhcp", owrtInterfaceName.."_dhcp", "force", "1")
 
 	uci:set("dhcp", owrtInterfaceName, "tag")
 	uci:set("dhcp", owrtInterfaceName, "dhcp_option", { "option:mtu,1350" } )
