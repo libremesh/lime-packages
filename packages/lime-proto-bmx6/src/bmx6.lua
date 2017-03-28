@@ -40,19 +40,20 @@ function bmx6.configure(args)
 	uci:set(bmx6.f, "json", "plugin")
 	uci:set(bmx6.f, "json", "plugin", "bmx6_json.so")
 
-  -- Enable sms plugin
+	-- Enable sms plugin
 	uci:set(bmx6.f, "sms", "plugin")
 	uci:set(bmx6.f, "sms", "plugin", "bmx6_sms.so")
 
 
 	-- Enable tun plugin, DISCLAIMER: this must be positioned before table plugin if used.
---	uci:set(bmx6.f, "ptun", "plugin")
---	uci:set(bmx6.f, "ptun", "plugin", "bmx6_tun.so")
+	--uci:set(bmx6.f, "ptun", "plugin")
+	--uci:set(bmx6.f, "ptun", "plugin", "bmx6_tun.so")
 
 	-- Disable ThrowRules because they are broken in IPv6 with current Linux Kernel
 	uci:set(bmx6.f, "ipVersion", "ipVersion")
 	uci:set(bmx6.f, "ipVersion", "ipVersion", "6")
 
+	
 	-- Search for networks in 172.16.0.0/12
 	uci:set(bmx6.f, "nodes", "tunOut")
 	uci:set(bmx6.f, "nodes", "tunOut", "nodes")
@@ -80,6 +81,27 @@ function bmx6.configure(args)
 	uci:set(bmx6.f, "publicv6", "tunOut", "publicv6")
 	uci:set(bmx6.f, "publicv6", "network", "2000::/3")
 	uci:set(bmx6.f, "publicv6", "maxPrefixLen", "64")
+
+	-- Set prefered GW if defined
+	local pref_gw = config.get("network", "bmx6_pref_gw") or nil
+	if pref_gw then
+		uci:set(bmx6.f, "inet4p", "tunOut")
+		uci:set(bmx6.f, "inet4p", "tunOut", "inet4p")
+		uci:set(bmx6.f, "inet4p", "network", "0.0.0.0/0")
+		uci:set(bmx6.f, "inet4p", "maxPrefixLen", "0")
+		uci:set(bmx6.f, "inet4p", "gwName", pref_gw)
+		uci:set(bmx6.f, "inet4p", "rating", "1000")
+
+		uci:set(bmx6.f, "inet6p", "tunOut")
+		uci:set(bmx6.f, "inet6p", "tunOut", "inet6p")
+		uci:set(bmx6.f, "inet6p", "network", "::/0")
+		uci:set(bmx6.f, "inet6p", "maxPrefixLen", "0")
+		uci:set(bmx6.f, "inet6p", "gwName", pref_gw)
+		uci:set(bmx6.f, "inet6p", "rating", "1000")
+	else
+		uci:delete(bmx6.f, "inet4p", "tunOut")
+		uci:delete(bmx6.f, "inet6p", "tunOut")
+	end
 
 	if config.get_bool("network", "bmx6_over_batman") then
 		for _,protoArgs in pairs(config.get("network", "protocols")) do
