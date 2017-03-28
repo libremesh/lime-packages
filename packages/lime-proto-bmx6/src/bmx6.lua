@@ -6,6 +6,7 @@ local fs = require("nixio.fs")
 local libuci = require("uci")
 local wireless = require("lime.wireless")
 local opkg = require("luci.model.ipkg")
+local string = require("string")
 
 bmx6 = {}
 
@@ -18,6 +19,8 @@ function bmx6.configure(args)
 
 	local uci = libuci:cursor()
 	local ipv4, ipv6 = network.primary_address()
+	local ipv4_32 = string.gsub(ipv4:string(),"/(.*)","/32")
+	local ipv6_128 = string.gsub(ipv6:string(),"/(.*)","/128")
 
 	fs.writefile("/etc/config/"..bmx6.f, "")
 
@@ -52,6 +55,16 @@ function bmx6.configure(args)
 	-- Disable ThrowRules because they are broken in IPv6 with current Linux Kernel
 	uci:set(bmx6.f, "ipVersion", "ipVersion")
 	uci:set(bmx6.f, "ipVersion", "ipVersion", "6")
+
+	-- Announce own IPv4 address
+	uci:set(bmx6.f, "myip4", "tunIn")
+	uci:set(bmx6.f, "myip4", "tunIn", "myip4")
+	uci:set(bmx6.f, "myip4", "network", ipv4_32)
+
+	-- Announce own IPv6 address
+        uci:set(bmx6.f, "myip6", "tunIn")
+        uci:set(bmx6.f, "myip6", "tunIn", "myip6")
+        uci:set(bmx6.f, "myip6", "network", ipv6_128)
 
 	-- Search for networks in 172.16.0.0/12
 	uci:set(bmx6.f, "nodes", "tunOut")
