@@ -1,11 +1,13 @@
 #!/bin/sh
+
 FIRMWARE="$1"                                     
 shift                                             
 BACKUP_FILES="$@" 
+KEEP_LISTS="$(uci -q get lime.system.keep_on_upgrade || uci -q get lime-defaults.system.keep_on_upgrade)"
 
 add_file() {
   for l in `cat $1 | sed -e s/#.*$// -e /^$/d`; do
-    BACKUP_FILES="$BACKUP_FILES $l"
+    [ -e "$l" ] && BACKUP_FILES="$BACKUP_FILES $l"
   done
 }
 
@@ -14,23 +16,24 @@ usage() {
   echo "Use system variable FORCE=1 for not being asked for confirmation"
   echo ""
   echo "In addition to the user specified backup files, the content of the following lists will also be included:"
-  for f in `uci get lime-defaults.system.keep_on_upgrade`; do 
-    echo " -> /lib/upgrade/keep.d/$f"
+  for f in $KEEP_LISTS; do
+    echo $f | grep -q '/' && echo " -> $f" || echo " -> /lib/upgrade/keep.d/$f"
   done
   exit 0
 }
 
 [ ! -f "$FIRMWARE" ] && usage
 
-for f in `uci get lime-defaults.system.keep_on_upgrade`; do
-  file="/lib/upgrade/keep.d/$f"
+for f in $KEEP_LISTS; do
+  echo "$f" | grep -q '/' && file="$f" || file="/lib/upgrade/keep.d/$f"
   [ -f "$file" ] && add_file $file || echo "Warning: Cannot read $file file"
 done
 
-tar czf /tmp/upgrade.tar.gz $BACKUP_FILES 2>/dev/null || { 
+[ -n "$BACKUP_FILES" ] && ( tar czf /tmp/upgrade.tar.gz $BACKUP_FILES 2>/dev/null || {
   echo "Error: Cannot create tar.gz backup file"
+  echo "Command: tar czf /tmp/upgrade.tar.gz $BACKUP_FILES"
   exit 1
-}
+})
 echo "Upgrading the system..."
 echo ""
 echo "Files to be saved"
@@ -44,4 +47,5 @@ echo "Ready to perform the upgrade. Press [ENTER] to continue or CTRL+C to cance
 [ "$FORCE" == "1" ] || read
 echo ""
 
-sysupgrade -f /tmp/upgrade.tar.gz $FIRMWARE &
+[ -n "$BACKUP_FILES" ] && OPTIONS="-f /tmp/upgrade.tar.gz" || OPTIONS="-n"
+sysupgrade $OPTIONS $FIRMWARE &

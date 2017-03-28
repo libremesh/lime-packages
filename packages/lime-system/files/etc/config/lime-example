@@ -16,7 +16,7 @@
 config lime system
 	option hostname 'LiMe-%M4%M5%M6'                                       # Parametrizable with %Mn
 	option domain 'lan'                                                    # DNS domain for the L2 cloud it could be something like mycloud.mynetwork.tld, hosts that get their IP by DHCP will also get a fully qualified domain name like hostname.mycloud.mynetwork.tld
-	option keep_on_upgrade 'libremesh base-files-essential'                # Files defining the list of files and directories to backup when upgrade. Relative to /lib/upgrade/keep.d
+	option keep_on_upgrade 'libremesh /etc/sysupgrade.conf'                # Files defining the list of files and directories to backup when upgrade. Relative to /lib/upgrade/keep.d if no '/' defined.
 
 ### Network general option
 
