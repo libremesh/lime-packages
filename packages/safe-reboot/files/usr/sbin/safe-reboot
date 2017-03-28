@@ -47,6 +47,9 @@
 ###  cancel
 ###        Remove /overlay/upper/.etc.last-good.tgz
 ###        (useful after a successful reboot)
+###  discard
+###        Restores /overlay/upper/etc from /overlay/upper/.etc.last-good.tgz.
+###        (useful to discard changes)
 ### 
 ###    TIME examples: 1hour 60min 60m 3600sec 3600
 ###    (all of them are equivalent)
@@ -100,10 +103,7 @@ start() {
   ( [ -s "$file_etc_lastgood" ] \
     && sleep $fallback_timeout & trap 'kill \$! ; exit' TERM ; wait \
     && if [ -s $file_etc_lastgood ] ; then
-        rm -rf $dir_etc ; mkdir -p $dir_etc
-        tar -xzf $file_etc_lastgood -C $dir_etc
-        rm -f $file_etc_lastgood
-        reboot ; sleep 10 ; eval "$cmd_force_reboot"
+        safe-reboot discard
     fi ) &
   echo \$! > "$PIDFILE"
 }
@@ -131,6 +131,14 @@ action_cancel () {
   fi
 }
 
+action_discard () {
+  rm -f "$safe_fallback_script"
+  rm -rf $dir_etc ; mkdir -p $dir_etc
+  tar -xzf $file_etc_lastgood -C $dir_etc
+  rm -f $file_etc_lastgood
+  reboot ; sleep 10 ; eval "$cmd_force_reboot"
+}
+
 while [ -n "$1" ]; do
   arg="$1"
   shift
@@ -141,6 +149,7 @@ while [ -n "$1" ]; do
     --fallback-after | -f ) fallback_timeout=$(timetoseconds "$1") ; shift
       [ -z "$fallback_timeout" ] && usage "Error with fallback timeout value."
     ;;
+    --discard | discard ) action_discard ; exit ;;
     --cancel | cancel ) action_cancel ; exit ;;
     now ) grace_period=0 ;;
     --help | -h ) usage ;;
