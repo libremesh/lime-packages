@@ -1,0 +1,9 @@
+#!/bin/sh
+echo "Apply hostname"
+hostname="$(/sbin/uci get system.@system[0].hostname)"
+echo "$hostname" > /proc/sys/kernel/hostname
+echo "Reload network config"
+/sbin/reload_config
+echo "Reload routing protocols"
+# Workaround until "bmx6 configReload" updates hostname
+[ -x /etc/init.d/bmx6 ] && /etc/init.d/bmx6 restart
