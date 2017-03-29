@@ -24,6 +24,7 @@
 require("luci.sys")
 local lime = Map("lime", "LibreMesh")
 local config = require("lime.config")
+local bmx6json = require("luci.model.bmx6json") or nil
 
 -- Create sections
 local system = lime:section(NamedSection, "system", "lime","System","System")
@@ -47,6 +48,25 @@ local ipv6 = network:option(Value,"main_ipv6_address",translate("Main IPv6"),
   translate("The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"))
 ipv6.default = config.get("network","main_ipv6_address")
 ipv6.optional = true
+
+-- bmx6 prefered gateway
+if bmx6json then
+	local bmx6_pref_gw = network:option(ListValue,"bmx6_pref_gw",translate("Internet Priorized Gateway (bmx6)"),
+	  translate("You can choose a Gateway to priorize your traffic to go through this node."))
+
+	bmx6_pref_gw:value('')
+	local tunoptions = bmx6json.get("tunnels") or nil
+	if tunoptions then
+		local _,o
+		for _,o in pairs(tunoptions.tunnels) do
+    			if o.advNet == "0.0.0.0/0" then
+        			bmx6_pref_gw:value(o.remoteName)
+    			end
+		end
+	end
+	bmx6_pref_gw.default = config.get("network","bmx6_pref_gw")
+	bmx6_pref_gw.optional = true
+end
 
 -- wifi
 local ap_ssid = wifi:option(Value,"ap_ssid",translate("Network SSID"),
@@ -72,7 +92,7 @@ bssid.optional = true
 
 -- commit
 function lime.on_commit(self,map)
-  luci.sys.call('(/usr/bin/lime-config > /tmp/lime-config.log 2>&1 && reboot) &')
+  luci.sys.call('(/usr/bin/lime-config > /tmp/lime-config.log 2>&1 && /usr/bin/lime-apply) &')
 end
 
 -- LibreMap.org config
