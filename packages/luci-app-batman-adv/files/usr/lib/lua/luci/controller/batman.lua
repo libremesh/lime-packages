@@ -14,6 +14,26 @@ $Id$
 
 module("luci.controller.batman", package.seeall)
 
+local function split(str, pat)
+   local t = {}  -- NOTE: use {n = 0} in Lua-5.0
+   local fpat = "(.-)" .. pat
+   local last_end = 1
+   local s, e, cap = str:find(fpat, 1)
+   while s do
+      if s ~= 1 or cap ~= "" then
+         table.insert(t,cap)
+      end
+      last_end = e+1
+      s, e, cap = str:find(fpat, last_end)
+   end
+   if last_end <= #str then
+      cap = str:sub(last_end)
+      table.insert(t, cap)
+   end
+   return t
+end
+
+
 function index()
 	local page
 
@@ -108,29 +128,34 @@ function act_json()
 	--
 	-- originators
 	--
-	fd = io.popen("batctl o")
+        local originators_command = (
+        "batctl o -H 2>/dev/null ".. -- gets originators from batctl
+        "| tr -d '[]()' ".. -- removes brackets and parenthesis
+        "| sed 's/^  / -/g' ".. -- normalizes output, adding a minus when no asterisk is outputed in each line
+        "| sed 's/^ //g' "..  -- removes the space from the beginning of the line
+        "| sed -r 's/\\s+/,/g'".. -- replaces tabs for commas
+        "| sed -r 's/s,/,/g'" -- removes the 's' from the last_seen field referencing seconds
+        )
+	fd = io.popen(originators_command)
 	if fd then
-		-- skip header lines
-		fd:read("*l")
-		fd:read("*l")
-
 		repeat
-			l = fd:read("*l")
+			l = fd:read()
 			if l then
-				local m, s, q, n, i = l:match("^ *([^ ]+) +([%d%.]+)s +%( *(%d+)%) +([^ ]+) +%[ *(%S+)%]:")
-				if m and s and q then
+				local asterisk, originator_name, last_seen, link_quality, next_hop, outgoing_if
+                                asterisk, originator_name, last_seen, link_quality, next_hop, outgoing_if = unpack(split(l, ","))
+				if originator_name and last_seen and link_quality then
 					rv.originators[#rv.originators+1] = {
-						m,
-						tonumber(s) * 1000,
-						tonumber(q),
-						n,
-						i
+						originator_name,
+						tonumber(last_seen) * 1000,
+						tonumber(link_quality),
+						next_hop,
+						outgoing_if
 					}
 				end
 			end
 		until not l
 		fd:close()
-	end
+        end
 
 	--
 	-- gateways
