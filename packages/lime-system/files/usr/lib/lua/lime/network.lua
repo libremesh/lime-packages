@@ -152,6 +152,8 @@ function network.scandevices()
 	local wireless = require("lime.wireless")
 
 	function dev_parser(dev)
+		if dev == nil then return end
+
 		if dev:match("^eth%d+$") then
 			devices[dev] = devices[dev] or {}
 		end
