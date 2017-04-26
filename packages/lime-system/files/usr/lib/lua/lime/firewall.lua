@@ -2,7 +2,7 @@
 
 local fs = require("nixio.fs")
 local libuci = require("uci")
-local opkg = require("luci.model.ipkg")
+local utils = require("lime.utils")
 firewall = {}
 
 function firewall.clean()
@@ -10,7 +10,7 @@ function firewall.clean()
 end
 
 function firewall.configure()
-    if opkg.installed("firewall") then
+    if utils.is_installed('firewall') then
         local uci = libuci:cursor()
         uci:foreach("firewall", "defaults",
             function(section)
