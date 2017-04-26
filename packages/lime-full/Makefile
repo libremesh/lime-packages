@@ -24,7 +24,7 @@ define Package/$(PKG_NAME)
   SUBMENU:=Collections
   MAINTAINER:=Pau Escrich <p4u@dabax.net>
   URL:=http://libremesh.org
-  DEPENDS:=+lime-basic +lime-debug +luci-mod-admin-full
+  DEPENDS:=+lime-basic +lime-debug +luci-mod-admin-full +lime-map-agent
 endef
 
 define Package/$(PKG_NAME)/description
