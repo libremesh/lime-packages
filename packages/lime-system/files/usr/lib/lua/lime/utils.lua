@@ -19,7 +19,6 @@ function utils.stringEnds(string, _end)
    return ( _end == '' or string.sub( string, -string.len(_end) ) == _end)
 end
 
-
 function utils.hex(x)
     return string.format("%02x", x)
 end
@@ -144,6 +143,15 @@ function utils.sanitize_hostname(hostname)
 	hostname = hostname:gsub('-*$', '')
 	hostname = hostname:sub(1, 32)
 	return hostname
+end
+
+function utils.file_exists(name)
+	local f=io.open(name,"r")
+	if f~=nil then io.close(f) return true else return false end
+end
+
+function utils.is_installed(pkg)
+	return utils.file_exists('/usr/lib/opkg/info/'..pkg..'.control')
 end
 
 return utils

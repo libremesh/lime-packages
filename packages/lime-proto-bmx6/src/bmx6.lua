@@ -5,8 +5,7 @@ local config = require("lime.config")
 local fs = require("nixio.fs")
 local libuci = require("uci")
 local wireless = require("lime.wireless")
-local opkg = require("luci.model.ipkg")
-
+local utils = require("lime.utils")
 bmx6 = {}
 
 bmx6.configured = false
@@ -111,7 +110,7 @@ function bmx6.configure(args)
 
 	uci:save(bmx6.f)
 
-	if opkg.installed("firewall") then
+	if utils.is_installed('firewall') then
 		uci:delete("firewall", "bmxtun")
 
 		uci:set("firewall", "bmxtun", "zone")
