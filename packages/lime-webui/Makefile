@@ -25,7 +25,7 @@ define Package/$(PKG_NAME)
   $(call Package/$(PKG_NAME)/Default)
   TITLE:=libremesh web user interface based on LUCI
   MENU:=1
-  DEPENDS:= +luci-mod-admin-full +lime-system \
+  DEPENDS:=+luci-base +lime-system \
 	+PACKAGE_lime-proto-bmx6:luci-app-bmx6 \
 	+PACKAGE_lime-proto-batadv:luci-app-batman-adv \
 	+luci-mod-status +uhttpd +libiwinfo-lua \

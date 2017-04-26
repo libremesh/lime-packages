@@ -27,7 +27,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libremesh.org
-  DEPENDS:=+lua +libuci-lua +luci-base +luci-lib-ip +luci-lib-nixio
+  DEPENDS:=+lua +libuci-lua +luci-lib-ip +luci-lib-nixio
 endef
 
 define Package/$(PKG_NAME)/description
