@@ -306,7 +306,7 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 		--! sanitize passed linuxBaseIfName for constructing uci section name
 		--! because only alphanumeric and underscores are allowed
 		owrtInterfaceName = owrtInterfaceName..openwrtNameSuffix.."_if"
-		owrtDeviceName = network.limeIfNamePrefix..network.sanitizeIfaceName(linuxBaseIfname)..openwrtNameSuffix.."_dev"
+		owrtDeviceName = network.sanitizeIfaceName(linuxBaseIfname)..openwrtNameSuffix.."_dev"
 
 		if linuxBaseIfname:match("^wlan") then
 			linuxBaseIfname = "@"..network.sanitizeIfaceName(linuxBaseIfname)
