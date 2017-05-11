@@ -138,7 +138,10 @@ function bmx6.configure(args)
 end
 
 function bmx6.setup_interface(ifname, args)
-	if not args["specific"] and ifname:match("^wlan%d+.ap") then return end
+	if not args["specific"] and
+			( ifname:match("^wlan%d+.ap") or ifname:match("^eth%d+") )
+	then return end
+
 	vlanId = args[2] or 13
 	vlanProto = args[3] or "8021ad"
 	nameSuffix = args[4] or "_bmx6"
@@ -147,7 +150,7 @@ function bmx6.setup_interface(ifname, args)
 
 	local uci = libuci:cursor()
 
-	local mtu = config.get("network","bmx6_mtu") or "1398"
+	local mtu = config.get("network", "bmx6_mtu", "1500")
 	uci:set("network", owrtDeviceName, "mtu", mtu)
 
 	-- BEGIN [Workaround issue 38]
