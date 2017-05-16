@@ -23,9 +23,8 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
 	URL:=http://libremesh.org
 	DEPENDS:=+PACKAGE_lime-proto-batadv:batctl \
-       		+busybox +ethtool +iwinfo +iw +mtr +ip +iputils-ping6 +iputils-ping \
-		+sprunge +safe-reboot +netperf +pv +tcpdump-mini \
-		+bwm-ng
+		+busybox +ethtool +iwinfo +iw +mtr +ip +iputils-ping6 +iputils-ping \
+		+sprunge +safe-reboot +netperf +pv +tcpdump-mini +bwm-ng
 endef
 
 define Package/$(PKG_NAME)/description
@@ -43,6 +42,7 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/
+	$(CP) ./files/* $(1)/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
