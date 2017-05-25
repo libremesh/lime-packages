@@ -1,0 +1,33 @@
+#!/bin/sh
+
+hook_name="dnsmasq"
+
+function hook_is_installed() {
+  installed=no
+  [ -x /usr/sbin/dnsmasq ] && [ -x /etc/init.d/dnsmasq ] && installed=yes                                         
+}   
+
+function hook_check() {
+  status=error
+  [ -f /var/run/dnsmasq/dnsmasq.*.pid ] && {
+    status=ok
+    for p in $(cat /var/run/dnsmasq/dnsmasq.*.pid); do
+      [ ! -d /proc/$p ] && { 
+        status=error
+        break
+      }
+    done
+  }
+}
+
+function hook_quickfix() {
+  log="Restarting dnsmasq process"
+  PATH="/usr/sbin:/usr/bin:/sbin:/bin"
+  /etc/init.d/dnsmasq restart
+}
+
+function hook_longfix() {
+  log="Cleaning dnsmasq configuration and restarting process"
+  true
+}
+
