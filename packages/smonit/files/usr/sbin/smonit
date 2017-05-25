@@ -5,6 +5,7 @@ logdir="/tmp/smonit"
 mainlog="$logdir/smonit.log"
 statef="$logdir/smonit.state"
 maxfails=3
+maxsize=100000
 [ ! -d "$logdir" ] && mkdir -p $logdir
 
 function check_fs() {
@@ -17,11 +18,14 @@ function check_fs() {
     lprint "Warning -> tmp freespace below 5 MiB, cleaning log files..."
     rm -f $logdir/*
   }
+  local mainlogsize=$(ls -lsk $mainlog | awk '{print $6}')
+  [ $mainlogsize -gt $maxsize ] && rm -f $mainlog
+
   touch $statef
 }
 
 function lprint() {
-  local time=$(date "+[%Y/%m/%d %H:%m]")
+  local time=$(date "+[%Y/%m/%d %H:%M]")
   echo "$time $@"
   echo "$time $@" >> $mainlog
 }
