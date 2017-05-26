@@ -1,11 +1,9 @@
 #!/usr/bin/lua
 
---! LibreMesh is modular but this doesn't mean parallel,
---! modules are executed sequencially, so we don't need
---! to worry about transaction and all other stuff that
---! affects parrallels database, at moment we don't need
---! parallelism as this is just some configuration stuff
---! and is not performance critical.
+--! LibreMesh is modular but this doesn't mean parallel, modules are executed
+--! sequencially, so we don't need to worry about transactionality and all other
+--! stuff that affects parrallels database, at moment we don't need parallelism
+--! as this is just some configuration stuff and is not performance critical.
 
 local libuci = require("uci")
 
