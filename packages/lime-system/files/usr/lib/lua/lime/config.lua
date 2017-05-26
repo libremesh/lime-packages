@@ -18,7 +18,13 @@ function config.get(sectionname, option, default)
 	if limeconf then return limeconf end
 
 	local defcnf = config.uci:get("lime-defaults", sectionname, option, default)
-	config.set(sectionname, option, defcnf)
+	if ( defcnf ~= nil ) then
+		config.set(sectionname, option, defcnf)
+	else
+		local cfn = sectionname.."."..option
+		print("WARNING: Attempt to access undeclared default for: "..cfn)
+		print(debug.traceback())
+	end
 	return defcnf
 end
 
