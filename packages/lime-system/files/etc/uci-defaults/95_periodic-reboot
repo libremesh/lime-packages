@@ -1,0 +1,7 @@
+#!/bin/sh
+
+### To schedule a daily reboot at 6:00am
+mkdir -p /etc/crontabs ; touch /etc/crontabs/root
+sed "\| \* \* \* .*reboot$|d" -i /etc/crontabs/root
+echo "0 6 * * * sleep 70; touch /etc/banner; reboot -f" >> /etc/crontabs/root
+
