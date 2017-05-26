@@ -22,6 +22,10 @@ function config.get(sectionname, option, default)
 	return defcnf
 end
 
+--! Execute +callback+ for each config of type +configtype+ found in
+--! +/etc/config/lime+.
+--! beware this function doesn't look in +/etc/config/lime-default+ for default
+--! values as it is designed for use with specific sections only
 function config.foreach(configtype, callback)
 	return config.uci:foreach("lime", configtype, callback)
 end
