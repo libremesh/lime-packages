@@ -14,7 +14,12 @@ config = {}
 config.uci = libuci:cursor()
 
 function config.get(sectionname, option, default)
-	return config.uci:get("lime", sectionname, option) or config.uci:get("lime-defaults", sectionname, option, default)
+	local limeconf = config.uci:get("lime", sectionname, option)
+	if limeconf then return limeconf end
+
+	local defcnf = config.uci:get("lime-defaults", sectionname, option, default)
+	config.set(sectionname, option, defcnf)
+	return defcnf
 end
 
 function config.foreach(configtype, callback)
@@ -23,15 +28,15 @@ end
 
 function config.get_all(sectionname)
 	local lime_section = config.uci:get_all("lime", sectionname)
-	local lime_default_section = config.uci:get_all("lime-defaults", sectionname)
-	local section_exists = (lime_section ~= nil) or (lime_default_section ~= nil)
+	local lime_def_section = config.uci:get_all("lime-defaults", sectionname)
 
-	if section_exists then
+	if lime_section or lime_def_section then
 		local ret = lime_section or {}
 
-		if lime_default_section then
-			for key,value in pairs(lime_default_section) do
+		if lime_def_section then
+			for key,value in pairs(lime_def_section) do
 				if (ret[key] == nil) then
+					config.set(sectionname, key, value)
 					ret[key] = value
 				end
 			end
