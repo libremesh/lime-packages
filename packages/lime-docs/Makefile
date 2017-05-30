@@ -25,7 +25,6 @@ define Package/$(PKG_NAME)
   TITLE:=LibreMesh documentation
   MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
   URL:=http://libremesh.org/docs/
-  DEPENDS:= +lime-docs-minimal
 endef
 
 define Package/$(PKG_NAME)/description
