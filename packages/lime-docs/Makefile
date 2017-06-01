@@ -27,19 +27,38 @@ define Package/$(PKG_NAME)
   URL:=http://libremesh.org/docs/
 endef
 
+define Package/$(PKG_NAME)-minimal
+  CATEGORY:=LiMe
+  TITLE:=LibreMesh minimal documentation
+  MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
+  URL:=http://libremesh.org/docs/config.html
+endef
+
 define Package/$(PKG_NAME)/description
 Offline documentation for LibreMesh firmware,
 includes lime-docs-minimal contents
+endef
+
+define Package/$(PKG_NAME)-minimal/description
+Minimal offline documentation for LibreMesh firmware containing
+just an expaination of the main config file.
 endef
 
 define Build/Compile
 endef
 
 define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/docs/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/*txt $(1)/docs/
-	@cp -r $(PKG_BUILD_DIR)/hardware/ $(1)/docs/
+	$(INSTALL_DIR) $(1)/www/docs/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/*txt $(1)/www/docs/
+	@ln -s /www/docs $(1)/docs
+endef
+
+define Package/$(PKG_NAME)-minimal/install
+	$(INSTALL_DIR) $(1)/www/docs/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/config.txt $(1)/www/docs/
+	@ln -s /www/docs $(1)/docs
 endef
 
 $(eval $(call BuildPackage,lime-docs))
+$(eval $(call BuildPackage,lime-docs-minimal))
 
