@@ -27,7 +27,8 @@ define Package/$(PKG_NAME)
 	DEPENDS:= +lime-system +lime-proto-bmx6 +lime-proto-batadv \
 	         +lime-proto-anygw +lime-proto-wan +dnsmasq-lease-share \
 	         +dnsmasq-distributed-hosts +lime-webui-ng \
-	         +lime-hwd-openwrt-wan +bmx6-auto-gw-mode +lime-hwd-ground-routing
+	         +lime-hwd-openwrt-wan +bmx6-auto-gw-mode +lime-hwd-ground-routing \
+		 +lime-docs-minimal
 endef
 
 define Package/$(PKG_NAME)/description
