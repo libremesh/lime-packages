@@ -9,7 +9,11 @@ anygw = {}
 anygw.configured = false
 
 function anygw.anygw_mac()
-	local anygw_mac = config.get("network", "anygw_mac") or "aa:aa:aa:%N1:%N2:aa"
+	local anygw_mac = utils.applyMacTemplate16("aa:%N1:%N2:%M4:%M5:%M6",
+	                                          network.primary_mac())
+	if config.get_bool("network","anygw_mac_enable",false) then
+		anygw_mac = config.get("network", "anygw_mac","aa:%N1:%N2:aa:aa:aa")
+	end
 	return utils.applyNetTemplate16(anygw_mac)
 end
 
