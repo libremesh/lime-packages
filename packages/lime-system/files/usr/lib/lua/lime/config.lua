@@ -57,6 +57,7 @@ function config.get_all(sectionname)
 end
 
 function config.get_bool(sectionname, option, default)
+	if(type(default) == 'boolean') then default = tostring(default) end
 	local val = config.get(sectionname, option, default)
 	return (val and ((val == '1') or (val == 'on') or (val == 'true') or (val == 'enabled')))
 end
