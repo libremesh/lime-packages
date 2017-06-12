@@ -27,7 +27,7 @@ function hook_quickfix() {
 }
 
 function hook_longfix() {
-  log="Cleaning dnsmasq configuration and restarting process"
+  log="Doing nothing for longfix"
   true
 }
 
