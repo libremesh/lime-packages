@@ -8,18 +8,15 @@ anygw = {}
 
 anygw.configured = false
 
-function anygw.anygw_mac()
-	local anygw_mac = config.get("network", "anygw_mac") or "aa:aa:aa:%N1:%N2:aa"
-	return utils.applyNetTemplate16(anygw_mac)
-end
-
 function anygw.configure(args)
 	if anygw.configured then return end
 	anygw.configured = true
 
 	local ipv4, ipv6 = network.primary_address()
-	local anygw_mac = anygw.anygw_mac()
-	local anygw_mac_mask = "ff:ff:ff:00:00:00" -- bytes 4 & 5 vary depending on %N1 and %N2 by default
+	local anygw_mac = config.get("network", "anygw_mac", "aa:aa:aa:%N1:%N2:aa")
+	anygw_mac = utils.applyNetTemplate16(anygw_mac)
+	--! bytes 4 & 5 vary depending on %N1 and %N2 by default
+	local anygw_mac_mask = "ff:ff:ff:00:00:00"
 	local anygw_ipv6 = ipv6:minhost()
 	local anygw_ipv4 = ipv4:minhost()
 	anygw_ipv6:prefix(64) -- SLAAC only works with a /64, per RFC
