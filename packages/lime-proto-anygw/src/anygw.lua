@@ -13,7 +13,7 @@ function anygw.configure(args)
 	anygw.configured = true
 
 	local ipv4, ipv6 = network.primary_address()
-	local anygw_mac = config.get("network", "anygw_mac", "aa:aa:aa:%N1:%N2:aa")
+	local anygw_mac = config.get("network", "anygw_mac")
 	anygw_mac = utils.applyNetTemplate16(anygw_mac)
 	--! bytes 4 & 5 vary depending on %N1 and %N2 by default
 	local anygw_mac_mask = "ff:ff:ff:00:00:00"

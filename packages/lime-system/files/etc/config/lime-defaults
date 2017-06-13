@@ -28,6 +28,7 @@ config lime network
 	list resolvers 2001:470:20::2 # ordns.he.net
 	option bmx6_over_batman false
 	option bmx7_over_batman false
+	option anygw_mac "aa:aa:aa:%N1:%N2:aa"
 
 config lime wifi
 	option channel_2ghz '11'
