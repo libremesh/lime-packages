@@ -6,7 +6,8 @@ mainlog="$logdir/smonit.log"
 statef="$logdir/smonit.state"
 maxfails=3
 maxsize=100000
-[ ! -d "$logdir" ] && mkdir -p $logdir
+[ ! -d "$logdir" ] && mkdir -p "$logdir"
+[ ! -f "$mainlog" ] && touch "$mainlog"
 
 function check_fs() {
   [ ! -d "$hooks" ] && {
