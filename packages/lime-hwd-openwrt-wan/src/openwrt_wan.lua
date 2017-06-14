@@ -21,9 +21,16 @@ function openwrt_wan.detect_hardware()
 		uci_o = nil
 		if ifname then
 			local protos = {}
-			for _, proto in pairs(config.get("network", "protocols")) do
-				if ( ( proto ~= "lan" ) and ( proto ~= "wan" ) ) then
-					table.insert(protos, proto)
+			local net = require("lime.network")
+			local utils = require("lime.utils")
+			for _, pArgs in pairs(config.get("network", "protocols")) do
+				local pArr = utils.split(pArgs, net.protoParamsSeparator)
+				if ( pArr[1] == "bmx6" ) then
+					pArr[2] = 0
+					pArgs = table.concat(pArr, net.protoParamsSeparator)
+					table.insert(protos, pArgs)
+				elseif ( pArr[1]~="lan" and pArr[1]~="wan" ) then
+					table.insert(protos, pArgs)
 				end
 			end
 			table.insert(protos, "wan")
