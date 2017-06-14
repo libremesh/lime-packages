@@ -27,7 +27,7 @@ config lime network
 	list resolvers 141.1.1.1 # cns1.cw.net
 	list resolvers 2001:470:20::2 # ordns.he.net
 	option bmx6_over_batman false
-	option bmx6_pref_gw ''
+	option bmx6_pref_gw none
 	option bmx7_over_batman false
 	option anygw_mac "aa:aa:aa:%N1:%N2:aa"
 

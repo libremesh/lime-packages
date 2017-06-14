@@ -83,7 +83,7 @@ function bmx6.configure(args)
 
 	-- Set prefered GW if defined
 	local pref_gw = config.get("network", "bmx6_pref_gw")
-	if (pref_gw ~= '') then
+	if (pref_gw ~= "none") then
 		uci:set(bmx6.f, "inet4p", "tunOut")
 		uci:set(bmx6.f, "inet4p", "tunOut", "inet4p")
 		uci:set(bmx6.f, "inet4p", "network", "0.0.0.0/0")
