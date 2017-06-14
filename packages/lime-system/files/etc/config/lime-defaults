@@ -15,7 +15,7 @@ config lime network
 	option main_ipv4_address '10.%N1.0.0/16'
 	option main_ipv6_address '2a00:1508:0a%N1:%N200::/64'
 	option bmx6_mtu '1398'
-	list protocols adhoc
+	list protocols ieee80211s
 	list protocols lan
 	list protocols anygw
 	list protocols batadv:%N1
@@ -35,7 +35,7 @@ config lime wifi
 	option htmode_5ghz 'HT40'
 	list modes 'ap'
 	list modes 'apname'
-	list modes 'adhoc'
+	list modes 'ieee80211s'
 	option ap_ssid 'LibreMesh.org'
 	option apname_ssid 'LibreMesh.org/%H'
 	option adhoc_ssid 'LiMe'
