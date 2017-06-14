@@ -9,7 +9,9 @@ local openwrt_wan = {}
 openwrt_wan.sectionName = hardware_detection.sectionNamePrefix.."openwrt_wan"
 
 function openwrt_wan.clean()
-	if config.autogenerable(openwrt_wan.sectionName) then config.delete(openwrt_wan.sectionName) end
+	if config.autogenerable(openwrt_wan.sectionName) then
+		config.delete(openwrt_wan.sectionName)
+	end
 end
 
 function openwrt_wan.detect_hardware()
