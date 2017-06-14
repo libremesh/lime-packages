@@ -41,13 +41,8 @@ define Package/$(PKG_NAME)-no-ui
 	DEPENDS:=+lime-system +lime-proto-bmx6 +lime-proto-batadv \
 	         +lime-proto-anygw +lime-proto-wan +dnsmasq-lease-share \
 	         +dnsmasq-distributed-hosts \
-<<<<<<< HEAD
-	         +lime-hwd-openwrt-wan \
-	         +bmx6-auto-gw-mode +lime-hwd-ground-routing +smonit
-=======
 	         +lime-hwd-openwrt-wan +lime-docs-minimal \
-	         +bmx6-auto-gw-mode +lime-hwd-ground-routing
->>>>>>> develop
+	         +bmx6-auto-gw-mode +lime-hwd-ground-routing +smonit
 endef
 
 
