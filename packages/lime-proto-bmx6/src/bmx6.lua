@@ -106,10 +106,9 @@ function bmx6.configure(args)
 	local bxmOverBatdv = config.get_bool("network", "bmx6_over_batman")
 	local hasLan = false
 	for _,protoArgs in pairs(config.get("network", "protocols")) do
-		if(utils.split(protoArgs, network.protoParamsSeparator)[1] == "lan")
-		then hasLan = true; end
-		if(utils.split(protoArgs, network.protoParamsSeparator)[1] == "batadv")
-		then hasBatadv = true; end
+		local proto =  utils.split(protoArgs, network.protoParamsSeparator)[1]
+		if(proto == "lan") then hasLan = true
+		elseif(proto == "batadv") then hasBatadv = true end
 	end
 
 	if(hasLan) then
