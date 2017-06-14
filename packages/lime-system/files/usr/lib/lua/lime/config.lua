@@ -1,11 +1,9 @@
 #!/usr/bin/lua
 
---! LibreMesh is modular but this doesn't mean parallel,
---! modules are executed sequencially, so we don't need
---! to worry about transaction and all other stuff that
---! affects parrallels database, at moment we don't need
---! parallelism as this is just some configuration stuff
---! and is not performance critical.
+--! LibreMesh is modular but this doesn't mean parallel, modules are executed
+--! sequencially, so we don't need to worry about transactionality and all other
+--! stuff that affects parrallels database, at moment we don't need parallelism
+--! as this is just some configuration stuff and is not performance critical.
 
 local libuci = require("uci")
 
@@ -14,24 +12,39 @@ config = {}
 config.uci = libuci:cursor()
 
 function config.get(sectionname, option, default)
-	return config.uci:get("lime", sectionname, option) or config.uci:get("lime-defaults", sectionname, option, default)
+	local limeconf = config.uci:get("lime", sectionname, option)
+	if limeconf then return limeconf end
+
+	local defcnf = config.uci:get("lime-defaults", sectionname, option, default)
+	if ( defcnf ~= nil ) then
+		config.set(sectionname, option, defcnf)
+	else
+		local cfn = sectionname.."."..option
+		print("WARNING: Attempt to access undeclared default for: "..cfn)
+		print(debug.traceback())
+	end
+	return defcnf
 end
 
+--! Execute +callback+ for each config of type +configtype+ found in
+--! +/etc/config/lime+.
+--! beware this function doesn't look in +/etc/config/lime-default+ for default
+--! values as it is designed for use with specific sections only
 function config.foreach(configtype, callback)
 	return config.uci:foreach("lime", configtype, callback)
 end
 
 function config.get_all(sectionname)
 	local lime_section = config.uci:get_all("lime", sectionname)
-	local lime_default_section = config.uci:get_all("lime-defaults", sectionname)
-	local section_exists = (lime_section ~= nil) or (lime_default_section ~= nil)
+	local lime_def_section = config.uci:get_all("lime-defaults", sectionname)
 
-	if section_exists then
+	if lime_section or lime_def_section then
 		local ret = lime_section or {}
 
-		if lime_default_section then
-			for key,value in pairs(lime_default_section) do
+		if lime_def_section then
+			for key,value in pairs(lime_def_section) do
 				if (ret[key] == nil) then
+					config.set(sectionname, key, value)
 					ret[key] = value
 				end
 			end
