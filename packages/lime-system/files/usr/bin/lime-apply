@@ -6,4 +6,12 @@ echo "Reload network config"
 /sbin/reload_config
 echo "Reload routing protocols"
 # Workaround until "bmx6 configReload" updates hostname
-[ -x /etc/init.d/bmx6 ] && /etc/init.d/bmx6 restart
+[ -x /etc/init.d/bmx6 ] && {
+	bmx6_hostname=$(bmx6 -c jshow status | jsonfilter -e '@.status.name')
+	sys_hostname=$(uci get system.@system[0].hostname)
+	[ "$bmx6_hostname" == "$sys_hostname" ] && bmx6 -c configReload || {
+		/etc/init.d/watchping stop
+		/etc/init.d/bmx6 restart
+		sleep 1 && /etc/init.d/watchping start
+	}
+}
