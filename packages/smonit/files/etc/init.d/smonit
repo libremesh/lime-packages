@@ -5,13 +5,13 @@ SMONIT="/usr/sbin/smonit"
 CRONTAB="/etc/crontabs/root"
 CRON_LINE='*/5 * * * *'
 
-start() {
+enable() {
   echo "Enabling smonit to crontab"
   grep -q "$SMONIT" $CRONTAB || echo "$CRON_LINE $SMONIT" >> $CRONTAB
   /etc/init.d/cron reload
 }
 
-stop() {
+disable() {
   echo "Disabling smonit from crontab"
   cat $CRONTAB | grep -v "$SMONIT" > /tmp/cron.tmp
   cp -f /tmp/cron.tmp $CRONTAB
