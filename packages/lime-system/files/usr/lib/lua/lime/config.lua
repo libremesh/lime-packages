@@ -11,11 +11,11 @@ config = {}
 
 config.uci = libuci:cursor()
 
-function config.get(sectionname, option, default)
+function config.get(sectionname, option)
 	local limeconf = config.uci:get("lime", sectionname, option)
 	if limeconf then return limeconf end
 
-	local defcnf = config.uci:get("lime-defaults", sectionname, option, default)
+	local defcnf = config.uci:get("lime-defaults", sectionname, option)
 	if ( defcnf ~= nil ) then
 		config.set(sectionname, option, defcnf)
 	else
@@ -56,8 +56,8 @@ function config.get_all(sectionname)
 	return nil
 end
 
-function config.get_bool(sectionname, option, default)
-	local val = config.get(sectionname, option, default)
+function config.get_bool(sectionname, option)
+	local val = config.get(sectionname, option)
 	return (val and ((val == '1') or (val == 'on') or (val == 'true') or (val == 'enabled')))
 end
 
