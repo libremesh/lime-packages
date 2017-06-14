@@ -1,6 +1,6 @@
 [![tip for next commit](http://tip4commit.com/projects/804.svg)](http://tip4commit.com/projects/804)
 
-# [LibreMesh][5] packages "Community Chaos" release (16.07)
+# [LibreMesh][5] packages "Dayboot Relay" release (17.06)
 
 [![LibreMesh logo](https://raw.githubusercontent.com/libremesh/lime-web/master/logo/logo.png)](http://libremesh.org)
 
@@ -12,7 +12,7 @@ The firmware (the main piece) will allow simple deployment of auto-configurable,
 
 This is the easiest way to first test and install LibreMesh in your router.
 
-You can download a firmware image with **generic configuration** of the last **stable release** at [downloads][9] subdomain.
+You can download a firmware image with **generic configuration** of the last **release** at [downloads][9] subdomain.
 
 ## Customize and Download a Firmware Image Using Chef
 
@@ -20,7 +20,7 @@ We encourage each network community to create its firmware profile on our own we
 
 ## Building a Firmware Image on Your PC
 
-The LibreMesh firmware can be compiled either using the easy to use [lime-build][2] tool or manually adding the feed to a [OpenWrt buildroot][1] environment.
+The LibreMesh firmware can be compiled either using the easy to use [lime-sdk][2] tool or manually adding the feed to a [OpenWrt buildroot][1] environment.
 
 ### Using lime-build
 
@@ -28,10 +28,10 @@ Refer to [lime-build][2] README.
 
 ### Using OpenWrt buildroot
 
-Clone OpenWRT stable repository, nowadays is version 15.05.1 (Chaos Calmer).
+Clone LEDE stable repository, nowadays is version 17.01 (Reboot).
 
-    git clone -b chaos_calmer git://github.com/openwrt/openwrt.git
-    cd openwrt
+    git clone -b lede-17.01 https://git.lede-project.org/source.git lede
+    cd lede
 
 Add lime-packages feed to the default ones.
 
@@ -40,7 +40,7 @@ Add lime-packages feed to the default ones.
 
 If you want to use a specific branch of lime-packages specify it adding ;nameofthebranch at the end of the last line. For example:
 
-    src-git lime https://github.com/libremesh/lime-packages.git;16.07
+    src-git lime https://github.com/libremesh/lime-packages.git;17.06
 
 Download the new packages.
 
@@ -78,10 +78,10 @@ The project uses an IRC channel on freenode.net
 * #libremesh - a public channel for everyone to join and participate
 
 [1]: http://wiki.openwrt.org/doc/start#building_openwrt
-[2]: https://github.com/libremesh/lime-build
+[2]: https://github.com/libremesh/lime-sdk
 [4]: http://libremesh.org/howitworks.html
 [5]: http://libremesh.org/
 [7]: https://lists.libremesh.org/mailman/listinfo/lime-dev
 [8]: https://lists.libremesh.org/mailman/listinfo/lime-users
-[9]: http://downloads.libremesh.org/community_chaos/16.07/
+[9]: http://repo.libremesh.org/current/
 [10]: https://chef.altermundi.net/
