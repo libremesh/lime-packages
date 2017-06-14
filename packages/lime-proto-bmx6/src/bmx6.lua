@@ -102,9 +102,26 @@ function bmx6.configure(args)
 		uci:delete(bmx6.f, "inet6p", "tunOut")
 	end
 
-	if config.get_bool("network", "bmx6_over_batman") then
-		for _,protoArgs in pairs(config.get("network", "protocols")) do
-			if(utils.split(protoArgs, network.protoParamsSeparator)[1] == "batadv") then bmx6.setup_interface("bat0", args) end
+	local hasBatadv = false
+	local bxmOverBatdv = config.get_bool("network", "bmx6_over_batman")
+	local hasLan = false
+	for _,protoArgs in pairs(config.get("network", "protocols")) do
+		local proto =  utils.split(protoArgs, network.protoParamsSeparator)[1]
+		if(proto == "lan") then hasLan = true
+		elseif(proto == "batadv") then hasBatadv = true end
+	end
+
+	if(hasLan) then
+		uci:set("bmx6", "lm_net_br_lan", "dev")
+		uci:set("bmx6", "lm_net_br_lan", "dev", "br-lan")
+
+		if(hasBatadv and not bxmOverBatdv) then
+			fs.mkdir("/etc/firewall.lime.d")
+			fs.writefile("/etc/firewall.lime.d/20-bmx-not-over-bat0-ebtables",
+				"ebtables -t nat -A POSTROUTING -o bat0 -p ipv6"..
+				" --ip6-proto udp --ip6-sport 6240 --ip6-dport 6240 -j DROP\n")
+		else
+			fs.remove("/etc/firewall.lime.d/20-bmx-not-over-bat0-ebtables")
 		end
 	end
 
@@ -138,7 +155,10 @@ function bmx6.configure(args)
 end
 
 function bmx6.setup_interface(ifname, args)
-	if not args["specific"] and ifname:match("^wlan%d+.ap") then return end
+	if not args["specific"] and
+			( ifname:match("^wlan%d+.ap") or ifname:match("^eth%d+") )
+	then return end
+
 	vlanId = args[2] or 13
 	vlanProto = args[3] or "8021ad"
 	nameSuffix = args[4] or "_bmx6"
@@ -147,7 +167,7 @@ function bmx6.setup_interface(ifname, args)
 
 	local uci = libuci:cursor()
 
-	local mtu = config.get("network","bmx6_mtu") or "1398"
+	local mtu = config.get("network", "bmx6_mtu", "1500")
 	uci:set("network", owrtDeviceName, "mtu", mtu)
 
 	-- BEGIN [Workaround issue 38]
