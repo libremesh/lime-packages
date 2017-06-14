@@ -2,7 +2,7 @@
 
 local libuci = require("uci")
 local fs = require("nixio.fs")
-local opkg = require("luci.model.ipkg")
+local utils = require("lime.utils")
 
 wan = {}
 
@@ -23,7 +23,7 @@ function wan.setup_interface(ifname, args)
 	uci:set("network", "wan", "ifname", ifname)
 	uci:save("network")
 
-	if opkg.installed("firewall") then
+	if utils.is_installed('firewall') then
 		fs.remove("/etc/firewall.lime.d/20-wan-out-masquerade")
 	else
 		fs.mkdir("/etc/firewall.lime.d")

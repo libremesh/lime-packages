@@ -1,0 +1,86 @@
+#!/bin/sh
+
+hooks="/etc/smonit"
+logdir="/tmp/smonit"
+mainlog="$logdir/smonit.log"
+statef="$logdir/smonit.state"
+maxfails=3
+maxsize=100000
+[ ! -d "$logdir" ] && mkdir -p "$logdir"
+[ ! -f "$mainlog" ] && touch "$mainlog"
+
+function check_fs() {
+  [ ! -d "$hooks" ] && {
+    lprint "Hooks directory $hooks does not exist!"
+    exit 1
+  }
+  local freespace=$(df | grep /tmp | awk '{print $4}')
+  [ $freespace -lt 5000 ] && {
+    lprint "Warning -> tmp freespace below 5 MiB, cleaning log files..."
+    rm -f $logdir/*
+  }
+  local mainlogsize=$(ls -lsk $mainlog | awk '{print $6}')
+  [ $mainlogsize -gt $maxsize ] && rm -f $mainlog
+
+  touch $statef
+}
+
+function lprint() {
+  local time=$(date "+[%Y/%m/%d %H:%M]")
+  echo "$time $@"
+  echo "$time $@" >> $mainlog
+}
+
+function save_state() {
+  local hook=$1
+  local count=$2
+  local status=$(cat $statef | grep ^${hook}:)
+  if [ -z "$status" ]; then 
+    echo "${hook}:$count" >> $statef
+  else
+    [ $count -eq 0 ] && local newstate=0 || {
+      local newstate=$(($(echo $status | cut -d: -f2)+$count))
+    }
+    sed -i s/"^$hook:.*"/"$hook:$newstate"/g $statef
+  fi
+}
+
+function get_state_count() {
+  local hook=$1
+  cat $statef | grep -q ^${hook}: && {
+    echo $(cat $statef | grep ^${hook}: | cut -d: -f2)
+  } || echo 0
+}
+
+check_fs
+
+for h in $hooks/*; do
+  [ ! -x $h ] && continue
+
+  . $h
+  hook_is_installed
+  [ "$installed" == "no" ] && continue
+
+  lprint "$hook_name -> Executing"
+  hook_check
+  lprint "$hook_name -> Status: $status"
+  [ "$status" == "error" ] && {
+    state=$(get_state_count $hook_name)
+    [ $state -lt $maxfails ] && {
+      lprint "$hook_name -> Fails:$state, executing quick fix"
+      hook_quickfix
+      echo "$log" >> $logdir/$hook_name
+      save_state $hook_name 1
+    } || {
+      if [ $state -eq $maxfails ]; then
+        lprint "$hook_name -> Fails:$state, executing long fix"
+        hook_longfix
+        echo "$log" >> $logdir/$hook_name
+        save_state $hook_name 1
+      else
+        lprint "$hook_name -> No recovery after longfix, doing nothing else"
+      fi
+    }
+  }
+  [ "$status" == "ok" ] && save_state $hook_name 0
+done
