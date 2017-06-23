@@ -7,13 +7,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fft-eval
-PKG_VERSION:=2013-06-26
+PKG_VERSION:=2017-06-23
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=git://github.com/libremesh/FFT_eval.git
+# PKG_SOURCE_URL:=git://github.com/simonwunderlich/FFT_eval.git
+PKG_SOURCE_URL:=git://github.com/nicopace/FFT_eval.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=236940c6b92f89a4cc8f77412b18a521ab9d9f8b
+PKG_SOURCE_VERSION:=0c49c48473ef126ce398bc9992acec0bb1d463e0
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 
 include $(INCLUDE_DIR)/package.mk
@@ -22,11 +23,11 @@ define Package/$(PKG_NAME)
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Evaluates FFT samples from ath9k driver
-  MAINTAINER:=Gui Iribarren <gui@altermundi.net>
+  MAINTAINER:=Nicolas Pace <nicopace@altermundi.net>
   DEPENDS:= +libc
 endef
 
-TARGET_CFLAGS  += -ffunction-sections -fdata-sections -flto 
+TARGET_CFLAGS  += -ffunction-sections -fdata-sections -flto -D__NOSDL__
 
 define Build/Compile
 	$(TARGET_CC) $(PKG_BUILD_DIR)/fft_eval.c -o $(PKG_BUILD_DIR)/fft_eval -lm
