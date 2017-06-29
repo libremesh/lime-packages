@@ -7,29 +7,37 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fft-eval
-PKG_VERSION:=2013-06-26
+PKG_VERSION:=2017-06-28
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=git://github.com/libremesh/FFT_eval.git
+PKG_SOURCE_URL:=git://github.com/simonwunderlich/FFT_eval.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=236940c6b92f89a4cc8f77412b18a521ab9d9f8b
+PKG_SOURCE_VERSION:=3cc175570379da172b0b2bcdbb8d2a42f83dad88
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/$(PKG_NAME)
+define Package/$(PKG_NAME)/Default
   SECTION:=utils
   CATEGORY:=Utilities
+  MAINTAINER:=Nicolas Pace <nicopace@altermundi.net>
+  URL:=https://github.com/simonwunderlich/FFT_eval
+endef
+
+define Package/$(PKG_NAME)
   TITLE:=Evaluates FFT samples from ath9k driver
-  MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   DEPENDS:= +libc
 endef
 
-TARGET_CFLAGS  += -ffunction-sections -fdata-sections -flto 
+define Package/$(PKG_NAME)/description
+	Evaluates FFT samples from diferent wifi boards drivers
+endef
+
+TARGET_CFLAGS  += -ffunction-sections -fdata-sections -flto
 
 define Build/Compile
-	$(TARGET_CC) $(PKG_BUILD_DIR)/fft_eval.c -o $(PKG_BUILD_DIR)/fft_eval -lm
+	$(TARGET_CC) -D__NOSDL__ $(PKG_BUILD_DIR)/fft_eval.c -o $(PKG_BUILD_DIR)/fft_eval -lm
 endef
 
 define Package/$(PKG_NAME)/install
