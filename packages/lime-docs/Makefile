@@ -23,6 +23,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   TITLE:=LibreMesh documentation
+  DEPENDS:=+lime-docs-minimal
   MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
   URL:=http://libremesh.org/docs/
 endef
@@ -49,7 +50,7 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/www/docs/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/*txt $(1)/www/docs/
+	$(INSTALL_BIN) $(filter-out $(PKG_BUILD_DIR)/config.txt,$(wildcard $(PKG_BUILD_DIR)/*.txt)) $(1)/www/docs/
 	@ln -s /www/docs $(1)/docs
 endef
 
