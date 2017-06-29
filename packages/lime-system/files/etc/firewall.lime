@@ -2,6 +2,9 @@
 # they will be executed during each firewall (re-)start
 # or, if firewall package is not installed, just during boot.
 # They are interpreted as shell script.
+
+[ $(ls -1 /etc/firewall.lime.d/* 2>/dev/null | wc -l) = 0 ] && return 0
+
 for hook in /etc/firewall.lime.d/* ; do
         [ -s "$hook" ] && /bin/sh "$hook"
 done
