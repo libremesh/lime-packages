@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 LIME_BUILDDATE:=$(shell date +%Y%m%d_%H%M)
-LIME_CODENAME:=bigbang
+LIME_CODENAME:=DaybootRelay
 
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libremesh.org
-  DEPENDS:=+lime-system +lua +libuci-lua +kmod-ipt-nat +iptables
+  DEPENDS:=+lime-system +lua +libuci-lua +kmod-ipt-nat +!PACKAGE_firewall:iptables
 endef
 
 define Build/Compile
