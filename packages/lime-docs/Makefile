@@ -22,26 +22,39 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
   CATEGORY:=LiMe
-  TITLE:=LibreMesh documentation
+  TITLE:=LibreMesh English documentation
   DEPENDS:=+lime-docs-minimal
   MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
   URL:=http://libremesh.org/docs/
+  SUBMENU:=Offline Documentation
+endef
+
+define Package/$(PKG_NAME)-it
+  CATEGORY:=LiMe
+  TITLE:=LibreMesh Italian documentation
+  MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
+  URL:=http://libremesh.org/docs/
+  SUBMENU:=Offline Documentation
 endef
 
 define Package/$(PKG_NAME)-minimal
   CATEGORY:=LiMe
   TITLE:=LibreMesh minimal documentation
   MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
-  URL:=http://libremesh.org/docs/config.html
+  URL:=http://libremesh.org/docs/en_config.html
+  SUBMENU:=Offline Documentation
 endef
 
 define Package/$(PKG_NAME)/description
-Offline documentation for LibreMesh firmware,
-includes lime-docs-minimal contents
+Offline English documentation for LibreMesh firmware
+endef
+
+define Package/$(PKG_NAME)-it/description
+Offline Italian documentation for LibreMesh firmware
 endef
 
 define Package/$(PKG_NAME)-minimal/description
-Minimal offline documentation for LibreMesh firmware containing
+Minimal offline English documentation for LibreMesh firmware containing
 just an expaination of the main config file.
 endef
 
@@ -50,16 +63,23 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/www/docs/
-	$(INSTALL_BIN) $(filter-out $(PKG_BUILD_DIR)/config.txt,$(wildcard $(PKG_BUILD_DIR)/*.txt)) $(1)/www/docs/
+	$(INSTALL_DATA) $(filter-out $(PKG_BUILD_DIR)/en_config.txt,$(wildcard $(PKG_BUILD_DIR)/en_*.txt)) $(1)/www/docs/
+	@ln -s /www/docs $(1)/docs
+endef
+
+define Package/$(PKG_NAME)-it/install
+	$(INSTALL_DIR) $(1)/www/docs/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/it_*.txt $(1)/www/docs/
 	@ln -s /www/docs $(1)/docs
 endef
 
 define Package/$(PKG_NAME)-minimal/install
 	$(INSTALL_DIR) $(1)/www/docs/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/config.txt $(1)/www/docs/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/en_config.txt $(1)/www/docs/
 	@ln -s /www/docs $(1)/docs
 endef
 
 $(eval $(call BuildPackage,lime-docs))
+$(eval $(call BuildPackage,lime-docs-it))
 $(eval $(call BuildPackage,lime-docs-minimal))
 
