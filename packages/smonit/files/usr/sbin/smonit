@@ -5,7 +5,8 @@ logdir="/tmp/smonit"
 mainlog="$logdir/smonit.log"
 statef="$logdir/smonit.state"
 maxfails=3
-maxsize=100000
+maxlogsize_b=200000
+maxdirlogsize_m=5
 [ ! -d "$logdir" ] && mkdir -p "$logdir"
 [ ! -f "$mainlog" ] && touch "$mainlog"
 
@@ -14,13 +15,13 @@ function check_fs() {
     lprint "Hooks directory $hooks does not exist!"
     exit 1
   }
-  local freespace=$(df | grep /tmp | awk '{print $4}')
-  [ $freespace -lt 5000 ] && {
-    lprint "Warning -> tmp freespace below 5 MiB, cleaning log files..."
+  local dirlogsize_m=$(du -sm $logdir | awk '{print $1}')
+  [ $dirlogsize_m -ge $maxdirlogsize_m ] && {
+    lprint "Warning -> max log size dir reached, cleaning log files..."
     rm -f $logdir/*
   }
-  local mainlogsize=$(ls -lsk $mainlog | awk '{print $6}')
-  [ $mainlogsize -gt $maxsize ] && rm -f $mainlog
+  local logsize_b=$(wc -c $mainlog | awk '{print $1}')
+  [ $logsize_b -ge $maxlogsize_b ] && rm -f $mainlog
 
   touch $statef
 }
