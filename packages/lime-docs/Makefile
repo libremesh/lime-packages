@@ -23,7 +23,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   TITLE:=LibreMesh English documentation
-  DEPENDS:=+lime-docs-minimal
+  DEPENDS:=@(!PACKAGE_$(PKG_NAME)-minimal)
   MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
   URL:=http://libremesh.org/docs/
   SUBMENU:=Offline Documentation
@@ -32,6 +32,7 @@ endef
 define Package/$(PKG_NAME)-it
   CATEGORY:=LiMe
   TITLE:=LibreMesh Italian documentation
+  DEPENDS:=@(!PACKAGE_$(PKG_NAME)-minimal)
   MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
   URL:=http://libremesh.org/docs/
   SUBMENU:=Offline Documentation
@@ -63,13 +64,15 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/www/docs/
-	$(INSTALL_DATA) $(filter-out $(PKG_BUILD_DIR)/en_config.txt,$(wildcard $(PKG_BUILD_DIR)/en_*.txt)) $(1)/www/docs/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/en_*.txt $(1)/www/docs/
+	$(INSTALL_DATA) ./files/lime-example $(1)/www/docs/
 	@ln -s /www/docs $(1)/docs
 endef
 
 define Package/$(PKG_NAME)-it/install
 	$(INSTALL_DIR) $(1)/www/docs/
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/it_*.txt $(1)/www/docs/
+	$(INSTALL_DATA) ./files/lime-example $(1)/www/docs/
 	@ln -s /www/docs $(1)/docs
 endef
 
