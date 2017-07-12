@@ -32,6 +32,7 @@ endef
 define Package/$(PKG_NAME)-it
   CATEGORY:=LiMe
   TITLE:=LibreMesh Italian documentation
+  DEPENDS:=+lime-docs-minimal
   MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
   URL:=http://libremesh.org/docs/
   SUBMENU:=Offline Documentation
@@ -55,7 +56,7 @@ endef
 
 define Package/$(PKG_NAME)-minimal/description
 Minimal offline English documentation for LibreMesh firmware containing
-just an expaination of the main config file.
+just a commented version of the main config file.
 endef
 
 define Build/Compile
@@ -63,7 +64,7 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/www/docs/
-	$(INSTALL_DATA) $(filter-out $(PKG_BUILD_DIR)/en_config.txt,$(wildcard $(PKG_BUILD_DIR)/en_*.txt)) $(1)/www/docs/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/en_*.txt $(1)/www/docs/
 	@ln -s /www/docs $(1)/docs
 endef
 
@@ -75,7 +76,7 @@ endef
 
 define Package/$(PKG_NAME)-minimal/install
 	$(INSTALL_DIR) $(1)/www/docs/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/en_config.txt $(1)/www/docs/
+	$(INSTALL_DATA) ./files/lime-example $(1)/www/docs/
 	@ln -s /www/docs $(1)/docs
 endef
 
