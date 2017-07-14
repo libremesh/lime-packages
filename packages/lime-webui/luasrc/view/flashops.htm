@@ -15,7 +15,7 @@
 		<% if upgrade_avail then %>
 			<form method="post" action="<%=url('lime/flashops/sysupgrade')%>" enctype="multipart/form-data">
 				<input type="hidden" name="token" value="<%=token%>" />
-				<div class="cbi-section-descr"><%:Upload a sysupgrade-compatible image here to replace the running firmware. Check "Keep settings" to retain the current configuration (requires a compatible firmware image).%></div>
+				<div class="cbi-section-descr"><%:Upload a LibreMesh sysupgrade image here to replace the running firmware.%></div>
 				<div class="cbi-section-node">
 					<div class="cbi-value cbi-value-last<% if image_invalid then %> cbi-value-error<% end %>">
 						<label class="cbi-value-title" for="image"><%:Image%>:</label>
