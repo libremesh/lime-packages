@@ -1,0 +1,30 @@
+#!/bin/sh
+
+. /etc/os-release
+[ -f /etc/lime_release ] && . /etc/lime_release
+
+feeds_file="/etc/opkg/limefeeds.conf"
+key_file="/etc/opkg/keys/a71b3c8285abd28b"
+
+[ -f "$feeds_file" ] && {
+  echo "LibreMesh opkg feeds already defined, skyping..."
+  exit 0
+}
+
+[ -z "$LEDE_ARCH" ] && {
+  echo "Release information not available, skipping opkg configuration"
+  exit 1
+}
+
+[ "$LIME_BRANCH" == "develop" ] || [ "$LIME_RELEASE" == "0.0" ] || [ -z "$LIME_RELEASE" ] && {
+  base_url="http://repo.libremesh.org/current/packages/$LEDE_ARCH"; } || {
+  base_url="http://repo.libremesh.org/releases/$LIME_RELEASE/packages/$LEDE_ARCH"
+}
+
+echo "Configuring official libremesh opkg repository..."
+echo "src/gz libremap $base_url/libremap" > /etc/opkg/limefeeds.conf
+echo "src/gz routing $base_url/routing" >> /etc/opkg/limefeeds.conf
+echo "src/gz libremesh $base_url/libremesh" >> /etc/opkg/limefeeds.conf
+echo "untrusted comment: signed by libremesh.org key a71b3c8285abd28b" > $key_file
+echo "RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8" >> $key_file
+
