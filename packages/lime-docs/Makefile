@@ -23,7 +23,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   TITLE:=LibreMesh English documentation
-  DEPENDS:=@(!PACKAGE_$(PKG_NAME)-minimal)
+  DEPENDS:=+!PACKAGE_$(PKG_NAME)-minimal
   MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
   URL:=http://libremesh.org/docs/
   SUBMENU:=Offline Documentation
@@ -32,7 +32,7 @@ endef
 define Package/$(PKG_NAME)-it
   CATEGORY:=LiMe
   TITLE:=LibreMesh Italian documentation
-  DEPENDS:=@(!PACKAGE_$(PKG_NAME)-minimal)
+  DEPENDS:=+!PACKAGE_$(PKG_NAME)-minimal
   MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
   URL:=http://libremesh.org/docs/
   SUBMENU:=Offline Documentation
