@@ -14,55 +14,61 @@
 ### System options
 
 config lime system
-	option hostname 'LiMe-%M4%M5%M6'                                       # Parametrizable with %Mn
-	option domain 'lan'                                                    # DNS domain for the L2 cloud it could be something like mycloud.mynetwork.tld, hosts that get their IP by DHCP will also get a fully qualified domain name like hostname.mycloud.mynetwork.tld
-	option keep_on_upgrade 'libremesh /etc/sysupgrade.conf'                # Files defining the list of files and directories to backup when upgrade. Relative to /lib/upgrade/keep.d if no '/' defined.
+	option hostname 'LiMe-%M4%M5%M6'		# Parametrizable with %Mn
+	option domain 'lan'				# DNS domain for the L2 cloud it could be something like mycloud.mynetwork.tld, hosts that get their IP by DHCP will also get a fully qualified domain name like hostname.mycloud.mynetwork.tld
+	option keep_on_upgrade 'libremesh base-files-essential /etc/sysupgrade.conf'	# Files defining the list of files and directories to backup when upgrade. Relative to /lib/upgrade/keep.d if no '/' defined.
 
 ### Network general option
 
 config lime network
-#	option primary_interface eth0                                          # The mac address of this device will be used in different places
-#	option bmx6_over_batman false                                          # Disables Bmx6 meshing on top of batman
-	option main_ipv4_address '10.%N1.0.0/16'                               # Here you have 4 possibilities: set a static IP and the subnet, like '192.0.2.1/16'; parametrize with %Mn and %Nn, and set the subnet, like '192.%N1.%M5.%M6/16'; set a whole network address (so not a specific IP) for getting the IP autocompleted in that network with bits from MAC address, this works also with netmasks other than /24 or /16, like '192.0.128.0/17' (but not valid network addresses, for example '192.0.128.0/16' or '192.0.129.0/17', won't get parametrized); set two different parameters, the first for subnet and the second for IP parametrization, like '192.0.128.0/16/17', this results in /16 subnet but IP parametrized in a /17 range.
-	option main_ipv6_address '2a00:1508:0a%N1:%N200::/64'                  # Parametrizable in the same way as main_ipv4_address. If used, the IP autocompletion will fill maximum the last 24 bits, so specifying an IP autocompletion range bigger than /104 is not useful.
-	option anygw_mac 'aa:aa:aa:%N1:%N2:aa'                                 # Parametrizable with %Nn. Keep in mind that the ebtables rule will use a mask of ff:ff:ff:00:00:00 so br-lan will not forward anything coming in that matches the first 3 bytes of it's own anygw_mac (aa:aa:aa: by default)
-	option bmx6_mtu '1398'                                                 # Set MTU for bmx6 tunnel interfaces
-#	option bmx6_pref_gw 'gw_hostname'                                      # Force bmx6 to use a specific gateway to Internet (hostname must be used as identifier)
-	list protocols adhoc                                                   # List of protocols configured by LiMe, some of these require the relative package "lime-proto-...". Note that if you set here some protocols, you overwrite the *whole* list of protocols set in /etc/config/lime-defaults
+	option primary_interface eth0			# The mac address of this device will be used in different places
+	option main_ipv4_address '10.%N1.0.0/16'	# Here you have 4 possibilities: set a static IP and the subnet, like '192.0.2.1/16'; parametrize with %Mn and %Nn, and set the subnet, like '192.%N1.%M5.%M6/16'; set a whole network address (so not a specific IP) for getting the IP autocompleted in that network with bits from MAC address, this works also with netmasks other than /24 or /16, like '192.0.128.0/17' (but not valid network addresses, for example '192.0.128.0/16' or '192.0.129.0/17', won't get parametrized); set two different parameters, the first for subnet and the second for IP parametrization, like '192.0.128.0/16/17', this results in /16 subnet but IP parametrized in a /17 range.
+	option main_ipv6_address '2a00:1508:0a%N1:%N200::/64'	# Parametrizable in the same way as main_ipv4_address. If used, the IP autocompletion will fill maximum the last 24 bits, so specifying an IP autocompletion range bigger than /104 is not useful.
+	option bmx6_mtu '1500'				# Set MTU for bmx6 tunnel interfaces
+#	option bmx6_pref_gw 'gw_hostname'		# Force bmx6 to use a specific gateway to Internet (hostname must be used as identifier)
+	list protocols ieee80211s			# List of protocols configured by LiMe, some of these require the relative package "lime-proto-...". Note that if you set here some protocols, you overwrite the *whole* list of protocols set in /etc/config/lime-defaults
 	list protocols lan
 	list protocols anygw
-	list protocols batadv:%N1                                              # Parametrizable with %Nn (which depends from ap_ssid), note that this will range between 16 and 272
+	list protocols batadv:%N1			# Parametrizable with %Nn (which depends from ap_ssid), note that this will range between 16 and 272
+#	list protocols batadv:0				# If 0 VLAN tags are disabled and the routing is done on the raw interface
 	list protocols bmx6:13
-# 	list protocols batadv:0                                                # If 0 VLAN tags are disabled and the routing is done on the raw interface
-#	list protocols olsr:14
-#	list protocols olsr6:15
-#	list protocols olsr2:16
-#	list resolvers 4.2.2.2   # b.resolvers.Level3.net                      # DNS servers node will use
-#	list resolvers 141.1.1.1 # cns1.cw.net
-#	list resolvers 2001:470:20::2 # ordns.he.net
-# 	option autoap_enabled 0                                                # Requires lime-ap-watchping installed. If enabled AP SSID is changed to ERROR when network issues
-# 	option autoap_hosts "8.8.8.8 141.1.1.1"                                # Requires lime-ap-watchping installed. Hosts used to check if the network is working fine
+	list protocols olsr:14
+	list protocols olsr6:15
+	list protocols olsr2:16
+	list resolvers 4.2.2.2 # b.resolvers.Level3.net	# DNS servers node will use
+	list resolvers 141.1.1.1 # cns1.cw.net
+	list resolvers 2001:470:20::2 # ordns.he.net
+	option bmx6_over_batman false			# Disables Bmx6 meshing on top of batman
+	option bmx6_pref_gw none
+	option bmx7_over_batman false
+	option anygw_mac 'aa:aa:aa:%N1:%N2:aa'		# Parametrizable with %Nn. Keep in mind that the ebtables rule will use a mask of ff:ff:ff:00:00:00 so br-lan will not forward anything coming in that matches the first 3 bytes of it's own anygw_mac (aa:aa:aa: by default)
+#	option autoap_enabled 0				# Requires lime-ap-watchping installed. If enabled AP SSID is changed to ERROR when network issues
+#	option autoap_hosts "8.8.8.8 141.1.1.1"		# Requires lime-ap-watchping installed. Hosts used to check if the network is working fine
+
 
 ### WiFi general options
 
 config lime wifi
 #	option country 'ES'
-#	option channel_2ghz '11'
-#	option channel_5ghz '48'                                               # Check for allowed channels on https://en.wikipedia.org/wiki/List_of_WLAN_channels#regulatory_tables5.0ghz
+	option channel_2ghz '11'
+	option channel_5ghz '48'			# Check for allowed channels on https://en.wikipedia.org/wiki/List_of_WLAN_channels#regulatory_tables5.0ghz
 #	option htmode_2ghz 'HT20'
-#	option htmode_5ghz 'HT40'
-#	list modes 'ap'
-#	list modes 'apname'
-#	list modes 'adhoc'
-#	list modes 'client'
+	option htmode_5ghz 'HT40'
+	list modes 'ap'
+	list modes 'apname'
+	list modes 'ieee80211s'
+#	list modes 'adhoc'				# See below for adhoc configuration
+#	list modes 'client'				# See below for client configuration
 	option ap_ssid 'LibreMesh.org'
+#	option ap_key 'SomeWPA2PskKey'
+#	option ap_encryption 'psk2'
 	option apname_ssid 'LibreMesh.org/%H'
-#	option adhoc_ssid 'LiMe'                                                 # Parametrizable with %M, %H
-#	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
-#	option adhoc_mcast_rate_2ghz '24000'
-#	option adhoc_mcast_rate_5ghz '6000'
-#	option mesh_mesh_fwding '0'                                            # Settings needed only for 802.11s
-#	option mesh_mesh_id 'LiMe'
+#	option apname_key 'SomeWPA2PskKey'
+#	option apname_encryption 'psk2'
+	option ieee80211s_mesh_fwding '0'		# Settings needed only for 802.11s
+	option ieee80211s_mesh_id 'LiMe'
+#	option ieee80211s_encryption 'psk2/aes'
+#	option ieee80211s_key 'SomePsk2AESKey'
 
 
 ### WiFi interface specific options ( override general option )
@@ -71,27 +77,20 @@ config lime wifi
 #	list modes 'adhoc'
 #	option channel_2ghz '1'
 #	option channel_5ghz '48'
-#	option adhoc_mcast_rate '6000'
-#	option adhoc_ssid 'LiMe'
+#	option adhoc_ssid 'LiMe'			# Parametrizable with %M, %H
 #	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
+#	option adhoc_mcast_rate_2ghz '24000'
+#	option adhoc_mcast_rate_5ghz '6000'
 
 #config wifi radio12
-#	list modes 'manual'                                                    # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
+#	list modes 'manual'				# If you use manual protocol you must not specify other protocol, or your configuration will be broken!
 
 #config wifi radio13
-#  list modes 'client'
-#  option channel_2ghz 'auto'
-#  option client_ssid 'SomeWiFiNetwork'
-#  option client_key 'SomeWPApskPassword'
-#  option client_encryption 'psk'
-
-#config wifi radio14
-#  list modes 'ap'
-#  option channel_2ghz '1'
-#  option channel_5ghz '36'
-#  option ap_ssid 'MyPrivateSSID'
-#  option ap_key 'WPA2PskKey'
-#  option ap_encryption 'psk2'
+#	list modes 'client'
+#	option channel_2ghz 'auto'
+#	option client_ssid 'SomeWiFiNetwork'
+#	option client_key 'SomeWPApskPassword'
+#	option client_encryption 'psk'			# psk for WPA or psk2 for WPA2
 
 
 ### Network interface specific options ( override general option )
@@ -99,10 +98,11 @@ config lime wifi
 ### proto:vlan_number works too ( something like bmx6:13 is supported )
 ### If you use manual do not specify other protocols, may result in an unpredictable behavior/configuration (likely you loose connection to the node)
 
-#config net port5                                                           # Do not put any "." in the section name
-#	option linux_name 'eth1.5'                                          # Put here the actual name of the interface
-#	list protocols 'wan'                                                # Some of these protocols require the relative package "lime-proto-..."
-#	list protocols 'static:172.23.0.1/24'                               # Set up a static IP (both IPv4 and IPv6 supported, specify twice one per IP type)'
+#config net port5					# Do not put any "." in the section name
+#	option linux_name 'eth1.5'			# Put here the actual name of the interface
+#	list protocols 'wan'				# Some of these protocols require the relative package "lime-proto-..."
+#	list protocols 'static:172.23.0.1/24'		# Set up a static IP (both IPv4 and IPv6 supported, specify twice one per IP type)'
+
 
 ### Ground routing specific sections
 ### One section for each ground routing link
@@ -111,11 +111,12 @@ config lime wifi
 ### For a detailed description have a look at http://libremesh.org/projects/libremesh/wiki/Ground_routing
 
 #config hwd_gr link1
-#	option net_dev 'eth0'                                               # Plain ethernet device on top of which 802.1q vlan will be constructed. In case of doubts rely on wiki.openwrt.org
-#	option vlan '5'                                                     # Vlan id to use for this ground routing link, use little one because cheap switch doesn't supports big ids, this will be used also as 802.1q vid on tagged ports
-#	option switch_dev 'switch0'                                         # These options regarding switch need to be set only if your ethernet device is connected to a switch chip. If the switch exists you can read its name (like switch0) in /etc/config/network file
-#	option switch_cpu_port '0'                                          # Refer to switch port map of your device on wiki.openwrt.org to know CPU port index
-#	list switch_ports '4t'                                              # List switch ports on which you want the vlan being passed, use the 't' suffix to specify the port being tagged, refer to wiki.openwrt.org for correspondence with physical ports
+#	option net_dev 'eth0'				# Plain ethernet device on top of which 802.1q vlan will be constructed. In case of doubts rely on wiki.openwrt.org
+#	option vlan '5'					# Vlan id to use for this ground routing link, use little one because cheap switch doesn't supports big ids, this will be used also as 802.1q vid on tagged ports
+#	option switch_dev 'switch0'			# These options regarding switch need to be set only if your ethernet device is connected to a switch chip. If the switch exists you can read its name (like switch0) in /etc/config/network file
+#	option switch_cpu_port '0'			# Refer to switch port map of your device on wiki.openwrt.org to know CPU port index
+#	list switch_ports '4t'				# List switch ports on which you want the vlan being passed, use the 't' suffix to specify the port being tagged, refer to wiki.openwrt.org for correspondence with physical ports
+
 
 ### Proto BGP specific sections
 ### One section for each BGP peer
