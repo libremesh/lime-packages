@@ -28,7 +28,7 @@ define Package/$(PKG_NAME)
 	         +lime-proto-anygw +lime-proto-wan +dnsmasq-lease-share \
 	         +dnsmasq-distributed-hosts +lime-webui-ng \
 	         +lime-hwd-openwrt-wan +bmx6-auto-gw-mode +lime-hwd-ground-routing \
-		 +!PACKAGE_lime-docs:lime-docs-minimal
+		 +lime-docs-minimal
 endef
 
 define Package/$(PKG_NAME)/description
