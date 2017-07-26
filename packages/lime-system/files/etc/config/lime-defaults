@@ -2,8 +2,8 @@
 # If the same option or list is defined both in /etc/config/lime and lime-defaults file, the former will prevail
 # Beware this file is not supposed to store interface specific configuration, like "config net eth0"
 
-# Read the documentation in /etc/config/lime.example file
-# and on https://libremesh.org
+# Read the documentation in /docs directory
+# and on http://libremesh.org
 
 config lime system
 	option hostname 'LiMe-%M4%M5%M6'
