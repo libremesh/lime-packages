@@ -23,7 +23,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   TITLE:=LibreMesh English documentation
-  DEPENDS:=@(!PACKAGE_$(PKG_NAME)-minimal)
+  DEPENDS:=+$(PKG_NAME)-minimal
   MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
   URL:=http://libremesh.org/docs/
   SUBMENU:=Offline Documentation
@@ -32,7 +32,7 @@ endef
 define Package/$(PKG_NAME)-it
   CATEGORY:=LiMe
   TITLE:=LibreMesh Italian documentation
-  DEPENDS:=@(!PACKAGE_$(PKG_NAME)-minimal)
+  DEPENDS:=+$(PKG_NAME)-minimal
   MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
   URL:=http://libremesh.org/docs/
   SUBMENU:=Offline Documentation
@@ -42,7 +42,7 @@ define Package/$(PKG_NAME)-minimal
   CATEGORY:=LiMe
   TITLE:=LibreMesh minimal documentation
   MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
-  URL:=http://libremesh.org/docs/en_config.html
+  URL:=http://libremesh.org/docs/
   SUBMENU:=Offline Documentation
 endef
 
@@ -56,7 +56,7 @@ endef
 
 define Package/$(PKG_NAME)-minimal/description
 Minimal offline English documentation for LibreMesh firmware containing
-just an expaination of the main config file.
+just a commented example of the main config file.
 endef
 
 define Build/Compile
@@ -65,20 +65,18 @@ endef
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/www/docs/
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/en_*.txt $(1)/www/docs/
-	$(INSTALL_DATA) ./files/lime-example $(1)/www/docs/
 	@ln -s /www/docs $(1)/docs
 endef
 
 define Package/$(PKG_NAME)-it/install
 	$(INSTALL_DIR) $(1)/www/docs/
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/it_*.txt $(1)/www/docs/
-	$(INSTALL_DATA) ./files/lime-example $(1)/www/docs/
 	@ln -s /www/docs $(1)/docs
 endef
 
 define Package/$(PKG_NAME)-minimal/install
 	$(INSTALL_DIR) $(1)/www/docs/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/en_config.txt $(1)/www/docs/
+	$(INSTALL_DATA) ./files/lime-example $(1)/www/docs/
 	@ln -s /www/docs $(1)/docs
 endef
 
