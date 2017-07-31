@@ -49,10 +49,7 @@ changes back to lime-packages.
 
 #### Branch Names
 
-There are two key branches:
-
-- `master`: this branch is used for releases.  Only members responsible for release management
-  will merge changes into this branch, and only from the `develop` branch.
+There are only one key branch:
 
 - `develop`: this branch is the working version that is currently under development.  All
     new feature branches should be made from the tip of `develop` and all PR's should have `develop`
@@ -60,7 +57,26 @@ There are two key branches:
 
 For any new feature branches, the following naming convention is recommended:
 
-- `issue-X`: branch to work on GitHub issue X (e.g. `issue-31`).
+### `<type>/<name>`
+
+#### `<type>`
+```
+issue     - Code changes linked to a known issue.
+feature   - New feature.
+hotfix    - Quick fixes to the codebase.
+sandbox   - Experiments (will never be merged).
+```
+
+#### `<name>`
+Always use dashes to seperate words, and keep it short.
+
+##### Examples
+```
+issue/133
+feature/smonit
+hotfix/driver-xxx
+sandbox/new-crazy-thing
+```
 
 #### General Workflow
 
