@@ -1,0 +1,32 @@
+sudo: false
+dist: trusty
+addons:
+  apt:
+    sources:
+    - sourceline: 'ppa:ubuntu-toolchain-r/test'
+    packages:
+    - build-essential
+    - subversion
+    - libncurses5-dev
+    - zlib1g-dev
+    - gawk
+    - gcc-multilib
+    - flex
+    - git-core
+    - gettext
+    - libssl-dev
+    - libstdc++6-4.7-dev
+notifications:
+  email: false
+language: c
+install:
+- cd $TRAVIS_BUILD_DIR
+- git clone https://github.com/libremesh/lime-sdk.git sdk || true
+- cd sdk
+- sed 's|https://github.com/libremesh/lime-packages.git.*|'$TRAVIS_BUILD_DIR'|g' feeds.conf.default > feeds.conf.default.local
+- ./cooker -f -d x86/generic
+script:
+- cd $TRAVIS_BUILD_DIR/sdk
+- export J=$(($(nproc)+1))
+- ./cooker -b x86/generic
+- ./cooker --flavor=lime_default -c x86/generic --profile=Generic
