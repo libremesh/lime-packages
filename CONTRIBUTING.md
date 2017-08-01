@@ -49,7 +49,7 @@ changes back to lime-packages.
 
 #### Branch Names
 
-There are only one key branch:
+There is only one key branch:
 
 - `develop`: this branch is the working version that is currently under development.  All
     new feature branches should be made from the tip of `develop` and all PR's should have `develop`
