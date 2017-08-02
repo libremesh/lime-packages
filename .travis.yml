@@ -30,3 +30,5 @@ script:
 - export J=$(($(nproc)+1))
 - ./cooker -b x86/generic
 - ./cooker --flavor=lime_default -c x86/generic --profile=Generic
+- ./cooker --flavor=lime_mini -c x86/generic --profile=Generic
+- ./cooker --flavor=lime_zero -c x86/generic --profile=Generic
