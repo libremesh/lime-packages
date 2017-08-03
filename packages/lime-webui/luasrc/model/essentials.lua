@@ -85,6 +85,10 @@ local country = wifi:option(Value,"country",translate("Country code"),
   translate("Country code used for WiFi radios"))
 country.default = config.get("wifi","country")
 country.optional = true
+local distance = wifi:option(Value,"distance",translate("Distance"),
+  translate("Max distance for the links in meters (big impact on performance)"))
+distance.default = config.get("wifi","distance")
+distance.optional = true
 local bssid = wifi:option(Value,"adhoc_bssid",translate("Mesh BSSID"),
   translate("The BSSID (WiFi network identifier) used for the mesh network"))
 bssid.default = config.get("wifi","adhoc_bssid")
