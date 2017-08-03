@@ -31,6 +31,12 @@ msgstr "Código del país"
 msgid "Country code used for WiFi radios"
 msgstr "Código del país usado para las radios WiFi"
 
+msgid "Distance"
+msgstr "Distancia"
+
+msgid "Max distance for the links in meters (big impact on performance)"
+msgstr "Distancia m�xima de los enlaces WiFi en metros (impacto importante)"
+
 msgid "Default channel used for 2.4 GHz radios"
 msgstr "Canal por defecto usado para las radios de 2.4GHz"
 
