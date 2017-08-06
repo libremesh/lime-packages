@@ -1,0 +1,2 @@
+#!/bin/bash
+curl -H "Authorization: token $COMMENT_BOT_KEY" https://api.github.com/repos/libremesh/lime-packages/issues/$TRAVIS_PULL_REQUEST/comments -d "{\"body\": \"You can download the image from <http://ci.libremesh.org/$TRAVIS_PULL_REQUEST>\"}"
