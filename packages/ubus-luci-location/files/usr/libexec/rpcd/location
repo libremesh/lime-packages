@@ -1,0 +1,53 @@
+#!/usr/bin/env lua
+--[[
+Copyright 2017 Marcos Gutierrez <gmarcos87@gmail.com>
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-3.0
+]]--
+
+require "ubus"
+require "uloop"
+
+uloop.init()
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function get_location(req, msg)
+    local result = {}
+    local lat = conn:call("uci", "get", {config="libremap", section="location", option="latitude" }).value
+    local lon = conn:call("uci", "get", {config="libremap", section="location", option="longitude" }).value
+
+    if (type(tonumber(lat)) == "number" and type(tonumber(lon)) == "number") then
+        result.lat = lat
+        result.lon = lon
+    else
+        result.lat = conn:call("uci", "get", {config="libremap", section="@libremap[0]",
+                                              option="community_lat" }).value
+        result.lon = conn:call("uci", "get", {config="libremap", section="@libremap[0]",
+                                              option="community_lon" }).value
+    end
+    conn:reply(req, result);
+end
+
+local function set_location(req, msg)
+    local result = {}
+    conn:call("uci", "set", {config="libremap", section="location", values={ longitude = msg.lon, latitude = msg.lat } })
+    conn:reply(req, { lat = msg.lat, lon = msg.lon });
+end
+
+local module = {}
+
+module['luci2.location'] = {
+    get = { get_location, { } },
+	set = { set_location, { lat = ubus.STRING, lon= ubus.STRING } }
+}
+
+
+conn:add(module)
+
+uloop.run()
