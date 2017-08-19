@@ -10,7 +10,7 @@ You may obtain a copy of the License at
 require "ubus"
 require "uloop"
 
-
+local json = require 'luci.json'
 local nixio = require "nixio",require "nixio.fs"
 
 local function split(str, pat, max, regex)
@@ -81,7 +81,7 @@ function bmx6get(field, host)
 	 local raw = ""
 
 	if json_url[1] == "http"  then
-		raw,err = wget(url..field,2000)
+		raw,err = wget(url..field,500)
 	else
 
 		if json_url[1] == "exec" then
@@ -95,9 +95,8 @@ function bmx6get(field, host)
 
 	local data = nil
 
-	local json = require 'luci/json'
     if raw and raw:len() > 10 then
-		data = json.decode(raw)
+		data = json.decode( raw )
 	end
 
 	return data
@@ -244,7 +243,7 @@ function topology(req, msg)
 
 	if cachefd == nil or update then
         for i,o in ipairs(originators) do
-            local links = bmx6get("links",o.name..'.mesh    ')
+            local links = bmx6get("links",o.name)
             if links then
                 if first then
                     first = false
@@ -280,12 +279,10 @@ function topology(req, msg)
 		cachefd:write(os.time()..'\n')
 		cachefd:write(topology)
 		cachefd:close()
-        local json = require 'luci/json'
         conn:reply(req, { topology = json.decode( topology ) })
         return
 	end
 
-    local json = require 'luci/json'
     conn:reply(req, { topology = json.decode( topology )  })
 
 end
@@ -300,7 +297,7 @@ local module = {}
 module['luci2.bmx6'] = {
     status = { status, { } },
     originators = { originators, { } },
-    links = { links, { topology = ubus.STRING } },
+    links = { links, { host = ubus.STRING } },
     topology = { topology, { } },
     tunnels = { tunnels, { } }
 }
