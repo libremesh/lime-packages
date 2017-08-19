@@ -14,7 +14,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
   SUBMENU:=3. Applications
   TITLE:=Openairview ubus module
-  DEPENDS:= +libc +fft-eval
+  DEPENDS:= +lua +libubox-lua +libubus-lua +fft-eval +luci-base +luci-lib-nixio
 endef
 
 define Build/Compile
