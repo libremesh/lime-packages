@@ -13,7 +13,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
   SUBMENU:=3. Applications
   TITLE:=BMX6 ubus status module
-  DEPENDS:= +libc
+  DEPENDS:= +lua +libubox-lua +libubus-lua +luci-app-bmx6 +luci-lib-nixio
 endef
 
 define Build/Compile

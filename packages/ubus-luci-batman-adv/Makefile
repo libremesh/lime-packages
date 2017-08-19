@@ -13,7 +13,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
   SUBMENU:=3. Applications
   TITLE:=B.A.T.M.A.N.-Adv ubus status module
-  DEPENDS:= +libc +kmod-batman-adv +batctl
+  DEPENDS:= +lua +libubox-lua +libubus-lua +kmod-batman-adv +batctl +luci-lib-nixio
 endef
 
 define Build/Compile
