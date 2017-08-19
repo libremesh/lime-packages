@@ -11,7 +11,6 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   SECTION:=ubus
   CATEGORY:=Ubus
-  TITLE:=Ubus
   MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
   SUBMENU:=3. Applications
   TITLE:=Openairview ubus module
