@@ -22,6 +22,9 @@ function hook_quickfix()
 
 function hook_longfix()
 {
+	# IMHO following line means that we are doing something really wrong
+	PATH="/usr/sbin:/usr/bin:/sbin:/bin"
+
 	for iface in $(iw dev | grep Interface | awk '{print $2}'); do
 		((
 			iw dev ${iface} scan freq 5745 5825 &> /dev/null || true
