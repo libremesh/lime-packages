@@ -134,9 +134,9 @@ end
 
 local module = {}
 module['luci2.batman_adv'] = {
-	get_interfaces = { get_interfaces, {} },
-	get_originators = { get_originators, {} },
-	get_gateways = { get_gateways, {} }
+	interfaces = { get_interfaces, {} },
+	originators = { get_originators, {} },
+	gateways = { get_gateways, {} }
 }
 
 conn:add(module)
