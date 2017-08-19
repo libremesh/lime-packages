@@ -197,9 +197,9 @@ end
 
 local module = {}
 module['luci2.openairview'] = {
-	get_stations = { get_stations, { msg=ubus.STRING } },
+	get_stations = { get_stations, { device = ubus.STRING } },
 	get_interfaces = { get_interfaces, {} },
-	spectral_scan = { spectral_scan, { msg=ubus.STRING }}
+	spectral_scan = { spectral_scan, { device = ubus.STRING, spectrum = ubus.STRING }}
 }
 
 conn:add(module)
