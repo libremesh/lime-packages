@@ -133,7 +133,7 @@ end
 
 
 local module = {}
-module['luci2.batman_adv'] = {
+module['luci2.batman-adv'] = {
 	interfaces = { get_interfaces, {} },
 	originators = { get_originators, {} },
 	gateways = { get_gateways, {} }
