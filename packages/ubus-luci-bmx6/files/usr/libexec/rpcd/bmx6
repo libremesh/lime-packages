@@ -94,8 +94,8 @@ function bmx6get(field, host)
 	end
 
 	local data = nil
-local json
-	local json = require 'lime/json'
+
+	local json = require 'luci/json'
     if raw and raw:len() > 10 then
 		data = json.decode(raw)
 	end
@@ -280,12 +280,12 @@ function topology(req, msg)
 		cachefd:write(os.time()..'\n')
 		cachefd:write(topology)
 		cachefd:close()
-        local json = require 'lime/json'
+        local json = require 'luci/json'
         conn:reply(req, { topology = json.decode( topology ) })
         return
 	end
 
-    local json = require 'lime/json'
+    local json = require 'luci/json'
     conn:reply(req, { topology = json.decode( topology )  })
 
 end
