@@ -151,7 +151,7 @@ local function spectral_scan(req,msg)
     end
 
     local json_reply = { }
-	local json = require 'lime/json'
+	local json = require 'luci/json'
 
     table.insert(json_reply, { epoch = os.time(), samples = json.decode( samples ) })
 
