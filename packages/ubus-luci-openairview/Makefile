@@ -21,9 +21,9 @@ define Build/Compile
 endef
 
 define Package/$(PKG_NAME)/install
-  $(INSTALL_DIR) $(1)/
-  $(CP) ./files/* $(1)/
-  @chmod +x $(1)/usr/libexec/rpcd/openairview
+	$(INSTALL_DIR) $(1)/
+	$(CP) ./files/* $(1)/
+	@chmod +x $(1)/usr/libexec/rpcd/openairview
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
