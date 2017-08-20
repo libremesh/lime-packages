@@ -1,7 +1,7 @@
 # B.A.T.M.A.N-Adv ubus status module
 
 |Path     |Procedure     |Signature     |Description
-|---  |---  |---  |---  |---  |
+|---  |---  |---  |---  
 |luci2.batman-adv |interfaces     |{}     | Get the list of intefaces 
 |luci2.batman-adv |gateways     |{}     | Get the list of gateways
 |luci2.batman-adv |originators    |{}       | Ghet the list of originators

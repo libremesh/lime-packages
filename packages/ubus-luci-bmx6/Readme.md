@@ -1,7 +1,7 @@
 # BMX6 ubus status module
 
 |Path     |Procedure     |Signature     |Description
-|---     |---  |---  |---  |---  |
+|---  |---  |---  |---  
 |luci2.bmx6 |links     |{"host": STRING }     | Get the list of bmx6 links by interface. "host" can be an IPv4, IPV6, or device name. If "host" is not defined the query is local.
 |luci2.bmx6 |status     |{}     | Get the current status of bmx6 and the list of interfaces
 |luci2.bmx6 |tunnels    |{}       | Get the list Of bmx6 tunnes

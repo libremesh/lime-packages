@@ -2,7 +2,7 @@
 # Openairview (Align / Spectrun scan) ubus status module
 
 |Path     |Procedure     |Signature     |Description
-|---  |---  |---  |---  |---  |
+|---  |---  |---  |---  
 |luci2.openairview |interfaces     |{}     | Get list of interfaces
 |luci2.openairview |get_stations     |{device:STRING}     | List of stations transmitting on the same frequency as the selected device/interface.
 |luci2.openairview |spectral_scan     |{device:STRING, spectrum:STRING}     |Scan the spectrum ("5ghz","2ghz" or "current") of the device whit fft_eval.

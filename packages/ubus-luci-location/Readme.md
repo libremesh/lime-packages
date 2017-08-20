@@ -2,7 +2,7 @@
 # Location (Libremap) ubus status module
 
 |Path   	|Procedure   	|Signature   	|Description
-|---	|---	|---	|---	|---	|
+|---  |---  |---  |---  
 |luci2.location |get   	|{}   	| Get current location
 |luci2.location |set   	|{lon:STRING, lat:STRING}   	| Set new location
 
