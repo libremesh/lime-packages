@@ -150,9 +150,18 @@ local function spectral_scan(req,msg)
         samples = sample_current_channel(path_ath9k)
     end
 
-    local json_reply = { }
+	samples = json.decode( samples )
 
-    table.insert(json_reply, { epoch = os.time(), samples = json.decode( samples ) })
+	-- Convert values to string (avoid ubus bug)
+	for _, dev in pairs(samples[1].data) do
+		samples[1].data[_][1] = tostring(samples[1].data[_][1])
+		samples[1].data[_][2] = tostring(samples[1].data[_][2])
+	end
+	
+	local json_reply = {
+		samples = samples,
+		epoch = os.time()
+	}
 
     result.spectrum = json_reply
 	conn:reply(req,result)
