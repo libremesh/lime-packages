@@ -12,6 +12,7 @@ require "uloop"
 
 local json = require 'luci.json'
 local nixio = require "nixio",require "nixio.fs"
+local iwinfo = require("iwinfo")
 
 local function shell(command)
     -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
@@ -29,8 +30,6 @@ if not conn then
 end
 
 function get_stations(req, msg)
-
-	local netm = require "luci.model.network"
 
 	local function lines(str)
 		-- split a string into lines separated by line endings
@@ -62,31 +61,28 @@ function get_stations(req, msg)
 		return dict
 	end
 
-	local function network_links(ntm, net)
-		local station_links = {}
-		local macaddr = ntm:get_interface(msg.device):mac()
-		local channel = net:channel()
-		
-		local assoclist = net.iwinfo.assoclist
+	local function network_links(iface)
+		local result = {}
+		result.stations = {}
+		local channel = iwinfo.nl80211.channel(iface)
+		local assoclist = iwinfo.nl80211.assoclist(iface)
 		local bat_hosts = dict_from_file("/etc/bat-hosts")
 		for station_mac, link_data in pairs(assoclist) do
 			local wifilink = {
-				type = "wifi",
-				station = station_mac,
+				link_type = "wifi",
+				station_mac = station_mac,
 				hostname = station_hostname,
 				station_hostname = bat_hosts[string.lower(station_mac)] or station_mac,
-				attributes = { signal = link_data.signal, channel = channel, inactive= link_data.inactive }
+				attributes = { signal = tostring(link_data.signal),
+							channel = channel, inactive= link_data.inactive }
 			}
-			table.insert(station_links, wifilink)
+			table.insert(result.stations, wifilink)
 		end
-		return station_links
+		return result
 	end   
 
-	local ntm = netm.init()
-	local net = ntm:get_wifinet(msg.device)
-
    	local net_links = { 
-		stations = network_links(ntm, net)
+		stations = network_links(msg.device).stations
 	}
 
 	conn:reply(req, net_links)
