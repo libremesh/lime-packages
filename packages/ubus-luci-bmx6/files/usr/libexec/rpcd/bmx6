@@ -12,38 +12,7 @@ require "uloop"
 
 local json = require 'luci.json'
 local nixio = require "nixio",require "nixio.fs"
-
-local function split(str, pat, max, regex)
-	pat = pat or "\n"
-	max = max or #str
-	local t = {}
-	local c = 1
-
-	if #str == 0 then
-		return {""}
-	end
-
-	if #pat == 0 then
-		return nil
-	end
-
-	if max == 0 then
-		return str
-	end
-
-	repeat
-		local s, e = str:find(pat, c, not regex)
-		max = max - 1
-		if s and max < 0 then
-			t[#t+1] = str:sub(c)
-		else
-			t[#t+1] = str:sub(c, s and s - 1)
-		end
-		c = e and e + 1 or #str + 1
-	until not s or max < 0
-
-	return t
-end
+local split = require 'lime.utils'.split
 
 local function shell(command)
     -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
