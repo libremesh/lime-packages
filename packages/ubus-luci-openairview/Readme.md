@@ -41,14 +41,24 @@ If the openairview was never established, return the openairview of the communit
 {
   "stations": [
     {
-      "type": "wifi",
-      "station_hostname": "lm123_wlan1-adhoc",
-      "station": "A0:F3:C1:86:32:11",
+      "station_mac": "A0:F3:C1:86:31:35",
+      "station_hostname": "herradura_wlan1-adhoc",
       "attributes": {
-        "inactive": 0,
+        "inactive": 16870,
         "channel": 112,
-        "signal": -72
-      }
+        "signal": "-82"
+      },
+      "link_type": "wifi"
+    },
+    {
+      "station_mac": "A0:F3:C1:86:32:11",
+      "station_hostname": "marisa_wlan1-adhoc",
+      "attributes": {
+        "inactive": 10,
+        "channel": 112,
+        "signal": "-74"
+      },
+      "link_type": "wifi"
     }
   ]
 }
