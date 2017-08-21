@@ -109,6 +109,10 @@ function index()
 	entry({"lime","about"}, call("action_about"), _("About"), 80).dependent=false
 	entry({"lime","logout"}, call("action_logout"), _("Logout"), 90)
 
+	if nixio.fs.access("/usr/libexec/rpcd/attendedsysupgrade") then
+		entry({"lime", "attendedsysupgrade"}, template("attendedsysupgrade"), _("Attended Sysupgrade"), 75)
+	end
+
 	entry({"lime", "flashops"}, call("action_flashops"), _("Flash Firmware"), 70)
 	entry({"lime", "flashops", "sysupgrade"}, call("action_sysupgrade"))
 end
