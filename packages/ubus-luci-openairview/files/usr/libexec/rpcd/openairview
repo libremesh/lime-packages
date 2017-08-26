@@ -22,6 +22,24 @@ local function shell(command)
     return result
 end
 
+local function file_exists(file)
+    -- check if the file exists
+    local f = io.open(file, "rb")
+    if f then f:close() end
+    return f ~= nil
+end
+
+local function list_from_file(file)
+    -- get all lines from a file with one value per line and return a list type table
+    -- return an empty table if the file does not exist
+    if not file_exists(file) then return {} end
+    local list = {}
+    for line in io.lines(file) do
+        table.insert(list, line)
+    end
+    return list
+end	
+
 uloop.init()
 
 local conn = ubus.connect()
@@ -90,16 +108,13 @@ end
 
 function get_interfaces(req, msg)
 	local dev
-	local devices = conn:call("network.device", "status", {})
-	local result = {
-		interfaces = { }
-	}
-
-	for _, dev in pairs(devices) do
-		if _:match("^wlan%d") or _:match("^ath%d") or _:match("^wl%d") then
-		result.interfaces[#result.interfaces+1] = _
-		end
-	end
+	local devices = conn:call("uci", "get", { config="wireless", type="wifi-iface"})
+	local result = {}
+	local interfaces = {}
+	for iface,iface_conf in pairs(devices.values) do
+		table.insert(interfaces, { name = iface_conf.ifname, mode = iface_conf.mode })
+    end
+	result.interfaces = interfaces
 	conn:reply(req, result)
 end
 
@@ -180,11 +195,47 @@ function sample_whole_spectrum(device, path_ath9k, freqs)
     return samples
 end
 
+local function get_station_signal(req, msg)
+    local iface = msg.iface
+    local mac = msg.station_mac
+    local result = {}
+    local assoclist = iwinfo.nl80211.assoclist(iface)
+    result.station = mac
+    result.signal = tostring(assoclist[mac].signal)
+    result.status = "ok"
+    conn:reply(req, result)
+end
+
+local function get_iface_stations(req, msg)
+    local iface = msg.iface
+    local result = {}
+    local stations = {}
+    local assoclist = iwinfo.nl80211.assoclist(iface)
+    local bat_hosts = dict_from_file("/etc/bat-hosts")
+    for mac, link_data in pairs(assoclist) do
+        local hostname = bat_hosts[string.lower(mac)] or mac
+        local station_data = {
+            hostname = hostname,
+            mac = mac,
+            signal = tostring(link_data.signal),
+            iface = iface,
+            rx_packets = link_data.rx_packets,
+            tx_packets = link_data.tx_packets,
+        }
+        table.insert(stations, station_data)
+    end
+    result.stations = stations
+    result.status = "ok"
+    call:reply(req, result)
+end
+
 local module = {}
 module['luci2.openairview'] = {
 	get_stations = { get_stations, { device = ubus.STRING } },
 	get_interfaces = { get_interfaces, {} },
-	spectral_scan = { spectral_scan, { device = ubus.STRING, spectrum = ubus.STRING }}
+	spectral_scan = { spectral_scan, { device = ubus.STRING, spectrum = ubus.STRING }},
+	get_station_signal = { get_station_signal, { iface = ubus.STRING, station_mac = ubus.STRING }},
+	get_iface_stations = { get_iface_stations, { iface = ubus.STRING }}
 }
 
 conn:add(module)
