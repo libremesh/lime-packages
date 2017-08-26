@@ -1,0 +1,53 @@
+#!/usr/bin/env lua
+--[[
+  Copyright (C) 2013-2017 LibreMesh.org
+  This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
+
+  Copyright 2017 Marcos Gutierrez <gmarcos@altermindi.net>
+  Copyright 2017 Nicolas Echaniz <nicoechaniz@altermundi.net>
+]]--
+
+require "ubus"
+require "uloop"
+
+uloop.init()
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function shell(command)
+    -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+    return result
+end
+
+local function get_cloud_nodes(req, msg)
+    -- check how to get this data from /tmp/run/bmx6/json
+    local conf = conn:call("uci", "get", { config="network" })
+    local local_net = conf.values.lm_net_anygw_route4.target
+    local nodes = shell("bmx6 -cd8 | grep ".. local_net .." | awk '{ print $10 }'")
+    local result = {}
+    result.nodes = {}
+    for line in nodes:gmatch("[^\n]*") do
+        if line ~= "" then
+            table.insert(result.nodes, line)
+        end
+    end
+    result.status = "ok"
+    conn:reply(req,result)
+end
+
+
+local module = {}
+
+module['lime.utils'] = {
+    get_cloud_nodes = { get_cloud_nodes, { } }
+}
+
+conn:add(module)
+
+uloop.run()
