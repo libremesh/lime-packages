@@ -71,6 +71,7 @@ endef
 define Build/Compile
 	@cp -r ./luasrc/. $(PKG_BUILD_DIR)/
 	@find $(PKG_BUILD_DIR)/ -type f -name "*.lua" -exec sed -i '/^--!.*/d' {} \;
+	./clean_i18n.sh
 endef
 
 ifneq ($(strip $(CONFIG_LIMEWEBUI_ES)),)

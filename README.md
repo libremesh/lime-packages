@@ -1,3 +1,4 @@
+[![travis](https://api.travis-ci.org/libremesh/lime-packages.svg?branch=develop)](https://travis-ci.org/libremesh/lime-packages)
 [![tip for next commit](http://tip4commit.com/projects/804.svg)](http://tip4commit.com/projects/804)
 
 # [LibreMesh][5] packages "Dayboot Rely" release (17.06)
