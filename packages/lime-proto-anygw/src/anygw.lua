@@ -69,8 +69,14 @@ function anygw.configure(args)
 
 	uci:set("dhcp", owrtInterfaceName.."_dhcp", "dhcp")
 	uci:set("dhcp", owrtInterfaceName.."_dhcp", "interface", owrtInterfaceName)
-	uci:set("dhcp", owrtInterfaceName.."_dhcp", "start", "2")
-	uci:set("dhcp", owrtInterfaceName.."_dhcp", "limit", (2 ^ (32 - anygw_ipv4:prefix()))) -- use whole network
+	anygw_dhcp_start = config.get("network", "anygw_dhcp_start")
+	uci:set("dhcp", owrtInterfaceName.."_dhcp", "start", anygw_dhcp_start)
+	anygw_dhcp_limit = config.get("network", "anygw_dhcp_limit")
+	if anygw_dhcp_limit > 0 then
+		uci:set("dhcp", owrtInterfaceName.."_dhcp", "limit", anygw_dhcp_limit)
+	else
+		uci:set("dhcp", owrtInterfaceName.."_dhcp", "limit", (2 ^ (32 - anygw_ipv4:prefix())) - anygw_dhcp_start - 1)
+	end
 	uci:set("dhcp", owrtInterfaceName.."_dhcp", "leasetime", "1h")
 	uci:set("dhcp", owrtInterfaceName.."_dhcp", "force", "1")
 
