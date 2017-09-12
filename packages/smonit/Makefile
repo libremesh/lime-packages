@@ -20,6 +20,12 @@ define Package/$(PKG_NAME)
   DEPENDS:=
 endef
 
+define Package/$(PKG_NAME)/config
+  select CONFIG_BUSYBOX_CONFIG_CROND
+  select CONFIG_BUSYBOX_CONFIG_CRONTAB
+endef
+
+
 define Package/$(PKG_NAME)/description
   Small modular daemon for monitoring system processes using hooks
 endef
