@@ -44,7 +44,7 @@ function config.get_all(sectionname)
 		if lime_def_section then
 			for key,value in pairs(lime_def_section) do
 				if (ret[key] == nil) then
-					config.set(sectionname, key, value)
+					config.set(sectionname, key, tostring(value))
 					ret[key] = value
 				end
 			end
