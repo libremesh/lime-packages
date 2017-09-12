@@ -12,28 +12,10 @@ $Id$
 
 -%>
 
-<%
-	local cur_vm = luci.sys.exec("batctl vm"):trim()
-%>
-
 <%+header%>
 
 <script type="text/javascript" src="<%=resource%>/cbi.js"></script>
 <script type="text/javascript">//<![CDATA[
-	function vis_apply(field)
-	{
-		document.getElementById('vis_form').style.display = 'none';
-		document.getElementById('vis_apply').style.display = '';
-
-		XHR.get('<%=luci.dispatcher.build_url("batman/vis")%>/'+field.value, null,
-			function() {
-				document.getElementById('vis_form').style.display = '';
-				document.getElementById('vis_apply').style.display = 'none';
-				document.getElementById('vis_form_dl').style.display =
-					(field.value == 'server') ? '' : 'none';
-			});
-	}
-
 	function gw_apply(field)
 	{
 		var mode, val;
@@ -153,22 +135,12 @@ $Id$
 <h2><a id="content" name="content"><%:B.A.T.M.A.N. Status%></a></h2>
 
 <fieldset class="cbi-section">
-	<legend><%:Visualization Server%></legend>
+	<legend><%:Visualization%></legend>
 	<div id="vis_form">
-		<input type="radio" name="vis" value="client" id="vis_client" onchange="vis_apply(this)"<%=ifattr(cur_vm ~= "server", "checked", "checked")%> />
-		<label for="vis_client"><%:Act as client%></label>
-		&#160; &#160;
-
-		<input type="radio" name="vis" value="server" id="vis_server" onchange="vis_apply(this)"<%=ifattr(cur_vm == "server", "checked", "checked")%> />
-		<label for="vis_server"><%:Act as server%></label>
-
-		<span id="vis_form_dl"<%=ifattr(cur_vm ~= "server", "style", "display:none")%>>
+		<span id="vis_form_dl">
 			- <a href="<%=luci.dispatcher.build_url("batman/graph")%>"><%:View Topology%></a>
 			- <a href="<%=luci.dispatcher.build_url("batman/topo")%>"><%:Download Topology%></a>
 		</span>
-	</div>
-	<div id="vis_apply" style="display:none">
-		<em><%:Applying change...%></em>
 	</div>
 </fieldset>
 
