@@ -47,10 +47,6 @@ function index()
 	page = node("batman", "json")
 	page.target = call("act_json")
 
-	page = node("batman", "vis")
-	page.target = call("act_vis")
-	page.leaf   = true
-
 	page = node("batman", "topo")
 	page.target = call("act_topo")
 	page.leaf   = true
@@ -60,19 +56,9 @@ function index()
 	page.leaf   = true
 end
 
-function act_vis(mode)
-	if mode == "server" or mode == "client" or mode == "off" then
-		luci.sys.call("batctl vm %q >/dev/null" % mode)
-		luci.http.prepare_content("application/json")
-		luci.http.write_json(mode)
-	else
-		luci.http.status(500, "Bad mode")
-	end
-end
-
 function act_topo(mode)
 	if not mode or mode == "dot" or mode == "json" then
-		local fd = io.popen("batctl vd %s" %( mode or "dot" ))
+		local fd = io.popen("batadv-vis -f %s" %( mode or "dot" ))
 		if fd then
 			if mode == "json" then
 				luci.http.prepare_content("application/json")
