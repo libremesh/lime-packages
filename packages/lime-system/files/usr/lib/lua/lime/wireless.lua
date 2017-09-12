@@ -5,6 +5,7 @@ local network = require("lime.network")
 local utils = require("lime.utils")
 local libuci = require("uci")
 local fs = require("nixio.fs")
+local iwinfo = require("iwinfo")
 
 wireless = {}
 
@@ -32,12 +33,8 @@ function wireless.scandevices()
 end
 
 function wireless.is5Ghz(radio)
-	local uci = libuci:cursor()
-	local hwmode = uci:get("wireless", radio, "hwmode") or "11ng"
-	if hwmode:find("a") then
-		return true
-	end
-	return false
+	local devModes = iwinfo.nl80211.hwmodelist(radio)
+	return devModes.a or devModes.ac
 end
 
 wireless.availableModes = { adhoc=true, ap=true, apname=true, ieee80211s=true }
