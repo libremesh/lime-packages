@@ -1,6 +1,6 @@
 # The /etc/config/lime-defaults file contains the default configuration.
 # To configure LibreMesh insert options in /etc/config/lime file, these will override the default ones.
-# Interface specific options have to be included in /etc/config/lime, if in /etc/config/lime-defaults they'll be ignored.
+# Interface specific options have to be included in /etc/config/lime, if in /etc/config/lime-defaults they'll cause unpredictable behaviour.
 #
 # The options marked with "Parametrizable with %Mn, %Nn, %H"
 # can include %Mn templates that will be substituted
