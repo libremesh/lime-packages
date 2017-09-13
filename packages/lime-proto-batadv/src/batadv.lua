@@ -47,6 +47,12 @@ function batadv.configure(args)
 	uci:set("network", owrtInterfaceName, "proto", "batadv")
 	uci:set("network", owrtInterfaceName, "mesh", "bat0")
 	uci:save("network")
+
+	-- enable alfred on bat0 if installed
+	if utils.is_installed("alfred") then
+		uci:set("alfred", "alfred", "batmanif", "bat0")
+		uci:save("alfred")
+	end
 end
 
 function batadv.setup_interface(ifname, args)
