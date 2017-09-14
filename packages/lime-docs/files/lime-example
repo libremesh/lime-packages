@@ -85,6 +85,10 @@ config lime wifi
 #config wifi radio12
 #	list modes 'manual'				# If you use manual protocol you must not specify other protocol, or your configuration will be broken!
 
+# Wireless client mode needs two pieces of configuration:
+# the wifi specific configuration and the network specific one.
+# In the network specific configuration, the client interface should be set as WAN if client of a non-LibreMesh access point, otherwise as LAN if client of a LibreMesh AP
+
 #config wifi radio13
 #	list modes 'client'
 #	option channel_2ghz 'auto'
@@ -92,6 +96,17 @@ config lime wifi
 #	option client_key 'SomeWPApskPassword'
 #	option client_encryption 'psk'			# psk for WPA or psk2 for WPA2
 
+#config net wirelessclient
+#	option linux_name 'wlan0-client'		# the client interface name could be named differently, like wlan1-client
+#	list protocols 'wan'				# when connecting to non-LibreMesh AP include interface in WAN
+
+#config net wirelessclient
+#	option linux_name 'wlan0-client'		# the client interface name could be named differently, like wlan1-client
+#	list protocols 'lan'				# when connecting to LibreMesh AP include interface in LAN
+#	list protocols ieee80211s
+#	list protocols anygw
+#	list protocols batadv:%N1
+#	list protocols bmx6:13
 
 ### Network interface specific options ( override general option )
 ### Available protocols: bmx6, batadv, olsr, olsr6, wan, lan, manual
