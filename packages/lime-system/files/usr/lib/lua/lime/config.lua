@@ -44,7 +44,7 @@ function config.get_all(sectionname)
 		if lime_def_section then
 			for key,value in pairs(lime_def_section) do
 				if (ret[key] == nil) then
-					config.set(sectionname, key, tostring(value))
+					config.set(sectionname, key, value)
 					ret[key] = value
 				end
 			end
@@ -68,6 +68,10 @@ function config.init_batch()
 end
 
 function config.set(...)
+	local aty = type(arg[3])
+	if (aty ~= "nil" and aty ~= "string" and aty ~= "table") then
+		arg[3] = tostring(arg[3])
+	end
 	config.uci:set("lime", unpack(arg))
 	if(not config.batched) then config.uci:save("lime") end
 end
