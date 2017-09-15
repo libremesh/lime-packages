@@ -85,12 +85,20 @@ config lime wifi
 #config wifi radio12
 #	list modes 'manual'				# If you use manual protocol you must not specify other protocol, or your configuration will be broken!
 
+# If you want to use Wifi client mode just to connect to an AP offering internet
+# you need two pieces of configuration the wifi specific configuration and the
+# network specific one like in the following example.
+
 #config wifi radio13
 #	list modes 'client'
 #	option channel_2ghz 'auto'
 #	option client_ssid 'SomeWiFiNetwork'
 #	option client_key 'SomeWPApskPassword'
-#	option client_encryption 'psk'			# psk for WPA or psk2 for WPA2
+#	option client_encryption 'psk'               # psk for WPA or psk2 for WPA2
+
+#config net wirelessclient
+#	option linux_name 'wlan0-client'             # the client interface name could be named differently, like wlan1-client
+#	list protocols 'wan'                         # use wan to get Internet connectivity via DHCP
 
 
 ### Network interface specific options ( override general option )
