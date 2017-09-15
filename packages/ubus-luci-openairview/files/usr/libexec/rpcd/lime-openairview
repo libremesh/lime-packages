@@ -8,11 +8,13 @@ You may obtain a copy of the License at
 ]]--
 
 require "ubus"
-require "uloop"
-
-local json = require 'luci.json'
 local nixio = require "nixio",require "nixio.fs"
 local iwinfo = require("iwinfo")
+local json = require 'luci.json'
+
+local function printJson (obj)
+    print(json.encode(obj))
+end
 
 local function shell(command)
     -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
@@ -40,15 +42,12 @@ local function list_from_file(file)
     return list
 end	
 
-uloop.init()
-
 local conn = ubus.connect()
 if not conn then
     error("Failed to connect to ubus")
 end
 
-function get_stations(req, msg)
-
+function get_stations(msg)
 	local function lines(str)
 		-- split a string into lines separated by line endings
 		local t = {}
@@ -103,10 +102,10 @@ function get_stations(req, msg)
 		stations = network_links(msg.device).stations
 	}
 
-	conn:reply(req, net_links)
+	printJson(net_links)
 end
 
-function get_interfaces(req, msg)
+function get_interfaces(msg)
 	local dev
 	local devices = conn:call("uci", "get", { config="wireless", type="wifi-iface"})
 	local result = {}
@@ -115,10 +114,10 @@ function get_interfaces(req, msg)
 		table.insert(interfaces, { name = iface_conf.ifname, mode = iface_conf.mode })
     end
 	result.interfaces = interfaces
-	conn:reply(req, result)
+	printJson(result)
 end
 
-local function spectral_scan(req,msg)
+local function spectral_scan(msg)
 
 	local device = msg.device
 	local spectrum = msg.spectrum
@@ -156,7 +155,7 @@ local function spectral_scan(req,msg)
 	}
 
     result.spectrum = json_reply
-	conn:reply(req,result)
+	printJson(result)
 end
 
 function sample_current_channel(path_ath9k)
@@ -176,7 +175,6 @@ function sample_current_channel(path_ath9k)
 end
 
 function sample_whole_spectrum(device, path_ath9k, freqs)
-	print(nixio.fs)
     -- grab samples over the whole spectrum
     -- grab only one sample per trigger
     nixio.fs.writefile(path_ath9k .. "spectral_count", "1")
@@ -195,7 +193,7 @@ function sample_whole_spectrum(device, path_ath9k, freqs)
     return samples
 end
 
-local function get_station_signal(req, msg)
+local function get_station_signal(msg)
     local iface = msg.iface
     local mac = msg.station_mac
     local result = {}
@@ -203,15 +201,15 @@ local function get_station_signal(req, msg)
     result.station = mac
     result.signal = tostring(assoclist[mac].signal)
     result.status = "ok"
-    conn:reply(req, result)
+    printJson(result)
 end
 
-local function get_iface_stations(req, msg)
+local function get_iface_stations(msg)
     local iface = msg.iface
     local result = {}
     local stations = {}
     local assoclist = iwinfo.nl80211.assoclist(iface)
-    local bat_hosts = dict_from_file("/etc/bat-hosts")
+    local bat_hosts = list_from_file("/etc/bat-hosts")
     for mac, link_data in pairs(assoclist) do
         local hostname = bat_hosts[string.lower(mac)] or mac
         local station_data = {
@@ -226,18 +224,29 @@ local function get_iface_stations(req, msg)
     end
     result.stations = stations
     result.status = "ok"
-    call:reply(req, result)
+    printJson(result)
 end
 
-local module = {}
-module['luci2.openairview'] = {
-	get_stations = { get_stations, { device = ubus.STRING } },
-	get_interfaces = { get_interfaces, {} },
-	spectral_scan = { spectral_scan, { device = ubus.STRING, spectrum = ubus.STRING }},
-	get_station_signal = { get_station_signal, { iface = ubus.STRING, station_mac = ubus.STRING }},
-	get_iface_stations = { get_iface_stations, { iface = ubus.STRING }}
+local methods = {
+	get_stations = { device = 'value' },
+	get_interfaces = { no_params = 0 },
+	spectral_scan = { device = 'value', spectrum = 'value' },
+	get_station_signal = { iface = 'value', station_mac = 'value' },
+	get_iface_stations = { iface = 'value' }
 }
 
-conn:add(module)
+if arg[1] == 'list' then
+    printJson(methods)
+end
 
-uloop.run()
+if arg[1] == 'call' then
+    local msg = io.read()
+    msg = json.decode(msg)
+    if       arg[2] == 'get_stations'           then get_stations(msg)
+    elseif   arg[2] == 'get_interfaces'         then get_interfaces(msg)
+    elseif   arg[2] == 'spectral_scan'          then spectral_scan(msg)
+    elseif   arg[2] == 'get_station_signal'     then get_station_signal(msg)
+    elseif   arg[2] == 'get_iface_stations'     then get_iface_stations(msg)
+    else                                        printJson({ error = "Method not found" })
+    end
+end

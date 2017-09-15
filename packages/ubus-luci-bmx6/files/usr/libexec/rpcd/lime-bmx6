@@ -8,11 +8,13 @@ You may obtain a copy of the License at
 ]]--
 
 require "ubus"
-require "uloop"
-
-local json = require 'luci.json'
 local nixio = require "nixio",require "nixio.fs"
 local split = require 'lime.utils'.split
+local json = require 'luci.json'
+
+local function printJson (obj)
+    print(json.encode(obj))
+end
 
 local function shell(command)
     -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
@@ -21,8 +23,6 @@ local function shell(command)
     handle:close()
     return result
 end
-
-uloop.init()
 
 local conn = ubus.connect()
 if not conn then
@@ -130,7 +130,7 @@ function wget(url, timeout)
 	end
 end
 
-function status(req, msg)
+function status(msg)
     local status = bmx6get("status").status or nil
     local interfaces = bmx6get("interfaces").interfaces or nil
     local result
@@ -139,10 +139,10 @@ function status(req, msg)
     else
         result = { status = status, interfaces = interfaces }
     end
-	conn:reply(req, result)
+	printJson(result)
 end
 
-function originators(req, msg)
+function originators(msg)
     local orig_list = bmx6get("originators").originators
     if orig_list == nil then
         conn:reply(req, { error = "Cannot fetch data from bmx6 json"})
@@ -166,12 +166,11 @@ function originators(req, msg)
             table.insert(originators,{name=name,orig=orig,desc=desc})
         end
 
-        conn:reply(req, {originators =originators })
+        printJson({originators = originators })
     end
 end
 
-function links(req,msg)
-
+function links(msg)
     local links = bmx6get("links", msg.host)
 	local devlinks = {}
 	local _,l
@@ -186,10 +185,10 @@ function links(req,msg)
 			table.insert(devlinks[l.viaDev],l)
 		end
 	end
-    conn:reply(req, { links = devlinks })
+   printJson({ links = devlinks })
 end
 
-function topology(req, msg)
+function topology(msg)
 	local originators = bmx6get("originators/all")
 	local o,i,l,i2
 	local first = true
@@ -248,30 +247,39 @@ function topology(req, msg)
 		cachefd:write(os.time()..'\n')
 		cachefd:write(topology)
 		cachefd:close()
-        conn:reply(req, { topology = json.decode( topology ) })
+        printJson({ topology = json.decode( topology ) })
         return
 	end
 
-    conn:reply(req, { topology = json.decode( topology )  })
+    printJson({ topology = json.decode( topology )  })
 
 end
 
-local function tunnels (req, msg)
-    local tunnels = bmx6get("tunnels").tunnels
-    conn:reply(req, { tunnels = tunnels })
+local function tunnels (msg)
+	local tunnels = bmx6get("tunnels").tunnels
+	printJson({ tunnels = tunnels })
 end
 
-local module = {}
-
-module['luci2.bmx6'] = {
-    status = { status, { } },
-    originators = { originators, { } },
-    links = { links, { host = ubus.STRING } },
-    topology = { topology, { } },
-    tunnels = { tunnels, { } }
+local methods = {
+    status = { no_params = 0 },
+    originators = { no_params = 0 },
+    links = { host = 'value' },
+    topology = { no_params = 0 },
+    tunnels = { no_params = 0 }
 }
 
+if arg[1] == 'list' then
+    printJson(methods)
+end
 
-conn:add(module)
-
-uloop.run()
+if arg[1] == 'call' then
+    local msg = io.read()
+	msg = json.decode(msg)
+    if       arg[2] == 'status'  		        then status(msg)
+	elseif   arg[2] == 'originators'	        then originators(msg)
+    elseif   arg[2] == 'links'		            then links(msg)
+	elseif   arg[2] == 'topology'	            then topology(msg)
+	elseif   arg[2] == 'tunnels'                then tunnels(msg)
+    else                                        printJson({ error = "Method not found" })
+    end
+end

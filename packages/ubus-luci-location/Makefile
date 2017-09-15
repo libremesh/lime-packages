@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=ubus-luci-location
+PKG_NAME:=ubus-lime-location
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
@@ -22,7 +22,7 @@ endef
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
-	@chmod +x $(1)/usr/libexec/rpcd/location
+	@chmod a+x $(1)/usr/libexec/rpcd/lime-location
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))

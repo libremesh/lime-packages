@@ -8,13 +8,15 @@
 ]]--
 
 require "ubus"
-require "uloop"
-
-uloop.init()
+local json = require 'luci.json'
 
 local conn = ubus.connect()
 if not conn then
     error("Failed to connect to ubus")
+end
+
+local function printJson (obj)
+    print(json.encode(obj))
 end
 
 local function shell(command)
@@ -38,16 +40,21 @@ local function get_cloud_nodes(req, msg)
         end
     end
     result.status = "ok"
-    conn:reply(req,result)
+    printJson(result)
+    return
 end
 
-
-local module = {}
-
-module['lime.utils'] = {
-    get_cloud_nodes = { get_cloud_nodes, { } }
+local methods = {
+    get_cloud_nodes = { no_params = 0 }
 }
 
-conn:add(module)
+if arg[1] == 'list' then
+    printJson(methods)
+end
 
-uloop.run()
+if arg[1] == 'call' then
+    local msg = io.read()
+    if arg[2] == 'get_cloud_nodes' then get_cloud_nodes(msg)
+    else printJson({ error = "Method not found" })
+    end
+end
