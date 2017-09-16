@@ -68,6 +68,10 @@ function config.init_batch()
 end
 
 function config.set(...)
+	local aty = type(arg[3])
+	if (aty ~= "nil" and aty ~= "string" and aty ~= "table") then
+		arg[3] = tostring(arg[3])
+	end
 	config.uci:set("lime", unpack(arg))
 	if(not config.batched) then config.uci:save("lime") end
 end

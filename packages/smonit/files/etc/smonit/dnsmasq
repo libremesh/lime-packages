@@ -2,32 +2,34 @@
 
 hook_name="dnsmasq"
 
-function hook_is_installed() {
-  installed=no
-  [ -x /usr/sbin/dnsmasq ] && [ -x /etc/init.d/dnsmasq ] && installed=yes                                         
-}   
-
-function hook_check() {
-  status=error
-  [ -f /var/run/dnsmasq/dnsmasq.*.pid ] && {
-    status=ok
-    for p in $(cat /var/run/dnsmasq/dnsmasq.*.pid); do
-      [ ! -d /proc/$p ] && { 
-        status=error
-        break
-      }
-    done
-  }
+# IMHO this package should be moularized instead of having such an hook...
+function hook_is_installed()
+{
+	# Using a variable for bool-like return value is a dangerous overkill IMHO
+	installed=no
+	[ -x /usr/sbin/dnsmasq ] && [ -x /etc/init.d/dnsmasq ] && installed=yes
 }
 
-function hook_quickfix() {
-  log="Restarting dnsmasq process"
-  PATH="/usr/sbin:/usr/bin:/sbin:/bin"
-  /etc/init.d/dnsmasq restart
+function hook_check()
+{
+	# Using a variable for bool-like return value is a dangerous overkill IMHO
+	/usr/bin/nslookup localhost 127.0.0.1 && status=ok || status=error
 }
 
-function hook_longfix() {
-  log="Doing nothing for longfix"
-  true
+function hook_quickfix()
+{
+	log="Restarting dnsmasq process"
+	# IMHO following line means that we are doing something really wrong
+	PATH="/usr/sbin:/usr/bin:/sbin:/bin"
+	/etc/init.d/dnsmasq stop
+	sleep 1
+	# Make sure dnsmasq is stopped also in extreme zombi cases
+	killall -9 dnsmasq
+	/etc/init.d/dnsmasq start
 }
 
+function hook_longfix()
+{
+	log="Doing nothing for longfix"
+	true
+}

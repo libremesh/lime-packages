@@ -29,9 +29,9 @@ script:
 - cd $TRAVIS_BUILD_DIR/sdk
 - export J=$(($(nproc)+1))
 - ./cooker -b x86/generic
-- ./cooker --flavor=lime_default -c x86/generic --profile=Generic
-- ./cooker --flavor=lime_mini -c x86/generic --profile=Generic
-- ./cooker --flavor=lime_zero -c x86/generic --profile=Generic
+- travis_wait ./cooker --flavor=lime_default -c x86/generic --profile=Generic
+- travis_wait ./cooker --flavor=lime_mini -c x86/generic --profile=Generic
+- travis_wait ./cooker --flavor=lime_zero -c x86/generic --profile=Generic
 after_success:
 - chmod +x $TRAVIS_BUILD_DIR/.ci/after_success.sh
 - $TRAVIS_BUILD_DIR/.ci/after_success.sh

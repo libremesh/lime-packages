@@ -4,6 +4,8 @@ lan = {}
 
 local network = require("lime.network")
 local libuci = require("uci")
+local config = require("lime.config")
+local utils = require("lime.utils")
 
 lan.configured = false
 
@@ -20,6 +22,23 @@ function lan.configure(args)
 	uci:set("network", "lan", "mtu", "1500")
 	uci:delete("network", "lan", "ifname")
 	uci:save("network")
+
+	-- disable bat0 on alfred if batadv not enabled
+	if utils.is_installed("alfred") then
+		local is_batadv_enabled = false
+		local generalProtocols = config.get("network", "protocols")
+			for _,protocol in pairs(generalProtocols) do
+				local protoModule = "lime.proto."..utils.split(protocol,":")[1]
+			if protoModule == "lime.proto.batadv" then
+				is_batadv_enabled = true
+				break
+			end
+		end
+		if not is_batadv_enabled then
+			uci:set("alfred", "alfred", "batmanif", "none")
+			uci:save("alfred")
+		end
+	end
 end
 
 function lan.setup_interface(ifname, args)
