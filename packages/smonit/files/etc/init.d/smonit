@@ -3,18 +3,21 @@
 START=99
 SMONIT="/usr/sbin/smonit"
 CRONTAB="/etc/crontabs/root"
-CRON_LINE='*/5 * * * *'
+CRON_LINE='*/5 * * * * $SMONIT'
 
 enable() {
-  echo "Enabling smonit to crontab"
-  grep -q "$SMONIT" $CRONTAB || echo "$CRON_LINE $SMONIT" >> $CRONTAB
-  /etc/init.d/cron reload
+  echo "Ensuring smonit is run by cron"
+  if ! ( grep -q "$CRON_LINE" "$CRONTAB" 2>/dev/null ) ; then
+    echo "$CRON_LINE" >> "$CRONTAB"
+    /etc/init.d/cron enable
+    /etc/init.d/cron restart
+  fi
 }
 
 disable() {
-  echo "Disabling smonit from crontab"
-  cat $CRONTAB | grep -v "$SMONIT" > /tmp/cron.tmp
-  cp -f /tmp/cron.tmp $CRONTAB
+  echo "Removing smonit from crontab"
+  sed "\|$CRON_LINE|d" -i "$CRONTAB"
+  /etc/init.d/cron restart
 }
 
 reload() {
