@@ -7,7 +7,6 @@
 include $(TOPDIR)/rules.mk
 
 LIME_BUILDDATE:=$(shell date +%Y%m%d_%H%M)
-LIME_CODENAME:=biggestbang
 
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
