@@ -87,26 +87,27 @@ local function get_node_status(msg)
             end
         end
     end
-    local most_active_rx = 0
-    local most_active = nil
-    for _, station in ipairs(stations) do
-        local traffic = shell("iw "..station.iface.." station get "..station.station_mac.." | grep bytes | awk '{ print $3}'")
-        words = {}
-        for w in traffic:gmatch("[^\n]+") do table.insert(words, w) end
-        rx = words[1]
-        tx = words[2]
-        station.rx_bytes = tonumber(rx, 10)
-        station.tx_bytes = tonumber(tx, 10)
-        if station.rx_bytes > most_active_rx then
-            most_active_rx = station.rx_bytes
-            most_active = station
+    if next(stations) ~= nil then
+        local most_active_rx = 0
+        local most_active = nil
+        for _, station in ipairs(stations) do
+            local traffic = shell("iw "..station.iface.." station get "..station.station_mac.." | grep bytes | awk '{ print $3}'")
+            words = {}
+            for w in traffic:gmatch("[^\n]+") do table.insert(words, w) end
+            rx = words[1]
+            tx = words[2]
+            station.rx_bytes = tonumber(rx, 10)
+            station.tx_bytes = tonumber(tx, 10)
+            if station.rx_bytes > most_active_rx then
+                most_active_rx = station.rx_bytes
+                most_active = station
+            end
         end
+        local station_traffic = get_station_traffic({ iface=most_active.iface, station_mac=most_active.station_mac })
+        most_active.rx_bytes = station_traffic.rx_bytes
+        most_active.tx_bytes = station_traffic.tx_bytes
+        result.most_active = most_active
     end
-    local station_traffic = get_station_traffic({ iface=most_active.iface, station_mac=most_active.station_mac })
-    most_active.rx_bytes = station_traffic.rx_bytes
-    most_active.tx_bytes = station_traffic.tx_bytes
-    result.most_active = most_active
-
     local uptime = shell("awk '{print $1}' /proc/uptime")
     result.uptime = uptime
 
