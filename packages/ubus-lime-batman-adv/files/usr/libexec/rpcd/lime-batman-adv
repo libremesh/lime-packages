@@ -8,9 +8,12 @@ You may obtain a copy of the License at
 ]]--
 
 require "ubus"
-require "uloop"
 local split = require 'lime.utils'.split
+local json = require 'luci.json'
 
+local function printJson (obj)
+    print(json.encode(obj))
+end
 
 local function shell(command)
     -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
@@ -20,14 +23,12 @@ local function shell(command)
     return result
 end
 
-uloop.init()
-
 local conn = ubus.connect()
 if not conn then
     error("Failed to connect to ubus")
 end
 
-local function get_gateways(req, msg)
+local function get_gateways(msg)
 	local v, l, fd
 	local rv = {
 		gateways = {}
@@ -55,11 +56,11 @@ local function get_gateways(req, msg)
 			end
 		until not l
 		fd:close()
-		conn:reply(req, rv)
+		printJson(rv)
 	end
 end
 
-local function get_originators(req, mesg)
+local function get_originators(msg)
 	local fd, l
 	local rv = {
 		originators = {}
@@ -91,11 +92,11 @@ local function get_originators(req, mesg)
 			end
 		until not l
 		fd:close()
-		conn:reply(req, rv)
+		printJson(rv)
 	end
 end
 
-local function get_interfaces(req, mesg)
+local function get_interfaces(msg)
 	local fd, l
 	local rv = {
 		interfaces = {}
@@ -110,18 +111,27 @@ local function get_interfaces(req, mesg)
 			end
 		until not l
 		fd:close()
-		conn:reply(req,rv)
+		printJson(rv)
 	end
 end
 
 
-local module = {}
-module['luci2.batman-adv'] = {
-	interfaces = { get_interfaces, {} },
-	originators = { get_originators, {} },
-	gateways = { get_gateways, {} }
+local methods = {
+	get_interfaces = { no_params = 0 },
+	get_originators = { no_params = 0 },
+	get_gateways = { no_params = 0 }
 }
 
-conn:add(module)
+if arg[1] == 'list' then
+    printJson(methods)
+end
 
-uloop.run()
+if arg[1] == 'call' then
+    local msg = io.read()
+    msg = json.decode(msg)
+    if       arg[2] == 'get_interfaces'         then get_interfaces(msg)
+	elseif   arg[2] == 'get_originators'        then get_originators(msg)
+    elseif   arg[2] == 'get_gateways'           then get_gateways(msg)
+    else                                        printJson({ error = "Method not found" })
+    end
+end

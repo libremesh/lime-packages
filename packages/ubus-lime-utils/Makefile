@@ -22,7 +22,7 @@ endef
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
-	@chmod +x $(1)/usr/libexec/rpcd/lime-utils
+	@chmod a+x $(1)/usr/libexec/rpcd/lime-utils
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))

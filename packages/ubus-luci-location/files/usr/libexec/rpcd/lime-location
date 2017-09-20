@@ -8,16 +8,18 @@ You may obtain a copy of the License at
 ]]--
 
 require "ubus"
-require "uloop"
+local json = require 'luci.json'
 
-uloop.init()
+local function printJson (obj)
+    print(json.encode(obj))
+end
 
 local conn = ubus.connect()
 if not conn then
     error("Failed to connect to ubus")
 end
 
-local function get_location(req, msg)
+local function get_location(msg)
     local result = {}
     local lat = conn:call("uci", "get", {config="libremap", section="location", option="latitude" }).value
     local lon = conn:call("uci", "get", {config="libremap", section="location", option="longitude" }).value
@@ -31,23 +33,29 @@ local function get_location(req, msg)
         result.lon = conn:call("uci", "get", {config="libremap", section="@libremap[0]",
                                               option="community_lon" }).value
     end
-    conn:reply(req, result);
+    printJson(result);
 end
 
-local function set_location(req, msg)
+local function set_location(msg)
     local result = {}
     conn:call("uci", "set", {config="libremap", section="location", values={ longitude = msg.lon, latitude = msg.lat } })
-    conn:reply(req, { lat = msg.lat, lon = msg.lon });
+    printJson({ lat = msg.lat, lon = msg.lon });
 end
 
-local module = {}
-
-module['luci2.location'] = {
-    get = { get_location, { } },
-	set = { set_location, { lat = ubus.STRING, lon= ubus.STRING } }
+local methods = {
+    get = { no_params = 0 },
+	set = { lat = 'value', lon = 'value' }
 }
 
+if arg[1] == 'list' then
+    printJson(methods)
+end
 
-conn:add(module)
-
-uloop.run()
+if arg[1] == 'call' then
+    local msg = io.read()
+	msg = json.decode(msg)
+    if       arg[2] == 'get'	        then get_location(msg)
+	elseif   arg[2] == 'set'	        then set_location(msg)
+    else                                printJson({ error = "Method not found" })
+    end
+end
