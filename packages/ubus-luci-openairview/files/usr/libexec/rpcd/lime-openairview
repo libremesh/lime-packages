@@ -110,10 +110,12 @@ function get_interfaces(msg)
 	local devices = conn:call("uci", "get", { config="wireless", type="wifi-iface"})
 	local result = {}
 	local interfaces = {}
-	for iface,iface_conf in pairs(devices.values) do
-		table.insert(interfaces, { name = iface_conf.ifname, mode = iface_conf.mode })
+    if devices ~= nil then
+        for iface,iface_conf in pairs(devices.values) do
+            table.insert(interfaces, { name = iface_conf.ifname, mode = iface_conf.mode })
+        end
     end
-	result.interfaces = interfaces
+    result.interfaces = interfaces
 	printJson(result)
 end
 
