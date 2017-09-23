@@ -33,6 +33,21 @@ function wan.setup_interface(ifname, args)
 			"iptables -t nat -A POSTROUTING -o " .. ifname .. " -j MASQUERADE\n"
 		)
 	end
+
+	if utils.is_installed('firewall') then
+		fs.mkdir("/etc/firewall.lime.d")
+		fs.writefile(
+			"/etc/firewall.lime.d/20-allow-all-fe80-traffic-over-wan",
+			"# These will do nothing if fw3 is not running, since *put_wan_rule will not exist\n" ..
+			"ip6tables -D input_wan_rule  -j ACCEPT -p all -s fe80::/10 -m comment --comment 'Allow all link-local traffic over WAN'\n" ..
+			"ip6tables -A input_wan_rule  -j ACCEPT -p all -s fe80::/10 -m comment --comment 'Allow all link-local traffic over WAN'\n" ..
+			"ip6tables -D output_wan_rule -j ACCEPT -p all -s fe80::/10 -m comment --comment 'Allow all link-local traffic over WAN'\n" ..
+			"ip6tables -A output_wan_rule -j ACCEPT -p all -s fe80::/10 -m comment --comment 'Allow all link-local traffic over WAN'\n"
+		)
+	else
+		fs.remove("/etc/firewall.lime.d/20-allow-all-fe80-traffic-over-wan")
+	end
+
 end
 
 return wan
