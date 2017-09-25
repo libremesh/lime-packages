@@ -1,17 +1,16 @@
 {
-    "superuser": {
-        "description": "Super user access role",
+    "lime-app": {
+        "description": "lime-app public access",
         "read": {
             "ubus": {
-                    "*": [ "*" ]
-            },
-            "uci": [ "*" ]
+                    "lime-utils": [ "*" ],
+                    "system": [ "board" ]
+            }
         },
         "write": {
             "ubus": {
-                    "*": [ "*" ]
-            },
-            "uci": [ "*" ]
+                    "lime-utils": [ "*" ]
+            }
         }
     }
 }
