@@ -1,5 +1,10 @@
 #!/bin/sh
-echo "adding bmx6 IPv6 addresses to dnsmasq hosts file directory"
-echo "*/4 * * * * /usr/bin/bmx6hosts_dnsmasq_update" >> /etc/crontabs/root
-uci add_list dhcp.@dnsmasq[0].addnhosts='/var/hosts/bmx6'
-uci commit dhcp
+cat /etc/crontabs/root | grep /usr/bin/bmx6hosts_dnsmasq_update || {
+  echo "adding bmx6 IPv6 addresses to dnsmasq hosts file directory"
+  echo "*/4 * * * * /usr/bin/bmx6hosts_dnsmasq_update" >> /etc/crontabs/root
+}
+
+uci show dhcp.@dnsmasq[0].addnhosts | grep '/var/hosts/bmx6' || {
+  uci add_list dhcp.@dnsmasq[0].addnhosts='/var/hosts/bmx6'
+  uci commit dhcp
+}
