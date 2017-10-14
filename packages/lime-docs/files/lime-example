@@ -1,5 +1,6 @@
 # The /etc/config/lime-defaults file contains the default configuration.
 # To configure LibreMesh insert options in /etc/config/lime file, these will override the default ones.
+# Interface specific options have to be included in /etc/config/lime, if in /etc/config/lime-defaults they'll cause unpredictable behaviour.
 #
 # The options marked with "Parametrizable with %Mn, %Nn, %H"
 # can include %Mn templates that will be substituted
@@ -72,6 +73,8 @@ config lime wifi
 #	option ieee80211s_encryption 'psk2/aes'
 #	option ieee80211s_key 'SomePsk2AESKey'
 
+
+# The following interface specific options have to be included in /etc/config/lime, not in /etc/config/lime-defaults
 
 ### WiFi interface specific options ( override general option )
 
