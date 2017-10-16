@@ -18,7 +18,7 @@ LIME_CODENAME:=development
 LIME_BRANCH:=$(shell git branch | sed -n '/\* /s///p')
 LIME_REVISION:=$(shell git log -n 1 --pretty=%h)
 LIME_BUILDDATE:=$(shell date +%Y%m%d_%H%M)
-LIME_DESCRIPTION:=$(LIME_ID) $(LIME_RELEASE) $(LIME_CODENAME) ($(LIME_BRANCH) rev.$(LIME_REVISION) $(LIME_BUILDDATE))
+LIME_DESCRIPTION:=$(LIME_ID) $(LIME_RELEASE) $(LIME_CODENAME) ($(LIME_BRANCH) rev. $(LIME_REVISION) $(LIME_BUILDDATE))
 
 include $(INCLUDE_DIR)/package.mk
 
