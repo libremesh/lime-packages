@@ -16,14 +16,14 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
  SECTION:=net
  CATEGORY:=LiMe
- TITLE:=dnsmasq lease sharing accross mesh
+ TITLE:=dnsmasq lease sharing across mesh
  MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
  URL:=http://libremesh.org
  DEPENDS:=+alfred +lua +libuci-lua
 endef
 
 define Package/$(PKG_NAME)/description
- Share dnsmasq lease file accross all nodes of a mesh with enabled alfred
+ Share dnsmasq DHCP lease file across nodes of the same mesh cloud
 endef
 
 define Build/Prepare

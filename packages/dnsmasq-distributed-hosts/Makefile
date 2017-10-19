@@ -16,14 +16,14 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
  SECTION:=net
  CATEGORY:=LiMe
- TITLE:=/etc/hosts sharing accross mesh
+ TITLE:=/etc/hosts sharing across mesh
  MAINTAINER:=Gui Iribarren <gui@altermundi.net>
  URL:=http://libremesh.org
  DEPENDS:=+alfred +lua +libuci-lua
 endef
 
 define Package/$(PKG_NAME)/description
- Share /etc/hosts file accross all nodes of a mesh with enabled alfred
+ Share hostnames in /etc/hosts file across nodes of the same mesh cloud
 endef
 
 define Build/Prepare
