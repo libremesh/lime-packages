@@ -101,11 +101,13 @@ local function get_node_status(msg)
     local ifaces = conn:call("lime-openairview", "get_interfaces", {}).interfaces
     local stations = {}
     for _, iface  in ipairs(ifaces) do
-        iface_stations = conn:call("lime-openairview", "get_stations", {device = iface.name}).stations
-        if iface_stations then
-            for _, station in pairs(iface_stations) do
-                station['iface'] = iface.name
-                table.insert(stations, station)
+        if iface.name then
+            iface_stations = conn:call("lime-openairview", "get_stations", {device = iface.name}).stations
+            if iface_stations then
+                for _, station in pairs(iface_stations) do
+                    station['iface'] = iface.name
+                    table.insert(stations, station)
+                end
             end
         end
     end
