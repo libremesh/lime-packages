@@ -20,7 +20,7 @@ define Package/$(PKG_NAME)
 	TITLE:=LimeApp
 	MAINTAINER:=Marcos Gutierrez <gmarcos@altermundi.net>
 	URL:=http://github.com/libremesh/lime-app
-	DEPENDS:=+ubus-lime-batman-adv +ubus-lime-bmx6 +ubus-lime-location +ubus-lime-metrics +ubus-lime-metrics +ubus-lime-utils
+	DEPENDS:=+uhttpd +uhttpd-mod-ubus +ubus-lime-batman-adv +ubus-lime-bmx6 +ubus-lime-location +ubus-lime-metrics +ubus-lime-metrics +ubus-lime-utils
 endef
 
 define Package/$(PKG_NAME)/description
