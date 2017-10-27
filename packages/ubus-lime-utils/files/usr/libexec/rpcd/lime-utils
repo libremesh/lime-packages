@@ -27,6 +27,28 @@ local function shell(command)
     return result
 end
 
+local function file_exists(file)
+    -- check if the file exists
+    local f = io.open(file, "rb")
+    if f then f:close() end
+    return f ~= nil
+end
+
+local function get_text_file(file)
+  if not file_exists(file) then return '' end
+  local text_file = io.open(file,'rb')
+  local content = text_file:read "*a"
+  text_file:close()
+  return content
+end
+
+local function write_text_file(file,text)
+  local text_file = io.open(file,'w')
+  text_file:write(text)
+  text_file:close()
+  return 1
+end
+
 local function get_cloud_nodes(msg)
     -- check how to get this data from /tmp/run/bmx6/json
     local conf = conn:call("uci", "get", { config="network" })
@@ -79,11 +101,13 @@ local function get_node_status(msg)
     local ifaces = conn:call("lime-openairview", "get_interfaces", {}).interfaces
     local stations = {}
     for _, iface  in ipairs(ifaces) do
-        iface_stations = conn:call("lime-openairview", "get_stations", {device = iface.name}).stations
-        if iface_stations then
-            for _, station in pairs(iface_stations) do
-                station['iface'] = iface.name
-                table.insert(stations, station)
+        if iface.name then
+            iface_stations = conn:call("lime-openairview", "get_stations", {device = iface.name}).stations
+            if iface_stations then
+                for _, station in pairs(iface_stations) do
+                    station['iface'] = iface.name
+                    table.insert(stations, station)
+                end
             end
         end
     end
@@ -115,9 +139,25 @@ local function get_node_status(msg)
     printJson(result)
 end
 
+local function get_notes()
+    local result = {}
+    result.notes = get_text_file('/etc/banner.notes')
+    result.status = "ok"
+    printJson(result)
+end
+
+local function set_notes(msg)
+    local result = {}
+    local banner = write_text_file('/etc/banner.notes', msg.text)
+    result = get_notes()
+    printJson(result)
+end
+
 local methods = {
     get_cloud_nodes = { no_params = 0 },
-    get_node_status = { no_params = 0 }
+    get_node_status = { no_params = 0 },
+    get_notes = { no_params = 0},
+    set_notes = { text = 'value' }
 }
 
 if arg[1] == 'list' then
@@ -129,6 +169,8 @@ if arg[1] == 'call' then
     msg = json.decode(msg)
     if      arg[2] == 'get_cloud_nodes' then get_cloud_nodes(msg)
     elseif  arg[2] == 'get_node_status' then get_node_status(msg)
+    elseif  arg[2] == 'get_notes' then get_notes(msg)
+    elseif  arg[2] == 'set_notes' then set_notes(msg)
     else printJson({ error = "Method not found" })
     end
 end

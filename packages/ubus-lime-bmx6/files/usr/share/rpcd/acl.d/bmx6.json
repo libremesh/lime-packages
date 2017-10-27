@@ -3,13 +3,12 @@
         "description": "lime-app public access",
         "read": {
             "ubus": {
-                    "lime-utils": [ "*" ],
-                    "system": [ "board" ]
+                    "lime-bmx6": [ "*" ]
             }
         },
         "write": {
             "ubus": {
-                    "lime-utils": [ "*" ]
+                    "lime-bmx6": [ "*" ]
             }
         }
     }

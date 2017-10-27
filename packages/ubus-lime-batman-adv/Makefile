@@ -20,9 +20,9 @@ define Build/Compile
 endef
 
 define Package/$(PKG_NAME)/install
-  $(INSTALL_DIR) $(1)/
-  $(CP) ./files/* $(1)/
-  @chmod a+x $(1)/usr/libexec/rpcd/lime-batman-adv
+	$(INSTALL_DIR) $(1)/
+	$(CP) ./files/* $(1)/
+	@chmod a+x $(1)/usr/libexec/rpcd/lime-batman-adv
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
