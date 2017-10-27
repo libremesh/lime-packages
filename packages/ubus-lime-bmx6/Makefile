@@ -10,8 +10,8 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   SECTION:=ubus
   CATEGORY:=Ubus
-  MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
   SUBMENU:=3. Applications
+  MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
   TITLE:=BMX6 ubus status module
   DEPENDS:= +lua +libubox-lua +libubus-lua +luci-app-bmx6 +luci-lib-nixio +luci-lib-json +lime-system
 endef
