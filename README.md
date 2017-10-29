@@ -82,4 +82,3 @@ The project offers the following mailing lists
 [8]: https://lists.libremesh.org/mailman/listinfo/lime-users
 [9]: http://repo.libremesh.org/current/
 [10]: https://chef.altermundi.net/
-[11]: https://webchat.freenode.net/?channels=libremesh
