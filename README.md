@@ -74,12 +74,6 @@ The project offers the following mailing lists
 * [lime-dev@lists.libremesh.org][7] - This list is used for general development related work.
 * [lime-users@lists.libremesh.org][8] - This list is used for project organisational purposes. And for user specific questions.
 
-### IRC Channel
-
-The project uses an IRC channel on freenode.net
-
-* [#libremesh][11] - a public channel for everyone to join and participate
-
 [1]: https://lede-project.org/docs/guide-developer/quickstart-build-images
 [2]: https://github.com/libremesh/lime-sdk
 [4]: http://libremesh.org/howitworks.html
