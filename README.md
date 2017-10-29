@@ -15,9 +15,9 @@ This is the easiest way to first test and install LibreMesh in your router.
 
 You can download a firmware image with **generic configuration** of the last **release** at [downloads][9] subdomain.
 
-## Customize and Download a Firmware Image Using Chef
+## Customize and Download a Firmware Image Using LEDE Imagebuilder
 
-We encourage each network community to create its firmware profile on our own web application [Chef][10]. It generates and delivers **customized firmware images** (for example custom ESSID, IP range, additional packets or scripts...). 
+We encourage each network community to create its firmware profile on [LEDE Imagebuilder][10]. It generates and delivers **customized firmware images** (for example custom ESSID, IP range, additional packets or scripts...). 
 
 ## Building a Firmware Image on Your PC
 
@@ -87,5 +87,5 @@ The project uses an IRC channel on freenode.net
 [7]: https://lists.libremesh.org/mailman/listinfo/lime-dev
 [8]: https://lists.libremesh.org/mailman/listinfo/lime-users
 [9]: http://repo.libremesh.org/current/
-[10]: https://chef.altermundi.net/
+[10]: https://imagebuilder.libremesh.org/imagebuilder
 [11]: https://webchat.freenode.net/?channels=libremesh
