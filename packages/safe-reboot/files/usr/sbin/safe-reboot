@@ -132,11 +132,16 @@ action_cancel () {
 }
 
 action_discard () {
-  rm -f "$safe_fallback_script"
-  rm -rf $dir_etc ; mkdir -p $dir_etc
-  tar -xzf $file_etc_lastgood -C $dir_etc
-  rm -f $file_etc_lastgood
-  reboot ; sleep 10 ; eval "$cmd_force_reboot"
+  if backup_etc_exists ; then
+    rm -f "$safe_fallback_script"
+    rm -rf $dir_etc ; mkdir -p $dir_etc
+    tar -xzf $file_etc_lastgood -C $dir_etc
+    rm -f $file_etc_lastgood
+    reboot ; sleep 10 ; eval "$cmd_force_reboot"
+  else
+    echo "STOP! Backup file $file_etc_lastgood not found or 0 sized! Refusing to continue."
+    exit 2
+  fi
 }
 
 while [ -n "$1" ]; do
