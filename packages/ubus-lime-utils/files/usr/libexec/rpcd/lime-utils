@@ -153,11 +153,35 @@ local function set_notes(msg)
     printJson(result)
 end
 
+
+local function get_community_settings ()
+    local config = conn:call("uci", "get", {config="lime-app"})
+    if config ~=  nil then
+        config = config.values.cfg02541a
+        -- TODO: Find a best way to remove uci keys
+        function table.removekey(table, key)
+            local element = table[key]
+            table[key] = nil
+            return element
+        end
+        table.removekey(config,".name")
+        table.removekey(config,".index")
+        table.removekey(config,".anonymous")
+        table.removekey(config,".type")
+        
+        printJson(config)
+    else
+        printJson({error = "config not found"})
+    end
+    
+end
+
 local methods = {
     get_cloud_nodes = { no_params = 0 },
     get_node_status = { no_params = 0 },
     get_notes = { no_params = 0},
-    set_notes = { text = 'value' }
+    set_notes = { text = 'value' },
+    get_community_settings = { no_params = 0}
 }
 
 if arg[1] == 'list' then
@@ -171,6 +195,7 @@ if arg[1] == 'call' then
     elseif  arg[2] == 'get_node_status' then get_node_status(msg)
     elseif  arg[2] == 'get_notes' then get_notes(msg)
     elseif  arg[2] == 'set_notes' then set_notes(msg)
+    elseif  arg[2] == 'get_community_settings' then get_community_settings(msg)
     else printJson({ error = "Method not found" })
     end
 end
