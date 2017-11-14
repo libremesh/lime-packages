@@ -33,6 +33,8 @@ endef
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/www/app/
 	$(CP) $(BUILD_DIR)/build/* $(1)/www/app/
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/lime-app.defaults $(1)/etc/uci-defaults/90_lime-app
 endef
 
 define Package/$(PKG_NAME)/postinst
