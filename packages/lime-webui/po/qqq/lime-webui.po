@@ -2,116 +2,116 @@ msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
 msgid "About"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Access Point ESSID (usually name of your network)"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Advanced"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Channel 2.4 GHz"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Channel 5 GHz"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Community name"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Contact"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Contact information"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Country code"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Country code used for WiFi radios"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Distance"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Max distance for the links in meters (big impact on performance)"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Default channel used for 2.4 GHz radios"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Default channel used for 5 GHz radios"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Email"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "General"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Hostname"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Latitude"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Latitude (this can be also configured in location tab)"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Location"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Logout"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Longitude"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Longitude (this can be also configured in location tab)"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Main IPv4"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Main IPv6"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Map location"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Mesh BSSID"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Name"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Name for this node"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Network SSID"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Simple Config"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "The BSSID (WiFi network identifier) used for the mesh network"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid ""
 "The main IPv4 configured for this node, with slash notation (for ex. "
 "1.2.3.4/24)"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid ""
 "The main IPv6 configured for this node, with slash notation (for ex. 2001:"
 "db8::1/64)"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "The name of your network community"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Your email (not required)"
-msgstr "documentation-to-do"
+msgstr ""
 
 msgid "Your name or alias (not required)"
-msgstr "documentation-to-do"
+msgstr ""
