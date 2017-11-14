@@ -1,0 +1,117 @@
+msgid ""
+msgstr "Content-Type: text/plain; charset=UTF-8"
+
+msgid "About"
+msgstr ""
+
+msgid "Access Point ESSID (usually name of your network)"
+msgstr ""
+
+msgid "Advanced"
+msgstr ""
+
+msgid "Channel 2.4 GHz"
+msgstr ""
+
+msgid "Channel 5 GHz"
+msgstr ""
+
+msgid "Community name"
+msgstr ""
+
+msgid "Contact"
+msgstr ""
+
+msgid "Contact information"
+msgstr ""
+
+msgid "Country code"
+msgstr ""
+
+msgid "Country code used for WiFi radios"
+msgstr ""
+
+msgid "Distance"
+msgstr ""
+
+msgid "Max distance for the links in meters (big impact on performance)"
+msgstr ""
+
+msgid "Default channel used for 2.4 GHz radios"
+msgstr ""
+
+msgid "Default channel used for 5 GHz radios"
+msgstr ""
+
+msgid "Email"
+msgstr ""
+
+msgid "General"
+msgstr ""
+
+msgid "Hostname"
+msgstr ""
+
+msgid "Latitude"
+msgstr ""
+
+msgid "Latitude (this can be also configured in location tab)"
+msgstr ""
+
+msgid "Location"
+msgstr ""
+
+msgid "Logout"
+msgstr ""
+
+msgid "Longitude"
+msgstr ""
+
+msgid "Longitude (this can be also configured in location tab)"
+msgstr ""
+
+msgid "Main IPv4"
+msgstr ""
+
+msgid "Main IPv6"
+msgstr ""
+
+msgid "Map location"
+msgstr ""
+
+msgid "Mesh BSSID"
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
+msgid "Name for this node"
+msgstr ""
+
+msgid "Network SSID"
+msgstr ""
+
+msgid "Simple Config"
+msgstr ""
+
+msgid "The BSSID (WiFi network identifier) used for the mesh network"
+msgstr ""
+
+msgid ""
+"The main IPv4 configured for this node, with slash notation (for ex. "
+"1.2.3.4/24)"
+msgstr ""
+
+msgid ""
+"The main IPv6 configured for this node, with slash notation (for ex. 2001:"
+"db8::1/64)"
+msgstr ""
+
+msgid "The name of your network community"
+msgstr ""
+
+msgid "Your email (not required)"
+msgstr ""
+
+msgid "Your name or alias (not required)"
+msgstr ""
