@@ -1,11 +1,10 @@
 #!/bin/sh
-bmx6hosts > /var/hosts/bmx6
-new=/tmp/bmx6hosts.new.md5
-last=/tmp/bmx6hosts.last.md5
-touch $last
-md5sum /var/hosts/bmx6| awk '{print $1}' > $new 
-[ "$(cat $new)" != "$(cat $last)" ] && {
+bmx6hosts > /tmp/bmx6hosts.new
+md5new="$(md5sum /tmp/bmx6hosts.new | awk '{print $1}')"
+md5last="$(cat /tmp/bmx6hosts.last.md5)"
+[ "$md5new" != "$md5last" ] && {
 	logger -t bmx6hosts "New bmx6 hosts found, updating dnsmasq"
+	mv /tmp/bmx6hosts.new /var/hosts/bmx6
 	killall -HUP dnsmasq
 }
-cp -f $new $last
+echo "$md5new" > /tmp/bmx6hosts.last.md5
