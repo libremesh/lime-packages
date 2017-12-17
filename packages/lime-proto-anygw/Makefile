@@ -21,7 +21,8 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libremesh.org
-  DEPENDS:=+ebtables +lime-system +lua +libuci-lua +kmod-macvlan +dnsmasq-lease-share +dnsmasq-dhcpv6 @(!PACKAGE_dnsmasq)
+  DEPENDS:=+kmod-ebtables +ebtables +lime-system +lua +libuci-lua +kmod-macvlan \
+	+dnsmasq-lease-share +dnsmasq-dhcpv6 @(!PACKAGE_dnsmasq)
 endef
 
 define Build/Compile
