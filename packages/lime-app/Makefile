@@ -20,7 +20,8 @@ define Package/$(PKG_NAME)
 	TITLE:=LimeApp
 	MAINTAINER:=Marcos Gutierrez <gmarcos@altermundi.net>
 	URL:=http://github.com/libremesh/lime-app
-	DEPENDS:=+uhttpd +uhttpd-mod-ubus +ubus-lime-batman-adv +ubus-lime-bmx6 +ubus-lime-location +ubus-lime-metrics +ubus-lime-metrics +ubus-lime-utils
+	DEPENDS:=+uhttpd +uhttpd-mod-ubus +ubus-lime-batman-adv +ubus-lime-bmx6 \
+		+ubus-lime-location +ubus-lime-metrics +ubus-lime-metrics +ubus-lime-utils
 endef
 
 define Package/$(PKG_NAME)/description
@@ -41,18 +42,7 @@ endef
 
 define Package/$(PKG_NAME)/postinst
 #!/bin/sh
-
-if ! uci show rpcd | grep -q lime-app; then
-	uci add rpcd login
-	uci set rpcd.@login[1].username='lime-app'
-	uci set rpcd.@login[1].password='$1$$ta3C2yX4TvVObdaJyQ9Md1'
-	uci add_list rpcd.@login[1].read='lime-app'
-	uci add_list rpcd.@login[1].write='lime-app'
-	uci commit rpcd
-	/etc/init.d/rpcd restart && /etc/init.d/uhttpd restart
-fi
-
-exit 0
+[ -n "$${IPKG_INSTROOT}" ] ||	( /etc/init.d/rpcd restart && /etc/init.d/uhttpd restart ) || true
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
