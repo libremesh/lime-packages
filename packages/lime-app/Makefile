@@ -36,8 +36,8 @@ define Package/$(PKG_NAME)/install
 	$(CP) $(BUILD_DIR)/build/* $(1)/www/app/
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN) ./files/lime-app.defaults $(1)/etc/uci-defaults/90_lime-app
+	$(INSTALL_BIN) ./files/95-lime-app-rpc-acl $(1)/etc/uci-defaults/
 	@mkdir -p $(1)/usr/share/rpcd/acl.d || true
-	$(INSTALL_BIN) ./files/unauthenticated.json $(1)/usr/share/rpcd/acl.d
 endef
 
 define Package/$(PKG_NAME)/postinst

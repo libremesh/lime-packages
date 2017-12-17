@@ -1,3 +1,5 @@
+#!/bin/sh
+cat > /usr/share/rpcd/acl.d << EOF
 {
 	"unauthenticated": {
 		"description": "Access controls for unauthenticated requests",
@@ -11,3 +13,4 @@
 		}
 	}
 }
+EOF
