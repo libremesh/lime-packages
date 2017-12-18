@@ -11,6 +11,21 @@ config = {}
 
 config.uci = libuci:cursor()
 
+--! Minimal /etc/config/lime santitizing
+function config.sanitize()
+	local cf = io.open("/etc/config/lime", "r")
+	if (cf == nil) then
+		cf = io.open("/etc/config/lime", "w")
+		cf:write("")
+	end
+	cf:close()
+
+
+	for _,sectName in pairs({"system","network","wifi"}) do
+		config.set(sectName, "lime")
+	end
+end
+
 function config.get(sectionname, option)
 	local limeconf = config.uci:get("lime", sectionname, option)
 	if limeconf then return limeconf end
