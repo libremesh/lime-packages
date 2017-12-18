@@ -1,5 +1,7 @@
 #!/usr/bin/lua
 
+local config = require("lime.config")
+
 function getopt( arg, options )
   --! Taken from http://lua-users.org/wiki/AlternativeGetOpt
   local tab = {}
@@ -33,6 +35,8 @@ function getopt( arg, options )
 end
 
 function main()
+	config.sanitize()
+
 	local modules_name = { "hardware_detection", "wireless", "network", "firewall", "system" }
 	local modules = {}
 
