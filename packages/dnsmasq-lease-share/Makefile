@@ -37,6 +37,7 @@ endef
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/alfred
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/dnsmasq-lease-share.lua $(1)/etc/alfred/dnsmasq-lease-share.lua
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/dnsmasq-lease-share.sh $(1)/usr/bin/dnsmasq-lease-share.sh
 	$(CP) ./files/* $(1)/
 endef
 
