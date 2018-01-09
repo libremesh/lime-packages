@@ -16,8 +16,6 @@ config lime network
 	option anygw_dhcp_start '2'
 	option anygw_dhcp_limit '0'
 	option main_ipv6_address '2a00:1508:0a%N1:%N200::/64'
-	option bmx6_mtu '1500'
-	option bmx6_publish_ownip '0'
 	list protocols ieee80211s
 	list protocols lan
 	list protocols anygw
@@ -29,6 +27,8 @@ config lime network
 	list resolvers 4.2.2.2   # b.resolvers.Level3.net
 	list resolvers 141.1.1.1 # cns1.cw.net
 	list resolvers 2001:470:20::2 # ordns.he.net
+	option bmx6_mtu '1500'
+	option bmx6_publish_ownip false
 	option bmx6_over_batman false
 	option bmx6_pref_gw none
 	option bmx7_over_batman false
