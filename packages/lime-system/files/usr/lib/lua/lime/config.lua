@@ -11,28 +11,15 @@ config = {}
 
 config.uci = libuci:cursor()
 
---! Minimal /etc/config/lime santitizing
-function config.sanitize()
-	local cf = io.open("/etc/config/lime", "r")
-	if (cf == nil) then
-		cf = io.open("/etc/config/lime", "w")
-		cf:write("")
-	end
-	cf:close()
-
-
-	for _,sectName in pairs({"system","network","wifi"}) do
-		config.set(sectName, "lime")
-	end
-end
-
-function config.get(sectionname, option)
+function config.get(sectionname, option, default)
 	local limeconf = config.uci:get("lime", sectionname, option)
 	if limeconf then return limeconf end
 
 	local defcnf = config.uci:get("lime-defaults", sectionname, option)
 	if ( defcnf ~= nil ) then
 		config.set(sectionname, option, defcnf)
+	elseif ( default ~= nil ) then
+		defcnf = default
 	else
 		local cfn = sectionname.."."..option
 		print("WARNING: Attempt to access undeclared default for: "..cfn)
@@ -71,8 +58,8 @@ function config.get_all(sectionname)
 	return nil
 end
 
-function config.get_bool(sectionname, option)
-	local val = config.get(sectionname, option)
+function config.get_bool(sectionname, option, default)
+	local val = config.get(sectionname, option, default)
 	return (val and ((val == '1') or (val == 'on') or (val == 'true') or (val == 'enabled')))
 end
 
@@ -83,10 +70,6 @@ function config.init_batch()
 end
 
 function config.set(...)
-	local aty = type(arg[3])
-	if (aty ~= "nil" and aty ~= "string" and aty ~= "table") then
-		arg[3] = tostring(arg[3])
-	end
 	config.uci:set("lime", unpack(arg))
 	if(not config.batched) then config.uci:save("lime") end
 end
