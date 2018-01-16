@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Marcos Gutierrez <gmarcos@altermundi.net>
 	URL:=http://github.com/libremesh/lime-app
 	DEPENDS:=+uhttpd +uhttpd-mod-ubus +ubus-lime-batman-adv +ubus-lime-bmx6 \
-		+ubus-lime-location +ubus-lime-metrics +ubus-lime-metrics +ubus-lime-utils \
+		+ubus-lime-location +ubus-lime-metrics +ubus-lime-utils \
 		+ubus-lime-openairview
 endef
 
