@@ -109,7 +109,7 @@ local function get_node_status(msg)
                     table.insert(stations, station)
                 end
             end
-        end
+        end     
     end
     if next(stations) ~= nil then
         local most_active_rx = 0
@@ -176,12 +176,24 @@ local function get_community_settings ()
     
 end
 
+local function set_hostname (msg)
+    if msg.name ~= nil then
+        local newName = msg.name
+        conn:call("uci", "set", {config="lime", section="system", values= { hostname = newName }})
+        shell("lime-config; lime-apply")
+        printJson({ status = 'ok'})
+    else
+        printJson({ status = 'error', msg = 'You must enter a hostname' })
+    end
+end
+
 local methods = {
     get_cloud_nodes = { no_params = 0 },
     get_node_status = { no_params = 0 },
     get_notes = { no_params = 0},
     set_notes = { text = 'value' },
-    get_community_settings = { no_params = 0}
+    get_community_settings = { no_params = 0},
+    set_hostname = { name = 'value' }
 }
 
 if arg[1] == 'list' then
@@ -196,6 +208,7 @@ if arg[1] == 'call' then
     elseif  arg[2] == 'get_notes' then get_notes(msg)
     elseif  arg[2] == 'set_notes' then set_notes(msg)
     elseif  arg[2] == 'get_community_settings' then get_community_settings(msg)
+    elseif  arg[2] == 'set_hostname' then set_hostname(msg)
     else printJson({ error = "Method not found" })
     end
 end
