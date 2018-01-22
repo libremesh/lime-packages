@@ -6,7 +6,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lime-app
-PKG_VERSION:=v0.0.1-alpha.6
+PKG_VERSION:=v0.1.0-alpha.2
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -21,7 +21,8 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Marcos Gutierrez <gmarcos@altermundi.net>
 	URL:=http://github.com/libremesh/lime-app
 	DEPENDS:=+uhttpd +uhttpd-mod-ubus +ubus-lime-batman-adv +ubus-lime-bmx6 \
-		+ubus-lime-location +ubus-lime-metrics +ubus-lime-metrics +ubus-lime-utils
+		+ubus-lime-location +ubus-lime-metrics +ubus-lime-utils \
+		+ubus-lime-openairview
 endef
 
 define Package/$(PKG_NAME)/description
