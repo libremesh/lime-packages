@@ -17,6 +17,7 @@ config lime network
 	option anygw_dhcp_limit '0'
 	option main_ipv6_address '2a00:1508:0a%N1:%N200::/64'
 	option bmx6_mtu '1500'
+	option bmx7_mtu '1500'
 	list protocols ieee80211s
 	list protocols lan
 	list protocols anygw
@@ -31,6 +32,7 @@ config lime network
 	option bmx6_over_batman false
 	option bmx6_pref_gw none
 	option bmx7_over_batman false
+	option bmx7_pref_gw none
 	option anygw_mac "aa:aa:aa:%N1:%N2:aa"
 
 config lime wifi

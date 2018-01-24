@@ -24,6 +24,8 @@ function bmx7.configure(args)
 	uci:set(bmx7.f, "general", "bmx7")
 	uci:set(bmx7.f, "general", "dbgMuteTimeout", "1000000")
 	uci:set(bmx7.f, "general", "tunOutTimeout", "100000")
+	uci:set(bmx7.f, "general", "configSync", "0")
+	uci:set(bmx7.f, "general", "syslog", "0")
 
 	uci:set(bmx7.f, "main", "tunDev")
 	uci:set(bmx7.f, "main", "tunDev", "main")
@@ -37,7 +39,7 @@ function bmx7.configure(args)
 	-- Enable JSON plugin to get bmx7 information in json format
 	uci:set(bmx7.f, "json", "plugin")
 	uci:set(bmx7.f, "json", "plugin", "bmx7_json.so")
-	
+
 	-- Enable SMS plugin to enable sharing of small files
 	uci:set(bmx7.f, "sms", "plugin")
 	uci:set(bmx7.f, "sms", "plugin", "bmx7_sms.so")
@@ -78,9 +80,47 @@ function bmx7.configure(args)
 	uci:set(bmx7.f, "publicv6", "network", "2000::/3")
 	uci:set(bmx7.f, "publicv6", "maxPrefixLen", "64")
 
-	if config.get_bool("network", "bmx7_over_batman") then
-		for _,protoArgs in pairs(config.get("network", "protocols")) do
-			if(utils.split(protoArgs, network.protoParamsSeparator)[1] == "batadv") then bmx7.setup_interface("bat0", args) end
+	-- Set prefered GW if defined
+	local pref_gw = config.get("network", "bmx7_pref_gw")
+	if (pref_gw ~= "none") then
+		uci:set(bmx7.f, "inet4p", "tunOut")
+		uci:set(bmx7.f, "inet4p", "tunOut", "inet4p")
+		uci:set(bmx7.f, "inet4p", "network", "0.0.0.0/0")
+		uci:set(bmx7.f, "inet4p", "maxPrefixLen", "0")
+		uci:set(bmx7.f, "inet4p", "gwName", pref_gw)
+		uci:set(bmx7.f, "inet4p", "rating", "1000")
+
+		uci:set(bmx7.f, "inet6p", "tunOut")
+		uci:set(bmx7.f, "inet6p", "tunOut", "inet6p")
+		uci:set(bmx7.f, "inet6p", "network", "::/0")
+		uci:set(bmx7.f, "inet6p", "maxPrefixLen", "0")
+		uci:set(bmx7.f, "inet6p", "gwName", pref_gw)
+		uci:set(bmx7.f, "inet6p", "rating", "1000")
+	else
+		uci:delete(bmx7.f, "inet4p", "tunOut")
+		uci:delete(bmx7.f, "inet6p", "tunOut")
+	end
+
+	local hasBatadv = false
+	local bxmOverBatdv = config.get_bool("network", "bmx7_over_batman")
+	local hasLan = false
+	for _,protoArgs in pairs(config.get("network", "protocols")) do
+		local proto =  utils.split(protoArgs, network.protoParamsSeparator)[1]
+		if(proto == "lan") then hasLan = true
+		elseif(proto == "batadv") then hasBatadv = true end
+	end
+
+	if(hasLan) then
+		uci:set("bmx7", "lm_net_br_lan", "dev")
+		uci:set("bmx7", "lm_net_br_lan", "dev", "br-lan")
+
+		if(hasBatadv and not bxmOverBatdv) then
+			fs.mkdir("/etc/firewall.lime.d")
+			fs.writefile("/etc/firewall.lime.d/20-bmx7-not-over-bat0-ebtables",
+			"ebtables -t nat -A POSTROUTING -o bat0 -p ipv6"..
+			" --ip6-proto udp --ip6-sport 6270 --ip6-dport 6270 -j DROP\n")
+		else
+			fs.remove("/etc/firewall.lime.d/20-bmx7-not-over-bat0-ebtables")
 		end
 	end
 
@@ -114,7 +154,10 @@ function bmx7.configure(args)
 end
 
 function bmx7.setup_interface(ifname, args)
-	if not args["specific"] and ifname:match("^wlan%d+.ap") then return end
+	if not args["specific"] and
+		( ifname:match("^wlan%d+.ap") or ifname:match("^eth%d+") )
+	then return end
+
 	vlanId = args[2] or 13
 	vlanProto = args[3] or "8021ad"
 	nameSuffix = args[4] or "_bmx7"
@@ -122,7 +165,8 @@ function bmx7.setup_interface(ifname, args)
 	local owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 
 	local uci = libuci:cursor()
-	uci:set("network", owrtDeviceName, "mtu", "1398")
+	local mtu = config.get("network", "bmx7_mtu", "1500")
+	uci:set("network", owrtDeviceName, "mtu", mtu)
 
 	-- BEGIN [Workaround issue 38]
 	if ifname:match("^wlan%d+") then
