@@ -58,7 +58,6 @@ end
 function batadv.setup_interface(ifname, args)
 	if not args["specific"] then
 		if ifname:match("^wlan%d+.ap") then return end
-		if ifname:match("^eth") then return end
 	end
 
 	local vlanId = args[2] or "%N1"
