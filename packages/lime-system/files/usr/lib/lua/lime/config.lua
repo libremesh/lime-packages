@@ -26,13 +26,17 @@ function config.sanitize()
 	end
 end
 
-function config.get(sectionname, option)
+function config.get(sectionname, option, default)
 	local limeconf = config.uci:get("lime", sectionname, option)
 	if limeconf then return limeconf end
 
 	local defcnf = config.uci:get("lime-defaults", sectionname, option)
 	if ( defcnf ~= nil ) then
 		config.set(sectionname, option, defcnf)
+	elseif ( default ~= nil ) then
+		defcnf = default
+		local cfn = sectionname.."."..option
+		print("WARNING: Option "..cfn.." is not defined. Using value "..default)
 	else
 		local cfn = sectionname.."."..option
 		print("WARNING: Attempt to access undeclared default for: "..cfn)
@@ -71,8 +75,8 @@ function config.get_all(sectionname)
 	return nil
 end
 
-function config.get_bool(sectionname, option)
-	local val = config.get(sectionname, option)
+function config.get_bool(sectionname, option, default)
+	local val = config.get(sectionname, option, default)
 	return (val and ((val == '1') or (val == 'on') or (val == 'true') or (val == 'enabled')))
 end
 
