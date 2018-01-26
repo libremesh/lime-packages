@@ -27,7 +27,7 @@ function openwrt_wan.detect_hardware()
 			local utils = require("lime.utils")
 			for _, pArgs in pairs(config.get("network", "protocols")) do
 				local pArr = utils.split(pArgs, net.protoParamsSeparator)
-				if ( pArr[1] == "bmx6" ) then
+				if ( pArr[1] == "bmx6" or pArr[1] == "bmx7") then
 					pArr[2] = 0
 					pArgs = table.concat(pArr, net.protoParamsSeparator)
 					table.insert(protos, pArgs)
