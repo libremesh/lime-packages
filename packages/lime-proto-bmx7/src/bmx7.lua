@@ -32,6 +32,17 @@ function bmx7.configure(args)
 	uci:set(bmx7.f, "main", "tun4Address", ipv4:string())
 	uci:set(bmx7.f, "main", "tun6Address", ipv6:string())
 
+	-- If publish own IP enabled, configure tunIn
+	local pub_own_ip = config.get_bool("network", "bmx7_publish_ownip", false)
+	if (pub_own_ip) then
+		uci:set(bmx7.f, "myIP4", "tunIn")
+		uci:set(bmx7.f, "myIP4", "tunIn", "myIP4")
+		uci:set(bmx7.f, "myIP4", "network", ipv4:host():string()..'/32')
+		uci:set(bmx7.f, "myIP6", "tunIn")
+		uci:set(bmx7.f, "myIP6", "tunIn", "myIP6")
+		uci:set(bmx7.f, "myIP6", "network", ipv6:host():string()..'/128')
+	end
+
 	-- Enable bmx7 uci config plugin
 	uci:set(bmx7.f, "config", "plugin")
 	uci:set(bmx7.f, "config", "plugin", "bmx7_config.so")
