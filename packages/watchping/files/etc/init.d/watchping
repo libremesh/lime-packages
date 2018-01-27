@@ -107,6 +107,7 @@ service_triggers() {
 		for iface in $trigger_interfaces; do
 			logger -p user.info -t "watchping" "adding ifup trigger for $iface"
 			procd_add_interface_trigger "interface.*.up" "$iface" /etc/init.d/watchping restart
+			procd_add_interface_trigger "interface.*.update" "$iface" /etc/init.d/watchping restart
 		done
 	fi
 }

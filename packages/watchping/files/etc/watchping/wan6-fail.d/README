@@ -1,0 +1,4 @@
+# All executable files in this directory are processed
+# when watchping gets no reply through wan6 ('interface')
+# from all of the hosts listed in 'pinghosts'
+# after the time set in 'timeout'

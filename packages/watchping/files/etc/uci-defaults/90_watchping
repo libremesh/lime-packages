@@ -2,11 +2,16 @@
 
 uci -q get system.@watchping[0] || {
         uci batch <<EOF
-        add system watchping
-        set system.@watchping[0].interface=wan
-        set system.@watchping[0].timeout=2m
-        set system.@watchping[0].pinghosts=8.8.8.8
-        set system.@watchping[0].pinginterval=20s
+        set system.watchping=watchping
+        set system.watchping.interface=wan
+        set system.watchping.timeout=2m
+        set system.watchping.pinghosts=8.8.8.8
+        set system.watchping.pinginterval=20s
+        set system.watchping6=watchping
+        set system.watchping6.interface=wan6
+        set system.watchping6.timeout=2m
+        set system.watchping6.pinghosts=2001:470:20::2
+        set system.watchping6.pinginterval=20s
         commit system
 EOF
 }
