@@ -141,25 +141,25 @@ function bmx7.configure(args)
 		uci:delete("firewall", "bmxtun")
 
 		uci:set("firewall", "bmxtun", "zone")
-		uci:set("firewall", "bmxtun", "name", "bmxtun")
+		uci:set("firewall", "bmxtun", "name", "bmx7tun")
 		uci:set("firewall", "bmxtun", "input", "ACCEPT")
 		uci:set("firewall", "bmxtun", "output", "ACCEPT")
 		uci:set("firewall", "bmxtun", "forward", "ACCEPT")
 		uci:set("firewall", "bmxtun", "mtu_fix", "1")
 		uci:set("firewall", "bmxtun", "conntrack", "1")
-		uci:set("firewall", "bmxtun", "device", "bmx+")
+		uci:set("firewall", "bmxtun", "device", "X7+")
 		uci:set("firewall", "bmxtun", "family", "ipv4")
 
 		uci:save("firewall")
 
-		fs.remove("/etc/firewall.lime.d/20-bmxtun-mtu_fix")
+		fs.remove("/etc/firewall.lime.d/20-bmx7tun-mtu_fix")
 	else
 		fs.mkdir("/etc/firewall.lime.d")
 		fs.writefile(
-			"/etc/firewall.lime.d/20-bmxtun-mtu_fix",
+			"/etc/firewall.lime.d/20-bmx7tun-mtu_fix",
 			"\n" ..
-			"iptables -t mangle -D FORWARD -o bmx+ -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" ..
-			"iptables -t mangle -A FORWARD -o bmx+ -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
+			"iptables -t mangle -D FORWARD -o X7+ -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" ..
+			"iptables -t mangle -A FORWARD -o X7+ -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 		)
 	end
 end
@@ -238,7 +238,7 @@ function bmx7.bgp_conf(templateVarsIPv4, templateVarsIPv6)
 
 	local base_bgp_conf = [[
 protocol direct {
-	interface "bmx*";
+	interface "X7*";
 }
 ]]
 
