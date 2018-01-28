@@ -68,7 +68,10 @@ function network.primary_address(offset)
 	invalid = invalid or ipv4_template:equal(mc:minhost())
 	--! Generated address is the broadcast address like 192.0.2.255/24 ?
 	invalid = invalid or ipv4_template:equal(mc:broadcast())
-	if invalid then ipv4_template = mc:maxhost() end
+	if invalid then
+		ipv4_template = mc:maxhost()
+		ipv4_template:prefix(tonumber(ipv4_maskbits))
+	end
 
 	ipv6_template:prefix(tonumber(ipv6_maskbits))
 
