@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+
+START=97
+
+start() {
+        if ! ( grep -q /usr/bin/lime-bmx7-rc-client /etc/crontabs/root 2>/dev/null ) ; then
+                echo "*/5 * * * * /usr/bin/lime-bmx7-rc-client > /tmp/log/lime-bmx7-rc-client.log" >> /etc/crontabs/root
+                /etc/init.d/cron enable
+                /etc/init.d/cron start
+        fi
+}
+
+stop() {
+        sed -r -i -e '\|^([^\t ]+[\t ]+){5}/usr/bin/lime-bmx7-rc-client > /tmp/log/lime-bmx7-rc-client.log$|d' /etc/crontabs/root
+        /etc/init.d/cron restart
+}
+
+reload() {
+        start
+}
+
