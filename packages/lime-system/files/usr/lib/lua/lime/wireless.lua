@@ -113,31 +113,35 @@ function wireless.configure()
 			uci:save("wireless")
 
 			for _,modeName in pairs(modes) do
-				local args = {}
-				local mode = require("lime.mode."..modeName)
+				if not modeName:match(ignoredSuffix) then
+					modeName = modeName:gsub(freqSuffix, "")
 
-				for key,value in pairs(options) do
-					local keyPrefix = utils.split(key, "_")[1]
-					local isGoodOption = ( (key ~= "modes")
-					                and (not key:match("^%."))
-					                and (not key:match("channel"))
-					                and (not key:match("country"))
-					                and (not key:match("htmode"))
-					                and (not (wireless.isMode(keyPrefix) and keyPrefix ~= modeName))
-					                and (not key:match(ignoredSuffix)) )
-					if isGoodOption then
-						local nk = key:gsub("^"..modeName.."_", ""):gsub(freqSuffix.."$", "")
-						if nk == "ssid" then
-							value = utils.applyHostnameTemplate(value)
-							value = utils.applyMacTemplate16(value, network.primary_mac())
-							value = string.sub(value, 1, 32)
+					local args = {}
+					local mode = require("lime.mode."..modeName)
+
+					for key,value in pairs(options) do
+						local keyPrefix = utils.split(key, "_")[1]
+						local isGoodOption = ( (key ~= "modes")
+							and (not key:match("^%."))
+							and (not key:match("channel"))
+							and (not key:match("country"))
+							and (not key:match("htmode"))
+							and (not (wireless.isMode(keyPrefix) and keyPrefix ~= modeName))
+							and (not key:match(ignoredSuffix)) )
+						if isGoodOption then
+							local nk = key:gsub("^"..modeName.."_", ""):gsub(freqSuffix.."$", "")
+							if nk == "ssid" then
+								value = utils.applyHostnameTemplate(value)
+								value = utils.applyMacTemplate16(value, network.primary_mac())
+								value = string.sub(value, 1, 32)
+							end
+
+							args[nk] = value
 						end
-
-						args[nk] = value
 					end
-				end
 
-				mode.setup_radio(radio, args)
+					mode.setup_radio(radio, args)
+				end
 			end
 		end
 	end
