@@ -16,11 +16,9 @@ end
 
 function openwrt_wan.detect_hardware()
 	if config.autogenerable(openwrt_wan.sectionName) then
-		local uci_o = libuci:cursor()
-		uci_o:set_confdir("/etc/lime-config-firstboot")
-		uci_o:set_savedir("/dev/null")
-		local ifname = uci_o:get("network", "wan", "ifname")
-		uci_o = nil
+		local handle = io.popen("sh /usr/lib/lua/lime/hwd/openwrt_wan.sh")
+		local ifname = handle:read("*a")
+		handle:close()
 		if ifname then
 			local protos = {}
 			local net = require("lime.network")
@@ -46,6 +44,5 @@ function openwrt_wan.detect_hardware()
 		end
 	end
 end
-
 
 return openwrt_wan
