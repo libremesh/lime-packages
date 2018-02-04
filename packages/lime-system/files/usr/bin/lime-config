@@ -66,9 +66,14 @@ else
 	lockFile:write(statFile:read("*n"))
 	statFile:close()
 
+	opts = getopt( arg, "" )
+
+	if opts["reset"] or opts["r"] then
+		os.remove("/etc/config/lime")
+	end
+
 	main()
 
-	opts = getopt( arg, "" )
 	--! using --no-commit doesn't guarantee filesystem will not be changed
 	--! mainly because many config files are not uci-based
 	if not opts["no-commit"] and not opts["n"] then
