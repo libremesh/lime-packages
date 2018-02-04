@@ -1,0 +1,6 @@
+#!/bin/sh
+
+cat << EOF > /etc/profile
+pgrep bmx7 > /dev/null && echo " BMX7 ID: $(bmx7 -c show=status /r=1 | tail -n 1 | awk '{ print $2 }')"
+EOF
+
