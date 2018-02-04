@@ -182,7 +182,7 @@ local function change_config (msg)
         local newIp = msg.ip
         conn:call("uci", "set", {config="lime", section="system", values= { hostname = newName }})
         conn:call("uci", "set", {config="lime", section="network", values= { main_ipv4_address = newIp }})
-        shell("lime-config & lime-apply")
+        shell("lime-config && lime-apply")
         printJson({ status = 'ok'})
     else
         printJson({ status = 'error', msg = 'You must enter a hostname' })
