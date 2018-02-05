@@ -60,8 +60,11 @@ config lime wifi
 	list modes 'ap'
 	list modes 'apname'
 	list modes 'ieee80211s'
-#	list modes 'adhoc'				# See below for adhoc configuration
-#	list modes 'client'				# See below for client configuration
+#	list modes 'adhoc'            # See below for adhoc configuration
+#	list modes 'client'           # See below for client configuration
+#	list modes 'ap_2ghz'          # Enable Access Point only on 2.4GHz Radio
+#	list modes 'apname_2ghz' 
+#	list modes 'ieee80211s_5ghz'  # Enable Mesh network only on 5Ghz Radio
 	option ap_ssid 'LibreMesh.org'
 #	option ap_key 'SomeWPA2PskKey'
 #	option ap_encryption 'psk2'
@@ -72,6 +75,7 @@ config lime wifi
 	option ieee80211s_mesh_id 'LiMe'
 #	option ieee80211s_encryption 'psk2/aes'
 #	option ieee80211s_key 'SomePsk2AESKey'
+
 
 
 # The following interface specific options have to be included in /etc/config/lime, not in /etc/config/lime-defaults
