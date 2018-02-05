@@ -36,7 +36,7 @@ function config.get(sectionname, option, default)
 	elseif ( default ~= nil ) then
 		defcnf = default
 		local cfn = sectionname.."."..option
-		print("WARNING: Option "..cfn.." is not defined. Using value "..default)
+		print("WARNING: Option "..cfn.." is not defined. Using value "..tostring(defcnf))
 	else
 		local cfn = sectionname.."."..option
 		print("WARNING: Attempt to access undeclared default for: "..cfn)
@@ -77,7 +77,7 @@ end
 
 function config.get_bool(sectionname, option, default)
 	local val = config.get(sectionname, option, default)
-	return (val and ((val == '1') or (val == 'on') or (val == 'true') or (val == 'enabled')))
+	return (val and ((val == '1') or (val == 'on') or (val == 'true') or (val == 'enabled') or (val == 1) or (val == true)))
 end
 
 config.batched = false
