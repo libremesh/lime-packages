@@ -100,7 +100,7 @@ function wireless.configure()
 			end
 
 			--! up to 10km links by default
-			local distance = options["distance"..freqSuffix] or options["distance"] or 10000
+			local distance = options["distance"..freqSuffix] or options["distance"] or 1000
 			local htmode = options["htmode"..freqSuffix] or options["htmode"]
 			local channel = options["channel"..freqSuffix] or options["channel"]
 
