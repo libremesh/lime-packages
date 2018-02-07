@@ -48,7 +48,6 @@ config lime network
 #	option autoap_enabled 0				# Requires lime-ap-watchping installed. If enabled AP SSID is changed to ERROR when network issues
 #	option autoap_hosts "8.8.8.8 141.1.1.1"		# Requires lime-ap-watchping installed. Hosts used to check if the network is working fine
 
-
 ### WiFi general options
 
 config lime wifi
@@ -78,35 +77,46 @@ config lime wifi
 
 # The following interface specific options have to be included in /etc/config/lime, not in /etc/config/lime-defaults
 
-### WiFi interface specific options ( override general option )
+### WiFi interface specific options ( override defaults options )
 
-#config wifi radio11
-#	list modes 'adhoc'
-#	option channel_2ghz '1'
-#	option channel_5ghz '48'
-#	option adhoc_ssid 'LiMe'			# Parametrizable with %M, %H
-#	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
-#	option adhoc_mcast_rate_2ghz '24000'
-#	option adhoc_mcast_rate_5ghz '6000'
+## use radio0 only for mesh
+config wifi radio0
+	list modes 'ieee89211s'
 
-#config wifi radio12
-#	list modes 'manual'				# If you use manual protocol you must not specify other protocol, or your configuration will be broken!
+## change ssid for radio1
+config wifi radio1
+	option ap_ssid 'Special'
+
+## diable lime-config for radio2
+config wifi radio2
+	option modes 'manual' # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
+
+
+## set radio3 to adhoc with specific channel
+config wifi radio3
+	list modes 'adhoc'
+	option channel_2ghz '1'
+	option channel_5ghz '48'
+	option adhoc_ssid 'LiMe' # Parametrizable with %M, %H
+	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
+	option adhoc_mcast_rate_2ghz '24000'
+	option adhoc_mcast_rate_5ghz '6000'
 
 # If you want to use Wifi client mode just to connect to an AP offering internet
 # you need two pieces of configuration the wifi specific configuration and the
 # network specific one like in the following example.
 
-#config wifi radio13
-#	list modes 'client'
-#	option channel_2ghz 'auto'
-#	option client_ssid 'SomeWiFiNetwork'
-#	option client_key 'SomeWPApskPassword'
-#	option client_encryption 'psk'               # psk for WPA or psk2 for WPA2
+## set radio4 as client of access point
+option wifi radio4
+	list modes 'client'
+	option channel_2ghz 'auto'
+	option client_ssid 'SomeWiFiNetwork'
+	option client_key 'SomeWPApskPassword'
+	option client_encryption 'psk' # psk for WPA or psk2 for WPA2
 
-#config net wirelessclient
-#	option linux_name 'wlan0-client'             # the client interface name could be named differently, like wlan1-client
-#	list protocols 'wan'                         # use wan to get Internet connectivity via DHCP
-
+config net wirelessclient
+	option linux_name 'wlan0-client'			# the client interface name could be named differently, like wlan1-client
+	list protocols 'wan'						# use wan to get Internet connectivity via DHCP
 
 ### Network interface specific options ( override general option )
 ### Available protocols: bmx6, bmx7, batadv, olsr, olsr6, olsr2, bgp, wan, lan, manual, static
