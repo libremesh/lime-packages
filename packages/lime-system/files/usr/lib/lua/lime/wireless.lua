@@ -86,7 +86,7 @@ function wireless.configure()
 
 		if specRadio then
 			modes = specRadio["modes"]
-			options = specRadio
+			utils.arrayConcat(options, specRadio)
 		end
 
 		--! If manual mode is used toghether with other modes it results in an
@@ -108,7 +108,17 @@ function wireless.configure()
 				htmode = options["htmode"..freqSuffix] or options["htmode"] or "HT20"
 			end
 
-			local channel = options["channel"..freqSuffix] or options["channel"]
+			--! up to 10km links by default
+			local distance = options["distance"..freqSuffix] or options["distance"] or 10000
+			local htmode = options["htmode"..freqSuffix] or options["htmode"]
+
+			--! fallback to "auto" in client mode
+			local channel
+			if modes[1] ~= "client" then
+				channel = options["channel"..freqSuffix] or options["channel"]
+			else
+				channel = specRadio["channel"..freqSuffix] or specRadio["channel"] or "auto"
+			end
 
 			local uci = libuci:cursor()
 			uci:set("wireless", radioName, "disabled", 0)
