@@ -57,6 +57,8 @@ config lime wifi
 	option channel_5ghz '48'			# Check for allowed channels on https://en.wikipedia.org/wiki/List_of_WLAN_channels#regulatory_tables5.0ghz
 #	option htmode_2ghz 'HT20'
 	option htmode_5ghz 'HT40'
+	option distance_2ghz '100'			# Distance between the ap and the furthest client in meters
+	option distance_5ghz '1000'			# Distance between this node and the furthest connected node in meters
 	list modes 'ap'
 	list modes 'apname'
 	list modes 'ieee80211s'
