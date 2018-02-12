@@ -154,4 +154,13 @@ function utils.is_installed(pkg)
 	return utils.file_exists('/usr/lib/opkg/info/'..pkg..'.control')
 end
 
+function utils.has_value(tab, val)
+	for index, value in ipairs(tab) do
+		if value == val then
+			return true
+		end
+	end
+	return false
+end
+
 return utils
