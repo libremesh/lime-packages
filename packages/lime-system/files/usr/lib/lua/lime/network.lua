@@ -138,8 +138,15 @@ function network.clean()
 
 	uci:save("network")
 
-	print("Disabling odhcpd")
-	io.popen("/etc/init.d/odhcpd disable 2>/dev/null || true"):close()
+	if config.get_bool("network", "use_odhcpd", false) then
+		print("Use odhcpd as dhcp server")
+		uci:set("dhcp", "odchpd", "maindhcp", 1)
+		os.execute("/etc/init.d/odhcpd enable")
+	else
+		print("Disabling odhcpd")
+		uci:set("dhcp", "odchpd", "maindhcp", 0)
+		os.execute("/etc/init.d/odhcpd disable")
+	end
 
 	print("Cleaning dnsmasq")
 	uci:foreach("dhcp", "dnsmasq", function(s) uci:delete("dhcp", s[".name"], "server") end)
