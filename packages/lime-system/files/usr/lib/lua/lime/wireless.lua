@@ -91,15 +91,16 @@ function wireless.configure()
 
 		--! If manual mode is used toghether with other modes it results in an
 		--! unpredictable behaviour
+		local distance
 		if modes[1] ~= "manual" then
 			if wireless.is5Ghz(radioName) then
 				freqSuffix = "_5ghz"
 				ignoredSuffix = "_2ghz"
-				local distance = options["distance"..freqSuffix] or options["distance"] or 1000
+				distance = options["distance"..freqSuffix] or options["distance"] or 1000
 			else
 				local freqSuffix = "_2ghz"
 				local ignoredSuffix = "_5ghz"
-				local distance = options["distance"..freqSuffix] or options["distance"] or 100
+				distance = options["distance"..freqSuffix] or options["distance"] or 100
 			end
 
 			local htmode = options["htmode"..freqSuffix] or options["htmode"]
