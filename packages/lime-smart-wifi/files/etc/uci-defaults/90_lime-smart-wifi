@@ -15,9 +15,9 @@ uci -q get lime-defaults.smart_wifi.all_to_mesh || \
 uci -q get lime-defaults.smart_wifi.all_to_ap || \
     uci set lime-defaults.smart_wifi.all_to_ap=0
 uci -q get lime-defaults.smart_wifi.channels_2ghz || \
-    uci set lime-defaults.smart_wifi.channels_2ghz="1 11 6"
+    uci add_list lime-defaults.smart_wifi.channels_2ghz="1 11 6"
 uci -q get lime-defaults.smart_wifi.channels_5ghz || \
-    uci set lime-defaults.smart_wifi.channels_5ghz="36 48"
+    uci add_list lime-defaults.smart_wifi.channels_5ghz="36 48"
 uci commit lime-defaults
 
 /usr/bin/lime-smart_wifi > /tmp/log/lime-smart_wifi.log
