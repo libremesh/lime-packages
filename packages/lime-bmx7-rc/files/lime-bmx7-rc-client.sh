@@ -1,34 +1,40 @@
 #!/bin/sh
 
-trusted_ids=$(uci -q get lime-defaults.trusted_nodes.node_id)
+. /usr/share/libubox/jshn.sh
 
+trusted_ids=$(uci -q get lime-defaults.trusted_nodes.node_id)
 [[ -z "$trusted_ids" ]]  && {
-    echo "please add section trusted_nodes in lime-defaults"
-    exit 1
+    trusted_ids=$(uci -q get lime.trusted_nodes.node_id)
+    [[ -z "$trusted_ids" ]] && {
+        uci -q set lime.trusted_nodes="trusted_nodes"
+        uci -q set lime.trusted_nodes.node_id=""
+        echo "please add section trusted_nodes in /etc/config/lime"
+        exit 1
+    }
 }
 
-echo "checking"
-# get all recevied configs
-for config_path in /var/run/bmx7/sms/rcvdSms/*lime-defaults; do
-    # check if installed config is older then received config
-    if [[ "$(sha256sum /etc/config/lime-defaults | cut -c -32)" != "$(sha256sum "$config_path" | cut -c -32)" ]]; then
-        echo "found new config"
-        # get filename without path
-        config_file="$(basename $config_path)"
-        # parse node id
-        node_id="${config_file%%:*}"
-        # check if node is trusted
-        for trusted_id in $trusted_ids; do
-            if [[ "$node_id" == "$trusted_id" ]]; then
-                echo "$node_id: trusted config found"
-                # replace outdated config
-                cp $config_path /etc/config/lime-defaults
-                lime-config
-                lime-apply
-                exit
-            else
-                echo "$node_id: ignoring untrusted config"
-            fi
-        done
-    fi
+bmx7_id="$(uci -q get lime.system.bmx7_id)"
+[[ -z "$bmx7_id" ]] && {
+    json_load "$(cat /var/run/bmx7/json/status)"
+    json_select status
+    json_get_var bmx7_id shortId
+    uci -q set lime.system.bmx7_id="$bmx7_id"
+}
+
+for trusted_id in $trusted_ids; do
+    [[ -z "$trusted_id" ]] && return
+    for config_file in ls ${trusted_id}*; do
+        if [[ "$config_file" == "${trusted_id}:lime-defaults" ]]; then
+            cp $config_file /etc/config/lime-defaults
+            changes=1
+        elif [[ "$config_file" == "${trusted_id}:hn_${bmx7_id}" ]]; then
+            uci -q set lime.system.hostname="$(cat $config_file)"
+            changes=1
+        fi
+    done
 done
+
+[[ -n "$changes" ]] && {
+    lime-config
+    lime-apply
+}

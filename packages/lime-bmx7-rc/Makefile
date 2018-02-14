@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lime-bmx7-rc
-PKG_VERSION:=0.0.2
-PKG_RELEASE:=3
+PKG_VERSION:=0.0.3
+PKG_RELEASE:=4
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -31,6 +31,9 @@ define Package/lime-bmx7-rc-client/install
 
 		$(INSTALL_DIR) $(1)/etc/init.d
 		$(CP) files/lime-bmx7-rc-client.procd $(1)/etc/init.d/lime-bmx7-rc-client
+
+		$(INSTALL_DIR) $(1)/etc/uci-defaults
+		$(CP) files/lime-bmx7-rc-client.defaults $(1)/etc/uci-defaults/lime-bmx7-rc-client
 endef
 
 define Package/lime-bmx7-rc-server

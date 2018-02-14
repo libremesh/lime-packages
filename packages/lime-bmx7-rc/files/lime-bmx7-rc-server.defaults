@@ -3,7 +3,7 @@
 uci set bmx7.sms='plugin'
 uci set bmx7.sms.plugin='bmx7_sms.so'
 uci set bmx7.lime_defaults='syncSms'
-uci set bmx7.lime_defaults='lime-defaults'
+uci set bmx7.lime_defaults.syncSms='lime-defaults'
 uci commit bmx7
 /etc/init.d/bmx7 reload
 
