@@ -91,19 +91,23 @@ function wireless.configure()
 
 		--! If manual mode is used toghether with other modes it results in an
 		--! unpredictable behaviour
+		local freqSuffix
+		local ignoredSuffix
 		local distance
+		local htmode
 		if modes[1] ~= "manual" then
 			if wireless.is5Ghz(radioName) then
 				freqSuffix = "_5ghz"
 				ignoredSuffix = "_2ghz"
 				distance = options["distance"..freqSuffix] or options["distance"] or 1000
+				htmode = options["htmode"..freqSuffix] or options["htmode"] or "HT40"
 			else
-				local freqSuffix = "_2ghz"
-				local ignoredSuffix = "_5ghz"
+				freqSuffix = "_2ghz"
+				ignoredSuffix = "_5ghz"
 				distance = options["distance"..freqSuffix] or options["distance"] or 100
+				htmode = options["htmode"..freqSuffix] or options["htmode"] or "HT20"
 			end
 
-			local htmode = options["htmode"..freqSuffix] or options["htmode"]
 			local channel = options["channel"..freqSuffix] or options["channel"]
 
 			local uci = libuci:cursor()
