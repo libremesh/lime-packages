@@ -34,6 +34,14 @@ endef
 define Package/$(PKG_NAME)/install
 	@mkdir -p $(1)/usr/lib/lua/lime/proto || true
 	$(CP) ./build/bmx7.lua $(1)/usr/lib/lua/lime/proto/
+
+	@mkdir -p $(1)/etc/uci-defaults
+	$(CP) ./files/etc/uci-defaults/bmx7-id-banner.defaults /etc/uci-defaults/bmx7-id-banner
+endef
+
+define Package/$(PKG_NAME)/postrm
+	#!/bin/sh
+	sed -i '/^pgrep bmx7 > /dev/null && echo " BMX7 ID: .*$/d' /etc/profile
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
