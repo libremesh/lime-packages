@@ -163,4 +163,12 @@ function utils.has_value(tab, val)
 	return false
 end
 
+--! contact array t2 to the end of array t1
+function utils.arrayConcat(t1,t2)
+	for _,i in ipairs(t2) do
+		table.insert(t1,i)
+	end
+	return t1
+end
+
 return utils
