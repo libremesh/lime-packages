@@ -3,7 +3,7 @@
 
 |Path     |Procedure     |Signature     |Description
 |---  |---  |---  |---
-|luci2.openairview |interfaces     |{}     | Get list of interfaces
+|luci2.openairview |interfaces     |{}     | Get list of adhoc interfaces
 |luci2.openairview |get_stations     |{device:STRING}     | List of stations transmitting on the same frequency as the selected device/interface.
 |luci2.openairview |spectral_scan     |{device:STRING, spectrum:STRING}     |Scan the spectrum ("5ghz","2ghz" or "current") of the device whit fft_eval.
 ## Examples
@@ -23,13 +23,7 @@ If the openairview was never established, return the openairview of the communit
 ```json
 {
   "interfaces": [
-    "wlan1-ap",
-    "wlan0-adhoc_13",
-    "wlan1-adhoc_177",
-    "wlan1-adhoc_13",
-    "wlan0-adhoc_177",
     "wlan1-adhoc",
-    "wlan0-ap",
     "wlan0-adhoc"
   ]
 }
