@@ -113,7 +113,7 @@ function bmx7.configure(args)
 	end
 
 	local hasBatadv = false
-	local bxmOverBatdv = config.get_bool("network", "bmx7_over_batman")
+	local bmxOverBatdv = config.get_bool("network", "bmx7_over_batman")
 	local hasLan = false
 	for _,protoArgs in pairs(config.get("network", "protocols")) do
 		local proto =  utils.split(protoArgs, network.protoParamsSeparator)[1]
@@ -125,7 +125,7 @@ function bmx7.configure(args)
 		uci:set("bmx7", "lm_net_br_lan", "dev")
 		uci:set("bmx7", "lm_net_br_lan", "dev", "br-lan")
 
-		if(hasBatadv and not bxmOverBatdv) then
+		if(hasBatadv and not bmxOverBatdv) then
 			fs.mkdir("/etc/firewall.lime.d")
 			fs.writefile("/etc/firewall.lime.d/20-bmx7-not-over-bat0-ebtables",
 			"ebtables -t nat -A POSTROUTING -o bat0 -p ipv6"..
