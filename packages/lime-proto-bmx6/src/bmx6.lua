@@ -51,9 +51,10 @@ function bmx6.configure(args)
 	uci:set(bmx6.f, "json", "plugin", "bmx6_json.so")
 
 	-- Enable sms plugin
-	uci:set(bmx6.f, "sms", "plugin")
-	uci:set(bmx6.f, "sms", "plugin", "bmx6_sms.so")
-
+	if utils.is_installed("bmx6-sms") then
+		uci:set(bmx6.f, "sms", "plugin")
+		uci:set(bmx6.f, "sms", "plugin", "bmx6_sms.so")
+	end
 
 	-- Enable tun plugin, DISCLAIMER: this must be positioned before table plugin if used.
 	--uci:set(bmx6.f, "ptun", "plugin")
