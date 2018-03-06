@@ -42,6 +42,21 @@ local function list_from_file(file)
     return list
 end	
 
+local function dict_from_file(file)
+    -- get all lines from a file with two values per line and return a dict type table
+    -- return an empty table if the file does not exist
+    if not file_exists(file) then return {} end
+    dict = {}
+    for line in io.lines(file) do
+        words = {}
+        for w in line:gmatch("%S+") do table.insert(words, w) end
+        if #words == 2 and type(words[1]) == "string" then
+            dict[string.lower(words[1])] = words[2]
+        end
+    end
+    return dict
+end
+
 local conn = ubus.connect()
 if not conn then
     error("Failed to connect to ubus")
@@ -61,21 +76,6 @@ function get_stations(msg)
 		local f = io.open(file, "rb")
 		if f then f:close() end
 		return f ~= nil
-	end
-
-	local function dict_from_file(file)
-		-- get all lines from a file with two values per line and return a dict type table
-		-- return an empty table if the file does not exist
-		if not file_exists(file) then return {} end
-		dict = {}
-		for line in io.lines(file) do
-			words = {}
-			for w in line:gmatch("%S+") do table.insert(words, w) end
-			if #words == 2 and type(words[1]) == "string" and type(words[1]) == "string" then
-				dict[string.lower(words[1])] = words[2]
-			end
-		end
-		return dict
 	end
 
 	local function network_links(iface)
@@ -112,7 +112,9 @@ function get_interfaces(msg)
 	local interfaces = {}
     if devices ~= nil then
         for iface,iface_conf in pairs(devices.values) do
-            table.insert(interfaces, { name = iface_conf.ifname, mode = iface_conf.mode })
+            if iface_conf.mode == "adhoc" then
+                table.insert(interfaces, { name = iface_conf.ifname, mode = iface_conf.mode })
+            end
         end
     end
     result.interfaces = interfaces
@@ -135,7 +137,7 @@ local function get_iface_stations(msg)
     local result = {}
     local stations = {}
     local assoclist = iwinfo.nl80211.assoclist(iface)
-    local bat_hosts = list_from_file("/etc/bat-hosts")
+    local bat_hosts = dict_from_file("/etc/bat-hosts")
     for mac, link_data in pairs(assoclist) do
         local hostname = bat_hosts[string.lower(mac)] or mac
         local station_data = {
