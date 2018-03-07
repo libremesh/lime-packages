@@ -198,7 +198,8 @@ function bmx7.setup_interface(ifname, args)
 
 	-- BEGIN [Workaround issue 40]
 	if ifname:match("^wlan%d+") then
-		uci:set(bmx7.f, owrtInterfaceName, "rateMax", "54000000")
+		local rateMax = config.get_bool("network", "bmx7_wifi_rate_max", 54000000)
+		uci:set(bmx7.f, owrtInterfaceName, "rateMax", rateMax)
 	end
 	--- END [Workaround issue 40]
 
