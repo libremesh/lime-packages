@@ -48,8 +48,10 @@ function bmx7.configure(args)
 	uci:set(bmx7.f, "config", "plugin", "bmx7_config.so")
 
 	-- Enable JSON plugin to get bmx7 information in json format
-	uci:set(bmx7.f, "json", "plugin")
-	uci:set(bmx7.f, "json", "plugin", "bmx7_json.so")
+	if utils.is_installed("bmx7-sms") then
+		uci:set(bmx7.f, "json", "plugin")
+		uci:set(bmx7.f, "json", "plugin", "bmx7_json.so")
+	end
 
 	-- Enable SMS plugin to enable sharing of small files
 	uci:set(bmx7.f, "sms", "plugin")
