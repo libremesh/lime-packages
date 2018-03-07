@@ -53,6 +53,12 @@ function bmx7.configure(args)
 		uci:set(bmx7.f, "json", "plugin", "bmx7_json.so")
 	end
 
+	-- Enable iwinfo plugin to get better link bandwidth estimation
+	if utils.is_installed("bmx7-iwinfo") then
+		uci:set(bmx7.f, "iwinfo", "plugin")
+		uci:set(bmx7.f, "iwinfo", "plugin", "bmx7_iwinfo.so")
+	end
+
 	-- Enable SMS plugin to enable sharing of small files
 	uci:set(bmx7.f, "sms", "plugin")
 	uci:set(bmx7.f, "sms", "plugin", "bmx7_sms.so")
