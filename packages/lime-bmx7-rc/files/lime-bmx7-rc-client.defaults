@@ -1,6 +1,0 @@
-#!/bin/sh
-
-uci set bmx7.sms='plugin'
-uci set bmx7.sms.plugin='bmx7_sms.so'
-uci commit bmx7
-/etc/init.d/bmx7 reload
