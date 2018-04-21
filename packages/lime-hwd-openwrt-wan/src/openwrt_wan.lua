@@ -19,7 +19,7 @@ function openwrt_wan.detect_hardware()
 		local handle = io.popen("sh /usr/lib/lua/lime/hwd/openwrt_wan.sh")
 		local ifname = handle:read("*a")
 		handle:close()
-		if ifname then
+		if ifname and ifname ~= "" then
 			local protos = {}
 			local net = require("lime.network")
 			local utils = require("lime.utils")
@@ -41,6 +41,8 @@ function openwrt_wan.detect_hardware()
 			config.set(openwrt_wan.sectionName, "protocols", protos)
 			config.set(openwrt_wan.sectionName, "linux_name", ifname)
 			config.end_batch()
+		else
+			print("No wan interface detected")
 		end
 	end
 end

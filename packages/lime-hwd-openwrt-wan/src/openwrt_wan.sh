@@ -5,7 +5,11 @@
 json_load "$(cat /etc/board.json)"
 
 json_select network
-json_select wan
-json_get_var ifname ifname
+if json_get_type Type wan && [ "$Type" == object ]; then
+    json_select wan
+    json_get_var ifname ifname
+else
+    ifname=""
+fi
 
 echo -n "$ifname"
