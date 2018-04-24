@@ -20,4 +20,6 @@ uci -q get lime-defaults.smart_wifi.channels_5ghz || \
     uci add_list lime-defaults.smart_wifi.channels_5ghz="36 48"
 uci commit lime-defaults
 
-/usr/bin/lime-smart_wifi > /tmp/log/lime-smart_wifi.log
+/usr/bin/lime-smart-wifi > /tmp/log/lime-smart_wifi.log
+
+uci commit lime
