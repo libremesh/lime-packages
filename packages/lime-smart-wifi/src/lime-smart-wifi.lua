@@ -118,7 +118,9 @@ end
 
 function smart_wifi.add_ap(modes_radio)
     table.insert(modes_radio, "ap")
-    table.insert(modes_radio, "apname")
+    if utils.has_value(smart_wifi.modes, "apname") then
+        table.insert(modes_radio, "apname")
+    end
     return modes_radio
 end
 
