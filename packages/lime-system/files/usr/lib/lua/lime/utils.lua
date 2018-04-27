@@ -44,11 +44,15 @@ end
 
 function utils.applyMacTemplate16(template, mac)
 	for i=1,6,1 do template = template:gsub("%%M"..i, mac[i]) end
+	local macid = utils.get_id(mac)
+	for i=1,6,1 do template = template:gsub("%%m"..i, macid[i]) end
 	return template
 end
 
 function utils.applyMacTemplate10(template, mac)
 	for i=1,6,1 do template = template:gsub("%%M"..i, tonumber(mac[i], 16)) end
+	local macid = utils.get_id(mac)
+	for i=1,6,1 do template = template:gsub("%%m"..i, tonumber(macid[i], 16)) end
 	return template
 end
 
@@ -57,18 +61,24 @@ function utils.applyHostnameTemplate(template)
 	return template:gsub("%%H", system.get_hostname())
 end
 
+function utils.get_id(string)
+	local id = {}
+	local fd = io.popen('echo "' .. string .. '" | md5sum')
+	if fd then
+		local md5 = fd:read("*a")
+        local j = 1
+        for i=1,16,1 do 
+            id[i] = string.sub(md5, j, j + 1)
+            j = j + 2
+        end
+		fd:close()
+	end
+	return id
+end
+
 function utils.network_id()
-    local network_essid = config.get("wifi", "ap_ssid")
-    local netid = {}
-    local fd = io.popen('echo "' .. network_essid .. '" | md5sum')
-    if fd then
-        local md5 = fd:read("*a")
-        netid[1] = md5:match("^(..)")
-        netid[2] = md5:match("^..(..)")
-        netid[3] = md5:match("^....(..)")
-        fd:close()
-    end
-    return netid
+	local network_essid = config.get("wifi", "ap_ssid")
+	return utils.get_id(network_essid)
 end
 
 function utils.applyNetTemplate16(template)
