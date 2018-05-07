@@ -61,16 +61,19 @@ function utils.applyHostnameTemplate(template)
 	return template:gsub("%%H", system.get_hostname())
 end
 
-function utils.get_id(string)
+function utils.get_id(input)
+	if type(input) == "table" then
+		input = table.concat(input, "")
+	end
 	local id = {}
-	local fd = io.popen('echo "' .. string .. '" | md5sum')
+	local fd = io.popen('echo "' .. input .. '" | md5sum')
 	if fd then
 		local md5 = fd:read("*a")
-        local j = 1
-        for i=1,16,1 do 
-            id[i] = string.sub(md5, j, j + 1)
-            j = j + 2
-        end
+		local j = 1
+		for i=1,16,1 do
+			id[i] = string.sub(md5, j, j + 1)
+			j = j + 2
+		end
 		fd:close()
 	end
 	return id
