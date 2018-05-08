@@ -81,7 +81,7 @@ function wireless.configure()
 	for _,radio in pairs(allRadios) do
 		local radioName = radio[".name"]
 		local specRadio = specificRadios[radioName]
-		local modes = config.get("wifi", "modes")
+		local modes = config.get("wifi", "modes", {})
 		local options = config.get_all("wifi")
 
 		if specRadio then
