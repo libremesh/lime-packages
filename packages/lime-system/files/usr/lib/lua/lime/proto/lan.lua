@@ -55,6 +55,9 @@ function lan.setup_interface(ifname, args)
 			table.insert(bridgedIfs, iface)
 		end
 	end
+    if ifname == config.get("network", "primary_interface") then
+        config.set("network", "primary_interface", "br-lan")
+    end
 	table.insert(bridgedIfs, ifname)
 	uci:set("network", "lan", "ifname", bridgedIfs)
 	uci:save("network")
