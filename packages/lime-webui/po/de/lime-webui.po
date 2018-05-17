@@ -1,14 +1,15 @@
-# Translation of LibreMesh - Web UI to Spanish (español)
+# Translation of LibreMesh - Web UI to German (Deutsch)
 # Exported from translatewiki.net
 #
+# Author: Jkimmel
 msgid ""
 msgstr ""
 ""
-"Content-Type: text/plain; charset=UTF-8\n"
 "PO-Revision-Date: 2018-05-17 06:31:59+0000\n"
 "X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: es\n"
+"Language: de\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
@@ -18,75 +19,75 @@ msgstr ""
 
 #
 msgid "About"
-msgstr "Sobre"
+msgstr "Über"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
-msgstr "ESSID del punto de acceso (normalmente nombre de la red)"
+msgstr "Zugangspunkt ESSID (normalerweise Name Ihres Netzwerks"
 
 #
 msgid "Advanced"
-msgstr "Avanzado"
+msgstr "Erweitert"
 
 #
 msgid "Attended Sysupgrade"
-msgstr ""
+msgstr "Unterstütztes Sysupgrade"
 
 #
 msgid "Cancel"
-msgstr ""
+msgstr "Abbrechen"
 
 #
 msgid "Changes applied."
-msgstr ""
+msgstr "Änderungen ausgeführt"
 
 #
 msgid "Channel 2.4 GHz"
-msgstr "Canal 2.4GHz"
+msgstr "Kanal 2.4 GHz"
 
 #
 msgid "Channel 5 GHz"
-msgstr "Canal 5GHz"
+msgstr "Kanal 5 GHz"
 
 #
 msgid "Checksum"
-msgstr ""
+msgstr "Prüfsumme"
 
 #
 msgid "Community name"
-msgstr "Nombre de la comunidad"
+msgstr "Name der Gemeinschaft"
 
 #
 msgid "Contact"
-msgstr "Contacto"
+msgstr "Kontakt"
 
 #
 msgid "Contact information"
-msgstr "Información de contacto"
+msgstr "Kontaktinformationen"
 
 #
 msgid "Country code"
-msgstr "Código del país"
+msgstr "Ländercode."
 
 #
 msgid "Country code used for WiFi radios"
-msgstr "Código del país usado para las radios WiFi"
+msgstr "Für WiFi Sender verwendeter Ländercode"
 
 #
 msgid "Default channel used for 2.4 GHz radios"
-msgstr "Canal por defecto usado para las radios de 2.4GHz"
+msgstr ""
 
 #
 msgid "Default channel used for 5 GHz radios"
-msgstr "Canal por defecto usado para las radios de 5GHz"
+msgstr ""
 
 #
 msgid "Distance"
-msgstr "Distancia"
+msgstr "Distanz"
 
 #
 msgid "Email"
-msgstr "Correo"
+msgstr "E-Mail"
 
 #
 msgid "Flash Firmware"
@@ -110,15 +111,15 @@ msgstr ""
 
 #
 msgid "General"
-msgstr "General"
+msgstr "Allgemein"
 
 #
 msgid "Hostname"
-msgstr "Nombre de la máquina"
+msgstr "Hostname"
 
 #
 msgid "Image"
-msgstr ""
+msgstr "Abbild"
 
 #
 msgid "Internet Priorized Gateway (bmx6)"
@@ -126,75 +127,75 @@ msgstr ""
 
 #
 msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
-msgstr ""
+msgstr "Es scheint, als versuchst Du ein Abbild zu flashen,das nicht in den Flashspeicher passt, bitte überprüfe die Abbilddatei."
 
 #
 msgid "Keep settings"
-msgstr ""
+msgstr "Behalte Einstellungen"
 
 #
 msgid "Latitude"
-msgstr "Latitud"
+msgstr "Breitengrad"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
-msgstr "Latitud (puede ser configurada también en la sección Localización)"
+msgstr ""
 
 #
 msgid "Loading"
-msgstr ""
+msgstr "Lade"
 
 #
 msgid "Location"
-msgstr "Localización"
+msgstr "Standort"
 
 #
 msgid "Logout"
-msgstr "Salir"
+msgstr "Abmelden"
 
 #
 msgid "Longitude"
-msgstr "Longitud"
+msgstr "Längengrad"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
-msgstr "Longitud (puede ser configurada también en la sección Localización)"
-
-#
-msgid "MD5"
 msgstr ""
 
 #
+msgid "MD5"
+msgstr "MD5"
+
+#
 msgid "Main IPv4"
-msgstr "Dirección principal IPv4"
+msgstr ""
 
 #
 msgid "Main IPv6"
-msgstr "Dirección principal IPv6"
+msgstr ""
 
 #
 msgid "Map location"
-msgstr "Localización en mapa"
+msgstr "Standortkarte"
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
-msgstr "Distancia máxima de los enlaces WiFi en metros (impacto importante)"
+msgstr ""
 
 #
 msgid "Mesh BSSID"
-msgstr "BSSID de la Mesh"
+msgstr ""
 
 #
 msgid "Name"
-msgstr "Nombre"
+msgstr "Name"
 
 #
 msgid "Name for this node"
-msgstr "Nombre para este nodo"
+msgstr "Name für diesen Knoten"
 
 #
 msgid "Network SSID"
-msgstr "SSID de la red"
+msgstr "Netzwerk SSID"
 
 #
 msgid "Notes"
@@ -218,7 +219,7 @@ msgstr ""
 
 #
 msgid "Simple Config"
-msgstr "Configuración simple"
+msgstr ""
 
 #
 msgid "Size"
@@ -238,7 +239,7 @@ msgstr ""
 
 #
 msgid "The BSSID (WiFi network identifier) used for the mesh network"
-msgstr "El BSSID (identificador de la red WiFi) usado para la mesh"
+msgstr ""
 
 #
 msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
@@ -246,15 +247,15 @@ msgstr ""
 
 #
 msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
-msgstr "La IPv4 principal para este nodo, con notación de barra (p.e 1.2.3.4/24)"
+msgstr ""
 
 #
 msgid "The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"
-msgstr "La IPv6 principal para este nodo, con notación de barra (p.e 2001:db8::1/64)"
+msgstr ""
 
 #
 msgid "The name of your network community"
-msgstr "Nombre para la red comunitaria"
+msgstr ""
 
 #
 msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
@@ -286,9 +287,9 @@ msgstr ""
 
 #
 msgid "Your email (not required)"
-msgstr "Tu correo electrónico (no obligatorio)"
+msgstr ""
 
 #
 msgid "Your name or alias (not required)"
-msgstr "Tu nombre o alias (no obligatorio)"
+msgstr ""
 
