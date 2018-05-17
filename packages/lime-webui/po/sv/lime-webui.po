@@ -1,32 +1,33 @@
-# Translation of LibreMesh - Web UI to Spanish (español)
+# Translation of LibreMesh - Web UI to Swedish (svenska)
 # Exported from translatewiki.net
 #
+# Author: WikiPhoenix
 msgid ""
 msgstr ""
 ""
-"Content-Type: text/plain; charset=UTF-8\n"
 "PO-Revision-Date: 2018-05-17 06:31:59+0000\n"
 "X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: es\n"
+"Language: sv\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #
 msgid "(%s available)"
-msgstr ""
+msgstr "(%s tillgänglig)"
 
 #
 msgid "About"
-msgstr "Sobre"
+msgstr "Om"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
-msgstr "ESSID del punto de acceso (normalmente nombre de la red)"
+msgstr ""
 
 #
 msgid "Advanced"
-msgstr "Avanzado"
+msgstr "Avancerad"
 
 #
 msgid "Attended Sysupgrade"
@@ -34,59 +35,59 @@ msgstr ""
 
 #
 msgid "Cancel"
-msgstr ""
+msgstr "Avbryt"
 
 #
 msgid "Changes applied."
-msgstr ""
+msgstr "Ändringar verkställdes."
 
 #
 msgid "Channel 2.4 GHz"
-msgstr "Canal 2.4GHz"
+msgstr "Kanal 2.4 GHz"
 
 #
 msgid "Channel 5 GHz"
-msgstr "Canal 5GHz"
+msgstr "Kanal 5 GHz"
 
 #
 msgid "Checksum"
-msgstr ""
+msgstr "Kontrollsumma"
 
 #
 msgid "Community name"
-msgstr "Nombre de la comunidad"
+msgstr "Gemenskapsnamn"
 
 #
 msgid "Contact"
-msgstr "Contacto"
+msgstr "Kontakt"
 
 #
 msgid "Contact information"
-msgstr "Información de contacto"
+msgstr "Kontaktinformation"
 
 #
 msgid "Country code"
-msgstr "Código del país"
+msgstr "Landskod"
 
 #
 msgid "Country code used for WiFi radios"
-msgstr "Código del país usado para las radios WiFi"
+msgstr ""
 
 #
 msgid "Default channel used for 2.4 GHz radios"
-msgstr "Canal por defecto usado para las radios de 2.4GHz"
+msgstr ""
 
 #
 msgid "Default channel used for 5 GHz radios"
-msgstr "Canal por defecto usado para las radios de 5GHz"
+msgstr ""
 
 #
 msgid "Distance"
-msgstr "Distancia"
+msgstr "Avstånd"
 
 #
 msgid "Email"
-msgstr "Correo"
+msgstr "E-post"
 
 #
 msgid "Flash Firmware"
@@ -110,15 +111,15 @@ msgstr ""
 
 #
 msgid "General"
-msgstr "General"
+msgstr "Allmänt"
 
 #
 msgid "Hostname"
-msgstr "Nombre de la máquina"
+msgstr "Värdnamn"
 
 #
 msgid "Image"
-msgstr ""
+msgstr "Bild"
 
 #
 msgid "Internet Priorized Gateway (bmx6)"
@@ -130,7 +131,7 @@ msgstr ""
 
 #
 msgid "Keep settings"
-msgstr ""
+msgstr "Behåll inställningar"
 
 #
 msgid "Latitude"
@@ -138,19 +139,19 @@ msgstr "Latitud"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
-msgstr "Latitud (puede ser configurada también en la sección Localización)"
-
-#
-msgid "Loading"
 msgstr ""
 
 #
+msgid "Loading"
+msgstr "Läser in"
+
+#
 msgid "Location"
-msgstr "Localización"
+msgstr "Plats"
 
 #
 msgid "Logout"
-msgstr "Salir"
+msgstr "Logga ut"
 
 #
 msgid "Longitude"
@@ -158,71 +159,71 @@ msgstr "Longitud"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
-msgstr "Longitud (puede ser configurada también en la sección Localización)"
+msgstr ""
 
 #
 msgid "MD5"
-msgstr ""
+msgstr "MD5"
 
 #
 msgid "Main IPv4"
-msgstr "Dirección principal IPv4"
+msgstr ""
 
 #
 msgid "Main IPv6"
-msgstr "Dirección principal IPv6"
+msgstr ""
 
 #
 msgid "Map location"
-msgstr "Localización en mapa"
+msgstr "Kartposition"
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
-msgstr "Distancia máxima de los enlaces WiFi en metros (impacto importante)"
+msgstr ""
 
 #
 msgid "Mesh BSSID"
-msgstr "BSSID de la Mesh"
+msgstr ""
 
 #
 msgid "Name"
-msgstr "Nombre"
+msgstr "Namn"
 
 #
 msgid "Name for this node"
-msgstr "Nombre para este nodo"
+msgstr "Namn på denna nod"
 
 #
 msgid "Network SSID"
-msgstr "SSID de la red"
+msgstr "Nätverks-SSID"
 
 #
 msgid "Notes"
-msgstr ""
+msgstr "Anteckningar"
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
-msgstr ""
+msgstr "Anteckningar som kommer att visas i konsolinloggningen och kommer att vara tillhands här."
 
 #
 msgid "Proceed"
-msgstr ""
+msgstr "Fortsätt"
 
 #
 msgid "Rebooting..."
-msgstr ""
+msgstr "Startar om..."
 
 #
 msgid "SHA256"
-msgstr ""
+msgstr "SHA256"
 
 #
 msgid "Simple Config"
-msgstr "Configuración simple"
+msgstr "Enkel konfig"
 
 #
 msgid "Size"
-msgstr ""
+msgstr "Storlek"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
@@ -230,15 +231,15 @@ msgstr ""
 
 #
 msgid "System"
-msgstr ""
+msgstr "System"
 
 #
 msgid "System Notes"
-msgstr ""
+msgstr "Systemsanteckningar"
 
 #
 msgid "The BSSID (WiFi network identifier) used for the mesh network"
-msgstr "El BSSID (identificador de la red WiFi) usado para la mesh"
+msgstr ""
 
 #
 msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
@@ -246,15 +247,15 @@ msgstr ""
 
 #
 msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
-msgstr "La IPv4 principal para este nodo, con notación de barra (p.e 1.2.3.4/24)"
+msgstr ""
 
 #
 msgid "The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"
-msgstr "La IPv6 principal para este nodo, con notación de barra (p.e 2001:db8::1/64)"
+msgstr ""
 
 #
 msgid "The name of your network community"
-msgstr "Nombre para la red comunitaria"
+msgstr "Namnet på din nätverksgemenskap"
 
 #
 msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
@@ -274,11 +275,11 @@ msgstr ""
 
 #
 msgid "Verify"
-msgstr ""
+msgstr "Verifiera"
 
 #
 msgid "Waiting for changes to be applied..."
-msgstr ""
+msgstr "Väntar på att ändringar ska verkställas..."
 
 #
 msgid "You can choose a Gateway to priorize your traffic to go through this node."
@@ -286,9 +287,9 @@ msgstr ""
 
 #
 msgid "Your email (not required)"
-msgstr "Tu correo electrónico (no obligatorio)"
+msgstr "Din e-postadress (inte nödvändig)"
 
 #
 msgid "Your name or alias (not required)"
-msgstr "Tu nombre o alias (no obligatorio)"
+msgstr "Ditt namn eller alias (inte nödvändigt)"
 
