@@ -1,15 +1,16 @@
-# Translation of LibreMesh - Web UI to Message documentation (Message documentation)
+# Translation of LibreMesh - Web UI to German (Deutsch)
 # Exported from translatewiki.net
 #
-# Author: Robby
+# Author: Jkimmel
+# Author: Metalhead64
 msgid ""
 msgstr ""
 ""
-"Content-Type: text/plain; charset=UTF-8\n"
-"PO-Revision-Date: 2018-05-21 14:11:11+0000\n"
+"PO-Revision-Date: 2018-05-21 14:11:09+0000\n"
 "X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: qqq\n"
+"Language: de\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
@@ -19,59 +20,59 @@ msgstr ""
 
 #
 msgid "About"
-msgstr "{{Identical|About}}"
+msgstr "Über"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
-msgstr ""
+msgstr "Zugangspunkt ESSID (normalerweise Name Ihres Netzwerks"
 
 #
 msgid "Advanced"
-msgstr "{{Identical|Advanced}}"
+msgstr "Erweitert"
 
 #
 msgid "Attended Sysupgrade"
-msgstr ""
+msgstr "Unterstütztes Sysupgrade"
 
 #
 msgid "Cancel"
-msgstr "{{Identical|Cancel}}"
+msgstr "Abbrechen"
 
 #
 msgid "Changes applied."
-msgstr ""
+msgstr "Änderungen ausgeführt"
 
 #
 msgid "Channel 2.4 GHz"
-msgstr ""
+msgstr "Kanal 2.4 GHz"
 
 #
 msgid "Channel 5 GHz"
-msgstr ""
+msgstr "Kanal 5 GHz"
 
 #
 msgid "Checksum"
-msgstr ""
+msgstr "Prüfsumme"
 
 #
 msgid "Community name"
-msgstr ""
+msgstr "Name der Gemeinschaft"
 
 #
 msgid "Contact"
-msgstr ""
+msgstr "Kontakt"
 
 #
 msgid "Contact information"
-msgstr ""
+msgstr "Kontaktinformationen"
 
 #
 msgid "Country code"
-msgstr ""
+msgstr "Ländercode."
 
 #
 msgid "Country code used for WiFi radios"
-msgstr ""
+msgstr "Für WiFi Sender verwendeter Ländercode"
 
 #
 msgid "Default channel used for 2.4 GHz radios"
@@ -83,11 +84,11 @@ msgstr ""
 
 #
 msgid "Distance"
-msgstr ""
+msgstr "Distanz"
 
 #
 msgid "Email"
-msgstr "{{Identical|Email}}"
+msgstr "E-Mail"
 
 #
 msgid "Flash Firmware"
@@ -111,15 +112,15 @@ msgstr ""
 
 #
 msgid "General"
-msgstr "{{Identical|General}}"
+msgstr "Allgemein"
 
 #
 msgid "Hostname"
-msgstr ""
+msgstr "Hostname"
 
 #
 msgid "Image"
-msgstr ""
+msgstr "Abbild"
 
 #
 msgid "Internet Priorized Gateway (bmx6)"
@@ -127,15 +128,15 @@ msgstr ""
 
 #
 msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
-msgstr ""
+msgstr "Es scheint, als versuchst Du ein Abbild zu flashen,das nicht in den Flashspeicher passt, bitte überprüfe die Abbilddatei."
 
 #
 msgid "Keep settings"
-msgstr ""
+msgstr "Behalte Einstellungen"
 
 #
 msgid "Latitude"
-msgstr ""
+msgstr "Breitengrad"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
@@ -143,19 +144,19 @@ msgstr ""
 
 #
 msgid "Loading"
-msgstr ""
+msgstr "Lade"
 
 #
 msgid "Location"
-msgstr ""
+msgstr "Standort"
 
 #
 msgid "Logout"
-msgstr "{{Identical|Logout}}"
+msgstr "Abmelden"
 
 #
 msgid "Longitude"
-msgstr ""
+msgstr "Längengrad"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
@@ -163,19 +164,19 @@ msgstr ""
 
 #
 msgid "MD5"
-msgstr ""
+msgstr "MD5"
 
 #
 msgid "Main IPv4"
-msgstr ""
+msgstr "Haupt-IPv4"
 
 #
 msgid "Main IPv6"
-msgstr ""
+msgstr "Haupt-IPv6"
 
 #
 msgid "Map location"
-msgstr ""
+msgstr "Standortkarte"
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
@@ -187,15 +188,15 @@ msgstr ""
 
 #
 msgid "Name"
-msgstr "{{Identical|Name}}"
+msgstr "Name"
 
 #
 msgid "Name for this node"
-msgstr ""
+msgstr "Name für diesen Knoten"
 
 #
 msgid "Network SSID"
-msgstr ""
+msgstr "Netzwerk SSID"
 
 #
 msgid "Notes"
@@ -223,7 +224,7 @@ msgstr ""
 
 #
 msgid "Size"
-msgstr "{{Identical|Size}}"
+msgstr "Größe"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
@@ -231,7 +232,7 @@ msgstr ""
 
 #
 msgid "System"
-msgstr ""
+msgstr "System"
 
 #
 msgid "System Notes"
@@ -275,7 +276,7 @@ msgstr ""
 
 #
 msgid "Verify"
-msgstr ""
+msgstr "Verifizieren"
 
 #
 msgid "Waiting for changes to be applied..."

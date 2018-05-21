@@ -1,33 +1,34 @@
-# Translation of LibreMesh - Web UI to Message documentation (Message documentation)
+# Translation of LibreMesh - Web UI to Italian (italiano)
 # Exported from translatewiki.net
 #
-# Author: Robby
+# Author: Beta16
+# Author: Ilario
 msgid ""
 msgstr ""
 ""
-"Content-Type: text/plain; charset=UTF-8\n"
-"PO-Revision-Date: 2018-05-21 14:11:11+0000\n"
+"PO-Revision-Date: 2018-05-21 14:11:09+0000\n"
 "X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: qqq\n"
+"Language: it\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #
 msgid "(%s available)"
-msgstr ""
+msgstr "(%s disponibile)"
 
 #
 msgid "About"
-msgstr "{{Identical|About}}"
+msgstr "A proposito di"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
-msgstr ""
+msgstr "Nome del punto di accesso (ESSID, solitamente corrisponde al nome della rete)"
 
 #
 msgid "Advanced"
-msgstr "{{Identical|Advanced}}"
+msgstr "Avanzate"
 
 #
 msgid "Attended Sysupgrade"
@@ -35,19 +36,19 @@ msgstr ""
 
 #
 msgid "Cancel"
-msgstr "{{Identical|Cancel}}"
+msgstr "Annulla"
 
 #
 msgid "Changes applied."
-msgstr ""
+msgstr "Le modifiche sono state applicate."
 
 #
 msgid "Channel 2.4 GHz"
-msgstr ""
+msgstr "Canale a 2.4 GHz"
 
 #
 msgid "Channel 5 GHz"
-msgstr ""
+msgstr "Canale a 5 GHz"
 
 #
 msgid "Checksum"
@@ -55,71 +56,71 @@ msgstr ""
 
 #
 msgid "Community name"
-msgstr ""
+msgstr "Nome della comunità"
 
 #
 msgid "Contact"
-msgstr ""
+msgstr "Contatti"
 
 #
 msgid "Contact information"
-msgstr ""
+msgstr "Informazioni di contatto"
 
 #
 msgid "Country code"
-msgstr ""
+msgstr "Codice dello stato"
 
 #
 msgid "Country code used for WiFi radios"
-msgstr ""
+msgstr "Codice dello stato per la regolamentazione WiFi"
 
 #
 msgid "Default channel used for 2.4 GHz radios"
-msgstr ""
+msgstr "Canale predefinito per le radio sui 2.4 GHz"
 
 #
 msgid "Default channel used for 5 GHz radios"
-msgstr ""
+msgstr "Canale predefinito per le radio sui 5 GHz"
 
 #
 msgid "Distance"
-msgstr ""
+msgstr "Distanza"
 
 #
 msgid "Email"
-msgstr "{{Identical|Email}}"
+msgstr "Indirizzo email"
 
 #
 msgid "Flash Firmware"
-msgstr ""
+msgstr "Reinstalla il Sistema Operativo"
 
 #
 msgid "Flash image..."
-msgstr ""
+msgstr "Reinstalla il Sistema Operativo..."
 
 #
 msgid "Flash new firmware image"
-msgstr ""
+msgstr "Installa un nuovo Sistema Operativo"
 
 #
 msgid "Flash operations"
-msgstr ""
+msgstr "Operazioni di reinstallazione"
 
 #
 msgid "Flashing..."
-msgstr ""
+msgstr "Reinstallando..."
 
 #
 msgid "General"
-msgstr "{{Identical|General}}"
+msgstr "Generale"
 
 #
 msgid "Hostname"
-msgstr ""
+msgstr "Nome della macchina"
 
 #
 msgid "Image"
-msgstr ""
+msgstr "Immagine"
 
 #
 msgid "Internet Priorized Gateway (bmx6)"
@@ -127,39 +128,39 @@ msgstr ""
 
 #
 msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
-msgstr ""
+msgstr "Il file di installazione fornito è troppo grande per la memoria flash dell'apparato, verificare che sia il file corretto!"
 
 #
 msgid "Keep settings"
-msgstr ""
+msgstr "Preservare le impostazioni attuali"
 
 #
 msgid "Latitude"
-msgstr ""
+msgstr "Latitudine"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Latitudine (può essere configurata anche nella scheda Localizzazione)"
 
 #
 msgid "Loading"
-msgstr ""
+msgstr "Caricamento"
 
 #
 msgid "Location"
-msgstr ""
+msgstr "Localizzazione"
 
 #
 msgid "Logout"
-msgstr "{{Identical|Logout}}"
+msgstr "Esci"
 
 #
 msgid "Longitude"
-msgstr ""
+msgstr "Longitudine"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Longitudine (può essere configurata anche nella scheda Localizzazione)"
 
 #
 msgid "MD5"
@@ -187,7 +188,7 @@ msgstr ""
 
 #
 msgid "Name"
-msgstr "{{Identical|Name}}"
+msgstr ""
 
 #
 msgid "Name for this node"
@@ -223,7 +224,7 @@ msgstr ""
 
 #
 msgid "Size"
-msgstr "{{Identical|Size}}"
+msgstr ""
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
@@ -231,7 +232,7 @@ msgstr ""
 
 #
 msgid "System"
-msgstr ""
+msgstr "Sistema"
 
 #
 msgid "System Notes"

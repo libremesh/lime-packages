@@ -1,25 +1,26 @@
-# Translation of LibreMesh - Web UI to Message documentation (Message documentation)
+# Translation of LibreMesh - Web UI to Finnish (suomi)
 # Exported from translatewiki.net
 #
-# Author: Robby
+# Author: Nike
+# Author: Pyscowicz
 msgid ""
 msgstr ""
 ""
-"Content-Type: text/plain; charset=UTF-8\n"
-"PO-Revision-Date: 2018-05-21 14:11:11+0000\n"
+"PO-Revision-Date: 2018-05-21 14:11:09+0000\n"
 "X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: qqq\n"
+"Language: fi\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #
 msgid "(%s available)"
-msgstr ""
+msgstr "(%s saatavilla)"
 
 #
 msgid "About"
-msgstr "{{Identical|About}}"
+msgstr "Tietoja"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
@@ -27,7 +28,7 @@ msgstr ""
 
 #
 msgid "Advanced"
-msgstr "{{Identical|Advanced}}"
+msgstr "Lisäasetukset"
 
 #
 msgid "Attended Sysupgrade"
@@ -35,7 +36,7 @@ msgstr ""
 
 #
 msgid "Cancel"
-msgstr "{{Identical|Cancel}}"
+msgstr "Peru"
 
 #
 msgid "Changes applied."
@@ -43,11 +44,11 @@ msgstr ""
 
 #
 msgid "Channel 2.4 GHz"
-msgstr ""
+msgstr "Kanava 2.4 GHz"
 
 #
 msgid "Channel 5 GHz"
-msgstr ""
+msgstr "Kanava 5 GHz"
 
 #
 msgid "Checksum"
@@ -55,7 +56,7 @@ msgstr ""
 
 #
 msgid "Community name"
-msgstr ""
+msgstr "Yhteisön nimi"
 
 #
 msgid "Contact"
@@ -67,7 +68,7 @@ msgstr ""
 
 #
 msgid "Country code"
-msgstr ""
+msgstr "Maakoodi"
 
 #
 msgid "Country code used for WiFi radios"
@@ -83,11 +84,11 @@ msgstr ""
 
 #
 msgid "Distance"
-msgstr ""
+msgstr "Etäisyys"
 
 #
 msgid "Email"
-msgstr "{{Identical|Email}}"
+msgstr "Sähköposti"
 
 #
 msgid "Flash Firmware"
@@ -111,11 +112,11 @@ msgstr ""
 
 #
 msgid "General"
-msgstr "{{Identical|General}}"
+msgstr "Yleiset"
 
 #
 msgid "Hostname"
-msgstr ""
+msgstr "Isäntänimi"
 
 #
 msgid "Image"
@@ -131,7 +132,7 @@ msgstr ""
 
 #
 msgid "Keep settings"
-msgstr ""
+msgstr "Pidä asetukset"
 
 #
 msgid "Latitude"
@@ -143,15 +144,15 @@ msgstr ""
 
 #
 msgid "Loading"
-msgstr ""
+msgstr "Ladataan"
 
 #
 msgid "Location"
-msgstr ""
+msgstr "Sijainti"
 
 #
 msgid "Logout"
-msgstr "{{Identical|Logout}}"
+msgstr "Kirjaudu ulos"
 
 #
 msgid "Longitude"
@@ -187,7 +188,7 @@ msgstr ""
 
 #
 msgid "Name"
-msgstr "{{Identical|Name}}"
+msgstr "Nimi"
 
 #
 msgid "Name for this node"
@@ -223,7 +224,7 @@ msgstr ""
 
 #
 msgid "Size"
-msgstr "{{Identical|Size}}"
+msgstr ""
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
@@ -231,7 +232,7 @@ msgstr ""
 
 #
 msgid "System"
-msgstr ""
+msgstr "Järjestelmä"
 
 #
 msgid "System Notes"

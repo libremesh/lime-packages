@@ -1,0 +1,295 @@
+# Translation of LibreMesh - Web UI to Korean (한국어)
+# Exported from translatewiki.net
+#
+# Author: Ykhwong
+msgid ""
+msgstr ""
+""
+"PO-Revision-Date: 2018-05-17 06:31:59+0000\n"
+"X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ko\n"
+"X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#
+msgid "(%s available)"
+msgstr "(%s 사용 가능)"
+
+#
+msgid "About"
+msgstr "정보"
+
+#
+msgid "Access Point ESSID (usually name of your network)"
+msgstr "액세스 포인트 ESSID (보통은 내 네트워크의 이름임)"
+
+#
+msgid "Advanced"
+msgstr "고급"
+
+#
+msgid "Attended Sysupgrade"
+msgstr "시스템 업그레이드 주의"
+
+#
+msgid "Cancel"
+msgstr "취소"
+
+#
+msgid "Changes applied."
+msgstr "변경사항을 적용했습니다."
+
+#
+msgid "Channel 2.4 GHz"
+msgstr "채널 2.4 GHz"
+
+#
+msgid "Channel 5 GHz"
+msgstr "채널 5 GHz"
+
+#
+msgid "Checksum"
+msgstr "체크섬"
+
+#
+msgid "Community name"
+msgstr "커뮤니티 이름"
+
+#
+msgid "Contact"
+msgstr "연락"
+
+#
+msgid "Contact information"
+msgstr "연락처 정보"
+
+#
+msgid "Country code"
+msgstr "국가 코드"
+
+#
+msgid "Country code used for WiFi radios"
+msgstr "WiFi 무선에 쓰이는 국가 코드"
+
+#
+msgid "Default channel used for 2.4 GHz radios"
+msgstr "2.4 GHz 무선에 쓰이는 기본 채널"
+
+#
+msgid "Default channel used for 5 GHz radios"
+msgstr "5 GHz 무선에 쓰이는 기본 채널"
+
+#
+msgid "Distance"
+msgstr "거리"
+
+#
+msgid "Email"
+msgstr "이메일"
+
+#
+msgid "Flash Firmware"
+msgstr "펌웨어 플래시"
+
+#
+msgid "Flash image..."
+msgstr "플래시 이미지..."
+
+#
+msgid "Flash new firmware image"
+msgstr "새로운 펌웨어 이미지 플래시"
+
+#
+msgid "Flash operations"
+msgstr "플래시 동작"
+
+#
+msgid "Flashing..."
+msgstr "플래시 중..."
+
+#
+msgid "General"
+msgstr "일반"
+
+#
+msgid "Hostname"
+msgstr "호스트 이름"
+
+#
+msgid "Image"
+msgstr "이미지"
+
+#
+msgid "Internet Priorized Gateway (bmx6)"
+msgstr "인터넷 우선 게이트웨이 (bmx6)"
+
+#
+msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
+msgstr "플래시 메모리와 호환되지 않는 이미지를 플래시하려는 것으로 보입니다. 이미지 파일을 확인해 주십시오!"
+
+#
+msgid "Keep settings"
+msgstr "설정 유지"
+
+#
+msgid "Latitude"
+msgstr "위도"
+
+#
+msgid "Latitude (this can be also configured in location tab)"
+msgstr "위도 (위치 탭에서도 구성할 수 있습니다)"
+
+#
+msgid "Loading"
+msgstr "불러오는 중"
+
+#
+msgid "Location"
+msgstr "위치"
+
+#
+msgid "Logout"
+msgstr "로그아웃"
+
+#
+msgid "Longitude"
+msgstr "경도"
+
+#
+msgid "Longitude (this can be also configured in location tab)"
+msgstr "경도 (위치 탭에서도 구성할 수 있습니다)"
+
+#
+msgid "MD5"
+msgstr "MD5"
+
+#
+msgid "Main IPv4"
+msgstr "주요 IPv4"
+
+#
+msgid "Main IPv6"
+msgstr "주요 IPv6"
+
+#
+msgid "Map location"
+msgstr "지도 위치"
+
+#
+msgid "Max distance for the links in meters (big impact on performance)"
+msgstr "링크의 최대 거리 (단위: 미터, 성능에 큰 영향을 미침)"
+
+#
+msgid "Mesh BSSID"
+msgstr "메시 BSSID"
+
+#
+msgid "Name"
+msgstr "이름"
+
+#
+msgid "Name for this node"
+msgstr "이 노드의 이름"
+
+#
+msgid "Network SSID"
+msgstr "네트워크 SSID"
+
+#
+msgid "Notes"
+msgstr "참고"
+
+#
+msgid "Notes that will be shown on console login and will be at hand here."
+msgstr "콘솔 로그인 시에 표시될 참고이며 여기에 바로 반영됩니다."
+
+#
+msgid "Proceed"
+msgstr "진행"
+
+#
+msgid "Rebooting..."
+msgstr "다시 부팅하는 중..."
+
+#
+msgid "SHA256"
+msgstr "SHA256"
+
+#
+msgid "Simple Config"
+msgstr "단순 구성"
+
+#
+msgid "Size"
+msgstr "크기"
+
+#
+msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
+msgstr "죄송합니다. 현재 시스템 업그레이드 지원이 없습니다. 새로운 펌웨어 이미지는 수동으로 플래시해야 합니다. 장치에 맞는 설치 안내문에 대해서는 위키를 참고해 주십시오."
+
+#
+msgid "System"
+msgstr "시스템"
+
+#
+msgid "System Notes"
+msgstr "시스템 참고"
+
+#
+msgid "The BSSID (WiFi network identifier) used for the mesh network"
+msgstr "메시 네트워크에 쓰이는 BSSID (WiFi 네트워크 식별자)"
+
+#
+msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
+msgstr "플래시 이미지를 업로드했습니다. 아래에 체크섬과 파일 크기가 나열되어 있으니 원래의 파일과 비교하여 데이터 무결성을 확인하십시오.<br /> 플래시 절차를 시작하려면 아래의 \"진행\"을 클릭하십시오."
+
+#
+msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
+msgstr "이 노드에 구성되는 주요 IPv4 (슬래시 기호로 구분, 예: 1.2.3.4/24)"
+
+#
+msgid "The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"
+msgstr "이 노드에 구성되는 주요 IPv6 (슬래시 기호로 구분, 예: 2001:db8::1/64)"
+
+#
+msgid "The name of your network community"
+msgstr "내 네트워크 커뮤니티의 이름"
+
+#
+msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
+msgstr "시스템을 지금 플래시하고 있습니다.<br /> 장치의 전원을 끄지 마십시오!<br /> 몇 분 기다렸다가 연결을 다시 시도하십시오. 설정에 따라 장치에 다시 도달하기 위해 컴퓨터의 주소를 갱신해야 할 수 있습니다."
+
+#
+msgid "The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
+msgstr "업로드한 이미지 파일은 지원되는 포맷을 포함하고 있지 않습니다. 플랫폼에 맞는 일반 이미지 포맷을 선택해 주십시오."
+
+#
+msgid "Upload a LibreMesh sysupgrade image here to replace the running firmware."
+msgstr "기동 중인 펌웨어를 변경하려면 여기에 LibreMesh 시스템 업그레이드 이미지를 업로드하십시오."
+
+#
+msgid "Upload a sysupgrade-compatible image here to replace the running firmware. Check \"Keep settings\" to retain the current configuration (requires a compatible firmware image)."
+msgstr "기동 중인 펌웨어를 변경하려면 여기에 시스템 업그레이드 호환 이미지를 업로드하십시오. 현재 구성을 보관하려면 \"설정 유지\"에 체크하십시오. (호환되는 펌웨어 이미지 필요)"
+
+#
+msgid "Verify"
+msgstr "확인"
+
+#
+msgid "Waiting for changes to be applied..."
+msgstr "변경사항이 적용되기를 기다리는 중..."
+
+#
+msgid "You can choose a Gateway to priorize your traffic to go through this node."
+msgstr "이 노드를 경유하는 트래픽의 우선 순위를 정하기 위해 게이트웨이를 선택할 수 있습니다."
+
+#
+msgid "Your email (not required)"
+msgstr "내 이메일 (필수는 아님)"
+
+#
+msgid "Your name or alias (not required)"
+msgstr "내 이름 또는 다른 이름 (필수는 아님)"
+

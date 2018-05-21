@@ -1,0 +1,295 @@
+# Translation of LibreMesh - Web UI to Greek (Ελληνικά)
+# Exported from translatewiki.net
+#
+# Author: Nikosgranturismogt
+msgid ""
+msgstr ""
+""
+"PO-Revision-Date: 2018-05-17 06:31:59+0000\n"
+"X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: el\n"
+"X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#
+msgid "(%s available)"
+msgstr "(%δ διαθέσιμα)"
+
+#
+msgid "About"
+msgstr "Σχετικά"
+
+#
+msgid "Access Point ESSID (usually name of your network)"
+msgstr "Σημείο πρόσβασης ESSID (συνήθως το όνομα του δικτύου σας)"
+
+#
+msgid "Advanced"
+msgstr "Προχωρημένο"
+
+#
+msgid "Attended Sysupgrade"
+msgstr "Παρακολουθούμενη αναβάθμιση συστήματος"
+
+#
+msgid "Cancel"
+msgstr "Ακύρωση"
+
+#
+msgid "Changes applied."
+msgstr "Οι αλλαγές εφαρμόστηκαν."
+
+#
+msgid "Channel 2.4 GHz"
+msgstr "Κανάλι 2.4 GHz"
+
+#
+msgid "Channel 5 GHz"
+msgstr "Κανάλι 5 GHz"
+
+#
+msgid "Checksum"
+msgstr "Σύνολο ελέγχου"
+
+#
+msgid "Community name"
+msgstr "Όνομα κοινότητας"
+
+#
+msgid "Contact"
+msgstr "Επικοινωνία"
+
+#
+msgid "Contact information"
+msgstr "Στοιχεία επικοινωνίας"
+
+#
+msgid "Country code"
+msgstr "Κωδικός χώρας."
+
+#
+msgid "Country code used for WiFi radios"
+msgstr "Κωδικός χώρας που χρησιμοποιείται για ραδιόφωνα WiFi"
+
+#
+msgid "Default channel used for 2.4 GHz radios"
+msgstr "Προεπιλεγμένο κανάλι που χρησιμοποιείται για ραδιόφωνα 2.4 GHz"
+
+#
+msgid "Default channel used for 5 GHz radios"
+msgstr "Προεπιλεγμένο κανάλι που χρησιμοποιείται για ραδιόφωνα 5 GHz"
+
+#
+msgid "Distance"
+msgstr "Απόσταση"
+
+#
+msgid "Email"
+msgstr "Διεύθυνση ηλ. ταχυδρομείου"
+
+#
+msgid "Flash Firmware"
+msgstr "Υλικολογισμικό Flash"
+
+#
+msgid "Flash image..."
+msgstr "Εικόνα φλας σε εξέλιξη..."
+
+#
+msgid "Flash new firmware image"
+msgstr "Νέα εικόνα υλικολογισμικού φλας"
+
+#
+msgid "Flash operations"
+msgstr "Λειτουργίες φλας"
+
+#
+msgid "Flashing..."
+msgstr "Η διαδικασία φλας είναι σε εξέλιξη..."
+
+#
+msgid "General"
+msgstr "Γενικά"
+
+#
+msgid "Hostname"
+msgstr "Όνομα οικοδεσπότη"
+
+#
+msgid "Image"
+msgstr "Εικόνα"
+
+#
+msgid "Internet Priorized Gateway (bmx6)"
+msgstr "Πύλη με προτεραιότητα το διαδίκτυο (bmx6)"
+
+#
+msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
+msgstr "Φαίνεται ότι προσπαθείτε να φλασάρετε μια εικόνα που δεν κάνει στην μνήμη, παρακαλώ επαληθεύστε το αρχείο εικόνας!"
+
+#
+msgid "Keep settings"
+msgstr "Διατήρηση των ρυθμίσεων"
+
+#
+msgid "Latitude"
+msgstr "Γεωγραφικό πλάτος"
+
+#
+msgid "Latitude (this can be also configured in location tab)"
+msgstr "Γεωγραφικό πλάτος (αυτό μπορεί επίσης να ρυθμιστεί στην καρτέλα τοποθεσίας)"
+
+#
+msgid "Loading"
+msgstr "Φορτώνει"
+
+#
+msgid "Location"
+msgstr "Τοποθεσία"
+
+#
+msgid "Logout"
+msgstr "Έξοδος"
+
+#
+msgid "Longitude"
+msgstr "Γεωγραφικό μήκος"
+
+#
+msgid "Longitude (this can be also configured in location tab)"
+msgstr "Γεωγραφικό μήκος (αυτό μπορεί επίσης να ρυθμιστεί στην καρτέλα τοποθεσίας)"
+
+#
+msgid "MD5"
+msgstr "MD5"
+
+#
+msgid "Main IPv4"
+msgstr "Κύρια διεύθυνση IPv4"
+
+#
+msgid "Main IPv6"
+msgstr "Κύρια διεύθυνση IPv6"
+
+#
+msgid "Map location"
+msgstr "Τοποθεσία χάρτη"
+
+#
+msgid "Max distance for the links in meters (big impact on performance)"
+msgstr "Μέγιστη απόσταση για τους συνδέσμους σε μέτρα (επιδρά κατά μεγάλο βαθμό στην απόδοση)"
+
+#
+msgid "Mesh BSSID"
+msgstr "Πιάσιμο του BSSID"
+
+#
+msgid "Name"
+msgstr "Όνομα"
+
+#
+msgid "Name for this node"
+msgstr "Όνομα για αυτό το κόμβο"
+
+#
+msgid "Network SSID"
+msgstr "SSID δικτύου"
+
+#
+msgid "Notes"
+msgstr "Σημειώσεις"
+
+#
+msgid "Notes that will be shown on console login and will be at hand here."
+msgstr "Οι σημειώσεις θα εμφανιστούν στην σύνδεση κονσόλας και θα είναι στο χέρι εδώ."
+
+#
+msgid "Proceed"
+msgstr "Συνέχεια"
+
+#
+msgid "Rebooting..."
+msgstr "Επανεκκίνηση σε εξέλιξη..."
+
+#
+msgid "SHA256"
+msgstr "SHA256"
+
+#
+msgid "Simple Config"
+msgstr "Απλή ρύθμιση"
+
+#
+msgid "Size"
+msgstr "Μέγεθος"
+
+#
+msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
+msgstr "Λυπούμαστε, δεν υπάρχει παρούσα υποστήριξη αναβάθμισης συστήματος, και μια νέα εικόνα υλικολογισμικού πρέπει να φλασαριστεί χειροκίνητα. Παρακαλώ ανατρέξτε στο βίκι για ιδιαίτερες πληροφορίες εγκατάστασης ανάλογα με τη συσκευή."
+
+#
+msgid "System"
+msgstr "Σύστημα"
+
+#
+msgid "System Notes"
+msgstr "Σημειώσεις συστήματος"
+
+#
+msgid "The BSSID (WiFi network identifier) used for the mesh network"
+msgstr "Το BSSID (αναγνωριστής δικτύου WiFi) που χρησιμοποιείται για το δίκτυο πιασίματος"
+
+#
+msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
+msgstr "Η εικόνα φλας ενημερώθηκε. Παρακάτω παρατίθεται το σύνολο ελέγχου και το μέγεθος αρχείου. Συγκρίνετέ τα με το αρχικό αρχείο για να σιγουρευτείτε σχετικά με την ακεραιότητα των δεδομένων. <br /> Κάντε κλικ στο \"Συνέχεια\" παρακάτω για να ξεκινήσετε την επεξεργασία του φλας."
+
+#
+msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
+msgstr "Η κύρια ορισμένη διεύθυνση IPv4 για αυτό το κόμβο, με σκισμένη σημειογραφία (π.χ. 1.2.3.4/24)"
+
+#
+msgid "The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"
+msgstr "Η κύρια ορισμένη διεύθυνση IPv6 για αυτό το κόμβο, με σκισμένη σημειογραφία (π.χ. 2001:db8::1/64)"
+
+#
+msgid "The name of your network community"
+msgstr "Το όνομα της κοινότητας δικτύου σας"
+
+#
+msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
+msgstr "Το σύστημα φλασάρεται αυτή τη στιγμή.<br /> ΜΗΝ ΑΠΟΣΥΝΔΕΣΕΤΕ ΤΗΝ ΣΥΣΚΕΥΗ ΑΠΟ ΤΟ ΡΕΥΜΑ!<br /> Περιμένετε για λίγα λεπτά πριν ξαναπροσπαθήσετε να συνδεθείτε. Ίσως να είναι απαραίτητο να ανανεώσετε την διεύθυνση του υπολογιστή σας για να φτάσετε την διεύθυνση ξανά, ανάλογα με τις ρυθμίσεις σας."
+
+#
+msgid "The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
+msgstr "Το ανεβασμένο αρχείο εικόνας δεν περιέχει μια υποστηριζόμενη μορφοποίηση. Σιγουρευτείτε ότι επιλέγετε την γενική μορφοποίηση εικόνας για την πλατφόρμα σας."
+
+#
+msgid "Upload a LibreMesh sysupgrade image here to replace the running firmware."
+msgstr "Ανεβάστε μια εικόνα αναβάθμισης συστήματος LibreMesh εδώ για να αντικαταστήσετε το υλικολογισμικό που τρέχει."
+
+#
+msgid "Upload a sysupgrade-compatible image here to replace the running firmware. Check \"Keep settings\" to retain the current configuration (requires a compatible firmware image)."
+msgstr "Ανεβάστε μια εικόνα συμβατή με το sysupgrade εδώ για να αντικαστήσετε το υλικολογισμικό που εκτελείται. Ελέγξτε το \"Διατήρηση ρυθμίσεων\" για την διατήρηση της τρέχουσας ρύθμισης (απαιτεί μια συμβατή εικόνα υλικολογισμικού)."
+
+#
+msgid "Verify"
+msgstr "Επαλήθευση"
+
+#
+msgid "Waiting for changes to be applied..."
+msgstr "Περιμένετε για την εφάρμοση των αλλαγών..."
+
+#
+msgid "You can choose a Gateway to priorize your traffic to go through this node."
+msgstr "Μπορείτε να επιλέξετε μια πύλη για να προτεραιοποιήσετε την κυκλοφορία σας να πάει μέσω αυτού του κόμβου."
+
+#
+msgid "Your email (not required)"
+msgstr "Η διεύθυνση ηλεκτρονικού ταχυδρομείου σας (δεν απαιτείται)"
+
+#
+msgid "Your name or alias (not required)"
+msgstr "Το όνομα ή ψευδώνυμό σας (δεν απαιτείται)"
+
