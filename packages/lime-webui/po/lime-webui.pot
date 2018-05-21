@@ -27,7 +27,7 @@ msgstr ""
 msgid "Advanced"
 msgstr ""
 
-msgid "Attended Sysupgrade"
+msgid "Attended System Upgrade"
 msgstr ""
 
 msgid "Cancel"
@@ -96,7 +96,7 @@ msgstr ""
 msgid "Image"
 msgstr ""
 
-msgid "Internet Priorized Gateway (bmx6)"
+msgid "Internet Prioritized Gateway (bmx6)"
 msgstr ""
 
 msgid ""
@@ -239,7 +239,7 @@ msgid "Waiting for changes to be applied..."
 msgstr ""
 
 msgid ""
-"You can choose a Gateway to priorize your traffic to go through this node."
+"You can choose a Gateway to prioritize your traffic to go through this node."
 msgstr ""
 
 msgid "Your email (not required)"
