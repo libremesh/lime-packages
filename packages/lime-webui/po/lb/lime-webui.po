@@ -1,15 +1,15 @@
-# Translation of LibreMesh - Web UI to Message documentation (Message documentation)
+# Translation of LibreMesh - Web UI to Luxembourgish (Lëtzebuergesch)
 # Exported from translatewiki.net
 #
 # Author: Robby
 msgid ""
 msgstr ""
 ""
-"Content-Type: text/plain; charset=UTF-8\n"
-"PO-Revision-Date: 2018-05-21 14:11:11+0000\n"
+"PO-Revision-Date: 2018-05-21 14:11:09+0000\n"
 "X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: qqq\n"
+"Language: lb\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
@@ -19,7 +19,7 @@ msgstr ""
 
 #
 msgid "About"
-msgstr "{{Identical|About}}"
+msgstr "Iwwer"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
@@ -27,7 +27,7 @@ msgstr ""
 
 #
 msgid "Advanced"
-msgstr "{{Identical|Advanced}}"
+msgstr "Erweidert"
 
 #
 msgid "Attended Sysupgrade"
@@ -35,7 +35,7 @@ msgstr ""
 
 #
 msgid "Cancel"
-msgstr "{{Identical|Cancel}}"
+msgstr "Ofbriechen"
 
 #
 msgid "Changes applied."
@@ -59,7 +59,7 @@ msgstr ""
 
 #
 msgid "Contact"
-msgstr ""
+msgstr "Kontakt"
 
 #
 msgid "Contact information"
@@ -67,7 +67,7 @@ msgstr ""
 
 #
 msgid "Country code"
-msgstr ""
+msgstr "Lännercode"
 
 #
 msgid "Country code used for WiFi radios"
@@ -83,11 +83,11 @@ msgstr ""
 
 #
 msgid "Distance"
-msgstr ""
+msgstr "Distanz"
 
 #
 msgid "Email"
-msgstr "{{Identical|Email}}"
+msgstr "E-Mail"
 
 #
 msgid "Flash Firmware"
@@ -111,7 +111,7 @@ msgstr ""
 
 #
 msgid "General"
-msgstr "{{Identical|General}}"
+msgstr "Allgemeng"
 
 #
 msgid "Hostname"
@@ -119,7 +119,7 @@ msgstr ""
 
 #
 msgid "Image"
-msgstr ""
+msgstr "Bild"
 
 #
 msgid "Internet Priorized Gateway (bmx6)"
@@ -143,7 +143,7 @@ msgstr ""
 
 #
 msgid "Loading"
-msgstr ""
+msgstr "Lueden"
 
 #
 msgid "Location"
@@ -151,7 +151,7 @@ msgstr ""
 
 #
 msgid "Logout"
-msgstr "{{Identical|Logout}}"
+msgstr "Ausloggen"
 
 #
 msgid "Longitude"
@@ -171,7 +171,7 @@ msgstr ""
 
 #
 msgid "Main IPv6"
-msgstr ""
+msgstr "Haapt-IPv6"
 
 #
 msgid "Map location"
@@ -187,7 +187,7 @@ msgstr ""
 
 #
 msgid "Name"
-msgstr "{{Identical|Name}}"
+msgstr "Numm"
 
 #
 msgid "Name for this node"
@@ -199,7 +199,7 @@ msgstr ""
 
 #
 msgid "Notes"
-msgstr ""
+msgstr "Notizen"
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
@@ -207,11 +207,11 @@ msgstr ""
 
 #
 msgid "Proceed"
-msgstr ""
+msgstr "Virufueren"
 
 #
 msgid "Rebooting..."
-msgstr ""
+msgstr "Nei starten..."
 
 #
 msgid "SHA256"
@@ -223,7 +223,7 @@ msgstr ""
 
 #
 msgid "Size"
-msgstr "{{Identical|Size}}"
+msgstr "Gréisst"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
@@ -231,7 +231,7 @@ msgstr ""
 
 #
 msgid "System"
-msgstr ""
+msgstr "System"
 
 #
 msgid "System Notes"
@@ -275,7 +275,7 @@ msgstr ""
 
 #
 msgid "Verify"
-msgstr ""
+msgstr "Nokucken"
 
 #
 msgid "Waiting for changes to be applied..."
@@ -287,7 +287,7 @@ msgstr ""
 
 #
 msgid "Your email (not required)"
-msgstr ""
+msgstr "Är E-Mail-Adress (fakultativ)"
 
 #
 msgid "Your name or alias (not required)"

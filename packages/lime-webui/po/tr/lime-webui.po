@@ -1,0 +1,295 @@
+# Translation of LibreMesh - Web UI to Turkish (Türkçe)
+# Exported from translatewiki.net
+#
+# Author: Hedda
+msgid ""
+msgstr ""
+""
+"PO-Revision-Date: 2018-05-21 14:11:09+0000\n"
+"X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: tr\n"
+"X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#
+msgid "(%s available)"
+msgstr "(%s müsait)"
+
+#
+msgid "About"
+msgstr "Hakkında"
+
+#
+msgid "Access Point ESSID (usually name of your network)"
+msgstr "Erişim Noktası ESSID (genellikle ağınızın adı)"
+
+#
+msgid "Advanced"
+msgstr "Gelişmiş"
+
+#
+msgid "Attended Sysupgrade"
+msgstr "Dahil Olunan Sysupgrade"
+
+#
+msgid "Cancel"
+msgstr "İptal"
+
+#
+msgid "Changes applied."
+msgstr "Değişiklikler uygulandı."
+
+#
+msgid "Channel 2.4 GHz"
+msgstr "Kanal 2.4 GHz"
+
+#
+msgid "Channel 5 GHz"
+msgstr "Kanal 5 GHz"
+
+#
+msgid "Checksum"
+msgstr "Sağlama"
+
+#
+msgid "Community name"
+msgstr "Topluluk adı"
+
+#
+msgid "Contact"
+msgstr "İletişim"
+
+#
+msgid "Contact information"
+msgstr "İletişim bilgisi"
+
+#
+msgid "Country code"
+msgstr "Ülke kodu"
+
+#
+msgid "Country code used for WiFi radios"
+msgstr "WiFi radyolar için kullanılan ülke kodu"
+
+#
+msgid "Default channel used for 2.4 GHz radios"
+msgstr "2.4 GHz radyolar için varsayılan kanal"
+
+#
+msgid "Default channel used for 5 GHz radios"
+msgstr "5 GHz radyolar için varsayılan kanal"
+
+#
+msgid "Distance"
+msgstr "Uzaklık"
+
+#
+msgid "Email"
+msgstr "E-posta"
+
+#
+msgid "Flash Firmware"
+msgstr "Yazılımı Flaşla"
+
+#
+msgid "Flash image..."
+msgstr "Görüntüyü flaşla..."
+
+#
+msgid "Flash new firmware image"
+msgstr "Yeni yazılım görüntüsünü flaşla"
+
+#
+msgid "Flash operations"
+msgstr "İşlemleri flaşla"
+
+#
+msgid "Flashing..."
+msgstr "Flaşlanıyor..."
+
+#
+msgid "General"
+msgstr "Genel"
+
+#
+msgid "Hostname"
+msgstr "Sunucu adı"
+
+#
+msgid "Image"
+msgstr "Resim"
+
+#
+msgid "Internet Priorized Gateway (bmx6)"
+msgstr "İnternet Öncelikli Ağ Geçidi (bmx6)"
+
+#
+msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
+msgstr "Flash belleğe sığmayan bir görüntüyü yakmaya çalıştığınız anlaşılıyor, lütfen görüntü dosyasını doğrulayın!"
+
+#
+msgid "Keep settings"
+msgstr "Ayarları koru"
+
+#
+msgid "Latitude"
+msgstr "Enlem"
+
+#
+msgid "Latitude (this can be also configured in location tab)"
+msgstr "Enlem (bu ayrıca konum sekmesinde de yapılandırılabilir)"
+
+#
+msgid "Loading"
+msgstr "Yükleniyor"
+
+#
+msgid "Location"
+msgstr "Konum"
+
+#
+msgid "Logout"
+msgstr "Çıkış"
+
+#
+msgid "Longitude"
+msgstr "Boylam"
+
+#
+msgid "Longitude (this can be also configured in location tab)"
+msgstr "Boylam (bu ayrıca konum sekmesinde de yapılandırılabilir)"
+
+#
+msgid "MD5"
+msgstr "MD5"
+
+#
+msgid "Main IPv4"
+msgstr "Ana IPv4"
+
+#
+msgid "Main IPv6"
+msgstr "Ana IPv6"
+
+#
+msgid "Map location"
+msgstr "Harita konumu"
+
+#
+msgid "Max distance for the links in meters (big impact on performance)"
+msgstr "Metre cinsinden bağlantılar için maksimum mesafe (performans üzerinde büyük etkisi)"
+
+#
+msgid "Mesh BSSID"
+msgstr "Mesh BSSID"
+
+#
+msgid "Name"
+msgstr "Ad"
+
+#
+msgid "Name for this node"
+msgstr "Bu düğümün adı"
+
+#
+msgid "Network SSID"
+msgstr "Ağ SSID"
+
+#
+msgid "Notes"
+msgstr "Notlar"
+
+#
+msgid "Notes that will be shown on console login and will be at hand here."
+msgstr "Konsol girişinde gösterilecek notlar burada yer alacak."
+
+#
+msgid "Proceed"
+msgstr "Devam et"
+
+#
+msgid "Rebooting..."
+msgstr "Yeniden başlatılıyor..."
+
+#
+msgid "SHA256"
+msgstr "SHA256"
+
+#
+msgid "Simple Config"
+msgstr "Basit Yapılandırma"
+
+#
+msgid "Size"
+msgstr "Boyut"
+
+#
+msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
+msgstr "Üzgünüz, mevcut sysupgrade desteği yok; Yeni bir yazılım görüntüsü manuel olarak flashlanmalıdır. Lütfen aygıta özel yükleme talimatları için viki'ye bakın."
+
+#
+msgid "System"
+msgstr "Sistem"
+
+#
+msgid "System Notes"
+msgstr "Sistem Notları"
+
+#
+msgid "The BSSID (WiFi network identifier) used for the mesh network"
+msgstr "Mesh ağı için kullanılan BSSID (WiFi ağ tanımlayıcısı)"
+
+#
+msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
+msgstr "Flash görüntüsü yüklendi. Aşağıda listelenen sağlama toplamı ve dosya boyutu, veri bütünlüğünü sağlamak için orijinal dosyayla karşılaştırılır.<br /> Flaş prosedürünü başlatmak için aşağıdaki \"Devam et\"e tıklayın."
+
+#
+msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
+msgstr "Bu düğüm için eğik çizgi gösterimi ile yapılandırılan ana IPv4 (ör. 1.2.3.4/24)"
+
+#
+msgid "The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"
+msgstr "Bu düğüm için yapılandırılmış ana IPv6, eğik çizgiyle (ör. 2001:db8::1/64)"
+
+#
+msgid "The name of your network community"
+msgstr "Ağ topluluğunuzun adı"
+
+#
+msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
+msgstr "Sistem şu an flashlanıyor.<br /> CİHAZI KAPATMAYIN!<br /> Yeniden bağlanmaya başlamadan önce birkaç dakika bekleyin. Ayarlarınıza bağlı olarak bilgisayarınızın adresi cihaza tekrar ulaşmak için yeniden gerekebilir."
+
+#
+msgid "The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
+msgstr "Yüklenen görüntü dosyası desteklenen bir format içermiyor. Platformunuz için genel resim formatını seçtiğinizden emin olun."
+
+#
+msgid "Upload a LibreMesh sysupgrade image here to replace the running firmware."
+msgstr "Çalışan donanım yazılımını değiştirmek için LibreMesh sysupgrade görüntüsünü buraya yükleyin."
+
+#
+msgid "Upload a sysupgrade-compatible image here to replace the running firmware. Check \"Keep settings\" to retain the current configuration (requires a compatible firmware image)."
+msgstr "Çalışan donanım yazılımını değiştirmek için sysupgrade uyumlu bir görüntü yükleyin. Mevcut yapılandırmayı korumak için \"Ayarları koru\" seçeneğini işaretleyin (uyumlu bir ürün yazılımı görüntüsü gerektirir)."
+
+#
+msgid "Verify"
+msgstr "Doğrula"
+
+#
+msgid "Waiting for changes to be applied..."
+msgstr "Değişikliklerin uygulanması için bekleniyor..."
+
+#
+msgid "You can choose a Gateway to priorize your traffic to go through this node."
+msgstr "Bu düğümü kullanarak trafiğinizi önceliklendirmek için bir Ağ Geçidi seçebilirsiniz."
+
+#
+msgid "Your email (not required)"
+msgstr "E-postanız (zorunlu değil)"
+
+#
+msgid "Your name or alias (not required)"
+msgstr "Adınız veya lakabınız (zorunlu değil)"
+

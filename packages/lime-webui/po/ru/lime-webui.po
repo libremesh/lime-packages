@@ -1,25 +1,26 @@
-# Translation of LibreMesh - Web UI to Message documentation (Message documentation)
+# Translation of LibreMesh - Web UI to Russian (русский)
 # Exported from translatewiki.net
 #
-# Author: Robby
+# Author: Movses
+# Author: Okras
 msgid ""
 msgstr ""
 ""
-"Content-Type: text/plain; charset=UTF-8\n"
-"PO-Revision-Date: 2018-05-21 14:11:11+0000\n"
+"PO-Revision-Date: 2018-05-21 14:11:09+0000\n"
 "X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: qqq\n"
+"Language: ru\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=3; plural=(n%10 == 1 && n%100 != 11) ? 0 : ( (n%10 >= 2 && n%10 <= 4 && (n%100 < 10 || n%100 >= 20)) ? 1 : 2 );\n"
 
 #
 msgid "(%s available)"
-msgstr ""
+msgstr "(%s доступно)"
 
 #
 msgid "About"
-msgstr "{{Identical|About}}"
+msgstr ""
 
 #
 msgid "Access Point ESSID (usually name of your network)"
@@ -27,7 +28,7 @@ msgstr ""
 
 #
 msgid "Advanced"
-msgstr "{{Identical|Advanced}}"
+msgstr ""
 
 #
 msgid "Attended Sysupgrade"
@@ -35,11 +36,11 @@ msgstr ""
 
 #
 msgid "Cancel"
-msgstr "{{Identical|Cancel}}"
+msgstr "Отмена"
 
 #
 msgid "Changes applied."
-msgstr ""
+msgstr "Изменения внесены."
 
 #
 msgid "Channel 2.4 GHz"
@@ -51,11 +52,11 @@ msgstr ""
 
 #
 msgid "Checksum"
-msgstr ""
+msgstr "Контрольная сумма"
 
 #
 msgid "Community name"
-msgstr ""
+msgstr "Название сообщества"
 
 #
 msgid "Contact"
@@ -63,11 +64,11 @@ msgstr ""
 
 #
 msgid "Contact information"
-msgstr ""
+msgstr "Контактная информация"
 
 #
 msgid "Country code"
-msgstr ""
+msgstr "Код страны"
 
 #
 msgid "Country code used for WiFi radios"
@@ -83,11 +84,11 @@ msgstr ""
 
 #
 msgid "Distance"
-msgstr ""
+msgstr "Расстояние"
 
 #
 msgid "Email"
-msgstr "{{Identical|Email}}"
+msgstr "Эл. почта"
 
 #
 msgid "Flash Firmware"
@@ -111,7 +112,7 @@ msgstr ""
 
 #
 msgid "General"
-msgstr "{{Identical|General}}"
+msgstr ""
 
 #
 msgid "Hostname"
@@ -119,7 +120,7 @@ msgstr ""
 
 #
 msgid "Image"
-msgstr ""
+msgstr "Изображение"
 
 #
 msgid "Internet Priorized Gateway (bmx6)"
@@ -135,7 +136,7 @@ msgstr ""
 
 #
 msgid "Latitude"
-msgstr ""
+msgstr "Широта"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
@@ -143,7 +144,7 @@ msgstr ""
 
 #
 msgid "Loading"
-msgstr ""
+msgstr "Загрузка"
 
 #
 msgid "Location"
@@ -151,11 +152,11 @@ msgstr ""
 
 #
 msgid "Logout"
-msgstr "{{Identical|Logout}}"
+msgstr "Выйти"
 
 #
 msgid "Longitude"
-msgstr ""
+msgstr "Долгота"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
@@ -163,7 +164,7 @@ msgstr ""
 
 #
 msgid "MD5"
-msgstr ""
+msgstr "MD5"
 
 #
 msgid "Main IPv4"
@@ -187,7 +188,7 @@ msgstr ""
 
 #
 msgid "Name"
-msgstr "{{Identical|Name}}"
+msgstr ""
 
 #
 msgid "Name for this node"
@@ -195,7 +196,7 @@ msgstr ""
 
 #
 msgid "Network SSID"
-msgstr ""
+msgstr "SSID сети"
 
 #
 msgid "Notes"
@@ -211,11 +212,11 @@ msgstr ""
 
 #
 msgid "Rebooting..."
-msgstr ""
+msgstr "Перезагрузка…"
 
 #
 msgid "SHA256"
-msgstr ""
+msgstr "SHA256"
 
 #
 msgid "Simple Config"
@@ -223,7 +224,7 @@ msgstr ""
 
 #
 msgid "Size"
-msgstr "{{Identical|Size}}"
+msgstr "Размер"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
@@ -275,7 +276,7 @@ msgstr ""
 
 #
 msgid "Verify"
-msgstr ""
+msgstr "Проверить"
 
 #
 msgid "Waiting for changes to be applied..."
@@ -287,7 +288,7 @@ msgstr ""
 
 #
 msgid "Your email (not required)"
-msgstr ""
+msgstr "Ваш е-мейл (необязательно)"
 
 #
 msgid "Your name or alias (not required)"

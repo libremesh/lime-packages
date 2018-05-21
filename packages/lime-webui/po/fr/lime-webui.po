@@ -1,0 +1,296 @@
+# Translation of LibreMesh - Web UI to French (français)
+# Exported from translatewiki.net
+#
+# Author: Gomoko
+# Author: Wladek92
+msgid ""
+msgstr ""
+""
+"PO-Revision-Date: 2018-05-21 14:11:09+0000\n"
+"X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fr\n"
+"X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#
+msgid "(%s available)"
+msgstr "(%s disponible)"
+
+#
+msgid "About"
+msgstr "À propos"
+
+#
+msgid "Access Point ESSID (usually name of your network)"
+msgstr "Point d'accès ESSID (habituellement le nom de votre réseau)"
+
+#
+msgid "Advanced"
+msgstr "Avancé"
+
+#
+msgid "Attended Sysupgrade"
+msgstr "Mise à jour système tentée"
+
+#
+msgid "Cancel"
+msgstr "Annuler"
+
+#
+msgid "Changes applied."
+msgstr "Modifications appliquées."
+
+#
+msgid "Channel 2.4 GHz"
+msgstr "Canal 2,4GHz"
+
+#
+msgid "Channel 5 GHz"
+msgstr "Canal 5GHz"
+
+#
+msgid "Checksum"
+msgstr "Somme de contrôle"
+
+#
+msgid "Community name"
+msgstr "Nom de la communauté"
+
+#
+msgid "Contact"
+msgstr "Contact"
+
+#
+msgid "Contact information"
+msgstr "Informations de contact"
+
+#
+msgid "Country code"
+msgstr "Code du pays"
+
+#
+msgid "Country code used for WiFi radios"
+msgstr "Code du pays utilisé pour les radios WiFi"
+
+#
+msgid "Default channel used for 2.4 GHz radios"
+msgstr "Canal par défaut utilisé pour les radios à 2.4 GHz"
+
+#
+msgid "Default channel used for 5 GHz radios"
+msgstr "Canal par défaut utilisé pour les radios à 5GHz"
+
+#
+msgid "Distance"
+msgstr "Distance"
+
+#
+msgid "Email"
+msgstr "Courriel"
+
+#
+msgid "Flash Firmware"
+msgstr "Flasher le micrologiciel"
+
+#
+msgid "Flash image..."
+msgstr "Flasher l’image…"
+
+#
+msgid "Flash new firmware image"
+msgstr "Flasher l’image du nouveau micrologiciel"
+
+#
+msgid "Flash operations"
+msgstr "Opérations de capture"
+
+#
+msgid "Flashing..."
+msgstr "Capture..."
+
+#
+msgid "General"
+msgstr "Général"
+
+#
+msgid "Hostname"
+msgstr "Nom d’hôte"
+
+#
+msgid "Image"
+msgstr "Image"
+
+#
+msgid "Internet Priorized Gateway (bmx6)"
+msgstr "Passerelle Internet priorisée (bmx6)"
+
+#
+msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
+msgstr "Il semble que vous essayez de flasher une image qui ne rentre pas dans la mémoire flash, veuillez vérifier le fichier image !"
+
+#
+msgid "Keep settings"
+msgstr "Conserver les paramètres"
+
+#
+msgid "Latitude"
+msgstr "Latitude"
+
+#
+msgid "Latitude (this can be also configured in location tab)"
+msgstr "Latitude (cela peut aussi être configuré dans l’onglet localisation)"
+
+#
+msgid "Loading"
+msgstr "Chargement"
+
+#
+msgid "Location"
+msgstr "Localisation"
+
+#
+msgid "Logout"
+msgstr "Déconnexion"
+
+#
+msgid "Longitude"
+msgstr "Longitude"
+
+#
+msgid "Longitude (this can be also configured in location tab)"
+msgstr "Longitude (cela peut aussi être configuré dans l’onglet localisation)"
+
+#
+msgid "MD5"
+msgstr "MD5"
+
+#
+msgid "Main IPv4"
+msgstr "IPv4 principal"
+
+#
+msgid "Main IPv6"
+msgstr "IPv6 principal"
+
+#
+msgid "Map location"
+msgstr "Emplacement sur la carte"
+
+#
+msgid "Max distance for the links in meters (big impact on performance)"
+msgstr "Distance maximale pour les liens en mètres (gros impact sur les performances)"
+
+#
+msgid "Mesh BSSID"
+msgstr "BSSID de la maille"
+
+#
+msgid "Name"
+msgstr "Nom"
+
+#
+msgid "Name for this node"
+msgstr "Nom pour ce nœud"
+
+#
+msgid "Network SSID"
+msgstr "SSID du réseau"
+
+#
+msgid "Notes"
+msgstr "Notes"
+
+#
+msgid "Notes that will be shown on console login and will be at hand here."
+msgstr "Notes qui seront affichées à la connexion à la console et qui seront sous la main ici."
+
+#
+msgid "Proceed"
+msgstr "Effectuer"
+
+#
+msgid "Rebooting..."
+msgstr "Redémarrage…"
+
+#
+msgid "SHA256"
+msgstr "SHA256"
+
+#
+msgid "Simple Config"
+msgstr "Configuration simple"
+
+#
+msgid "Size"
+msgstr "Taille"
+
+#
+msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
+msgstr "Désolé, il n’y a pas de support présent de mise à jour système ; une nouvelle image du micrologiciel doit être flashée manuellement. Veuillez vous reporter au wiki pour les instructions d’installation spécifiques de l’appareil."
+
+#
+msgid "System"
+msgstr "Système"
+
+#
+msgid "System Notes"
+msgstr "Notes système"
+
+#
+msgid "The BSSID (WiFi network identifier) used for the mesh network"
+msgstr "Le BSSID (identifiant de réseau WiFi) utilisé pour la maille réseau"
+
+#
+msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
+msgstr "L'image de flash a été téléversée. Ci-dessous le code de contrôle et la taille du fichier, à comparer avec le fichier d’origine pour s’assurer de l’intégrité des données.<br /> Cliquez sur « Effectuer » ci-dessous pour démarrer la procédure de flash."
+
+#
+msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
+msgstr "L’IPv4 principal configuré pour ce nœud, avec la notation CIDR (par ex. 1.2.3.4/24)"
+
+#
+msgid "The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"
+msgstr "L’IPv6 principale configurée pour ce nœud, avec la notation CIDR (par ex. 2001:db8::1/64)"
+
+#
+msgid "The name of your network community"
+msgstr "Le nom de votre communauté réseau"
+
+#
+msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
+msgstr "Le système est en cours de flashage.<br /> N’ÉTEIGNEZ PAS L’APPAREIL !<br /> Attendez quelques minutes avant d’essayer de vous reconnecter. Il peut être nécessaire de renouveler l’adresse de votre machine pour atteindre de nouveau l’appareil, selon vos paramètres."
+
+#
+msgid "The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
+msgstr "Le fichier image téléchargé ne contient pas un format supporté. Assurez-vous que vous choisissez le format d’image générique pour votre plateforme."
+
+#
+msgid "Upload a LibreMesh sysupgrade image here to replace the running firmware."
+msgstr "Télécharger une image de mise à jour système LibreMesh ici pour remplacer le micrologiciel actuel."
+
+#
+msgid "Upload a sysupgrade-compatible image here to replace the running firmware. Check \"Keep settings\" to retain the current configuration (requires a compatible firmware image)."
+msgstr "Télécharger une image compatible mise à jour système ici pour remplacer le micrologiciel actuel. Cochez « Conserver les paramètres » pour conserver la configuration actuelle (nécessite une image de micrologiciel compatible)."
+
+#
+msgid "Verify"
+msgstr "Vérifier"
+
+#
+msgid "Waiting for changes to be applied..."
+msgstr "Attente de l’application des modifications…"
+
+#
+msgid "You can choose a Gateway to priorize your traffic to go through this node."
+msgstr "Vous pouvez choisir une passerelle pour prioriser votre trafic passant à travers ce nœud."
+
+#
+msgid "Your email (not required)"
+msgstr "Votre courriel (pas nécessaire)"
+
+#
+msgid "Your name or alias (not required)"
+msgstr "Votre nom ou alias (facultatif)"
+

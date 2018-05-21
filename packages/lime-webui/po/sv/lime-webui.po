@@ -1,25 +1,25 @@
-# Translation of LibreMesh - Web UI to Message documentation (Message documentation)
+# Translation of LibreMesh - Web UI to Swedish (svenska)
 # Exported from translatewiki.net
 #
-# Author: Robby
+# Author: WikiPhoenix
 msgid ""
 msgstr ""
 ""
-"Content-Type: text/plain; charset=UTF-8\n"
-"PO-Revision-Date: 2018-05-21 14:11:11+0000\n"
+"PO-Revision-Date: 2018-05-17 06:31:59+0000\n"
 "X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: qqq\n"
+"Language: sv\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #
 msgid "(%s available)"
-msgstr ""
+msgstr "(%s tillgänglig)"
 
 #
 msgid "About"
-msgstr "{{Identical|About}}"
+msgstr "Om"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
@@ -27,7 +27,7 @@ msgstr ""
 
 #
 msgid "Advanced"
-msgstr "{{Identical|Advanced}}"
+msgstr "Avancerad"
 
 #
 msgid "Attended Sysupgrade"
@@ -35,39 +35,39 @@ msgstr ""
 
 #
 msgid "Cancel"
-msgstr "{{Identical|Cancel}}"
+msgstr "Avbryt"
 
 #
 msgid "Changes applied."
-msgstr ""
+msgstr "Ändringar verkställdes."
 
 #
 msgid "Channel 2.4 GHz"
-msgstr ""
+msgstr "Kanal 2.4 GHz"
 
 #
 msgid "Channel 5 GHz"
-msgstr ""
+msgstr "Kanal 5 GHz"
 
 #
 msgid "Checksum"
-msgstr ""
+msgstr "Kontrollsumma"
 
 #
 msgid "Community name"
-msgstr ""
+msgstr "Gemenskapsnamn"
 
 #
 msgid "Contact"
-msgstr ""
+msgstr "Kontakt"
 
 #
 msgid "Contact information"
-msgstr ""
+msgstr "Kontaktinformation"
 
 #
 msgid "Country code"
-msgstr ""
+msgstr "Landskod"
 
 #
 msgid "Country code used for WiFi radios"
@@ -83,11 +83,11 @@ msgstr ""
 
 #
 msgid "Distance"
-msgstr ""
+msgstr "Avstånd"
 
 #
 msgid "Email"
-msgstr "{{Identical|Email}}"
+msgstr "E-post"
 
 #
 msgid "Flash Firmware"
@@ -111,15 +111,15 @@ msgstr ""
 
 #
 msgid "General"
-msgstr "{{Identical|General}}"
+msgstr "Allmänt"
 
 #
 msgid "Hostname"
-msgstr ""
+msgstr "Värdnamn"
 
 #
 msgid "Image"
-msgstr ""
+msgstr "Bild"
 
 #
 msgid "Internet Priorized Gateway (bmx6)"
@@ -131,11 +131,11 @@ msgstr ""
 
 #
 msgid "Keep settings"
-msgstr ""
+msgstr "Behåll inställningar"
 
 #
 msgid "Latitude"
-msgstr ""
+msgstr "Latitud"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
@@ -143,19 +143,19 @@ msgstr ""
 
 #
 msgid "Loading"
-msgstr ""
+msgstr "Läser in"
 
 #
 msgid "Location"
-msgstr ""
+msgstr "Plats"
 
 #
 msgid "Logout"
-msgstr "{{Identical|Logout}}"
+msgstr "Logga ut"
 
 #
 msgid "Longitude"
-msgstr ""
+msgstr "Longitud"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
@@ -163,7 +163,7 @@ msgstr ""
 
 #
 msgid "MD5"
-msgstr ""
+msgstr "MD5"
 
 #
 msgid "Main IPv4"
@@ -175,7 +175,7 @@ msgstr ""
 
 #
 msgid "Map location"
-msgstr ""
+msgstr "Kartposition"
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
@@ -187,43 +187,43 @@ msgstr ""
 
 #
 msgid "Name"
-msgstr "{{Identical|Name}}"
+msgstr "Namn"
 
 #
 msgid "Name for this node"
-msgstr ""
+msgstr "Namn på denna nod"
 
 #
 msgid "Network SSID"
-msgstr ""
+msgstr "Nätverks-SSID"
 
 #
 msgid "Notes"
-msgstr ""
+msgstr "Anteckningar"
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
-msgstr ""
+msgstr "Anteckningar som kommer att visas i konsolinloggningen och kommer att vara tillhands här."
 
 #
 msgid "Proceed"
-msgstr ""
+msgstr "Fortsätt"
 
 #
 msgid "Rebooting..."
-msgstr ""
+msgstr "Startar om..."
 
 #
 msgid "SHA256"
-msgstr ""
+msgstr "SHA256"
 
 #
 msgid "Simple Config"
-msgstr ""
+msgstr "Enkel konfig"
 
 #
 msgid "Size"
-msgstr "{{Identical|Size}}"
+msgstr "Storlek"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
@@ -231,11 +231,11 @@ msgstr ""
 
 #
 msgid "System"
-msgstr ""
+msgstr "System"
 
 #
 msgid "System Notes"
-msgstr ""
+msgstr "Systemsanteckningar"
 
 #
 msgid "The BSSID (WiFi network identifier) used for the mesh network"
@@ -255,7 +255,7 @@ msgstr ""
 
 #
 msgid "The name of your network community"
-msgstr ""
+msgstr "Namnet på din nätverksgemenskap"
 
 #
 msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
@@ -275,11 +275,11 @@ msgstr ""
 
 #
 msgid "Verify"
-msgstr ""
+msgstr "Verifiera"
 
 #
 msgid "Waiting for changes to be applied..."
-msgstr ""
+msgstr "Väntar på att ändringar ska verkställas..."
 
 #
 msgid "You can choose a Gateway to priorize your traffic to go through this node."
@@ -287,9 +287,9 @@ msgstr ""
 
 #
 msgid "Your email (not required)"
-msgstr ""
+msgstr "Din e-postadress (inte nödvändig)"
 
 #
 msgid "Your name or alias (not required)"
-msgstr ""
+msgstr "Ditt namn eller alias (inte nödvändigt)"
 
