@@ -1,7 +1,7 @@
-# Translation of LibreMesh - Web UI to Portuguese (português)
+# Translation of LibreMesh - Web UI to Brazilian Portuguese (português do Brasil)
 # Exported from translatewiki.net
 #
-# Author: Athena in Wonderland
+# Author: Eduardo Addad de Oliveira
 msgid ""
 msgstr ""
 ""
@@ -9,9 +9,9 @@ msgstr ""
 "X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: pt\n"
+"Language: pt-BR\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 #
 msgid "(%s available)"
@@ -19,11 +19,11 @@ msgstr "(%s disponível)"
 
 #
 msgid "About"
-msgstr "Acerca"
+msgstr "Sobre"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
-msgstr "Ponto de acesso ESSID (normalmente o nome da sua rede)"
+msgstr "Ponto de acesso ESSID (normalmente nome da sua rede)"
 
 #
 msgid "Advanced"
@@ -31,7 +31,7 @@ msgstr "Avançado"
 
 #
 msgid "Attended Sysupgrade"
-msgstr "Atualização do sistema tratada"
+msgstr "Frequentou o Sysupgrade"
 
 #
 msgid "Cancel"
@@ -39,7 +39,7 @@ msgstr "Cancelar"
 
 #
 msgid "Changes applied."
-msgstr "As alterações foram aplicadas."
+msgstr "Mudanças aplicadas."
 
 #
 msgid "Channel 2.4 GHz"
@@ -59,11 +59,11 @@ msgstr "Nome da comunidade"
 
 #
 msgid "Contact"
-msgstr "Contacto"
+msgstr "Contato"
 
 #
 msgid "Contact information"
-msgstr "Informação de contacto"
+msgstr "Informações para contato"
 
 #
 msgid "Country code"
@@ -71,15 +71,15 @@ msgstr "Código do país"
 
 #
 msgid "Country code used for WiFi radios"
-msgstr "Código do país usado para as rádios WiFi"
+msgstr "Código do país usado para os rádios WiFi"
 
 #
 msgid "Default channel used for 2.4 GHz radios"
-msgstr "Canal padrão usado para as rádios de 2.4 GHz"
+msgstr "Canal padrão usado para rádios de 2,4 GHz"
 
 #
 msgid "Default channel used for 5 GHz radios"
-msgstr "Canal padrão usado para as rádios de 5 GHz"
+msgstr "Canal padrão usado para rádios de 5 GHz"
 
 #
 msgid "Distance"
@@ -87,7 +87,7 @@ msgstr "Distância"
 
 #
 msgid "Email"
-msgstr "Correio eletrónico"
+msgstr "E-mail"
 
 #
 msgid "Flash Firmware"
@@ -95,19 +95,19 @@ msgstr "Instalar firmware"
 
 #
 msgid "Flash image..."
-msgstr "Instalar imagem..."
+msgstr "Imagem em flash..."
 
 #
 msgid "Flash new firmware image"
-msgstr "Instalar a imagem do novo firmware"
+msgstr "Flash nova imagem de firmware"
 
 #
 msgid "Flash operations"
-msgstr "Operações da instalação"
+msgstr "Operações de flash"
 
 #
 msgid "Flashing..."
-msgstr "A instalar..."
+msgstr "Instalando a imagem..."
 
 #
 msgid "General"
@@ -127,11 +127,11 @@ msgstr "Gateway priorizado pela Internet (bmx6)"
 
 #
 msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
-msgstr "Parece que está a tentar instalar uma imagem que não se encaixa na memória de instalação, por favor, verifique o ficheiro de imagem!"
+msgstr "Parece que você está tentando piscar uma imagem que não se encaixa na memória flash, por favor, verifique o arquivo de imagem!"
 
 #
 msgid "Keep settings"
-msgstr "Manter as configurações"
+msgstr "Manter configurações"
 
 #
 msgid "Latitude"
@@ -139,15 +139,15 @@ msgstr "Latitude"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
-msgstr "Latitude (também pode ser configurada no separador local)"
+msgstr "Latitude (isso também pode ser configurado na guia local)"
 
 #
 msgid "Loading"
-msgstr "A carregar"
+msgstr "Carregando"
 
 #
 msgid "Location"
-msgstr "Local"
+msgstr "Localização"
 
 #
 msgid "Logout"
@@ -159,7 +159,7 @@ msgstr "Longitude"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
-msgstr "Longitude (também pode ser configurada no separador local)"
+msgstr "Longitude (isso também pode ser configurado na guia local)"
 
 #
 msgid "MD5"
@@ -175,11 +175,11 @@ msgstr "IPv6 principal"
 
 #
 msgid "Map location"
-msgstr "Localização no mapa"
+msgstr "Localização do mapa"
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
-msgstr "Distância máxima para as ligações em metros (demasiado impacto no desempenho)"
+msgstr "Distância máxima para os links em metros (grande impacto no desempenho)"
 
 #
 msgid "Mesh BSSID"
@@ -203,7 +203,7 @@ msgstr "Notas"
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
-msgstr "As notas que serão mostradas no acesso da consola e estarão disponíveis aqui."
+msgstr "Notas que serão mostradas no login do console e estarão disponíveis aqui."
 
 #
 msgid "Proceed"
@@ -211,7 +211,7 @@ msgstr "Avançar"
 
 #
 msgid "Rebooting..."
-msgstr "A reiniciar..."
+msgstr "Reiniciando…"
 
 #
 msgid "SHA256"
@@ -227,7 +227,7 @@ msgstr "Tamanho"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
-msgstr "Desculpe, não há suporte para a imagem de atualização do sistema; uma nova imagem de firmware deve ser instalada manualmente. Por favor, consulte a wiki para obter as instruções específicas de instalação do dispositivo."
+msgstr "Desculpe, não há suporte para o sysupgrade presente; uma nova imagem de firmware deve ser mostrada manualmente. Por favor, consulte o wiki para instruções de instalação específicas do dispositivo."
 
 #
 msgid "System"
@@ -243,15 +243,15 @@ msgstr "O BSSID (identificador da rede WiFi) usado para a rede em malha"
 
 #
 msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
-msgstr "A imagem instalada foi carregada. Abaixo encontram-se listados a soma de verificação e o tamanho do ficheiro, compare-os com o ficheiro original para garantir a integridade dos dados.<br /> Abaixo, clique em \"Avançar\" para iniciar o procedimento de instalação."
+msgstr "A imagem instalada foi carregada. Abaixo encontram-se listados a soma de verificação e o tamanho do arquivo, compare-os com o arquivo original para garantir a integridade dos dados.<br /> Abaixo, clique em \"Avançar\" para iniciar o procedimento de instalação."
 
 #
 msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
-msgstr "O principal IPv4 configurado para este nó, com a notação de barra (por exemplo: 1.2.3.4/24)"
+msgstr "O principal IPv4 configurado para este nó, com notação de barra (por exemplo, 1.2.3.4/24)"
 
 #
 msgid "The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"
-msgstr "O principal IPv6 configurado para este nó, com a notação de barra (por exemplo: 2001:db8::1/64)"
+msgstr "O principal IPv6 configurado para este nó, com notação de barra (para ex. 2001:db8::1/64)"
 
 #
 msgid "The name of your network community"
@@ -263,7 +263,7 @@ msgstr "O sistema está a ser instalado no momento.<br /> NÃO DESLIGUE O DISPOS
 
 #
 msgid "The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
-msgstr "O ficheiro de imagem enviado não contém um formato suportado. Certifique-se de escolher o formato de imagem genérica para a sua plataforma."
+msgstr "O arquivo de imagem enviado não contém um formato suportado. Certifique-se de escolher o formato de imagem genérico para sua plataforma."
 
 #
 msgid "Upload a LibreMesh sysupgrade image here to replace the running firmware."
@@ -271,7 +271,7 @@ msgstr "Importe aqui uma imagem de atualização do sistema (sysupgrade) LibreMe
 
 #
 msgid "Upload a sysupgrade-compatible image here to replace the running firmware. Check \"Keep settings\" to retain the current configuration (requires a compatible firmware image)."
-msgstr "Importe aqui a imagem de atualização compatível com o sistema para substituir o firmware em execução. Marque \"Manter configurações\" para manter a configuração atual (requer uma imagem de firmware compatível)."
+msgstr "Carregue aqui a imagem compatível com o sistema para substituir o firmware em execução. Marque \"Manter configurações\" para manter a configuração atual (requer imagem de firmware compatível)."
 
 #
 msgid "Verify"
@@ -279,17 +279,17 @@ msgstr "Verificar"
 
 #
 msgid "Waiting for changes to be applied..."
-msgstr "A aguardar pela aplicação das alterações..."
+msgstr "Aguardando que as alterações sejam aplicadas ..."
 
 #
 msgid "You can choose a Gateway to priorize your traffic to go through this node."
-msgstr "Pode escolher um Gateway para priorizar o seu tráfego, passando através deste nó."
+msgstr "Você pode escolher um Gateway para priorizar seu tráfego para passar por esse nó."
 
 #
 msgid "Your email (not required)"
-msgstr "O seu correio eletrónico (opcional)"
+msgstr "Seu e-mail (não obrigatório)"
 
 #
 msgid "Your name or alias (not required)"
-msgstr "O seu nome ou pseudónimo (opcional)"
+msgstr "Seu nome ou alias (não obrigatório)"
 

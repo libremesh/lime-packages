@@ -1,8 +1,8 @@
-# Translation of LibreMesh - Web UI to Italian (italiano)
+# Translation of LibreMesh - Web UI to Russian (русский)
 # Exported from translatewiki.net
 #
-# Author: Beta16
-# Author: Ilario
+# Author: Movses
+# Author: Okras
 msgid ""
 msgstr ""
 ""
@@ -10,25 +10,25 @@ msgstr ""
 "X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: it\n"
+"Language: ru\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=3; plural=(n%10 == 1 && n%100 != 11) ? 0 : ( (n%10 >= 2 && n%10 <= 4 && (n%100 < 10 || n%100 >= 20)) ? 1 : 2 );\n"
 
 #
 msgid "(%s available)"
-msgstr "(%s disponibile)"
+msgstr "(%s доступно)"
 
 #
 msgid "About"
-msgstr "A proposito di"
+msgstr ""
 
 #
 msgid "Access Point ESSID (usually name of your network)"
-msgstr "Nome del punto di accesso (ESSID, solitamente corrisponde al nome della rete)"
+msgstr ""
 
 #
 msgid "Advanced"
-msgstr "Avanzate"
+msgstr ""
 
 #
 msgid "Attended Sysupgrade"
@@ -36,91 +36,91 @@ msgstr ""
 
 #
 msgid "Cancel"
-msgstr "Annulla"
+msgstr "Отмена"
 
 #
 msgid "Changes applied."
-msgstr "Le modifiche sono state applicate."
+msgstr "Изменения внесены."
 
 #
 msgid "Channel 2.4 GHz"
-msgstr "Canale a 2.4 GHz"
-
-#
-msgid "Channel 5 GHz"
-msgstr "Canale a 5 GHz"
-
-#
-msgid "Checksum"
 msgstr ""
 
 #
+msgid "Channel 5 GHz"
+msgstr ""
+
+#
+msgid "Checksum"
+msgstr "Контрольная сумма"
+
+#
 msgid "Community name"
-msgstr "Nome della comunità"
+msgstr "Название сообщества"
 
 #
 msgid "Contact"
-msgstr "Contatti"
+msgstr ""
 
 #
 msgid "Contact information"
-msgstr "Informazioni di contatto"
+msgstr "Контактная информация"
 
 #
 msgid "Country code"
-msgstr "Codice dello stato"
+msgstr "Код страны"
 
 #
 msgid "Country code used for WiFi radios"
-msgstr "Codice dello stato per la regolamentazione WiFi"
+msgstr ""
 
 #
 msgid "Default channel used for 2.4 GHz radios"
-msgstr "Canale predefinito per le radio sui 2.4 GHz"
+msgstr ""
 
 #
 msgid "Default channel used for 5 GHz radios"
-msgstr "Canale predefinito per le radio sui 5 GHz"
+msgstr ""
 
 #
 msgid "Distance"
-msgstr "Distanza"
+msgstr "Расстояние"
 
 #
 msgid "Email"
-msgstr "Indirizzo email"
+msgstr "Эл. почта"
 
 #
 msgid "Flash Firmware"
-msgstr "Reinstalla il Sistema Operativo"
+msgstr ""
 
 #
 msgid "Flash image..."
-msgstr "Reinstalla il Sistema Operativo..."
+msgstr ""
 
 #
 msgid "Flash new firmware image"
-msgstr "Installa un nuovo Sistema Operativo"
+msgstr ""
 
 #
 msgid "Flash operations"
-msgstr "Operazioni di reinstallazione"
+msgstr ""
 
 #
 msgid "Flashing..."
-msgstr "Reinstallando..."
+msgstr ""
 
 #
 msgid "General"
-msgstr "Generale"
+msgstr ""
 
 #
 msgid "Hostname"
-msgstr "Nome della macchina"
+msgstr ""
 
 #
 msgid "Image"
-msgstr "Immagine"
+msgstr "Изображение"
 
 #
 msgid "Internet Priorized Gateway (bmx6)"
@@ -128,43 +128,43 @@ msgstr ""
 
 #
 msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
-msgstr "Il file di installazione fornito è troppo grande per la memoria flash dell'apparato, verificare che sia il file corretto!"
+msgstr ""
 
 #
 msgid "Keep settings"
-msgstr "Preservare le impostazioni attuali"
+msgstr ""
 
 #
 msgid "Latitude"
-msgstr "Latitudine"
+msgstr "Широта"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
-msgstr "Latitudine (può essere configurata anche nella scheda Localizzazione)"
+msgstr ""
 
 #
 msgid "Loading"
-msgstr "Caricamento"
+msgstr "Загрузка"
 
 #
 msgid "Location"
-msgstr "Localizzazione"
+msgstr ""
 
 #
 msgid "Logout"
-msgstr "Esci"
+msgstr "Выйти"
 
 #
 msgid "Longitude"
-msgstr "Longitudine"
+msgstr "Долгота"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
-msgstr "Longitudine (può essere configurata anche nella scheda Localizzazione)"
+msgstr ""
 
 #
 msgid "MD5"
-msgstr ""
+msgstr "MD5"
 
 #
 msgid "Main IPv4"
@@ -196,7 +196,7 @@ msgstr ""
 
 #
 msgid "Network SSID"
-msgstr ""
+msgstr "SSID сети"
 
 #
 msgid "Notes"
@@ -212,11 +212,11 @@ msgstr ""
 
 #
 msgid "Rebooting..."
-msgstr ""
+msgstr "Перезагрузка…"
 
 #
 msgid "SHA256"
-msgstr ""
+msgstr "SHA256"
 
 #
 msgid "Simple Config"
@@ -224,7 +224,7 @@ msgstr ""
 
 #
 msgid "Size"
-msgstr ""
+msgstr "Размер"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
@@ -232,7 +232,7 @@ msgstr ""
 
 #
 msgid "System"
-msgstr "Sistema"
+msgstr ""
 
 #
 msgid "System Notes"
@@ -276,7 +276,7 @@ msgstr ""
 
 #
 msgid "Verify"
-msgstr ""
+msgstr "Проверить"
 
 #
 msgid "Waiting for changes to be applied..."
@@ -288,7 +288,7 @@ msgstr ""
 
 #
 msgid "Your email (not required)"
-msgstr ""
+msgstr "Ваш е-мейл (необязательно)"
 
 #
 msgid "Your name or alias (not required)"

@@ -1,11 +1,12 @@
 # Translation of LibreMesh - Web UI to Message documentation (Message documentation)
 # Exported from translatewiki.net
 #
+# Author: Robby
 msgid ""
 msgstr ""
 ""
 "Content-Type: text/plain; charset=UTF-8\n"
-"PO-Revision-Date: 2018-05-17 06:32:01+0000\n"
+"PO-Revision-Date: 2018-05-21 14:11:11+0000\n"
 "X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: qqq\n"
@@ -18,7 +19,7 @@ msgstr ""
 
 #
 msgid "About"
-msgstr ""
+msgstr "{{Identical|About}}"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
@@ -26,7 +27,7 @@ msgstr ""
 
 #
 msgid "Advanced"
-msgstr ""
+msgstr "{{Identical|Advanced}}"
 
 #
 msgid "Attended Sysupgrade"
@@ -34,7 +35,7 @@ msgstr ""
 
 #
 msgid "Cancel"
-msgstr ""
+msgstr "{{Identical|Cancel}}"
 
 #
 msgid "Changes applied."
@@ -86,7 +87,7 @@ msgstr ""
 
 #
 msgid "Email"
-msgstr ""
+msgstr "{{Identical|Email}}"
 
 #
 msgid "Flash Firmware"
@@ -110,7 +111,7 @@ msgstr ""
 
 #
 msgid "General"
-msgstr ""
+msgstr "{{Identical|General}}"
 
 #
 msgid "Hostname"
@@ -150,7 +151,7 @@ msgstr ""
 
 #
 msgid "Logout"
-msgstr ""
+msgstr "{{Identical|Logout}}"
 
 #
 msgid "Longitude"
@@ -186,7 +187,7 @@ msgstr ""
 
 #
 msgid "Name"
-msgstr ""
+msgstr "{{Identical|Name}}"
 
 #
 msgid "Name for this node"
@@ -222,7 +223,7 @@ msgstr ""
 
 #
 msgid "Size"
-msgstr ""
+msgstr "{{Identical|Size}}"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
