@@ -1,8 +1,7 @@
-# Translation of LibreMesh - Web UI to German (Deutsch)
+# Translation of LibreMesh - Web UI to Turkish (Türkçe)
 # Exported from translatewiki.net
 #
-# Author: Jkimmel
-# Author: Metalhead64
+# Author: Hedda
 msgid ""
 msgstr ""
 ""
@@ -10,37 +9,37 @@ msgstr ""
 "X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: de\n"
+"Language: tr\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 
 #
 msgid "(%s available)"
-msgstr ""
+msgstr "(%s müsait)"
 
 #
 msgid "About"
-msgstr "Über"
+msgstr "Hakkında"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
-msgstr "Zugangspunkt ESSID (normalerweise Name Ihres Netzwerks"
+msgstr "Erişim Noktası ESSID (genellikle ağınızın adı)"
 
 #
 msgid "Advanced"
-msgstr "Erweitert"
+msgstr "Gelişmiş"
 
 #
 msgid "Attended Sysupgrade"
-msgstr "Unterstütztes Sysupgrade"
+msgstr "Dahil Olunan Sysupgrade"
 
 #
 msgid "Cancel"
-msgstr "Abbrechen"
+msgstr "İptal"
 
 #
 msgid "Changes applied."
-msgstr "Änderungen ausgeführt"
+msgstr "Değişiklikler uygulandı."
 
 #
 msgid "Channel 2.4 GHz"
@@ -52,115 +51,115 @@ msgstr "Kanal 5 GHz"
 
 #
 msgid "Checksum"
-msgstr "Prüfsumme"
+msgstr "Sağlama"
 
 #
 msgid "Community name"
-msgstr "Name der Gemeinschaft"
+msgstr "Topluluk adı"
 
 #
 msgid "Contact"
-msgstr "Kontakt"
+msgstr "İletişim"
 
 #
 msgid "Contact information"
-msgstr "Kontaktinformationen"
+msgstr "İletişim bilgisi"
 
 #
 msgid "Country code"
-msgstr "Ländercode."
+msgstr "Ülke kodu"
 
 #
 msgid "Country code used for WiFi radios"
-msgstr "Für WiFi Sender verwendeter Ländercode"
+msgstr "WiFi radyolar için kullanılan ülke kodu"
 
 #
 msgid "Default channel used for 2.4 GHz radios"
-msgstr ""
+msgstr "2.4 GHz radyolar için varsayılan kanal"
 
 #
 msgid "Default channel used for 5 GHz radios"
-msgstr ""
+msgstr "5 GHz radyolar için varsayılan kanal"
 
 #
 msgid "Distance"
-msgstr "Distanz"
+msgstr "Uzaklık"
 
 #
 msgid "Email"
-msgstr "E-Mail"
+msgstr "E-posta"
 
 #
 msgid "Flash Firmware"
-msgstr ""
+msgstr "Yazılımı Flaşla"
 
 #
 msgid "Flash image..."
-msgstr ""
+msgstr "Görüntüyü flaşla..."
 
 #
 msgid "Flash new firmware image"
-msgstr ""
+msgstr "Yeni yazılım görüntüsünü flaşla"
 
 #
 msgid "Flash operations"
-msgstr ""
+msgstr "İşlemleri flaşla"
 
 #
 msgid "Flashing..."
-msgstr ""
+msgstr "Flaşlanıyor..."
 
 #
 msgid "General"
-msgstr "Allgemein"
+msgstr "Genel"
 
 #
 msgid "Hostname"
-msgstr "Hostname"
+msgstr "Sunucu adı"
 
 #
 msgid "Image"
-msgstr "Abbild"
+msgstr "Resim"
 
 #
 msgid "Internet Priorized Gateway (bmx6)"
-msgstr ""
+msgstr "İnternet Öncelikli Ağ Geçidi (bmx6)"
 
 #
 msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
-msgstr "Es scheint, als versuchst Du ein Abbild zu flashen,das nicht in den Flashspeicher passt, bitte überprüfe die Abbilddatei."
+msgstr "Flash belleğe sığmayan bir görüntüyü yakmaya çalıştığınız anlaşılıyor, lütfen görüntü dosyasını doğrulayın!"
 
 #
 msgid "Keep settings"
-msgstr "Behalte Einstellungen"
+msgstr "Ayarları koru"
 
 #
 msgid "Latitude"
-msgstr "Breitengrad"
+msgstr "Enlem"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Enlem (bu ayrıca konum sekmesinde de yapılandırılabilir)"
 
 #
 msgid "Loading"
-msgstr "Lade"
+msgstr "Yükleniyor"
 
 #
 msgid "Location"
-msgstr "Standort"
+msgstr "Konum"
 
 #
 msgid "Logout"
-msgstr "Abmelden"
+msgstr "Çıkış"
 
 #
 msgid "Longitude"
-msgstr "Längengrad"
+msgstr "Boylam"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Boylam (bu ayrıca konum sekmesinde de yapılandırılabilir)"
 
 #
 msgid "MD5"
@@ -168,129 +167,129 @@ msgstr "MD5"
 
 #
 msgid "Main IPv4"
-msgstr "Haupt-IPv4"
+msgstr "Ana IPv4"
 
 #
 msgid "Main IPv6"
-msgstr "Haupt-IPv6"
+msgstr "Ana IPv6"
 
 #
 msgid "Map location"
-msgstr "Standortkarte"
+msgstr "Harita konumu"
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
-msgstr ""
+msgstr "Metre cinsinden bağlantılar için maksimum mesafe (performans üzerinde büyük etkisi)"
 
 #
 msgid "Mesh BSSID"
-msgstr ""
+msgstr "Mesh BSSID"
 
 #
 msgid "Name"
-msgstr "Name"
+msgstr "Ad"
 
 #
 msgid "Name for this node"
-msgstr "Name für diesen Knoten"
+msgstr "Bu düğümün adı"
 
 #
 msgid "Network SSID"
-msgstr "Netzwerk SSID"
+msgstr "Ağ SSID"
 
 #
 msgid "Notes"
-msgstr ""
+msgstr "Notlar"
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
-msgstr ""
+msgstr "Konsol girişinde gösterilecek notlar burada yer alacak."
 
 #
 msgid "Proceed"
-msgstr ""
+msgstr "Devam et"
 
 #
 msgid "Rebooting..."
-msgstr ""
+msgstr "Yeniden başlatılıyor..."
 
 #
 msgid "SHA256"
-msgstr ""
+msgstr "SHA256"
 
 #
 msgid "Simple Config"
-msgstr ""
+msgstr "Basit Yapılandırma"
 
 #
 msgid "Size"
-msgstr "Größe"
+msgstr "Boyut"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
-msgstr ""
+msgstr "Üzgünüz, mevcut sysupgrade desteği yok; Yeni bir yazılım görüntüsü manuel olarak flashlanmalıdır. Lütfen aygıta özel yükleme talimatları için viki'ye bakın."
 
 #
 msgid "System"
-msgstr "System"
+msgstr "Sistem"
 
 #
 msgid "System Notes"
-msgstr ""
+msgstr "Sistem Notları"
 
 #
 msgid "The BSSID (WiFi network identifier) used for the mesh network"
-msgstr ""
+msgstr "Mesh ağı için kullanılan BSSID (WiFi ağ tanımlayıcısı)"
 
 #
 msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
-msgstr ""
+msgstr "Flash görüntüsü yüklendi. Aşağıda listelenen sağlama toplamı ve dosya boyutu, veri bütünlüğünü sağlamak için orijinal dosyayla karşılaştırılır.<br /> Flaş prosedürünü başlatmak için aşağıdaki \"Devam et\"e tıklayın."
 
 #
 msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
-msgstr ""
+msgstr "Bu düğüm için eğik çizgi gösterimi ile yapılandırılan ana IPv4 (ör. 1.2.3.4/24)"
 
 #
 msgid "The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"
-msgstr ""
+msgstr "Bu düğüm için yapılandırılmış ana IPv6, eğik çizgiyle (ör. 2001:db8::1/64)"
 
 #
 msgid "The name of your network community"
-msgstr ""
+msgstr "Ağ topluluğunuzun adı"
 
 #
 msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
-msgstr ""
+msgstr "Sistem şu an flashlanıyor.<br /> CİHAZI KAPATMAYIN!<br /> Yeniden bağlanmaya başlamadan önce birkaç dakika bekleyin. Ayarlarınıza bağlı olarak bilgisayarınızın adresi cihaza tekrar ulaşmak için yeniden gerekebilir."
 
 #
 msgid "The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
-msgstr ""
+msgstr "Yüklenen görüntü dosyası desteklenen bir format içermiyor. Platformunuz için genel resim formatını seçtiğinizden emin olun."
 
 #
 msgid "Upload a LibreMesh sysupgrade image here to replace the running firmware."
-msgstr ""
+msgstr "Çalışan donanım yazılımını değiştirmek için LibreMesh sysupgrade görüntüsünü buraya yükleyin."
 
 #
 msgid "Upload a sysupgrade-compatible image here to replace the running firmware. Check \"Keep settings\" to retain the current configuration (requires a compatible firmware image)."
-msgstr ""
+msgstr "Çalışan donanım yazılımını değiştirmek için sysupgrade uyumlu bir görüntü yükleyin. Mevcut yapılandırmayı korumak için \"Ayarları koru\" seçeneğini işaretleyin (uyumlu bir ürün yazılımı görüntüsü gerektirir)."
 
 #
 msgid "Verify"
-msgstr "Verifizieren"
+msgstr "Doğrula"
 
 #
 msgid "Waiting for changes to be applied..."
-msgstr ""
+msgstr "Değişikliklerin uygulanması için bekleniyor..."
 
 #
 msgid "You can choose a Gateway to priorize your traffic to go through this node."
-msgstr ""
+msgstr "Bu düğümü kullanarak trafiğinizi önceliklendirmek için bir Ağ Geçidi seçebilirsiniz."
 
 #
 msgid "Your email (not required)"
-msgstr ""
+msgstr "E-postanız (zorunlu değil)"
 
 #
 msgid "Your name or alias (not required)"
-msgstr ""
+msgstr "Adınız veya lakabınız (zorunlu değil)"
 

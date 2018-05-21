@@ -1,11 +1,14 @@
 # Translation of LibreMesh - Web UI to Spanish (español)
 # Exported from translatewiki.net
 #
+# Author: Fitoschido
+# Author: Giudicejesica
+# Author: Modante
 msgid ""
 msgstr ""
 ""
 "Content-Type: text/plain; charset=UTF-8\n"
-"PO-Revision-Date: 2018-05-17 06:31:59+0000\n"
+"PO-Revision-Date: 2018-05-21 14:11:09+0000\n"
 "X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: es\n"
@@ -14,11 +17,11 @@ msgstr ""
 
 #
 msgid "(%s available)"
-msgstr ""
+msgstr "(%<span class=\"notranslate\">s</span> Disponible)"
 
 #
 msgid "About"
-msgstr "Sobre"
+msgstr "Acerca de"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
@@ -30,15 +33,15 @@ msgstr "Avanzado"
 
 #
 msgid "Attended Sysupgrade"
-msgstr ""
+msgstr "Actualización de sistema asistida"
 
 #
 msgid "Cancel"
-msgstr ""
+msgstr "Cancelar"
 
 #
 msgid "Changes applied."
-msgstr ""
+msgstr "Se aplicaron los cambios."
 
 #
 msgid "Channel 2.4 GHz"
@@ -50,7 +53,7 @@ msgstr "Canal 5GHz"
 
 #
 msgid "Checksum"
-msgstr ""
+msgstr "Secuencia de comprobación del archivo imagen (checksum)"
 
 #
 msgid "Community name"
@@ -86,27 +89,27 @@ msgstr "Distancia"
 
 #
 msgid "Email"
-msgstr "Correo"
+msgstr "Correo electrónico"
 
 #
 msgid "Flash Firmware"
-msgstr ""
+msgstr "Instalar sistema (firmware)"
 
 #
 msgid "Flash image..."
-msgstr ""
+msgstr "Grabar imagen…"
 
 #
 msgid "Flash new firmware image"
-msgstr ""
+msgstr "Grabar imagen de firmware nueva"
 
 #
 msgid "Flash operations"
-msgstr ""
+msgstr "Operaciones de grabación"
 
 #
 msgid "Flashing..."
-msgstr ""
+msgstr "Grabando la imagen…"
 
 #
 msgid "General"
@@ -118,19 +121,19 @@ msgstr "Nombre de la máquina"
 
 #
 msgid "Image"
-msgstr ""
+msgstr "Imagen"
 
 #
 msgid "Internet Priorized Gateway (bmx6)"
-msgstr ""
+msgstr "Puerta de salida prioritaria para Internet (bmx6)"
 
 #
 msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
-msgstr ""
+msgstr "Parece que estás intentando grabar una imagen que no cabe en la memoria flash, por favor, verificar el archivo imagen a grabar!"
 
 #
 msgid "Keep settings"
-msgstr ""
+msgstr "Mantener la configuración"
 
 #
 msgid "Latitude"
@@ -142,11 +145,11 @@ msgstr "Latitud (puede ser configurada también en la sección Localización)"
 
 #
 msgid "Loading"
-msgstr ""
+msgstr "Cargando"
 
 #
 msgid "Location"
-msgstr "Localización"
+msgstr "Ubicación"
 
 #
 msgid "Logout"
@@ -162,7 +165,7 @@ msgstr "Longitud (puede ser configurada también en la sección Localización)"
 
 #
 msgid "MD5"
-msgstr ""
+msgstr "MD5"
 
 #
 msgid "Main IPv4"
@@ -178,7 +181,7 @@ msgstr "Localización en mapa"
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
-msgstr "Distancia máxima de los enlaces WiFi en metros (impacto importante)"
+msgstr "Distancia máxima de los enlaces WiFi en metros (impacto importante en el rendimiento)"
 
 #
 msgid "Mesh BSSID"
@@ -198,23 +201,23 @@ msgstr "SSID de la red"
 
 #
 msgid "Notes"
-msgstr ""
+msgstr "Notas"
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
-msgstr ""
+msgstr "Notas que serán mostradas en la autentificación de la consola y estarán a mano aquí."
 
 #
 msgid "Proceed"
-msgstr ""
+msgstr "Continuar"
 
 #
 msgid "Rebooting..."
-msgstr ""
+msgstr "Reiniciando…"
 
 #
 msgid "SHA256"
-msgstr ""
+msgstr "SHA256"
 
 #
 msgid "Simple Config"
@@ -222,19 +225,19 @@ msgstr "Configuración simple"
 
 #
 msgid "Size"
-msgstr ""
+msgstr "Tamaño"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
-msgstr ""
+msgstr "Lo sentimos, no hay asistente de sysupgrade; el nuevo firmware debe ser grabado manualmente. Por favor, consulte las instrucciones de la wiki para instalar un dispositivo específico."
 
 #
 msgid "System"
-msgstr ""
+msgstr "Sistema"
 
 #
 msgid "System Notes"
-msgstr ""
+msgstr "Notas del sistema"
 
 #
 msgid "The BSSID (WiFi network identifier) used for the mesh network"
@@ -242,7 +245,7 @@ msgstr "El BSSID (identificador de la red WiFi) usado para la mesh"
 
 #
 msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
-msgstr ""
+msgstr "La imagen se ha cargado en la memoria flash. Abajo encontrará el checksum y la medida del archivo, compárelo con el archivo original para asegurar la integridad del mismo.<br/> Presione \"Avanzar\" para empezar con el procedimiento de instalación."
 
 #
 msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
@@ -258,31 +261,31 @@ msgstr "Nombre para la red comunitaria"
 
 #
 msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
-msgstr ""
+msgstr "Se está instalando la imagen del sistema.<br />NO DEBE APAGARSE EL DISPOSITIVO.<br />Hay que esperar algunos minutos antes de intentar realizar una conexión. Puede que sea necesario renovar la dirección del equipo para que alcance el dispositivo de nuevo, en función de la configuración."
 
 #
 msgid "The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
-msgstr ""
+msgstr "El archivo cargado no contiene un formato soportado. Asegúrese de haber escogido el formato de imagen genérico para su plataforma."
 
 #
 msgid "Upload a LibreMesh sysupgrade image here to replace the running firmware."
-msgstr ""
+msgstr "Cargar una imagen de actualización de LibreMesh aquí para reemplazar el firmware actual."
 
 #
 msgid "Upload a sysupgrade-compatible image here to replace the running firmware. Check \"Keep settings\" to retain the current configuration (requires a compatible firmware image)."
-msgstr ""
+msgstr "Cargar aquí una imagen de actualización de sistema (sysupgrade) compatible para reemplazar el actual. Seleccione \"Mantener configuración\" para reproducir la configuración actual (requiere una imagen-firmware compatible)."
 
 #
 msgid "Verify"
-msgstr ""
+msgstr "Verificar"
 
 #
 msgid "Waiting for changes to be applied..."
-msgstr ""
+msgstr "Esperando a que se apliquen los cambios…"
 
 #
 msgid "You can choose a Gateway to priorize your traffic to go through this node."
-msgstr ""
+msgstr "Es posible seleccionar una puerta de enlace para priorizar el tráfico haciendo que pase por este nodo."
 
 #
 msgid "Your email (not required)"
