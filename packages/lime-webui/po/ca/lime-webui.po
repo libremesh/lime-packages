@@ -1,7 +1,7 @@
-# Translation of LibreMesh - Web UI to Luxembourgish (Lëtzebuergesch)
+# Translation of LibreMesh - Web UI to Catalan (català)
 # Exported from translatewiki.net
 #
-# Author: Robby
+# Author: Fitoschido
 msgid ""
 msgstr ""
 ""
@@ -9,7 +9,7 @@ msgstr ""
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: lb\n"
+"Language: ca\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
@@ -19,7 +19,7 @@ msgstr ""
 
 #
 msgid "About"
-msgstr "Iwwer"
+msgstr "Quant a"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
@@ -27,7 +27,7 @@ msgstr ""
 
 #
 msgid "Advanced"
-msgstr "Erweidert"
+msgstr ""
 
 #
 msgid "Attended System Upgrade"
@@ -35,11 +35,11 @@ msgstr ""
 
 #
 msgid "Cancel"
-msgstr "Ofbriechen"
+msgstr "Cancel·la"
 
 #
 msgid "Changes applied."
-msgstr ""
+msgstr "S’han aplicat els canvis."
 
 #
 msgid "Channel 2.4 GHz"
@@ -59,15 +59,15 @@ msgstr ""
 
 #
 msgid "Contact"
-msgstr "Kontakt"
+msgstr "Contacte"
 
 #
 msgid "Contact information"
-msgstr ""
+msgstr "Informació de contacte"
 
 #
 msgid "Country code"
-msgstr "Lännercode"
+msgstr "Codi del país"
 
 #
 msgid "Country code used for WiFi radios"
@@ -83,19 +83,19 @@ msgstr ""
 
 #
 msgid "Distance"
-msgstr "Distanz"
+msgstr ""
 
 #
 msgid "Email"
-msgstr "E-Mail"
+msgstr "Adreça electrònica"
 
 #
 msgid "Flash Firmware"
-msgstr ""
+msgstr "Instal·la el microprogramari"
 
 #
 msgid "Flash image..."
-msgstr ""
+msgstr "Instal·la una imatge…"
 
 #
 msgid "Flash new firmware image"
@@ -107,11 +107,11 @@ msgstr ""
 
 #
 msgid "Flashing..."
-msgstr ""
+msgstr "S’està instal·lant…"
 
 #
 msgid "General"
-msgstr "Allgemeng"
+msgstr ""
 
 #
 msgid "Hostname"
@@ -119,7 +119,7 @@ msgstr ""
 
 #
 msgid "Image"
-msgstr "Bild"
+msgstr "Imatge"
 
 #
 msgid "Internet Prioritized Gateway (bmx6)"
@@ -143,15 +143,15 @@ msgstr ""
 
 #
 msgid "Loading"
-msgstr "Lueden"
-
-#
-msgid "Location"
 msgstr ""
 
 #
+msgid "Location"
+msgstr "Ubicació"
+
+#
 msgid "Logout"
-msgstr "Ausloggen"
+msgstr "Surt"
 
 #
 msgid "Longitude"
@@ -171,7 +171,7 @@ msgstr ""
 
 #
 msgid "Main IPv6"
-msgstr "Haapt-IPv6"
+msgstr ""
 
 #
 msgid "Map location"
@@ -187,7 +187,7 @@ msgstr ""
 
 #
 msgid "Name"
-msgstr "Numm"
+msgstr "Nom"
 
 #
 msgid "Name for this node"
@@ -195,11 +195,11 @@ msgstr ""
 
 #
 msgid "Network SSID"
-msgstr ""
+msgstr "SSID de la xarxa"
 
 #
 msgid "Notes"
-msgstr "Notizen"
+msgstr "Notes"
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
@@ -207,11 +207,11 @@ msgstr ""
 
 #
 msgid "Proceed"
-msgstr "Virufueren"
+msgstr ""
 
 #
 msgid "Rebooting..."
-msgstr "Nei starten..."
+msgstr ""
 
 #
 msgid "SHA256"
@@ -223,7 +223,7 @@ msgstr ""
 
 #
 msgid "Size"
-msgstr "Gréisst"
+msgstr "Mida"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
@@ -231,11 +231,11 @@ msgstr ""
 
 #
 msgid "System"
-msgstr "System"
+msgstr "Sistema"
 
 #
 msgid "System Notes"
-msgstr ""
+msgstr "Notes del sistema"
 
 #
 msgid "The BSSID (WiFi network identifier) used for the mesh network"
@@ -259,7 +259,7 @@ msgstr ""
 
 #
 msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
-msgstr ""
+msgstr "S’està instal·lant el sistema en aquest moment.<br />NO APAGUEU EL DISPOSITIU!<br />Espereu uns minuts abans d’intentar connectar-vos. Possiblement caldria renovar les adreces de l’ordinador perquè trobi el dispositiu de nou, en funció dels paràmetres que hàgiu definit."
 
 #
 msgid "The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
@@ -275,7 +275,7 @@ msgstr ""
 
 #
 msgid "Verify"
-msgstr "Nokucken"
+msgstr ""
 
 #
 msgid "Waiting for changes to be applied..."
@@ -287,7 +287,7 @@ msgstr ""
 
 #
 msgid "Your email (not required)"
-msgstr "Är E-Mail-Adress (fakultativ)"
+msgstr ""
 
 #
 msgid "Your name or alias (not required)"
