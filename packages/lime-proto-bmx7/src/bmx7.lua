@@ -137,6 +137,11 @@ function bmx7.configure(args)
 		elseif(proto == "batadv") then hasBatadv = true end
 	end
 
+	if config.get("network", "bmx7_over_librenet6", false) then
+		uci:set("bmx7", "librenet6", "dev")
+		uci:set("bmx7", "librenet6", "dev", "librenet6")
+	end
+
 	if(hasLan) then
 		uci:set("bmx7", "lm_net_br_lan", "dev")
 		uci:set("bmx7", "lm_net_br_lan", "dev", "br-lan")
