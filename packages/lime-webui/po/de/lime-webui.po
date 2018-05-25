@@ -6,8 +6,8 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-21 14:11:09+0000\n"
-"X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"PO-Revision-Date: 2018-05-25 09:51:34+0000\n"
+"X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 
 #
 msgid "(%s available)"
-msgstr ""
+msgstr "(%s verfügbar)"
 
 #
 msgid "About"
@@ -24,14 +24,14 @@ msgstr "Über"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
-msgstr "Zugangspunkt ESSID (normalerweise Name Ihres Netzwerks"
+msgstr "Zugangspunkt-ESSID (normalerweise der Name deines Netzwerks)"
 
 #
 msgid "Advanced"
 msgstr "Erweitert"
 
-#
-msgid "Attended Sysupgrade"
+#, fuzzy
+msgid "Attended System Upgrade"
 msgstr "Unterstütztes Sysupgrade"
 
 #
@@ -44,7 +44,7 @@ msgstr "Änderungen ausgeführt"
 
 #
 msgid "Channel 2.4 GHz"
-msgstr "Kanal 2.4 GHz"
+msgstr "Kanal 2,4 GHz"
 
 #
 msgid "Channel 5 GHz"
@@ -72,7 +72,7 @@ msgstr "Ländercode."
 
 #
 msgid "Country code used for WiFi radios"
-msgstr "Für WiFi Sender verwendeter Ländercode"
+msgstr "Für WLAN-Sender verwendeter Ländercode"
 
 #
 msgid "Default channel used for 2.4 GHz radios"
@@ -123,12 +123,12 @@ msgid "Image"
 msgstr "Abbild"
 
 #
-msgid "Internet Priorized Gateway (bmx6)"
+msgid "Internet Prioritized Gateway (bmx6)"
 msgstr ""
 
 #
 msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
-msgstr "Es scheint, als versuchst Du ein Abbild zu flashen,das nicht in den Flashspeicher passt, bitte überprüfe die Abbilddatei."
+msgstr "Es scheint, als ob du versuchst, ein Abbild zu flashen, das nicht in den Flashspeicher passt. Bitte überprüfe die Abbilddatei."
 
 #
 msgid "Keep settings"
@@ -196,7 +196,7 @@ msgstr "Name für diesen Knoten"
 
 #
 msgid "Network SSID"
-msgstr "Netzwerk SSID"
+msgstr "Netzwerk-SSID"
 
 #
 msgid "Notes"
@@ -208,7 +208,7 @@ msgstr ""
 
 #
 msgid "Proceed"
-msgstr ""
+msgstr "Fortfahren"
 
 #
 msgid "Rebooting..."
@@ -216,7 +216,7 @@ msgstr ""
 
 #
 msgid "SHA256"
-msgstr ""
+msgstr "SHA256"
 
 #
 msgid "Simple Config"
@@ -283,7 +283,7 @@ msgid "Waiting for changes to be applied..."
 msgstr ""
 
 #
-msgid "You can choose a Gateway to priorize your traffic to go through this node."
+msgid "You can choose a Gateway to prioritize your traffic to go through this node."
 msgstr ""
 
 #

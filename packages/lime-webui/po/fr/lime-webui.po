@@ -6,8 +6,8 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-21 14:11:09+0000\n"
-"X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"PO-Revision-Date: 2018-05-25 09:51:34+0000\n"
+"X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: fr\n"
@@ -30,8 +30,8 @@ msgstr "Point d'accès ESSID (habituellement le nom de votre réseau)"
 msgid "Advanced"
 msgstr "Avancé"
 
-#
-msgid "Attended Sysupgrade"
+#, fuzzy
+msgid "Attended System Upgrade"
 msgstr "Mise à jour système tentée"
 
 #
@@ -123,7 +123,7 @@ msgid "Image"
 msgstr "Image"
 
 #
-msgid "Internet Priorized Gateway (bmx6)"
+msgid "Internet Prioritized Gateway (bmx6)"
 msgstr "Passerelle Internet priorisée (bmx6)"
 
 #
@@ -264,7 +264,7 @@ msgstr "Le système est en cours de flashage.<br /> N’ÉTEIGNEZ PAS L’APPARE
 
 #
 msgid "The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
-msgstr "Le fichier image téléchargé ne contient pas un format supporté. Assurez-vous que vous choisissez le format d’image générique pour votre plateforme."
+msgstr "Le fichier image téléchargé ne contient pas de format supporté. Assurez-vous que vous choisissez le format d’image générique pour votre plateforme."
 
 #
 msgid "Upload a LibreMesh sysupgrade image here to replace the running firmware."
@@ -283,7 +283,7 @@ msgid "Waiting for changes to be applied..."
 msgstr "Attente de l’application des modifications…"
 
 #
-msgid "You can choose a Gateway to priorize your traffic to go through this node."
+msgid "You can choose a Gateway to prioritize your traffic to go through this node."
 msgstr "Vous pouvez choisir une passerelle pour prioriser votre trafic passant à travers ce nœud."
 
 #

@@ -5,8 +5,8 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-17 06:31:59+0000\n"
-"X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"PO-Revision-Date: 2018-05-25 09:51:34+0000\n"
+"X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: zh-Hans\n"
@@ -29,8 +29,8 @@ msgstr "访问点ESSID（通常是您的网络名称）"
 msgid "Advanced"
 msgstr "高级"
 
-#
-msgid "Attended Sysupgrade"
+#, fuzzy
+msgid "Attended System Upgrade"
 msgstr "已参与系统更新"
 
 #
@@ -122,7 +122,7 @@ msgid "Image"
 msgstr "图片"
 
 #
-msgid "Internet Priorized Gateway (bmx6)"
+msgid "Internet Prioritized Gateway (bmx6)"
 msgstr "网络优先级网关（bmx6）"
 
 #
@@ -282,7 +282,7 @@ msgid "Waiting for changes to be applied..."
 msgstr "正在等待应用更新..."
 
 #
-msgid "You can choose a Gateway to priorize your traffic to go through this node."
+msgid "You can choose a Gateway to prioritize your traffic to go through this node."
 msgstr "您可以选择网关以优先处理您的流量至此节点。"
 
 #

@@ -5,8 +5,8 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-17 06:31:59+0000\n"
-"X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"PO-Revision-Date: 2018-05-25 09:51:34+0000\n"
+"X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: sv\n"
@@ -30,7 +30,7 @@ msgid "Advanced"
 msgstr "Avancerad"
 
 #
-msgid "Attended Sysupgrade"
+msgid "Attended System Upgrade"
 msgstr ""
 
 #
@@ -122,7 +122,7 @@ msgid "Image"
 msgstr "Bild"
 
 #
-msgid "Internet Priorized Gateway (bmx6)"
+msgid "Internet Prioritized Gateway (bmx6)"
 msgstr ""
 
 #
@@ -282,7 +282,7 @@ msgid "Waiting for changes to be applied..."
 msgstr "Väntar på att ändringar ska verkställas..."
 
 #
-msgid "You can choose a Gateway to priorize your traffic to go through this node."
+msgid "You can choose a Gateway to prioritize your traffic to go through this node."
 msgstr ""
 
 #

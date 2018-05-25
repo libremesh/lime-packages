@@ -5,8 +5,8 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-21 14:11:09+0000\n"
-"X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"PO-Revision-Date: 2018-05-25 09:51:34+0000\n"
+"X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: pt-BR\n"
@@ -29,8 +29,8 @@ msgstr "Ponto de acesso ESSID (normalmente nome da sua rede)"
 msgid "Advanced"
 msgstr "Avançado"
 
-#
-msgid "Attended Sysupgrade"
+#, fuzzy
+msgid "Attended System Upgrade"
 msgstr "Frequentou o Sysupgrade"
 
 #
@@ -122,7 +122,7 @@ msgid "Image"
 msgstr "Imagem"
 
 #
-msgid "Internet Priorized Gateway (bmx6)"
+msgid "Internet Prioritized Gateway (bmx6)"
 msgstr "Gateway priorizado pela Internet (bmx6)"
 
 #
@@ -282,7 +282,7 @@ msgid "Waiting for changes to be applied..."
 msgstr "Aguardando que as alterações sejam aplicadas ..."
 
 #
-msgid "You can choose a Gateway to priorize your traffic to go through this node."
+msgid "You can choose a Gateway to prioritize your traffic to go through this node."
 msgstr "Você pode escolher um Gateway para priorizar seu tráfego para passar por esse nó."
 
 #

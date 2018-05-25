@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 ""
 "Content-Type: text/plain; charset=UTF-8\n"
-"PO-Revision-Date: 2018-05-21 14:11:09+0000\n"
-"X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"PO-Revision-Date: 2018-05-25 09:51:34+0000\n"
+"X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: es\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
@@ -31,8 +31,8 @@ msgstr "ESSID del punto de acceso (normalmente nombre de la red)"
 msgid "Advanced"
 msgstr "Avanzado"
 
-#
-msgid "Attended Sysupgrade"
+#, fuzzy
+msgid "Attended System Upgrade"
 msgstr "Actualización de sistema asistida"
 
 #
@@ -53,7 +53,7 @@ msgstr "Canal 5GHz"
 
 #
 msgid "Checksum"
-msgstr "Secuencia de comprobación del archivo imagen (checksum)"
+msgstr "Suma de comprobación"
 
 #
 msgid "Community name"
@@ -93,7 +93,7 @@ msgstr "Correo electrónico"
 
 #
 msgid "Flash Firmware"
-msgstr "Instalar sistema (firmware)"
+msgstr "Instalar firmware"
 
 #
 msgid "Flash image..."
@@ -101,15 +101,15 @@ msgstr "Grabar imagen…"
 
 #
 msgid "Flash new firmware image"
-msgstr "Grabar imagen de firmware nueva"
+msgstr "Instalar imagen de firmware nueva"
 
 #
 msgid "Flash operations"
-msgstr "Operaciones de grabación"
+msgstr "Operaciones de instalación"
 
 #
 msgid "Flashing..."
-msgstr "Grabando la imagen…"
+msgstr "Instalando la imagen…"
 
 #
 msgid "General"
@@ -124,7 +124,7 @@ msgid "Image"
 msgstr "Imagen"
 
 #
-msgid "Internet Priorized Gateway (bmx6)"
+msgid "Internet Prioritized Gateway (bmx6)"
 msgstr "Puerta de salida prioritaria para Internet (bmx6)"
 
 #
@@ -284,7 +284,7 @@ msgid "Waiting for changes to be applied..."
 msgstr "Esperando a que se apliquen los cambios…"
 
 #
-msgid "You can choose a Gateway to priorize your traffic to go through this node."
+msgid "You can choose a Gateway to prioritize your traffic to go through this node."
 msgstr "Es posible seleccionar una puerta de enlace para priorizar el tráfico haciendo que pase por este nodo."
 
 #
