@@ -25,6 +25,7 @@ config lime network
 	list protocols olsr:14
 	list protocols olsr6:15
 	list protocols olsr2:16
+	list protocols babeld:17
 	list resolvers 4.2.2.2   # b.resolvers.Level3.net
 	list resolvers 141.1.1.1 # cns1.cw.net
 	list resolvers 2001:470:20::2 # ordns.he.net
