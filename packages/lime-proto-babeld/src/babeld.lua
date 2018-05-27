@@ -30,7 +30,7 @@ function babeld.configure(args)
 
 	print("lime.proto.babeld.configure(...)")
 
---	fs.writefile("/etc/config/babeld", "")
+	fs.writefile("/etc/config/babeld", "")
 
 	local uci = libuci:cursor()
 
@@ -49,6 +49,11 @@ function babeld.configure(args)
 	uci:set("babeld", "mesh4", "type", "redistribute")
 	uci:set("babeld", "mesh4", "ip", "10.0.0.0/8")
 	uci:set("babeld", "mesh4", "action", "allow")
+
+	uci:set("babeld", "mptp4", "filter")
+	uci:set("babeld", "mptp4", "type", "redistribute")
+	uci:set("babeld", "mptp4", "ip", "172.16.0.0/12")
+	uci:set("babeld", "mptp4", "action", "allow")
 
 	uci:set("babeld", "default4", "filter")
 	uci:set("babeld", "default4", "type", "redistribute")
