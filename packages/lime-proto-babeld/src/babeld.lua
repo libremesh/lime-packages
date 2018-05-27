@@ -1,105 +1,107 @@
 #!/usr/bin/lua
 
+--! LiMe Proto Babeld
+--! Copyright (C) 2018  Gioacchino Mazzurco <gio@eigenlab.org>
+--!
+--! This program is free software: you can redistribute it and/or modify
+--! it under the terms of the GNU Affero General Public License as
+--! published by the Free Software Foundation, either version 3 of the
+--! License, or (at your option) any later version.
+--!
+--! This program is distributed in the hope that it will be useful,
+--! but WITHOUT ANY WARRANTY; without even the implied warranty of
+--! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--! GNU Affero General Public License for more details.
+--!
+--! You should have received a copy of the GNU Affero General Public License
+--! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 local network = require("lime.network")
-local config = require("lime.config")
 local fs = require("nixio.fs")
 local libuci = require("uci")
 
 babeld = {}
 
-function babeld.setup_interface(ifname, args)
-	vlanId = args[2] or 14
-	vlanProto = args[3] or "8021ad"
-	nameSuffix = args[4] or "_babeld"
-
-	local owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
-
-	local uci = libuci:cursor()
-	uci:set("babeld", owrtInterfaceName, "interface")
-	uci:set("babeld", owrtInterfaceName, "ignore", "false")
-	uci:save("babeld")
-end
-
-function babeld.clean()
-	print("Clearing babeld config...")
-	fs.writefile("/etc/config/babeld", "")
-end
+babeld.configured = false
 
 function babeld.configure(args)
+	if babeld.configured then return end
+	babeld.configured = true
 
-	babeld.clean()
+	print("lime.proto.babeld.configure(...)")
 
-	local ipv4, ipv6 = network.primary_address()
+--	fs.writefile("/etc/config/babeld", "")
 
 	local uci = libuci:cursor()
 
-	uci:set("babeld", "general", "babeld")
-	uci:set("babeld", "general", "log_file", "/var/log/babeld.log")
+	uci:set("babeld", "public6", "filter")
+	uci:set("babeld", "public6", "type", "redistribute")
+	uci:set("babeld", "public6", "ip", "2000::0/3")
+	uci:set("babeld", "public6", "action", "allow")
 
-	-- Don't announce anything by default
-	uci:set("babeld", "default_out", "filter")
-	uci:set("babeld", "default_out", "ignore", "false")
-	uci:set("babeld", "default_out", "type", "redistribute")
-	uci:set("babeld", "default_out", "local", "1")
-	uci:set("babeld", "default_out", "action", "deny")
+	uci:set("babeld", "default6", "filter")
+	uci:set("babeld", "default6", "type", "redistribute")
+	uci:set("babeld", "default6", "ip", "0::0/0")
+	uci:set("babeld", "default6", "le", "0")
+	uci:set("babeld", "default6", "action", "allow")
 
-	-- Don't search for anything by default
-	uci:set("babeld", "default_in", "filter")
-	uci:set("babeld", "default_in", "ignore", "false")
-	uci:set("babeld", "default_in", "type", "in")
-	uci:set("babeld", "default_in", "action", "deny")
+	uci:set("babeld", "mesh4", "filter")
+	uci:set("babeld", "mesh4", "type", "redistribute")
+	uci:set("babeld", "mesh4", "ip", "10.0.0.0/8")
+	uci:set("babeld", "mesh4", "action", "allow")
 
-	-- Search for networks in 172.16.0.0/12
-	uci:set("babeld", "nodes", "filter")
-	uci:set("babeld", "nodes", "ignore", "false")
-	uci:set("babeld", "nodes", "type", "in")
-	uci:set("babeld", "nodes", "ip", "172.16.0.0/12")
+	uci:set("babeld", "default4", "filter")
+	uci:set("babeld", "default4", "type", "redistribute")
+	uci:set("babeld", "default4", "ip", "0.0.0.0/0")
+	uci:set("babeld", "default4", "le", "0")
+	uci:set("babeld", "default4", "action", "allow")
 
-	-- Search for networks in 10.0.0.0/8
-	uci:set("babeld", "clouds", "filter")
-	uci:set("babeld", "clouds", "ignore", "false")
-	uci:set("babeld", "clouds", "type", "in")
-	uci:set("babeld", "clouds", "ip", "10.0.0.0/8")
+	-- Avoid redistributing extra local addesses
+	uci:set("babeld", "localdeny", "filter")
+	uci:set("babeld", "localdeny", "type", "redistribute")
+	uci:set("babeld", "localdeny", "local", "true")
+	uci:set("babeld", "localdeny", "action", "deny")
 
-	-- Search for internet in the mesh cloud
-	uci:set("babeld", "inet4", "filter")
-	uci:set("babeld", "inet4", "ignore", "false")
-	uci:set("babeld", "inet4", "type", "in")
-	uci:set("babeld", "inet4", "ip", "0.0.0.0/0")
-	uci:set("babeld", "inet4", "le", "0")
-
-	-- Search for internet IPv6 gateways in the mesh cloud
-	uci:set("babeld", "inet6", "filter")
-	uci:set("babeld", "inet6", "ignore", "false")
-	uci:set("babeld", "inet6", "type", "in")
-	uci:set("babeld", "inet6", "ip", "::/0")
-	uci:set("babeld", "inet6", "le", "0")
-
-	-- Search for other mesh cloud announcements that have public ipv6
-	uci:set("babeld", "publicv6", "filter")
-	uci:set("babeld", "publicv6", "ignore", "false")
-	uci:set("babeld", "publicv6", "type", "in")
-	uci:set("babeld", "publicv6", "ip", "2000::/3")
-	uci:set("babeld", "publicv6", "le", "64")
-
-	-- Announce local ipv4 cloud
-	uci:set("babeld", "local4", "filter")
-	uci:set("babeld", "local4", "ignore", "false")
-	uci:set("babeld", "local4", "type", "redistribute")
-	uci:set("babeld", "local4", "ip", ipv4:network():string().."/"..ipv4:prefix())
-
-	-- Announce local ipv6 cloud
-	uci:set("babeld", "local6", "filter")
-	uci:set("babeld", "local6", "ignore", "false")
-	uci:set("babeld", "local6", "type", "redistribute")
-	uci:set("babeld", "local6", "ip", ipv6:network():string().."/"..ipv6:prefix())
+	-- Avoid redistributing enything else
+	uci:set("babeld", "dany", "filter")
+	uci:set("babeld", "dany", "type", "redistribute")
+	uci:set("babeld", "dany", "action", "deny")
 
 	uci:save("babeld")
 end
 
-function babeld.apply()
-    os.execute("killall babeld ; sleep 2 ; killall -9 babeld")
-    os.execute("babeld")
+function babeld.setup_interface(ifname, args)
+	if not args["specific"] and ifname:match("^wlan%d+.ap") then
+		print("lime.proto.babeld.setup_interface(...)", ifname, "ignored")
+		return
+	end
+
+	print("lime.proto.babeld.setup_interface(...)", ifname)
+
+	local vlanId = args[2] or 17
+	local vlanProto = args[3] or "8021ad"
+	local nameSuffix = args[4] or "_babeld"
+
+	local owrtInterfaceName, linuxVlanIfName, owrtDeviceName =
+	  network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
+
+	local ipv4, _ = network.primary_address()
+
+	local uci = libuci:cursor()
+
+	uci:set("network", owrtInterfaceName, "proto", "static")
+	uci:set("network", owrtInterfaceName, "ipaddr", ipv4:host():string())
+	uci:set("network", owrtInterfaceName, "netmask", "255.255.255.255")
+	uci:save("network")
+
+	uci:set("babeld", owrtInterfaceName, "interface")
+	uci:set("babeld", owrtInterfaceName, "ifname", linuxVlanIfName)
+	--! It is quite common to have dummy radio device attached via ethernet so
+	--! disable wired optimization always as it would consider the link down at
+	--! first packet lost
+	uci:set("babeld", owrtInterfaceName, "wired", "false")
+
+	uci:save("babeld")
 end
 
 return babeld
