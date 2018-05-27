@@ -20,9 +20,9 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   TITLE:=LiMe babeld proto support
   CATEGORY:=LiMe
-  MAINTAINER:=Gui Iribarren <gui@altermundi.net>
+  MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libre-mesh.org
-  DEPENDS:=+babeld +iptables +lime-system +lua +libuci-lua
+  DEPENDS:=+babeld +lime-system
 endef
 
 define Build/Compile
