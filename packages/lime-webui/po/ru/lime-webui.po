@@ -3,10 +3,11 @@
 #
 # Author: Movses
 # Author: Okras
+# Author: Redredsonia
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-25 09:51:34+0000\n"
+"PO-Revision-Date: 2018-05-28 08:58:34+0000\n"
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -60,7 +61,7 @@ msgstr "Название сообщества"
 
 #
 msgid "Contact"
-msgstr ""
+msgstr "Контакты"
 
 #
 msgid "Contact information"
@@ -148,7 +149,7 @@ msgstr "Загрузка"
 
 #
 msgid "Location"
-msgstr ""
+msgstr "Местоположение"
 
 #
 msgid "Logout"
@@ -200,7 +201,7 @@ msgstr "SSID сети"
 
 #
 msgid "Notes"
-msgstr ""
+msgstr "Примечания"
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
@@ -232,7 +233,7 @@ msgstr ""
 
 #
 msgid "System"
-msgstr ""
+msgstr "Система"
 
 #
 msgid "System Notes"

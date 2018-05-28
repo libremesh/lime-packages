@@ -1,7 +1,7 @@
-# Translation of LibreMesh - Web UI to Traditional Chinese (中文（繁體）‎)
+# Translation of LibreMesh - Web UI to Norwegian Bokmål (norsk bokmål)
 # Exported from translatewiki.net
 #
-# Author: Kly
+# Author: Kingu
 msgid ""
 msgstr ""
 ""
@@ -9,157 +9,157 @@ msgstr ""
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: zh-Hant\n"
+"Language: nb\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #
 msgid "(%s available)"
-msgstr "（%s 可用）"
+msgstr "(%s tilgjengelig)"
 
 #
 msgid "About"
-msgstr "關於"
+msgstr "Om"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
-msgstr "存取點 ESSID（通常是您的網路名稱）"
+msgstr ""
 
 #
 msgid "Advanced"
-msgstr "進階"
+msgstr "Avansert"
 
 #
 msgid "Attended System Upgrade"
-msgstr "已加入系統更新"
+msgstr ""
 
 #
 msgid "Cancel"
-msgstr "取消"
+msgstr "Avbryt"
 
 #
 msgid "Changes applied."
-msgstr "變更套用。"
+msgstr "Endringer utført."
 
 #
 msgid "Channel 2.4 GHz"
-msgstr "2.4 GHz 頻段"
+msgstr "Kanal 2.4 GHz"
 
 #
 msgid "Channel 5 GHz"
-msgstr "5 GHz 頻段"
+msgstr "Kanal 5 GHz"
 
 #
 msgid "Checksum"
-msgstr "校驗和"
+msgstr "Sjekksum"
 
 #
 msgid "Community name"
-msgstr "社群名稱"
+msgstr "Gemenskapsnavn"
 
 #
 msgid "Contact"
-msgstr "聯絡"
+msgstr "Kontakt"
 
 #
 msgid "Contact information"
-msgstr "聯絡資訊"
+msgstr "Kontaktinformasjon"
 
 #
 msgid "Country code"
-msgstr "國家代碼"
+msgstr "Landskode"
 
 #
 msgid "Country code used for WiFi radios"
-msgstr "用於 WiFi 廣播的國家代碼"
+msgstr ""
 
 #
 msgid "Default channel used for 2.4 GHz radios"
-msgstr "用於 2.4 GHz 廣播的預設頻段"
+msgstr "Forvalgt kanal brukt for 2.4 GHz-radioer"
 
 #
 msgid "Default channel used for 5 GHz radios"
-msgstr "用於 5 GHz 廣播的預設頻段"
+msgstr "Forvalgt kanal brukt for 5 GHz-radioer"
 
 #
 msgid "Distance"
-msgstr "距離"
+msgstr "Avstand"
 
 #
 msgid "Email"
-msgstr "電子郵件"
+msgstr "E-post"
 
 #
 msgid "Flash Firmware"
-msgstr "刷新韌體"
+msgstr ""
 
 #
 msgid "Flash image..."
-msgstr "刷新映像中..."
+msgstr ""
 
 #
 msgid "Flash new firmware image"
-msgstr "刷新新的韌體映像"
+msgstr ""
 
 #
 msgid "Flash operations"
-msgstr "刷新操作"
+msgstr ""
 
 #
 msgid "Flashing..."
-msgstr "刷新中..."
+msgstr ""
 
 #
 msgid "General"
-msgstr "一般"
+msgstr ""
 
 #
 msgid "Hostname"
-msgstr "主機名稱"
+msgstr "Vertsnavn"
 
 #
 msgid "Image"
-msgstr "映像"
+msgstr "Bilde"
 
 #
 msgid "Internet Prioritized Gateway (bmx6)"
-msgstr "網路優先閘道器（bmx6）"
+msgstr ""
 
 #
 msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
-msgstr "看起來似乎您正在嘗試刷新不適用於快閃記憶體的映像，請驗證映像檔案！"
+msgstr ""
 
 #
 msgid "Keep settings"
-msgstr "維持設定"
+msgstr "Behold innstillinger"
 
 #
 msgid "Latitude"
-msgstr "緯度"
+msgstr "Breddegrad"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
-msgstr "緯度（這也可以在位置分頁裡設置）"
+msgstr "Breddegrad (dette kan også settes opp i plasseringsfanen)"
 
 #
 msgid "Loading"
-msgstr "載入中"
+msgstr "Laster"
 
 #
 msgid "Location"
-msgstr "位置"
+msgstr "Plassering"
 
 #
 msgid "Logout"
-msgstr "登出"
+msgstr ""
 
 #
 msgid "Longitude"
-msgstr "經度"
+msgstr ""
 
 #
 msgid "Longitude (this can be also configured in location tab)"
-msgstr "經度（這也可以在位置分頁裡設置）"
+msgstr ""
 
 #
 msgid "MD5"
@@ -167,129 +167,129 @@ msgstr "MD5"
 
 #
 msgid "Main IPv4"
-msgstr "主 IPv4"
+msgstr ""
 
 #
 msgid "Main IPv6"
-msgstr "主 IPv6"
+msgstr ""
 
 #
 msgid "Map location"
-msgstr "地圖位置"
+msgstr ""
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
-msgstr "以公尺為單位用於連結的最大距離（會對效能產生巨大影響）"
+msgstr ""
 
 #
 msgid "Mesh BSSID"
-msgstr "網狀 BSSID"
+msgstr ""
 
 #
 msgid "Name"
-msgstr "名稱"
+msgstr "Navn"
 
 #
 msgid "Name for this node"
-msgstr "此節點名稱"
+msgstr "Navnet på denne noden"
 
 #
 msgid "Network SSID"
-msgstr "網路 SSID"
+msgstr "Nettverks-SSID"
 
 #
 msgid "Notes"
-msgstr "備註"
+msgstr ""
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
-msgstr "備註將會在此與主控台登入裡顯示"
+msgstr ""
 
 #
 msgid "Proceed"
-msgstr "繼續"
+msgstr "Fortsett"
 
 #
 msgid "Rebooting..."
-msgstr "重新啟動中..."
+msgstr "Starter om…"
 
 #
 msgid "SHA256"
-msgstr "SHA256"
+msgstr ""
 
 #
 msgid "Simple Config"
-msgstr "簡易設置"
+msgstr "Enkelt oppsett"
 
 #
 msgid "Size"
-msgstr "大小"
+msgstr "Størrelse"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
-msgstr "很抱歉，目前沒有系統更新支援，新的韌體映像必須以手動方式刷新。請參閱有關設備特定安裝說明的 wiki。"
+msgstr ""
 
 #
 msgid "System"
-msgstr "系統"
+msgstr "System"
 
 #
 msgid "System Notes"
-msgstr "系統備註"
+msgstr ""
 
 #
 msgid "The BSSID (WiFi network identifier) used for the mesh network"
-msgstr "用於網狀網路的 BSSID（WiFi 網路識別碼）"
+msgstr ""
 
 #
 msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
-msgstr "刷新用的映像檔案已上傳。下方為校驗和以及檔案大小，請與原始檔案比較來確定資料的完整性。<br />點擊下方的「繼續」來開始刷新程序。"
+msgstr ""
 
 #
 msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
-msgstr "帶斜線符號用於此節點的主 IPv4 設置（例如：1.2.3.4/24）"
+msgstr ""
 
 #
 msgid "The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"
-msgstr "帶斜線符號用於此節點的主 IPv6 設置（例如：2001:db8::1/64）"
+msgstr ""
 
 #
 msgid "The name of your network community"
-msgstr "您的網路社群名稱"
+msgstr ""
 
 #
 msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
-msgstr "現在系統正在刷新韌體，<br />請不要關閉設備！<br />請等待幾分鐘後再重試連線。另外依您的設定情況，可能會將您的電腦重新做位址分配以連繫設備。"
+msgstr ""
 
 #
 msgid "The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
-msgstr "上傳的映像檔案不包含支援的格式，請確定您有選擇適用於您平台的通用映像格式"
+msgstr ""
 
 #
 msgid "Upload a LibreMesh sysupgrade image here to replace the running firmware."
-msgstr "在此上傳 LibreMesh 系統更新映像來取代目前運作的韌體。"
+msgstr ""
 
 #
 msgid "Upload a sysupgrade-compatible image here to replace the running firmware. Check \"Keep settings\" to retain the current configuration (requires a compatible firmware image)."
-msgstr "在此上傳兼容系統更新之映像來取代目前運作的韌體。點擊「維持設定」來保留目前的設置（需要兼容韌體的映像）。"
+msgstr ""
 
 #
 msgid "Verify"
-msgstr "驗證"
+msgstr "Bekreft"
 
 #
 msgid "Waiting for changes to be applied..."
-msgstr "等待套用變更中..."
+msgstr "Venter på at endringer skal iverksettes…"
 
 #
 msgid "You can choose a Gateway to prioritize your traffic to go through this node."
-msgstr "您可以挑選優先化您的流量來通過此節點之閘道器。"
+msgstr ""
 
 #
 msgid "Your email (not required)"
-msgstr "您的電子郵件（可選）"
+msgstr "Din e-postadresse (ikke nødvendig)"
 
 #
 msgid "Your name or alias (not required)"
-msgstr "您的名稱或別名（可選）"
+msgstr "Ditt navn eller alias (ikke nødvendig)"
 
