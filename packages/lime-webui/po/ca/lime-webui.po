@@ -2,10 +2,11 @@
 # Exported from translatewiki.net
 #
 # Author: Fitoschido
+# Author: Leandro
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-25 09:51:34+0000\n"
+"PO-Revision-Date: 2018-05-28 08:58:33+0000\n"
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -15,7 +16,7 @@ msgstr ""
 
 #
 msgid "(%s available)"
-msgstr ""
+msgstr "(%s disponible)"
 
 #
 msgid "About"
@@ -23,15 +24,15 @@ msgstr "Quant a"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
-msgstr ""
+msgstr "ESSID de Punt d'Accés (normalment nom de la teva xarxa)"
 
 #
 msgid "Advanced"
-msgstr ""
+msgstr "Avançat"
 
 #
 msgid "Attended System Upgrade"
-msgstr ""
+msgstr "Actualització de Sistema assistida"
 
 #
 msgid "Cancel"
@@ -43,19 +44,19 @@ msgstr "S’han aplicat els canvis."
 
 #
 msgid "Channel 2.4 GHz"
-msgstr ""
+msgstr "Canal 2.4 GHz"
 
 #
 msgid "Channel 5 GHz"
-msgstr ""
+msgstr "Canal 5 GHz"
 
 #
 msgid "Checksum"
-msgstr ""
+msgstr "Verificació"
 
 #
 msgid "Community name"
-msgstr ""
+msgstr "Nom de la comunitat"
 
 #
 msgid "Contact"
@@ -71,19 +72,19 @@ msgstr "Codi del país"
 
 #
 msgid "Country code used for WiFi radios"
-msgstr ""
+msgstr "Codi de país per ràdios WiFi"
 
 #
 msgid "Default channel used for 2.4 GHz radios"
-msgstr ""
+msgstr "Canal per defecte per ràdios 2.4 GHz"
 
 #
 msgid "Default channel used for 5 GHz radios"
-msgstr ""
+msgstr "Canal per defecte per ràdios 5 GHz"
 
 #
 msgid "Distance"
-msgstr ""
+msgstr "Distància"
 
 #
 msgid "Email"
@@ -99,11 +100,11 @@ msgstr "Instal·la una imatge…"
 
 #
 msgid "Flash new firmware image"
-msgstr ""
+msgstr "Gravar nova imatge de programari"
 
 #
 msgid "Flash operations"
-msgstr ""
+msgstr "Operacions de gravació"
 
 #
 msgid "Flashing..."
@@ -111,11 +112,11 @@ msgstr "S’està instal·lant…"
 
 #
 msgid "General"
-msgstr ""
+msgstr "General"
 
 #
 msgid "Hostname"
-msgstr ""
+msgstr "Nom de màquina"
 
 #
 msgid "Image"
@@ -123,27 +124,27 @@ msgstr "Imatge"
 
 #
 msgid "Internet Prioritized Gateway (bmx6)"
-msgstr ""
+msgstr "Porta de sortida a Internet Prioritzada (bmx6)"
 
 #
 msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
-msgstr ""
+msgstr "Sembla que estàs intentant gravar una imatge que no cap a la memòria flaix, si us plau verificar l'arxiu d'imatge!"
 
 #
 msgid "Keep settings"
-msgstr ""
+msgstr "Mantenir paràmetres"
 
 #
 msgid "Latitude"
-msgstr ""
+msgstr "Latitud"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Latitud (també es pot configurar al tab d'ubicació)"
 
 #
 msgid "Loading"
-msgstr ""
+msgstr "Carregant"
 
 #
 msgid "Location"
@@ -155,35 +156,35 @@ msgstr "Surt"
 
 #
 msgid "Longitude"
-msgstr ""
+msgstr "Longitud"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Longitud (també es pot configurar al tab d'ubicació)"
 
 #
 msgid "MD5"
-msgstr ""
+msgstr "MD5"
 
 #
 msgid "Main IPv4"
-msgstr ""
+msgstr "IPv4 principal"
 
 #
 msgid "Main IPv6"
-msgstr ""
+msgstr "IP6 principal"
 
 #
 msgid "Map location"
-msgstr ""
+msgstr "Mapa d'ubicació"
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
-msgstr ""
+msgstr "Max distància pels enllaços en metres (gran impacte en rendiment)"
 
 #
 msgid "Mesh BSSID"
-msgstr ""
+msgstr "BSSID mesh"
 
 #
 msgid "Name"
@@ -191,7 +192,7 @@ msgstr "Nom"
 
 #
 msgid "Name for this node"
-msgstr ""
+msgstr "Nom per aquest node"
 
 #
 msgid "Network SSID"
@@ -203,23 +204,23 @@ msgstr "Notes"
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
-msgstr ""
+msgstr "Notes que es mostraran en l'inici de sessió de la consola i estaran disponibles aquí."
 
 #
 msgid "Proceed"
-msgstr ""
+msgstr "Procedir"
 
 #
 msgid "Rebooting..."
-msgstr ""
+msgstr "Reiniciant..."
 
 #
 msgid "SHA256"
-msgstr ""
+msgstr "SHA256"
 
 #
 msgid "Simple Config"
-msgstr ""
+msgstr "Configuració senzilla"
 
 #
 msgid "Size"
@@ -227,7 +228,7 @@ msgstr "Mida"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
-msgstr ""
+msgstr "Ho sento, no hi ha suport per a l'actualització del sistema; s'ha de gravar manualment una nova imatge de programari. Si us plau, consulteu la wiki per instruccions específiques per a la instal·lació d'aquest dispositiu."
 
 #
 msgid "System"
@@ -239,23 +240,23 @@ msgstr "Notes del sistema"
 
 #
 msgid "The BSSID (WiFi network identifier) used for the mesh network"
-msgstr ""
+msgstr "El BSSID (identificador de xarxa WiFi) que fa servir la xarxa mesh"
 
 #
 msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
-msgstr ""
+msgstr "S'ha carregat la imatge flaix. A continuació es mostra la suma de comprovació i la mida de l'arxiu, compareu-los amb l'arxiu original per garantir la integritat de les dades. Feu clic a \"Continuar\" per iniciar el procediment de gravació."
 
 #
 msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
-msgstr ""
+msgstr "La direcció IPv4 principal configurada per a aquest node, amb notació de barra (per ex. 1.2.3.4/24)"
 
 #
 msgid "The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"
-msgstr ""
+msgstr "La direcció IPv6 principal configurada per a aquest node, amb notació de barra (per ex. 2001:db8::1/64)"
 
 #
 msgid "The name of your network community"
-msgstr ""
+msgstr "El nom de la teva comunitat de xarxa"
 
 #
 msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
@@ -263,33 +264,33 @@ msgstr "S’està instal·lant el sistema en aquest moment.<br />NO APAGUEU EL D
 
 #
 msgid "The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
-msgstr ""
+msgstr "L'arxiu d'imatge carregat no té un format compatible. Assegura't d'escollir el format d'imatge genèric per a la teva plataforma."
 
 #
 msgid "Upload a LibreMesh sysupgrade image here to replace the running firmware."
-msgstr ""
+msgstr "Carregar una imatge d'actualització del sistema LibreMesh aquí per reemplaçar el firmware en execució."
 
 #
 msgid "Upload a sysupgrade-compatible image here to replace the running firmware. Check \"Keep settings\" to retain the current configuration (requires a compatible firmware image)."
-msgstr ""
+msgstr "Carregueu aquí una imatge compatible con sysupgrade per reemplaçar el programari en execució. Comproveu \"Mantenir paràmetres\" per mantenir la configuració actual (cal una imatge de programari compatible)."
 
 #
 msgid "Verify"
-msgstr ""
+msgstr "Verificar"
 
 #
 msgid "Waiting for changes to be applied..."
-msgstr ""
+msgstr "Esperant l'aplicació de canvis..."
 
 #
 msgid "You can choose a Gateway to prioritize your traffic to go through this node."
-msgstr ""
+msgstr "Pots escollir una Porta de sortida per prioritzar el teu trànsit per passar per aquest node."
 
 #
 msgid "Your email (not required)"
-msgstr ""
+msgstr "El teu correu electrònic (opcional)"
 
 #
 msgid "Your name or alias (not required)"
-msgstr ""
+msgstr "El teu nom o àlies (opcional)"
 

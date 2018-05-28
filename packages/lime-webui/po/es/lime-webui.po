@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 ""
 "Content-Type: text/plain; charset=UTF-8\n"
-"PO-Revision-Date: 2018-05-25 09:51:34+0000\n"
+"PO-Revision-Date: 2018-05-28 08:58:34+0000\n"
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: es\n"
@@ -17,7 +17,7 @@ msgstr ""
 
 #
 msgid "(%s available)"
-msgstr "(%<span class=\"notranslate\">s</span> Disponible)"
+msgstr "(%s disponible)"
 
 #
 msgid "About"
@@ -31,7 +31,7 @@ msgstr "ESSID del punto de acceso (normalmente nombre de la red)"
 msgid "Advanced"
 msgstr "Avanzado"
 
-#, fuzzy
+#
 msgid "Attended System Upgrade"
 msgstr "Actualización de sistema asistida"
 
@@ -97,7 +97,7 @@ msgstr "Instalar firmware"
 
 #
 msgid "Flash image..."
-msgstr "Grabar imagen…"
+msgstr "Instalar imagen…"
 
 #
 msgid "Flash new firmware image"

@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-25 09:51:34+0000\n"
+"PO-Revision-Date: 2018-05-28 08:58:34+0000\n"
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -29,7 +29,7 @@ msgstr "Σημείο πρόσβασης ESSID (συνήθως το όνομα τ
 msgid "Advanced"
 msgstr "Προχωρημένο"
 
-#, fuzzy
+#
 msgid "Attended System Upgrade"
 msgstr "Παρακολουθούμενη αναβάθμιση συστήματος"
 
