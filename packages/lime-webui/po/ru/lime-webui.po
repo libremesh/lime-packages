@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-28 08:58:34+0000\n"
+"PO-Revision-Date: 2018-05-31 06:28:09+0000\n"
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -21,7 +21,7 @@ msgstr "(%s доступно)"
 
 #
 msgid "About"
-msgstr ""
+msgstr "О программе"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
@@ -113,11 +113,11 @@ msgstr ""
 
 #
 msgid "General"
-msgstr ""
+msgstr "Общее"
 
 #
 msgid "Hostname"
-msgstr ""
+msgstr "Имя узла"
 
 #
 msgid "Image"
@@ -177,7 +177,7 @@ msgstr ""
 
 #
 msgid "Map location"
-msgstr ""
+msgstr "Расположение на карте"
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
@@ -189,7 +189,7 @@ msgstr ""
 
 #
 msgid "Name"
-msgstr ""
+msgstr "Название"
 
 #
 msgid "Name for this node"
@@ -209,7 +209,7 @@ msgstr ""
 
 #
 msgid "Proceed"
-msgstr ""
+msgstr "Продолжить"
 
 #
 msgid "Rebooting..."
