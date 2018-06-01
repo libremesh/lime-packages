@@ -18,6 +18,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=Utilities
   TITLE:=Ping a host and run customizable actions (hooks) on timeout/recovery.
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

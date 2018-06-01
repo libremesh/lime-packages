@@ -21,6 +21,7 @@ define Package/$(PKG_NAME)
   SUBMENU:=3. Applications
   TITLE:=Visualize the spectrum and wifi neighbours
   DEPENDS:= +libc +fft-eval +luci-lib-jquery-1-4 +luci-lib-jquery-flot-0-8 +luci-lib-json
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

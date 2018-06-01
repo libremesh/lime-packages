@@ -23,6 +23,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libre-mesh.org
   DEPENDS:=+babeld +lime-system
+  PKGARCH:=all
 endef
 
 define Build/Compile

@@ -24,6 +24,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Pau Escrich <p4u@dabax.net>
   URL:=http://libremesh.org
   DEPENDS:=+lime-basic +lime-debug +luci +lime-map-agent +lime-docs +lime-app
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

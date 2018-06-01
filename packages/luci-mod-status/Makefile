@@ -20,6 +20,7 @@ define Package/$(PKG_NAME)
   TITLE:=LuCI status - some read-only info without login
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   DEPENDS:= +uhttpd +luci-base +libiwinfo-lua +luci-lib-jquery-1-4 +luci-lib-jquery-flot-0-8 +luci-lib-json
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description
