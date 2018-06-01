@@ -20,6 +20,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Pau Escrich <p4u@dabax.et>
   URL:=http://libremesh.org
   DEPENDS:= bmx7 +watchping +ip
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

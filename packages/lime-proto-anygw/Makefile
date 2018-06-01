@@ -23,6 +23,7 @@ define Package/$(PKG_NAME)
   URL:=http://libremesh.org
   DEPENDS:=+kmod-ebtables +ebtables +lime-system +lua +libuci-lua +kmod-macvlan \
 	+dnsmasq-lease-share +dnsmasq-dhcpv6 @(!PACKAGE_dnsmasq)
+  PKGARCH:=all
 endef
 
 define Build/Compile

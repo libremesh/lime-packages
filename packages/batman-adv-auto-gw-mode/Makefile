@@ -20,6 +20,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   URL:=http://libremesh.org
   DEPENDS:= +kmod-batman-adv +watchping +dnsmasq-dhcpv6 +ip
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

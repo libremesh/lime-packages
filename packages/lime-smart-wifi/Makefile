@@ -13,6 +13,7 @@ define Package/$(PKG_NAME)
  MAINTAINER:=Paul Spooren <paul@spooren.de>
  URL:=http://libremesh.org
  DEPENDS:=+lime-system
+ PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description
