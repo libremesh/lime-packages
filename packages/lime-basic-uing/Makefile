@@ -28,6 +28,7 @@ define Package/$(PKG_NAME)
 	         +dnsmasq-distributed-hosts +lime-webui-ng \
 	         +lime-hwd-openwrt-wan +bmx6-auto-gw-mode +lime-hwd-ground-routing \
 		 +lime-docs-minimal
+	PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

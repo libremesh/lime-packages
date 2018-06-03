@@ -28,6 +28,7 @@ define Package/$(PKG_NAME)
            +luci-mod-status +luci-mod-lime-basic-ssl \
            +libremap-agent +luci-lib-libremap-wireless \
            +luci-lib-libremap-location +luci-lib-libremap-system
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

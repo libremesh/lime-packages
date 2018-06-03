@@ -22,6 +22,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Gioacchino Mazzurco <gio@diveni.re>
   URL:=http://libremesh.org
   DEPENDS:=+bird4 +bird6 +lime-system +lua
+  PKGARCH:=all
 endef
 
 define Build/Compile

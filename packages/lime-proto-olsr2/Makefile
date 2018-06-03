@@ -22,6 +22,7 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Gabriel <gabriel@autistici.org>
 	URL:=http://libremesh.org
 	DEPENDS:=+lua +libuci-lua +lime-system +oonf-olsrd2
+	PKGARCH:=all
 endef
 
 define Build/Compile

@@ -18,6 +18,7 @@ define Package/$(PKG_NAME)
  CATEGORY:=Network
  TITLE:=$(PKG_NAME)
  MAINTAINER:=Gui Iribarren <gui@altermundi.net>
+ PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

@@ -21,6 +21,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   URL:=http://libremesh.org
   DEPENDS:=+lime-system +lua +libuci-lua +lime-proto-wan
+  PKGARCH:=all
 endef
 
 define Build/Compile
