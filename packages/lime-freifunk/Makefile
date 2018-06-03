@@ -24,6 +24,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
   URL:=http://libremesh.org
   DEPENDS:=+lime-basic
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

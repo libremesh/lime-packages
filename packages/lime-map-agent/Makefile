@@ -23,6 +23,7 @@ define Package/$(PKG_NAME)
 	URL:=http://libremesh.org
 	DEPENDS:=+libremap-agent +luci-lib-libremap-location +luci-lib-libremap-system +luci-lib-libremap-wireless \
 		+PACKAGE_lime-proto-bmx6:luci-lib-libremap-bmx6 +luci-app-lime-location
+	PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description
