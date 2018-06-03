@@ -14,6 +14,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
   TITLE:=BMX6 ubus status module
   DEPENDS:= +lua +libubox-lua +libubus-lua +luci-app-bmx6 +luci-lib-nixio +luci-lib-json +lime-system
+  PKGARCH:=all
 endef
 
 define Build/Compile
