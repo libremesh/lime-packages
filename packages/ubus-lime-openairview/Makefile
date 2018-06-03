@@ -15,6 +15,7 @@ define Package/$(PKG_NAME)
   SUBMENU:=3. Applications
   TITLE:=Openairview ubus module
   DEPENDS:= +lua +libubox-lua +libubus-lua +libiwinfo-lua +luci-lib-nixio +luci-lib-json
+  PKGARCH:=all
 endef
 
 define Build/Compile

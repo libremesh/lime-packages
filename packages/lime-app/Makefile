@@ -23,6 +23,7 @@ define Package/$(PKG_NAME)
 	DEPENDS:=+uhttpd +uhttpd-mod-ubus +ubus-lime-batman-adv +ubus-lime-bmx6 \
 		+ubus-lime-location +ubus-lime-metrics +ubus-lime-utils \
 		+ubus-lime-openairview
+	PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description
