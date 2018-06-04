@@ -34,6 +34,12 @@ function babeld.configure(args)
 
 	local uci = libuci:cursor()
 
+	if config.get("network", "babeld_over_librenet6", false) then
+		uci:set("babeld", "librenet6", "interface")
+		uci:set("babeld", "librenet6", "ifname", "librenet6")
+		uci:set("babeld", "librenet6", "type", "tunnel")
+	end
+
 	uci:set("babeld", "public6", "filter")
 	uci:set("babeld", "public6", "type", "redistribute")
 	uci:set("babeld", "public6", "ip", "2000::0/3")
