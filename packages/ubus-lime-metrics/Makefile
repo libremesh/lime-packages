@@ -15,6 +15,7 @@ define Package/$(PKG_NAME)
   SUBMENU:=3. Applications
   TITLE:=Metrics ubus module
   DEPENDS:= +lua +libubox-lua +libubus-lua +luci-lib-json
+  PKGARCH:=all
 endef
 
 define Build/Compile
