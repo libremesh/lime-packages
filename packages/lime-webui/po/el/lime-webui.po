@@ -1,11 +1,12 @@
 # Translation of LibreMesh - Web UI to Greek (Ελληνικά)
 # Exported from translatewiki.net
 #
+# Author: Haniavis
 # Author: Nikosgranturismogt
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-28 08:58:34+0000\n"
+"PO-Revision-Date: 2018-06-04 06:01:16+0000\n"
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -279,7 +280,7 @@ msgstr "Επαλήθευση"
 
 #
 msgid "Waiting for changes to be applied..."
-msgstr "Περιμένετε για την εφάρμοση των αλλαγών..."
+msgstr "Περιμένετε για την εφαρμογή των αλλαγών..."
 
 #
 msgid "You can choose a Gateway to prioritize your traffic to go through this node."
