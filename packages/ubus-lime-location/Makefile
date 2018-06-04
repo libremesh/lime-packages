@@ -14,6 +14,7 @@ define Package/$(PKG_NAME)
   SUBMENU:=3. Applications
   TITLE:=Libremap ubus status module
   DEPENDS:= +lua +libubox-lua +libubus-lua +libuci +libremap-agent
+  PKGARCH:=all
 endef
 
 define Build/Compile

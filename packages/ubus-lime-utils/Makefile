@@ -14,6 +14,7 @@ define Package/$(PKG_NAME)
   SUBMENU:=3. Applications
   TITLE:=LIbremesh ubus utils module
   DEPENDS:= +lua +libubox-lua +libubus-lua +libuci
+  PKGARCH:=all
 endef
 
 define Build/Compile

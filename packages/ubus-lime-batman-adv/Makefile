@@ -14,6 +14,7 @@ define Package/$(PKG_NAME)
   SUBMENU:=3. Applications
   TITLE:=B.A.T.M.A.N.-Adv ubus status module
   DEPENDS:= +lua +libubox-lua +libubus-lua +kmod-batman-adv +batctl +luci-lib-nixio +lime-system
+  PKGARCH:=all
 endef
 
 define Build/Compile
