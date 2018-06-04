@@ -7,7 +7,7 @@ feeds_file="/etc/opkg/limefeeds.conf"
 key_file="/etc/opkg/keys/a71b3c8285abd28b"
 
 [ -f "$feeds_file" ] && {
-  echo "LibreMesh opkg feeds already defined, skyping..."
+  echo "LibreMesh opkg feeds already defined - skipping"
   exit 0
 }
 
@@ -21,7 +21,7 @@ key_file="/etc/opkg/keys/a71b3c8285abd28b"
   base_url="http://repo.libremesh.org/releases/$LIME_RELEASE/packages/$LEDE_ARCH"
 }
 
-echo "Configuring official libremesh opkg repository..."
+echo "Configuring official LibreMesh opkg feeds"
 echo "src/gz libremap $base_url/libremap" > /etc/opkg/limefeeds.conf
 echo "src/gz routing $base_url/routing" >> /etc/opkg/limefeeds.conf
 echo "src/gz libremesh $base_url/libremesh" >> /etc/opkg/limefeeds.conf

@@ -1,0 +1,15 @@
+#!/bin/sh
+
+feeds_file="/etc/opkg/limesnapshots.conf"
+key_file="/etc/opkg/keys/7546f62c3d9f56b1"
+base_url="http://snapshots.libremesh.org/snapshots/packages/"
+
+if [ -f "$feeds_file" ]; then
+    echo "LibreMesh snapshots opkg feeds already setup - skiping"
+else 
+    echo "Configuring libremesh snapshots opkg feed"
+    echo "src/gz libremesh $base_url/libremesh" >> "$feeds_file"
+    # other repos may follow
+    echo "untrusted comment: signed by snapshots.libremesh.org key 7546f62c3d9f56b1" > "$key_file"
+    echo "RWR1RvYsPZ9WsTsmoVajHX9dyl2wL7grjcfFua1q8A99RWr2gF94lRdJ" >> "$key_file"
+fi
