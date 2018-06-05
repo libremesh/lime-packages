@@ -2,36 +2,65 @@ sudo: false
 dist: trusty
 addons:
   apt:
-    sources:
-    - sourceline: 'ppa:ubuntu-toolchain-r/test'
     packages:
-    - build-essential
-    - subversion
-    - libncurses5-dev
-    - zlib1g-dev
-    - gawk
-    - gcc-multilib
-    - flex
-    - git-core
-    - gettext
-    - libssl-dev
-    - libstdc++6-4.7-dev
+      - subversion 
+      - g++
+      - zlib1g-dev
+      - build-essential 
+      - git 
+      - python 
+      - rsync 
+      - man-db
+      - libncurses5-dev 
+      - gawk 
+      - gettext 
+      - unzip 
+      - file 
+      - libssl-dev 
+      - sshpass
+      - lua5.2
+      - wget 
+      - zip
 notifications:
   email: false
 language: c
+cache:
+  directories:
+    - $TRAVIS_BUILD_DIR/sdk
 install:
 - cd $TRAVIS_BUILD_DIR
-- git clone https://github.com/libremesh/lime-sdk.git sdk || true
+- git clone https://github.com/aparcar/lime-sdk.git sdk || true
 - cd sdk
+- git checkout develop
 - sed 's|https://github.com/libremesh/lime-packages.git.*|'$TRAVIS_BUILD_DIR'|g' feeds.conf.default > feeds.conf.default.local
-- ./cooker -f -d x86/generic
+- ./cooker -f --sdk $TARGET
 script:
 - cd $TRAVIS_BUILD_DIR/sdk
-- export J=$(($(nproc)+1))
-- ./cooker -b x86/generic
-- travis_wait ./cooker --flavor=lime_default -c x86/generic --profile=Generic
-- travis_wait ./cooker --flavor=lime_mini -c x86/generic --profile=Generic
-- travis_wait ./cooker --flavor=lime_zero -c x86/generic --profile=Generic
-after_success:
-- chmod +x $TRAVIS_BUILD_DIR/.ci/after_success.sh
-- $TRAVIS_BUILD_DIR/.ci/after_success.sh
+- ./cooker -b $TARGET --no-link-ib
+- ./snippets/create_repository.sh || true
+- rsync -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22100" $TRAVIS_BUILD_DIR/sdk/repository/* ci@srv02.planetexpress.cc:ci/
+env:
+  - TARGET="ar71xx/generic"
+  - TARGET="x86/64"
+  - TARGET="ramips/rt305x"
+  - TARGET="ramips/rt3883"
+  - TARGET="ramips/mt7620"
+  - TARGET="ramips/mt7621"
+  - TARGET="ramips/mt76x8"
+  - TARGET="lantiq/xrx200"
+  - TARGET="lantiq/xway"
+  - TARGET="x86/generic"
+  - TARGET="x86/geode"
+  - TARGET="ipq806x/generic"
+  - TARGET="brcm2708/bcm2708"
+  - TARGET="brcm2708/bcm2709"
+  - TARGET="brcm2708/bcm2710"
+  - TARGET="brcm47xx/mips74k"
+  - TARGET="brcm63xx/smp"
+  - TARGET="octeon/generic"
+  - TARGET="sunxi/cortexa53"
+  - TARGET="sunxi/cortexa7"
+  - TARGET="sunxi/cortexa8"
+  - TARGET="mediatek/32"
+  - TARGET="armvirt/64"
+  - TARGET="armvirt/32"
