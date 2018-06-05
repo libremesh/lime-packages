@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libremesh.org
   DEPENDS:=+kmod-ebtables +ebtables +lime-system +lua +libuci-lua +kmod-macvlan \
-	+dnsmasq-lease-share +dnsmasq-dhcpv6 @(!PACKAGE_dnsmasq)
+	+dnsmasq-lease-share +odhcpd-ipv6only
   PKGARCH:=all
 endef
 
