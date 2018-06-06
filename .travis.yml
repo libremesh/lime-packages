@@ -32,6 +32,8 @@ install:
   - /$TRAVIS_BUILD_DIR/.travis_do.sh setup
 script:
   - /$TRAVIS_BUILD_DIR/.travis_do.sh build
+before_cache:
+  - rm -rf "$HOME/sdk/$SDK_TARGET/sdk/key-build"
 after_success:
   - /$TRAVIS_BUILD_DIR/.travis_do.sh upload
 branches:

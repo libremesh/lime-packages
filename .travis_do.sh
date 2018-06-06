@@ -84,11 +84,15 @@ src-git libremesh https://github.com/libremesh/lime-packages.git;master
 src-git libremap https://github.com/libremap/libremap-agent-openwrt.git;master
 src-git limeui https://github.com/libremesh/lime-packages-ui.git;master
 EOF
+    fi
 
-cat > ./sdk/key-build <<EOF
+    if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then
+        cat > ./sdk/key-build <<EOF
 untrusted comment: private key 7546f62c3d9f56b1
 $KEY_BUILD
 EOF
+    else
+        sed -i s/CONFIG_SIGNED_PACKAGES=y/CONFIG_SIGNED_PACKAGES=n/g ./sdk/.config
     fi
 
     # check again and fail here if the file is still bad
@@ -110,17 +114,25 @@ build() {
     ./scripts/feeds install -p $REPO_NAME -a -d m > /dev/null
     make defconfig > /dev/null
 
-    make -j$(($(nproc)+1))
+    if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then
+        make -j$(($(nproc)+1))
+    else
+        make -j1 V=s
+    fi
 }
 
 upload() {
-    rsync -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $CI_PORT" \
-        --exclude 'base/*' \
-        --exclude 'packages/*' \
-        --exclude 'luci/*' \
-        --exclude 'routing/*' \
-        --exclude 'telephony/*' \
-        $SDK_HOME/sdk/bin/packages/x86_64/ "${CI_USER}@${CI_SERVER}:${CI_STORE_PATH}/$STORE_PATH/packages/"
+    if [[ "$TRAVIS_PULL_REQUEST" == "false" ]]; then
+        rsync -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $CI_PORT" \
+            --exclude 'base/*' \
+            --exclude 'packages/*' \
+            --exclude 'luci/*' \
+            --exclude 'routing/*' \
+            --exclude 'telephony/*' \
+            $SDK_HOME/sdk/bin/packages/x86_64/ "${CI_USER}@${CI_SERVER}:${CI_STORE_PATH}/$STORE_PATH/packages/"
+    else
+        echo_blue "=== No PR uploads"
+    fi
 }
 
 if [ $# -ne 1 ] ; then
