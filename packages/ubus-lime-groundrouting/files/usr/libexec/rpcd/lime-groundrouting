@@ -22,8 +22,9 @@ end
 
 local function get_config()
     local result = {}
+    result.config = {}
     function add_to_result(section)
-        table.insert(result, section)
+        table.insert(result.config, section)
     end
     config.foreach("hwd_gr", add_to_result)
     printJson(result);
