@@ -1,0 +1,53 @@
+#!/usr/bin/env lua
+--[[
+Copyright 2018 Marcos Gutierrez <gmarcos87@gmail.com>
+Licensed under the Apache License, Version 3.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-3.0
+]]--
+
+require "ubus"
+local json = require 'luci.json'
+local lime = require 'lime.config'
+
+local function printJson (obj)
+    print(json.encode(obj))
+end
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function get_config()
+    local result = {}
+    function add_to_result(section)
+        table.insert(result, section)
+    end
+    config.foreach("hwd_gr", add_to_result)
+    printJson(result);
+end
+
+local function set_config(msg)
+    local result = {}
+    printJson(result);
+end
+
+local methods = {
+    get = { no_params = 0 },
+	set = { config = 'object' }
+}
+
+if arg[1] == 'list' then
+    printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = io.read()
+	msg = json.decode(msg)
+    if       arg[2] == 'get'	    then get_config()
+	elseif   arg[2] == 'set'	        then set_config(msg)
+    else                                printJson({ error = "Method not found" })
+    end
+end
