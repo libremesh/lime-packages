@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-31 06:28:09+0000\n"
+"PO-Revision-Date: 2018-06-14 10:31:19+0000\n"
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -139,7 +139,7 @@ msgstr "Latitud"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Latitud (detta kan även konfigureras i platsfliken)"
 
 #
 msgid "Loading"
@@ -159,7 +159,7 @@ msgstr "Longitud"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Longitud (detta kan även konfigureras i platsfliken)"
 
 #
 msgid "MD5"
@@ -283,7 +283,7 @@ msgstr "Väntar på att ändringar ska verkställas..."
 
 #
 msgid "You can choose a Gateway to prioritize your traffic to go through this node."
-msgstr ""
+msgstr "Du kan välja en gateway för att prioritera din trafik till att gå igenom denna nod."
 
 #
 msgid "Your email (not required)"
