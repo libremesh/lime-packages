@@ -11,7 +11,6 @@ config lime system
 	option keep_on_upgrade 'libremesh base-files-essential /etc/sysupgrade.conf'
 
 config lime network
-	option primary_interface eth0
 	option main_ipv4_address '10.%N1.0.0/16'
 	option anygw_dhcp_start '2'
 	option anygw_dhcp_limit '0'
