@@ -134,7 +134,12 @@ function smart_wifi.run()
     has2ghz = false
     has5ghz = false
 
-    smart_wifi.modes = config.get("wifi", "modes")
+    smart_wifi.modes = config.get("wifi", "modes", {})
+    if #smart_wifi.modes == 0 then
+        print("No wifi modes defined - skipping")
+        return
+    end
+
     config.init_batch()
 
     for _, radio in pairs(all_radios) do
