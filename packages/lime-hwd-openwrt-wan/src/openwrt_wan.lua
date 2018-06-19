@@ -16,7 +16,7 @@ end
 
 function openwrt_wan.detect_hardware()
 	if config.autogenerable(openwrt_wan.sectionName) then
-		local handle = io.popen("sh /usr/lib/lua/lime/hwd/openwrt_wan.sh")
+		local handle = io.popen("sh /usr/lib/lua/lime/board.sh wan ifname")
 		local ifname = handle:read("*a")
 		handle:close()
 		if ifname and ifname ~= "" then
