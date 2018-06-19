@@ -15,16 +15,29 @@ network.protoVlanSeparator="_"
 
 function network.get_mac(ifname)
 	local path = "/sys/class/net/"..ifname.."/address"
-	local mac = assert(fs.readfile(path), "network.get_mac(...) failed reading: "..path):gsub("\n","")
-	return utils.split(mac, ":")
+	local macaddr = assert(fs.readfile(path), "network.get_mac(...) failed reading: "..path):gsub("\n","")
+	return utils.split(macaddr, ":")
 end
 
 function network.primary_interface()
-	return config.get("network", "primary_interface")
+	local handle = io.popen("sh /usr/lib/lua/lime/board.sh lan ifname")
+	local ifname = handle:read("*a")
+	handle:close()
+	if not ifname or ifname == "" then
+		ifname = "eth0"
+	end
+	return ifname
 end
 
 function network.primary_mac()
-	return network.get_mac(network.primary_interface())
+	local handle = io.popen("sh /usr/lib/lua/lime/board.sh lan macaddr")
+	local macaddr = handle:read("*a")
+	handle:close()
+	if macaddr and macaddr ~= "" then
+		return utils.split(macaddr, ":")
+	else
+		return network.get_mac(network.primary_interface())
+	end
 end
 
 function network.generate_host(ipprefix, hexsuffix)
@@ -238,7 +251,7 @@ function network.configure()
 		if utils.isModuleAvailable(protoModule) then
 			local proto = require(protoModule)
 			xpcall(function() proto.configure(utils.split(protocol, network.protoParamsSeparator)) end,
-			       function(errmsg) print(errmsg) ; print(debug.traceback()) end)
+				   function(errmsg) print(errmsg) ; print(debug.traceback()) end)
 		end
 	end
 
@@ -259,7 +272,7 @@ function network.configure()
 			if utils.isModuleAvailable(protoModule) then
 				local proto = require(protoModule)
 				xpcall(function() proto.configure(args) ; proto.setup_interface(device, args) end,
-				       function(errmsg) print(errmsg) ; print(debug.traceback()) end)
+					   function(errmsg) print(errmsg) ; print(debug.traceback()) end)
 			end
 		end
 	end
