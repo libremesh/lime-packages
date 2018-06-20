@@ -5,8 +5,8 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-17 06:31:59+0000\n"
-"X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"PO-Revision-Date: 2018-06-14 10:31:19+0000\n"
+"X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: sv\n"
@@ -30,7 +30,7 @@ msgid "Advanced"
 msgstr "Avancerad"
 
 #
-msgid "Attended Sysupgrade"
+msgid "Attended System Upgrade"
 msgstr ""
 
 #
@@ -71,15 +71,15 @@ msgstr "Landskod"
 
 #
 msgid "Country code used for WiFi radios"
-msgstr ""
+msgstr "Landskod som användas för WiFi-radior"
 
 #
 msgid "Default channel used for 2.4 GHz radios"
-msgstr ""
+msgstr "Standardkanal används för 2,4 GHz-radior"
 
 #
 msgid "Default channel used for 5 GHz radios"
-msgstr ""
+msgstr "Standardkanal används för 5 GHz-radior"
 
 #
 msgid "Distance"
@@ -122,7 +122,7 @@ msgid "Image"
 msgstr "Bild"
 
 #
-msgid "Internet Priorized Gateway (bmx6)"
+msgid "Internet Prioritized Gateway (bmx6)"
 msgstr ""
 
 #
@@ -139,7 +139,7 @@ msgstr "Latitud"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Latitud (detta kan även konfigureras i platsfliken)"
 
 #
 msgid "Loading"
@@ -159,7 +159,7 @@ msgstr "Longitud"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Longitud (detta kan även konfigureras i platsfliken)"
 
 #
 msgid "MD5"
@@ -282,8 +282,8 @@ msgid "Waiting for changes to be applied..."
 msgstr "Väntar på att ändringar ska verkställas..."
 
 #
-msgid "You can choose a Gateway to priorize your traffic to go through this node."
-msgstr ""
+msgid "You can choose a Gateway to prioritize your traffic to go through this node."
+msgstr "Du kan välja en gateway för att prioritera din trafik till att gå igenom denna nod."
 
 #
 msgid "Your email (not required)"

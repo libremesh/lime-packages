@@ -1,229 +1,229 @@
-# Translation of LibreMesh - Web UI to Luxembourgish (Lëtzebuergesch)
+# Translation of LibreMesh - Web UI to Asturian (asturianu)
 # Exported from translatewiki.net
 #
-# Author: Robby
+# Author: Xuacu
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-25 09:51:34+0000\n"
+"PO-Revision-Date: 2018-06-04 06:01:16+0000\n"
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: lb\n"
+"Language: ast\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #
 msgid "(%s available)"
-msgstr ""
+msgstr "(%s disponible)"
 
 #
 msgid "About"
-msgstr "Iwwer"
+msgstr "Tocante a"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
-msgstr ""
+msgstr "ESSID del puntu d'accesu (de normal el nome de la to rede)"
 
 #
 msgid "Advanced"
-msgstr "Erweidert"
+msgstr "Avanzao"
 
 #
 msgid "Attended System Upgrade"
-msgstr ""
+msgstr "Actualización de sistema asistida"
 
 #
 msgid "Cancel"
-msgstr "Ofbriechen"
+msgstr "Encaboxar"
 
 #
 msgid "Changes applied."
-msgstr ""
+msgstr "Aplicáronse los cambeos."
 
 #
 msgid "Channel 2.4 GHz"
-msgstr ""
+msgstr "Canal 2.4GHz"
 
 #
 msgid "Channel 5 GHz"
-msgstr ""
+msgstr "Canal 5GHz"
 
 #
 msgid "Checksum"
-msgstr ""
+msgstr "Suma de comprobación"
 
 #
 msgid "Community name"
-msgstr ""
+msgstr "Nome de la comunidá"
 
 #
 msgid "Contact"
-msgstr "Kontakt"
+msgstr "Contautu"
 
 #
 msgid "Contact information"
-msgstr ""
+msgstr "Información de contautu"
 
 #
 msgid "Country code"
-msgstr "Lännercode"
+msgstr "Códigu del país"
 
 #
 msgid "Country code used for WiFi radios"
-msgstr ""
+msgstr "Códigu del país usáu pa les radios WiFi"
 
 #
 msgid "Default channel used for 2.4 GHz radios"
-msgstr ""
+msgstr "Canal predetermináu usáu pa les radios de 2.4GHz"
 
 #
 msgid "Default channel used for 5 GHz radios"
-msgstr ""
+msgstr "Canal predetermináu usáu pa les radios de 5GHz"
 
 #
 msgid "Distance"
-msgstr "Distanz"
+msgstr "Distancia"
 
 #
 msgid "Email"
-msgstr "E-Mail"
+msgstr "Corréu"
 
 #
 msgid "Flash Firmware"
-msgstr ""
+msgstr "Instalar firmware"
 
 #
 msgid "Flash image..."
-msgstr ""
+msgstr "Instalar imaxe…"
 
 #
 msgid "Flash new firmware image"
-msgstr ""
+msgstr "Instalar imaxe de firmware nueva"
 
 #
 msgid "Flash operations"
-msgstr ""
+msgstr "Operaciones d'instalación"
 
 #
 msgid "Flashing..."
-msgstr ""
+msgstr "Instalando la imaxe…"
 
 #
 msgid "General"
-msgstr "Allgemeng"
+msgstr "Xeneral"
 
 #
 msgid "Hostname"
-msgstr ""
+msgstr "Nome de host"
 
 #
 msgid "Image"
-msgstr "Bild"
+msgstr "Imaxe"
 
 #
 msgid "Internet Prioritized Gateway (bmx6)"
-msgstr ""
+msgstr "Puerta de salida prioritaria pa Internet (bmx6)"
 
 #
 msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
-msgstr ""
+msgstr "Paez que tas intentando grabar una imaxe que nun cabe na memoria flash; por favor, comprueba'l ficheru d'imaxe."
 
 #
 msgid "Keep settings"
-msgstr ""
+msgstr "Caltener la configuración"
 
 #
 msgid "Latitude"
-msgstr ""
+msgstr "Llatitú"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Llatitú (puede configurase tamién na llingüeta allugamientu)"
 
 #
 msgid "Loading"
-msgstr "Lueden"
+msgstr "Cargando"
 
 #
 msgid "Location"
-msgstr ""
+msgstr "Allugamientu"
 
 #
 msgid "Logout"
-msgstr "Ausloggen"
+msgstr "Salir"
 
 #
 msgid "Longitude"
-msgstr ""
+msgstr "Llonxitú"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Llonxitú (puede configurase tamién na llingüeta allugamientu)"
 
 #
 msgid "MD5"
-msgstr ""
+msgstr "MD5"
 
 #
 msgid "Main IPv4"
-msgstr ""
+msgstr "IPv4 principal"
 
 #
 msgid "Main IPv6"
-msgstr "Haapt-IPv6"
+msgstr "IPv6 principal"
 
 #
 msgid "Map location"
-msgstr ""
+msgstr "Allugamientu nel mapa"
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
-msgstr ""
+msgstr "Distancia máxima de los enllaces en metros (impactu importante nel rindimientu)"
 
 #
 msgid "Mesh BSSID"
-msgstr ""
+msgstr "BSSID de mesh"
 
 #
 msgid "Name"
-msgstr "Numm"
+msgstr "Nome"
 
 #
 msgid "Name for this node"
-msgstr ""
+msgstr "Nome para esti nodiu"
 
 #
 msgid "Network SSID"
-msgstr ""
+msgstr "SSID de la rede"
 
 #
 msgid "Notes"
-msgstr "Notizen"
+msgstr "Notes"
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
-msgstr ""
+msgstr "Notes que se verán nel aniciu de sesión de la consola y van tar a mano equí."
 
 #
 msgid "Proceed"
-msgstr "Virufueren"
+msgstr "Siguir"
 
 #
 msgid "Rebooting..."
-msgstr "Nei starten..."
+msgstr "Reaniciando…"
 
 #
 msgid "SHA256"
-msgstr ""
+msgstr "SHA256"
 
 #
 msgid "Simple Config"
-msgstr ""
+msgstr "Configuración simple"
 
 #
 msgid "Size"
-msgstr "Gréisst"
+msgstr "Tamañu"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
@@ -231,15 +231,15 @@ msgstr ""
 
 #
 msgid "System"
-msgstr "System"
+msgstr "Sistema"
 
 #
 msgid "System Notes"
-msgstr ""
+msgstr "Notes del sistema"
 
 #
 msgid "The BSSID (WiFi network identifier) used for the mesh network"
-msgstr ""
+msgstr "El BSSID (identificador de la rede WiFi) usáu para la rede mesh"
 
 #
 msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
@@ -275,11 +275,11 @@ msgstr ""
 
 #
 msgid "Verify"
-msgstr "Nokucken"
+msgstr "Verificar"
 
 #
 msgid "Waiting for changes to be applied..."
-msgstr ""
+msgstr "Esperando a que s'apliquen los cambeos…"
 
 #
 msgid "You can choose a Gateway to prioritize your traffic to go through this node."
@@ -287,7 +287,7 @@ msgstr ""
 
 #
 msgid "Your email (not required)"
-msgstr "Är E-Mail-Adress (fakultativ)"
+msgstr ""
 
 #
 msgid "Your name or alias (not required)"

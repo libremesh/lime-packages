@@ -5,8 +5,8 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-17 06:31:59+0000\n"
-"X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"PO-Revision-Date: 2018-05-28 08:58:34+0000\n"
+"X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: ko\n"
@@ -30,7 +30,7 @@ msgid "Advanced"
 msgstr "고급"
 
 #
-msgid "Attended Sysupgrade"
+msgid "Attended System Upgrade"
 msgstr "시스템 업그레이드 주의"
 
 #
@@ -122,7 +122,7 @@ msgid "Image"
 msgstr "이미지"
 
 #
-msgid "Internet Priorized Gateway (bmx6)"
+msgid "Internet Prioritized Gateway (bmx6)"
 msgstr "인터넷 우선 게이트웨이 (bmx6)"
 
 #
@@ -282,7 +282,7 @@ msgid "Waiting for changes to be applied..."
 msgstr "변경사항이 적용되기를 기다리는 중..."
 
 #
-msgid "You can choose a Gateway to priorize your traffic to go through this node."
+msgid "You can choose a Gateway to prioritize your traffic to go through this node."
 msgstr "이 노드를 경유하는 트래픽의 우선 순위를 정하기 위해 게이트웨이를 선택할 수 있습니다."
 
 #
