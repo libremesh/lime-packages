@@ -1,25 +1,25 @@
-# Translation of LibreMesh - Web UI to Luxembourgish (Lëtzebuergesch)
+# Translation of LibreMesh - Web UI to Norwegian Bokmål (norsk bokmål)
 # Exported from translatewiki.net
 #
-# Author: Robby
+# Author: Kingu
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-25 09:51:34+0000\n"
+"PO-Revision-Date: 2018-05-28 08:58:34+0000\n"
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: lb\n"
+"Language: nb\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #
 msgid "(%s available)"
-msgstr ""
+msgstr "(%s tilgjengelig)"
 
 #
 msgid "About"
-msgstr "Iwwer"
+msgstr "Om"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
@@ -27,7 +27,7 @@ msgstr ""
 
 #
 msgid "Advanced"
-msgstr "Erweidert"
+msgstr "Avansert"
 
 #
 msgid "Attended System Upgrade"
@@ -35,27 +35,27 @@ msgstr ""
 
 #
 msgid "Cancel"
-msgstr "Ofbriechen"
+msgstr "Avbryt"
 
 #
 msgid "Changes applied."
-msgstr ""
+msgstr "Endringer utført."
 
 #
 msgid "Channel 2.4 GHz"
-msgstr ""
+msgstr "Kanal 2.4 GHz"
 
 #
 msgid "Channel 5 GHz"
-msgstr ""
+msgstr "Kanal 5 GHz"
 
 #
 msgid "Checksum"
-msgstr ""
+msgstr "Sjekksum"
 
 #
 msgid "Community name"
-msgstr ""
+msgstr "Gemenskapsnavn"
 
 #
 msgid "Contact"
@@ -63,11 +63,11 @@ msgstr "Kontakt"
 
 #
 msgid "Contact information"
-msgstr ""
+msgstr "Kontaktinformasjon"
 
 #
 msgid "Country code"
-msgstr "Lännercode"
+msgstr "Landskode"
 
 #
 msgid "Country code used for WiFi radios"
@@ -75,19 +75,19 @@ msgstr ""
 
 #
 msgid "Default channel used for 2.4 GHz radios"
-msgstr ""
+msgstr "Forvalgt kanal brukt for 2.4 GHz-radioer"
 
 #
 msgid "Default channel used for 5 GHz radios"
-msgstr ""
+msgstr "Forvalgt kanal brukt for 5 GHz-radioer"
 
 #
 msgid "Distance"
-msgstr "Distanz"
+msgstr "Avstand"
 
 #
 msgid "Email"
-msgstr "E-Mail"
+msgstr "E-post"
 
 #
 msgid "Flash Firmware"
@@ -111,15 +111,15 @@ msgstr ""
 
 #
 msgid "General"
-msgstr "Allgemeng"
-
-#
-msgid "Hostname"
 msgstr ""
 
 #
+msgid "Hostname"
+msgstr "Vertsnavn"
+
+#
 msgid "Image"
-msgstr "Bild"
+msgstr "Bilde"
 
 #
 msgid "Internet Prioritized Gateway (bmx6)"
@@ -131,27 +131,27 @@ msgstr ""
 
 #
 msgid "Keep settings"
-msgstr ""
+msgstr "Behold innstillinger"
 
 #
 msgid "Latitude"
-msgstr ""
+msgstr "Breddegrad"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Breddegrad (dette kan også settes opp i plasseringsfanen)"
 
 #
 msgid "Loading"
-msgstr "Lueden"
+msgstr "Laster"
 
 #
 msgid "Location"
-msgstr ""
+msgstr "Plassering"
 
 #
 msgid "Logout"
-msgstr "Ausloggen"
+msgstr ""
 
 #
 msgid "Longitude"
@@ -163,7 +163,7 @@ msgstr ""
 
 #
 msgid "MD5"
-msgstr ""
+msgstr "MD5"
 
 #
 msgid "Main IPv4"
@@ -171,7 +171,7 @@ msgstr ""
 
 #
 msgid "Main IPv6"
-msgstr "Haapt-IPv6"
+msgstr ""
 
 #
 msgid "Map location"
@@ -187,19 +187,19 @@ msgstr ""
 
 #
 msgid "Name"
-msgstr "Numm"
+msgstr "Navn"
 
 #
 msgid "Name for this node"
-msgstr ""
+msgstr "Navnet på denne noden"
 
 #
 msgid "Network SSID"
-msgstr ""
+msgstr "Nettverks-SSID"
 
 #
 msgid "Notes"
-msgstr "Notizen"
+msgstr ""
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
@@ -207,11 +207,11 @@ msgstr ""
 
 #
 msgid "Proceed"
-msgstr "Virufueren"
+msgstr "Fortsett"
 
 #
 msgid "Rebooting..."
-msgstr "Nei starten..."
+msgstr "Starter om…"
 
 #
 msgid "SHA256"
@@ -219,11 +219,11 @@ msgstr ""
 
 #
 msgid "Simple Config"
-msgstr ""
+msgstr "Enkelt oppsett"
 
 #
 msgid "Size"
-msgstr "Gréisst"
+msgstr "Størrelse"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
@@ -275,11 +275,11 @@ msgstr ""
 
 #
 msgid "Verify"
-msgstr "Nokucken"
+msgstr "Bekreft"
 
 #
 msgid "Waiting for changes to be applied..."
-msgstr ""
+msgstr "Venter på at endringer skal iverksettes…"
 
 #
 msgid "You can choose a Gateway to prioritize your traffic to go through this node."
@@ -287,9 +287,9 @@ msgstr ""
 
 #
 msgid "Your email (not required)"
-msgstr "Är E-Mail-Adress (fakultativ)"
+msgstr "Din e-postadresse (ikke nødvendig)"
 
 #
 msgid "Your name or alias (not required)"
-msgstr ""
+msgstr "Ditt navn eller alias (ikke nødvendig)"
 

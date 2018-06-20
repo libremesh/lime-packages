@@ -3,11 +3,13 @@
 #
 # Author: Movses
 # Author: Okras
+# Author: Redredsonia
+# Author: Viktoriya Yutkina
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-21 14:11:09+0000\n"
-"X-POT-Import-Date: 2018-05-16 10:46:37+0000\n"
+"PO-Revision-Date: 2018-06-04 06:01:17+0000\n"
+"X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: ru\n"
@@ -20,19 +22,19 @@ msgstr "(%s доступно)"
 
 #
 msgid "About"
-msgstr ""
+msgstr "О программе"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
-msgstr ""
+msgstr "Точка доступа ESSID (имя вашей сети)"
 
 #
 msgid "Advanced"
-msgstr ""
+msgstr "Дополнительно"
 
 #
-msgid "Attended Sysupgrade"
-msgstr ""
+msgid "Attended System Upgrade"
+msgstr "Обновление системы вручную"
 
 #
 msgid "Cancel"
@@ -44,11 +46,11 @@ msgstr "Изменения внесены."
 
 #
 msgid "Channel 2.4 GHz"
-msgstr ""
+msgstr "Канал 2,4 ГГц"
 
 #
 msgid "Channel 5 GHz"
-msgstr ""
+msgstr "Канал 5 ГГц"
 
 #
 msgid "Checksum"
@@ -60,7 +62,7 @@ msgstr "Название сообщества"
 
 #
 msgid "Contact"
-msgstr ""
+msgstr "Контакты"
 
 #
 msgid "Contact information"
@@ -72,15 +74,15 @@ msgstr "Код страны"
 
 #
 msgid "Country code used for WiFi radios"
-msgstr ""
+msgstr "Код страны для радиоустройства WiFi"
 
 #
 msgid "Default channel used for 2.4 GHz radios"
-msgstr ""
+msgstr "Канал по умолчанию для радиоустройств 2,4 ГГц"
 
 #
 msgid "Default channel used for 5 GHz radios"
-msgstr ""
+msgstr "Канал по умолчанию для радиоустройств 5 ГГц"
 
 #
 msgid "Distance"
@@ -92,47 +94,47 @@ msgstr "Эл. почта"
 
 #
 msgid "Flash Firmware"
-msgstr ""
+msgstr "Записать прошивку"
 
 #
 msgid "Flash image..."
-msgstr ""
+msgstr "Записать образ"
 
 #
 msgid "Flash new firmware image"
-msgstr ""
+msgstr "Записать новый образ прошивки"
 
 #
 msgid "Flash operations"
-msgstr ""
+msgstr "Операции записи"
 
 #
 msgid "Flashing..."
-msgstr ""
+msgstr "Запись..."
 
 #
 msgid "General"
-msgstr ""
+msgstr "Общее"
 
 #
 msgid "Hostname"
-msgstr ""
+msgstr "Имя узла"
 
 #
 msgid "Image"
 msgstr "Изображение"
 
 #
-msgid "Internet Priorized Gateway (bmx6)"
-msgstr ""
+msgid "Internet Prioritized Gateway (bmx6)"
+msgstr "Предпочтительный шлюз в интернет (bmx6)"
 
 #
 msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
-msgstr ""
+msgstr "Вы пытаетесь записать образ, размер которого больше установленной flash-памяти. Проверьте файл образа!"
 
 #
 msgid "Keep settings"
-msgstr ""
+msgstr "Сохранить настройки"
 
 #
 msgid "Latitude"
@@ -140,7 +142,7 @@ msgstr "Широта"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Широта (этот параметр также можно изменить во вкладке 'позиция')"
 
 #
 msgid "Loading"
@@ -148,7 +150,7 @@ msgstr "Загрузка"
 
 #
 msgid "Location"
-msgstr ""
+msgstr "Местоположение"
 
 #
 msgid "Logout"
@@ -160,7 +162,7 @@ msgstr "Долгота"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Долгота (этот параметр также можно изменить во вкладке 'позиция')"
 
 #
 msgid "MD5"
@@ -168,31 +170,31 @@ msgstr "MD5"
 
 #
 msgid "Main IPv4"
-msgstr ""
+msgstr "Основной IPv4 адрес"
 
 #
 msgid "Main IPv6"
-msgstr ""
+msgstr "Основной IPv6 адрес"
 
 #
 msgid "Map location"
-msgstr ""
+msgstr "Расположение на карте"
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
-msgstr ""
+msgstr "Максимальная дистанция для соединений в метрах (сильно влияет на скорость)"
 
 #
 msgid "Mesh BSSID"
-msgstr ""
+msgstr "Имя сети (Mesh BSSID)"
 
 #
 msgid "Name"
-msgstr ""
+msgstr "Название"
 
 #
 msgid "Name for this node"
-msgstr ""
+msgstr "Имя этого узла"
 
 #
 msgid "Network SSID"
@@ -200,15 +202,15 @@ msgstr "SSID сети"
 
 #
 msgid "Notes"
-msgstr ""
+msgstr "Примечания"
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
-msgstr ""
+msgstr "Заметки, которые будут показываться при входе через консоль, будут под рукой здесь."
 
 #
 msgid "Proceed"
-msgstr ""
+msgstr "Продолжить"
 
 #
 msgid "Rebooting..."
@@ -220,7 +222,7 @@ msgstr "SHA256"
 
 #
 msgid "Simple Config"
-msgstr ""
+msgstr "Простая настройка"
 
 #
 msgid "Size"
@@ -228,51 +230,51 @@ msgstr "Размер"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
-msgstr ""
+msgstr "Это устройство не поддерживает обновления через sysupgrade, новая прошивка должна быть записана вручную. Подробнее см. wiki для конкретного устройства."
 
 #
 msgid "System"
-msgstr ""
+msgstr "Система"
 
 #
 msgid "System Notes"
-msgstr ""
+msgstr "Заметки о системе"
 
 #
 msgid "The BSSID (WiFi network identifier) used for the mesh network"
-msgstr ""
+msgstr "Имя сети BSSID, используемое для сети mesh"
 
 #
 msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
-msgstr ""
+msgstr "Образ прошивки загружен. Ниже указана контрольная сумма и размер файла, сравните их с оригинальным файлом для проверки целостности.<br />Нажмите \"Начать\" для начала записи."
 
 #
 msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
-msgstr ""
+msgstr "Основной адрес IPv4, заданный для этого узла, в виде адрес/маска (1.2.3.4/24)"
 
 #
 msgid "The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"
-msgstr ""
+msgstr "Основной адрес IPv6, заданный для этого узла, в виде адрес/маска (2001:db8::1/64)"
 
 #
 msgid "The name of your network community"
-msgstr ""
+msgstr "Название вашего сетевого сообщества"
 
 #
 msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
-msgstr ""
+msgstr "Обновление системы запущено <br /> НЕ ОТКЛЮЧАЙТЕ ПИТАНИЕ!<br /> Подождите несколько минут, пока связь восстановится. Возможно, потребуется обновить адрес вашего компьютера, чтобы снова получить доступ к устройству, в зависимости от ваших настроек."
 
 #
 msgid "The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
-msgstr ""
+msgstr "Загруженный файл образа имеет неподдерживаемый формат. Убедитесь, что вы выбрали формат, подходящий к вашей платформе (generic формат)."
 
 #
 msgid "Upload a LibreMesh sysupgrade image here to replace the running firmware."
-msgstr ""
+msgstr "Загрузите образ обновления (sysupgrade) LibreMesh сюда для замены рабочей прошивки."
 
 #
 msgid "Upload a sysupgrade-compatible image here to replace the running firmware. Check \"Keep settings\" to retain the current configuration (requires a compatible firmware image)."
-msgstr ""
+msgstr "Загрузите сюда sysupgrade-совестимый образ для замены рабочей прошивки. Отметьте гелочкой \"Сохранить настройки\" для сохранения текущей конфигурации (требует совместимого образа прошивки)."
 
 #
 msgid "Verify"
@@ -280,11 +282,11 @@ msgstr "Проверить"
 
 #
 msgid "Waiting for changes to be applied..."
-msgstr ""
+msgstr "Ожидание применения изменений..."
 
 #
-msgid "You can choose a Gateway to priorize your traffic to go through this node."
-msgstr ""
+msgid "You can choose a Gateway to prioritize your traffic to go through this node."
+msgstr "Вы можете выбрать шлюз как предпочтительный для трафика, проходящего через этот узел."
 
 #
 msgid "Your email (not required)"
@@ -292,5 +294,5 @@ msgstr "Ваш е-мейл (необязательно)"
 
 #
 msgid "Your name or alias (not required)"
-msgstr ""
+msgstr "Ваше имя или псевдоним (не обязательно)"
 
