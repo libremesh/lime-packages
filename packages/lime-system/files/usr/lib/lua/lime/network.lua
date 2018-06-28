@@ -20,11 +20,14 @@ function network.get_mac(ifname)
 end
 
 function network.primary_interface()
-	local handle = io.popen("sh /usr/lib/lua/lime/board.sh lan ifname")
-	local ifname = handle:read("*a")
-	handle:close()
-	if not ifname or ifname == "" then
-		ifname = "eth0"
+	local ifname = config.get("network", "primary_interface", "auto")
+	if ifname == "auto" then
+		local handle = io.popen("sh /usr/lib/lua/lime/board.sh lan ifname")
+		ifname = handle:read("*a")
+		handle:close()
+		if not ifname or ifname == "" then
+			ifname = "eth0"
+		end
 	end
 	return ifname
 end
