@@ -215,14 +215,12 @@ function bmx7.setup_interface(ifname, args)
 	uci:set(bmx7.f, owrtInterfaceName, "dev")
 	uci:set(bmx7.f, owrtInterfaceName, "dev", linux802adIfName)
 
-	-- BEGIN [Workaround issue 40]
 	if ifname:match("^wlan%d+") then
-		local rateMax = config.get("network", "bmx7_wifi_rate_max", 54000000)
-		if rateMax then
+		local rateMax = config.get("network", "bmx7_wifi_rate_max", "auto")
+		if rateMax ~= "auto" then
 			uci:set(bmx7.f, owrtInterfaceName, "rateMax", rateMax)
 		end
 	end
-	--- END [Workaround issue 40]
 
 	uci:save(bmx7.f)
 end
