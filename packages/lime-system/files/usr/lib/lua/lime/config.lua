@@ -26,20 +26,18 @@ function config.sanitize()
 	end
 end
 
-function config.get(sectionname, option, default)
+function config.get(sectionname, option, fallback)
 	local limeconf = config.uci:get("lime", sectionname, option)
 	if limeconf then return limeconf end
 
 	local defcnf = config.uci:get("lime-defaults", sectionname, option)
 	if ( defcnf ~= nil ) then
 		config.set(sectionname, option, defcnf)
-	elseif ( default ~= nil ) then
-		defcnf = default
-		local cfn = sectionname.."."..option
-		print("WARNING: Option "..cfn.." is not defined. Using value "..tostring(defcnf))
+	elseif ( fallback ~= nil ) then
+		defcnf = fallback
+		print("Use fallback value for "..sectionname.."."..option..": "..tostring(defcnf))
 	else
-		local cfn = sectionname.."."..option
-		print("WARNING: Attempt to access undeclared default for: "..cfn)
+		print("WARNING: Attempt to access undeclared default for: "..sectionname.."."..option)
 		print(debug.traceback())
 	end
 	return defcnf
