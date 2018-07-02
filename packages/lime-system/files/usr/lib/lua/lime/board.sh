@@ -11,4 +11,4 @@ if [ -n "$1" -a -n "$2" ]; then
     fi
 fi
 
-echo -n "$output"
+echo -n "${output% *}"
