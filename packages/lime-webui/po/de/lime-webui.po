@@ -6,7 +6,7 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-28 08:58:33+0000\n"
+"PO-Revision-Date: 2018-07-05 11:48:00+0000\n"
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -76,11 +76,11 @@ msgstr "Für WLAN-Sender verwendeter Ländercode"
 
 #
 msgid "Default channel used for 2.4 GHz radios"
-msgstr ""
+msgstr "Standardkanal für 2,4-GHz-Sender"
 
 #
 msgid "Default channel used for 5 GHz radios"
-msgstr ""
+msgstr "Standardkanal für 5-GHz-Sender"
 
 #
 msgid "Distance"
@@ -92,23 +92,23 @@ msgstr "E-Mail"
 
 #
 msgid "Flash Firmware"
-msgstr ""
+msgstr "Firmware flashen"
 
 #
 msgid "Flash image..."
-msgstr ""
+msgstr "Abbild flashen …"
 
 #
 msgid "Flash new firmware image"
-msgstr ""
+msgstr "Neues Firmware-Abbild flashen"
 
 #
 msgid "Flash operations"
-msgstr ""
+msgstr "Flashoperationen"
 
 #
 msgid "Flashing..."
-msgstr ""
+msgstr "Flashen …"
 
 #
 msgid "General"
@@ -124,7 +124,7 @@ msgstr "Abbild"
 
 #
 msgid "Internet Prioritized Gateway (bmx6)"
-msgstr ""
+msgstr "Internetpriorisiertes Gateway (bmx6)"
 
 #
 msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
@@ -140,7 +140,7 @@ msgstr "Breitengrad"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Breitengrad (dies kann auch im Standort-Reiter konfiguriert werden)"
 
 #
 msgid "Loading"
@@ -160,7 +160,7 @@ msgstr "Längengrad"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Längengrad (dies kann auch im Standort-Reiter konfiguriert werden)"
 
 #
 msgid "MD5"
@@ -180,11 +180,11 @@ msgstr "Standortkarte"
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
-msgstr ""
+msgstr "Maximaler Abstand für die Verbindungen in Metern (hat großen Einfluss auf die Leistung)"
 
 #
 msgid "Mesh BSSID"
-msgstr ""
+msgstr "Netz-BSSID"
 
 #
 msgid "Name"
@@ -200,11 +200,11 @@ msgstr "Netzwerk-SSID"
 
 #
 msgid "Notes"
-msgstr ""
+msgstr "Bemerkungen"
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
-msgstr ""
+msgstr "Anmerkungen werden bei der Konsolenanmeldung angezeigt und sind dort verfügbar."
 
 #
 msgid "Proceed"
@@ -212,7 +212,7 @@ msgstr "Fortfahren"
 
 #
 msgid "Rebooting..."
-msgstr ""
+msgstr "Neustart …"
 
 #
 msgid "SHA256"
@@ -220,7 +220,7 @@ msgstr "SHA256"
 
 #
 msgid "Simple Config"
-msgstr ""
+msgstr "Einfache Konfiguration"
 
 #
 msgid "Size"
@@ -236,11 +236,11 @@ msgstr "System"
 
 #
 msgid "System Notes"
-msgstr ""
+msgstr "Systemmitteilungen"
 
 #
 msgid "The BSSID (WiFi network identifier) used for the mesh network"
-msgstr ""
+msgstr "Die BSSID (WLAN-Netzwerkkennung) für das Netzwerk"
 
 #
 msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
@@ -248,15 +248,15 @@ msgstr ""
 
 #
 msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
-msgstr ""
+msgstr "Die für diesen Knoten konfigurierte Haupt-IPv4-Adresse, mit Schrägstrichen (z.&nbsp;B. 1.2.3.4/24)"
 
 #
 msgid "The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"
-msgstr ""
+msgstr "Die für diesen Knoten konfigurierte Haupt-IPv6-Adresse, mit Schrägstrichen (z.&nbsp;B. 2001:db8::1/64)"
 
 #
 msgid "The name of your network community"
-msgstr ""
+msgstr "Der Name deiner Netzwerkgemeinschaft"
 
 #
 msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
@@ -268,7 +268,7 @@ msgstr ""
 
 #
 msgid "Upload a LibreMesh sysupgrade image here to replace the running firmware."
-msgstr ""
+msgstr "Hier ein Sysupgrade-Abbild für LibreMesh hochladen, um die laufende Firmware zu ersetzen."
 
 #
 msgid "Upload a sysupgrade-compatible image here to replace the running firmware. Check \"Keep settings\" to retain the current configuration (requires a compatible firmware image)."
@@ -280,17 +280,17 @@ msgstr "Verifizieren"
 
 #
 msgid "Waiting for changes to be applied..."
-msgstr ""
+msgstr "Warte auf Anwendung der Änderungen"
 
 #
 msgid "You can choose a Gateway to prioritize your traffic to go through this node."
-msgstr ""
+msgstr "Du kannst ein bevorzugtes Gateway auswählen, durch das dein Verkehr gehen soll."
 
 #
 msgid "Your email (not required)"
-msgstr ""
+msgstr "Deine E-Mail-Adresse (optional)"
 
 #
 msgid "Your name or alias (not required)"
-msgstr ""
+msgstr "Dein Name oder Alias (optional)"
 
