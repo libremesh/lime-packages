@@ -10,6 +10,14 @@ You may obtain a copy of the License at
 require "ubus"
 local json = require 'luci.json'
 local lime = require 'lime.config'
+local network = require 'lime.network'
+
+function readFile(file)
+    local f = io.open(file, "rb")
+    local content = f:read("*all")
+    f:close()
+    return content
+end
 
 local function printJson (obj)
     print(json.encode(obj))
@@ -27,6 +35,8 @@ local function get_config()
         table.insert(result.config, section)
     end
     config.foreach("hwd_gr", add_to_result)
+    result.board = readFile('/etc/board.json') or '{}'
+    result.board = json.decode(result.board)
     printJson(result);
 end
 
