@@ -1,7 +1,7 @@
-# Translation of LibreMesh - Web UI to Norwegian Bokmål (norsk bokmål)
+# Translation of LibreMesh - Web UI to Basque (euskara)
 # Exported from translatewiki.net
 #
-# Author: Kingu
+# Author: Amaia
 msgid ""
 msgstr ""
 ""
@@ -9,17 +9,17 @@ msgstr ""
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: nb\n"
+"Language: eu\n"
 "X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-07-10\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #
 msgid "(%s available)"
-msgstr "(%s tilgjengelig)"
+msgstr "(%s erabilgarri)"
 
 #
 msgid "About"
-msgstr "Om"
+msgstr "Honi buruz"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
@@ -27,7 +27,7 @@ msgstr ""
 
 #
 msgid "Advanced"
-msgstr "Avansert"
+msgstr "Aurreratua"
 
 #
 msgid "Attended System Upgrade"
@@ -35,39 +35,39 @@ msgstr ""
 
 #
 msgid "Cancel"
-msgstr "Avbryt"
+msgstr "Utzi"
 
 #
 msgid "Changes applied."
-msgstr "Endringer utført."
+msgstr "Aldaketak aplikatu dira."
 
 #
 msgid "Channel 2.4 GHz"
-msgstr "Kanal 2.4 GHz"
+msgstr "2.4 GHz kanala"
 
 #
 msgid "Channel 5 GHz"
-msgstr "Kanal 5 GHz"
+msgstr "5 GHz kanala"
 
 #
 msgid "Checksum"
-msgstr "Sjekksum"
+msgstr ""
 
 #
 msgid "Community name"
-msgstr "Gemenskapsnavn"
+msgstr "Komunitate izena"
 
 #
 msgid "Contact"
-msgstr "Kontakt"
+msgstr ""
 
 #
 msgid "Contact information"
-msgstr "Kontaktinformasjon"
+msgstr "Kontratuaren informazioa"
 
 #
 msgid "Country code"
-msgstr "Landskode"
+msgstr ""
 
 #
 msgid "Country code used for WiFi radios"
@@ -75,19 +75,19 @@ msgstr ""
 
 #
 msgid "Default channel used for 2.4 GHz radios"
-msgstr "Forvalgt kanal brukt for 2.4 GHz-radioer"
+msgstr ""
 
 #
 msgid "Default channel used for 5 GHz radios"
-msgstr "Forvalgt kanal brukt for 5 GHz-radioer"
+msgstr ""
 
 #
 msgid "Distance"
-msgstr "Avstand"
+msgstr "Distantzia"
 
 #
 msgid "Email"
-msgstr "E-post"
+msgstr "Helbide elektronikoa"
 
 #
 msgid "Flash Firmware"
@@ -111,15 +111,15 @@ msgstr ""
 
 #
 msgid "General"
-msgstr ""
+msgstr "Orokorra"
 
 #
 msgid "Hostname"
-msgstr "Vertsnavn"
+msgstr ""
 
 #
 msgid "Image"
-msgstr "Bilde"
+msgstr "Irudia"
 
 #
 msgid "Internet Prioritized Gateway (bmx6)"
@@ -131,35 +131,35 @@ msgstr ""
 
 #
 msgid "Keep settings"
-msgstr "Behold innstillinger"
+msgstr "Ezarpenak mantendu"
 
 #
 msgid "Latitude"
-msgstr "Breddegrad"
+msgstr "Latitudea"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
-msgstr "Breddegrad (dette kan også settes opp i plasseringsfanen)"
+msgstr "Latitudea (kokapenean ere konfiguratu daiteke)"
 
 #
 msgid "Loading"
-msgstr "Laster"
+msgstr "Kargatzen"
 
 #
 msgid "Location"
-msgstr "Plassering"
+msgstr "Kokapena"
 
 #
 msgid "Logout"
-msgstr ""
+msgstr "Saioa itxi"
 
 #
 msgid "Longitude"
-msgstr ""
+msgstr "Longitudea"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Longitudea (kokapenean ere konfiguratu daiteke)"
 
 #
 msgid "MD5"
@@ -167,15 +167,15 @@ msgstr "MD5"
 
 #
 msgid "Main IPv4"
-msgstr ""
+msgstr "IPv4 nagusia"
 
 #
 msgid "Main IPv6"
-msgstr ""
+msgstr "IPv6 nagusia"
 
 #
 msgid "Map location"
-msgstr ""
+msgstr "Kokapena mapan"
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
@@ -187,19 +187,19 @@ msgstr ""
 
 #
 msgid "Name"
-msgstr "Navn"
+msgstr "Izena"
 
 #
 msgid "Name for this node"
-msgstr "Navnet på denne noden"
+msgstr "Nodoarentzako izena"
 
 #
 msgid "Network SSID"
-msgstr "Nettverks-SSID"
+msgstr "Sarearen SSIDa"
 
 #
 msgid "Notes"
-msgstr ""
+msgstr "Oharrak"
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
@@ -207,23 +207,23 @@ msgstr ""
 
 #
 msgid "Proceed"
-msgstr "Fortsett"
+msgstr "Jarraitu"
 
 #
 msgid "Rebooting..."
-msgstr "Starter om…"
+msgstr "Berrabiarazten..."
 
 #
 msgid "SHA256"
-msgstr ""
+msgstr "SHA256"
 
 #
 msgid "Simple Config"
-msgstr "Enkelt oppsett"
+msgstr "Konfigurazio sinplea"
 
 #
 msgid "Size"
-msgstr "Størrelse"
+msgstr "Tamaina"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
@@ -231,11 +231,11 @@ msgstr ""
 
 #
 msgid "System"
-msgstr "System"
+msgstr "Sistema"
 
 #
 msgid "System Notes"
-msgstr ""
+msgstr "Sistemaren Oharrak"
 
 #
 msgid "The BSSID (WiFi network identifier) used for the mesh network"
@@ -275,11 +275,11 @@ msgstr ""
 
 #
 msgid "Verify"
-msgstr "Bekreft"
+msgstr "Egiaztatu"
 
 #
 msgid "Waiting for changes to be applied..."
-msgstr "Venter på at endringer skal iverksettes…"
+msgstr "Aldaketak aplikatzeko itxaroten..."
 
 #
 msgid "You can choose a Gateway to prioritize your traffic to go through this node."
@@ -287,9 +287,9 @@ msgstr ""
 
 #
 msgid "Your email (not required)"
-msgstr "Din e-postadresse (ikke nødvendig)"
+msgstr "Zure helbide elektronikoa (aukerakoa)"
 
 #
 msgid "Your name or alias (not required)"
-msgstr "Ditt navn eller alias (ikke nødvendig)"
+msgstr "Zure izen edo ezizena (aukerakoa)"
 

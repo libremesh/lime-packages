@@ -5,12 +5,12 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-31 06:28:09+0000\n"
+"PO-Revision-Date: 2018-07-16 14:57:39+0000\n"
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: tr\n"
-"X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
+"X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-07-10\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
 #

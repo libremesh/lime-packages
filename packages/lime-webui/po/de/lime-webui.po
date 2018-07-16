@@ -6,12 +6,12 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-07-05 11:48:00+0000\n"
+"PO-Revision-Date: 2018-07-16 14:57:39+0000\n"
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: de\n"
-"X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
+"X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-07-10\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #
@@ -92,23 +92,23 @@ msgstr "E-Mail"
 
 #
 msgid "Flash Firmware"
-msgstr "Firmware flashen"
+msgstr "Firmware aufspielen"
 
 #
 msgid "Flash image..."
-msgstr "Abbild flashen …"
+msgstr "Abbild aufspielen …"
 
 #
 msgid "Flash new firmware image"
-msgstr "Neues Firmware-Abbild flashen"
+msgstr "Neues Firmware-Abbild aufspielen"
 
 #
 msgid "Flash operations"
-msgstr "Flashoperationen"
+msgstr "Aufspieloperationen"
 
 #
 msgid "Flashing..."
-msgstr "Flashen …"
+msgstr "Aufspielen …"
 
 #
 msgid "General"
@@ -128,7 +128,7 @@ msgstr "Internetpriorisiertes Gateway (bmx6)"
 
 #
 msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
-msgstr "Es scheint, als ob du versuchst, ein Abbild zu flashen, das nicht in den Flashspeicher passt. Bitte überprüfe die Abbilddatei."
+msgstr "Es scheint, als ob du versuchst, ein Abbild aufzuspielen, das nicht in den Flashspeicher passt. Bitte überprüfe die Abbilddatei!"
 
 #
 msgid "Keep settings"
@@ -228,7 +228,7 @@ msgstr "Größe"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
-msgstr ""
+msgstr "Leider ist keine Sysupgrade-Unterstützung vorhanden. Es muss manuell ein neues Firmware-Abbild aufgespielt werden. Bitte lies im Wiki die gerätespezifischen Installationsanweisungen."
 
 #
 msgid "System"
@@ -244,7 +244,7 @@ msgstr "Die BSSID (WLAN-Netzwerkkennung) für das Netzwerk"
 
 #
 msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
-msgstr ""
+msgstr "Das Aufspielabbild wurde hochgeladen. Unten werden die Prüfsumme und Dateigröße aufgelistet. Vergleiche diese mit der Originaldatei, um die Datenintegrität zu gewährleisten.<br />Klicke unten auf „Fortfahren“, um den Aufspielprozess zu starten."
 
 #
 msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
@@ -260,11 +260,11 @@ msgstr "Der Name deiner Netzwerkgemeinschaft"
 
 #
 msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
-msgstr ""
+msgstr "Das System wird jetzt aufgespielt.<br />DAS GERÄT NICHT AUSSCHALTEN!<br />Warte einige Minuten, bevor du eine Neuverbindung versuchst. Es könnte – abhängig von deinen Einstellungen – erforderlich sein, die Adresse deines Computers zu erneuern, um das Gerät wieder zu erreichen."
 
 #
 msgid "The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
-msgstr ""
+msgstr "Die hochgeladene Abbilddatei enthält kein unterstütztes Format. Stelle sicher, dass du das allgemeine Abbildformat für deine Plattform auswählst."
 
 #
 msgid "Upload a LibreMesh sysupgrade image here to replace the running firmware."
@@ -272,7 +272,7 @@ msgstr "Hier ein Sysupgrade-Abbild für LibreMesh hochladen, um die laufende Fir
 
 #
 msgid "Upload a sysupgrade-compatible image here to replace the running firmware. Check \"Keep settings\" to retain the current configuration (requires a compatible firmware image)."
-msgstr ""
+msgstr "Lade hier ein Sysupgrade-kompatibles Abbild hoch, um die laufende Firmware zu ersetzen. Wähle „Einstellungen behalten“ aus, um die derzeitige Konfiguration beizubehalten (erfordert ein kompatibles Firmware-Abbild)."
 
 #
 msgid "Verify"
