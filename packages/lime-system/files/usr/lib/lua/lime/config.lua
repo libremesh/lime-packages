@@ -26,11 +26,17 @@ function config.sanitize()
 	end
 end
 
+function config.defaults_file()
+    if os.rename("/etc/config/lime-profile", "/etc/config/lime-profile") then
+        return "lime-profile"
+    else
+        return "lime-defaults"
+
 function config.get(sectionname, option, fallback)
 	local limeconf = config.uci:get("lime", sectionname, option)
 	if limeconf then return limeconf end
 
-	local defcnf = config.uci:get("lime-defaults", sectionname, option)
+	local defcnf = config.uci:get(config.defaults_file(), sectionname, option)
 	if ( defcnf ~= nil ) then
 		config.set(sectionname, option, defcnf)
 	elseif ( fallback ~= nil ) then
@@ -53,7 +59,7 @@ end
 
 function config.get_all(sectionname)
 	local lime_section = config.uci:get_all("lime", sectionname)
-	local lime_def_section = config.uci:get_all("lime-defaults", sectionname)
+	local lime_def_section = config.uci:get_all(config.defaults_file(), sectionname)
 
 	if lime_section or lime_def_section then
 		local ret = lime_section or {}
