@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
 	URL:=http://github.com/libremesh/lime-app
 	DEPENDS:=+uhttpd +uhttpd-mod-ubus +ubus-lime-batman-adv +ubus-lime-bmx6 \
 		+ubus-lime-location +ubus-lime-metrics +ubus-lime-utils \
-		+ubus-lime-openairview
+		+ubus-lime-openairview +ubus-lime-grondrouting
 	PKGARCH:=all
 endef
 
