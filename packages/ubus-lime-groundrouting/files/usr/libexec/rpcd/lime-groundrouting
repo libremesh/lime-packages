@@ -85,11 +85,6 @@ local function set_config(msg)
     
 end
 
-local function apply_config()
-    shell("lime-config && lime-apply")
-    printJson({ status = 'ok'})
-end
-
 local methods = {
     get = { no_params = 0 },
     set = { config = 'object' }
