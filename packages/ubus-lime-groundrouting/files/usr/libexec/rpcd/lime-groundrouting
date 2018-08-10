@@ -9,8 +9,9 @@ You may obtain a copy of the License at
 
 require "ubus"
 local json = require 'luci.json'
-local lime = require 'lime.config'
+local config = require 'lime.config'
 local network = require 'lime.network'
+local ntm = require "luci.model.network".init()
 
 function readFile(file)
     local f = io.open(file, "rb")
@@ -37,6 +38,7 @@ local function get_config()
     config.foreach("hwd_gr", add_to_result)
     result.board = readFile('/etc/board.json') or '{}'
     result.board = json.decode(result.board)
+    result.devices = network.scandevices()
     printJson(result);
 end
 
@@ -57,8 +59,8 @@ end
 if arg[1] == 'call' then
     local msg = io.read()
 	msg = json.decode(msg)
-    if       arg[2] == 'get'	    then get_config()
-	elseif   arg[2] == 'set'	        then set_config(msg)
-    else                                printJson({ error = "Method not found" })
+    if       arg[2] == 'get'    then get_config()
+	elseif   arg[2] == 'set'    then set_config(msg)
+    else                        printJson({ error = "Method not found" })
     end
 end
