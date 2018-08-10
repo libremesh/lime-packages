@@ -12,6 +12,15 @@ local json = require 'luci.json'
 local config = require 'lime.config'
 local network = require 'lime.network'
 local ntm = require "luci.model.network".init()
+local libuci = require "uci"
+
+local function shell(command)
+    -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+    return result
+end
 
 function readFile(file)
     local f = io.open(file, "rb")
@@ -43,13 +52,47 @@ local function get_config()
 end
 
 local function set_config(msg)
-    local result = {}
-    printJson(result);
+    local configuration = msg.config
+    local net_dev = configuration.net_dev
+    local uci = libuci:cursor()
+    uci:delete("lime","link1")
+    config.init_batch()
+
+    if configuration.delete ~= true then    
+            config.set("link1","hwd_gr")
+            if configuration.net_dev ~= nil then
+                config.set("link1","net_dev", configuration.net_dev )
+            end
+            if configuration.vlan ~= nil then
+                config.set("link1","vlan", configuration.vlan )
+            end
+            if configuration.switch_dev ~= nil then
+                config.set("link1","switch_dev", configuration.switch_dev )
+            end
+            if configuration.switch_cpu_port ~= nil then
+                config.set("link1","switch_cpu_port", configuration.switch_cpu_port )
+            end
+            if configuration.switch_ports ~= nil then
+                config.set("link1","switch_ports", configuration.switch_ports )
+            end
+    end
+    config.end_batch()
+    uci:commit("lime")
+    
+    shell("lime-config && lime-apply")
+    
+    printJson({ status = 'ok'})
+    
+end
+
+local function apply_config()
+    shell("lime-config && lime-apply")
+    printJson({ status = 'ok'})
 end
 
 local methods = {
     get = { no_params = 0 },
-	set = { config = 'object' }
+    set = { config = 'object' }
 }
 
 if arg[1] == 'list' then
@@ -60,7 +103,7 @@ if arg[1] == 'call' then
     local msg = io.read()
 	msg = json.decode(msg)
     if       arg[2] == 'get'    then get_config()
-	elseif   arg[2] == 'set'    then set_config(msg)
+    elseif   arg[2] == 'set'    then set_config(msg)
     else                        printJson({ error = "Method not found" })
     end
 end
