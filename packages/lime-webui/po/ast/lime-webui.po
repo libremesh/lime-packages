@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-07-16 14:57:38+0000\n"
+"PO-Revision-Date: 2018-08-17 13:05:53+0000\n"
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -227,7 +227,7 @@ msgstr "Tamañu"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
-msgstr ""
+msgstr "Sentímoslo, nun hai encontu pa sysupgrade; tien de grabase manualmente una imaxe nueva del firmware. Consulta les instrucciones de la wiki pa les instrucciones d'instalación específiques pa un preséu."
 
 #
 msgid "System"
