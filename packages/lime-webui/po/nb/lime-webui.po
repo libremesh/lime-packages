@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-07-16 14:57:39+0000\n"
+"PO-Revision-Date: 2018-08-20 06:13:58+0000\n"
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -23,7 +23,7 @@ msgstr "Om"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
-msgstr ""
+msgstr "Tilgangspunktets ESSID (vanligvis nettverksnavnet ditt)"
 
 #
 msgid "Advanced"
@@ -31,7 +31,7 @@ msgstr "Avansert"
 
 #
 msgid "Attended System Upgrade"
-msgstr ""
+msgstr "Brukerpåvirket systemoppgradering"
 
 #
 msgid "Cancel"
@@ -71,7 +71,7 @@ msgstr "Landskode"
 
 #
 msgid "Country code used for WiFi radios"
-msgstr ""
+msgstr "Landkode brukt for Wi-Fi-radioer"
 
 #
 msgid "Default channel used for 2.4 GHz radios"
@@ -91,27 +91,27 @@ msgstr "E-post"
 
 #
 msgid "Flash Firmware"
-msgstr ""
+msgstr "Innprent fastvare"
 
 #
 msgid "Flash image..."
-msgstr ""
+msgstr "Innprent avtrykk…"
 
 #
 msgid "Flash new firmware image"
-msgstr ""
+msgstr "Innprent nytt fastvareavtrykk"
 
 #
 msgid "Flash operations"
-msgstr ""
+msgstr "Innprentingsoperasjoner"
 
 #
 msgid "Flashing..."
-msgstr ""
+msgstr "Innprenter…"
 
 #
 msgid "General"
-msgstr ""
+msgstr "Generelt"
 
 #
 msgid "Hostname"
@@ -123,11 +123,11 @@ msgstr "Bilde"
 
 #
 msgid "Internet Prioritized Gateway (bmx6)"
-msgstr ""
+msgstr "Internettprioritert portner (bmx6)"
 
 #
 msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
-msgstr ""
+msgstr "Det later til at du prøver å innprente et avtrykk som ikke får plass i innprentingsminnet, bekreft avtrykksfilen!"
 
 #
 msgid "Keep settings"
@@ -151,15 +151,15 @@ msgstr "Plassering"
 
 #
 msgid "Logout"
-msgstr ""
+msgstr "Logg ut"
 
 #
 msgid "Longitude"
-msgstr ""
+msgstr "Lengdegrad"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
-msgstr ""
+msgstr "Breddegrad (dette kan også settes opp i posisjonsfanen)"
 
 #
 msgid "MD5"
@@ -167,23 +167,23 @@ msgstr "MD5"
 
 #
 msgid "Main IPv4"
-msgstr ""
+msgstr "Hoved-IPv4"
 
 #
 msgid "Main IPv6"
-msgstr ""
+msgstr "Hoved-IPv6"
 
 #
 msgid "Map location"
-msgstr ""
+msgstr "Kartposisjon"
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
-msgstr ""
+msgstr "Maksimal distanse for tilknytninger i meter (stor ytelsespåvirkning)"
 
 #
 msgid "Mesh BSSID"
-msgstr ""
+msgstr "Maskenett-BSSID"
 
 #
 msgid "Name"
@@ -199,11 +199,11 @@ msgstr "Nettverks-SSID"
 
 #
 msgid "Notes"
-msgstr ""
+msgstr "Notater"
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
-msgstr ""
+msgstr "Notater som vil bli vist ved konsollinnlogging og vil være tilgjengelig her."
 
 #
 msgid "Proceed"
@@ -215,7 +215,7 @@ msgstr "Starter om…"
 
 #
 msgid "SHA256"
-msgstr ""
+msgstr "SHA-256"
 
 #
 msgid "Simple Config"
@@ -227,7 +227,7 @@ msgstr "Størrelse"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
-msgstr ""
+msgstr "Det forefinnes ingen sysupgrade-støtte; et nytt fastvareavtrykk må innprentes manuelt. Henvend dem til wiki-en for enhetsspesifikk installasjonsinstruks."
 
 #
 msgid "System"
@@ -235,43 +235,43 @@ msgstr "System"
 
 #
 msgid "System Notes"
-msgstr ""
+msgstr "Systemnotater"
 
 #
 msgid "The BSSID (WiFi network identifier) used for the mesh network"
-msgstr ""
+msgstr "BSSID-en (Wi-Fi-nettverksindikator) brukt for maskenettverket"
 
 #
 msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
-msgstr ""
+msgstr "Innprentingsavtrykket ble lastet opp. Nedenfor finnes sjekksummen og filstørrelsen, sammenlign dem med originalfilen for å forsikre deg om at filen ikke har blitt tuklet med. <br /> Trykk \"Fortsett\" nedenfor når du ønsker å starte innprentingsprosessen."
 
 #
 msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
-msgstr ""
+msgstr "Hoved-IPv4 oppsatt for denne noden, med skråstreksnotasjon (f.eks. 1.2.3.4/24)"
 
 #
 msgid "The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"
-msgstr ""
+msgstr "Hoved-IPv6 oppsatt for denne noden, med skråstreksnotasjon (f.eks. 2001:db8::1/64)"
 
 #
 msgid "The name of your network community"
-msgstr ""
+msgstr "Navnet på ditt nettverkfellesskap"
 
 #
 msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
-msgstr ""
+msgstr "Systemet innprenter nå fastvare.<br /> Ikke skru av enheten!<br /> Vent noen minutter før du prøver å koble til igjen. Det kan være nødvendig å fornye adressen til datamaskinen din for å nå enheten din igjen, alt avhengig av innstillingene dine."
 
 #
 msgid "The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
-msgstr ""
+msgstr "Det opplastede avtrykketsfilen inneholder ikke et støttet format. Forsikre deg om at du velger det generiske avtrykksformatet for din plattform."
 
 #
 msgid "Upload a LibreMesh sysupgrade image here to replace the running firmware."
-msgstr ""
+msgstr "Last opp et LibreMesh-sysupgrade-avtrykk her for å erstatte den kjørende fastvaren."
 
 #
 msgid "Upload a sysupgrade-compatible image here to replace the running firmware. Check \"Keep settings\" to retain the current configuration (requires a compatible firmware image)."
-msgstr ""
+msgstr "Last opp et sysupgrade-kompatibelt avtrykk her for å erstatte kjørende fastvare. Huk av \"Behold innstillinger\" for å beholde gjeldende oppsett (krever kompatibelt fastvareavtrykk)."
 
 #
 msgid "Verify"
@@ -283,7 +283,7 @@ msgstr "Venter på at endringer skal iverksettes…"
 
 #
 msgid "You can choose a Gateway to prioritize your traffic to go through this node."
-msgstr ""
+msgstr "Du kan velge en portner for å prioritere din trafikk til å ta veien gjennom denne noden."
 
 #
 msgid "Your email (not required)"
