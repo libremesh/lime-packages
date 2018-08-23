@@ -4,11 +4,10 @@ utils = {}
 
 local config = require("lime.config")
 
-
 function utils.split(string, sep)
-    local ret = {}
-    for token in string.gmatch(string, "[^"..sep.."]+") do table.insert(ret, token) end
-    return ret
+	local ret = {}
+	for token in string.gmatch(string, "[^"..sep.."]+") do table.insert(ret, token) end
+	return ret
 end
 
 function utils.stringStarts(string, start)
@@ -20,11 +19,11 @@ function utils.stringEnds(string, _end)
 end
 
 function utils.hex(x)
-    return string.format("%02x", x)
+	return string.format("%02x", x)
 end
 
 function utils.printf(fmt, ...)
-    print(string.format(fmt, ...))
+	print(string.format(fmt, ...))
 end
 
 function utils.isModuleAvailable(name)
@@ -176,10 +175,18 @@ function utils.has_value(tab, val)
 	return false
 end
 
---! contact array t2 to the end of array t1
-function utils.arrayConcat(t1,t2)
-	for _,i in ipairs(t2) do
-		table.insert(t1,i)
+--! contact array a2 to the end of array a1
+function utils.arrayConcat(a1,a2)
+	for _,i in ipairs(a2) do
+		table.insert(a1,i)
+	end
+	return a1
+end
+
+--! melt table t1 into t2, if keys exists in both tables use value of t2
+function utils.tableMelt(t1, t2)
+	for key, value in pairs(t2) do
+		t1[key] = value
 	end
 	return t1
 end

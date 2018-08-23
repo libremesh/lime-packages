@@ -18,6 +18,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=Utilities
   TITLE:=$(PKG_NAME) falls back to a last-known-good config after an ill-fated reboot.
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

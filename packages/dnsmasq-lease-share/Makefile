@@ -20,6 +20,7 @@ define Package/$(PKG_NAME)
  MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
  URL:=http://libremesh.org
  DEPENDS:=+alfred +lua +libuci-lua
+ PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

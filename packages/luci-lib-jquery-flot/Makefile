@@ -19,6 +19,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   SUBMENU:=8. Libraries
   TITLE:=jQuery library - Flot chart plotting
+  PKGARCH:=all
 endef
 
 define Build/Compile

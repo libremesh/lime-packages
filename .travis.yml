@@ -1,37 +1,42 @@
 sudo: false
 dist: trusty
-addons:
-  apt:
-    sources:
-    - sourceline: 'ppa:ubuntu-toolchain-r/test'
-    packages:
-    - build-essential
-    - subversion
-    - libncurses5-dev
-    - zlib1g-dev
-    - gawk
-    - gcc-multilib
-    - flex
-    - git-core
-    - gettext
-    - libssl-dev
-    - libstdc++6-4.7-dev
 notifications:
   email: false
 language: c
+cache:
+  directories:
+    - $TRAVIS_BUILD_DIR/sdk
+addons:
+  apt:
+    packages:
+      - subversion 
+      - g++
+      - zlib1g-dev
+      - build-essential 
+      - git 
+      - python 
+      - rsync 
+      - man-db
+      - libncurses5-dev 
+      - gawk 
+      - gettext 
+      - unzip 
+      - file 
+      - libssl-dev 
+      - sshpass
+      - lua5.2
+      - wget 
+      - tree
+      - zip
 install:
-- cd $TRAVIS_BUILD_DIR
-- git clone https://github.com/libremesh/lime-sdk.git sdk || true
-- cd sdk
-- sed 's|https://github.com/libremesh/lime-packages.git.*|'$TRAVIS_BUILD_DIR'|g' feeds.conf.default > feeds.conf.default.local
-- ./cooker -f -d x86/generic
+  - /$TRAVIS_BUILD_DIR/.travis_do.sh setup
 script:
-- cd $TRAVIS_BUILD_DIR/sdk
-- export J=$(($(nproc)+1))
-- ./cooker -b x86/generic
-- travis_wait ./cooker --flavor=lime_default -c x86/generic --profile=Generic
-- travis_wait ./cooker --flavor=lime_mini -c x86/generic --profile=Generic
-- travis_wait ./cooker --flavor=lime_zero -c x86/generic --profile=Generic
+  - /$TRAVIS_BUILD_DIR/.travis_do.sh build
 after_success:
-- chmod +x $TRAVIS_BUILD_DIR/.ci/after_success.sh
-- $TRAVIS_BUILD_DIR/.ci/after_success.sh
+  - /$TRAVIS_BUILD_DIR/.travis_do.sh upload
+branches:
+  only:
+    - "master"
+    - "17.06"
+env:
+  - SDK_TARGET="x86/64" OPENWRT_RELEASE="17.01.4"

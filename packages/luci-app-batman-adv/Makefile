@@ -21,6 +21,7 @@ define Package/$(PKG_NAME)
   SUBMENU:=3. Applications
   TITLE:=B.A.T.M.A.N.-Adv status module
   DEPENDS:= +libc +kmod-batman-adv +luci-lib-jquery-1-4 +luci-lib-dracula +batctl
+  PKGARCH:=all
 endef
 
 define Build/Compile

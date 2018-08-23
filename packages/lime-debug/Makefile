@@ -24,6 +24,7 @@ define Package/$(PKG_NAME)
 	DEPENDS:=+PACKAGE_lime-proto-batadv:batctl \
 		+busybox +ethtool +iwinfo +iw +mtr +ip +iputils-ping6 +iputils-ping \
 		+sprunge +safe-reboot +netperf +pv +tcpdump-mini +bwm-ng
+	PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

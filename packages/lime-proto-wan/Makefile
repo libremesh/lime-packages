@@ -22,6 +22,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libremesh.org
   DEPENDS:=+lime-system +lua +libuci-lua +kmod-ipt-nat +!PACKAGE_firewall:iptables
+  PKGARCH:=all
 endef
 
 define Build/Compile

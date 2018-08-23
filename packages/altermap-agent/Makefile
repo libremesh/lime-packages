@@ -19,6 +19,7 @@ define Package/$(PKG_NAME)
   TITLE:=Send system information to an AlterMap server
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   DEPENDS:= +luci-lib-core +luci-lib-httpclient +luci-lib-json +luci-lib-nixio +libuci-lua
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

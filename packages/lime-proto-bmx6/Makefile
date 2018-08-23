@@ -23,6 +23,7 @@ define Package/$(PKG_NAME)
   URL:=http://libremesh.org
   DEPENDS:=+bmx6 +bmx6-json +bmx6-sms +bmx6-table +bmx6-uci-config +!PACKAGE_firewall:iptables \
   +lime-system +lua +libuci-lua +PACKAGE_lime-proto-batadv:kmod-ebtables-ipv6
+  PKGARCH:=all
 endef
 
 define Build/Compile

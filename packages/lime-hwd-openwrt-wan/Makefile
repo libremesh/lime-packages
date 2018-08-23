@@ -21,6 +21,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   URL:=http://libremesh.org
   DEPENDS:=+lime-system +lua +libuci-lua +lime-proto-wan
+  PKGARCH:=all
 endef
 
 define Build/Compile
@@ -34,9 +35,6 @@ define Package/$(PKG_NAME)/install
 	@mkdir -p $(1)/usr/lib/lua/lime/hwd || true
 	$(CP) ./build/openwrt_wan.lua $(1)/usr/lib/lua/lime/hwd/openwrt_wan.lua
 	@chmod +x $(1)/usr/lib/lua/lime/hwd/openwrt_wan.lua
-
-	$(CP) ./src/openwrt_wan.sh $(1)/usr/lib/lua/lime/hwd/openwrt_wan.sh
-	@chmod +x $(1)/usr/lib/lua/lime/hwd/openwrt_wan.sh
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
