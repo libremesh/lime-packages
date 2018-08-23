@@ -1,0 +1,2 @@
+#!/bin/sh
+ifconfig $INTERFACE up txqueuelen 1000

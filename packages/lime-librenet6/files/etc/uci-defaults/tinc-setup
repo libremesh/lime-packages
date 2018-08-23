@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# tell tinc to use the librenet6 network
+uci -q show tinc.librenet6 || {
+    touch /etc/config/tinc
+    uci batch <<-EOF
+    set tinc.librenet6='tinc-net'
+    set tinc.librenet6.enabled='1'
+    commit tinc
+EOF
+}
+
+# disable ra
+uci set network.lan.accept_ra=0
+uci commit network
+
+# set IPv6 subnet of librenet6.librenet.org
+uci set lime.network.main_ipv6_address '2002:8aff:5905:%N1%N2::/64'
+
+# be sure to enable babeld
+uci get lime.network.protocols | grep "babeld" || {
+    uci add_list lime.network.protocols="babeld:17"
+}
+
+# commit modified lime config
+uci commit lime
+
+# apply all changes
+lime-config
+lime-apply
+
+# restart tinc to be sure it and babeld are running
+/etc/init.d/tinc restart
