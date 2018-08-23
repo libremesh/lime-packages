@@ -22,6 +22,7 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=leonaard <leone@inventati.org>
 	URL:=http://libremesh.org
 	DEPENDS:=+lua +libuci-lua +lime-system +olsrd +olsrd-mod-jsoninfo +kmod-ipip
+	PKGARCH:=all
 endef
 
 define Build/Compile

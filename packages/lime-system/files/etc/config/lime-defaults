@@ -11,7 +11,7 @@ config lime system
 	option keep_on_upgrade 'libremesh base-files-essential /etc/sysupgrade.conf'
 
 config lime network
-	option primary_interface eth0
+	option primary_interface 'auto'
 	option main_ipv4_address '10.%N1.0.0/16'
 	option anygw_dhcp_start '2'
 	option anygw_dhcp_limit '0'
@@ -26,6 +26,8 @@ config lime network
 	list protocols olsr:14
 	list protocols olsr6:15
 	list protocols olsr2:16
+	list protocols babeld:17
+	list protocols bmx7:18
 	list resolvers 4.2.2.2   # b.resolvers.Level3.net
 	list resolvers 141.1.1.1 # cns1.cw.net
 	list resolvers 2001:470:20::2 # ordns.he.net
@@ -37,7 +39,7 @@ config lime network
 	option bmx7_publish_ownip false
 	option bmx7_over_batman false
 	option bmx7_pref_gw none
-	option bmx7_wifi_rate_max 54000000
+	option bmx7_wifi_rate_max 'auto'
 	option anygw_mac "aa:aa:aa:%N1:%N2:aa"
 	option use_odhcpd false
 

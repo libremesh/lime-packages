@@ -14,6 +14,7 @@ define Package/$(PKG_NAME)
     MAINTAINER:=Nicolas Pace <nico@libre.ws>
     URL:=http://www.libremesh.org/
     DEPENDS:=
+    PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

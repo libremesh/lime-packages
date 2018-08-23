@@ -137,6 +137,11 @@ function bmx7.configure(args)
 		elseif(proto == "batadv") then hasBatadv = true end
 	end
 
+	if config.get("network", "bmx7_over_librenet6", false) then
+		uci:set("bmx7", "librenet6", "dev")
+		uci:set("bmx7", "librenet6", "dev", "librenet6")
+	end
+
 	if(hasLan) then
 		uci:set("bmx7", "lm_net_br_lan", "dev")
 		uci:set("bmx7", "lm_net_br_lan", "dev", "br-lan")
@@ -185,7 +190,7 @@ function bmx7.setup_interface(ifname, args)
 		( ifname:match("^wlan%d+.ap") or ifname:match("^eth%d+") )
 	then return end
 
-	vlanId = args[2] or 13
+	vlanId = args[2] or 18
 	vlanProto = args[3] or "8021ad"
 	nameSuffix = args[4] or "_bmx7"
 
@@ -210,14 +215,12 @@ function bmx7.setup_interface(ifname, args)
 	uci:set(bmx7.f, owrtInterfaceName, "dev")
 	uci:set(bmx7.f, owrtInterfaceName, "dev", linux802adIfName)
 
-	-- BEGIN [Workaround issue 40]
 	if ifname:match("^wlan%d+") then
-		local rateMax = config.get("network", "bmx7_wifi_rate_max", 54000000)
-		if rateMax then
+		local rateMax = config.get("network", "bmx7_wifi_rate_max", "auto")
+		if rateMax ~= "auto" then
 			uci:set(bmx7.f, owrtInterfaceName, "rateMax", rateMax)
 		end
 	end
-	--- END [Workaround issue 40]
 
 	uci:save(bmx7.f)
 end

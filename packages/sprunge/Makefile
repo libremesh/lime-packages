@@ -20,6 +20,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=Utilities
   MAINTAINER:=Ilario Gelmetti <ilario@eigenlab.org>
   URL:=http://sprunge.us
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

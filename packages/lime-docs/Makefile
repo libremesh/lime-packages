@@ -27,6 +27,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
   URL:=http://libremesh.org/docs/
   SUBMENU:=Offline Documentation
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)-it
@@ -36,6 +37,7 @@ define Package/$(PKG_NAME)-it
   MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
   URL:=http://libremesh.org/docs/
   SUBMENU:=Offline Documentation
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)-minimal
@@ -44,6 +46,7 @@ define Package/$(PKG_NAME)-minimal
   MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
   URL:=http://libremesh.org/docs/
   SUBMENU:=Offline Documentation
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description
