@@ -6,12 +6,12 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-05-25 09:51:34+0000\n"
+"PO-Revision-Date: 2018-08-06 05:23:16+0000\n"
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: it\n"
-"X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-04-10\n"
+"X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-07-10\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #
@@ -32,7 +32,7 @@ msgstr "Avanzate"
 
 #
 msgid "Attended System Upgrade"
-msgstr ""
+msgstr "Aggiornare il sistema tramite server remoto"
 
 #
 msgid "Cancel"
@@ -52,7 +52,7 @@ msgstr "Canale a 5 GHz"
 
 #
 msgid "Checksum"
-msgstr ""
+msgstr "Checksum"
 
 #
 msgid "Community name"
@@ -124,7 +124,7 @@ msgstr "Immagine"
 
 #
 msgid "Internet Prioritized Gateway (bmx6)"
-msgstr ""
+msgstr "Accesso prioritario ad Internet (bmx6)"
 
 #
 msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
@@ -164,67 +164,67 @@ msgstr "Longitudine (può essere configurata anche nella scheda Localizzazione)"
 
 #
 msgid "MD5"
-msgstr ""
+msgstr "MD5"
 
 #
 msgid "Main IPv4"
-msgstr ""
+msgstr "Indirizzo IPv4 principale"
 
 #
 msgid "Main IPv6"
-msgstr ""
+msgstr "Indirizzo IPv6 principale"
 
 #
 msgid "Map location"
-msgstr ""
+msgstr "Posizionamento"
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
-msgstr ""
+msgstr "Massima distanza di connessione, in metri (può avere un forte impatto sulle prestazioni)"
 
 #
 msgid "Mesh BSSID"
-msgstr ""
+msgstr "BSSID della Mesh"
 
 #
 msgid "Name"
-msgstr ""
+msgstr "Nome"
 
 #
 msgid "Name for this node"
-msgstr ""
+msgstr "Nome di questo nodo"
 
 #
 msgid "Network SSID"
-msgstr ""
+msgstr "SSID della rete"
 
 #
 msgid "Notes"
-msgstr ""
+msgstr "Note"
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
-msgstr ""
+msgstr "Avvisi da mostrare all'accesso via console (e disponibili pure qui)"
 
 #
 msgid "Proceed"
-msgstr ""
+msgstr "Continua"
 
 #
 msgid "Rebooting..."
-msgstr ""
+msgstr "Riavviando..."
 
 #
 msgid "SHA256"
-msgstr ""
+msgstr "SHA256"
 
 #
 msgid "Simple Config"
-msgstr ""
+msgstr "Configurazione basica"
 
 #
 msgid "Size"
-msgstr ""
+msgstr "Dimensione"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
