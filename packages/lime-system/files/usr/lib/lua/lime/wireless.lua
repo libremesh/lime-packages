@@ -95,6 +95,7 @@ function wireless.configure()
 		local ignoredSuffix
 		local distance
 		local htmode
+		local modeSuffix
 		if modes[1] ~= "manual" then
 			if wireless.is5Ghz(radioName) then
 				freqSuffix = "_5ghz"
@@ -131,6 +132,8 @@ function wireless.configure()
 
 			for _,modeName in pairs(modes) do
 				local args = {}
+				modeSuffix = utils.split(modeName, "_")[2]	
+				modeName = utils.split(modeName, "_")[1]	
 				local mode = require("lime.mode."..modeName)
 
 				for key,value in pairs(options) do
@@ -154,7 +157,10 @@ function wireless.configure()
 					end
 				end
 
-				mode.setup_radio(radio, args)
+				if ( modeSuffix == nil ) or ("_"..modeSuffix == freqSuffix) then
+					mode.setup_radio(radio, args)
+				end
+
 			end
 		end
 	end
