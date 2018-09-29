@@ -52,7 +52,7 @@ config lime network
 
 config lime wifi
 #	option country 'ES'
-	option channel_2ghz '11'
+	option channel_2ghz '11'                    # May be either a list or a single option, in case of a list channel will be selected according to radio index
 	option channel_5ghz '48'			# Check for allowed channels on https://en.wikipedia.org/wiki/List_of_WLAN_channels#regulatory_tables5.0ghz
 #	option htmode_2ghz 'HT20'
 	option htmode_5ghz 'HT40'
