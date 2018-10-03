@@ -1,0 +1,296 @@
+# Translation of LibreMesh - Web UI to Arabic (العربية)
+# Exported from translatewiki.net
+#
+# Author: Meno25
+# Author: Sami
+msgid ""
+msgstr ""
+""
+"PO-Revision-Date: 2018-10-03 20:12:01+0000\n"
+"X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ar\n"
+"X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-07-10\n"
+"Plural-Forms: nplurals=6; plural=(n == 0) ? 0 : ( (n == 1) ? 1 : ( (n == 2) ? 2 : ( (n%100 >= 3 && n%100 <= 10) ? 3 : ( (n%100 >= 11 && n%100 <= 99) ? 4 : 5 ) ) ) );\n"
+
+#
+msgid "(%s available)"
+msgstr "(%s متوفر)"
+
+#
+msgid "About"
+msgstr "حول"
+
+#
+msgid "Access Point ESSID (usually name of your network)"
+msgstr "ESSID الخاص بنقطة وصولك (عادة اسم شبكتك)"
+
+#
+msgid "Advanced"
+msgstr "متقدم"
+
+#
+msgid "Attended System Upgrade"
+msgstr "ترقية نظام موصى بها"
+
+#
+msgid "Cancel"
+msgstr "إلغاء"
+
+#
+msgid "Changes applied."
+msgstr "التغييرات تم تطبيقها."
+
+#
+msgid "Channel 2.4 GHz"
+msgstr "القناة 2.4 GHz"
+
+#
+msgid "Channel 5 GHz"
+msgstr "القناة 5 GHz"
+
+#
+msgid "Checksum"
+msgstr "تدقيق المجاميع"
+
+#
+msgid "Community name"
+msgstr "اسم المجتمع"
+
+#
+msgid "Contact"
+msgstr "اتصال"
+
+#
+msgid "Contact information"
+msgstr "معلومات الاتصال"
+
+#
+msgid "Country code"
+msgstr "رمز البلد"
+
+#
+msgid "Country code used for WiFi radios"
+msgstr "رمز البلد المستخدم لراديوهات WiFi"
+
+#
+msgid "Default channel used for 2.4 GHz radios"
+msgstr "القناة الافتراضية المستخدمة لراديوهات 2.4 GHz"
+
+#
+msgid "Default channel used for 5 GHz radios"
+msgstr "القناة الافتراضية المستخدمة لراديوهات 5 GHz"
+
+#
+msgid "Distance"
+msgstr "المسافة"
+
+#
+msgid "Email"
+msgstr "البريد الإلكتروني"
+
+#
+msgid "Flash Firmware"
+msgstr "فلاش Firmware"
+
+#
+msgid "Flash image..."
+msgstr "صورة Flash..."
+
+#
+msgid "Flash new firmware image"
+msgstr "احرق صورة الfirmware الجديدة"
+
+#
+msgid "Flash operations"
+msgstr "عمليات الفلاش"
+
+#
+msgid "Flashing..."
+msgstr "جاري الحرق..."
+
+#
+msgid "General"
+msgstr "عام"
+
+#
+msgid "Hostname"
+msgstr "اسم المضيف"
+
+#
+msgid "Image"
+msgstr "الصورة"
+
+#
+msgid "Internet Prioritized Gateway (bmx6)"
+msgstr "بوابة الإنترنت ذات الأولوية (bmx6)"
+
+#
+msgid "It appears that you are trying to flash an image that does not fit into the flash memory, please verify the image file!"
+msgstr "يبدو أنك تحاول كتابة صورة ليس لها مكان كاف في ذاكرة الفلاش، من فضلك تحقق من ملف الصورة!"
+
+#
+msgid "Keep settings"
+msgstr "الإبقاء على الإعدادات"
+
+#
+msgid "Latitude"
+msgstr "دائرة العرض"
+
+#
+msgid "Latitude (this can be also configured in location tab)"
+msgstr "دائرة العرض (هذا أيضا يمكن ضبطه في لسان الموقع)"
+
+#
+msgid "Loading"
+msgstr "جارٍ التحميل"
+
+#
+msgid "Location"
+msgstr "الموقع"
+
+#
+msgid "Logout"
+msgstr "تسجيل الخروج"
+
+#
+msgid "Longitude"
+msgstr "خط الطول"
+
+#
+msgid "Longitude (this can be also configured in location tab)"
+msgstr "خط الطول (هذا أيضا يمكن ضبطه في لسان الموقع)"
+
+#
+msgid "MD5"
+msgstr "MD5"
+
+#
+msgid "Main IPv4"
+msgstr "IPv4 رئيسي"
+
+#
+msgid "Main IPv6"
+msgstr "IPv6 رئيسي"
+
+#
+msgid "Map location"
+msgstr "موقع الخريطة"
+
+#
+msgid "Max distance for the links in meters (big impact on performance)"
+msgstr "المسافة القصوى للوصلات بالمتر (نأثير كبير على الأداء)"
+
+#
+msgid "Mesh BSSID"
+msgstr "BSSID الميش"
+
+#
+msgid "Name"
+msgstr "الاسم"
+
+#
+msgid "Name for this node"
+msgstr "اسم هذه العقدة"
+
+#
+msgid "Network SSID"
+msgstr "SSID الشبكة"
+
+#
+msgid "Notes"
+msgstr "ملاحظات"
+
+#
+msgid "Notes that will be shown on console login and will be at hand here."
+msgstr "الملاحظات التي سيتم عرضها عند الconsole login وستكون معروضة هنا."
+
+#
+msgid "Proceed"
+msgstr "تابع"
+
+#
+msgid "Rebooting..."
+msgstr "جاري إعادة التشغيل..."
+
+#
+msgid "SHA256"
+msgstr "SHA256"
+
+#
+msgid "Simple Config"
+msgstr "ضبط بسيط"
+
+#
+msgid "Size"
+msgstr "الحجم"
+
+#
+msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
+msgstr "عذرا، لا يوجد دعم sysupgrade موجود؛ صورة firmware جديدة ينبغي كتابتها يدويا. من فضلك ارجع لهذه الويكي لإرشادات التنصيب حسب الجهاز."
+
+#
+msgid "System"
+msgstr "النظام"
+
+#
+msgid "System Notes"
+msgstr "ملاحظات النظام"
+
+#
+msgid "The BSSID (WiFi network identifier) used for the mesh network"
+msgstr "الBSSID (معرف شبكة الWiFi) المستخدم لشبكة الmesh"
+
+#
+msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
+msgstr "صورة الفلاش تم رفعها. بالأسفل معروض checksum وحجم الملف، قارنهما بالملف الأصلي للتأكد من سلامة البيانات.<br /> اضغط على \"Proceed\" بالأسفل لبدء إجراءات الفلاش."
+
+#
+msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
+msgstr "الIPv4 الرئيسي المضبوط لهذه العقدة، بطريقة السلاش (كمثال 1.2.3.4/24)"
+
+#
+msgid "The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"
+msgstr "الIPv6 الرئيسي المضبوط لهذه العقدة، بطريقة السلاش (كمثال 2001:db8::1/64)"
+
+#
+msgid "The name of your network community"
+msgstr "اسم مجتمع شبكتك"
+
+#
+msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
+msgstr "عملية الفلاش جارية على النظام حاليا.<br /> لا تطفيء الجهاز!<br /> انتظر عدة دقائق قبل محاولة إعادة الاتصال. ربما يكون من الضروري تجديد عنوان جهاز الحاسوب الخاص بك، حسب إعداداتك."
+
+#
+msgid "The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
+msgstr "ملف الصورة المرفوع لا يحتوي على صيغة مدعومة. تأكد من أنك اخترت صيغة صورة عامة لجهازك."
+
+#
+msgid "Upload a LibreMesh sysupgrade image here to replace the running firmware."
+msgstr "ارفع صورة LibreMesh sysupgrade هنا لاستبدال الfirmware الحالي."
+
+#
+msgid "Upload a sysupgrade-compatible image here to replace the running firmware. Check \"Keep settings\" to retain the current configuration (requires a compatible firmware image)."
+msgstr "ارفع صورة sysupgrade-compatible هنا لاستبدال الfirmware الحالي. اختر \"Keep settings\" للاحتفاظ بالضبط الحالي (يتطلب صورة firmware متوافقة)."
+
+#
+msgid "Verify"
+msgstr "حقق"
+
+#
+msgid "Waiting for changes to be applied..."
+msgstr "في انتظار تطبيق التغييرات..."
+
+#
+msgid "You can choose a Gateway to prioritize your traffic to go through this node."
+msgstr "يمكنك اختيار Gateway لإعطاء أولوية لبياناتك للذهاب من خلال هذه العقدة."
+
+#
+msgid "Your email (not required)"
+msgstr "عنوان البريد الإلكتروني الخاص بك (غير إجباري)"
+
+#
+msgid "Your name or alias (not required)"
+msgstr "اسمك أو لقبك (غير إجباري)"
+
