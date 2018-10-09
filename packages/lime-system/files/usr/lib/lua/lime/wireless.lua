@@ -95,6 +95,7 @@ function wireless.configure()
 		local ignoredSuffix
 		local distance
 		local htmode
+		local modeSuffix
 		if modes[1] ~= "manual" then
 			if wireless.is5Ghz(radioName) then
 				freqSuffix = "_5ghz"
@@ -116,6 +117,11 @@ function wireless.configure()
 			local channel
 			if modes[1] ~= "client" then
 				channel = options["channel"..freqSuffix] or options["channel"]
+				if type(channel) == "table" then
+					local chanIndex = 1 + radioName:match("%d+$") % #channel
+					chanIndex = chanIndex > 0 and chanIndex or 1
+					channel = channel[chanIndex]
+				end
 			else
 				channel = specRadio["channel"..freqSuffix] or specRadio["channel"] or "auto"
 			end
@@ -131,6 +137,8 @@ function wireless.configure()
 
 			for _,modeName in pairs(modes) do
 				local args = {}
+				modeSuffix = utils.split(modeName, "_")[2]	
+				modeName = utils.split(modeName, "_")[1]	
 				local mode = require("lime.mode."..modeName)
 
 				for key,value in pairs(options) do
@@ -154,7 +162,10 @@ function wireless.configure()
 					end
 				end
 
-				mode.setup_radio(radio, args)
+				if ( modeSuffix == nil ) or ("_"..modeSuffix == freqSuffix) then
+					mode.setup_radio(radio, args)
+				end
+
 			end
 		end
 	end
