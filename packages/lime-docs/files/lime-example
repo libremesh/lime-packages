@@ -81,7 +81,7 @@ config lime wifi
 
 ## use radio0 only for mesh
 config wifi radio0
-	list modes 'ieee89211s'
+	list modes 'ieee80211s'
 
 ## change ssid for radio1
 config wifi radio1
