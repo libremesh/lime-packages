@@ -15,9 +15,9 @@ This is the easiest way to first test and install LibreMesh in your router.
 
 You can download a firmware image with **generic configuration** of the last **release** at [downloads][9] subdomain.
 
-## Customize and Download a Firmware Image Using online ImageBuilder
+## Customize and Download a Firmware Image Using online Chef
 
-We encourage each network community to create its firmware profile on [network-profiles][10] repository and build the images with the [online ImageBuilder][11]. It generates and delivers **customized firmware images** (for example custom ESSID, IP range, additional packets or scripts...). 
+We encourage each network community to create its firmware profile on [network-profiles][10] repository and build the images with the [online Chef][11]. 
 
 ## Building a Firmware Image on Your PC
 
@@ -74,6 +74,10 @@ The project offers the following mailing lists
 * [lime-dev@lists.libremesh.org][7] - This list is used for general development related work.
 * [lime-users@lists.libremesh.org][8] - This list is used for project organisational purposes. And for user specific questions.
 
+### Chatroom
+
+Chatroom on [Matrix net][12].
+
 [1]: https://lede-project.org/docs/guide-developer/quickstart-build-images
 [2]: https://github.com/libremesh/lime-sdk
 [4]: http://libremesh.org/howitworks.html
@@ -82,4 +86,5 @@ The project offers the following mailing lists
 [8]: https://lists.libremesh.org/mailman/listinfo/lime-users
 [9]: http://repo.libremesh.org/current/
 [10]: https://github.com/libremesh/network-profiles/
-[11]: https://imagebuilder.libremesh.org/imagebuilder
+[11]: https://chef.libremesh.org/
+[12]: https://riot.im/app/#/room/#libremesh-dev:matrix.guifi.net
