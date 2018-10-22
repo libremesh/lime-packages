@@ -30,6 +30,6 @@ function hook_quickfix()
 
 function hook_longfix()
 {
-	log="Doing nothing for longfix"
-	true
+	log="Repeating quickfix for longfix"
+	hook_quickfix
 }
