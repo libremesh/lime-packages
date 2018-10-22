@@ -20,18 +20,19 @@ if not conn then
 end
 
 local function get_location(msg)
-    local result = {}
+    local result = {location = {}, default = false}
     local lat = conn:call("uci", "get", {config="libremap", section="location", option="latitude" }).value
     local lon = conn:call("uci", "get", {config="libremap", section="location", option="longitude" }).value
 
     if (type(tonumber(lat)) == "number" and type(tonumber(lon)) == "number") then
-        result.lat = lat
-        result.lon = lon
+        result.location.lat = lat
+        result.location.lon = lon
     else
-        result.lat = conn:call("uci", "get", {config="libremap", section="@libremap[0]",
+        result.location.lat = conn:call("uci", "get", {config="libremap", section="@libremap[0]",
                                               option="community_lat" }).value
-        result.lon = conn:call("uci", "get", {config="libremap", section="@libremap[0]",
+        result.location.lon = conn:call("uci", "get", {config="libremap", section="@libremap[0]",
                                               option="community_lon" }).value
+        result.default = true                                              
     end
     printJson(result);
 end
