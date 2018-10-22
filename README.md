@@ -21,18 +21,18 @@ We encourage each network community to create its firmware profile on [network-p
 
 ## Building a Firmware Image on Your PC
 
-The LibreMesh firmware can be compiled either using the easy to use [lime-sdk][2] tool or manually adding the feed to a [LEDE buildroot][1] environment.
+The LibreMesh firmware can be compiled either using the easy to use [lime-sdk][2] tool (recommended) or manually adding the feed to a [OpenWrt buildroot][1] environment.
 
 ### Using lime-sdk
 
 Refer to [lime-sdk][2] README.
 
-### Using LEDE buildroot
+### Using OpenWrt buildroot
 
-Clone LEDE stable repository, nowadays is version 17.01 (Reboot).
+Clone OpenWrt stable repository, nowadays is version 18.06.1.
 
-    git clone -b lede-17.01 https://git.lede-project.org/source.git lede
-    cd lede
+    git clone https://www.github.com/openwrt/openwrt -b openwrt-18.06
+    cd openwrt
 
 Add lime-packages, libremap and lime-ui-ng feeds to the default ones.
 
@@ -74,7 +74,7 @@ The project offers the following mailing lists
 * [lime-dev@lists.libremesh.org][7] - This list is used for general development related work.
 * [lime-users@lists.libremesh.org][8] - This list is used for project organisational purposes. And for user specific questions.
 
-[1]: https://lede-project.org/docs/guide-developer/quickstart-build-images
+[1]: https://openwrt.org/docs/guide-developer/quickstart-build-images
 [2]: https://github.com/libremesh/lime-sdk
 [4]: http://libremesh.org/howitworks.html
 [5]: http://libremesh.org/
