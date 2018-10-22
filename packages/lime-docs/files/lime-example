@@ -71,7 +71,7 @@ config lime wifi
 #	option apname_encryption 'psk2'
 	option ieee80211s_mesh_fwding '0'		# Settings needed only for 802.11s
 	option ieee80211s_mesh_id 'LiMe'
-#	option ieee80211s_encryption 'psk2/aes'
+#	option ieee80211s_encryption 'psk2/aes' # in order to use encryted mesh, the wpad-mini package have to be replaced with wpad-mesh package either manually or by the selected network-profile
 #	option ieee80211s_key 'SomePsk2AESKey'
 
 
