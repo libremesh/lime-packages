@@ -80,20 +80,20 @@ config lime wifi
 ### WiFi interface specific options ( override defaults options )
 
 ## use radio0 only for mesh
-config wifi radio0
+config wifi radio0 # you should ensure that the chosen radio name exists, for example with "wifi status" command
 	list modes 'ieee80211s'
 
 ## change ssid for radio1
-config wifi radio1
+config wifi radio1 # you should ensure that the chosen radio name exists, for example with "wifi status" command
 	option ap_ssid 'Special'
 
 ## diable lime-config for radio2
-config wifi radio2
+config wifi radio2 # you should ensure that the chosen radio name exists, for example with "wifi status" command
 	option modes 'manual' # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
 
 
 ## set radio3 to adhoc with specific channel
-config wifi radio3
+config wifi radio3 # you should ensure that the chosen radio name exists, for example with "wifi status" command
 	list modes 'adhoc'
 	option channel_2ghz '1'
 	option channel_5ghz '48'
@@ -106,8 +106,8 @@ config wifi radio3
 # you need two pieces of configuration the wifi specific configuration and the
 # network specific one like in the following example.
 
-## set radio4 as client of access point
-option wifi radio4
+## set radio4 as client of access point, both the following "wifi" and "net" sections are required
+option wifi radio4 # you should ensure that the chosen radio name exists, for example with "wifi status" command
 	list modes 'client'
 	option channel_2ghz 'auto'
 	option client_ssid 'SomeWiFiNetwork'
@@ -115,8 +115,8 @@ option wifi radio4
 	option client_encryption 'psk' # psk for WPA or psk2 for WPA2
 
 config net wirelessclient
-	option linux_name 'wlan0-client'			# the client interface name could be named differently, like wlan1-client
-	list protocols 'wan'						# use wan to get Internet connectivity via DHCP
+	option linux_name 'wlan0-sta' # the client interface name could be named differently, like wlan1-sta
+	list protocols 'wan' # use wan to get Internet connectivity via DHCP, lan is not supported yet
 
 ### Network interface specific options ( override general option )
 ### Available protocols: bmx6, bmx7, batadv, olsr, olsr6, olsr2, bgp, wan, lan, manual, static
