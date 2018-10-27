@@ -265,6 +265,7 @@ function network.configure()
 		if owrtIf then
 			deviceProtos = owrtIf["protocols"] or {"manual"}
 			flags["specific"] = true
+			flags["_specific_section"] = owrtIf
 		end
 
 		for _,protoParams in pairs(deviceProtos) do
