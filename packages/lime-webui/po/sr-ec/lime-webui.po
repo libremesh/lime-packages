@@ -1,7 +1,7 @@
-# Translation of LibreMesh - Web UI to Swedish (svenska)
+# Translation of LibreMesh - Web UI to Serbian (Cyrillic script) (српски (ћирилица)‎)
 # Exported from translatewiki.net
 #
-# Author: WikiPhoenix
+# Author: BadDog
 msgid ""
 msgstr ""
 ""
@@ -9,17 +9,17 @@ msgstr ""
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: sv\n"
+"Language: sr-Cyrl\n"
 "X-Generator: MediaWiki 1.33.0-alpha; Translate 2018-07-10\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #
 msgid "(%s available)"
-msgstr "(%s tillgänglig)"
+msgstr "(%s доступно)"
 
 #
 msgid "About"
-msgstr "Om"
+msgstr "О програму"
 
 #
 msgid "Access Point ESSID (usually name of your network)"
@@ -27,7 +27,7 @@ msgstr ""
 
 #
 msgid "Advanced"
-msgstr "Avancerad"
+msgstr "Напредно"
 
 #
 msgid "Attended System Upgrade"
@@ -35,59 +35,59 @@ msgstr ""
 
 #
 msgid "Cancel"
-msgstr "Avbryt"
+msgstr "Откажи"
 
 #
 msgid "Changes applied."
-msgstr "Ändringar verkställdes."
+msgstr "Промене су примењене."
 
 #
 msgid "Channel 2.4 GHz"
-msgstr "Kanal 2.4 GHz"
+msgstr ""
 
 #
 msgid "Channel 5 GHz"
-msgstr "Kanal 5 GHz"
+msgstr ""
 
 #
 msgid "Checksum"
-msgstr "Kontrollsumma"
+msgstr "Контролни збир"
 
 #
 msgid "Community name"
-msgstr "Gemenskapsnamn"
+msgstr "Име заједнице"
 
 #
 msgid "Contact"
-msgstr "Kontakt"
+msgstr "Контакт"
 
 #
 msgid "Contact information"
-msgstr "Kontaktinformation"
+msgstr "Контакт-информације"
 
 #
 msgid "Country code"
-msgstr "Landskod"
+msgstr "Кôд земље"
 
 #
 msgid "Country code used for WiFi radios"
-msgstr "Landskod som användas för WiFi-radior"
+msgstr ""
 
 #
 msgid "Default channel used for 2.4 GHz radios"
-msgstr "Standardkanal används för 2,4 GHz-radior"
+msgstr ""
 
 #
 msgid "Default channel used for 5 GHz radios"
-msgstr "Standardkanal används för 5 GHz-radior"
+msgstr ""
 
 #
 msgid "Distance"
-msgstr "Avstånd"
+msgstr "Удаљеност"
 
 #
 msgid "Email"
-msgstr "E-post"
+msgstr "Имејл"
 
 #
 msgid "Flash Firmware"
@@ -111,15 +111,15 @@ msgstr ""
 
 #
 msgid "General"
-msgstr "Allmänt"
+msgstr "Опште"
 
 #
 msgid "Hostname"
-msgstr "Värdnamn"
+msgstr "Име хоста"
 
 #
 msgid "Image"
-msgstr "Bild"
+msgstr "Слика"
 
 #
 msgid "Internet Prioritized Gateway (bmx6)"
@@ -131,39 +131,39 @@ msgstr ""
 
 #
 msgid "Keep settings"
-msgstr "Behåll inställningar"
+msgstr ""
 
 #
 msgid "Latitude"
-msgstr "Latitud"
+msgstr "Географска ширина"
 
 #
 msgid "Latitude (this can be also configured in location tab)"
-msgstr "Latitud (detta kan även konfigureras i platsfliken)"
+msgstr ""
 
 #
 msgid "Loading"
-msgstr "Läser in"
+msgstr "Учитавање"
 
 #
 msgid "Location"
-msgstr "Plats"
+msgstr "Локација"
 
 #
 msgid "Logout"
-msgstr "Logga ut"
+msgstr "Одјави ме"
 
 #
 msgid "Longitude"
-msgstr "Longitud"
+msgstr "Географска дужина"
 
 #
 msgid "Longitude (this can be also configured in location tab)"
-msgstr "Longitud (detta kan även konfigureras i platsfliken)"
+msgstr ""
 
 #
 msgid "MD5"
-msgstr "MD5"
+msgstr ""
 
 #
 msgid "Main IPv4"
@@ -175,7 +175,7 @@ msgstr ""
 
 #
 msgid "Map location"
-msgstr "Kartposition"
+msgstr ""
 
 #
 msgid "Max distance for the links in meters (big impact on performance)"
@@ -187,43 +187,43 @@ msgstr ""
 
 #
 msgid "Name"
-msgstr "Namn"
+msgstr "Име"
 
 #
 msgid "Name for this node"
-msgstr "Namn på denna nod"
+msgstr "Име овог чвора"
 
 #
 msgid "Network SSID"
-msgstr "Nätverks-SSID"
+msgstr "SSID мреже"
 
 #
 msgid "Notes"
-msgstr "Anteckningar"
+msgstr "Белешке"
 
 #
 msgid "Notes that will be shown on console login and will be at hand here."
-msgstr "Anteckningar som kommer att visas i konsolinloggningen och kommer att vara tillhands här."
+msgstr ""
 
 #
 msgid "Proceed"
-msgstr "Fortsätt"
+msgstr "Настави"
 
 #
 msgid "Rebooting..."
-msgstr "Startar om..."
+msgstr "Поновно покретање…"
 
 #
 msgid "SHA256"
-msgstr "SHA256"
+msgstr ""
 
 #
 msgid "Simple Config"
-msgstr "Enkel konfig"
+msgstr ""
 
 #
 msgid "Size"
-msgstr "Storlek"
+msgstr "Величина"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
@@ -231,11 +231,11 @@ msgstr ""
 
 #
 msgid "System"
-msgstr "System"
+msgstr "Систем"
 
 #
 msgid "System Notes"
-msgstr "Systemsanteckningar"
+msgstr ""
 
 #
 msgid "The BSSID (WiFi network identifier) used for the mesh network"
@@ -255,7 +255,7 @@ msgstr ""
 
 #
 msgid "The name of your network community"
-msgstr "Namnet på din nätverksgemenskap"
+msgstr ""
 
 #
 msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
@@ -275,21 +275,21 @@ msgstr ""
 
 #
 msgid "Verify"
-msgstr "Verifiera"
+msgstr "Верификуј"
 
 #
 msgid "Waiting for changes to be applied..."
-msgstr "Väntar på att ändringar ska verkställas..."
+msgstr "Чека се примењивање промена…"
 
 #
 msgid "You can choose a Gateway to prioritize your traffic to go through this node."
-msgstr "Du kan välja en gateway för att prioritera din trafik till att gå igenom denna nod."
+msgstr "Можете одабрати мрежни пролаз да бисте дали приоритет свом саобраћају да пролази кроз овај чвор."
 
 #
 msgid "Your email (not required)"
-msgstr "Din e-postadress (inte nödvändig)"
+msgstr "Ваш имејл (није неопходно)"
 
 #
 msgid "Your name or alias (not required)"
-msgstr "Ditt namn eller alias (inte nödvändigt)"
+msgstr "Ваше име или псеудоним (није неопходно)"
 

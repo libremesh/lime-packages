@@ -6,12 +6,12 @@
 msgid ""
 msgstr ""
 ""
-"PO-Revision-Date: 2018-08-06 05:23:16+0000\n"
+"PO-Revision-Date: 2018-10-29 07:07:56+0000\n"
 "X-POT-Import-Date: 2018-05-25 09:39:23+0000\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: it\n"
-"X-Generator: MediaWiki 1.32.0-alpha; Translate 2018-07-10\n"
+"X-Generator: MediaWiki 1.33.0-alpha; Translate 2018-07-10\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #
@@ -228,7 +228,7 @@ msgstr "Dimensione"
 
 #
 msgid "Sorry, there is no sysupgrade support present; a new firmware image must be flashed manually. Please refer to the wiki for device specific install instructions."
-msgstr ""
+msgstr "Spiacente, non è possibile aggiornare tramite sysupgrade; una nuova immagine firmware dovrà essere installata manualmente. Far riferimento al nostro wiki per istruzioni dettagliate e specifiche per il dispositivo in uso."
 
 #
 msgid "System"
@@ -236,61 +236,61 @@ msgstr "Sistema"
 
 #
 msgid "System Notes"
-msgstr ""
+msgstr "Note di sistema"
 
 #
 msgid "The BSSID (WiFi network identifier) used for the mesh network"
-msgstr ""
+msgstr "Codice BSSID (identificatore della rete senza fili) utilizzato per la rete magliata"
 
 #
 msgid "The flash image was uploaded. Below is the checksum and file size listed, compare them with the original file to ensure data integrity.<br /> Click \"Proceed\" below to start the flash procedure."
-msgstr ""
+msgstr "L'immagine firmware è stata caricata. Si raccomanda di confrontare il codice checksum e la dimensione del file riportati qui sotto con quelli del file originale, per confermare che il trasferimento non abbia avuto problemi.<br /> Cliccare su \"Procedi\" qui sotto per iniziare la procedura di installazione."
 
 #
 msgid "The main IPv4 configured for this node, with slash notation (for ex. 1.2.3.4/24)"
-msgstr ""
+msgstr "L'indirizzo IPv4 principale configurato per questo nodo, nella notazione con sbarra CIDR (per esempio 1.2.3.4/24)"
 
 #
 msgid "The main IPv6 configured for this node, with slash notation (for ex. 2001:db8::1/64)"
-msgstr ""
+msgstr "L'indirizzo IPv6 principale configurato per questo nodo, con la notazione con sbarra CIDR (per esempio 2001:db8::1/64)"
 
 #
 msgid "The name of your network community"
-msgstr ""
+msgstr "Il nome della tua rete comunitaria"
 
 #
 msgid "The system is flashing now.<br /> DO NOT POWER OFF THE DEVICE!<br /> Wait a few minutes before you try to reconnect. It might be necessary to renew the address of your computer to reach the device again, depending on your settings."
-msgstr ""
+msgstr "Il sistema si sta installando.<br /> NON RIMUOVERE L'ALIMENTAZIONE!<br /> Attendere qualche minuto prima di riconnettersi. A seconda delle impostazioni del computer, potrebbe esser necessario rinnovare la connessione di rete per riuscir a connettersi al dispositivo."
 
 #
 msgid "The uploaded image file does not contain a supported format. Make sure that you choose the generic image format for your platform."
-msgstr ""
+msgstr "L'immagine firmware caricata non sembra contenere un formato supportato. Assicurarsi di aver scelto l'immagine firmware generica per questo dispositivo."
 
 #
 msgid "Upload a LibreMesh sysupgrade image here to replace the running firmware."
-msgstr ""
+msgstr "Carica qui una immagine \"sysupgrade\" di LibreMesh per sostituire il firmware corrente."
 
 #
 msgid "Upload a sysupgrade-compatible image here to replace the running firmware. Check \"Keep settings\" to retain the current configuration (requires a compatible firmware image)."
-msgstr ""
+msgstr "Caricare qui una immagine \"sysupgrade\" o compatibile per sostituire il firmware corrente. Selezionare \"Mantieni impostazioni\" per conservare la configurazione attuale (solo in caso di installazione di una immagine firmware compatibile con la attuale)."
 
 #
 msgid "Verify"
-msgstr ""
+msgstr "Verificare"
 
 #
 msgid "Waiting for changes to be applied..."
-msgstr ""
+msgstr "Attendere, le modifiche stanno venendo applicate..."
 
 #
 msgid "You can choose a Gateway to prioritize your traffic to go through this node."
-msgstr ""
+msgstr "Puoi scegliere una uscita su internet da usare prioritariamente per il traffico di questo nodo."
 
 #
 msgid "Your email (not required)"
-msgstr ""
+msgstr "La tua email (facoltativo)"
 
 #
 msgid "Your name or alias (not required)"
-msgstr ""
+msgstr "Il tuo nome o pseudonimo (facoltativo)"
 
