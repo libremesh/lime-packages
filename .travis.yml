@@ -1,42 +1,53 @@
-sudo: false
-dist: trusty
-notifications:
-  email: false
+sudo: true
+
 language: c
-cache:
-  directories:
-    - $TRAVIS_BUILD_DIR/sdk
+
+services:
+- docker
+
 addons:
   apt:
     packages:
-      - subversion 
-      - g++
-      - zlib1g-dev
-      - build-essential 
-      - git 
-      - python 
-      - rsync 
-      - man-db
-      - libncurses5-dev 
-      - gawk 
-      - gettext 
-      - unzip 
-      - file 
-      - libssl-dev 
-      - sshpass
-      - lua5.2
-      - wget 
-      - tree
-      - zip
-install:
-  - /$TRAVIS_BUILD_DIR/.travis_do.sh setup
-script:
-  - /$TRAVIS_BUILD_DIR/.travis_do.sh build
-after_success:
-  - /$TRAVIS_BUILD_DIR/.travis_do.sh upload
-branches:
-  only:
-    - "master"
-    - "17.06"
+    - sshpass
+
 env:
-  - SDK_TARGET="x86/64" OPENWRT_RELEASE="17.01.4"
+    global:
+    - IMAGE_NAME="aparcar/openwrt-sdk:18.06-ar71xx"
+    - OPENWRT_BRANCH="18.06"
+
+before_script:
+- docker pull "$IMAGE_NAME" || true
+
+script:
+- |
+  cat <<EOF > key-build
+  untrusted comment: private key 7546f62c3d9f56b1
+  $KEY_BUILD
+  EOF
+- |
+  cat <<EOF > feeds.conf.default
+  src-git libremesh https://github.com/libremesh/lime-packages.git;$TRAVIS_BRANCH
+  EOF
+- docker run
+        -v "/output:/sdk/bin/packages/mips_24kc/libremesh"
+        -v "$(pwd)/feeds.conf.default:/sdk/feeds.conf.default"
+        -v "$(pwd)/key-build:/sdk/key-build"
+        "$IMAGE_NAME" /bin/bash -c
+        "apt update -qq && apt install time -y && ./scripts/feeds update -a && ./scripts/feeds install -p libremesh -a && ./scripts/feeds uninstall tinc && make defconfig && make"
+
+deploy:
+  provider: script
+  script:
+  - rsync -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $CI_PORT"
+        "/output/" "${CI_USER}@${CI_SERVER}:${CI_STORE_PATH}/$STORE_PATH/packages/"
+  on:
+    branch: master
+
+deploy:
+  provider: script
+  script:
+  - rsync -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $CI_PORT"
+        "/output/" "${CI_USER}@${CI_SERVER}:${CI_STORE_PATH}/$STORE_PATH/branches/$TRAVIS_BRANCH/"
+  on:
+    all_branches: true
+    condition: $TRAVIS_BRANCH != master
