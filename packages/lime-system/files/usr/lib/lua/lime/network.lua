@@ -79,15 +79,16 @@ function network.primary_address(offset)
 	ipv4_template:prefix(tonumber(ipv4_maskbits))
 	local mc = ipv4_template
 	--! Generated address is network address like 192.0.2.0/24 ?
-	local invalid = ipv4_template:equal(mc:network())
+	local invalid = ipv4_template:equal(mc:network()) and "NETWORK"
 	--! Generated address is the one reserved for anygw like 192.0.2.1/24 ?
-	invalid = invalid or ipv4_template:equal(mc:minhost())
+	invalid = invalid or ipv4_template:equal(mc:minhost()) and "ANYGW"
 	--! Generated address is the broadcast address like 192.0.2.255/24 ?
-	invalid = invalid or ipv4_template:equal(mc:broadcast())
+	invalid = invalid or ipv4_template:equal(mc:broadcast()) and "BROADCAST"
 	if invalid then
 		ipv4_template = mc:maxhost()
 		ipv4_template:prefix(tonumber(ipv4_maskbits))
-		print("INVALID IPv4 DETECTED, CHECK YOUR SETTINGS. USING " ..tostring(ipv4_template))
+		print("INVALID main_ipv4_address " ..tostring(mc).. " IDENTICAL TO RESERVED "
+			..invalid.. " ADDRESS. USING " ..tostring(ipv4_template))
 	end
 
 	ipv6_template:prefix(tonumber(ipv6_maskbits))
