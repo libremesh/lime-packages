@@ -87,6 +87,7 @@ function network.primary_address(offset)
 	if invalid then
 		ipv4_template = mc:maxhost()
 		ipv4_template:prefix(tonumber(ipv4_maskbits))
+		print("INVALID IPv4 DETECTED, CHECK YOUR SETTINGS. USING " ..tostring(ipv4_template))
 	end
 
 	ipv6_template:prefix(tonumber(ipv6_maskbits))
