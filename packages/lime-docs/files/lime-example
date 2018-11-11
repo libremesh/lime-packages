@@ -113,6 +113,7 @@ option wifi radio4 # you should ensure that the chosen radio name exists, for ex
 	option client_ssid 'SomeWiFiNetwork'
 	option client_key 'SomeWPApskPassword'
 	option client_encryption 'psk' # psk for WPA or psk2 for WPA2
+	option distance 300 # maximum distance to AP, heavily affects performances
 
 config net wirelessclientWAN
 	option linux_name 'wlan0-sta' # the client interface name could be named differently, like wlan1-sta
@@ -123,6 +124,7 @@ option wifi radio5 # you should ensure that the chosen radio name exists, for ex
 	list modes 'client'
 	option channel_2ghz 'auto'
 	option client_ssid 'LibreMesh.org'
+	option distance 1000 # maximum distance to AP, heavily affects performances
 
 config net wirelessclientBackbone
 	option linux_name 'wlan0-sta' # the client interface name could be named differently, like wlan1-sta
