@@ -15,7 +15,6 @@ end
 
 function static.setup_interface(ifname, args)
 	if not args["specific"] then return end
-	local uci = libuci:cursor()
 	-- kept for back compatibility
 	if #args > 1 then
 		local ipaddr = args[2]
