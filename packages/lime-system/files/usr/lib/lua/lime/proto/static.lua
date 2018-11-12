@@ -15,11 +15,6 @@ end
 
 function static.setup_interface(ifname, args)
 	if not args["specific"] then return end
-	-- kept for back compatibility
-	if #args > 1 then
-		local ipaddr = args[2]
-		network.createStaticIface(ifname, '_static', ipaddr)
-	end
 	local table = args._specific_section
 	local ipAddrIPv4 = table["static_ipv4"]
 	if ipAddrIPv4 then
