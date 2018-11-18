@@ -305,10 +305,14 @@ function network.createStaticIface(linuxBaseIfname, openwrtNameSuffix, ipAddr, g
 		local mask = addr:mask():string()
 		uci:set("network", owrtInterfaceName, "ipaddr", host)
 		uci:set("network", owrtInterfaceName, "netmask", mask)
-		uci:set("network", owrtInterfaceName, "gateway", gwAddr)
+		if gwAddr then
+			uci:set("network", owrtInterfaceName, "gateway", gwAddr)
+		end
 	elseif addr:is6() then
 		uci:set("network", owrtInterfaceName, "ip6addr", addr:string())
-		uci:set("network", owrtInterfaceName, "ip6gw", gwAddr)
+		if gwAddr then
+			uci:set("network", owrtInterfaceName, "ip6gw", gwAddr)
+		end
 	else
 		uci:delete("network", owrtInterfaceName, "interface")
 	end
