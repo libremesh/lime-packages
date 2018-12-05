@@ -36,18 +36,16 @@ script:
         "apt update -qq && apt install time -y && ./scripts/feeds update -a && ./scripts/feeds install -p libremesh -a && ./scripts/feeds uninstall tinc && make defconfig && make"
 
 deploy:
-  provider: script
-  script:
-  - rsync -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $CI_PORT"
-        "/output/" "${CI_USER}@${CI_SERVER}:${CI_STORE_PATH}/$STORE_PATH/packages/"
-  on:
-    branch: master
-
-deploy:
-  provider: script
-  script:
-  - rsync -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $CI_PORT"
-        "/output/" "${CI_USER}@${CI_SERVER}:${CI_STORE_PATH}/$STORE_PATH/branches/$TRAVIS_BRANCH/"
-  on:
-    all_branches: true
-    condition: $TRAVIS_BRANCH != master
+  - provider: script
+    script:
+    - rsync -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $CI_PORT"
+          "/output/" "${CI_USER}@${CI_SERVER}:${CI_STORE_PATH}/$STORE_PATH/packages/"
+    on:
+      branch: master
+  - provider: script
+    script:
+    - rsync -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $CI_PORT"
+          "/output/" "${CI_USER}@${CI_SERVER}:${CI_STORE_PATH}/$STORE_PATH/branches/$TRAVIS_BRANCH/"
+    on:
+      all_branches: true
+      condition: $TRAVIS_BRANCH != master
