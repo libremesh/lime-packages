@@ -1,0 +1,25 @@
+#!/bin/sh
+# if lime-defaults does not exist, copy the factory file
+# if lime-defaults exists, add non existing options only
+[ ! -f /etc/config/lime-defaults ] && cp -f /etc/config/lime-defaults-factory /etc/config/lime-defaults || {
+	echo "Starting [lime-factory-defaults] merge"
+	uci -d, -S show lime-defaults-factory | sed s/"^lime-defaults-factory."//g | while read line; do
+		option=$(echo $line | cut -d= -f1)
+		value=$(echo $line | cut -d= -f2 | tr -d \')
+		uci -S show lime-defaults | sed s/"^lime-defaults."//g | grep -q -s "^${option}=" || {
+			echo "$value" | grep -q -s  , && {
+				# if it's a list
+				for list_value in $(echo $value | tr , " "); do
+					echo "[lime-factory-defaults] add list value $option/$list_value"
+					uci add_list lime-defaults.$option=$list_value
+				done
+			} || {
+				# if it's not a list
+				echo "[lime-factory-defaults] add option $option to lime-defaults"
+				uci set lime-defaults.$option=$value
+			}
+	}
+	done
+	uci commit lime-defaults
+}
+exit 0

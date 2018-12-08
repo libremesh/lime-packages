@@ -40,17 +40,16 @@ script:
         "$IMAGE_NAME" /bin/bash -c
         "./scripts/feeds update -a && ./scripts/feeds install -p libremesh -a && cp /sdk/config /sdk/.config && make defconfig && make -j2"
 
-
 deploy:
   - provider: script
     script:
-    - rsync -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $CI_PORT"
+    - rsync --delete-after -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $CI_PORT"
           "/output/" "${CI_USER}@${CI_SERVER}:${CI_STORE_PATH}/$STORE_PATH/packages/"
     on:
       branch: master
   - provider: script
     script:
-    - rsync -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $CI_PORT"
+    - rsync --delete-after -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $CI_PORT"
           "/output/" "${CI_USER}@${CI_SERVER}:${CI_STORE_PATH}/$STORE_PATH/branches/$TRAVIS_BRANCH/"
     on:
       all_branches: true
