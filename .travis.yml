@@ -13,7 +13,6 @@ addons:
 env:
     global:
     - IMAGE_NAME="aparcar/openwrt-sdk:18.06-ar71xx"
-    - OPENWRT_BRANCH="18.06"
 
 before_script:
 - docker pull "$IMAGE_NAME" || true
@@ -25,26 +24,32 @@ script:
   $KEY_BUILD
   EOF
 - |
-  cat <<EOF > feeds.conf.default
+  cat <<EOF >> feeds.conf.default
+  src-git base https://git.openwrt.org/openwrt/openwrt.git;v18.06.1
+  src-git packages https://git.openwrt.org/feed/packages.git^35e0b737ab496f5b51e80079b0d8c9b442e223f5
+  src-git luci https://git.openwrt.org/project/luci.git^f64b1523447547032d5280fb0bcdde570f2ca913
+  src-git routing https://git.openwrt.org/feed/routing.git^1b9d1c419f0ecefda51922a7845ab2183d6acd76
+  src-git telephony https://git.openwrt.org/feed/telephony.git^b9d7b321d15a44c5abb9e5d43a4ec78abfd9031b
   src-git libremesh https://github.com/libremesh/lime-packages.git;$TRAVIS_BRANCH
   EOF
 - docker run
         -v "/output:/sdk/bin/packages/mips_24kc/libremesh"
         -v "$(pwd)/feeds.conf.default:/sdk/feeds.conf.default"
         -v "$(pwd)/key-build:/sdk/key-build"
+        -v "$(pwd)/libremesh.sdk.config:/sdk/config"
         "$IMAGE_NAME" /bin/bash -c
-        "apt update -qq && apt install time -y && ./scripts/feeds update -a && ./scripts/feeds install -p libremesh -a && ./scripts/feeds uninstall tinc && make defconfig && make"
+        "./scripts/feeds update -a && ./scripts/feeds install -p libremesh -a && cp /sdk/config /sdk/.config && make defconfig && make -j2"
 
 deploy:
   - provider: script
     script:
-    - rsync -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $CI_PORT"
+    - rsync --delete-after -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $CI_PORT"
           "/output/" "${CI_USER}@${CI_SERVER}:${CI_STORE_PATH}/$STORE_PATH/packages/"
     on:
       branch: master
   - provider: script
     script:
-    - rsync -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $CI_PORT"
+    - rsync --delete-after -L -r -v -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p $CI_PORT"
           "/output/" "${CI_USER}@${CI_SERVER}:${CI_STORE_PATH}/$STORE_PATH/branches/$TRAVIS_BRANCH/"
     on:
       all_branches: true
