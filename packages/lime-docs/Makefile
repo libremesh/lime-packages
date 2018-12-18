@@ -13,9 +13,9 @@ PKG_NAME:=lime-docs
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_URL:=https://github.com/libremesh/lime-web/trunk/docs
-PKG_SOURCE_PROTO:=svn
-PKG_SOURCE_VERSION:=HEAD
+PKG_SOURCE_URL:=https://github.com/libremesh/lime-web
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_VERSION:=onlydocs
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
@@ -67,13 +67,13 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/www/docs/
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/en_*.txt $(1)/www/docs/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/docs/en_*.txt $(1)/www/docs/
 	@ln -s /www/docs $(1)/docs
 endef
 
 define Package/$(PKG_NAME)-it/install
 	$(INSTALL_DIR) $(1)/www/docs/
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/it_*.txt $(1)/www/docs/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/docs/it_*.txt $(1)/www/docs/
 	@ln -s /www/docs $(1)/docs
 endef
 
