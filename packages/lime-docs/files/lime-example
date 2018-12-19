@@ -23,7 +23,7 @@ config lime system
 
 config lime network
 	option primary_interface eth0			# The mac address of this device will be used in different places
-	option main_ipv4_address '10.%N1.0.0/16'	# Here you have 4 possibilities: set a static IP and the subnet, like '10.0.2.1/16'; parametrize with %Mn and %Nn, and set the subnet, like '10.%N1.%M5.%M6/16'; set a whole network address (not a specific IP) for getting the IP autocompleted in that network with bits from MAC address, this works also with netmasks other than /24 or /16, like '10.0.128.0/17' (but not valid network addresses, for example '192.0.128.0/16' or '192.0.129.0/17' won't get parametrized); set two different parameters, the first for subnet and the second for IP parametrization, like '10.0.128.0/16/17', this results in /16 subnet but IP parametrized in a /17 range (from 10.0.128.1 to 10.0.255.254).
+	option main_ipv4_address '10.%N1.0.0/16'	# Here you have 4 possibilities: set a static IP and the subnet, like '10.0.2.1/16'; parametrize with %Mn and %Nn, and set the subnet, like '10.%N1.%M5.%M6/16'; set a whole network address (not a specific IP) for getting the IP autocompleted in that network with bits from MAC address, this works also with netmasks other than /24 or /16, like '10.0.128.0/17' (but not valid network addresses, for example '192.0.128.0/16' or '192.0.129.0/17' won't get parametrized); set two different parameters, the first for subnet and the second for IP parameterization, like '10.0.128.0/16/17', this results in /16 subnet but IP parametrized in a /17 range (from 10.0.128.1 to 10.0.255.254).
 	option anygw_dhcp_start '2'			# First IP in the subnet to be used for DHCP for clients. For example, if the subnet is 10.x.0.0/16 and you want the clients to get an IPv4 from a DHCP pool starting from 10.x.100.2, the start parameter will have to be 100 * 256 + 2 = 25602.
 	option anygw_dhcp_limit '0'			# Number of IPs available for DHCP. Use zero for having the DHCP pool ranging from anygw_dhcp_start up to the end of the subnet. For example, if the subnet is 10.x.0.0/16, the start of the DHCP pool is at 10.x.100.2 and you want the DHCP pool to finish at 10.x.127.254, the limit parameter will have to be (127 - 100) * 256 + (254 - 2) + 1 = 7165. Instead, if you want the DHCP pool to go from 10.x.100.2 up to 10.x.255.254 (last valid IPv4 in the /16 subnet) you can just set the limit to zero.
 	option main_ipv6_address '2a00:1508:0a%N1:%N200::/64'	# Parametrizable in the same way as main_ipv4_address. If used, the IP autocompletion will fill maximum the last 24 bits, so specifying an IP autocompletion range bigger than /104 is not useful.
@@ -71,7 +71,7 @@ config lime wifi
 #	option apname_encryption 'psk2'
 	option ieee80211s_mesh_fwding '0'		# Settings needed only for 802.11s
 	option ieee80211s_mesh_id 'LiMe'
-#	option ieee80211s_encryption 'psk2/aes' # in order to use encryted mesh, the wpad-mini package have to be replaced with wpad-mesh package either manually or by the selected network-profile
+#	option ieee80211s_encryption 'psk2/aes' # in order to use encrypted mesh, the wpad-mini package have to be replaced with wpad-mesh package either manually or by the selected network-profile
 #	option ieee80211s_key 'SomePsk2AESKey'
 
 
