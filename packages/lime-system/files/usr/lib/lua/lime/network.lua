@@ -291,7 +291,7 @@ end
 -- Creates a network Interface with static protocol
 -- ipAddr can be IPv4 or IPv6
 -- the function can be called twice to set both IPv4 and IPv6
-function network.createStaticIface(linuxBaseIfname, openwrtNameSuffix, ipAddr)
+function network.createStaticIface(linuxBaseIfname, openwrtNameSuffix, ipAddr, gwAddr)
 	local openwrtNameSuffix = openwrtNameSuffix or ""
 	local owrtInterfaceName = network.sanitizeIfaceName(linuxBaseIfname) .. openwrtNameSuffix
 	local uci = libuci:cursor()
@@ -308,8 +308,14 @@ function network.createStaticIface(linuxBaseIfname, openwrtNameSuffix, ipAddr)
 		local mask = addr:mask():string()
 		uci:set("network", owrtInterfaceName, "ipaddr", host)
 		uci:set("network", owrtInterfaceName, "netmask", mask)
+		if gwAddr then
+			uci:set("network", owrtInterfaceName, "gateway", gwAddr)
+		end
 	elseif addr:is6() then
 		uci:set("network", owrtInterfaceName, "ip6addr", addr:string())
+		if gwAddr then
+			uci:set("network", owrtInterfaceName, "ip6gw", gwAddr)
+		end
 	else
 		uci:delete("network", owrtInterfaceName, "interface")
 	end
