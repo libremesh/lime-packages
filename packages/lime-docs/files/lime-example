@@ -107,7 +107,7 @@ config wifi radio3 # you should ensure that the chosen radio name exists, for ex
 # network specific one like in the following example.
 
 ## set radio4 as client of access point, both the following "wifi" and "net" sections are required
-option wifi radio4 # you should ensure that the chosen radio name exists, for example with "wifi status" command
+config wifi radio0 # you should ensure that the chosen radio name exists, for example with "iw list" command
 	list modes 'client'
 	option channel_2ghz 'auto'
 	option client_ssid 'SomeWiFiNetwork'
