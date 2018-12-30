@@ -1,7 +1,7 @@
 #!/usr/bin/lua
 
 --! LiMe Proto Babeld
---! Copyright (C) 2018  Gioacchino Mazzurco <gio@eigenlab.org>
+--! Copyright (C) 2018  Gioacchino Mazzurco <gio@altermundi.net>
 --!
 --! This program is free software: you can redistribute it and/or modify
 --! it under the terms of the GNU Affero General Public License as
@@ -39,6 +39,9 @@ function babeld.configure(args)
 		uci:set("babeld", "librenet6", "ifname", "librenet6")
 		uci:set("babeld", "librenet6", "type", "tunnel")
 	end
+
+	uci:set("babeld", "general", "general")
+	uci:set("babeld", "general", "local_port", "30003")
 
 	uci:set("babeld", "public6", "filter")
 	uci:set("babeld", "public6", "type", "redistribute")
