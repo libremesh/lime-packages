@@ -82,6 +82,13 @@ function babeld.configure(args)
 	uci:set("babeld", "dany", "action", "deny")
 
 	uci:save("babeld")
+
+
+	uci:set("libremap", "babeld", "plugin")
+	uci:set("libremap", "babeld", "enabled", "true")
+
+	uci:save("libremap")
+
 end
 
 function babeld.setup_interface(ifname, args)
