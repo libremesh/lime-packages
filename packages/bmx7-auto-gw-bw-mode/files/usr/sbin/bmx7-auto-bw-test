@@ -1,0 +1,42 @@
+#!/bin/sh
+TRIES=3
+
+bw_test() {
+  local bw=""
+  local try=0
+  while [ -z "$bw" -a $try -lt $TRIES ]; do
+    test=$({ wget -T5 -q $1 -O- | pv -n -b -t >/dev/null; } 2>&1)
+    bw=$(echo $test | awk '{printf "%.0f",$NF/$(NF-1)*8}')
+    try=$(($try+1))
+  done
+  echo $bw
+}
+
+random_test() {
+  sv0="http://www.ovh.net/files/10Mio.dat"
+  sv1="http://frf1-speed-02.host.twtelecom.net.prod.hosts.ooklaserver.net:8080/download?size=12000000"
+  sv2="http://speedtest.catnix.cat.prod.hosts.ooklaserver.net:8080/download?size=12000000"
+  sv3="http://cdn.kernel.org/pub/linux/kernel/v4.x/patch-4.9.gz"
+  sv4="http://ubuntu.inode.at/ubuntu/dists/bionic/main/installer-amd64/current/images/hd-media/initrd.gz"
+  sv5="http://ftp.belnet.be/ubuntu.com/ubuntu/dists/bionic/main/installer-amd64/current/images/hd-media/initrd.gz"
+  sv6="http://cloudharmony.com/probe/test10mb.jpg"
+  sv7="http://cdn.google.cloudharmony.net/probe/test10mb.jpg"
+  sv8="http://speedtest-lon1.digitalocean.com/10mb.test"
+  sv9="http://aka.azureedge.net/probe/test10mb.jpg"
+  sv10="http://speedtest.serverius.net/files/10mb.bin"
+
+  rnd=$(awk 'BEGIN{srand();print int(rand()*11)}')
+  svid="sv$rnd"
+  sv=$(eval echo \$$svid)
+  logger -t bmx7-auto-gw "Testing bandwidth [$sv]"
+  bw_test "$sv"
+}
+
+cat /var/run/bmx7/json/parameters | jsonfilter -e '@["OPTIONS"][*]' | grep tunIn | grep -q "0.0.0.0" && {
+  bw=$(random_test)
+  [ -n "$bw" -a $bw -gt 1000 ] && {
+    logger -t bmx7-auto-gw "Got bandwidth of $bw bit/s"
+    bmx7 -c tunIn inet4 /b $bw /n 0.0.0.0/0
+    [ -n "$SAVE" ] && echo $(date +"%Y.%m.%d.%H.%M") $bw >> $SAVE
+  }
+}
