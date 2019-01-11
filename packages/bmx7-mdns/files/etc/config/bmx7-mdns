@@ -1,0 +1,7 @@
+config bmx7-mdns domains
+	option publish_hostname '1'
+	list domain4 'mesh'
+	list domain6 'mesh6'
+	list host_example 'guifi.mesh6@2a00:1508::5'
+	list host_example 'cfns.mesh@1.1.1.1'
+	list host_example 'myOwnNode'

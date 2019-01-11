@@ -1,0 +1,229 @@
+#!/bin/sh /etc/rc.common
+#    Copyright (C) 2018 Pau Escrich <p4u@dabax.net>
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License along
+#    with this program; if not, write to the Free Software Foundation, Inc.,
+#    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+#    The full GNU General Public License is included in this distribution in
+#    the file called "COPYING".
+
+START=99
+STOP=99
+
+# Configuration variables
+HOSTF="/tmp/mdns.hosts"
+SMSF="/var/run/bmx7/sms/sendSms/mdns"
+SMSTMP="/tmp/sms-mdns.tmp"
+SMSR="/var/run/bmx7/sms/rcvdSms"
+DNSMASQ="/etc/dnsmasq.conf"
+DNSMASQ_PID_DIR="/var/run/dnsmasq/"
+[ ! -f $HOSTF ] && touch $HOSTF
+[ ! -f $SMSF ] && touch $SMSF
+
+DOMAINS4="$(uci -q get bmx7-mdns.domains.domain4)"
+DOMAINS6="$(uci -q get bmx7-mdns.domains.domain6)"
+
+start() {
+	if ! cat /etc/crontabs/root | grep -q mdns; then
+		local rnd=$(awk 'BEGIN{srand();print int(rand()*60)}')
+		echo "$rnd * * * * /etc/init.d/bmx7-mdns reload" >> /etc/crontabs/root
+		/etc/init.d/cron enable
+		/etc/init.d/cron start
+	fi
+	/etc/init.d/bmx7-mdns reload
+}
+
+stop() {
+	sed -i -e '/.*\/etc\/init\.d\/bmx7-mdns reload$/d' /etc/crontabs/root
+	/etc/init.d/cron restart
+	[ -f $SMSF ] && rm -f $SMSF
+}
+
+reload() {
+	init
+	publish_my_domains
+	get_domains
+	finish
+}
+
+refresh() {
+	reload
+}
+
+log() {
+	logger -s -t "bmx7-mdns" $1
+}
+
+error() {
+	log "ERROR $1"
+	exit 1
+}
+
+init() {
+	[ ! -x /etc/init.d/dnsmasq ] && error "dnsmasq not enabled"
+	log "preparing bmx7"
+	bmx7 -c --syncSms mdns || error "cannot enable bmx7 sms"
+
+	cat $DNSMASQ | egrep "^addn-hosts=$HOSTF" -q || {
+		log "adding addn-host entry to dnsmasq config file"
+		echo "addn-hosts=$HOSTF" >> $DNSMASQ
+		log "reloading dnsmasq daemon"
+		/etc/init.d/dnsmasq restart
+	}
+	log "cleaning files"
+	[ -f $HOSTF ] && rm -f $HOSTF
+	touch $HOSTF
+}
+
+check_domain() {
+		local v="$1"
+		local d="$2"
+		local valid=1
+		local domains=""
+
+		[ $v == "4" ] && domains="$DOMAINS4"
+		[ $v == "6" ] && domains="$DOMAINS6"
+		[ $v == "all" ] && domains="$DOMAINS4 $DOMAINS6"
+
+		for D in $domains; do
+			echo "$d" | egrep "\.$D"$ -q && valid=0 && break
+		done
+
+		return $valid
+}
+
+get_my_domains() {
+	local v=${1:-4}
+	local my_domains=""
+	local domains=""
+
+	for d in $(uci -q get bmx7-mdns.domains.host); do
+		echo "$d" | grep -q -v "@" && my_tmp_domains="$d $my_tmp_domains"
+	done
+
+	[ "$v" == "4" ] && domains="$DOMAINS4"
+	[ "$v" == "6" ] && domains="$DOMAINS6"
+
+	for t in $my_tmp_domains; do
+		for d in $domains; do
+			my_domains="$t.$d $my_domains"
+		done
+	done
+	[ "$(uci -q get bmx7-mdns.domains.publish_hostname)" == "1" ] && {
+		for d in $domains; do
+			my_domains="$(cat /proc/sys/kernel/hostname).$d $my_domains"
+		done
+	}
+	echo $my_domains
+}
+
+get_myext_domains() {
+	local ext_domains=""
+	local d ip domain
+	local my_ext_domains=""
+
+	for d in $(uci -q get bmx7-mdns.domains.host); do
+		echo "$d" | grep -q @ && ext_domains="$d $ext_domains"
+	done
+
+	for d in $ext_domains; do
+		ip="$(echo $d | grep @ | cut -d@ -f2)"
+		domain="$(echo $d | grep @ | cut -d@ -f1)"
+		[ -z "$ip" -o -z "$domain" ] && continue
+		my_ext_domains="$ip $domain\n$my_ext_domains"
+	done
+
+	echo -e "$my_ext_domains"
+}
+
+get_my_ip4() {
+	[ -z $IPV4 ] && \
+		bmx7 -cp | grep tun4Address | awk '{print $2}' | awk -F / '{print $1}' || \
+	echo "$IPV4"
+}
+
+get_my_ip6() {
+	[ -z $IPV6 ] && \
+		bmx7 -cp | grep tun6Address | awk '{print $2}' | awk -F / '{print $1}' || \
+	echo "$IPV6"
+}
+
+publish_my_domains() {
+	local d domains ext_domains
+	local ip4="$(get_my_ip4)"
+	local ip6="$(get_my_ip6)"
+
+	echo -n "" > $SMSTMP
+	[ -z "$ip4$ip6" ] && error "cannot get ip address"
+	[ -n "$ip4" ] && {
+		domains="$(get_my_domains 4)"
+		[ -n "$domains" ] && {
+			log "publishing own IPv4 domains: $domains"
+			echo "$ip4 $domains" >> $SMSTMP
+			echo "$ip4 $domains" >> $HOSTF
+		}
+	}
+
+	[ -n "$ip6" ] && {
+		domains="$(get_my_domains 6)"
+		[ -n "$domains" ] && {
+			log "publishing own IPv6 domains: $domains"
+			echo "$ip6 $domains" >> $SMSTMP
+			echo "$ip6 $domains" >> $HOSTF
+		}
+	}
+
+	ext_domains="$(get_myext_domains)"
+	[ -n "$ext_domains" ] && {
+		log "publishing own external domains: $ext_domains"
+		echo -e "$ext_domains" >> $SMSTMP
+		echo -e "$ext_domains" >> $HOSTF
+	}
+
+	sed '/./!d' -i $SMSTMP $HOSTF
+	[ $(md5sum $SMSTMP $SMSF | awk '{print $1}' | uniq | wc -l) -gt 1 ] && cp -f $SMSTMP $SMSF
+}
+
+get_domains() {
+	local f d domline ip line n i
+	ls $SMSR/*:mdns 2>/dev/null >/dev/null && {
+	  # for each received file
+	  for f in $SMSR/*:mdns; do
+			n=$(cat $f | wc -l)
+			# for each line inside the file
+			for i in $(seq $n); do
+				line=$(cat $f | awk "NR==$i")
+				ip="$(echo $line | awk '{print $1}')"
+				[ -z $ip ] && continue
+				domains=""
+				# for each domain (first is IP)
+				for d in $(echo "$line" | awk '{$1=""; print $0}'); do
+					check_domain all $d && domains="$d $domains"
+				done
+
+				[ -n "$domains" ] && echo "$ip $domains" >> $HOSTF
+				log "added remote domains $domains= $ip"
+		  done
+  	done
+
+	  } || log "not published domains found in the network"
+}
+
+finish() {
+	for pidfile in $DNSMASQ_PID_DIR*; do
+		kill -SIGHUP $(cat $pidfile)
+	done
+}
+
+$@
