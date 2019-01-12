@@ -24,7 +24,6 @@
 require("luci.sys")
 local lime = Map("lime", "LibreMesh")
 local config = require("lime.config")
-local bmx6json = require("luci.model.bmx6json") or nil
 
 -- Create sections
 local system = lime:section(NamedSection, "system", "lime","System","System")
@@ -50,7 +49,8 @@ ipv6.default = config.get("network","main_ipv6_address")
 ipv6.optional = true
 
 -- bmx6 prefered gateway
-if bmx6json then
+if nixio.fs.stat("/usr/lib/lua/luci/model/bmx6json.lua","type") ~= nil then
+	local bmx6json = require("luci.model.bmx6json") or nil
 	local bmx6_pref_gw = network:option(ListValue,"bmx6_pref_gw",translate("Internet Priorized Gateway (bmx6)"),
 	  translate("You can choose a Gateway to priorize your traffic to go through this node."))
 
