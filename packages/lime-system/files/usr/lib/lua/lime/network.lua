@@ -80,8 +80,16 @@ function network.primary_address(offset)
 	local mc = ipv4_template
 	--! Generated address is network address like 192.0.2.0/24 ?
 	local invalid = ipv4_template:equal(mc:network()) and "NETWORK"
-	--! Generated address is the one reserved for anygw like 192.0.2.1/24 ?
-	invalid = invalid or ipv4_template:equal(mc:minhost()) and "ANYGW"
+	--! If anygw enabled, generated address is the one reserved for anygw like 192.0.2.1/24 ?
+	if utils.isModuleAvailable("lime.proto.anygw") then
+		local generalProtocols = config.get("network", "protocols")
+		for _,protocol in pairs(generalProtocols) do
+			if protocol == 'anygw' then
+				invalid = invalid or ipv4_template:equal(mc:minhost()) and "ANYGW"
+				break
+			end
+		end
+	end
 	--! Generated address is the broadcast address like 192.0.2.255/24 ?
 	invalid = invalid or ipv4_template:equal(mc:broadcast()) and "BROADCAST"
 	if invalid then
