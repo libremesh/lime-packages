@@ -1,4 +1,5 @@
 [![travis](https://api.travis-ci.org/libremesh/lime-packages.svg?branch=develop)](https://travis-ci.org/libremesh/lime-packages)
+[![opencollective](https://opencollective.com/lime-packages/tiers/backer/badge.svg?label=backer&color=brightgreen)](https://opencollective.com/lime-packages)
 
 # [LibreMesh][5] packages
 
@@ -85,6 +86,10 @@ The project offers the following mailing lists
   related work.
 * [lime-users@lists.libremesh.org][8] - This list is used for project
   organisational purposes. And for user specific questions.
+  
+### Donations
+
+We are now a memeber of [open collective][12], please consider a small donation!
 
 [1]: https://openwrt.org/docs/guide-developer/quickstart-build-images
 [2]: https://github.com/libremesh/lime-sdk
@@ -95,3 +100,4 @@ The project offers the following mailing lists
 [9]: http://repo.libremesh.org/current/
 [10]: https://github.com/libremesh/network-profiles/
 [11]: https://chef.libremesh.org/
+[12]: https://opencollective.com/lime-packages
