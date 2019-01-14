@@ -1,4 +1,5 @@
 [![travis](https://api.travis-ci.org/libremesh/lime-packages.svg?branch=develop)](https://travis-ci.org/libremesh/lime-packages)
+[![opencollective](https://opencollective.com/lime-packages/tiers/backer/badge.svg?label=backer&color=brightgreen)](https://opencollective.com/lime-packages)
 
 # [LibreMesh][5] packages
 
