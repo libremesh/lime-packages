@@ -85,6 +85,10 @@ The project offers the following mailing lists
   related work.
 * [lime-users@lists.libremesh.org][8] - This list is used for project
   organisational purposes. And for user specific questions.
+  
+### Donations
+
+We are now a memeber of [open collective](https://opencollective.com/lime-packages), please consider a small donation!
 
 [1]: https://openwrt.org/docs/guide-developer/quickstart-build-images
 [2]: https://github.com/libremesh/lime-sdk
