@@ -1,0 +1,16 @@
+#!/bin/sh
+cat > /usr/share/rpcd/acl.d << EOF
+{
+	"unauthenticated": {
+		"description": "Access controls for unauthenticated requests",
+		"read": {
+			"ubus": {
+				"session": [
+					"access",
+					"login"
+				]
+			}
+		}
+	}
+}
+EOF

@@ -1,0 +1,104 @@
+#!/usr/bin/env lua
+--[[
+Copyright 2018 Marcos Gutierrez <gmarcos87@gmail.com>
+Licensed under the Apache License, Version 3.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-3.0
+]]--
+
+require "ubus"
+local json = require 'luci.json'
+local config = require 'lime.config'
+local network = require 'lime.network'
+local ntm = require "luci.model.network".init()
+local libuci = require "uci"
+
+local function shell(command)
+    -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+    return result
+end
+
+function readFile(file)
+    local f = io.open(file, "rb")
+    local content = f:read("*all")
+    f:close()
+    return content
+end
+
+local function printJson (obj)
+    print(json.encode(obj))
+end
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function get_config()
+    local result = {}
+    result.config = {}
+    function add_to_result(section)
+        table.insert(result.config, section)
+    end
+    config.foreach("hwd_gr", add_to_result)
+    result.board = readFile('/etc/board.json') or '{}'
+    result.board = json.decode(result.board)
+    result.devices = network.scandevices()
+    printJson(result);
+end
+
+local function set_config(msg)
+    local configuration = msg.config
+    local net_dev = configuration.net_dev
+    local uci = libuci:cursor()
+    uci:delete("lime","link1")
+    config.init_batch()
+
+    if configuration.delete ~= true then    
+            config.set("link1","hwd_gr")
+            if configuration.net_dev ~= nil then
+                config.set("link1","net_dev", configuration.net_dev )
+            end
+            if configuration.vlan ~= nil then
+                config.set("link1","vlan", configuration.vlan )
+            end
+            if configuration.switch_dev ~= nil then
+                config.set("link1","switch_dev", configuration.switch_dev )
+            end
+            if configuration.switch_cpu_port ~= nil then
+                config.set("link1","switch_cpu_port", configuration.switch_cpu_port )
+            end
+            if configuration.switch_ports ~= nil then
+                config.set("link1","switch_ports", configuration.switch_ports )
+            end
+    end
+    config.end_batch()
+    uci:commit("lime")
+    
+    shell("lime-config && lime-apply")
+    
+    printJson({ status = 'ok'})
+    
+end
+
+local methods = {
+    get = { no_params = 0 },
+    set = { config = 'object' }
+}
+
+if arg[1] == 'list' then
+    printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = io.read()
+	msg = json.decode(msg)
+    if       arg[2] == 'get'    then get_config()
+    elseif   arg[2] == 'set'    then set_config(msg)
+    else                        printJson({ error = "Method not found" })
+    end
+end

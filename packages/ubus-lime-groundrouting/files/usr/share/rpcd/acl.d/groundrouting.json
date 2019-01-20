@@ -1,0 +1,15 @@
+{
+    "lime-app": {
+        "description": "lime-app public access",
+        "read": {
+            "ubus": {
+                    "lime-groundrouting": [ "*" ]
+            }
+        },
+        "write": {
+            "ubus": {
+                    "lime-groundrouting": [ "*" ]
+            }
+        }
+    }
+}
