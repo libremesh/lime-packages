@@ -67,7 +67,7 @@ to select _dnsmasq-dhcpv6_ in the same section. Then to deselect _odhcpd_ from
 _Network_ section.
 
 Finally enter the _LiMe_ section and select the wanted LibreMesh features, a
-good option is to select lime-full. 
+good option is to select lime-full.
 
 Compile the firmware images.
 
@@ -75,18 +75,17 @@ Compile the firmware images.
 
 The resulting files will be present in _bin_ directory.
 
-
 ## Get in Touch with LibreMesh Community
 
 ### Mailing Lists
 
 The project offers the following mailing lists
 
-* [lime-dev@lists.libremesh.org][7] - This list is used for general development
+- [lime-dev@lists.libremesh.org][7] - This list is used for general development
   related work.
-* [lime-users@lists.libremesh.org][8] - This list is used for project
+- [lime-users@lists.libremesh.org][8] - This list is used for project
   organisational purposes. And for user specific questions.
-  
+
 ### Donations
 
 We are now a member of [open collective][12], please consider a small donation!

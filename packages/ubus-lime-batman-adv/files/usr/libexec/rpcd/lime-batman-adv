@@ -1,0 +1,137 @@
+#!/usr/bin/env lua
+--[[
+Copyright 2017 Marcos Gutierrez <gmarcos87@gmail.com>
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-3.0
+]]--
+
+require "ubus"
+local split = require 'lime.utils'.split
+local json = require 'luci.json'
+
+local function printJson (obj)
+    print(json.encode(obj))
+end
+
+local function shell(command)
+    -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+    return result
+end
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function get_gateways(msg)
+	local v, l, fd
+	local rv = {
+		gateways = {}
+	}
+	fd = io.popen("batctl gwl")
+	if fd then
+		-- skip header line
+		fd:read("*l")
+
+		repeat
+			l = fd:read("*l")
+			if l then
+				local a, m, q, n, i, c, r = l:match("^(%S*) +([^ ]+) +%( *(%d+)%) +([^ ]+) +%[ *(%S+)%]: +(%d+) +- +(%S+)")
+				if a and m and q and n and i and c and r then
+					rv.gateways[#rv.gateways+1] = {
+						#a > 0,
+						m,
+						tonumber(q),
+						n,
+						i,
+						tonumber(c),
+						r
+					}
+				end
+			end
+		until not l
+		fd:close()
+		printJson(rv)
+	end
+end
+
+local function get_originators(msg)
+	local fd, l
+	local rv = {
+		originators = {}
+	}
+	local originators_command = (
+        "batctl o -H 2>/dev/null ".. -- gets originators from batctl
+        "| tr -d '[]()' ".. -- removes brackets and parenthesis
+        "| sed 's/^  / -/g' ".. -- normalizes output, adding a minus when no asterisk is outputed in each line
+        "| sed 's/^ //g' "..  -- removes the space from the beginning of the line
+        "| sed -r 's/\\s+/,/g'".. -- replaces tabs for commas
+        "| sed -r 's/s,/,/g'" -- removes the 's' from the last_seen field referencing seconds
+    )
+	fd = io.popen(originators_command)
+	if fd then
+		repeat
+			l = fd:read()
+			if l then
+				local asterisk, originator_name, last_seen, link_quality, next_hop, outgoing_if
+                                asterisk, originator_name, last_seen, link_quality, next_hop, outgoing_if = unpack(split(l, ","))
+				if originator_name and last_seen and link_quality then
+					rv.originators[#rv.originators+1] = {
+						originator_name,
+						tonumber(last_seen) * 1000,
+						tonumber(link_quality),
+						next_hop,
+						outgoing_if
+					}
+				end
+			end
+		until not l
+		fd:close()
+		printJson(rv)
+	end
+end
+
+local function get_interfaces(msg)
+	local fd, l
+	local rv = {
+		interfaces = {}
+	}
+	fd = io.popen("batctl if")
+	if fd then
+		repeat
+			l = fd:read("*l")
+			v = l and l:match("^(.-):")
+			if v then
+				rv.interfaces[#rv.interfaces+1] = v
+			end
+		until not l
+		fd:close()
+		printJson(rv)
+	end
+end
+
+
+local methods = {
+	get_interfaces = { no_params = 0 },
+	get_originators = { no_params = 0 },
+	get_gateways = { no_params = 0 }
+}
+
+if arg[1] == 'list' then
+    printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = io.read()
+    msg = json.decode(msg)
+    if       arg[2] == 'get_interfaces'         then get_interfaces(msg)
+	elseif   arg[2] == 'get_originators'        then get_originators(msg)
+    elseif   arg[2] == 'get_gateways'           then get_gateways(msg)
+    else                                        printJson({ error = "Method not found" })
+    end
+end

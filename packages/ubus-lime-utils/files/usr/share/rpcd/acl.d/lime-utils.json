@@ -1,0 +1,16 @@
+{
+    "lime-app": {
+        "description": "lime-app public access",
+        "read": {
+            "ubus": {
+                    "lime-utils": [ "*" ],
+                    "system": [ "board" ]
+            }
+        },
+        "write": {
+            "ubus": {
+                    "lime-utils": [ "*" ]
+            }
+        }
+    }
+}
