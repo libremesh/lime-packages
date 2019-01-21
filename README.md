@@ -99,4 +99,4 @@ We are now a member of [open collective][12], please consider a small donation!
 [9]: http://repo.libremesh.org/current/
 [10]: https://github.com/libremesh/network-profiles/
 [11]: https://chef.libremesh.org/
-[12]: https://opencollective.com/lime-packages
+[12]: https://opencollective.com/libremesh
