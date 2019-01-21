@@ -1,0 +1,62 @@
+#!/usr/bin/env lua
+--[[
+Copyright 2017 Marcos Gutierrez <gmarcos87@gmail.com>
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-3.0
+]]--
+
+require "ubus"
+local json = require 'luci.json'
+
+local function printJson (obj)
+    print(json.encode(obj))
+end
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function get_location(msg)
+    local result = {location = {}, default = false}
+    local lat = conn:call("uci", "get", {config="libremap", section="location", option="latitude" }).value
+    local lon = conn:call("uci", "get", {config="libremap", section="location", option="longitude" }).value
+
+    if (type(tonumber(lat)) == "number" and type(tonumber(lon)) == "number") then
+        result.location.lat = lat
+        result.location.lon = lon
+    else
+        result.location.lat = conn:call("uci", "get", {config="libremap", section="@libremap[0]",
+                                              option="community_lat" }).value
+        result.location.lon = conn:call("uci", "get", {config="libremap", section="@libremap[0]",
+                                              option="community_lon" }).value
+        result.default = true                                              
+    end
+    printJson(result);
+end
+
+local function set_location(msg)
+    local result = {}
+    conn:call("uci", "set", {config="libremap", section="location", values={ longitude = msg.lon, latitude = msg.lat } })
+    printJson({ lat = msg.lat, lon = msg.lon });
+end
+
+local methods = {
+    get = { no_params = 0 },
+	set = { lat = 'value', lon = 'value' }
+}
+
+if arg[1] == 'list' then
+    printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = io.read()
+	msg = json.decode(msg)
+    if       arg[2] == 'get'	        then get_location(msg)
+	elseif   arg[2] == 'set'	        then set_location(msg)
+    else                                printJson({ error = "Method not found" })
+    end
+end

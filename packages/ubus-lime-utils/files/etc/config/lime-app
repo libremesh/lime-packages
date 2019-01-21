@@ -1,0 +1,6 @@
+config lime-app
+    option good_signal '-65'
+    option bad_signal '-82'
+    option good_bandwidth '5' # Measured in Mbps
+    option bad_bandwidth '1'
+    option acceptable_loss '20' # Percentage

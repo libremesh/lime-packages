@@ -1,0 +1,15 @@
+{
+    "lime-app": {
+        "description": "lime-app public access",
+        "read": {
+            "ubus": {
+                    "lime-bmx6": [ "*" ]
+            }
+        },
+        "write": {
+            "ubus": {
+                    "lime-bmx6": [ "*" ]
+            }
+        }
+    }
+}
