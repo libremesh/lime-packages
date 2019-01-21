@@ -1,0 +1,216 @@
+#!/usr/bin/env lua
+--[[
+  Copyright (C) 2013-2017 LibreMesh.org
+  This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
+
+  Copyright 2017 Marcos Gutierrez <gmarcos@altermindi.net>
+  Copyright 2017 Nicolas Echaniz <nicoechaniz@altermundi.net>
+]]--
+
+require "ubus"
+local json = require 'luci.json'
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function printJson (obj)
+    print(json.encode(obj))
+end
+
+local function shell(command)
+    -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+    return result
+end
+
+local function file_exists(file)
+    -- check if the file exists
+    local f = io.open(file, "rb")
+    if f then f:close() end
+    return f ~= nil
+end
+
+local function get_text_file(file)
+  if not file_exists(file) then return '' end
+  local text_file = io.open(file,'rb')
+  local content = text_file:read "*a"
+  text_file:close()
+  return content
+end
+
+local function write_text_file(file,text)
+  local text_file = io.open(file,'w')
+  text_file:write(text)
+  text_file:close()
+  return 1
+end
+
+local function get_cloud_nodes(msg)
+    -- check how to get this data from /tmp/run/bmx6/json
+    local conf = conn:call("uci", "get", { config="network" })
+    local local_net = conf.values.lm_net_anygw_route4.target
+    local nodes = shell("bmx6 -cd8 | grep ".. local_net .." | awk '{ print $10 }'")
+    local result = {}
+    result.nodes = {}
+    for line in nodes:gmatch("[^\n]*") do
+        if line ~= "" then
+            table.insert(result.nodes, line)
+        end
+    end
+    result.status = "ok"
+    printJson(result)
+    return
+end
+
+local function get_station_traffic(params)
+    local iface = params.iface
+    local mac = params.station_mac
+    local result = {}
+    local traffic = shell("iw "..iface.." station get "..mac.." | grep bytes | awk '{ print $3}'")
+    words = {}
+    for w in traffic:gmatch("[^\n]+") do table.insert(words, w) end
+    rx = words[1]
+    tx = words[2]
+    result.station = mac
+    result.rx_bytes = tonumber(rx, 10)
+    result.tx_bytes = tonumber(tx, 10)
+    result.status = "ok"
+    return result
+end
+
+local function get_node_status(msg)
+    local result = {}
+    result.hostname = conn:call("system","board", {}).hostname
+    result.ips = {}
+    local ips = shell("ip a s br-lan | grep inet | awk '{ print $1, $2 }'")
+    for line in ips:gmatch("[^\n]+") do
+        local words = {}
+        for w in line:gmatch("%S+") do if w ~= "" then table.insert(words, w) end end
+        local version = words[1]
+        local address = words[2]
+        if version == "inet6" then
+            table.insert(result.ips, { version="6", address=address })
+        else
+            table.insert(result.ips, { version="4", address=address })
+        end
+    end
+    local ifaces = conn:call("lime-openairview", "get_interfaces", {}).interfaces
+    local stations = {}
+    for _, iface  in ipairs(ifaces) do
+        if iface.name then
+            iface_stations = conn:call("lime-openairview", "get_stations", {device = iface.name}).stations
+            if iface_stations then
+                for _, station in pairs(iface_stations) do
+                    station['iface'] = iface.name
+                    table.insert(stations, station)
+                end
+            end
+        end     
+    end
+    if next(stations) ~= nil then
+        local most_active_rx = 0
+        local most_active = nil
+        for _, station in ipairs(stations) do
+            local traffic = shell("iw "..station.iface.." station get "..station.station_mac.." | grep bytes | awk '{ print $3}'")
+            words = {}
+            for w in traffic:gmatch("[^\n]+") do table.insert(words, w) end
+            rx = words[1]
+            tx = words[2]
+            station.rx_bytes = tonumber(rx, 10)
+            station.tx_bytes = tonumber(tx, 10)
+            if station.rx_bytes > most_active_rx then
+                most_active_rx = station.rx_bytes
+                most_active = station
+            end
+        end
+        local station_traffic = get_station_traffic({ iface=most_active.iface, station_mac=most_active.station_mac })
+        most_active.rx_bytes = station_traffic.rx_bytes
+        most_active.tx_bytes = station_traffic.tx_bytes
+        result.most_active = most_active
+    end
+    local uptime = shell("awk '{print $1}' /proc/uptime")
+    result.uptime = uptime
+
+    result.status = "ok"
+    printJson(result)
+end
+
+local function get_notes()
+    local result = {}
+    result.notes = get_text_file('/etc/banner.notes')
+    result.status = "ok"
+    printJson(result)
+end
+
+local function set_notes(msg)
+    local result = {}
+    local banner = write_text_file('/etc/banner.notes', msg.text)
+    result = get_notes()
+    printJson(result)
+end
+
+
+local function get_community_settings ()
+    local config = conn:call("uci", "get", {config="lime-app"})
+    if config ~=  nil then
+        config = config.values.cfg02541a
+        -- TODO: Find a best way to remove uci keys
+        function table.removekey(table, key)
+            local element = table[key]
+            table[key] = nil
+            return element
+        end
+        table.removekey(config,".name")
+        table.removekey(config,".index")
+        table.removekey(config,".anonymous")
+        table.removekey(config,".type")
+        
+        printJson(config)
+    else
+        printJson({error = "config not found"})
+    end
+    
+end
+
+local function change_config (msg)
+    if msg.name ~= nil then
+        local newName = msg.name
+        local newIp = msg.ip
+        conn:call("uci", "set", {config="lime", section="system", values= { hostname = newName }})
+        conn:call("uci", "set", {config="lime", section="network", values= { main_ipv4_address = newIp }})
+        shell("lime-config && lime-apply")
+        printJson({ status = 'ok'})
+    else
+        printJson({ status = 'error', msg = 'You must enter a hostname' })
+    end
+end
+
+local methods = {
+    get_cloud_nodes = { no_params = 0 },
+    get_node_status = { no_params = 0 },
+    get_notes = { no_params = 0},
+    set_notes = { text = 'value' },
+    get_community_settings = { no_params = 0},
+    change_config = { name = 'value', ip = 'value' }
+}
+
+if arg[1] == 'list' then
+    printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = io.read()
+    msg = json.decode(msg)
+    if      arg[2] == 'get_cloud_nodes' then get_cloud_nodes(msg)
+    elseif  arg[2] == 'get_node_status' then get_node_status(msg)
+    elseif  arg[2] == 'get_notes' then get_notes(msg)
+    elseif  arg[2] == 'set_notes' then set_notes(msg)
+    elseif  arg[2] == 'get_community_settings' then get_community_settings(msg)
+    elseif  arg[2] == 'change_config' then change_config(msg)
+    else printJson({ error = "Method not found" })
+    end
+end

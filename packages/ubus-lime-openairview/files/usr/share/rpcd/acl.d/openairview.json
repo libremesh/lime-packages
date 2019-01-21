@@ -1,0 +1,15 @@
+{
+    "lime-app": {
+        "description": "lime-app public access",
+        "read": {
+            "ubus": {
+                    "lime-openairview": [ "*" ]
+            }
+        },
+        "write": {
+            "ubus": {
+                    "lime-openairview": [ "*" ]
+            }
+        }
+    }
+}
