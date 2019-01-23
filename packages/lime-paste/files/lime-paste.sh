@@ -1,0 +1,6 @@
+#!/bin/sh
+
+PASTE_SERVICE="${PASTE_SERVICE:-paste.libremesh.org}"
+PASTE_PORT="${PASTE_PORT:-8080}"
+
+nc "$PASTE_SERVICE" "$PASTE_PORT"
