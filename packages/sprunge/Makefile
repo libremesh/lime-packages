@@ -15,16 +15,16 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  TITLE:=sprunge.us pastebin
+  TITLE:=sprunge.us and ix.io pastebin
   SECTION:=utils
   CATEGORY:=Utilities
   MAINTAINER:=Ilario Gelmetti <ilario@eigenlab.org>
-  URL:=http://sprunge.us
+  URL:=http://ix.io
   PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description
-	sprunge.us command line pastebin
+	sprunge.us and ix.io command line pastebin
 endef
 
 define Build/Compile
@@ -33,6 +33,7 @@ endef
 define Package/$(PKG_NAME)/install
 	@mkdir -p $(1)/usr/bin/ || true
 	$(INSTALL_BIN) ./src/sprunge.sh $(1)/usr/bin/sprunge
+	$(INSTALL_BIN) ./src/ix.sh $(1)/usr/bin/ix
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
