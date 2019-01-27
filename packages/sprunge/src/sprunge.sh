@@ -37,9 +37,10 @@ esac
 cat "${TEMP_FILE}" | hexdump -v -e '/1 "%02x"' \
 	| sed 's/\(..\)/%\1/g' > "${TEMP_FILE_ENCODED}"
 
-echo "POST / HTTP/1.0
+echo -n "POST / HTTP/1.0
 Host: ${SPRUNGE_HOST}
 Content-Length: $(( $(cat ${TEMP_FILE_ENCODED} | wc -m) + 8 ))
+Content-Type: application/x-www-form-urlencoded
 
 sprunge=$(cat ${TEMP_FILE_ENCODED})" \
 	| nc "${SPRUNGE_HOST}" 80 \
