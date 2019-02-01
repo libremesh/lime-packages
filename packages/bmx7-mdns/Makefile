@@ -39,6 +39,7 @@ define Package/$(PKG_NAME)
   TITLE:=bmx7 distributed DNS system
   URL:=http://bmx6.net
   MAINTAINER:=Pau Escrich <p4u@dabax.net>
+  PKGARCH:=all
   DEPENDS:=+bmx7 +bmx7-sms
 endef
 

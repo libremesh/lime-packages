@@ -23,6 +23,7 @@ define Package/$(PKG_NAME)
 	SUBMENU:=Collections
 	MAINTAINER:=Pau Escrich <p4u@dabax.net>
 	URL:=http://libremesh.org
+	PKGARCH:=all
 	DEPENDS:=+lime-system +lime-proto-bmx6 +lime-proto-batadv +kmod-ebtables \
 	         +lime-proto-anygw +lime-proto-wan +dnsmasq-lease-share \
 	         +dnsmasq-distributed-hosts +lime-webui \
@@ -37,6 +38,7 @@ define Package/$(PKG_NAME)-no-ui
 	SUBMENU:=Collections
 	MAINTAINER:=Pau Escrich <p4u@dabax.net>
 	URL:=http://libremesh.org
+	PKGARCH:=all
 	DEPENDS:=+lime-system +lime-proto-bmx6 +lime-proto-batadv +kmod-ebtables \
 	         +lime-proto-anygw +lime-proto-wan +dnsmasq-lease-share \
 	         +dnsmasq-distributed-hosts \
