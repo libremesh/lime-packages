@@ -20,6 +20,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=NicoEchaniz <nicoechaniz@altermundi.net>
   SUBMENU:=3. Applications
   TITLE:=luci app to handle LibreMap location
+  PKGARCH:=all
   DEPENDS:= +libc +libremap-agent
 endef
 
