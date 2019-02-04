@@ -27,7 +27,6 @@ feeds_file="/etc/opkg/limefeeds.conf"
 }
 
 echo "Configuring official LibreMesh opkg feeds"
-echo "src/gz libremap $base_url/libremap" > /etc/opkg/limefeeds.conf
-echo "src/gz libremesh $base_url/libremesh" >> /etc/opkg/limefeeds.conf
+echo "src/gz libremesh $base_url/libremesh" > /etc/opkg/limefeeds.conf
 echo "untrusted comment: signed by libremesh.org key $key_name" > "/etc/opkg/keys/$key_name"
 echo "$key_content" >> "/etc/opkg/keys/$key_name"
