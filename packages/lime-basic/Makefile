@@ -46,6 +46,20 @@ define Package/$(PKG_NAME)-no-ui
 	         +bmx6-auto-gw-mode +lime-hwd-ground-routing +smonit
 endef
 
+define Package/$(PKG_NAME)-no-proto
+	TITLE:=libremesh minimal metapackage without mesh protocols
+	SECTION:=lime
+	CATEGORY:=LiMe
+	SUBMENU:=Collections
+	MAINTAINER:=Marcos Gutierrez <gmarcos@altermundi.net>
+	URL:=http://libremesh.org
+	PKGARCH:=all
+	DEPENDS:=+lime-system +kmod-ebtables \
+	         +lime-proto-anygw +lime-proto-wan +dnsmasq-lease-share \
+	         +dnsmasq-distributed-hosts \
+	         +lime-hwd-openwrt-wan +lime-docs-minimal \
+	         +lime-hwd-ground-routing +smonit
+endef
 
 define Package/$(PKG_NAME)/description
 	Metapackage depending on all the required to run a basic standard libremesh node
@@ -53,6 +67,10 @@ endef
 
 define Package/$(PKG_NAME)-no-ui/description
 	Metapackage depending on all the required to run a basic standard libremesh node (no webui)
+endef
+
+define Package/$(PKG_NAME)--no-proto/description
+	Metapackage depending on all the required to run a basic standard libremesh node without specifying any rmesh routing protocol
 endef
 
 
@@ -67,5 +85,10 @@ define Package/$(PKG_NAME)-no-ui/install
 	$(INSTALL_DIR) $(1)/
 endef
 
+define Package/$(PKG_NAME)-level2/install
+	$(INSTALL_DIR) $(1)/
+endef
+
 $(eval $(call BuildPackage,$(PKG_NAME)))
 $(eval $(call BuildPackage,$(PKG_NAME)-no-ui))
+$(eval $(call BuildPackage,$(PKG_NAME)-no-proto))
