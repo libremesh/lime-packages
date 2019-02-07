@@ -20,27 +20,24 @@ function network.get_mac(ifname)
 end
 
 function network.primary_interface()
-	local ifname = config.get("network", "primary_interface", "auto")
+	local ifname = config.get("network", "primary_interface", "eth0")
 	if ifname == "auto" then
 		local handle = io.popen("sh /usr/lib/lua/lime/board.sh lan ifname")
 		ifname = handle:read("*a")
 		handle:close()
-		if not ifname or ifname == "" then
-			ifname = "eth0"
-		end
 	end
+
+	assert( ifname ~= nil and ifname ~= "",
+	        "network.primary_interface() could not determine ifname!" )
+
+	assert( fs.lstat("/sys/class/net/"..ifname),
+	        "network.primary_interface() "..ifname.." doesn't exists!" )
+
 	return ifname
 end
 
 function network.primary_mac()
-	local handle = io.popen("sh /usr/lib/lua/lime/board.sh lan macaddr")
-	local macaddr = handle:read("*a")
-	handle:close()
-	if macaddr and macaddr ~= "" then
-		return utils.split(macaddr, ":")
-	else
-		return network.get_mac(network.primary_interface())
-	end
+	return network.get_mac(network.primary_interface())
 end
 
 function network.generate_host(ipprefix, hexsuffix)
