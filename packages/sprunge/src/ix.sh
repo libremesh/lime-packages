@@ -1,6 +1,6 @@
 #!/bin/sh
 
-SPRUNGE_HOST="sprunge.us"
+IX_HOST="ix.io"
 
 TEMP_FILE="$(mktemp)"
 TEMP_FILE_ENCODED="$(mktemp)"
@@ -9,7 +9,7 @@ COMMAND="$0 $@"
 usage()
 {
 	echo "\
-sprunge: Command line pastebin
+ix: Command line pastebin
 
 Suggested ways of using $0 are mainly 4:
 yourCommand arg1 arg2 | $0
@@ -38,12 +38,12 @@ cat "${TEMP_FILE}" | hexdump -v -e '/1 "%02x"' \
 	| sed 's/\(..\)/%\1/g' > "${TEMP_FILE_ENCODED}"
 
 echo -n "POST / HTTP/1.0
-Host: ${SPRUNGE_HOST}
-Content-Length: $(( $(cat ${TEMP_FILE_ENCODED} | wc -m) + 8 ))
+Host: ${IX_HOST}
+Content-Length: $(( $(cat ${TEMP_FILE_ENCODED} | wc -m) + 4 ))
 Content-Type: application/x-www-form-urlencoded
 
-sprunge=$(cat ${TEMP_FILE_ENCODED})" \
-	| nc "${SPRUNGE_HOST}" 80 \
-	| grep "${SPRUNGE_HOST}" 1>&2
+f:1=$(cat ${TEMP_FILE_ENCODED})" \
+	| nc "${IX_HOST}" 80 \
+	| grep "${IX_HOST}" 1>&2
 
 rm -f "${TEMP_FILE}" "${TEMP_FILE_ENCODED}"
