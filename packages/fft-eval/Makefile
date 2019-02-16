@@ -25,7 +25,7 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Nicolas Pace <nicopace@altermundi.net>
 	URL:=https://github.com/simonwunderlich/FFT_eval
 	TITLE:=Evaluates FFT samples from ath9k driver
-	DEPENDS:= +libc +@CONFIG_PACKAGE_ATH_SPECTRAL
+	DEPENDS:= +libc +@PACKAGE_ATH_DEBUG +@PACKAGE_ATH_SPECTRAL
 endef
 
 define Package/$(PKG_NAME)/description
