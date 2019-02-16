@@ -1,0 +1,371 @@
+#!/usr/bin/lua
+--[[
+    Copyright (C) 2019 Santiago Piccinini <spiccinini@altermundi.net>
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+]]--
+
+local io = require "io"
+local argparse = require 'argparse'
+
+local version = '1.0'
+local firmware_size_bytes = 7936*1024
+local fw1_addr = 0x9f050000
+local fw2_addr = 0x9f050000 + firmware_size_bytes
+
+-- safe upgrade script, generated with bootscript.py, DO NOT edit here!
+local bootcmd = 'run preboot; boot_part=${stable_part}; if test ${testing_part} -ne 0; then echo Testing part ${testing_part}; boot_part=${testing_part}; set testing_part 0; saveenv; fi; if test ${boot_part} -eq 2; then fw_addr=${fw2_addr}; run boot_2; else fw_addr=${fw1_addr}; run boot_1; fi; run boot_1; bootm ${fw1_addr};'
+
+STABLE_PARTITION_NAME = 'stable_part'
+TESTING_PARTITION_NAME = 'testing_part'
+
+safe_upgrade_auto_reboot_script = [[#!/bin/sh /etc/rc.common
+
+REBOOT_FILE_CONFIG_TIMEOUT_S="/etc/safe_upgrade_auto_reboot_confirm_timeout_s"
+MINIMUM_REBOOT_TIMEOUT_S=60
+PIDFILE="/var/run/safe_upgrade_auto_reboot_script.pid"
+CMD_FORCE_REBOOT="echo b > /proc/sysrq-trigger" # Immediately reboot the system without syncing or unmounting disks.
+
+START=11
+
+start() {
+  if [ -s "$REBOOT_FILE_CONFIG_TIMEOUT_S" ]; then
+      read reboot_at_uptime_s < "$REBOOT_FILE_CONFIG_TIMEOUT_S"
+  else
+      exit 0
+  fi
+
+  # check that the reboot time is above the minimum to prevent infinite reboots
+  if [ "$reboot_at_uptime_s" -lt "$MINIMUM_REBOOT_TIMEOUT_S" ]; then
+      echo "safe-upgrade reboot: Less than minimum timeout! aborting"
+      exit 0
+  fi
+
+  (sleep "$reboot_at_uptime_s" && \
+   if [ -s "$REBOOT_FILE_CONFIG_TIMEOUT_S" ]; then
+       reboot ; sleep 10 ; eval "$CMD_FORCE_REBOOT"
+   fi
+   ) &
+
+  echo $! > "$PIDFILE"
+}
+
+stop() {
+  rm "$REBOOT_FILE_CONFIG_TIMEOUT_S"
+  sync
+  kill -9 `cat "$PIDFILE"`
+}
+]]
+
+function get_uboot_env(key)
+    local handle = io.popen("fw_printenv -n " .. key .. " 2>&1")
+    local value = handle:read("*a")
+    handle:close()
+
+    if value:find('## Error:') == nil then
+        -- remove EOL
+        local value = value:sub(1, -2)
+        return value
+    else
+        return nil
+    end
+end
+
+function set_uboot_env(key, value)
+    print("DEBUG: seting key:" .. key)
+    print("DEBUG: value:" .. value)
+    local handle = io.popen("fw_setenv " .. key .. " '" .. value .. "'")
+    local value = handle:read("*a")
+    handle:close()
+end
+
+function file_exists(filename)
+    local f = io.open(filename, "rb")
+    if f then f:close() end
+    return f ~= nil
+end
+
+function fw_env_configured()
+    return file_exists('/etc/fw_env.config')
+end
+
+function assert_fw_env_configured()
+    if not fw_env_configured() then
+        print('/etc/fw_env.confg does not exist, aborting')
+        os.exit(115)
+    end
+end
+
+function get_current_cmdline()
+    local handle = io.open('/proc/cmdline', 'r')
+    local data = handle:read()
+    handle:close()
+    return data
+end
+
+function get_current_partition()
+    local handle = io.open('/proc/mtd', 'r')
+    local data = handle:read("*all")
+    handle:close()
+    if data:find("fw2") == nil then
+        return 2
+    else
+        return 1
+    end
+end
+
+function get_partitions()
+    local p = {}
+    p.current = get_current_partition()
+    if p.current == 1 then
+        p.other = 2
+    else
+        p.other = 1
+    end
+    p.stable = tonumber(get_uboot_env(STABLE_PARTITION_NAME))
+    p.testing = tonumber(get_uboot_env(TESTING_PARTITION_NAME))
+
+    return p
+end
+
+function get_su_version()
+    return get_uboot_env('su_version')
+end
+
+function is_su_installed()
+    return get_su_version() ~= nil
+end
+
+function fw_env_config()
+    if not fw_env_configured() then
+        print('fw_env.config not found, installing /etc/fw_env.config')
+        fw_env_configure()
+    end
+end
+
+function set_testing_partition(partition)
+    set_uboot_env(TESTING_PARTITION_NAME, tostring(partition))
+end
+
+function set_stable_partition(partition)
+    set_uboot_env(STABLE_PARTITION_NAME, tostring(partition))
+end
+
+function assert_su_installed()
+    if not is_su_installed() then
+        print('safe-upgrade is not installed, aborting')
+        os.exit(114)
+    end
+end
+
+function preserve_files_to_new_partition(args)
+    os.execute("mkdir -p /tmp/_to_sysupgradetgz/etc/init.d/")
+    os.execute("mkdir -p /tmp/_to_sysupgradetgz/etc/rc.d/")
+    local f = io.open("/tmp/_to_sysupgradetgz/etc/init.d/safe_upgrade_auto_reboot", "w")
+    f:write(safe_upgrade_auto_reboot_script)
+    f:close()
+
+    os.execute("chmod +x /tmp/_to_sysupgradetgz/etc/init.d/safe_upgrade_auto_reboot")
+    os.execute("ln -s ../init.d/safe_upgrade_auto_reboot /tmp/_to_sysupgradetgz/etc/rc.d/S11safe_upgrade_auto_reboot")
+
+
+    if not args.disable_reboot_safety then
+        local f = io.open("/tmp/_to_sysupgradetgz/etc/safe_upgrade_auto_reboot_confirm_timeout_s", "w")
+        f:write(args.reboot_safety_timeout)
+        f:close()
+    end
+
+    -- append files from existing /tmp/sysupgrade.tgz
+    if file_exists("/tmp/sysupgrade.tgz") then
+        os.execute("tar xfz /tmp/sysupgrade.tgz -C /tmp/_to_sysupgradetgz/")
+    end
+    os.execute("tar cfz /tmp/sysupgrade.tgz -C /tmp/_to_sysupgradetgz/ `ls /tmp/_to_sysupgradetgz/`")
+end
+
+function bootstrap(args)
+    --TODO: add --force option to upgrade SU
+    if is_su_installed() then
+        print(string.format("safe-upgrade version '%s' is already installed, aborting",
+                            get_su_version()))
+        os.exit(121)
+    end
+
+
+    if get_current_partition() ~= 1 then
+        print("installing safe-upgrade from partition 2 is not supported yet")
+        os.exit(120)
+    end
+
+    set_stable_partition(1)
+    set_testing_partition(0)
+    set_uboot_env('fw1_addr', string.format("0x%x", fw1_addr))
+    set_uboot_env('fw2_addr', string.format("0x%x", fw2_addr))
+
+    -- configure cmdline using the current cmdline config to not force
+    -- us to know here the correct cmdline bootargs of the running kernel
+    local boot_1 = 'set bootargs ' .. get_current_cmdline() .. '; echo booting part 1; bootm ${fw_addr};'
+    set_uboot_env('boot_1', boot_1)
+    set_uboot_env('su_version', version)
+
+    -- installing the script. Everything must be installed before this!
+    set_uboot_env('bootcmd', bootcmd)
+    print('succesfully bootstraped safe-upgrade')
+end
+
+function upgrade(args)
+    assert_su_installed()
+    local partitions = get_partitions()
+
+    -- TODO: validate that the firmware is valid for this board using metadata
+
+    local save_tar_config = '';
+    if not args.do_not_preserve_config then
+    -- It is important that the mtd -j option to preserve a file is used
+    -- with the file /tmp/sysupgrade.tgz because there are hooks in place
+    -- to unpack this tar and install the files at boot
+
+        if args.preserve_full_config then
+            print('Preserving full config')
+            os.execute("sysupgrade  --create-backup /tmp/sysupgrade.tgz")
+        end
+        save_tar_config = '-j /tmp/sysupgrade.tgz'
+        --[[ TODO: implement preserve config lime for first boot wizard,
+             the final file must be /tmp/sysupgrade.tgz
+        ]]--
+    end
+
+    preserve_files_to_new_partition(args)
+
+    print(string.format("erasing partition %d", partitions.other))
+    os.execute(string.format("mtd erase fw%d", partitions.other))
+
+    print(string.format("writing partition %d", partitions.other))
+    os.execute(string.format("mtd %s write %s fw%d", save_tar_config,
+                             args.firmware, partitions.other))
+
+    -- TODO: load bootargs from acompaning image, here is hardcoded!!
+
+    if partitions.other == 2 then
+        fw_mtd_str = '7936k(fw1),7936k(firmware)'
+    else
+        fw_mtd_str = '7936k(firmware),7936k(fw2)'
+    end
+    local boot_script_tpl = 'set bootargs console=ttyS0,115200 board=LIBREROUTERV1 mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),%s,128k(res),64k(ART); echo booting part %d; bootm ${fw_addr};'
+    local boot_script = string.format(boot_script_tpl, fw_mtd_str, partitions.other)
+    set_uboot_env(string.format('boot_%d', partitions.other), boot_script)
+    set_testing_partition(partitions.other)
+end
+
+function confirm(args)
+    assert_su_installed()
+    local partitions = get_partitions()
+    if partitions.current == partitions.stable then
+        print(string.format('the current partition: %d is already the stable partition, aborting', partitions.current))
+        os.exit(113)
+    end
+
+    print("Canceling and disabling automatic rebool")
+    os.execute("/etc/init.d/safe_upgrade_auto_reboot stop")
+    os.execute("/etc/init.d/safe_upgrade_auto_reboot disable")
+
+    set_stable_partition(partitions.current)
+    print(string.format('Confirmed partition %d as stable partition', partitions.current))
+end
+
+function test_other_partition(args)
+    assert_su_installed()
+    local partitions = get_partitions()
+    set_testing_partition(partitions.other)
+    print(string.format('Next boot will run partition: %d. You may confirm it if you like after reboot.', partitions.other))
+end
+
+
+function parse_args()
+    local parser = argparse('safe-upgrade', 'Safe upgrade mechanism for dual-boot systems')
+    parser:command_target('command')
+    local show = parser:command('show', 'Show the status of the system partitions.')
+
+    local upgrade = parser:command('upgrade', 'Upgrade firmware in a non permanent way.')
+    function validate_file_exists(filename)
+        if file_exists(filename) then
+            return filename
+        else
+            return nil, string.format("file %q does not exists", filename)
+        end
+    end
+    upgrade:argument("firmware", "frimware image (xxx-sysupgrade.bin)"):convert(validate_file_exists)
+    upgrade:flag("--preserve-full-config", ("Preserves the config files listed in /etc/sysupgrade.conf and " ..
+                                              "/lib/upgrade/keep.d/* like sysupgrade does."))
+    upgrade:flag("-n --do-not-preserve-config", "Do not save configuration to the new partition")
+    upgrade:flag("--disable-reboot-safety", "Disable the automatic reboot safety mechanism")
+
+    function validate_safety_timeout(value)
+        local timeout = tonumber(value)
+        if timeout == nil then
+            return nil, string.format("invalid --reboot-safety-timeout value: %q", value)
+        end
+        if timeout < 60 then
+            return nil, string.format("--reboot-safety-timeout must be greater than 60 but was %q", timeout)
+        end
+        return timeout
+    end
+    upgrade:option("--reboot-safety-timeout",
+                   "Set the timeout (in seconds) of the automatic reboot safety mechanism")
+                   :default('600'):convert(validate_safety_timeout)
+
+    local confirm = parser:command('confirm', ('Confirm the current partition. Use when after an upgrade' ..
+                                              'or after running "test-other-partition".'))
+
+    local bootstrap = parser:command('bootstrap', 'Install the safe-upgrade mechanism')
+
+    local test_other_parition = parser:command('test-other-partition',
+        'Mark the other partition as testing partition.')
+    --local swap_stable = parser:command('swap', 'Change the stable partition to the other partition.')
+    local args = parser:parse()
+
+
+    return args
+end
+
+-- detect if this module is run as a library or as a script
+if pcall(debug.getlocal, 4, 1) then
+    -- Library mode
+else
+    -- Main script mode
+
+    assert_fw_env_configured()
+
+    local args = parse_args()
+    if args.bootstrap then
+        bootstrap(args)
+    elseif args.upgrade then
+        upgrade(args)
+    elseif args.confirm then
+        confirm(args)
+    elseif args['test-other-partition'] then
+        test_other_partition(args)
+    elseif args.show then
+        local su_installed_version = get_uboot_env('su_version')
+        if su_installed_version == nil then
+            print('safe-upgrade is not installed, aborting.')
+            os.exit(199)
+        end
+        print('safe-upgrade version: ' .. su_installed_version)
+        local partitions = get_partitions()
+        --TODO show labels of partitions (maybe store them when flashing from a metadata file)
+        print(string.format('current partition: %d', partitions.current))
+        print(string.format('stable partition: %d', partitions.stable))
+        print(string.format('testing partition: %d', partitions.testing))
+    end
+end
