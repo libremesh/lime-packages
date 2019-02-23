@@ -216,7 +216,7 @@ local function safe_reboot(msg)
         args = args..' -f '..msg.value.fallback
       end
     end
-    local sr = assert(io.popen('safe-reboot'))
+    local sr = assert(io.popen('safe-reboot '..args))
     sr:close()
     result.status = getStatus()
     if result.status == true then
