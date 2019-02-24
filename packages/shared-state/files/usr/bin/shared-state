@@ -110,7 +110,7 @@ if arg[1] == "insert" then
 	for key, lv in pairs(inputTable) do sharedState.insert(key, lv) end
 elseif arg[1] == "get" then
 	sharedState.save("/dev/stdout")
-elseif arg[1] == "pull" then
+elseif arg[1] == "sync" then
 	local urls = {}
 
 	if arg[3] == nil then
@@ -135,7 +135,7 @@ elseif arg[1] == "pull" then
 			if parsedJson then sharedState.sync(parsedJson) end
 		end
 	end
-elseif arg[1] == "push" then
+elseif arg[1] == "reqsync" then
 	sharedState.sync(JSON.parse(io.stdin:read("*all")))
 	sharedState.save("/dev/stdout")
 elseif arg[1] == "remove" then
