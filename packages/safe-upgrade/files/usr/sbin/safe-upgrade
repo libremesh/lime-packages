@@ -229,17 +229,11 @@ function upgrade(args)
 
     -- TODO: validate that the firmware is valid for this board using metadata
 
-    local save_tar_config = '';
     if not args.do_not_preserve_config then
-    -- It is important that the mtd -j option to preserve a file is used
-    -- with the file /tmp/sysupgrade.tgz because there are hooks in place
-    -- to unpack this tar and install the files at boot
-
         if args.preserve_full_config then
             print('Preserving full config')
             os.execute("sysupgrade  --create-backup /tmp/sysupgrade.tgz")
         end
-        save_tar_config = '-j /tmp/sysupgrade.tgz'
         --[[ TODO: implement preserve config lime for first boot wizard,
              the final file must be /tmp/sysupgrade.tgz
         ]]--
@@ -250,8 +244,11 @@ function upgrade(args)
     print(string.format("erasing partition %d", partitions.other))
     os.execute(string.format("mtd erase fw%d", partitions.other))
 
+    -- It is important that the mtd -j option to preserve a file is used
+    -- with the file /tmp/sysupgrade.tgz because there are hooks in place
+    -- to unpack this tar and install the files at boot
     print(string.format("writing partition %d", partitions.other))
-    os.execute(string.format("mtd %s write %s fw%d", save_tar_config,
+    os.execute(string.format("mtd -j /tmp/sysupgrade.tgz write %s fw%d",
                              args.firmware, partitions.other))
 
     -- TODO: load bootargs from acompaning image, here is hardcoded!!
