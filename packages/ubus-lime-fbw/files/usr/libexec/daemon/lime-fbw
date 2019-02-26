@@ -1,0 +1,83 @@
+#!/usr/bin/lua
+
+require "ubus"
+require "uloop"
+local fbw = require 'firstbootwizard'
+local nixio = require "nixio"
+local json = require 'luci.json'
+
+uloop.init()
+
+local conn = ubus.connect()
+if not conn then
+	error("Failed to connect to ubus")
+end
+
+local methods = {
+    ['lime-fbw'] = {
+        search_networks = {
+            function(req, msg)
+                local scan_file = check_scan_file()
+                local status
+                if(scan_file == nil) or (msg.scan == true) then
+                    os.execute("rm /tmp/scanning")
+                    os.execute("(( /usr/bin/lua /bin/firstbootwizard 0<&- &>/dev/null &) &)")
+                end
+                if (scan_file == nil) or (scan_file == "true") or (msg.scan == true) then
+                    status = 'scanning'
+                else
+                    status = 'scanned'
+                end
+                conn:reply(req, {status= status, networks = read_configs()})
+
+            end, { scan = ubus.BOOLEAN }
+        },
+        status = {
+            function(req, msg)
+                local scan_status
+                local scan_file = check_scan_file()
+                -- if no scan file return 0
+                if scan_file == nil then scan_status = 0
+                -- if scanning return 1
+                elseif scan_file == "true" then scan_status = 1
+                -- if done scanning return 2
+                elseif scan_file == "false" then scan_status = 2
+                end
+                local lock_file = check_lock_file()
+                local status = {
+                    lock = lock_file,
+                    scan = scan_status
+                }
+                conn:reply(req, status)
+            end, {}
+        },
+        set_network = {
+            function(req, msg)
+                local file = msg.file
+                -- apply lime config
+                conn:reply(req, { status = 'configuring' })
+                -- os.execute('sleep 2s')
+                apply_config(file)
+                -- remove lock?
+                -- remove_lock_file()
+            end, { file = ubus.STRING }
+        },
+        create_network = {
+            function(req, msg)
+                local configs = {}
+                if (msg.name ~= nil) then
+                    configs["ssid"] = msg.name
+                end
+                if (configs ~= nil) then
+                    apply_user_configs(configs)
+                end
+                -- remove lock?
+                -- remove_lock_file()
+                conn:reply(req, { status = 'done' })
+            end, { name = ubus.STRING }
+        }
+    }
+}
+
+conn:add(methods)
+uloop.run()
