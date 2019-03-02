@@ -19,8 +19,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LiMe
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
-	DEPENDS:=+@BUSYBOX_CONFIG_CROND \
-		+@BUSYBOX_CONFIG_FEATURE_CROND_SPECIAL_TIMES shared-state
+	DEPENDS:=+lua +luci-lib-jsonc +luci-lib-nixio shared-state
 	PKGARCH:=all
 endef
 
