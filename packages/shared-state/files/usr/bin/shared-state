@@ -19,6 +19,7 @@
 local fs = require("nixio.fs")
 local http = require("luci.httpclient")
 local JSON = require("luci.jsonc")
+local nixio = require("nixio")
 
 sharedState = {}
 
@@ -26,6 +27,7 @@ sharedState = {}
 sharedState.storage = {}
 
 sharedState.changed = false
+sharedState.locked = false
 sharedState.dataType = "unspecified"
 sharedState.dataDir = "/var/shared-state/data/"
 sharedState.hooksDir = "/etc/shared-state/hooks/"
@@ -94,19 +96,34 @@ function sharedState.save(mPath)
 	fs.mkdirr(fs.dirname(mPath))
 	local outStr = sharedState.toJsonString()
 	if mPath == "/dev/stdout" then print(outStr)
-	else io.output(mPath):write(outStr) end
+	else
+		local outFile = io.open(mPath, "w")
+		outFile:write(outStr)
+		outFile:close()
+	end
 end
 
-
-
-
-
 if arg[2] then sharedState.dataType = arg[2] end
+
+for i=1,10 do
+	if not os.execute("mkdir "..sharedState.dataStorePath()..".lock >/dev/null 2>&1") then
+		nixio.nanosleep(0, 10000000000)
+	else
+		sharedState.locked = true
+		break
+	end
+end
+
+if not sharedState.locked then
+	log(arg[0].."Failed acquiring lock of data\n")
+	os.exit(false)
+end
+
 sharedState.load()
 
 
 if arg[1] == "insert" then
-	local inputTable = JSON.parse(io.stdin:read("*all"))
+	local inputTable = JSON.parse(io.stdin:read("*all")) or {}
 	for key, lv in pairs(inputTable) do sharedState.insert(key, lv) end
 elseif arg[1] == "get" then
 	sharedState.save("/dev/stdout")
@@ -148,9 +165,14 @@ else
 	return -22
 end
 
+if sharedState.changed then sharedState.save() end
+os.execute("rmdir "..sharedState.dataStorePath()..".lock")
+
+
 if sharedState.changed then
-	sharedState.save()
 	for hook in fs.dir(sharedState.hooksDir..sharedState.dataType) do
-		os.execute(sharedState.hooksDir..sharedState.dataType.."/"..hook);
+		local hookPath = sharedState.hooksDir..sharedState.dataType.."/"..hook
+		local retval = os.execute(hookPath);
+		log("Executed hook: "..hookPath.." "..retval.."\n")
 	end
 end
