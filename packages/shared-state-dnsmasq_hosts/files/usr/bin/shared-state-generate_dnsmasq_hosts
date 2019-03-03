@@ -21,7 +21,7 @@ local JSON = require("luci.jsonc")
 local outputTable = {}
 
 for key,value in pairs(
-	JSON.parse(io.input(io.popen("shared-state get dnsmasq-hosts")):read("*all")) ) do
+	JSON.parse(io.stdin:read("*all")) ) do
 	if value.data then table.insert(outputTable, key) end
 end
 
