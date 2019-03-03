@@ -20,14 +20,15 @@ local fs = require("nixio.fs")
 local http = require("luci.httpclient")
 local JSON = require("luci.jsonc")
 local nixio = require("nixio")
+require("nixio.util")
 
 sharedState = {}
 
 --! Map<Key, {timeout, author, data}>
 sharedState.storage = {}
 
+sharedState.storageFD = nil
 sharedState.changed = false
-sharedState.locked = false
 sharedState.dataType = "unspecified"
 sharedState.dataDir = "/var/shared-state/data/"
 sharedState.hooksDir = "/etc/shared-state/hooks/"
@@ -65,8 +66,6 @@ function sharedState.sync(stateSlice, notifyInsert)
 		else
 			local lv = sharedState.storage[key]
 			if( lv == nil ) then
-				log("Load entry for: "..key.." will expire on: ")
-				log(os.date("%c", rv.timeout).."\n")
 				sharedState.storage[key] = rv
 				sharedState.changed = sharedState.changed or notifyInsert
 			elseif ( lv.timeout < rv.timeout ) then
@@ -80,34 +79,22 @@ function sharedState.sync(stateSlice, notifyInsert)
 	end
 end
 
-function sharedState.load(mPath)
-	mPath = mPath or sharedState.dataStorePath()
-	if(fs.stat(mPath) ~= nil) then
-		sharedState.sync(JSON.parse(io.input(mPath):read("*all")), false)
-	end
-end
-
 function sharedState.toJsonString()
 	return JSON.stringify(sharedState.storage)
 end
 
-function sharedState.save(mPath)
-	mPath = mPath or sharedState.dataStorePath()
-	fs.mkdirr(fs.dirname(mPath))
-	local outStr = sharedState.toJsonString()
-	if mPath == "/dev/stdout" then print(outStr)
-	else
-		local outFile = io.open(mPath, "w")
-		outFile:write(outStr)
-		outFile:close()
-	end
-end
-
 if arg[2] then sharedState.dataType = arg[2] end
 
-for i=1,10 do
-	if not os.execute("mkdir "..sharedState.dataStorePath()..".lock >/dev/null 2>&1") then
-		nixio.nanosleep(0, 10000000000)
+fs.mkdirr(fs.dirname(sharedState.dataStorePath()))
+sharedState.storageFD = nixio.open(
+	sharedState.dataStorePath(),
+	nixio.open_flags("rdwr", "creat") )
+
+sharedState.locked = false
+
+for i=1,3 do
+	if not sharedState.storageFD:lock("tlock") then
+		nixio.nanosleep(1)
 	else
 		sharedState.locked = true
 		break
@@ -115,18 +102,17 @@ for i=1,10 do
 end
 
 if not sharedState.locked then
-	log(arg[0].."Failed acquiring lock of data\n")
-	os.exit(false)
+	log(arg[0].." Failed acquiring lock on data\n")
+	os.exit(-165)
 end
 
-sharedState.load()
-
+sharedState.sync(JSON.parse(sharedState.storageFD:readall()), false)
 
 if arg[1] == "insert" then
 	local inputTable = JSON.parse(io.stdin:read("*all")) or {}
 	for key, lv in pairs(inputTable) do sharedState.insert(key, lv) end
 elseif arg[1] == "get" then
-	sharedState.save("/dev/stdout")
+	print(sharedState.toJsonString())
 elseif arg[1] == "sync" then
 	local urls = {}
 
@@ -154,7 +140,7 @@ elseif arg[1] == "sync" then
 	end
 elseif arg[1] == "reqsync" then
 	sharedState.sync(JSON.parse(io.stdin:read("*all")))
-	sharedState.save("/dev/stdout")
+	print(sharedState.toJsonString())
 elseif arg[1] == "remove" then
 	local inputTable = JSON.parse(io.stdin:read("*all"))
 	if inputTable ~= nil then
@@ -165,14 +151,24 @@ else
 	return -22
 end
 
-if sharedState.changed then sharedState.save() end
-os.execute("rmdir "..sharedState.dataStorePath()..".lock")
+local jsonString = sharedState.toJsonString()
+
+if sharedState.changed then
+	local outFd = io.open(sharedState.dataStorePath(), "w")
+	outFd:write(jsonString)
+	outFd:close()
+	outFd = nil
+end
+sharedState.storageFD:lock("ulock")
+sharedState.storageFD:close()
+sharedState.storageFD = nil
 
 
 if sharedState.changed then
 	for hook in fs.dir(sharedState.hooksDir..sharedState.dataType) do
 		local hookPath = sharedState.hooksDir..sharedState.dataType.."/"..hook
-		local retval = os.execute(hookPath);
-		log("Executed hook: "..hookPath.." "..retval.."\n")
+		local cStdin = io.popen(hookPath, "w")
+		cStdin:write(jsonString)
+		cStdin:close()
 	end
 end
