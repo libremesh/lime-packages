@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LiMe
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
-	DEPENDS:=+lua +luci-lib-jsonc +luci-lib-nixio shared-state
+	DEPENDS:=+lua +luci-lib-jsonc shared-state
 	PKGARCH:=all
 endef
 

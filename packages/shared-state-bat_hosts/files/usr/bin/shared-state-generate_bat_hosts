@@ -16,13 +16,12 @@
 --! You should have received a copy of the GNU Affero General Public License
 --! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-local fs = require("nixio.fs")
 local JSON = require("luci.jsonc")
 
 local outputTable = {}
 
 for key,value in pairs(
-	JSON.parse(io.input(io.popen("shared-state get bat-hosts")):read("*all")) ) do
+	JSON.parse(io.stdin:read("*all")) ) do
 	table.insert(outputTable, key.." "..value.data)
 end
 
