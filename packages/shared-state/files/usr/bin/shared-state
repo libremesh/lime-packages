@@ -49,18 +49,13 @@ function sharedState.insert(key, data, timeout)
 	sharedState.changed = true
 end
 
-function sharedState.remove(key)
-	if(sharedState.storage[key] ~= nil and sharedState.storage[key].data ~= nil)
-	then sharedState.insert(key, nil) end
-end
-
-function sharedState.sync(stateSlice, notifyInsert)
+function sharedState.merge(stateSlice, notifyInsert)
 	local stateSlice = stateSlice or {}
 	if(notifyInsert == nil) then notifyInsert = true end
 
 	for key, rv in pairs(stateSlice) do
 		if(rv.timeout < os.time()) then
-			log("sharedState.sync got expired entry: "..key)
+			log("sharedState.merge got expired entry: "..key)
 			log(" expired on: "..os.date("%c", rv.timeout).."\n")
 			sharedState.changed = true
 		else
@@ -75,6 +70,38 @@ function sharedState.sync(stateSlice, notifyInsert)
 				sharedState.storage[key] = rv
 				sharedState.changed = sharedState.changed or notifyInsert
 			end
+		end
+	end
+end
+
+function sharedState.remove(key)
+	if(sharedState.storage[key] ~= nil and sharedState.storage[key].data ~= nil)
+	then sharedState.insert(key, nil) end
+end
+
+function sharedState.sync(urls)
+	urls = urls or {}
+
+	if #urls < 1 then
+		io.input(io.popen(arg[0].."-get_candidates_neigh"))
+		for line in io.lines() do
+			table.insert(
+				urls,
+				"http://["..line.."]/cgi-bin/shared-state/"..sharedState.dataType )
+		end
+	end
+
+	for _,url in ipairs(urls) do
+		local options = {}
+		options.sndtimeo = 3
+		options.rcvtimeo = 3
+		options.method = 'POST'
+		options.body = sharedState.toJsonString()
+
+		local response = http.request_to_buffer(url, options)
+		if type(response) == "string" and response:len() > 1  then
+			local parsedJson = JSON.parse(response)
+			if parsedJson then sharedState.merge(parsedJson) end
 		end
 	end
 end
@@ -106,7 +133,7 @@ if not sharedState.locked then
 	os.exit(-165)
 end
 
-sharedState.sync(JSON.parse(sharedState.storageFD:readall()), false)
+sharedState.merge(JSON.parse(sharedState.storageFD:readall()), false)
 
 if arg[1] == "insert" then
 	local inputTable = JSON.parse(io.stdin:read("*all")) or {}
@@ -115,31 +142,10 @@ elseif arg[1] == "get" then
 	print(sharedState.toJsonString())
 elseif arg[1] == "sync" then
 	local urls = {}
-
-	if arg[3] == nil then
-		io.input(io.popen(arg[0].."-get_candidates_neigh"))
-		for line in io.lines() do
-			table.insert(
-				urls,
-				"http://["..line.."]/cgi-bin/shared-state/"..sharedState.dataType )
-		end
-	else for i=3,#arg do table.insert(urls, arg[i]) end end
-
-	for _,url in ipairs(urls) do
-		local options = {}
-		options.sndtimeo = 3
-		options.rcvtimeo = 3
-		options.method = 'POST'
-		options.body = sharedState.toJsonString()
-
-		local response = http.request_to_buffer(url, options)
-		if type(response) == "string" and response:len() > 1  then
-			local parsedJson = JSON.parse(response)
-			if parsedJson then sharedState.sync(parsedJson) end
-		end
-	end
+	if arg[3] ~= nil then for i=3,#arg do table.insert(urls, arg[i]) end end
+	sharedState.sync(urls)
 elseif arg[1] == "reqsync" then
-	sharedState.sync(JSON.parse(io.stdin:read("*all")))
+	sharedState.merge(JSON.parse(io.stdin:read("*all")))
 	print(sharedState.toJsonString())
 elseif arg[1] == "remove" then
 	local inputTable = JSON.parse(io.stdin:read("*all"))
@@ -150,6 +156,8 @@ else
 	log(arg[0].." is not able to self manage, needs a command\n")
 	return -22
 end
+
+if sharedState.changed and arg[1] ~= "sync" then sharedState.sync() end
 
 local jsonString = sharedState.toJsonString()
 
