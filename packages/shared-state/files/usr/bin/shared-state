@@ -119,7 +119,7 @@ sharedState.storageFD = nixio.open(
 
 sharedState.locked = false
 
-for i=1,3 do
+for i=1,10 do
 	if not sharedState.storageFD:lock("tlock") then
 		nixio.nanosleep(1)
 	else
