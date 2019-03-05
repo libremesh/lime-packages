@@ -1,0 +1,3 @@
+#!/bin/sh
+echo "*/3 * * * * ((sleep $(($RANDOM % 60)); shared-state sync dnsmasq-hosts)&)" >> /etc/crontabs/root
+echo "*/30 * * * * ((sleep $(($RANDOM % 1000)); shared-state-publish_dnsmasq_hosts)&)" >> /etc/crontabs/root
