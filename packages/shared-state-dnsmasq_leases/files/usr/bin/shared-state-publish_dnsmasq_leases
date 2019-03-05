@@ -32,7 +32,7 @@ function add_lease(client_mac, client_ip, client_hostname, client_id)
 	leaseData[client_ip] = { hostname=client_hostname, id=client_id,
 	                         mac=client_mac }
 	local cStdin = io.popen("shared-state insert dnsmasq-leases", "w")
-	cStdin:write(JSON.stringify(leasesTable))
+	cStdin:write(JSON.stringify(leaseData))
 	cStdin:close()
 end
 
@@ -47,6 +47,7 @@ end
 local command = arg[1]
 local client_mac = arg[2]
 local client_ip = arg[3]
+
 local client_hostname
 if (arg[4] and (arg[4]:len() > 0)) then client_hostname = arg[4]
 else client_hostname = "" end
