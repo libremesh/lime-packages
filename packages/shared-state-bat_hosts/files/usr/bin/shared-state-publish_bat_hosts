@@ -24,10 +24,14 @@ local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
 
 local batHostTable = {}
 
+local ignoredIf = { lo=true, anygw=true }
+
 for ifname in fs.dir(ifacesPath) do
-	local macaddr = io.input(ifacesPath..ifname.."/address"):read("*line")
-	if type(macaddr) == "string" and macaddr:len() == 17 then
-		batHostTable[macaddr] = string.gsub(hostname.."_"..ifname, "%W", "_")
+	if not ignoredIf[ifname] then
+		local macaddr = io.input(ifacesPath..ifname.."/address"):read("*line")
+		if type(macaddr) == "string" and macaddr:len() == 17 then
+			batHostTable[macaddr] = string.gsub(hostname.."_"..ifname, "%W", "_")
+		end
 	end
 end
 
