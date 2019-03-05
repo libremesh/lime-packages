@@ -19,7 +19,8 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LiMe
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
-	DEPENDS:=+lua +libuci-lua +luci-lib-jsonc shared-state
+	DEPENDS:=@(!PACKAGE_dnsmasq-lease-share) +libuci-lua +lua \
+		+luci-lib-jsonc shared-state
 	PKGARCH:=all
 endef
 
