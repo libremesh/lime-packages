@@ -17,12 +17,13 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  TITLE:=LiMe anygw proto support
-  CATEGORY:=LiMe
-  MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
-  URL:=http://libremesh.org
-  DEPENDS:=+kmod-ebtables +ebtables +lime-system +lua +libuci-lua +kmod-macvlan \
-	+dnsmasq-lease-share +dnsmasq-dhcpv6 @(!PACKAGE_dnsmasq)
+	TITLE:=LiMe anygw proto support
+	CATEGORY:=LiMe
+	MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
+	URL:=http://libremesh.org
+	DEPENDS:=+dnsmasq-dhcpv6 @(!PACKAGE_dnsmasq) +ebtables +libuci-lua \
+		+lime-system +lua +kmod-ebtables +kmod-macvlan \
+		+shared-state +shared-state-dnsmasq_leases
   PKGARCH:=all
 endef
 
