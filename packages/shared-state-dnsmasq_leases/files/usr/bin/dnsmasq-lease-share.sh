@@ -1,2 +1,2 @@
 #!/bin/sh
-((/usr/bin/shared-state-publish_dnsmasq_leases $@)&)
+((shared-state-publish_dnsmasq_leases $@; shared-state sync dnsmasq-leases)&)

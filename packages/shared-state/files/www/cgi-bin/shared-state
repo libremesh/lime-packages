@@ -27,7 +27,7 @@ local tableName = nixio.getenv('PATH_INFO')
 if httpMethod == "POST" and type(tableName) == "string" then
 	local tmpPath = os.tmpname()
 	tableName = tableName:gsub("%/", "")
-	local pIn = io.popen("shared-state reqsync "..tableName.." > "..tmpPath)
+	local pIn = io.popen("shared-state reqsync "..tableName.." > "..tmpPath, "w")
 	pIn:write(io.stdin:read("*all")); pIn:close()
 	io.stdout:write(io.input(tmpPath):read("*all"))
 	os.remove(tmpPath)

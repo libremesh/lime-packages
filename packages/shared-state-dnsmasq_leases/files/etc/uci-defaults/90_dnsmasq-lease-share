@@ -4,4 +4,6 @@ uci set dhcp.@dnsmasq[0].dhcpscript=/usr/bin/dnsmasq-lease-share.sh
 uci set dhcp.@dnsmasq[0].dhcphostsfile=/tmp/dhcp.hosts_remote
 uci commit dhcp
 
+echo "*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync dnsmasq-leases)&)" >> /etc/crontabs/root
+
 exit 0
