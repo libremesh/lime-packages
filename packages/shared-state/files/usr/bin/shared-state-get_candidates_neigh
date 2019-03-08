@@ -20,6 +20,22 @@
 
 COPYRIGHT
 
+get_uptime()
+{
+	awk '{print $1}' /proc/uptime | awk -F. '{print $1}'
+}
+
+cacheFile="/tmp/shared-state-get_candidates_neigh.cache"
+lastRunFile="/tmp/shared-state-get_candidates_neigh.lastrun"
+lastRun=$(cat "$lastRunFile" 2>/dev/null || echo -9999)
+currUptime="$(get_uptime)"
+
+[ "$(($currUptime - $lastRun))" -lt "90" ] &&
+{
+	cat "$cacheFile"
+	exit 0
+}
+
 possiblyAvoidIfaces="anygw br-lan lo"
 
 candidateAddresses="$(
@@ -48,4 +64,5 @@ $(echo "$candidateAddresses" | grep -v "$cIp")"
 
 done
 
-echo "$candidateAddresses"
+echo "$candidateAddresses" | tee "$cacheFile"
+get_uptime > "$lastRunFile"

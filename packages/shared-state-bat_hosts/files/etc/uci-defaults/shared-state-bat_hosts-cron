@@ -1,4 +1,10 @@
 #!/bin/sh
 
-echo "*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync bat-hosts)&)" >> /etc/crontabs/root
-echo "*/30 * * * * ((sleep $(($RANDOM % 1000)); shared-state-publish_bat_hosts)&)" >> /etc/crontabs/root
+unique_append()
+{
+	grep -qF "$1" "$2" || echo "$1" >> "$2"
+}
+
+unique_append \
+	'*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync bat-hosts)&)'\
+	/etc/crontabs/root

@@ -98,10 +98,13 @@ function sharedState.sync(urls)
 		options.method = 'POST'
 		options.body = sharedState.toJsonString()
 
-		local response = http.request_to_buffer(url, options)
-		if type(response) == "string" and response:len() > 1  then
+		local success, response = pcall(http.request_to_buffer, url, options)
+
+		if success and type(response) == "string" and response:len() > 1  then
 			local parsedJson = JSON.parse(response)
 			if parsedJson then sharedState.merge(parsedJson) end
+		else
+			log( "debug", "httpclient interal error requesting "..url )
 		end
 	end
 end
@@ -139,7 +142,6 @@ sharedState.merge(JSON.parse(sharedState.storageFD:readall()), false)
 
 if arg[1] == "insert" then
 	local inputString = (io.stdin:read("*all"))
-	log("debug", "handling reqsync >>>"..inputString.."<<<")
 	local inputTable = JSON.parse(inputString) or {}
 	for key, lv in pairs(inputTable) do sharedState.insert(key, lv) end
 elseif arg[1] == "get" then
@@ -150,7 +152,7 @@ elseif arg[1] == "sync" then
 	sharedState.sync(urls)
 elseif arg[1] == "reqsync" then
 	local inputString = (io.stdin:read("*all"))
-	log("debug", "handling reqsync >>>"..inputString.."<<<")
+	log("debug", "handling reqsync "..sharedState.dataType.." >>>"..inputString.."<<<")
 	sharedState.merge(JSON.parse(inputString))
 	print(sharedState.toJsonString())
 elseif arg[1] == "remove" then
