@@ -27,13 +27,57 @@ function string:split(sep)
 	return ret
 end
 
+function add_tmp_dhcp_leases()
+	local leasesTable = {}
+	local hostTable = {}
+
+	for line in io.lines("/tmp/dhcp.leases") do
+		_, client_mac, client_ip, client_hostname, client_id = unpack(line:split(" "))
+		leasesTable[client_ip] = { hostname=client_hostname, --id=client_id,
+		                           mac=client_mac }
+		hostTable[client_ip.." "..client_hostname] = true
+	end
+
+	local jsonstring = JSON.stringify(leasesTable)
+
+	local cStdin = io.popen("shared-state insert dnsmasq-leases", "w")
+	cStdin:write(jsonstring)
+	cStdin:close()
+
+	local cStdin = io.popen("shared-state insert dnsmasq-hosts", "w")
+	cStdin:write(JSON.stringify(hostTable))
+	cStdin:close()
+end
+
 function add_lease(client_mac, client_ip, client_hostname, client_id)
 	local leaseData = {}
-	leaseData[client_ip] = { hostname=client_hostname, id=client_id,
+	leaseData[client_ip] = { hostname=client_hostname, --id=client_id,
 	                         mac=client_mac }
 	local cStdin = io.popen("shared-state insert dnsmasq-leases", "w")
 	cStdin:write(JSON.stringify(leaseData))
 	cStdin:close()
+
+	local hostTable = {}
+	hostTable[client_ip.." "..client_hostname] = true
+	local cStdin = io.popen("shared-state insert dnsmasq-hosts", "w")
+	cStdin:write(JSON.stringify(hostTable))
+	cStdin:close()
+end
+
+function add_own()
+	local leasesTable = {}
+
+	local uci_conf = uci.cursor()
+	local own_ipv4 = uci_conf:get("network", "lan", "ipaddr")
+	local own_ipv6 = uci_conf:get("network", "lan", "ip6addr")
+	uci_conf = nil
+	if own_ipv6 then own_ipv6 = own_ipv6:gsub("/.*$", "") end
+
+	local own_hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
+	local own_mac = io.input("/sys/class/net/br-lan/address"):read("*line")
+
+	add_lease(own_mac, own_ipv4, own_hostname, "*")
+	add_lease(own_mac, own_ipv6, own_hostname, "*")
 end
 
 function del_lease(client_ip)
@@ -41,6 +85,12 @@ function del_lease(client_ip)
 	table.insert(keysArr, client_ip)
 	local cStdin = io.popen("shared-state remove dnsmasq-leases", "w")
 	cStdin:write(JSON.stringify(keysArr))
+	cStdin:close()
+
+	local hostArr = {}
+	table.insert(hostArr, client_ip.." "..client_hostname)
+	local cStdin = io.popen("shared-state remove dnsmasq-hosts", "w")
+	cStdin:write(JSON.stringify(hostArr))
 	cStdin:close()
 end
 
@@ -57,34 +107,13 @@ if ((not client_id) or (client_id:len() <= 0)) then client_id = "*" end
 
 if command == "add" then
 	add_lease(client_mac, client_ip, client_hostname, client_id)
+	add_own()
 
 elseif command == "del" then
 	del_lease(client_ip)
+	add_own()
 
 elseif command == nil or command:match("^%s*$") then
-	local leasesTable = {}
-
-	local uci_conf = uci.cursor()
-	local own_ipv4 = uci_conf:get("network", "lan", "ipaddr")
-	local own_ipv6 = uci_conf:get("network", "lan", "ip6addr")
-	uci_conf = nil
-	if own_ipv6 then own_ipv6 = own_ipv6:gsub("/.*$", "") end
-
-	local own_hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
-	local own_mac = io.input("/sys/class/net/br-lan/address"):read("*line")
-
-	leasesTable[own_ipv4] = { hostname=own_hostname, id="*", mac=own_mac }
-	leasesTable[own_ipv6] = { hostname=own_hostname, id="*", mac=own_mac }
-
-	for line in io.lines("/tmp/dhcp.leases") do
-		_, client_mac, client_ip, client_hostname, client_id = unpack(line:split(" "))
-		leasesTable[client_ip] = { hostname=client_hostname, id=client_id,
-		                           mac=client_mac }
-	end
-
-	local jsonstring = JSON.stringify(leasesTable)
-
-	local cStdin = io.popen("shared-state insert dnsmasq-leases", "w")
-	cStdin:write(jsonstring)
-	cStdin:close()
+	add_tmp_dhcp_leases()
+	add_own()
 end

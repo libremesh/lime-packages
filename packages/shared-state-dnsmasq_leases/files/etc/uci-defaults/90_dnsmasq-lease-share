@@ -1,9 +1,22 @@
 #!/bin/sh
 
+dhcpHostsFile="/tmp/dhcp.hosts_remote"
+
 uci set dhcp.@dnsmasq[0].dhcpscript=/usr/bin/dnsmasq-lease-share.sh
-uci set dhcp.@dnsmasq[0].dhcphostsfile=/tmp/dhcp.hosts_remote
+uci set dhcp.@dnsmasq[0].dhcphostsfile=$dhcpHostsFile
 uci commit dhcp
 
-echo "*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync dnsmasq-leases)&)" >> /etc/crontabs/root
+unique_append()
+{
+	grep -qF "$1" "$2" || echo "$1" >> "$2"
+}
+
+# needed because init script ignore +dhcphostsfile+ if the file doesn't exists
+unique_append "dhcp-hostsfile=$dhcpHostsFile"\
+	"/etc/dnsmasq.d/shared-state-dhcp-leases"
+
+unique_append \
+	'*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync dnsmasq-leases)&)'\
+	/etc/crontabs/root
 
 exit 0

@@ -20,7 +20,7 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
 	DEPENDS:=@(!PACKAGE_dnsmasq-lease-share) +libuci-lua +lua \
-		+luci-lib-jsonc shared-state
+		+luci-lib-jsonc shared-state +shared-state-dnsmasq_hosts
 	PKGARCH:=all
 endef
 

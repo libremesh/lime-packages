@@ -23,12 +23,6 @@ local outputTable = {}
 for key,value in pairs(JSON.parse(io.stdin:read("*all"))) do
 	if value.data then
 		local hwaddr = value.data.mac
-
-		local id = ",*"
-		if string.len(value.data.id) > 1 then
-			id = ",id:"..value.data.id
-		end
-
 		local ipaddr = key
 		if ipaddr:find(":") then ipaddr = "[" .. ipaddr .. "]" end
 		ipaddr = ","..ipaddr
@@ -38,7 +32,7 @@ for key,value in pairs(JSON.parse(io.stdin:read("*all"))) do
 			hostname = ","..value.data.hostname
 		end
 
-		table.insert(outputTable, hwaddr..id..ipaddr..hostname)
+		table.insert(outputTable, hwaddr..ipaddr..hostname)
 	end
 end
 
