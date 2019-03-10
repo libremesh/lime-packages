@@ -1,0 +1,68 @@
+#!/bin/sh
+
+<< COPYRIGHT
+
+ LibreMesh
+ Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as
+ published by the Free Software Foundation, either version 3 of the
+ License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+COPYRIGHT
+
+get_uptime()
+{
+	awk '{print $1}' /proc/uptime | awk -F. '{print $1}'
+}
+
+cacheFile="/tmp/shared-state-get_candidates_neigh.cache"
+lastRunFile="/tmp/shared-state-get_candidates_neigh.lastrun"
+lastRun=$(cat "$lastRunFile" 2>/dev/null || echo -9999)
+currUptime="$(get_uptime)"
+
+[ "$(($currUptime - $lastRun))" -lt "90" ] &&
+{
+	cat "$cacheFile"
+	exit 0
+}
+
+possiblyAvoidIfaces="anygw br-lan lo"
+
+candidateAddresses="$(
+for iface in $(ls /sys/class/net/) ; do
+	echo $possiblyAvoidIfaces | grep -q $iface && continue
+
+	ping6 -c 2 ff02::1%${iface} 2> /dev/null | \
+		awk '{if ($3 == "from") print substr($4, 1, length($4)-1)'"\"%$iface\""'}'
+done | sort -u -r)"
+
+candidateAddresses="$candidateAddresses
+$(ping6 -c 2 ff02::1%br-lan | \
+	awk '{if ($3 == "from" && substr($7,6)+0 < 2) print substr($4, 1, length($4)-1)"%br-lan" }' | sort -u)"
+
+for ownAddr in $(ip -6 address show | awk '{if ($1 == "inet6") print $2}' | awk -F/ '{print $1}') ; do
+	candidateAddresses="$(echo "$candidateAddresses" | grep -v "$ownAddr")"
+done
+
+# Deduplicate addresses visible from muliple interfaces
+for cAddr in $(echo "$candidateAddresses"); do
+	cIp="$(echo "$cAddr" | awk -F% '{print $1}')"
+	cIface="$(echo "$cAddr" | awk -F% '{print $2}')"
+
+	candidateAddresses="$cAddr
+$(echo "$candidateAddresses" | grep -v "$cIp")"
+
+done
+
+echo "$candidateAddresses" | tee "$cacheFile"
+get_uptime > "$lastRunFile"

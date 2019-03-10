@@ -4,10 +4,6 @@ cat << 'EOF' >> /etc/profile
 
 # nice coloured prompt
 export PS1='\[\e]0;\u@\h: \w\a\]\[\033[00;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
-
-# mac2bat converts raw MACs to bat-names in piped output (i.e. "iwinfo scan | mac2bat"). bat2mac does the reverse.
-alias mac2bat='sed "$(sed -nr "{s/.*(..:..:..:..:..:..)[[:space:]]+([^[:space:]]+).*/s|\1|\2|Ig;/p}" /etc/bat-hosts)"'
-alias bat2mac='sed "$(sed -nr "{s/.*(..:..:..:..:..:..)[[:space:]]+([^[:space:]]+).*/s|\2|\1|Ig;/p}" /etc/bat-hosts)"'
 EOF
 
 exit 0

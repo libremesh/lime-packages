@@ -1,0 +1,3 @@
+#!/bin/sh
+
+cat | sed "$(sed -nr "{s/.*(..:..:..:..:..:..)[[:space:]]+([^[:space:]]+).*/s|\2|\1|Ig;/p}" /etc/bat-hosts)"

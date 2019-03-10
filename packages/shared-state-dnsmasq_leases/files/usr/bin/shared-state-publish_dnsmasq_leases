@@ -1,0 +1,119 @@
+#!/usr/bin/lua
+
+--! LibreMesh
+--! Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
+--!
+--! This program is free software: you can redistribute it and/or modify
+--! it under the terms of the GNU Affero General Public License as
+--! published by the Free Software Foundation, either version 3 of the
+--! License, or (at your option) any later version.
+--!
+--! This program is distributed in the hope that it will be useful,
+--! but WITHOUT ANY WARRANTY; without even the implied warranty of
+--! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--! GNU Affero General Public License for more details.
+--!
+--! You should have received a copy of the GNU Affero General Public License
+--! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+local JSON = require("luci.jsonc")
+local uci = require("uci")
+
+function string:split(sep)
+	local ret = {}
+	for token in self:gmatch("[^"..sep.."]+") do
+		table.insert(ret, token)
+	end
+	return ret
+end
+
+function add_tmp_dhcp_leases()
+	local leasesTable = {}
+	local hostTable = {}
+
+	for line in io.lines("/tmp/dhcp.leases") do
+		_, client_mac, client_ip, client_hostname, client_id = unpack(line:split(" "))
+		leasesTable[client_ip] = { hostname=client_hostname, --id=client_id,
+		                           mac=client_mac }
+		hostTable[client_ip.." "..client_hostname] = true
+	end
+
+	local jsonstring = JSON.stringify(leasesTable)
+
+	local cStdin = io.popen("shared-state insert dnsmasq-leases", "w")
+	cStdin:write(jsonstring)
+	cStdin:close()
+
+	local cStdin = io.popen("shared-state insert dnsmasq-hosts", "w")
+	cStdin:write(JSON.stringify(hostTable))
+	cStdin:close()
+end
+
+function add_lease(client_mac, client_ip, client_hostname, client_id)
+	local leaseData = {}
+	leaseData[client_ip] = { hostname=client_hostname, --id=client_id,
+	                         mac=client_mac }
+	local cStdin = io.popen("shared-state insert dnsmasq-leases", "w")
+	cStdin:write(JSON.stringify(leaseData))
+	cStdin:close()
+
+	local hostTable = {}
+	hostTable[client_ip.." "..client_hostname] = true
+	local cStdin = io.popen("shared-state insert dnsmasq-hosts", "w")
+	cStdin:write(JSON.stringify(hostTable))
+	cStdin:close()
+end
+
+function add_own()
+	local leasesTable = {}
+
+	local uci_conf = uci.cursor()
+	local own_ipv4 = uci_conf:get("network", "lan", "ipaddr")
+	local own_ipv6 = uci_conf:get("network", "lan", "ip6addr")
+	uci_conf = nil
+	if own_ipv6 then own_ipv6 = own_ipv6:gsub("/.*$", "") end
+
+	local own_hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
+	local own_mac = io.input("/sys/class/net/br-lan/address"):read("*line")
+
+	add_lease(own_mac, own_ipv4, own_hostname, "*")
+	add_lease(own_mac, own_ipv6, own_hostname, "*")
+end
+
+function del_lease(client_ip)
+	local keysArr = {}
+	table.insert(keysArr, client_ip)
+	local cStdin = io.popen("shared-state remove dnsmasq-leases", "w")
+	cStdin:write(JSON.stringify(keysArr))
+	cStdin:close()
+
+	local hostArr = {}
+	table.insert(hostArr, client_ip.." "..client_hostname)
+	local cStdin = io.popen("shared-state remove dnsmasq-hosts", "w")
+	cStdin:write(JSON.stringify(hostArr))
+	cStdin:close()
+end
+
+local command = arg[1]
+local client_mac = arg[2]
+local client_ip = arg[3]
+
+local client_hostname
+if (arg[4] and (arg[4]:len() > 0)) then client_hostname = arg[4]
+else client_hostname = "" end
+
+local client_id = os.getenv("DNSMASQ_CLIENT_ID")
+if ((not client_id) or (client_id:len() <= 0)) then client_id = "*" end
+
+if command == "add" then
+	add_lease(client_mac, client_ip, client_hostname, client_id)
+	add_own()
+
+elseif command == "del" then
+	del_lease(client_ip)
+	add_own()
+
+elseif command == nil or command:match("^%s*$") then
+	add_tmp_dhcp_leases()
+	add_own()
+end
