@@ -1,0 +1,10 @@
+#!/bin/sh
+
+unique_append()
+{
+	grep -qF "$1" "$2" || echo "$1" >> "$2"
+}
+
+unique_append \
+	'*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync bat-hosts)&)'\
+	/etc/crontabs/root
