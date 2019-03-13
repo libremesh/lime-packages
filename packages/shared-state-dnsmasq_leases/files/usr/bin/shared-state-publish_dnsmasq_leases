@@ -33,9 +33,11 @@ function add_tmp_dhcp_leases()
 
 	for line in io.lines("/tmp/dhcp.leases") do
 		_, client_mac, client_ip, client_hostname, client_id = unpack(line:split(" "))
-		leasesTable[client_ip] = { hostname=client_hostname, --id=client_id,
-		                           mac=client_mac }
-		hostTable[client_ip.." "..client_hostname] = true
+		leasesTable[client_ip] = { hostname=client_hostname,vmac=client_mac }
+
+		if type(client_hostname) == "string" and client_hostname:len() > 1 then
+			hostTable[client_ip.." "..client_hostname] = true
+		end
 	end
 
 	local jsonstring = JSON.stringify(leasesTable)
@@ -49,19 +51,20 @@ function add_tmp_dhcp_leases()
 	cStdin:close()
 end
 
-function add_lease(client_mac, client_ip, client_hostname, client_id)
+function add_lease(client_mac, client_ip, client_hostname)
 	local leaseData = {}
-	leaseData[client_ip] = { hostname=client_hostname, --id=client_id,
-	                         mac=client_mac }
+	leaseData[client_ip] = { hostname=client_hostname, mac=client_mac }
 	local cStdin = io.popen("shared-state insert dnsmasq-leases", "w")
 	cStdin:write(JSON.stringify(leaseData))
 	cStdin:close()
 
-	local hostTable = {}
-	hostTable[client_ip.." "..client_hostname] = true
-	local cStdin = io.popen("shared-state insert dnsmasq-hosts", "w")
-	cStdin:write(JSON.stringify(hostTable))
-	cStdin:close()
+	if type(client_hostname) == "string" and client_hostname:len() > 1 then
+		local hostTable = {}
+		hostTable[client_ip.." "..client_hostname] = true
+		local cStdin = io.popen("shared-state insert dnsmasq-hosts", "w")
+		cStdin:write(JSON.stringify(hostTable))
+		cStdin:close()
+	end
 end
 
 function add_own()
