@@ -98,13 +98,27 @@ function sharedState.sync(urls)
 		options.method = 'POST'
 		options.body = sharedState.toJsonString()
 
+		-- Alias WK:2622 Workaround https://github.com/openwrt/luci/issues/2622
+		local startTP = os.time() -- WK:2622
 		local success, response = pcall(http.request_to_buffer, url, options)
+		local endTP = os.time() -- WK:2622
 
 		if success and type(response) == "string" and response:len() > 1  then
 			local parsedJson = JSON.parse(response)
 			if parsedJson then sharedState.merge(parsedJson) end
 		else
 			log( "debug", "httpclient interal error requesting "..url )
+
+			-- WK:2622
+			for tFpath in fs.glob("/tmp/lua_*") do
+				local mStat = fs.stat(tFpath)
+				if mStat and
+						mStat.atime >= startTP and mStat.atime <= endTP and
+						mStat.ctime >= startTP and mStat.ctime <= endTP and
+						mStat.mtime >= startTP and mStat.mtime <= endTP then
+					os.remove(tFpath)
+				end
+			end
 		end
 	end
 end
@@ -134,7 +148,7 @@ for i=1,10 do
 end
 
 if not sharedState.locked then
-	print(arg[0].." Failed acquiring lock on data!")
+	print(arg[0], arg[1], arg[2], "Failed acquiring lock on data!")
 	os.exit(-165)
 end
 
