@@ -26,7 +26,8 @@ for key,value in pairs(
 end
 
 local outputFile = io.open("/var/hosts/shared-state-dnsmasq_hosts", "w")
-outputFile:write(table.concat(outputTable,"\n").."\n")
-outputFile:close()
-
-os.execute("killall -HUP dnsmasq 2>/dev/null")
+if outputFile then
+	outputFile:write(table.concat(outputTable,"\n").."\n")
+	outputFile:close()
+	os.execute("killall -HUP dnsmasq 2>/dev/null")
+end
