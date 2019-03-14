@@ -1,0 +1,5 @@
+#!/bin/sh
+echo "adding cron to save last known path to the Internet"
+sed "\| \* \* \* .*last_internet_path.*|d" -i /etc/crontabs/root
+echo "*/30 * * * * /usr/sbin/internet_path > /tmp/last_internet; if [ -s /tmp/last_internet ] && [\ "$(md5sum /tmp/last_internet | awk '{ print $1 }')\" != \"$(md5sum /etc/last_internet |  awk '{ print $1 }
+')\" ]; then cp /tmp/last_internet /etc/last_internet; fi" >>  /etc/crontabs/root
