@@ -62,7 +62,13 @@ function anygw.configure(args)
 		"ebtables -D FORWARD -j DROP -d " .. anygw_mac .. "/" .. anygw_mac_mask .. "\n" ..
 		"ebtables -A FORWARD -j DROP -d " .. anygw_mac .. "/" .. anygw_mac_mask .. "\n" ..
 		"ebtables -t nat -D POSTROUTING -o bat0 -j DROP -s " .. anygw_mac .. "/" .. anygw_mac_mask .. "\n" ..
-		"ebtables -t nat -A POSTROUTING -o bat0 -j DROP -s " .. anygw_mac .. "/" .. anygw_mac_mask .. "\n"
+		"ebtables -t nat -A POSTROUTING -o bat0 -j DROP -s " .. anygw_mac .. "/" .. anygw_mac_mask .. "\n" ..
+		"# Filter IPv6 Router Solicitation\n" ..
+		"ebtables -t nat -D POSTROUTING -o bat0 --protocol ipv6 --ip6-protocol ipv6-icmp --ip6-icmp-type router-solicitation -j DROP\n" ..
+		"ebtables -t nat -A POSTROUTING -o bat0 --protocol ipv6 --ip6-protocol ipv6-icmp --ip6-icmp-type router-solicitation -j DROP\n" ..
+		"# Filter rogue IPv6 Router advertisement\n" ..
+		"ebtables -t nat -D POSTROUTING -o bat0 --protocol ipv6 --ip6-protocol ipv6-icmp --ip6-icmp-type router-advertisement -j DROP\n" ..
+		"ebtables -t nat -A POSTROUTING -o bat0 --protocol ipv6 --ip6-protocol ipv6-icmp --ip6-icmp-type router-advertisement -j DROP\n"
 	)
 
 	uci:set("dhcp", "lan", "ignore", "1")
