@@ -25,6 +25,8 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
 	@chmod a+x $(1)/usr/libexec/rpcd/lime-metrics
+	@chmod a+x $(1)/etc/uci-defaults/99-save-last-known-path-to-internet
+	@chmod a+x $(1)/usr/sbin/last_internet
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
