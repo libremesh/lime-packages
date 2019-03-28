@@ -112,7 +112,7 @@ function get_interfaces(msg)
 	local interfaces = {}
     if devices ~= nil then
         for iface,iface_conf in pairs(devices.values) do
-            if iface_conf.mode == "adhoc" then
+            if iface_conf.mode == "adhoc" or iface_conf.mode == "mesh" then
                 table.insert(interfaces, { name = iface_conf.ifname, mode = iface_conf.mode })
             end
         end
