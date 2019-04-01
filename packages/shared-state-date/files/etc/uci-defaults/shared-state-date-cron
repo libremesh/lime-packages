@@ -10,9 +10,9 @@ unique_append()
 }
 
 unique_append \
-	'*/4 * * * * ((sleep $(($RANDOM % 90)); shared-state sync date)&)'\
+	'*/4 * * * * ((sleep $(($RANDOM % 90)); shared-state sync date &> /dev/null)&)'\
 	/etc/crontabs/root
 
 unique_append \
-	'*/2 * * * * ((sleep $(($RANDOM % 30)); /etc/shared-state/publishers/date)&)'\
+	'*/2 * * * * ((sleep $(($RANDOM % 30)); /etc/shared-state/publishers/date &> /dev/null)&)'\
 	/etc/crontabs/root

@@ -21,7 +21,7 @@ local JSON = require("luci.jsonc")
 local outputTable = {}
 
 for key,value in pairs(JSON.parse(io.stdin:read("*all"))) do
-	if value.data then
+	if value.data and value.data.mac then
 		local hwaddr = value.data.mac
 		local ipaddr = key
 		if ipaddr:find(":") then ipaddr = "[" .. ipaddr .. "]" end

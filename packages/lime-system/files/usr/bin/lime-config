@@ -1,6 +1,7 @@
 #!/usr/bin/lua
 
 local config = require("lime.config")
+local fs = require("nixio.fs")
 
 function getopt( arg, options )
   --! Taken from http://lua-users.org/wiki/AlternativeGetOpt
@@ -47,6 +48,12 @@ function main()
 
 	for _,module in pairs(modules) do
 		xpcall(module.configure, function(errmsg) print(errmsg) ; print(debug.traceback()) end)
+	end
+
+	local hooksDir = "/etc/hotplug.d/lime-config"
+	for hook in fs.dir(hooksDir) do
+		local hookCmd = hooksDir.."/"..hook.." after"
+		print("executed hook:", hookCmd, os.execute(hookCmd))
 	end
 end
 

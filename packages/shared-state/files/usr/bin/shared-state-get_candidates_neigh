@@ -36,14 +36,13 @@ currUptime="$(get_uptime)"
 	exit 0
 }
 
-possiblyAvoidIfaces="anygw br-lan lo"
-
 candidateAddresses="$(
 for iface in $(ls /sys/class/net/) ; do
-	echo $possiblyAvoidIfaces | grep -q $iface && continue
+	echo ${iface} | grep -q '^dummy' && continue
+	ls /sys/class/net/${iface}/upper_bat? &> /dev/null || continue
 
 	ping6 -c 2 ff02::1%${iface} 2> /dev/null | \
-		awk '{if ($3 == "from") print substr($4, 1, length($4)-1)'"\"%$iface\""'}'
+		awk '{if ($3 == "from") print substr($4, 1, length($4)-1)'"\"%${iface}\""'}'
 done | sort -u -r)"
 
 candidateAddresses="$candidateAddresses

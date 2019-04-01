@@ -28,7 +28,7 @@ mDiffS="$(($mCandDateS-$mCurrDateS))"
 [ "${mDiffS}" -lt "600" ] && exit 0
 
 ((
-ntpd -w -q -p ::1 || {
+ntpd -n -q -p ::1 || {
 	date --utc --set "$mCandDate"
 	[ "${mDiffS#-}" -gt "1200" ] &&
 		for pub in /etc/shared-state/publishers/* ; do
