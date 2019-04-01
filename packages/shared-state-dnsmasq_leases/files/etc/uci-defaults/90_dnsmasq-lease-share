@@ -16,7 +16,7 @@ unique_append "dhcp-hostsfile=$dhcpHostsFile"\
 	"/etc/dnsmasq.d/shared-state-dhcp-leases"
 
 unique_append \
-	'*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync dnsmasq-leases)&)'\
+	'*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync dnsmasq-leases &> /dev/null)&)'\
 	/etc/crontabs/root
 
 exit 0
