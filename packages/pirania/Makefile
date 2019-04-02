@@ -9,7 +9,7 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/libremesh/pirania
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=76e477686ef6dd5d51ddb21995febc11aec2e587
+PKG_SOURCE_VERSION:=ac5197e04ea9891fc73fe6c99a8d167d9024bdff
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 
 PKG_BUILD_PARALLEL:=1
@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
  CATEGORY:=Network
  TITLE:=$(PKG_NAME)
  MAINTAINER:=Nicolas Pace <nicopace@libre.ws>
- DEPENDS:= +ip6tables-mod-nat
+ DEPENDS:= +ip6tables-mod-nat +ipset
  PKGARCH:=all
 endef
 
