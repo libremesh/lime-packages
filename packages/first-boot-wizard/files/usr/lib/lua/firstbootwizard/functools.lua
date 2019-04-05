@@ -151,4 +151,11 @@ function functools.sortBy(option)
     end
 end
 
+function functools.flatTable(prev, act)
+    for i=1,#act do
+        prev[#prev+1] = act[i]
+    end
+    return prev
+end
+
 return functools
