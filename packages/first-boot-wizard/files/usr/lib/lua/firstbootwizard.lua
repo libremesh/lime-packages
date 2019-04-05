@@ -328,8 +328,8 @@ function apply_user_configs(configs)
     -- nixio.syslog("crit", "FBW apply_user_configs ssid "..ssid)
     uci_cursor:set("lime-defaults", 'wifi', 'ap_ssid', name)
     uci_cursor:set("lime-defaults", 'wifi', 'apname_ssid', name..'/%H')
-    uci_cursor:set("lime-defaults", 'wifi', 'adhoc_ssid', 'LiMe.'..name..'/%H')
-    uci_cursor:set("lime-defaults", 'wifi', 'ieee80211s_mesh_id', 'LiMe.'..name..'/%H')
+    uci_cursor:set("lime-defaults", 'wifi', 'adhoc_ssid', 'LiMe.%H')
+    uci_cursor:set("lime-defaults", 'wifi', 'ieee80211s_mesh_id', 'LiMe')
     uci_cursor:commit("lime-defaults")
 
     -- Apply config and reboot
