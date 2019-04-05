@@ -123,6 +123,15 @@ function connect(mesh_network)
     -- nixio.syslog("crit", "FBW in "..device_name)
 
     local uci_cursor = uci.cursor()
+
+    local current_channel = uci_cursor:get("wireless", 'radio'..phy_idx, "channel")
+    local current_mode = uci_cursor:set("wireless", device_name, "mode")
+
+    -- Avoid unnecessary configuration changes
+    if(current_channel == mesh_network.channel or current_mode == mode) then
+        return
+    end
+
     -- remove networks
     uci_cursor:foreach("wireless", "wifi-iface", function(entry)
         if entry['.name'] == device_name then
