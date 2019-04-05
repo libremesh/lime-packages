@@ -1,19 +1,22 @@
+#
+# Copyright (C) 2019 Gui Iribarren <gui@altermundi.net>
+#
+# This is free software, licensed under the GNU General Public License v3.
+#
+
 include $(TOPDIR)/rules.mk
 
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
-PKG_NAME:=pitbull
+PKG_NAME:=pirania
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/libremesh/pitbull
+PKG_SOURCE_URL:=https://github.com/libremesh/pirania
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=76e477686ef6dd5d51ddb21995febc11aec2e587
+PKG_SOURCE_VERSION:=ac5197e04ea9891fc73fe6c99a8d167d9024bdff
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
-
-PKG_BUILD_PARALLEL:=1
-PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -22,12 +25,12 @@ define Package/$(PKG_NAME)
  CATEGORY:=Network
  TITLE:=$(PKG_NAME)
  MAINTAINER:=Nicolas Pace <nicopace@libre.ws>
- DEPENDS:= +ip6tables-mod-nat
+ DEPENDS:= +ip6tables-mod-nat +ipset
  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description
-  Captive Portal for routers that want to share their Internet connection via bouchers.
+ Captive Portal for routers that want to share their Internet connection via vouchers.
 endef
 
 define Build/Compile
