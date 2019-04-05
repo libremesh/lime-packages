@@ -364,9 +364,15 @@ function sortNetworks(networks)
     return networks
 end
 
+function clearTmp()
+    execute('rm /tmp/lime-defaults__*')
+end
+
 function get_all_networks()
     -- Add lock file
     start_scan_file()
+    -- Clear previus scans
+    clearTmp()
     -- Set wireless backup
     backup_wifi_config()
     -- Get all networks
