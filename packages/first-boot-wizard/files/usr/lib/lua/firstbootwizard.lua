@@ -117,7 +117,7 @@ end
 function connect(mesh_network)
     local phy_idx = mesh_network["phy_idx"]
     local mode = mesh_network.mode == "Mesh Point" and 'mesh' or 'adhoc'
-    local device_name = "lm_wlan"..phy_idx..""..mode.."_radio"..phy_idx
+    local device_name = "lm_wlan"..phy_idx.."_"..mode.."_radio"..phy_idx
 
     -- nixio.syslog("crit", "FBW Connection to "..mesh_network.ssid)
     -- nixio.syslog("crit", "FBW in "..device_name)
@@ -125,7 +125,7 @@ function connect(mesh_network)
     local uci_cursor = uci.cursor()
 
     local current_channel = uci_cursor:get("wireless", 'radio'..phy_idx, "channel")
-    local current_mode = uci_cursor:set("wireless", device_name, "mode")
+    local current_mode = uci_cursor:get("wireless", device_name, "mode")
 
     -- Avoid unnecessary configuration changes
     if(current_channel == mesh_network.channel or current_mode == mode) then
