@@ -348,17 +348,30 @@ local function printParam(text,campo)
     end
 end
 
-function get_all_networks()
-    start_scan_file()
-    local networks = get_networks()
-    ft.map(printParam('FBW MESH - All Networlk ssid','ssid'), networks)
-    local all_mesh = ft.filter(filter_mesh, networks)
-    ft.map(printParam('FBW MESH - Only mesh Network ssid','ssid'), all_mesh)
-    backup_wifi_config()
-    local configs = unpack_table(ft.map(get_config, all_mesh))
-    restore_wifi_config()
+function sortNetworks(networks)
+    networks = ft.splitBy('mode')(networks)
+    networks = ft.map(ft.sortBy('channel'), networks)
+    networks = ft.reduce(ft.flatTable,networks, {})
+    return networks
+end
 
-    local equal_than_mine = ft.curry(are_files_different)('/etc/config/lime-defaults')
-    -- local configs = ft.filter(equal_than_mine, configs)
+function get_all_networks()
+    -- Add lock file
+    start_scan_file()
+    -- Set wireless backup
+    backup_wifi_config()
+    -- Get all networks
+    local networks = get_networks()
+    -- FIlter only mesh adn ad-hoc
+    local all_mesh = ft.filter(filter_mesh, networks)
+    -- Sort by channel and mode
+    all_mesh = sortNetworks(all_mesh)
+    -- Get configs files
+    local configs = unpack_table(ft.map(get_config, all_mesh))
+    -- Restore previus wireless configuration
+    restore_wifi_config()
+    -- Remove lock file
     stop_scan()
+    -- Return configs files names
+    return configs
 end
