@@ -377,7 +377,7 @@ function get_all_networks()
     backup_wifi_config()
     -- Get all networks
     local networks = get_networks()
-    -- FIlter only mesh adn ad-hoc
+    -- Filter only mesh and ad-hoc
     local all_mesh = ft.filter(filter_mesh, networks)
     -- Sort by channel and mode
     all_mesh = sortNetworks(all_mesh)
