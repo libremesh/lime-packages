@@ -179,21 +179,41 @@ local function get_community_settings ()
 end
 
 local function change_config (msg)
-    if msg.name ~= nil then
-        local newName = msg.name
-        local newIp = msg.ip
-        conn:call("uci", "set", {config="lime", section="system", values= { hostname = newName }})
-        conn:call("uci", "set", {config="lime", section="network", values= { main_ipv4_address = newIp }})
-        -- ap_ssid
-        -- uci_cursor:set("lime-defaults", 'wifi', 'ap_ssid', name)
-        conn:call("uci", "set", {config="lime", section="network", values= { main_ipv4_address = newIp }})
-        -- channel_2ghz
-        -- channel_5ghz
-        -- distance_2ghz
-        -- distance_5ghz
-        -- mesh_id
-        -- country
-        shell("lime-config && lime-apply")
+    if msg.hostname ~= nil then
+        local hostname = msg.hostname
+        local ipv4 = msg.ip.ipv4
+        local ipv6 = msg.ip.ipv6
+        local ap_ssid = msg.wireless.ap_ssid
+        local channel_2ghz = msg.wireless.channel_2ghz
+        local channel_5ghz = msg.wireless.channel_5ghz
+        local distance_5ghz = msg.wireless.distance_5ghz
+        local distance_2ghz = msg.wireless.distance_2ghz
+        local ap_ssid = msg.wireless.ap_ssid
+        local mesh_id = msg.wireless.mesh_id
+        local country = msg.wireless.country
+        conn:call("uci", "set", {config="lime", section="system", values= { hostname = hostname }})
+        conn:call("uci", "set", {config="lime", section="network", values= { main_ipv4_address = ipv4 }})
+        conn:call("uci", "set", {config="lime", section="network", values= { main_ipv6_address = ipv6 }})
+        conn:call("uci", "set", {config="lime", section="wifi", values= {
+          ap_ssid = ap_ssid,
+          channel_2ghz = channel_2ghz,
+          channel_5ghz = channel_5ghz,
+          distance_2ghz = distance_2ghz,
+          distance_5ghz = distance_5ghz,
+          ieee80211s_mesh_id = mesh_id,
+          adhoc_ssid = mesh_id,
+          country = country
+        }})
+        conn:call("uci", "set", {config="lime-defaults", section="wifi", values= {
+          channel_2ghz = channel_2ghz,
+          channel_5ghz = channel_5ghz,
+          distance_2ghz = distance_2ghz,
+          distance_5ghz = distance_5ghz,
+          ieee80211s_mesh_id = mesh_id,
+          adhoc_ssid = mesh_id,
+          country = country
+        }})
+        shell("lime-config && lime-apply && reboot")
         printJson({ status = 'ok'})
     else
         printJson({ status = 'error', msg = 'You must enter a hostname' })
