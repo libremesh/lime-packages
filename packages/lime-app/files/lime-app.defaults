@@ -5,4 +5,6 @@ uci set rpcd.@login[1].password='$1$$ta3C2yX4TvVObdaJyQ9Md1'
 uci add_list rpcd.@login[1].read='lime-app'
 uci add_list rpcd.@login[1].write='lime-app'
 uci commit rpcd
+uci set uhttpd.main.ubus_cors='1'
+uci commit uhttpd
 exit 0
