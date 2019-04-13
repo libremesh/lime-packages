@@ -113,4 +113,8 @@ function utils.sortNetworks(networks)
     return networks
 end
 
+function utils.filter_mesh(n)
+    return n.mode == "Ad-Hoc" or n.mode == "Mesh Point"
+end
+
 return utils
