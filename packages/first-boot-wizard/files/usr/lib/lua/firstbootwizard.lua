@@ -68,35 +68,44 @@ local function phy_to_idx(phy)
     return tonumber(substr)
 end
 
+local function radio_to_phy(radio)
+    return "phy"..radio.sub(radio, -1)
+end
+
+function not_own_network(net) 
+    return net.signal ~= -256
+end
+
+function add_prop(option, value)
+    return function(tab)
+        tab[option] = value
+        return tab
+    end
+end
+
+function extract_option(option)
+    return function(tab)
+        return tab[option]
+    end
+end
+
 function get_networks()
-    local thisBssids = {}
-    local wirelessConfig = conn:call("network.wireless", "status", {})
-    local allRadios = wireless.scandevices()
-    -- nixio.syslog("crit", "FBW radios "..json.encode(allRadios))
-    local all_networks = {}
-    local phys = {}
-    for _, radio in pairs (allRadios) do
-        if wireless.is5Ghz(radio[".name"]) then
-            local phyIndex = radio[".name"].sub(radio[".name"], -1)
-            phys[#phys+1] = "phy"..phyIndex
-            -- nixio.syslog("crit", "FBW thisBssids"..json.encode(wirelessConfig["radio"..phyIndex]))
-            table.insert(thisBssids, wirelessConfig["radio"..phyIndex].interfaces[1].config.bssid)
-        end
-    end
-    -- -- nixio.syslog("crit", "FBW thisBssids"..json.encode(thisBssids))
-    -- -- nixio.syslog("crit", "FBW phys"..json.encode(phys))
-    for idx, phy in pairs(phys) do
-        networks = iwinfo.nl80211.scanlist(phy)
-        -- nixio.syslog("crit", "FBW networs"..json.encode(networks))
-        for k,network in pairs(networks) do
-            if network.signal ~= -256 then
-                network["phy"] = phy
-                network["phy_idx"] = phy_to_idx(phy)
-                all_networks[#all_networks+1] = network
-            end
-        end
-    end
-    return all_networks
+    -- Get all radios
+    local radios = ft.map(extract_option(".name"), wireless.scandevices())
+    -- Get only 5ghz radios
+    local radios_5ghz = ft.filter(wireless.is5Ghz,  radios)
+    -- Convert radios to phys
+    local phys = ft.map(radio_to_phy, radios_5ghz)
+    -- Scan networks in phys and format result
+    local networks = ft.reduce(
+        function(tab, phy) 
+            local nets = iwinfo.nl80211.scanlist(phy)
+            ft.map(add_prop("phy_idx", phy_to_idx(phy)), nets)
+            table.insert(tab, nets)
+            return tab
+        end, phys, {})
+    -- Return all networks found in 5ghz
+    return networks
 end
 
 function backup_wifi_config()
@@ -377,8 +386,9 @@ function get_all_networks()
     backup_wifi_config()
     -- Get all networks
     local networks = get_networks()
-    -- Filter only mesh and ad-hoc
+    -- Filter only remote mesh and ad-hoc networks
     local all_mesh = ft.filter(filter_mesh, networks)
+    all_mesh = ft.filter(not_own_network, all_mesh)
     -- Sort by channel and mode
     all_mesh = sortNetworks(all_mesh)
     -- Get configs files
