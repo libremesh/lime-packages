@@ -106,4 +106,11 @@ function utils.unpack_table(t)
     return unpacked
 end
 
+function utils.sortNetworks(networks)
+    networks = ft.splitBy('mode')(networks)
+    networks = ft.map(ft.sortBy('channel'), networks)
+    networks = ft.reduce(ft.flatTable,networks, {})
+    return networks
+end
+
 return utils
