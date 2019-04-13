@@ -1,124 +1,44 @@
 #!/usr/bin/lua
 
-require "ubus"
 local json = require 'luci.json'
 local ft = require('firstbootwizard.functools')
+local utils = require('firstbootwizard.utils')
 local iwinfo = require("iwinfo")
 local wireless = require("lime.wireless")
 local fs = require("nixio.fs")
 local uci = require("uci")
 local nixio = require "nixio"
 
-local conn = ubus.connect()
-if not conn then
-    error("Failed to connect to ubus")
-end
-
-local function execute(cmd)
-    local f = assert(io.popen(cmd, 'r'))
-    local s = assert(f:read('*a'))
-    f:close()
-    return s
-end
-
-local function eui64(mac)
-    local cmd = [[
-    function eui64 {
-        mac="$(echo "$1" | tr -d : | tr A-Z a-z)"
-        mac="$(echo "$mac" | head -c 6)fffe$(echo "$mac" | tail -c +7)"
-        let "b = 0x$(echo "$mac" | head -c 2)"
-        let "b ^= 2"
-        printf "%02x" "$b"
-        echo "$mac" | tail -c +3 | head -c 2
-        echo -n :
-        echo "$mac" | tail -c +5 | head -c 4
-        echo -n :
-        echo "$mac" | tail -c +9 | head -c 4
-        echo -n :
-        echo "$mac" | tail -c +13
-    }
-    echo -n `eui64 ]]..mac..'`'
-    return 'fe80::'..execute(cmd)
-end
-
-function file_exists(filename)
-    return fs.stat(filename, "type") == "reg"
-end
-
-local function check_file_exists(file)
-    local f = io.open(file, "rb")
-    if f then f:close() end
-    return f ~= nil
-end  
-
-local function split(str, sep)
-    local sep, fields = sep or ":", {}
-    local pattern = string.format("([^%s]+)", sep)
-    str:gsub(pattern, function(c) fields[#fields+1] = c end)
-    return fields
-end
-
--- splits a multiline string in a list of strings, one per line
-local function lsplit(mlstring)
-    return split(mlstring, "\n")
-end
-
-local function phy_to_idx(phy)
-    local substr = string.gsub(phy, "phy", "")
-    return tonumber(substr)
-end
-
-local function radio_to_phy(radio)
-    return "phy"..radio.sub(radio, -1)
-end
-
-function not_own_network(net) 
-    return net.signal ~= -256
-end
-
-function add_prop(option, value)
-    return function(tab)
-        tab[option] = value
-        return tab
-    end
-end
-
-function extract_option(option)
-    return function(tab)
-        return tab[option]
-    end
-end
-
 function get_networks()
     -- Get all radios
-    local radios = ft.map(extract_option(".name"), wireless.scandevices())
+    local radios = ft.map(utils.extract_prop(".name"), wireless.scandevices())
     -- Get only 5ghz radios
     local radios_5ghz = ft.filter(wireless.is5Ghz,  radios)
     -- Convert radios to phys
-    local phys = ft.map(radio_to_phy, radios_5ghz)
+    local phys = ft.map(utils.radio_to_phy, radios_5ghz)
     -- Scan networks in phys and format result
-    local networks = ft.reduce(
-        function(tab, phy) 
+    local networks = ft.map(
+        function(phy) 
             local nets = iwinfo.nl80211.scanlist(phy)
-            ft.map(add_prop("phy_idx", phy_to_idx(phy)), nets)
-            table.insert(tab, nets)
-            return tab
-        end, phys, {})
+            return ft.map(utils.add_prop("phy_idx", utils.phy_to_idx(phy)), nets)
+        end, phys)
+    -- Merge results
+        networks = ft.reduce(ft.flatTable, networks, {})
     -- Return all networks found in 5ghz
     return networks
 end
 
 function backup_wifi_config()
-    execute("cp /etc/config/wireless /tmp/wireless-temp")
+    utils.execute("cp /etc/config/wireless /tmp/wireless-temp")
 end
 
 function restore_wifi_config()
-    execute("cp /tmp/wireless-temp /etc/config/wireless")
+    utils.execute("cp /tmp/wireless-temp /etc/config/wireless")
     local allRadios = wireless.scandevices()
     for _, radio in pairs (allRadios) do
         if wireless.is5Ghz(radio[".name"]) then
             local phyIndex = radio[".name"].sub(radio[".name"], -1)
-            execute("wifi down radio"..phyIndex.."; wifi up radio"..phyIndex)
+            utils.execute("wifi down radio"..phyIndex.."; wifi up radio"..phyIndex)
         end
     end
 end
@@ -127,9 +47,6 @@ function connect(mesh_network)
     local phy_idx = mesh_network["phy_idx"]
     local mode = mesh_network.mode == "Mesh Point" and 'mesh' or 'adhoc'
     local device_name = "lm_wlan"..phy_idx.."_"..mode.."_radio"..phy_idx
-
-    -- nixio.syslog("crit", "FBW Connection to "..mesh_network.ssid)
-    -- nixio.syslog("crit", "FBW in "..device_name)
 
     local uci_cursor = uci.cursor()
 
@@ -164,9 +81,8 @@ function connect(mesh_network)
 
     uci_cursor:commit("wireless")
 
-    -- nixio.syslog("crit", "FBW applying WIFI ")
     -- apply wifi config
-    execute("wifi down radio"..phy_idx.."; wifi up radio"..phy_idx)
+    utils.execute("wifi down radio"..phy_idx.."; wifi up radio"..phy_idx)
 end
 
 function fetch_config(data)
@@ -175,15 +91,13 @@ function fetch_config(data)
     local signal = data.signal
     local ssid = data.ssid
     local filename = "/tmp/lime-defaults__signal__"..(signal * -1).."__ssid__"..ssid.."__host__"..host
-    -- nixio.syslog("crit", "FBW fetching "..host)
     os.execute("sleep 5s")
     os.execute("/bin/wget http://["..host.."]/lime-defaults -O "..filename.." &")
-    return file_exists(filename) and filename or nil
+    return utils.file_exists(filename) and filename or nil
 end
 
 function get_stations_macs(network)
-    -- nixio.syslog("crit", "FBW get_stations_macs "..network)
-    return lsplit(execute('iw dev '..network..' station dump | grep ^Station | cut -d\\  -f 2'))
+    return utils.lsplit(utils.execute('iw dev '..network..' station dump | grep ^Station | cut -d\\  -f 2'))
 end
 
 local function getAp(path)
@@ -201,7 +115,6 @@ function read_configs()
     for file in tempFiles do
         if (file ~= nil and file:sub(1, 12) == "lime-default") then
             local ap = getAp(file)
-	    print(file)
             table.insert(result, {
                 ap = string.gsub(ap, "\"", ""),
                 file = file
@@ -211,44 +124,24 @@ function read_configs()
     return result
 end
 
-function read_file(file)
-    local lines = lines_from("/tmp/"..file)
-    -- for k,v in pairs(lines) do
-    --     -- nixio.syslog("crit", 'line[' .. k .. ']'..v)
-    -- end
-    return lines
-end
-
-local function tableEmpty(self)
-    for _, _ in pairs(self) do
-        return false
-    end
-    return true
-end
-
 function get_config(mesh_network)
     local mode = mesh_network.mode == "Mesh Point" and 'mesh' or 'adhoc'
     local dev_id = 'wlan'..mesh_network['phy_idx']..'-'..mode
-    -- nixio.syslog("crit", "FBW MESH_NETWORK "..json.encode(mesh_network))
     connect(mesh_network)
     -- check if connected if not sleep some more until connected or ignore if 10s passed
     local isAssociated = iwinfo.nl80211.assoclist(dev_id)
     local i = 0
-    while (tableEmpty(isAssociated)) and i < 5 do
+    while (utils.tableEmpty(isAssociated)) and i < 5 do
         isAssociated = iwinfo.nl80211.assoclist(dev_id)
-        -- nixio.syslog("crit", "FBW trying to associate "..json.encode(isAssociated)..i)
         i = i + 1
         os.execute("sleep 5s")
     end
     local stations = get_stations_macs(dev_id)
     
     local append_network = ft.curry(function (s1, s2) return s2..'%'..s1 end, 2) (dev_id)
-    local linksLocalIpv6 = ft.map(eui64, stations)
+    local linksLocalIpv6 = ft.map(utils.eui64, stations)
     local hosts = ft.map(append_network, linksLocalIpv6)
-    -- nixio.syslog("crit", "FBW DEV ID "..json.encode(dev_id))
-    -- nixio.syslog("crit", "FBW LINKS LOCALS "..json.encode(linksLocalIpv6))
-    -- nixio.syslog("crit", "FBW HOSTS "..json.encode(hosts))
-    
+   
     local function addData (host)
     	return {host = host, signal = mesh_network.signal, ssid = mesh_network.ssid }
     end
@@ -259,23 +152,8 @@ function get_config(mesh_network)
     return ft.filter(function(el) return el ~= nil end, configs)
 end
 
-function unpack_table(t)
-    local unpacked = {}
-    for k,v in ipairs(t) do
-        for sk, sv in ipairs(v) do
-            unpacked[#unpacked+1] = sv
-        end
-    end
-    return unpacked
-end
 
-function hash_file(file)
-    return execute("md5sum "..file.." | awk '{print $1}'")
-end
 
-function are_files_different(file1, file2)
-    return hash_file(file1) ~= hash_file(file2)
-end
 
 function clean_lime_config()
     local f = io.open("/etc/config/lime", "w")
@@ -291,16 +169,12 @@ end
 function apply_config(file)
     -- TODO: check if config is valid
     local filePath = "/tmp/"..file
-    check_file_exists(filePath)
-    -- nixio.syslog("crit", "FBW FILE EXISTS ")
-    execute("rm /etc/config/lime")
-    execute("cp "..filePath.." /etc/config/lime-defaults")
-    -- nixio.syslog("crit", "FBW FILE COPIED ")
+    check_utils.file_exists(filePath)
+    utils.execute("rm /etc/config/lime")
+    utils.execute("cp "..filePath.." /etc/config/lime-defaults")
     clean_lime_config()
-    -- nixio.syslog("crit", "FBW LIME CONFIG CLEANED ")
-    execute("/rom/etc/uci-defaults/91_lime-config")
-    execute("rm /etc/first_run")
-    -- nixio.syslog("crit", "APPLY CONFIGS ")
+    utils.execute("/rom/etc/uci-defaults/91_lime-config")
+    utils.execute("rm /etc/first_run")
     os.execute("(( /usr/bin/lime-config && /usr/bin/lime-apply && reboot 0<&- &>/dev/null &) &)")
 end
 
@@ -337,13 +211,12 @@ function check_lock_file()
 end
 
 function remove_lock_file()
-    execute("rm /etc/first_run")
+    utils.execute("rm /etc/first_run")
 end
 
 function apply_user_configs(configs)
     local name = configs.ssid
     local uci_cursor = uci.cursor()
-    -- nixio.syslog("crit", "FBW apply_user_configs ssid "..ssid)
     uci_cursor:set("lime-defaults", 'wifi', 'ap_ssid', name)
     uci_cursor:set("lime-defaults", 'wifi', 'apname_ssid', name..'/%H')
     uci_cursor:set("lime-defaults", 'wifi', 'adhoc_ssid', 'LiMe.'..name..'/%H')
@@ -351,19 +224,13 @@ function apply_user_configs(configs)
     uci_cursor:commit("lime-defaults")
 
     -- Apply config and reboot
-    execute("rm /etc/config/lime")
+    utils.execute("rm /etc/config/lime")
     clean_lime_config()
-    execute("/rom/etc/uci-defaults/91_lime-config")
-    execute("rm /etc/first_run")
+    utils.execute("/rom/etc/uci-defaults/91_lime-config")
+    utils.execute("rm /etc/first_run")
     os.execute("(( /usr/bin/lime-config && /usr/bin/lime-apply && reboot 0<&- &>/dev/null &) &)")
 
     return { configs = configs }
-end
-
-local function printParam(text,campo) 
-    return function(objeto) 
-        -- nixio.syslog("crit", text..': '..objeto[campo])
-    end
 end
 
 function sortNetworks(networks)
@@ -374,7 +241,7 @@ function sortNetworks(networks)
 end
 
 function clearTmp()
-    execute('rm /tmp/lime-defaults__*')
+    utils.execute('rm /tmp/lime-defaults__*')
 end
 
 function get_all_networks()
@@ -388,11 +255,11 @@ function get_all_networks()
     local networks = get_networks()
     -- Filter only remote mesh and ad-hoc networks
     local all_mesh = ft.filter(filter_mesh, networks)
-    all_mesh = ft.filter(not_own_network, all_mesh)
+    all_mesh = ft.filter(utils.not_own_network, all_mesh)
     -- Sort by channel and mode
     all_mesh = sortNetworks(all_mesh)
     -- Get configs files
-    local configs = unpack_table(ft.map(get_config, all_mesh))
+    local configs = utils.unpack_table(ft.map(get_config, all_mesh))
     -- Restore previus wireless configuration
     restore_wifi_config()
     -- Remove lock file
