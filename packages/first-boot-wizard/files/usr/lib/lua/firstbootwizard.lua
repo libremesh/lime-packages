@@ -245,6 +245,10 @@ function clearTmp()
 end
 
 function get_all_networks()
+    local networks = {}
+    local all_mesh = {}
+    local configs = {}
+
     -- Add lock file
     start_scan_file()
     -- Clear previus scans
@@ -252,14 +256,14 @@ function get_all_networks()
     -- Set wireless backup
     backup_wifi_config()
     -- Get all networks
-    local networks = get_networks()
+    networks = get_networks()
     -- Filter only remote mesh and ad-hoc networks
-    local all_mesh = ft.filter(filter_mesh, networks)
+    all_mesh = ft.filter(filter_mesh, networks)
     all_mesh = ft.filter(utils.not_own_network, all_mesh)
     -- Sort by channel and mode
     all_mesh = sortNetworks(all_mesh)
     -- Get configs files
-    local configs = utils.unpack_table(ft.map(get_config, all_mesh))
+    configs = utils.unpack_table(ft.map(get_config, all_mesh))
     -- Restore previus wireless configuration
     restore_wifi_config()
     -- Remove lock file
