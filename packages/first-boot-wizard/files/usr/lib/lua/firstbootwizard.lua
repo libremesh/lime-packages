@@ -128,7 +128,7 @@ function connect(mesh_network)
     local current_mode = uci_cursor:get("wireless", device_name, "mode")
 
     -- Avoid unnecessary configuration changes
-    if(current_channel == mesh_network.channel or current_mode == mode) then
+    if(current_channel == mesh_network.channel and current_mode == mode) then
         return
     end
 
