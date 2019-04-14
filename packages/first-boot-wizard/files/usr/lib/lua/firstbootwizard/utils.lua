@@ -1,7 +1,9 @@
-utils = {}
+local utils = {}
 
 local ft = require('firstbootwizard.functools')
 local fs = require("nixio.fs")
+local iwinfo = require("iwinfo")
+local json = require("luci.json")
 
 function execute(cmd)
     local f = assert(io.popen(cmd, 'r'))
@@ -38,16 +40,24 @@ function utils.file_exists(filename)
     return fs.stat(filename, "type") == "reg"
 end
 
-function utils.split(str, sep)
+function split(str, sep)
     local sep, fields = sep or ":", {}
     local pattern = string.format("([^%s]+)", sep)
     str:gsub(pattern, function(c) fields[#fields+1] = c end)
     return fields
 end
 
+function utils.split(str, sep)
+    return split(str, sep)
+end
+
 -- splits a multiline string in a list of strings, one per line
+function lsplit(mlstring)
+    return split(mlstring, "\n")
+end
+
 function utils.lsplit(mlstring)
-    return utils.split(mlstring, "\n")
+    return lsplit(mlstring)
 end
 
 function utils.phy_to_idx(phy)
@@ -81,15 +91,20 @@ function utils.read_file(file)
     return lines
 end
 
-function utils.tableEmpty(self)
+
+function tableEmpty(self)
     for _, _ in pairs(self) do
         return false
     end
     return true
 end
 
+function utils.tableEmpty(self)
+    return tableEmpty(self)
+end
+
 function utils.hash_file(file)
-    return utils.execute("md5sum "..file.." | awk '{print $1}'")
+    return execute("md5sum "..file.." | awk '{print $1}'")
 end
 
 function utils.are_files_different(file1, file2)
@@ -115,6 +130,27 @@ end
 
 function utils.filter_mesh(n)
     return n.mode == "Ad-Hoc" or n.mode == "Mesh Point"
+end
+
+function utils.is_connected(dev_id)
+    local isAssociated = {}
+    local i = 0
+    while (tableEmpty(isAssociated)) and i < 5 do
+        isAssociated = iwinfo.nl80211.assoclist(dev_id)
+        if tableEmpty(isAssociated) == false then break end
+        i = i + 1
+        os.execute("sleep 5s")
+    end
+end
+
+function utils.get_stations_macs(network)
+    return lsplit(execute('iw dev '..network..' station dump | grep ^Station | cut -d\\  -f 2'))
+end
+
+function utils.append_network(dev)
+    return function (ipv6)
+        return ipv6..'%'..dev
+    end
 end
 
 return utils
