@@ -1,0 +1,46 @@
+#!/usr/bin/lua
+
+--! LibreMesh
+--! Copyright (C) 2019  Marcos Gutierrez <gmarcos@altermundi.net>
+--! Copyright (C) 2019  Luandro <luandro@gmail.com>
+--!
+--! This program is free software: you can redistribute it and/or modify
+--! it under the terms of the GNU Affero General Public License as
+--! published by the Free Software Foundation, either version 3 of the
+--! License, or (at your option) any later version.
+--!
+--! This program is distributed in the hope that it will be useful,
+--! but WITHOUT ANY WARRANTY; without even the implied warranty of
+--! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--! GNU Affero General Public License for more details.
+--!
+--! You should have received a copy of the GNU Affero General Public License
+--! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+local JSON = require("luci.jsonc")
+
+local inputTable = JSON.parse(io.stdin:read("*all"))
+local header ='key,voucher,expiretime,uploadlimit,downloadlimit,amountofmacsallowed,usedmacs,\n'
+
+local outputLines = ''
+
+function macs2string(macs)
+    macs = macs or {}
+    local result = ''
+    for key, mac in pairs(macs) do 
+        result = result..mac
+        if  key ~= #macs then
+            result = result..'+'
+        end
+    end
+    return result
+end
+
+
+for key,sharedData in pairs(inputTable) do
+    vo = sharedData.data
+    local line= vo.name..','..vo.voucher..','..vo.expires..',10,10,'..vo.macsAllowed..','..macs2string(vo.macs)
+	outputLines = outputLines..line..'\n'
+end
+
+io.output("/tmp/db.csv"):write(header..outputLines)
