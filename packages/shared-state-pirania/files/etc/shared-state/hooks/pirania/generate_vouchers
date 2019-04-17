@@ -20,9 +20,7 @@
 local JSON = require("luci.jsonc")
 
 local inputTable = JSON.parse(io.stdin:read("*all"))
-local header ='key,voucher,expiretime,uploadlimit,downloadlimit,amountofmacsallowed,usedmacs,\n'
-
-local outputLines = ''
+local outputTable ={"key,voucher,expiretime,uploadlimit,downloadlimit,amountofmacsallowed,usedmacs,"}
 
 function macs2string(macs)
     macs = macs or {}
@@ -36,11 +34,9 @@ function macs2string(macs)
     return result
 end
 
-
 for key,sharedData in pairs(inputTable) do
     vo = sharedData.data
-    local line= vo.name..','..vo.voucher..','..vo.expires..',10,10,'..vo.macsAllowed..','..macs2string(vo.macs)
-	outputLines = outputLines..line..'\n'
+    table.insert(outputTable, vo.name..','..vo.voucher..','..vo.expires..',10,10,'..vo.macsAllowed..','..macs2string(vo.macs))
 end
 
-io.output("/tmp/db.csv"):write(header..outputLines)
+io.output("/tmp/db.csv"):write(table.concat(outputTable, '\n').."\n")
