@@ -35,7 +35,7 @@ function macs2string(macs)
 end
 
 for key,sharedData in pairs(inputTable) do
-	vo = sharedData.data
+	local vo = sharedData.data
 	table.insert(outputTable, vo.name..','..vo.voucher..','..vo.expires..',10,10,'..vo.macsAllowed..','..macs2string(vo.macs))
 end
 
