@@ -20,9 +20,7 @@
 local fs = require("nixio.fs")
 local JSON = require("luci.jsonc")
 
-
 local function shell(command)
-    -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
     local handle = io.popen(command)
     local result = handle:read("*a")
     handle:close()
