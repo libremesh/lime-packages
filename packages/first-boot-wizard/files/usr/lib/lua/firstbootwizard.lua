@@ -218,7 +218,7 @@ function read_configs()
     return result
 end
 
--- Create new network
+-- Apply configuration for a new network ( used in ubus daemon)
 function apply_user_configs(configs)
     -- Mesh network name
     local name = configs.ssid
