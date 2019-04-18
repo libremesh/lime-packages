@@ -121,4 +121,41 @@ function functools.print_r ( t )
     print()
 end
 
+function functools.reduce(cb, tab, default)
+    local result = default
+    for k, act in pairs(tab) do
+        result = cb(result,act) 
+    end
+    return result
+end
+
+function functools.splitBy(option)
+    return function(tab)
+        local result = {}
+        for k, obj in pairs(tab) do
+            if result[obj[option]] == nil then
+                result[obj[option]] = {}
+            end
+            table.insert(result[obj.mode], obj)
+        end
+        return result
+    end
+end
+
+function functools.sortBy(option)
+    return function(tab)
+        table.sort(tab, function (left, right)
+            return left[option] < right[option]
+        end)
+        return tab
+    end
+end
+
+function functools.flatTable(prev, act)
+    for i=1,#act do
+        prev[#prev+1] = act[i]
+    end
+    return prev
+end
+
 return functools
