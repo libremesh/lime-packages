@@ -18,8 +18,11 @@
 --! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local JSON = require("luci.jsonc")
+local uci = require("uci")
+local uci_conf = uci.cursor()
 
 local inputTable = JSON.parse(io.stdin:read("*all"))
+local dbPath = uci_conf:get("pirania", "base_config", "db_path")
 local outputTable ={"key,voucher,expiretime,uploadlimit,downloadlimit,amountofmacsallowed,usedmacs,"}
 
 function macs2string(macs)
@@ -39,4 +42,4 @@ for key,sharedData in pairs(inputTable) do
 	table.insert(outputTable, vo.name..','..vo.voucher..','..vo.expires..',10,10,'..vo.macsAllowed..','..macs2string(vo.macs))
 end
 
-io.output("/tmp/db.csv"):write(table.concat(outputTable, '\n').."\n")
+io.output(dbPath):write(table.concat(outputTable, '\n').."\n")
