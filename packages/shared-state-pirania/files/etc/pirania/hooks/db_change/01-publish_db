@@ -1,2 +1,2 @@
-!#/bin/sh
+#!/bin/sh
 /etc/shared-state/publishers/shared-state-publish_vouchers
