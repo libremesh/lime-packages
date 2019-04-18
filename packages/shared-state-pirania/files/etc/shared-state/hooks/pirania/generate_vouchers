@@ -25,6 +25,13 @@ local inputTable = JSON.parse(io.stdin:read("*all"))
 local dbPath = uci_conf:get("pirania", "base_config", "db_path")
 local outputTable ={"key,voucher,expiretime,uploadlimit,downloadlimit,amountofmacsallowed,usedmacs,"}
 
+local function shell(command)
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+    return result
+end
+
 function macs2string(macs)
 	macs = macs or {}
 	local result = ''
@@ -43,3 +50,4 @@ for key,sharedData in pairs(inputTable) do
 end
 
 io.output(dbPath):write(table.concat(outputTable, '\n').."\n")
+shell('captive-portal')
