@@ -139,7 +139,7 @@ function utils.is_connected(dev_id)
         isAssociated = iwinfo.nl80211.assoclist(dev_id)
         if tableEmpty(isAssociated) == false then break end
         i = i + 1
-        os.execute("sleep 5s")
+        os.execute("sleep 2s")
     end
 end
 
