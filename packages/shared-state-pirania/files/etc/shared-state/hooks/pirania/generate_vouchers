@@ -34,14 +34,7 @@ end
 
 function macs2string(macs)
 	macs = macs or {}
-	local result = ''
-	for key, mac in pairs(macs) do 
-		result = result..mac
-		if  key ~= #macs then
-			result = result..'+'
-		end
-	end
-	return result
+	return table.concat(macs, '+')
 end
 
 for key,sharedData in pairs(inputTable) do
