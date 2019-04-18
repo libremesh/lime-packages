@@ -229,9 +229,8 @@ function apply_user_configs(configs)
     uci_cursor:set("lime-defaults", 'wifi', 'adhoc_ssid', 'LiMe.'..name..'/%H')
     uci_cursor:set("lime-defaults", 'wifi', 'ieee80211s_mesh_id', 'LiMe.'..name..'/%H')
     uci_cursor:commit("lime-defaults")
-    -- Clean previus lime configuration
-    clean_lime_config()
     -- Apply new configuration and reboot
+    clean_lime_config()
     utils.execute("/rom/etc/uci-defaults/91_lime-config")
     utils.execute("rm /etc/first_run")
     os.execute("(( /usr/bin/lime-config && /usr/bin/lime-apply && reboot 0<&- &>/dev/null &) &)")
