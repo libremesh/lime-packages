@@ -65,7 +65,7 @@ function utils.phy_to_idx(phy)
     return tonumber(substr)
 end
 
-function utils.radio_to_phy(radio)
+function utils.extract_phys_from_radios(radio)
     return "phy"..radio.sub(radio, -1)
 end
 

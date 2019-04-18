@@ -40,8 +40,8 @@ function get_networks()
     local radios = ft.map(utils.extract_prop(".name"), wireless.scandevices())
     -- Get only 5ghz radios
     local radios_5ghz = ft.filter(wireless.is5Ghz,  radios)
-    -- Convert radios to phys
-    local phys = ft.map(utils.radio_to_phy, radios_5ghz)
+    -- Convert radios to phys (get a list of phys from radio devices)
+    local phys = ft.map(utils.extract_phys_from_radios, radios_5ghz)
     -- Scan networks in phys and format result
     local networks = ft.map(
         function(phy)
