@@ -54,7 +54,7 @@ function get_networks()
     networks = ft.filter(utils.filter_mesh, networks)
     networks = ft.filter(utils.not_own_network, networks)
     -- Sort by channel and mode
-    networks = utils.sortNetworks(networks)
+    networks = utils.sort_by_channel_and_mode(networks)
     return networks
 end
 
