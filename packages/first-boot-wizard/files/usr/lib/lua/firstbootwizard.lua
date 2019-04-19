@@ -2,7 +2,7 @@
 
 -- FIRSTBOOTWIZARD
 -- get_all_networks: Perform scan and fetch configurations
--- apply_config: Set lime-default and apply configurations
+-- apply_file_config: Set lime-default and apply configurations
 -- apply_user_configs: Set a new mesh network
 -- check_scan_file: Return /tmp/scanning status
 -- check_lock_file: Check /etc/first_run status
@@ -158,7 +158,7 @@ end
 -- Apply configuraation permanenty
 -- TODO: check if config is valid
 -- TODO: use safe-reboot
-function apply_config(file)
+function apply_file_config(file, hostname)
     local filePath = "/tmp/"..file
     check_utils.file_exists(filePath)
     -- Clean previus lime configuration and replace lime-defaults
