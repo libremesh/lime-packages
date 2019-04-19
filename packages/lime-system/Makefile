@@ -54,6 +54,7 @@ LIME_VERSION_SED:=$(SED)   's,%LIME_ID%,$(LIME_ID),g' \
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/lime-config/
 	$(LIME_VERSION_SED) \
 		$(1)/etc/lime_release \
 		$(1)/etc/uci-defaults/90_lime-banner
