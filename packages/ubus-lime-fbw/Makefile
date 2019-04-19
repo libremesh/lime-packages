@@ -25,6 +25,7 @@ define Package/$(PKG_NAME)/install
 	$(CP) ./files/* $(1)/
 	@chmod a+x $(1)/usr/libexec/daemon/lime-fbw
 	@chmod a+x $(1)/etc/init.d/ubus-lime-fbw
+  @chmod a+x $(1)/www/cgi-bin/hostname
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))

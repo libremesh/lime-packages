@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo "Status: 200"
+echo "Content-type: text/html; Cache-control: max-age=0, no-cache"
+echo
+echo $HOSTNAME
