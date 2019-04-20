@@ -17,6 +17,11 @@ local fs = require("nixio.fs")
 local uci = require("uci")
 local nixio = require "nixio"
 
+-- Share your own default configuration
+function share_defualts()
+    utils.execute('ln -s /etc/config/lime-defaults /www/lime-defaults')
+end
+
 -- Write lock file at begin
 function start_scan_file()
     local file = io.open("/tmp/scanning", "w")
@@ -178,6 +183,8 @@ function apply_file_config(file, hostname)
     -- Apply new configuration
     os.execute("/usr/bin/lime-config")
     os.execute("/usr/bin/lime-apply")
+    -- Start sharing lime-defaults and reboot
+    share_defualts()
     os.execute("reboot 0")
 end
 
@@ -249,6 +256,8 @@ function apply_user_configs(configs, hostname)
     -- Apply new configuration
     os.execute("/usr/bin/lime-config")
     os.execute("/usr/bin/lime-apply")
+    -- Start sharing lime-defaults and reboot
+    share_defualts()
     os.execute("reboot 0")
 end
 
