@@ -66,16 +66,17 @@ local methods = {
         create_network = {
             function(req, msg)
                 local configs = {}
-                if (msg.name ~= nil) then
-                    configs["ssid"] = msg.name
+                if (msg.network ~= nil) then
+                    configs.ssid = msg.network
                 end
                 if (configs ~= nil) then
-                    apply_user_configs(configs)
+                    conn:reply(req, { status = 'done' })
+                    apply_user_configs(configs, msg.hostname)
+                    return
+                else
+                    conn:reply(req, { status = 'error', msg = "Network name is required"})
                 end
-                -- remove lock?
-                -- remove_lock_file()
-                conn:reply(req, { status = 'done' })
-            end, { name = ubus.STRING }
+            end, { network = ubus.STRING, hostname = ubus.STRING }
         }
     }
 }
