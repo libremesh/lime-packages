@@ -64,7 +64,7 @@ function get_networks()
 end
 
 -- Calc link local address and download lime-default
-function get_config(mesh_network)
+function get_config(results, mesh_network)
     local mode = mesh_network.mode == "Mesh Point" and 'mesh' or 'adhoc'
     local dev_id = 'wlan'..mesh_network['phy_idx']..'-'..mode
     local stations = {}
@@ -81,10 +81,14 @@ function get_config(mesh_network)
     local data = ft.map(function(host)
     	return { host = host, signal = mesh_network.signal, ssid = mesh_network.ssid }
     end, hosts)
+    data = utils.filter_alredy_scanned(data, results)
     -- Try to fetch remote config file
     configs = ft.map(fetch_config, data)
     -- Return only valid configs
-    return ft.filter(function(el) return el ~= nil end, configs)
+    for _, config in pairs(configs) do
+        results[config.host] = config
+    end
+    return results
 end
 
 -- Setup wireless 
@@ -276,7 +280,7 @@ function get_all_networks()
     -- Get mesh networks
     networks = get_networks()
     -- Get configs files
-    configs = utils.unpack_table(ft.map(get_config, networks))
+    configs = ft.reduce(get_config, networks, {})
     -- Restore previus wireless configuration
     restore_wifi_config()
     -- Remove lock file
