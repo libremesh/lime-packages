@@ -223,6 +223,16 @@ function remove_lock_file()
     utils.execute("rm /etc/first_run")
 end
 
+-- Extract apname form lime-default
+local function getAp(path)
+    local uci_cursor = uci.cursor("/tmp")
+    local ap_ssid = uci_cursor:get(path, "wifi", "ap_ssid")
+    if ap_ssid ~= nil then
+	return ap_ssid
+    end
+    return ""
+end
+
 -- List downloaded lime-defaults
 function read_configs()
     local tempFiles = fs.dir("/tmp/")
