@@ -183,7 +183,7 @@ function apply_file_config(file, hostname)
     uci_cursor:set("lime", "system","hostname", hostname)
     uci_cursor:commit("lime")
     -- Remove FBW lock file
-    utils.execute("rm /etc/first_run")
+    remove_lock_file()
     -- Start sharing lime-defaults
     -- Apply new configuration
     os.execute("/usr/bin/lime-config")
@@ -273,6 +273,7 @@ function apply_user_configs(configs, hostname)
     os.execute("/usr/bin/lime-apply")
     -- Start sharing lime-defaults and reboot
     share_defualts()
+    remove_lock_file()
     os.execute("reboot 0")
 end
 
