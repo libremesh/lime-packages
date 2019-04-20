@@ -54,7 +54,7 @@ local methods = {
         set_network = {
             function(req, msg)
                 local file = msg.file
-                local file = msg.hostname
+                local hostname = msg.hostname
                 -- apply lime config
                 conn:reply(req, { status = 'configuring' })
                 -- os.execute('sleep 2s')

@@ -159,17 +159,26 @@ end
 -- TODO: check if config is valid
 -- TODO: use safe-reboot
 function apply_file_config(file, hostname)
+    local uci_cursor = uci.cursor()
+    --Check if lime-defaults exist
     local filePath = "/tmp/"..file
-    check_utils.file_exists(filePath)
+    utils.file_exists(filePath)
+    -- Format hostname
+    hostname = hostname or uci_cursor:get("lime", "system", "hostname")
     -- Clean previus lime configuration and replace lime-defaults
     clean_lime_config()
     utils.execute("cp "..filePath.." /etc/config/lime-defaults")    
-    -- Run lime-config as first boot
+    -- Run lime-config as first boot and  setup new hostname
     utils.execute("/rom/etc/uci-defaults/91_lime-config")
+    uci_cursor:set("lime", "system","hostname", hostname)
+    uci_cursor:commit("lime")
     -- Remove FBW lock file
     utils.execute("rm /etc/first_run")
+    -- Start sharing lime-defaults
     -- Apply new configuration
-    os.execute("(( /usr/bin/lime-config && /usr/bin/lime-apply && reboot 0<&- &>/dev/null &) &)")
+    os.execute("/usr/bin/lime-config")
+    os.execute("/usr/bin/lime-apply")
+    os.execute("reboot 0")
 end
 
 -- Remove scan lock file
@@ -219,9 +228,11 @@ function read_configs()
 end
 
 -- Apply configuration for a new network ( used in ubus daemon)
-function apply_user_configs(configs)
+function apply_user_configs(configs, hostname)
     -- Mesh network name
     local name = configs.ssid
+    -- Format hostname
+    hostname = hostname or uci_cursor:get("lime", "system", "hostname")
     -- Save changes in lime-defaults
     local uci_cursor = uci.cursor()
     uci_cursor:set("lime-defaults", 'wifi', 'ap_ssid', name)
@@ -229,12 +240,16 @@ function apply_user_configs(configs)
     uci_cursor:set("lime-defaults", 'wifi', 'adhoc_ssid', 'LiMe.%H')
     uci_cursor:set("lime-defaults", 'wifi', 'ieee80211s_mesh_id', 'LiMe')
     uci_cursor:commit("lime-defaults")
-    -- Apply new configuration and reboot
+    -- Apply new configuration and setup hostname
     clean_lime_config()
     utils.execute("/rom/etc/uci-defaults/91_lime-config")
-    utils.execute("rm /etc/first_run")
-    os.execute("(( /usr/bin/lime-config && /usr/bin/lime-apply && reboot 0<&- &>/dev/null &) &)")
-    return { configs = configs }
+    uci_cursor:set("lime", 'system', 'hostname', hostname)
+    uci_cursor:commit('lime')
+    -- Start sharing lime-defaults
+    -- Apply new configuration
+    os.execute("/usr/bin/lime-config")
+    os.execute("/usr/bin/lime-apply")
+    os.execute("reboot 0")
 end
 
 -- Scan for networks and fetch configurations files
