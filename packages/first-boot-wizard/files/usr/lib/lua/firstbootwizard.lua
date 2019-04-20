@@ -251,12 +251,12 @@ end
 
 -- Apply configuration for a new network ( used in ubus daemon)
 function apply_user_configs(configs, hostname)
+    local uci_cursor = uci.cursor()
     -- Mesh network name
     local name = configs.ssid
     -- Format hostname
     hostname = hostname or uci_cursor:get("lime", "system", "hostname")
     -- Save changes in lime-defaults
-    local uci_cursor = uci.cursor()
     uci_cursor:set("lime-defaults", 'wifi', 'ap_ssid', name)
     uci_cursor:set("lime-defaults", 'wifi', 'apname_ssid', name..'/%H')
     uci_cursor:set("lime-defaults", 'wifi', 'adhoc_ssid', 'LiMe.%H')
