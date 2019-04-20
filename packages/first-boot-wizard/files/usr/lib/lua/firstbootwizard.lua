@@ -127,12 +127,13 @@ end
 -- Fetch remote configuration and save result
 function fetch_config(data)
     local host = data.host
+    local hostname = utils.execute("/bin/wget http://["..data.host.."]/cgi-bin/hostname -qO - "):gsub("\n", "")
+    if (hostname == '') then hostname = host end
     local signal = data.signal
     local ssid = data.ssid
-    -- TODO : Fetch hostname form /cgi-bin/hostname
-    local filename = "/tmp/lime-defaults__signal__"..(signal * -1).."__ssid__"..ssid.."__host__"..host
-    os.execute("/bin/wget http://["..host.."]/lime-defaults -O "..filename)
-    return utils.file_exists(filename) and filename or nil
+    local filename = "/tmp/lime-defaults__signal__"..(signal * -1).."__ssid__"..ssid.."__host__"..hostname
+    utils.execute("/bin/wget http://["..data.host.."]/lime-defaults -O "..filename)
+    return { host = host, filename = filename, success = utils.file_exists(filename) }
 end
 
 -- Restore previus wireless configuration
