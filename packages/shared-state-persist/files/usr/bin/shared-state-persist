@@ -1,0 +1,93 @@
+#!/usr/bin/lua
+
+--[[
+	
+	Copyright (C) 2019 Luandro <luandro@gmail.com>
+	Copyright (C) 2019 Marcos Gutierrez <gmarcos@altermundi.net>
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+	You should have received a copy of the GNU General Public License
+	along with this file. If not, see <http://www.gnu.org/licenses/>.
+
+	Documentation: 
+		Searches the mounted devices according to the following logic:
+			- The mounted storage device has no shared-state folder (creates the directory and uses it after copy actua /var/shared-state)
+			- The mounted device has the folder shred-state (uses it as is)
+			- If not devices found use the defautl /var/shared-state
+		Info: Shared-state-persist use the first result founded.
+
+]]--
+
+local nixio = require('nixio')
+local fs = nixio.fs
+
+local sharedStateDir = "/var/shared-state"
+
+local function log(text) 
+	nixio.syslog('info', 'shared-state-persist: '..text)
+end
+
+local function shell(command)
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+    return result
+end
+
+local function usePath(path, status)   
+
+	if status == 0 then
+		log('Device found - Use device after create shared-folder and preseve status '..path..' '..status)
+		os.execute('mv '..sharedStateDir..' '..path..'/shared-state')
+		fs.symlink(path..'/s	hared-state', sharedStateDir)
+
+	elseif status == 1 then
+		log('Device found - Use device and existent folder '..path..' '..status)
+		os.execute('rm -rf '..sharedStateDir)
+		fs.symlink(path..'/shared-state', sharedStateDir)
+
+	elseif status == 2 then
+		log('No device found - Remove symlink and use default folder '..sharedStateDir)
+		if fs.lstat(sharedStateDir).type == 'lnk' then
+			fs.remove(sharedStateDir)
+			fs.mkdir(sharedStateDir)
+		end
+	end
+
+end
+
+local function getDevices()
+	log('Scanning devices')
+	return shell("block info | grep -oE \"(\/mnt\/+[a-z]*[0-9])\""):gmatch("[^'\n']+")
+end
+
+local function runPersist()
+	local selectedPath = nil
+	local selectedOption = 2
+
+	for mntPath in getDevices() do
+		-- Setup first device as valid
+		if selectedPath == nil and selectedOption == 2 then
+			selectedOption = 0
+			selectedPath = mntPath
+		end
+		-- Check for previus shared-state folder in the device
+		local folders = fs.dir(mntPath)
+		for folder in folders do
+			if selectedOption == 0 and folder == 'shared-state' then 
+				selectedOption = 1
+				selectedPath = mntPath
+			end
+		end
+	end
+	usePath(selectedPath, selectedOption)
+end
+
+runPersist()
