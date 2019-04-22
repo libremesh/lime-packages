@@ -153,4 +153,8 @@ function utils.append_network(dev)
     end
 end
 
+function utils.filter_alredy_scanned(hosts, results)
+    return ft.filter(function(host) return results[host.host] == nil end, hosts)
+end
+
 return utils

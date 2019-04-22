@@ -54,27 +54,29 @@ local methods = {
         set_network = {
             function(req, msg)
                 local file = msg.file
+                local hostname = msg.hostname
                 -- apply lime config
                 conn:reply(req, { status = 'configuring' })
                 -- os.execute('sleep 2s')
-                apply_config(file)
+                apply_file_config(file, hostname)
                 -- remove lock?
                 -- remove_lock_file()
-            end, { file = ubus.STRING }
+            end, { file = ubus.STRING, hostname = ubus.STRING }
         },
         create_network = {
             function(req, msg)
                 local configs = {}
-                if (msg.name ~= nil) then
-                    configs["ssid"] = msg.name
+                if (msg.network ~= nil) then
+                    configs.ssid = msg.network
                 end
                 if (configs ~= nil) then
-                    apply_user_configs(configs)
+                    conn:reply(req, { status = 'done' })
+                    apply_user_configs(configs, msg.hostname)
+                    return
+                else
+                    conn:reply(req, { status = 'error', msg = "Network name is required"})
                 end
-                -- remove lock?
-                -- remove_lock_file()
-                conn:reply(req, { status = 'done' })
-            end, { name = ubus.STRING }
+            end, { network = ubus.STRING, hostname = ubus.STRING }
         }
     }
 }
