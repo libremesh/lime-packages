@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LiMe
 	MAINTAINER:=Marcos Gutierrez <gmacos@altermundi.net>
 	URL:=http://libremesh.org
-	DEPENDS:=block-mount  kmod-usb-storage kmod-fs-vfat\
+	DEPENDS:=+block-mount +kmod-usb-storage +kmod-fs-vfat\
 		shared-state
 	PKGARCH:=all
 endef
