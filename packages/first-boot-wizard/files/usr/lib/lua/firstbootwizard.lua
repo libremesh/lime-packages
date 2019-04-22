@@ -188,7 +188,7 @@ function apply_file_config(file, hostname)
     os.execute("/usr/bin/lime-config")
     -- Start sharing lime-defaults and reboot
     share_defualts()
-    os.execute("reboot 0")
+    os.execute("reboot")
 end
 
 -- Remove scan lock file
@@ -270,7 +270,7 @@ function apply_user_configs(configs, hostname)
     -- Start sharing lime-defaults and reboot
     share_defualts()
     remove_lock_file()
-    os.execute("reboot 0")
+    os.execute("reboot")
 end
 
 -- Scan for networks and fetch configurations files
