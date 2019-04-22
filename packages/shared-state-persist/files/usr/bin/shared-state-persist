@@ -46,7 +46,7 @@ local function usePath(path, status)
 	if status == 0 then
 		log('Device found - Use device after create shared-folder and preseve status '..path..' '..status)
 		os.execute('mv '..sharedStateDir..' '..path..'/shared-state')
-		fs.symlink(path..'/s	hared-state', sharedStateDir)
+		fs.symlink(path..'/shared-state', sharedStateDir)
 
 	elseif status == 1 then
 		log('Device found - Use device and existent folder '..path..' '..status)
