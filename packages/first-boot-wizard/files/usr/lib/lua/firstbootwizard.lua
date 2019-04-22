@@ -184,10 +184,8 @@ function apply_file_config(file, hostname)
     uci_cursor:commit("lime")
     -- Remove FBW lock file
     remove_lock_file()
-    -- Start sharing lime-defaults
     -- Apply new configuration
     os.execute("/usr/bin/lime-config")
-    os.execute("/usr/bin/lime-apply")
     -- Start sharing lime-defaults and reboot
     share_defualts()
     os.execute("reboot 0")
@@ -267,10 +265,8 @@ function apply_user_configs(configs, hostname)
     utils.execute("/rom/etc/uci-defaults/91_lime-config")
     uci_cursor:set("lime", 'system', 'hostname', hostname)
     uci_cursor:commit('lime')
-    -- Start sharing lime-defaults
     -- Apply new configuration
     os.execute("/usr/bin/lime-config")
-    os.execute("/usr/bin/lime-apply")
     -- Start sharing lime-defaults and reboot
     share_defualts()
     remove_lock_file()
