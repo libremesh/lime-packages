@@ -2,7 +2,7 @@
 
 -- FIRSTBOOTWIZARD
 -- get_all_networks: Perform scan and fetch configurations
--- apply_config: Set lime-default and apply configurations
+-- apply_file_config: Set lime-default and apply configurations
 -- apply_user_configs: Set a new mesh network
 -- check_scan_file: Return /tmp/scanning status
 -- check_lock_file: Check /etc/first_run status
@@ -16,6 +16,11 @@ local wireless = require("lime.wireless")
 local fs = require("nixio.fs")
 local uci = require("uci")
 local nixio = require "nixio"
+
+-- Share your own default configuration
+function share_defualts()
+    utils.execute('ln -s /etc/config/lime-defaults /www/lime-defaults')
+end
 
 -- Write lock file at begin
 function start_scan_file()
@@ -59,7 +64,7 @@ function get_networks()
 end
 
 -- Calc link local address and download lime-default
-function get_config(mesh_network)
+function get_config(results, mesh_network)
     local mode = mesh_network.mode == "Mesh Point" and 'mesh' or 'adhoc'
     local dev_id = 'wlan'..mesh_network['phy_idx']..'-'..mode
     local stations = {}
@@ -76,10 +81,14 @@ function get_config(mesh_network)
     local data = ft.map(function(host)
     	return { host = host, signal = mesh_network.signal, ssid = mesh_network.ssid }
     end, hosts)
+    data = utils.filter_alredy_scanned(data, results)
     -- Try to fetch remote config file
     configs = ft.map(fetch_config, data)
     -- Return only valid configs
-    return ft.filter(function(el) return el ~= nil end, configs)
+    for _, config in pairs(configs) do
+        results[config.host] = config
+    end
+    return results
 end
 
 -- Setup wireless 
@@ -122,12 +131,13 @@ end
 -- Fetch remote configuration and save result
 function fetch_config(data)
     local host = data.host
+    local hostname = utils.execute("/bin/wget http://["..data.host.."]/cgi-bin/hostname -qO - "):gsub("\n", "")
+    if (hostname == '') then hostname = host end
     local signal = data.signal
     local ssid = data.ssid
-    -- TODO : Fetch hostname form /cgi-bin/hostname
-    local filename = "/tmp/lime-defaults__signal__"..(signal * -1).."__ssid__"..ssid.."__host__"..host
-    os.execute("/bin/wget http://["..host.."]/lime-defaults -O "..filename)
-    return utils.file_exists(filename) and filename or nil
+    local filename = "/tmp/lime-defaults__signal__"..(signal * -1).."__ssid__"..ssid.."__host__"..hostname
+    utils.execute("/bin/wget http://["..data.host.."]/lime-defaults -O "..filename)
+    return { host = host, filename = filename, success = utils.file_exists(filename) }
 end
 
 -- Restore previus wireless configuration
@@ -158,18 +168,27 @@ end
 -- Apply configuraation permanenty
 -- TODO: check if config is valid
 -- TODO: use safe-reboot
-function apply_config(file)
+function apply_file_config(file, hostname)
+    local uci_cursor = uci.cursor()
+    --Check if lime-defaults exist
     local filePath = "/tmp/"..file
-    check_utils.file_exists(filePath)
+    utils.file_exists(filePath)
+    -- Format hostname
+    hostname = hostname or uci_cursor:get("lime", "system", "hostname")
     -- Clean previus lime configuration and replace lime-defaults
     clean_lime_config()
     utils.execute("cp "..filePath.." /etc/config/lime-defaults")    
-    -- Run lime-config as first boot
+    -- Run lime-config as first boot and  setup new hostname
     utils.execute("/rom/etc/uci-defaults/91_lime-config")
+    uci_cursor:set("lime", "system","hostname", hostname)
+    uci_cursor:commit("lime")
     -- Remove FBW lock file
-    utils.execute("rm /etc/first_run")
+    remove_lock_file()
     -- Apply new configuration
-    os.execute("(( /usr/bin/lime-config && /usr/bin/lime-apply && reboot 0<&- &>/dev/null &) &)")
+    os.execute("/usr/bin/lime-config")
+    -- Start sharing lime-defaults and reboot
+    share_defualts()
+    os.execute("reboot")
 end
 
 -- Remove scan lock file
@@ -202,6 +221,16 @@ function remove_lock_file()
     utils.execute("rm /etc/first_run")
 end
 
+-- Extract apname form lime-default
+local function getAp(path)
+    local uci_cursor = uci.cursor("/tmp")
+    local ap_ssid = uci_cursor:get(path, "wifi", "ap_ssid")
+    if ap_ssid ~= nil then
+	return ap_ssid
+    end
+    return ""
+end
+
 -- List downloaded lime-defaults
 function read_configs()
     local tempFiles = fs.dir("/tmp/")
@@ -219,22 +248,29 @@ function read_configs()
 end
 
 -- Apply configuration for a new network ( used in ubus daemon)
-function apply_user_configs(configs)
+function apply_user_configs(configs, hostname)
+    local uci_cursor = uci.cursor()
     -- Mesh network name
     local name = configs.ssid
+    -- Format hostname
+    hostname = hostname or uci_cursor:get("lime", "system", "hostname")
     -- Save changes in lime-defaults
-    local uci_cursor = uci.cursor()
     uci_cursor:set("lime-defaults", 'wifi', 'ap_ssid', name)
     uci_cursor:set("lime-defaults", 'wifi', 'apname_ssid', name..'/%H')
     uci_cursor:set("lime-defaults", 'wifi', 'adhoc_ssid', 'LiMe.%H')
     uci_cursor:set("lime-defaults", 'wifi', 'ieee80211s_mesh_id', 'LiMe')
     uci_cursor:commit("lime-defaults")
-    -- Apply new configuration and reboot
+    -- Apply new configuration and setup hostname
     clean_lime_config()
     utils.execute("/rom/etc/uci-defaults/91_lime-config")
-    utils.execute("rm /etc/first_run")
-    os.execute("(( /usr/bin/lime-config && /usr/bin/lime-apply && reboot 0<&- &>/dev/null &) &)")
-    return { configs = configs }
+    uci_cursor:set("lime", 'system', 'hostname', hostname)
+    uci_cursor:commit('lime')
+    -- Apply new configuration
+    os.execute("/usr/bin/lime-config")
+    -- Start sharing lime-defaults and reboot
+    share_defualts()
+    remove_lock_file()
+    os.execute("reboot")
 end
 
 -- Scan for networks and fetch configurations files
@@ -251,7 +287,7 @@ function get_all_networks()
     -- Get mesh networks
     networks = get_networks()
     -- Get configs files
-    configs = utils.unpack_table(ft.map(get_config, networks))
+    configs = ft.reduce(get_config, networks, {})
     -- Restore previus wireless configuration
     restore_wifi_config()
     -- Remove lock file

@@ -1,3 +1,0 @@
-#!/bin/sh
-
-ln -s /etc/config/lime-defaults /www/lime-defaults
