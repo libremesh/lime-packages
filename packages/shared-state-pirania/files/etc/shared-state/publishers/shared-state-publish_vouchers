@@ -30,8 +30,10 @@ end
 local vouchers = JSON.parse(shell('voucher list_vouchers')) or {}
 local result = {}
 
-for _, voucher in pairs(vouchers) do
-    result[voucher.voucher] = voucher
+for _,voucher in pairs(vouchers) do
+        local text = string.gsub(JSON.stringify(voucher), "\"", "")
+        local hash = shell('echo "'..text..'" | md5sum | cut -d " " -f 1'):gsub("\n","")
+        result[hash] = voucher
 end
 
 io.popen("shared-state insert pirania", "w"):write(JSON.stringify(result))
