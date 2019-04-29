@@ -31,9 +31,9 @@ local fs = nixio.fs
 local sharedStateFolder = '/shared-state
 local sharedStateDefaultLocation = "/var/shared-state"
 
-NEW_DEVICE = 0
-OLD_DEVICE = 1
-NON_DEVICE = 2
+local NEW_DEVICE = 0
+local OLD_DEVICE = 1
+local NON_DEVICE = 2
 
 local function log(text) 
 	nixio.syslog('info', 'shared-state-persist: '..text)
