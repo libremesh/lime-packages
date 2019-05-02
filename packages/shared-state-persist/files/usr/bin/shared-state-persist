@@ -28,7 +28,12 @@
 local nixio = require('nixio')
 local fs = nixio.fs
 
-local sharedStateDir = "/var/shared-state"
+local sharedStateFolder = '/shared-state
+local sharedStateDefaultLocation = "/var/shared-state"
+
+local NEW_DEVICE = 0
+local OLD_DEVICE = 1
+local NON_DEVICE = 2
 
 local function log(text) 
 	nixio.syslog('info', 'shared-state-persist: '..text)
@@ -43,21 +48,21 @@ end
 
 local function usePath(path, status)   
 
-	if status == 0 then
+	if status == NEW_DEVICE then
 		log('Device found - Use device after create shared-folder and preseve status '..path..' '..status)
-		os.execute('mv '..sharedStateDir..' '..path..'/shared-state')
-		fs.symlink(path..'/shared-state', sharedStateDir)
+		os.execute('mv '..sharedStateDefaultLocation..' '..path..sharedStateFolder)
+		fs.symlink(path..sharedStateFolder, sharedStateDefaultLocation)
 
-	elseif status == 1 then
+	elseif status == OLD_DEVICE then
 		log('Device found - Use device and existent folder '..path..' '..status)
-		os.execute('rm -rf '..sharedStateDir)
-		fs.symlink(path..'/shared-state', sharedStateDir)
+		os.execute('rm -rf '..sharedStateDefaultLocation)
+		fs.symlink(path..sharedStateFolder, sharedStateDefaultLocation)
 
-	elseif status == 2 then
-		log('No device found - Remove symlink and use default folder '..sharedStateDir)
-		if fs.lstat(sharedStateDir).type == 'lnk' then
-			fs.remove(sharedStateDir)
-			fs.mkdir(sharedStateDir)
+	elseif status == NON_DEVICE then
+		log('No device found - Remove symlink and use default folder '..sharedStateDefaultLocation)
+		if fs.lstat(sharedStateDefaultLocation).type == 'lnk' then
+			fs.remove(sharedStateDefaultLocation)
+			fs.mkdir(sharedStateDefaultLocation)
 		end
 	end
 
@@ -70,19 +75,19 @@ end
 
 local function runPersist()
 	local selectedPath = nil
-	local selectedOption = 2
+	local selectedOption = NON_DEVICE
 
 	for mntPath in getDevices() do
 		-- Setup first device as valid
 		if selectedPath == nil and selectedOption == 2 then
-			selectedOption = 0
+			selectedOption = NEW_DEVICE
 			selectedPath = mntPath
 		end
 		-- Check for previus shared-state folder in the device
 		local folders = fs.dir(mntPath)
 		for folder in folders do
-			if selectedOption == 0 and folder == 'shared-state' then 
-				selectedOption = 1
+			if selectedOption == NEW_DEVICE and folder == 'shared-state' then 
+				selectedOption = OLD_DEVICE
 				selectedPath = mntPath
 			end
 		end
