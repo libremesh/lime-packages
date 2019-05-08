@@ -21,6 +21,7 @@ local http = require("luci.httpclient")
 local JSON = require("luci.jsonc")
 local nixio = require("nixio")
 require("nixio.util")
+local uci = require("uci")
 
 sharedState = {}
 
@@ -83,6 +84,15 @@ function sharedState.sync(urls)
 	urls = urls or {}
 
 	if #urls < 1 then
+
+		local uci_cursor = uci:cursor()
+		local fixed_candidates = uci_cursor:get("shared-state", "options","candidates") or {}
+		for _, line in pairs(fixed_candidates) do
+			table.insert(
+				urls,
+				"http://"..line.."/cgi-bin/shared-state/"..sharedState.dataType )
+		end
+
 		io.input(io.popen(arg[0].."-get_candidates_neigh"))
 		for line in io.lines() do
 			table.insert(
