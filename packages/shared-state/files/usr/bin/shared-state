@@ -90,7 +90,7 @@ function sharedState.sync(urls)
 		for _, line in pairs(fixed_candidates) do
 			table.insert(
 				urls,
-				"http://"..line.."/cgi-bin/shared-state/"..sharedState.dataType )
+				line.."/"..sharedState.dataType )
 		end
 
 		io.input(io.popen(arg[0].."-get_candidates_neigh"))
