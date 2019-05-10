@@ -82,6 +82,6 @@ local finalHash = shell('md5sum '..dbPath..' | cut -d \' \' -f 1')
 
 -- If db change trigger captive-portal and setup the new state
 if initialHash ~= finalHash then
-    shell('captive-portal')
+    shell('captive-portal update')
     shell('/etc/shared-state/publishers/shared-state-publish_vouchers')
 end
