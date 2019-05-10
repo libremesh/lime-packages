@@ -2,15 +2,44 @@
 
 # TO DO:
  # This script needs some volunteer work
- # It currently gets the path through bmx6 (currently the default of libremesh), 
- # but it should actually be able to detect which protocol is being used and 
+ # It currently gets the path through bmx6 and babeld, 
+ # but it should actually be able to detect any protocol is being used and 
  # use a strategy for each case.
 
-default_dev=`ip r | grep "default dev" | cut -d' ' -f3`;
-gw=`bmx6 -c show tunnels | grep $default_dev | grep inet4 | awk '{ print $10 }'`;
+result=''
+# if 8.8.8.8 is accessible, print internet path
+if ping -q -c5 -w10 8.8.8.8 &>/dev/null; then
+    #BMX6 Path to INternet
+    if [[ -f '/usr/lib/opkg/info/lime-proto-bmx6.control' ]]; then 
+        default_dev=`ip r | grep "default dev" | cut -d' ' -f3`;
+        gw=`bmx6 -c show tunnels | grep $default_dev | grep inet4 | awk '{ print $10 }'`;
+        path=`mtr -6 -r -c 1 $gw.mesh  | grep "\.|" |  awk '{ print $2}' | cut -d'.' -f1`
+        result="$path"
+    
+    #Babeld Path to Internet
+    elif [[ -f '/usr/lib/opkg/info/lime-proto-babeld.control' ]]; then
+        path=''
+        for ip in `mtr -4 -r --no-dns -c1 8.8.8.8 | grep "\.|" |  awk '{ print $2}' | grep '^10\.'`; do
+            name=$(nslookup $ip | grep name | cut -d '=' -f 2 | sed "s/ //" | cut -d '.' -f 1)
+            if [[ "$name" = "" ]]; then
+                path=$path$ip\\n
+            else
+                path=$path$name\\n
+            fi
+        done
+        result="$path"
+    fi
+fi
 
-# if 8.8.8.8 is accessible, save internet path to file
-if ping -q -c5 -w10 8.8.8.8 &>/dev/null
-    then path=`mtr -6 -r -c 1 $gw.mesh  | grep "\.|" |  awk '{ print $2}' | cut -d'.' -f1`
-    printf "$path"
+printf $result
+
+if [ ! -z "$result" ] && [ "$1" = "save" ] ; then
+    newSum=$(echo $result | md5sum | cut -d' ' -f 1)
+    oldSum=$(md5sum /etc/last_internet_path | cut -d' ' -f 1)
+    if [ "$newSum" != "$oldSum" ]; then
+        echo -n -e "$result" > /etc/last_internet_path
+        echo 'Last path to internet updated'
+    else 
+        echo 'Last path to internet has no changed'
+    fi
 fi
