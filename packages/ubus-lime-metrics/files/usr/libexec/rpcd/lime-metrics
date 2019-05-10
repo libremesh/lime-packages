@@ -9,6 +9,7 @@
 
 require "ubus"
 local json = require 'luci.json'
+local utils = require("lime.utils")
 
 local function shell(command)
     -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
@@ -68,8 +69,16 @@ end
 local function _get_metrics(target)
     local result = {}
     local node = target
-    local loss = _get_loss(node..".mesh", 6)
-    shell_output = shell("netperf -6 -l 10 -H "..node..".mesh| tail -n1| awk '{ print $5 }'")
+    local loss = nil
+    local shell_output = ""
+
+    if utils.is_installed("lime-proto-bmx6") then
+        loss = _get_loss(node..".mesh", 6)
+        shell_output = shell("netperf -6 -l 10 -H "..node..".mesh| tail -n1| awk '{ print $5 }'")
+    elseif utils.is_installed("lime-proto-babeld") then
+        loss = _get_loss(node, 4)
+        shell_output = shell("netperf -l 10 -H "..node.."| tail -n1| awk '{ print $5 }'")
+    end
     local bw = 0
     if shell_output ~= "" then
         bw = shell_output:match("[%d.]+")
@@ -87,12 +96,24 @@ end
 
 local function _get_gateway() 
     local result = {}
-    local default_dev = shell("ip r | grep 'default dev' | cut -d' ' -f3")
-    if default_dev ~= "" then
-        local shell_output = shell("bmx6 -c show tunnels | grep "..default_dev.." | grep inet4 ")
+    local default_dev = shell("echo -n $(ip r | grep 'default' | cut -d' ' -f3)")
+    local gw = nil
+
+    if utils.is_installed("lime-proto-bmx6") then
+        default_dev = shell("bmx6 -c show tunnels | grep "..default_dev.." | grep inet4 ")
         local res = {}
-        for w in shell_output:gmatch("%S+") do table.insert(res, w) end
-        local gw = res[10]
+        for w in default_dev:gmatch("%S+") do table.insert(res, w) end
+        gw = res[10]
+    end
+
+    if utils.is_installed("lime-proto-babeld") then
+        gw = shell('nslookup '..default_dev..' | grep name | cut -d "=" -f 2 | sed "s/ //" | cut -d "." -f 1')
+        if string.match(gw,'NXDOMAIN') or gw == "" then
+            gw = default_dev
+        end
+    end
+
+    if gw ~= "" then
         result.status = "ok"
         result.gateway = gw
         return result
@@ -103,6 +124,21 @@ local function _get_gateway()
 end
 local function get_gateway(msg)
    printJson(_get_gateway())
+end
+
+local function get_last_internet_path(msg)
+    local path = list_from_file("/etc/last_internet_path")
+    local result = {}
+    if #path>0 then
+        result.path = {}
+        for i, node in ipairs(path) do
+            table.insert(result.path, node)
+        end
+        result.status = "ok"
+    else
+        result = {status="error", error={msg="Not found. No known Internet path.", code="1"}}
+    end
+    printJson(result)
 end
 
 local function _get_path(target)
@@ -120,22 +156,8 @@ local function _get_path(target)
     return result
 end
 local function get_path(msg)
-    printJson(_get_path(msg.target))
-end
-
-local function get_last_internet_path(msg)
-    local path = list_from_file("/etc/last_internet_path")
-    local result = {}
-    if #path>0 then
-        result.path = {}
-        for i, node in ipairs(path) do
-            table.insert(result.path, node)
-        end
-        result.status = "ok"
-    else
-        result = {status="error", error={msg="Not found. No known Internet path.", code="1"}}
-    end
-    printJson(result)
+    --printJson(_get_path(msg.target))
+    get_last_internet_path()
 end
 
 local function get_internet_status(msg)
