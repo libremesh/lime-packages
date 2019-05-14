@@ -1,4 +1,10 @@
 #!/bin/sh
-echo "adding cron to save last known path to the Internet"
-sed "\| \* \* \* .*internet_path*|d" -i /etc/crontabs/root
-echo "*/30 * * * * /usr/sbin/internet_path save" >>  /etc/crontabs/root
+
+unique_append()
+{
+	grep -qF "$1" "$2" || echo "$1" >> "$2"
+}
+
+unique_append \
+	"*/30 * * * * /usr/sbin/internet_path save"\
+	/etc/crontabs/root
