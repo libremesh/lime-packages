@@ -1,0 +1,2 @@
+config shared-state 'options'
+	#list candidates 'http://10.13.0.2/cgi-bin/shared-state/'

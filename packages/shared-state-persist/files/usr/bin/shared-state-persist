@@ -28,7 +28,7 @@
 local nixio = require('nixio')
 local fs = nixio.fs
 
-local sharedStateFolder = '/shared-state
+local sharedStateFolder = "/shared-state"
 local sharedStateDefaultLocation = "/var/shared-state"
 
 local NEW_DEVICE = 0
