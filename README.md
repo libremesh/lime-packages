@@ -67,8 +67,7 @@ We suggest you to deselect the package _dnsmasq_ from _Base system_ section and
 to select _dnsmasq-dhcpv6_ in the same section. Then to deselect _odhcpd_ from
 _Network_ section.
 
-Finally enter the _LiMe_ section and select the wanted LibreMesh features, a
-good option is to select lime-full.
+Finally enter the _LiMe_ section and select the wanted LibreMesh features.
 
 Compile the firmware images.
 
