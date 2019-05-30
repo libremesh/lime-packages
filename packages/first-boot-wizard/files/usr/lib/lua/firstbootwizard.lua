@@ -241,7 +241,7 @@ function remove_lock_file()
     utils.execute("rm /etc/first_run")
 end
 
--- Extract apname form lime-default
+-- Get config from lime-default file
 local function getConfig(path)
     local uci_cursor = uci.cursor("/tmp")
     local config = uci_cursor:get_all(path)
