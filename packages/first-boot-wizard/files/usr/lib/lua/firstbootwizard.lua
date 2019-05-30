@@ -244,7 +244,7 @@ end
 -- Extract apname form lime-default
 local function getConfig(path)
     local uci_cursor = uci.cursor("/tmp")
-    local config = uci_cursor:get(path)
+    local config = uci_cursor:get_all(path)
     if config ~= nil then
         return config
     end
