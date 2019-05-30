@@ -6,11 +6,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lime-app
-PKG_VERSION:=v0.2.0-alpha.10
+PKG_VERSION:=v0.2.0-alpha.11
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_HASH:=ff3551cd330b4cfff51413b92458c5802f37301b65c8fefb8c71ab5ba92c6f19
+PKG_HASH:=f5766c22db800539985e413b2850f8fe58232025dee16677d54cd157e1ef51a1
 PKG_SOURCE_URL:=https://github.com/libremesh/lime-app/releases/download/$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
