@@ -135,12 +135,12 @@ function utils.filter_mesh(n)
     return n.mode == "Ad-Hoc" or n.mode == "Mesh Point"
 end
 
-local same_netwrok = function(net_a, net_b)
+local same_network = function(net_a, net_b)
     return net_a.channel == net_b.channel and net_a.ssid == net_b.ssid      
 end
 
 local find_network = function(network, data)
-    return ft.filter(function(net) return same_netwrok(net,network) end, data)
+    return ft.filter(function(net) return same_network(net,network) end, data)
 end
 
 function utils.only_best(networks)
@@ -148,7 +148,7 @@ function utils.only_best(networks)
         local existent = find_network(network, acc)
         if #existent > 0 then
             acc = ft.map(function(net)
-                if same_netwrok(net, network) and net.signal < network.signal then
+                if same_network(net, network) and net.signal < network.signal then
                     return network
                 end 
                 return net
