@@ -4,6 +4,7 @@ local ft = require('firstbootwizard.functools')
 local fs = require("nixio.fs")
 local iwinfo = require("iwinfo")
 local json = require("luci.json")
+local limeutils = require("lime.utils")
 
 function execute(cmd)
     local f = assert(io.popen(cmd, 'r'))
@@ -69,8 +70,10 @@ function utils.extract_phys_from_radios(radio)
     return "phy"..radio.sub(radio, -1)
 end
 
-function utils.not_own_network(net) 
-    return net.signal ~= -256
+function utils.not_own_network(own_macs) 
+    return function(remote_mac)
+        return limeutils.has_value(own_macs, remote_mac) ~= true
+    end
 end
 
 function utils.add_prop(option, value)
@@ -132,6 +135,31 @@ function utils.filter_mesh(n)
     return n.mode == "Ad-Hoc" or n.mode == "Mesh Point"
 end
 
+local same_network = function(net_a, net_b)
+    return net_a.channel == net_b.channel and net_a.ssid == net_b.ssid      
+end
+
+local find_network = function(network, data)
+    return ft.filter(function(net) return same_network(net,network) end, data)
+end
+
+function utils.only_best(networks)
+    return ft.reduce(function(acc, network)
+        local existent = find_network(network, acc)
+        if #existent > 0 then
+            acc = ft.map(function(net)
+                if same_network(net, network) and net.signal < network.signal then
+                    return network
+                end 
+                return net
+            end,acc)
+            return acc
+        end
+        table.insert(acc, network)
+        return acc
+    end, networks, {})
+end
+
 function utils.is_connected(dev_id)
     local isAssociated = {}
     local i = 0
@@ -154,7 +182,16 @@ function utils.append_network(dev)
 end
 
 function utils.filter_alredy_scanned(hosts, results)
-    return ft.filter(function(host) return results[host.host] == nil end, hosts)
+    local fe80scanned = ft.reduce(function(scanned, host)
+        local mac = split(host.host, "%%")[1]
+        scanned[mac] = mac
+        return scanned
+    end, results, {})
+
+    return ft.filter(function(host) 
+        local mac = split(host.host, "%%")[1]
+        return fe80scanned[mac] == nil
+    end, hosts)
 end
 
 return utils

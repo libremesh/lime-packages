@@ -17,6 +17,10 @@ local fs = require("nixio.fs")
 local uci = require("uci")
 local nixio = require "nixio"
 
+function log(text)
+    nixio.syslog('info', '[FBW] ' .. text)
+end
+
 -- Share your own default configuration
 function share_defualts()
     utils.execute('ln -s /etc/config/lime-defaults /www/lime-defaults')
@@ -57,14 +61,24 @@ function get_networks()
     networks = ft.reduce(ft.flatTable, networks, {})
     -- Filter only remote mesh and ad-hoc networks
     networks = ft.filter(utils.filter_mesh, networks)
-    networks = ft.filter(utils.not_own_network, networks)
     -- Sort by channel and mode
     networks = utils.sort_by_channel_and_mode(networks)
+    -- Remove dupicated results in multiradios devices
+    networks = utils.only_best(networks)
     return networks
+end
+
+-- Get macs from 5ghz radios
+function get_own_macs()
+    local radios = ft.map(utils.extract_prop(".name"), wireless.scandevices())
+    local radios_5ghz = ft.filter(wireless.is5Ghz,  radios)
+    local phys = ft.map(utils.extract_phys_from_radios, radios_5ghz)
+    return ft.map(function(phy) return table.concat(wireless.get_phy_mac(phy),":") end, phys)
 end
 
 -- Calc link local address and download lime-default
 function get_config(results, mesh_network)
+    log('Calc link local address and download lime-default - '.. json.encode(mesh_network))
     local mode = mesh_network.mode == "Mesh Point" and 'mesh' or 'adhoc'
     local dev_id = 'wlan'..mesh_network['phy_idx']..'-'..mode
     local stations = {}
@@ -73,13 +87,17 @@ function get_config(results, mesh_network)
     setup_wireless(mesh_network)
     -- Check if connected if not sleep some more until connected or ignore if 10s passed
     utils.is_connected(dev_id)
+    -- Get associated stations
+    stations = utils.get_stations_macs(dev_id)
+    -- Remove own wifi networks
+    local own_macs = get_own_macs()
+    stations = ft.filter(utils.not_own_network(own_macs), stations)
     -- Calc ipv6
-     stations = utils.get_stations_macs(dev_id)
     local linksLocalIpv6 = ft.map(utils.eui64, stations)
     local hosts = ft.map(utils.append_network(dev_id), linksLocalIpv6)
     -- Add aditional info
     local data = ft.map(function(host)
-    	return { host = host, signal = mesh_network.signal, ssid = mesh_network.ssid }
+        return { host = host, signal = mesh_network.signal, ssid = mesh_network.ssid }
     end, hosts)
     data = utils.filter_alredy_scanned(data, results)
     -- Try to fetch remote config file
@@ -130,12 +148,14 @@ end
 
 -- Fetch remote configuration and save result
 function fetch_config(data)
+    log('Fetch config from '.. json.encode(data))
     local host = data.host
     local hostname = utils.execute("/bin/wget http://["..data.host.."]/cgi-bin/hostname -qO - "):gsub("\n", "")
+    log('Hostname found: '.. hostname)
     if (hostname == '') then hostname = host end
     local signal = data.signal
     local ssid = data.ssid
-    local filename = "/tmp/lime-defaults__signal__"..(signal * -1).."__ssid__"..ssid.."__host__"..hostname
+    local filename = "/tmp/lime-defaults__host__"..hostname
     utils.execute("/bin/wget http://["..data.host.."]/lime-defaults -O "..filename)
     return { host = host, filename = filename, success = utils.file_exists(filename) }
 end
@@ -221,14 +241,14 @@ function remove_lock_file()
     utils.execute("rm /etc/first_run")
 end
 
--- Extract apname form lime-default
-local function getAp(path)
+-- Get config from lime-default file
+local function getConfig(path)
     local uci_cursor = uci.cursor("/tmp")
-    local ap_ssid = uci_cursor:get(path, "wifi", "ap_ssid")
-    if ap_ssid ~= nil then
-	return ap_ssid
+    local config = uci_cursor:get_all(path)
+    if config ~= nil then
+        return config
     end
-    return ""
+    return {}
 end
 
 -- List downloaded lime-defaults
@@ -237,9 +257,9 @@ function read_configs()
     local result = {}
     for file in tempFiles do
         if (file ~= nil and file:sub(1, 12) == "lime-default") then
-            local ap = getAp(file)
+            local config = getConfig(file)
             table.insert(result, {
-                ap = string.gsub(ap, "\"", ""),
+                config = config,
                 file = file
             })
         end
@@ -278,20 +298,20 @@ function get_all_networks()
     local networks = {}
     local configs = {}
 
-    -- Add lock file
+    log('Add lock file')
     start_scan_file()
-    -- Clear previus scans
+    log('Clear previus scans')
     clean_tmp()
-    -- Set wireless backup
+    log('Set wireless backup')
     backup_wifi_config()
-    -- Get mesh networks
+    log('Get mesh networks')
     networks = get_networks()
-    -- Get configs files
+    log('Get configs files')
     configs = ft.reduce(get_config, networks, {})
-    -- Restore previus wireless configuration
+    log('Restore previus wireless configuration')
     restore_wifi_config()
-    -- Remove lock file
+    log('Remove lock file')
     end_scan()
-    -- Return configs files names
+    log('Return configs files names')
     return configs
 end
