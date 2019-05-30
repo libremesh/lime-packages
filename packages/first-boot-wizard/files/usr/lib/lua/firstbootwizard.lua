@@ -61,12 +61,19 @@ function get_networks()
     networks = ft.reduce(ft.flatTable, networks, {})
     -- Filter only remote mesh and ad-hoc networks
     networks = ft.filter(utils.filter_mesh, networks)
-    networks = ft.filter(utils.not_own_network, networks)
     -- Sort by channel and mode
     networks = utils.sort_by_channel_and_mode(networks)
     -- Remove dupicated results in multiradios devices
     networks = utils.only_best(networks)
     return networks
+end
+
+-- Get macs from 5ghz radios
+function get_own_macs()
+    local radios = ft.map(utils.extract_prop(".name"), wireless.scandevices())
+    local radios_5ghz = ft.filter(wireless.is5Ghz,  radios)
+    local phys = ft.map(utils.extract_phys_from_radios, radios_5ghz)
+    return ft.map(function(phy) return table.concat(wireless.get_phy_mac(phy),":") end, phys)
 end
 
 -- Calc link local address and download lime-default
@@ -80,13 +87,17 @@ function get_config(results, mesh_network)
     setup_wireless(mesh_network)
     -- Check if connected if not sleep some more until connected or ignore if 10s passed
     utils.is_connected(dev_id)
+    -- Get associated stations
+    stations = utils.get_stations_macs(dev_id)
+    -- Remove own wifi networks
+    local own_macs = get_own_macs()
+    stations = ft.filter(utils.not_own_network(own_macs), stations)
     -- Calc ipv6
-     stations = utils.get_stations_macs(dev_id)
     local linksLocalIpv6 = ft.map(utils.eui64, stations)
     local hosts = ft.map(utils.append_network(dev_id), linksLocalIpv6)
     -- Add aditional info
     local data = ft.map(function(host)
-    	return { host = host, signal = mesh_network.signal, ssid = mesh_network.ssid }
+        return { host = host, signal = mesh_network.signal, ssid = mesh_network.ssid }
     end, hosts)
     data = utils.filter_alredy_scanned(data, results)
     -- Try to fetch remote config file
@@ -144,7 +155,7 @@ function fetch_config(data)
     if (hostname == '') then hostname = host end
     local signal = data.signal
     local ssid = data.ssid
-    local filename = "/tmp/lime-defaults__signal__"..(signal * -1).."__host__"..hostname
+    local filename = "/tmp/lime-defaults__host__"..hostname
     utils.execute("/bin/wget http://["..data.host.."]/lime-defaults -O "..filename)
     return { host = host, filename = filename, success = utils.file_exists(filename) }
 end
@@ -235,7 +246,7 @@ local function getConfig(path)
     local uci_cursor = uci.cursor("/tmp")
     local config = uci_cursor:get(path)
     if config ~= nil then
-	return config
+        return config
     end
     return {}
 end

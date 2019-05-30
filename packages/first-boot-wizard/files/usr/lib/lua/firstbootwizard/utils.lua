@@ -4,6 +4,7 @@ local ft = require('firstbootwizard.functools')
 local fs = require("nixio.fs")
 local iwinfo = require("iwinfo")
 local json = require("luci.json")
+local limeutils = require("lime.utils")
 
 function execute(cmd)
     local f = assert(io.popen(cmd, 'r'))
@@ -69,8 +70,10 @@ function utils.extract_phys_from_radios(radio)
     return "phy"..radio.sub(radio, -1)
 end
 
-function utils.not_own_network(net) 
-    return net.signal ~= -256
+function utils.not_own_network(own_macs) 
+    return function(remote_mac)
+        return limeutils.has_value(own_macs, remote_mac) ~= true
+    end
 end
 
 function utils.add_prop(option, value)
