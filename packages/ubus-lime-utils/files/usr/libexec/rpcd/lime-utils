@@ -195,7 +195,7 @@ local function change_config (msg)
             country = country
         }})
         shell("lime-config && reboot")
-        printJson({ status = 'ok'})|
+        printJson({ status = 'ok'})
     else
         printJson({ status = 'error', msg = 'You must enter a hostname' })
     end
