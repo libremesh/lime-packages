@@ -272,7 +272,7 @@ function confirm(args)
         os.exit(113)
     end
 
-    print("Canceling and disabling automatic rebool")
+    print("Canceling and disabling automatic reboot")
     os.execute("/etc/init.d/safe_upgrade_auto_reboot stop")
     os.execute("/etc/init.d/safe_upgrade_auto_reboot disable")
 
@@ -321,7 +321,7 @@ function parse_args()
                    "Set the timeout (in seconds) of the automatic reboot safety mechanism")
                    :default('600'):convert(validate_safety_timeout)
 
-    local confirm = parser:command('confirm', ('Confirm the current partition. Use when after an upgrade' ..
+    local confirm = parser:command('confirm', ('Confirm the current partition. Use when after an upgrade ' ..
                                               'or after running "test-other-partition".'))
 
     local bootstrap = parser:command('bootstrap', 'Install the safe-upgrade mechanism')
