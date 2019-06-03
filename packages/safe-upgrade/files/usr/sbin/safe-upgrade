@@ -301,7 +301,7 @@ function parse_args()
             return nil, string.format("file %q does not exists", filename)
         end
     end
-    upgrade:argument("firmware", "frimware image (xxx-sysupgrade.bin)"):convert(validate_file_exists)
+    upgrade:argument("firmware", "firmware image (xxx-sysupgrade.bin)"):convert(validate_file_exists)
     upgrade:flag("--preserve-full-config", ("Preserves the config files listed in /etc/sysupgrade.conf and " ..
                                               "/lib/upgrade/keep.d/* like sysupgrade does."))
     upgrade:flag("-n --do-not-preserve-config", "Do not save configuration to the new partition")
