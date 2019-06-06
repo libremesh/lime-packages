@@ -34,12 +34,13 @@ fi
 printf $result
 
 if [ ! -z "$result" ] && [ "$1" = "save" ] ; then
-    newSum=$(echo $result | md5sum | cut -d' ' -f 1)
+    echo -n -e "$result" > /tmp/last_internet_path
+    newSum=$(md5sum /tmp/last_internet_path | cut -d' ' -f 1)
     oldSum=$(md5sum /etc/last_internet_path | cut -d' ' -f 1)
     if [ "$newSum" != "$oldSum" ]; then
         echo -n -e "$result" > /etc/last_internet_path
-        echo 'Last path to internet updated'
+        logger 'Last path to internet updated'
     else 
-        echo 'Last path to internet has no changed'
+        logger 'Last path to internet has no changed'
     fi
 fi
