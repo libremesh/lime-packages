@@ -50,7 +50,7 @@ $(ping6 -c 2 ff02::1%br-lan | \
 	awk '{if ($3 == "from" && substr($7,6)+0 < 2) print substr($4, 1, length($4)-1)"%br-lan" }' | sort -u)"
 
 for ownAddr in $(ip -6 address show | awk '{if ($1 == "inet6") print $2}' | awk -F/ '{print $1}') ; do
-	candidateAddresses="$(echo "$candidateAddresses" | grep -v "$ownAddr")"
+	candidateAddresses="$(echo "$candidateAddresses" | grep -v "^$ownAddr%.*$")"
 done
 
 # Deduplicate addresses visible from muliple interfaces
