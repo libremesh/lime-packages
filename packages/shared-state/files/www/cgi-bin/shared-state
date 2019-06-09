@@ -1,65 +1,28 @@
-#!/usr/bin/lua
+#!/bin/sh
 
---! LibreMesh
---! Copyright (C) 2019  Marcos Gutierrez <gmarcos@altermundi.net>
---! Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
---!
---! This program is free software: you can redistribute it and/or modify
---! it under the terms of the GNU Affero General Public License as
---! published by the Free Software Foundation, either version 3 of the
---! License, or (at your option) any later version.
---!
---! This program is distributed in the hope that it will be useful,
---! but WITHOUT ANY WARRANTY; without even the implied warranty of
---! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
---! GNU Affero General Public License for more details.
---!
---! You should have received a copy of the GNU Affero General Public License
---! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+<<LICENSE
 
-local nixio = require("nixio")
+Copyright (C) 2019  Gioacchino Mazzurco <gio@eigenlab.org>
 
-io.stdout:write("\rContent-Type: application/json\n\n")
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License version 3 as
+published by the Free Software Foundation.
 
-local httpMethod = os.getenv('REQUEST_METHOD')
-local tableName = nixio.getenv('PATH_INFO')
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
 
-local tmpPathOut = os.tmpname()
-local tmpPathIn = os.tmpname()
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-function cExit(e)
-	os.remove(tmpPathOut)
-	os.remove(tmpPathIn)
-	os.exit(e)
-end
+LICENSE
 
+echo "Content-Type: application/json"
+echo
 
-if httpMethod == "POST" and type(tableName) == "string" then
-	local inFd = io.open(tmpPathIn, "w")
-	if inFd then
-		inFd:write(io.stdin:read("*all"))
-		inFd:close()
-		inFd = nil
-	else
-		cExit(-1)
-	end
+[ "$REQUEST_METHOD" != "POST" ] && exit 22
+[ -z "$PATH_INFO" ] && exit 22
+echo "$PATH_INFO" | grep -q '^[a-zA-Z0-9_-]*$' || exit 22
 
-	tableName = tableName:gsub("%/", "")
-	local retval = os.execute(
-		"cat "..tmpPathIn.." | shared-state reqsync "..tableName.." > "..tmpPathOut)
-
-	if retval == 0 then
-		local outFd = io.open(tmpPathOut, "r")
-		if outFd then
-			io.stdout:write(outFd:read("*all"))
-			outFd:close()
-			outFd = nil
-		else
-			cExit(-1)
-		end
-	end
-
-	cExit(retval)
-end
-
-cExit(-22)
+cat - | shared-state reqsync "$PATH_INFO"
