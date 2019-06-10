@@ -1,0 +1,84 @@
+#!/usr/bin/lua
+
+--! LibreMesh
+--! Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
+--! Copyright (C) 2019  Nicolas Echaniz <nicoechaniz@altermundi.net>
+--!
+--! This program is free software: you can redistribute it and/or modify
+--! it under the terms of the GNU Affero General Public License version 3
+--! published by the Free Software Foundation.
+--!
+--! This program is distributed in the hope that it will be useful,
+--! but WITHOUT ANY WARRANTY; without even the implied warranty of
+--! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--! GNU Affero General Public License for more details.
+--!
+--! You should have received a copy of the GNU Affero General Public License
+--! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+local http = require("luci.httpclient")
+local libuci = require("uci")
+
+
+local config = libuci:cursor()
+local url = config:get("check-date", "http", "server")
+url = url or { "http://openwrt.org" }
+math.randomseed(os.time())
+url = url[math.random(#url)]
+local resetDate = config:get("check-date", "system", "reset_date") or false
+local restartSysntpd = config:get("check-date", "system", "restart_sysntpd")
+restartSysntpd = (restartSysntpd == nil) or restartSysntpd
+config = nil
+
+local localCurrDate = assert(io.popen("date --utc -Iminutes", 'r'):read())
+local lFormat="(%d+)-(%d+)-(%d+)T(%d+):(%d+)UTC"
+local lYear, lMonth, lDay, lHour, lMin = localCurrDate:match(lFormat)
+
+local httpOptions = {}
+httpOptions.rcvtimeo = 5
+httpOptions.sndtimeo = 5
+httpOptions.depth = 0 -- Avoid annoying redirects
+httpOptions.method = 'HEAD'
+local success, response, algo = pcall(http.request_raw, url, httpOptions)
+
+if(not success) then
+	print(arg[0], "HTTP request failed", url, success, response, algo)
+	os.exit(42)
+end
+
+local s = algo['headers']['Date']
+local p="%a+, (%d+) (%a+) (%d+) (%d+):(%d+):(%d+) GMT"
+local day, month, year, hour, min, sec = s:match(p)
+local MON = { Jan="01", Feb="02", Mar="03", Apr="04", May="05", Jun="06", Jul="07", Aug="08", Sep="09", Oct="10", Nov="11", Dec="12"}
+month = MON[month]
+
+local skewDetected = false
+
+local lTdate = { lYear, lMonth, lDay, lHour }
+local rTdate = { year,  month,  day,  hour }
+
+for i=1,#lTdate do
+	if(lTdate[i] ~= rTdate[i]) then
+		skewDetected = true
+		break
+	end
+end
+
+skewDetected = skewDetected or (math.abs(lMin - min) > 13)
+
+if(skewDetected) then
+	local currDate = string.format(
+		"%s.%s.%s-%s:%s:%s", lYear, lMonth, lDay, lHour, lMin, "XX" )
+	local newDate = string.format(
+		"%s.%s.%s-%s:%s:%s", year, month, day, hour, min, sec )
+
+	print( arg[0].." Too far away clock skew detected "..
+	       " local "..currDate.." "..url.." "..newDate )
+
+	if resetDate then
+		local newDate = string.format(
+			"%s.%s.%s-%s:%s:%s", year, month, day, hour, min, sec )
+		os.execute("date --utc --set "..newDate)
+	end
+	if restartSysntpd then os.execute("/etc/init.d/sysntpd restart") end
+end
