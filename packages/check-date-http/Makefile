@@ -9,24 +9,25 @@ include $(TOPDIR)/rules.mk
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
-PKG_NAME:=shared-state-date
+PKG_NAME:=check-date-http
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-	TITLE:=date time module for shared-state
+	TITLE:=Keep local date under NTP too far away skew
 	CATEGORY:=LiMe
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
-	DEPENDS:=+@BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT +jsonfilter +lua \
-		+luci-lib-jsonc shared-state
+	DEPENDS:=+@BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT +libuci-lua +lua \
+		+luci-lib-httpclient
 	PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description
-	Syncronize time beween nodes, if NTP is not available nodes converges to
-	higher time available
+	Check local time against a list of HTTP(s) services, if the time skew is
+	more then 15 minutes, restart sysntpd to force time syncronization, or
+	reset trought date command depending on configuration.
 endef
 
 define Build/Compile
