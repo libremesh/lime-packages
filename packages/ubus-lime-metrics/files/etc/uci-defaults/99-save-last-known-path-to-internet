@@ -6,5 +6,5 @@ unique_append()
 }
 
 unique_append \
-	"*/30 * * * * /usr/sbin/internet_path save"\
+	"*/30 * * * * /usr/sbin/last_internet save"\
 	/etc/crontabs/root
