@@ -1,0 +1,15 @@
+config system 'system'
+	option restart_sysntpd true
+	option reset_date false
+
+config timeserver 'http'
+	list server 'http://libremesh.org/'
+	list server 'http://librerouter.org/'
+	list server 'http://www.lacnic.net/'
+	list server 'http://openwrt.org/'
+	list server 'http://eigenlab.org/'
+	list server 'http://stackoverflow.com/'
+	list server 'http://www.google.com/'
+	list server 'http://ip4.me/'
+	list server 'http://ip6only.me/'
+	list server 'http://ip6.me/'
