@@ -12,7 +12,7 @@ feeds_file="/etc/opkg/limefeeds.conf"
 
 [ -z "$OPENWRT_ARCH" ] && {
   echo "Release information not available, skipping opkg configuration"
-  exit 1
+  exit 0
 }
 
 [ "$LIME_BRANCH" == "master" ] || [ "$LIME_BRANCH" == "develop" ] || \
