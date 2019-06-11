@@ -137,32 +137,42 @@ function sharedState.toJsonString()
 	return JSON.stringify(sharedState.storage)
 end
 
+sharedState.locked = false
+
+function sharedState.lock()
+	fs.mkdirr(fs.dirname(sharedState.dataStorePath()))
+	sharedState.storageFD = nixio.open(
+		sharedState.dataStorePath(),
+		nixio.open_flags("rdwr", "creat") )
+
+	for i=1,10 do
+		if not sharedState.storageFD:lock("tlock") then
+			nixio.nanosleep(1)
+		else
+			sharedState.locked = true
+			break
+		end
+	end
+
+	if not sharedState.locked then
+		print(arg[0], arg[1], arg[2], "Failed acquiring lock on data!")
+		os.exit(-165)
+	end
+end
+
+function sharedState.unlock()
+	sharedState.storageFD:lock("ulock")
+	sharedState.storageFD:close()
+	sharedState.storageFD = nil
+end
+
 nixio.openlog("shared-state")
 
 if arg[2] then sharedState.dataType = arg[2] end
 
-fs.mkdirr(fs.dirname(sharedState.dataStorePath()))
-sharedState.storageFD = nixio.open(
-	sharedState.dataStorePath(),
-	nixio.open_flags("rdwr", "creat") )
-
-sharedState.locked = false
-
-for i=1,10 do
-	if not sharedState.storageFD:lock("tlock") then
-		nixio.nanosleep(1)
-	else
-		sharedState.locked = true
-		break
-	end
-end
-
-if not sharedState.locked then
-	print(arg[0], arg[1], arg[2], "Failed acquiring lock on data!")
-	os.exit(-165)
-end
-
+sharedState.lock()
 sharedState.merge(JSON.parse(sharedState.storageFD:readall()), false)
+sharedState.unlock()
 
 if arg[1] == "insert" then
 	local inputString = (io.stdin:read("*all"))
@@ -191,16 +201,15 @@ end
 
 local jsonString = sharedState.toJsonString()
 
+sharedState.lock()
 if sharedState.changed then
+	sharedState.merge(JSON.parse(sharedState.storageFD:readall()), false)
 	local outFd = io.open(sharedState.dataStorePath(), "w")
 	outFd:write(jsonString)
 	outFd:close()
 	outFd = nil
 end
-sharedState.storageFD:lock("ulock")
-sharedState.storageFD:close()
-sharedState.storageFD = nil
-
+sharedState.unlock()
 
 if sharedState.changed then
 	for hook in fs.dir(sharedState.hooksDir..sharedState.dataType) do
