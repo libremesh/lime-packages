@@ -25,7 +25,9 @@ local uci = require("uci")
 
 sharedState = {}
 
---! Map<Key, {timeout, author, data}>
+--! Map<Key, {ctl, author, data}>
+--!   ctl is the count of how much sates changes should occur before the entry
+--!   expires
 sharedState.storage = {}
 
 sharedState.storageFD = nil
@@ -40,10 +42,10 @@ end
 
 local log = nixio.syslog
 
-function sharedState.insert(key, data, timeout)
-	timeout = timeout or (os.time() + 3600)
+function sharedState.insert(key, data, ctl)
+	ctl = ctl or 60
 	sharedState.storage[key] = {
-		timeout=timeout,
+		ctl=ctl,
 		author=io.input("/proc/sys/kernel/hostname"):read("*line"),
 		data=data
 	}
@@ -55,7 +57,7 @@ function sharedState.merge(stateSlice, notifyInsert)
 	if(notifyInsert == nil) then notifyInsert = true end
 
 	for key, rv in pairs(stateSlice) do
-		if(rv.timeout < os.time()) then
+		if(rv.ctl <= 0 ) then
 			log( "debug", "sharedState.merge got expired entry: "..key..
 			     " expired on: "..os.date("%c", rv.timeout) )
 			sharedState.changed = true
@@ -64,10 +66,9 @@ function sharedState.merge(stateSlice, notifyInsert)
 			if( lv == nil ) then
 				sharedState.storage[key] = rv
 				sharedState.changed = sharedState.changed or notifyInsert
-			elseif ( lv.timeout < rv.timeout ) then
+			elseif ( lv.ctl < rv.ctl ) then
 				log( "debug", "Updating entry for: "..key.." older: "..
-				     os.date("%c", lv.timeout).." newer: "..
-				     os.date("%c", rv.timeout) )
+				     lv.ctl.." newer: "..rv.ctl )
 				sharedState.storage[key] = rv
 				sharedState.changed = sharedState.changed or notifyInsert
 			end
@@ -84,7 +85,6 @@ function sharedState.sync(urls)
 	urls = urls or {}
 
 	if #urls < 1 then
-
 		local uci_cursor = uci:cursor()
 		local fixed_candidates = uci_cursor:get("shared-state", "options","candidates") or {}
 		for _, line in pairs(fixed_candidates) do
@@ -186,7 +186,6 @@ elseif arg[1] == "sync" then
 	sharedState.sync(urls)
 elseif arg[1] == "reqsync" then
 	local inputString = (io.stdin:read("*all"))
-	log("debug", "handling reqsync "..sharedState.dataType.." >>>"..inputString.."<<<")
 	sharedState.merge(JSON.parse(inputString))
 	print(sharedState.toJsonString())
 elseif arg[1] == "remove" then
@@ -204,6 +203,7 @@ local jsonString = sharedState.toJsonString()
 sharedState.lock()
 if sharedState.changed then
 	sharedState.merge(JSON.parse(sharedState.storageFD:readall()), false)
+	for _,v in pairs(sharedState.storage) do v.ctl = v.ctl-1 end
 	local outFd = io.open(sharedState.dataStorePath(), "w")
 	outFd:write(jsonString)
 	outFd:close()
