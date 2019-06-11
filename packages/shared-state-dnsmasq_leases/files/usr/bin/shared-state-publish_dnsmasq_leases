@@ -18,6 +18,7 @@
 
 local JSON = require("luci.jsonc")
 local uci = require("uci")
+local fs = require("nixio.fs")
 
 function string:split(sep)
 	local ret = {}
@@ -27,23 +28,32 @@ function string:split(sep)
 	return ret
 end
 
-function add_tmp_dhcp_leases()
+function add_dhcp_leases_from_files()
 	local leasesTable = {}
 	local hostTable = {}
 
+	for cFpath in fs.glob("/etc/dnsmasq.d/*.conf") do
+		for line in io.lines(cFpath) do
+			local lMac, lIp, lName =
+					line:match("^dhcp%-host=(%x%x:%x%x:%x%x:%x%x:%x%x:%x%x),(%d+%.%d+%.%d+%.%d+),(.+),infinite$")
+			if lMac ~= nil then
+				leasesTable[lIp] = { hostname=lName, mac=lMac }
+				hostTable[lIp.." "..lName] = true
+			end
+		end
+	end
+
 	for line in io.lines("/tmp/dhcp.leases") do
 		_, client_mac, client_ip, client_hostname, client_id = unpack(line:split(" "))
-		leasesTable[client_ip] = { hostname=client_hostname,vmac=client_mac }
+		leasesTable[client_ip] = { hostname=client_hostname, mac=client_mac }
 
 		if type(client_hostname) == "string" and client_hostname:len() > 1 then
 			hostTable[client_ip.." "..client_hostname] = true
 		end
 	end
 
-	local jsonstring = JSON.stringify(leasesTable)
-
 	local cStdin = io.popen("shared-state insert dnsmasq-leases", "w")
-	cStdin:write(jsonstring)
+	cStdin:write(JSON.stringify(leasesTable))
 	cStdin:close()
 
 	local cStdin = io.popen("shared-state insert dnsmasq-hosts", "w")
@@ -117,6 +127,6 @@ elseif command == "del" then
 	add_own()
 
 elseif command == nil or command:match("^%s*$") then
-	add_tmp_dhcp_leases()
+	add_dhcp_leases_from_files()
 	add_own()
 end
