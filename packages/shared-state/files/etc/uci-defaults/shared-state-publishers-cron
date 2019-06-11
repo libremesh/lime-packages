@@ -8,3 +8,7 @@ unique_append()
 unique_append \
 	'*/30 * * * * ((sleep $(($RANDOM % 1000)); for publisher in /etc/shared-state/publishers/* ; do [ -x "$publisher" ] && "$publisher"; done &> /dev/null)&)'\
 	/etc/crontabs/root
+
+unique_append \
+	'*/2 * * * * ((for dataFile in /var/shared-state/data/* ; do shared-state bleach $(basename $dataFile .json); done &> /dev/null)&)'\
+	/etc/crontabs/root
