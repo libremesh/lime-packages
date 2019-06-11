@@ -107,7 +107,7 @@ local function _get_gateway()
     end
 
     if utils.is_installed("lime-proto-babeld") then
-        gw = shell('nslookup '..default_dev..' | grep name | cut -d "=" -f 2 | sed "s/ //" | cut -d "." -f 1')
+        gw = shell('echo -n $(nslookup '..default_dev..' | grep name | cut -d "=" -f 2 | sed "s/ //" | cut -d "." -f 1)')
         if string.match(gw,'NXDOMAIN') or gw == "" then
             gw = default_dev
         end
