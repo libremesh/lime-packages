@@ -53,10 +53,7 @@ local function write_text_file(file,text)
 end
 
 local function get_cloud_nodes(msg)
-    -- check how to get this data from /tmp/run/bmx6/json
-    local conf = conn:call("uci", "get", { config="network" })
-    local local_net = conf.values.lm_net_anygw_route4.target
-    local nodes = shell("bmx6 -cd8 | grep ".. local_net .." | awk '{ print $10 }'")
+    local nodes = shell("cat /tmp/bat-hosts | grep bat0 | cut -d' ' -f2 | sed 's/_bat0//' | sed 's/_/-/g' | sort | uniq")
     local result = {}
     result.nodes = {}
     for line in nodes:gmatch("[^\n]*") do
