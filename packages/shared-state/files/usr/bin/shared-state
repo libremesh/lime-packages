@@ -1,12 +1,12 @@
 #!/usr/bin/lua
 
---! LibreMesh
+--! Minimalistic CRDT-like shared state structure suitable for mesh networks
+--!
 --! Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
 --!
 --! This program is free software: you can redistribute it and/or modify
---! it under the terms of the GNU Affero General Public License as
---! published by the Free Software Foundation, either version 3 of the
---! License, or (at your option) any later version.
+--! it under the terms of the GNU Affero General Public License version 3 as
+--! published by the Free Software Foundation.
 --!
 --! This program is distributed in the hope that it will be useful,
 --! but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,199 +16,85 @@
 --! You should have received a copy of the GNU Affero General Public License
 --! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-local fs = require("nixio.fs")
-local http = require("luci.httpclient")
+if type(arg[2]) ~= "string" or arg[2]:len() < 1 then
+	print (arg[0], "needs CRDT name to be specified as second argument")
+	return -22
+end
+
 local JSON = require("luci.jsonc")
-local nixio = require("nixio")
+local SharedState = require("shared-state")
 require("nixio.util")
-local uci = require("uci")
 
-sharedState = {}
-
---! Map<Key, {timeout, author, data}>
-sharedState.storage = {}
-
-sharedState.storageFD = nil
-sharedState.changed = false
-sharedState.dataType = "unspecified"
-sharedState.dataDir = "/var/shared-state/data/"
-sharedState.hooksDir = "/etc/shared-state/hooks/"
-
-function sharedState.dataStorePath()
-	return sharedState.dataDir..sharedState.dataType..".json"
-end
-
-local log = nixio.syslog
-
-function sharedState.insert(key, data, timeout)
-	timeout = timeout or (os.time() + 3600)
-	sharedState.storage[key] = {
-		timeout=timeout,
-		author=io.input("/proc/sys/kernel/hostname"):read("*line"),
-		data=data
-	}
-	sharedState.changed = true
-end
-
-function sharedState.merge(stateSlice, notifyInsert)
-	local stateSlice = stateSlice or {}
-	if(notifyInsert == nil) then notifyInsert = true end
-
-	for key, rv in pairs(stateSlice) do
-		if(rv.timeout < os.time()) then
-			log( "debug", "sharedState.merge got expired entry: "..key..
-			     " expired on: "..os.date("%c", rv.timeout) )
-			sharedState.changed = true
-		else
-			local lv = sharedState.storage[key]
-			if( lv == nil ) then
-				sharedState.storage[key] = rv
-				sharedState.changed = sharedState.changed or notifyInsert
-			elseif ( lv.timeout < rv.timeout ) then
-				log( "debug", "Updating entry for: "..key.." older: "..
-				     os.date("%c", lv.timeout).." newer: "..
-				     os.date("%c", rv.timeout) )
-				sharedState.storage[key] = rv
-				sharedState.changed = sharedState.changed or notifyInsert
-			end
-		end
-	end
-end
-
-function sharedState.remove(key)
-	if(sharedState.storage[key] ~= nil and sharedState.storage[key].data ~= nil)
-	then sharedState.insert(key, nil) end
-end
-
-function sharedState.sync(urls)
-	urls = urls or {}
-
-	if #urls < 1 then
-
-		local uci_cursor = uci:cursor()
-		local fixed_candidates = uci_cursor:get("shared-state", "options","candidates") or {}
-		for _, line in pairs(fixed_candidates) do
-			table.insert(
-				urls,
-				line.."/"..sharedState.dataType )
-		end
-
-		io.input(io.popen(arg[0].."-get_candidates_neigh"))
-		for line in io.lines() do
-			table.insert(
-				urls,
-				"http://["..line.."]/cgi-bin/shared-state/"..sharedState.dataType )
-		end
-	end
-
-	for _,url in ipairs(urls) do
-		local options = {}
-		options.sndtimeo = 3
-		options.rcvtimeo = 3
-		options.method = 'POST'
-		options.body = sharedState.toJsonString()
-
-		-- Alias WK:2622 Workaround https://github.com/openwrt/luci/issues/2622
-		local startTP = os.time() -- WK:2622
-		local success, response = pcall(http.request_to_buffer, url, options)
-		local endTP = os.time() -- WK:2622
-
-		if success and type(response) == "string" and response:len() > 1  then
-			local parsedJson = JSON.parse(response)
-			if parsedJson then sharedState.merge(parsedJson) end
-		else
-			log( "debug", "httpclient interal error requesting "..url )
-
-			-- WK:2622
-			for tFpath in fs.glob("/tmp/lua_*") do
-				local mStat = fs.stat(tFpath)
-				if mStat and
-						mStat.atime >= startTP and mStat.atime <= endTP and
-						mStat.ctime >= startTP and mStat.ctime <= endTP and
-						mStat.mtime >= startTP and mStat.mtime <= endTP then
-					os.remove(tFpath)
-				end
-			end
-		end
-	end
-end
-
-function sharedState.toJsonString()
-	return JSON.stringify(sharedState.storage)
-end
-
-nixio.openlog("shared-state")
-
-if arg[2] then sharedState.dataType = arg[2] end
-
-fs.mkdirr(fs.dirname(sharedState.dataStorePath()))
-sharedState.storageFD = nixio.open(
-	sharedState.dataStorePath(),
-	nixio.open_flags("rdwr", "creat") )
-
-sharedState.locked = false
-
-for i=1,10 do
-	if not sharedState.storageFD:lock("tlock") then
-		nixio.nanosleep(1)
-	else
-		sharedState.locked = true
-		break
-	end
-end
-
-if not sharedState.locked then
-	print(arg[0], arg[1], arg[2], "Failed acquiring lock on data!")
-	os.exit(-165)
-end
-
-sharedState.merge(JSON.parse(sharedState.storageFD:readall()), false)
-
-if arg[1] == "insert" then
-	local inputString = (io.stdin:read("*all"))
-	local inputTable = JSON.parse(inputString) or {}
+if arg[1] == "bleach" then
+	nixio.openlog("shared-state")
+	local sharedState = SharedState(arg[2], nixio.syslog)
+	sharedState.lock()
+	sharedState.load()
+	local shouldNotify = sharedState.bleach()
+	sharedState.save()
+	sharedState.unlock()
+	--! Avoid hooks being called if data hasn't substantially changed
+	if(shouldNotify) then sharedState.notifyHooks() end
+	nixio.closelog()
+elseif arg[1] == "insert" then
+	local inputTable = JSON.parse(io.stdin:read("*all")) or {}
+	nixio.openlog("shared-state")
+	local sharedState = SharedState(arg[2], nixio.syslog)
+	sharedState.lock()
+	sharedState.load()
 	for key, lv in pairs(inputTable) do sharedState.insert(key, lv) end
+	sharedState.save()
+	sharedState.unlock()
+	sharedState.notifyHooks()
+	nixio.closelog()
 elseif arg[1] == "get" then
+	nixio.openlog("shared-state")
+	local sharedState = SharedState(arg[2], nixio.syslog)
+	sharedState.lock()
+	sharedState.load()
+	sharedState.unlock()
 	print(sharedState.toJsonString())
 elseif arg[1] == "sync" then
 	local urls = {}
 	if arg[3] ~= nil then for i=3,#arg do table.insert(urls, arg[i]) end end
+	nixio.openlog("shared-state")
+	local sharedState = SharedState(arg[2], nixio.syslog)
+	sharedState.lock()
+	sharedState.load()
+	sharedState.unlock()
 	sharedState.sync(urls)
+	sharedState.lock()
+	sharedState.load() -- Take in account changes happened during sync
+	sharedState.save()
+	sharedState.unlock()
+	sharedState.notifyHooks()
+	nixio.closelog()
 elseif arg[1] == "reqsync" then
-	local inputString = (io.stdin:read("*all"))
-	log("debug", "handling reqsync "..sharedState.dataType.." >>>"..inputString.."<<<")
-	sharedState.merge(JSON.parse(inputString))
+	local inputJson = JSON.parse(io.stdin:read("*all"))
+	nixio.openlog("shared-state")
+	local sharedState = SharedState(arg[2], nixio.syslog)
+	sharedState.lock()
+	sharedState.load()
+	sharedState.merge(inputJson)
+	sharedState.save()
+	sharedState.unlock()
 	print(sharedState.toJsonString())
+	sharedState.notifyHooks()
+	nixio.closelog()
 elseif arg[1] == "remove" then
 	local inputTable = JSON.parse(io.stdin:read("*all"))
 	if inputTable ~= nil then
+		nixio.openlog("shared-state")
+		local sharedState = SharedState(arg[2], nixio.syslog)
+		sharedState.lock()
+		sharedState.load()
 		for _,key in ipairs(inputTable) do sharedState.remove(key) end
+		sharedState.save()
+		sharedState.unlock()
+		sharedState.notifyHooks()
+		nixio.closelog()
 	end
 else
-	print(arg[0].." is not able to self manage, needs a command")
+	print(arg[0], "needs an operation name to be specified as first argument")
 	return -22
 end
-
-local jsonString = sharedState.toJsonString()
-
-if sharedState.changed then
-	local outFd = io.open(sharedState.dataStorePath(), "w")
-	outFd:write(jsonString)
-	outFd:close()
-	outFd = nil
-end
-sharedState.storageFD:lock("ulock")
-sharedState.storageFD:close()
-sharedState.storageFD = nil
-
-
-if sharedState.changed then
-	for hook in fs.dir(sharedState.hooksDir..sharedState.dataType) do
-		local hookPath = sharedState.hooksDir..sharedState.dataType.."/"..hook
-		local cStdin = io.popen(hookPath, "w")
-		cStdin:write(jsonString)
-		cStdin:close()
-	end
-end
-
-nixio.closelog()
