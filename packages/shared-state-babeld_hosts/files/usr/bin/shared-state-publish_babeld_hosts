@@ -1,0 +1,22 @@
+#!/usr/bin/lua
+
+--! Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
+--! This is free software, licensed under the GNU Affero General Public License v3
+
+local JSON = require("luci.jsonc")
+
+local hostname = nil
+local babelid = nil
+
+local cStdout = io.popen("echo | nc ::1 30003", "r")
+for line in cStdout:lines() do
+	hostname = hostname or line:match("^host (.+)$")
+	babelid = babelid or line:match("^my%-id (.+)$")
+end
+cStdout:close()
+
+local babHostTable = {}
+babHostTable[babelid] = hostname
+
+io.popen("shared-state insert babeld-hosts", "w"):write(
+	JSON.stringify(babHostTable) )

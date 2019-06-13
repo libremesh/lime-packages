@@ -19,9 +19,10 @@
 local JSON = require("luci.jsonc")
 
 local outputTable = {}
+local localHostname = io.input("/proc/sys/kernel/hostname"):read("*line")
 
 for key,value in pairs(JSON.parse(io.stdin:read("*all"))) do
-	if value.data and value.data.mac then
+	if value.data and value.data.mac and value.author ~= localHostname then
 		local hwaddr = value.data.mac
 		local ipaddr = key
 		if ipaddr:find(":") then ipaddr = "[" .. ipaddr .. "]" end

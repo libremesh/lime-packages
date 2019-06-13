@@ -23,6 +23,7 @@ echo
 
 [ "$REQUEST_METHOD" != "POST" ] && exit 22
 [ -z "$PATH_INFO" ] && exit 22
+PATH_INFO="${PATH_INFO#/}"
 echo "$PATH_INFO" | grep -q '^[a-zA-Z0-9_-]*$' || exit 22
 
 cat - | shared-state reqsync "$PATH_INFO"
