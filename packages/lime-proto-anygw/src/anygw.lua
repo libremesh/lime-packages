@@ -96,7 +96,9 @@ function anygw.configure(args)
 						"/anygw/"..anygw_ipv4:host():string(),
 						"/anygw/"..anygw_ipv6:host():string(),
 						"/thisnode.info/"..anygw_ipv4:host():string(),
-						"/thisnode.info/"..anygw_ipv6:host():string()
+						"/thisnode.info/"..anygw_ipv6:host():string(),
+						"/minodo.info/"..anygw_ipv4:host():string(),
+						"/minodo.info/"..anygw_ipv6:host():string()
 			})
 		end
 	)
