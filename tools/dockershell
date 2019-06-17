@@ -1,0 +1,32 @@
+#!/bin/bash
+
+PWD=$(printf "%q\n" "${PWD}")
+APP=${@:-/bin/bash}
+
+IMAGE="luatest"
+
+DOCKER_BASHRC=/tmp/.docker_${USER}_bashrc
+
+rm -rf ${DOCKER_BASHRC} 2>/dev/null
+cp ${HOME}/.bashrc ${DOCKER_BASHRC} 2>/dev/null
+echo "PS1=\"(docker) \$PS1\"" >> ${DOCKER_BASHRC}
+
+REPO_PATH=$(printf "%q\n" "`git rev-parse --show-toplevel`")
+
+DOCKER_CMD="docker run \
+    -v ${HOME}:${HOME} \
+    -v /etc/passwd:/etc/passwd:ro \
+    -v /etc/shadow:/etc/shadow:ro \
+    -v /etc/group:/etc/group:ro \
+    -v /tmp:/tmp \
+    -v ${DOCKER_BASHRC}:${HOME}/.bashrc \
+    -v /usr/share/git/completion:/usr/share/git/completion \
+    --net=host \
+    -i -w $PWD -t -u $(id -u):$(id -g) --rm \
+    -e DISPLAY=$DISPLAY \
+    -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 \
+    $IMAGE \
+    $APP"
+
+# Without the 'script' indirection, git's pre-commit hook does not work.
+script -qec "${DOCKER_CMD}" /dev/null

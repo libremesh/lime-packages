@@ -1,0 +1,9 @@
+FROM abaez/luarocks:lua5.1
+
+WORKDIR /root
+
+RUN luarocks install luacov; \
+    luarocks install busted
+
+# TODO: move into a development dockerfile
+RUN apk add --no-cache bash bash-completion
