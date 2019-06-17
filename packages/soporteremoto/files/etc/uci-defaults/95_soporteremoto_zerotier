@@ -1,0 +1,9 @@
+#!/bin/sh
+
+uci -q delete zerotier.sample_config
+uci set zerotier.soporteremoto=zerotier
+uci set zerotier.soporteremoto.enabled='1'
+uci set zerotier.soporteremoto.join=
+uci add_list zerotier.soporteremoto.join='35c192ce9b5fa4cb'
+uci commit zerotier
+/etc/init.d/zerotier restart
