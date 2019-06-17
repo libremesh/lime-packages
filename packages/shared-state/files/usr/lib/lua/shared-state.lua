@@ -133,6 +133,7 @@ local function SharedState(dataType, pLogger)
 	function sharedState.notifyHooks()
 		if self_changed then
 			local jsonString = sharedState.toJsonString()
+			if not fs.dir(self_hooksDir) then return end
 			for hook in fs.dir(self_hooksDir) do
 				local cStdin = io.popen(self_hooksDir.."/"..hook, "w")
 				cStdin:write(jsonString)
