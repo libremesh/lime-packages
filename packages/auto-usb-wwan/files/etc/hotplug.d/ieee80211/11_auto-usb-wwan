@@ -1,0 +1,46 @@
+#!/bin/sh
+
+[ "$ACTION" == "add" ] || exit 0
+
+logger $(env)
+PHYNBR=${DEVPATH##*/phy}
+
+[ -n $PHYNBR ] || exit 0
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+board=$(board_name)
+
+function find_radio () {
+	uci show wireless | grep -m 1 "$1" | sed 's/wireless.\(.*\).path=.*/\1/'
+}
+
+function find_wifi_ifaces () {
+	uci show wireless | grep "\.device='$1'$" | sed 's/wireless.\(.*\).device=.*/\1/'
+}
+
+case "$DEVPATH" in
+        *usb*)
+				radioPath=${DEVPATH##/devices/}
+				radioPath=${radioPath%%/ieee80211/*}
+				radio=$(find_radio "$radioPath")
+				for wifi_iface in $(find_wifi_ifaces "$radio"); do
+					uci delete wireless.${wifi_iface}
+				done
+				uci set wireless.${radio}.disabled=0
+				uci set wireless.${radio}_auto_usb_wwan=wifi-iface
+				uci set wireless.${radio}_auto_usb_wwan.device="${radio}"
+				uci set wireless.${radio}_auto_usb_wwan.network='auto_usb_wwan'
+				uci set wireless.${radio}_auto_usb_wwan.mode='sta'
+				uci set wireless.${radio}_auto_usb_wwan.ssid='internet'
+				uci set wireless.${radio}_auto_usb_wwan.encryption='psk2'
+				uci set wireless.${radio}_auto_usb_wwan.key='internet'
+				uci commit wireless	
+				uci set network.auto_usb_wwan=interface
+				uci set network.auto_usb_wwan.proto=dhcp
+				uci commit network
+                ;;
+        *)
+                ;;
+esac
