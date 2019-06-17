@@ -17,7 +17,6 @@
 ]]--
 
 local io = require "io"
-local argparse = require 'argparse'
 
 local version = '1.0'
 local firmware_size_bytes = 7936*1024
@@ -114,10 +113,15 @@ function get_current_cmdline()
     return data
 end
 
-function get_current_partition()
+function get_proc_mtd()
     local handle = io.open('/proc/mtd', 'r')
     local data = handle:read("*all")
     handle:close()
+    return data
+end
+
+function get_current_partition(proc_mtd)
+    local data = proc_mtd or get_proc_mtd()
     if data:find("fw2") == nil then
         return 2
     else
@@ -289,6 +293,7 @@ end
 
 
 function parse_args()
+    local argparse = require 'argparse'
     local parser = argparse('safe-upgrade', 'Safe upgrade mechanism for dual-boot systems')
     parser:command_target('command')
     local show = parser:command('show', 'Show the status of the system partitions.')
@@ -338,6 +343,9 @@ end
 -- detect if this module is run as a library or as a script
 if pcall(debug.getlocal, 4, 1) then
     -- Library mode
+    local safe_upgrade = {}
+    safe_upgrade.get_current_partition = get_current_partition
+    return safe_upgrade
 else
     -- Main script mode
 
