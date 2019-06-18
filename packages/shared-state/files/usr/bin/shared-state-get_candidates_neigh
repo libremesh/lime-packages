@@ -27,7 +27,7 @@ get_uptime()
 
 cacheFile="/tmp/shared-state-get_candidates_neigh.cache"
 lastRunFile="/tmp/shared-state-get_candidates_neigh.lastrun"
-lastRun=$(cat "$lastRunFile" 2>/dev/null || echo -9999)
+lastRun=$(if [ -s $lastRunFile ]; then echo $(cat $lastRunFile); else  echo -9999; fi)
 currUptime="$(get_uptime)"
 
 [ "$(($currUptime - $lastRun))" -lt "90" ] &&
