@@ -28,12 +28,7 @@ for key,value in pairs(JSON.parse(io.stdin:read("*all"))) do
 		if ipaddr:find(":") then ipaddr = "[" .. ipaddr .. "]" end
 		ipaddr = ","..ipaddr
 
-		local hostname = ""
-		if string.len(value.data.hostname) > 1 then
-			hostname = ","..value.data.hostname
-		end
-
-		table.insert(outputTable, hwaddr..ipaddr..hostname)
+	table.insert(outputTable, hwaddr..ipaddr)
 	end
 end
 
