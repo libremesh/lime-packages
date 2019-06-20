@@ -11,10 +11,6 @@ unique_append()
 	grep -qF "$1" "$2" || echo "$1" >> "$2"
 }
 
-# needed because init script ignore +dhcphostsfile+ if the file doesn't exists
-unique_append "dhcp-hostsfile=$dhcpHostsFile"\
-	"/etc/dnsmasq.d/shared-state-dhcp-leases.conf"
-
 unique_append \
 	'*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync dnsmasq-leases &> /dev/null)&)'\
 	/etc/crontabs/root
