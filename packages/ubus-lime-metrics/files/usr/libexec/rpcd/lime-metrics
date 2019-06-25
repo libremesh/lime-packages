@@ -123,17 +123,17 @@ local function _get_gateway()
 
 end
 local function get_gateway(msg)
-   printJson(_get_gateway())
+printJson(_get_gateway())
 end
 
 local function get_last_internet_path(msg)
-    local path = list_from_file("/etc/last_internet_path")
+    local internet_path_file = io.open("/etc/last_internet_path", "r")
+    path_content = assert(internet_path_file:read("*a"), nil)
+    internet_path_file:close()
+    path = json.decode(path_content) or nil
     local result = {}
-    if #path>0 then
-        result.path = {}
-        for i, node in ipairs(path) do
-            table.insert(result.path, node)
-        end
+    if path ~= nil then
+        result.path = path 
         result.status = "ok"
     else
         result = {status="error", error={msg="Not found. No known Internet path.", code="1"}}
