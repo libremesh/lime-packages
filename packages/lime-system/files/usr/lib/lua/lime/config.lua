@@ -32,7 +32,7 @@ end
 
 function config.get(sectionname, option, fallback)
 	local limeconf = config.uci:get("lime", sectionname, option)
-	if limeconf then return limeconf end
+	if limeconf ~= nil then return limeconf end
 
 	local defcnf = config.uci:get("lime-defaults", sectionname, option)
 	if ( defcnf ~= nil ) then
