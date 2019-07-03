@@ -1,0 +1,6 @@
+#!/bin/bash
+
+TESTS_PATHS='packages/*/tests/test*.lua  tests/test*.lua'
+LIB_PATHS='tests/fakes/?.lua;packages/lime-system/files/usr/lib/lua/?.lua;packages/safe-upgrade/files/usr/sbin/?;;'
+
+./tools/dockertestshell "busted -v ${TESTS_PATHS} --lpath='${LIB_PATHS}'" ${1}
