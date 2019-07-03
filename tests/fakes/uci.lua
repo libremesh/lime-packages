@@ -1,10 +1,17 @@
 
 local libuci = {}
 
-function libuci.cursor()
+-- shared store, not used when new_cursor() is used
+libuci._store = {}
+
+
+function libuci.cursor(self, local_only)
     local uci = {}
-    local store = {}
-    uci._store = store
+    if local_only == true then
+        _store = {}
+    else
+        _store = libuci._store -- use the shared store
+    end
 
     local function _get(local_store, ...)
         local args = {...}
@@ -20,9 +27,10 @@ function libuci.cursor()
         end
     end
 
-    function uci.get(...)
+    -- TODO: get should not returl all the elements of a subtree? view get_all()
+    function uci:get(...)
         local args = {...}
-        return _get(uci._store, ...)
+        return _get(_store, ...)
     end
 
     local function _set(local_store, ...)
@@ -44,12 +52,12 @@ function libuci.cursor()
     end
 
 
-    function uci.set(...)
+    function uci:set(...)
         -- the value is the last argument, that is retrieved when removing from the table
-        _set(uci._store, ...)
+        _set(_store, ...)
     end
 
-    function uci.save()
+    function uci:save()
     end
 
     local function _delete(local_store, ...)
@@ -62,24 +70,41 @@ function libuci.cursor()
         end
     end
 
-    function uci.delete(...)
-        _delete(uci._store, ...)
+    function uci:delete(...)
+        _delete(_store, ...)
     end
 
 
     function uci.foreach(...)
         local args = {...}
         local func = table.remove(args)
-        local elements = uci.get(unpack(args))
+        local elements = uci:get(unpack(args))
         for key, value in pairs(elements) do
             local s = {}
             s['.name'] = key
             func(s)
         end
     end
+
+    function uci:get_all(...)
+        return uci:get(...)
+    end
+
     return uci
 end
 
+-- this creates a new store only for this object
+function libuci.new_cursor()
+    return libuci:cursor(true)
+end
+
+-- this resets the shared store
+function libuci.reset()
+    -- remove all elements
+    for key, value in pairs(libuci._store) do
+        libuci._store[key] = nil
+    end
+end
 
 
 return libuci
