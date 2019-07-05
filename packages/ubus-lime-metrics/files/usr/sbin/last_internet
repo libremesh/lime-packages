@@ -17,7 +17,7 @@ if ping -q -c5 -w10 8.8.8.8 &>/dev/null; then
                 nodename=$(wget http://$path/cgi-bin/hostname -qO -)
                 path="$path,{\"ip\":\"$node\",\"hostname\":\"$nodename\"}"
         done
-        result="[{$path#?}]"
+        result="[${path#?}]"
     
     #Babeld Path to Internet
     elif [[ -f '/usr/lib/opkg/info/lime-proto-babeld.control' ]]; then
@@ -29,7 +29,7 @@ if ping -q -c5 -w10 8.8.8.8 &>/dev/null; then
             fi
             path="$path,{\"ip\":\"$ip\",\"hostname\":\"$name\"}"
         done
-        result="[{$path#?}]"
+        result="[${path#?}]"
     fi
 fi
 
