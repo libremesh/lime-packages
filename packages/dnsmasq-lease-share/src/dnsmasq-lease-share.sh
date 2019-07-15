@@ -1,2 +1,2 @@
 #!/bin/sh
-lua /etc/alfred/dnsmasq-lease-share.lua
+lua /etc/alfred/dnsmasq-lease-share.lua $@
