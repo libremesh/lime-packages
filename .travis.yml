@@ -31,7 +31,6 @@ script:
         --user 0:0
         -v "/output:/home/build/sdk/bin/packages/mips_24kc/libremesh"
         -v "$(pwd)/feeds.conf.default:/home/build/sdk/feeds.conf.default"
-        -v "$(pwd)/key-build:/home/build/sdk/key-build"
         -v "$(pwd)/libremesh.sdk.config:/home/build/sdk/config"
         "$IMAGE_NAME" /bin/bash -c
         "./scripts/feeds update -a && ./scripts/feeds install -p libremesh -a && cp /home/build/sdk/config /home/build/sdk/.config && make defconfig && make -j2"
