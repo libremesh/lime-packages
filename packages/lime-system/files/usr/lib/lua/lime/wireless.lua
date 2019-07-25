@@ -86,7 +86,7 @@ function wireless.configure()
 
 		if specRadio then
 			modes = specRadio["modes"]
-			options = utils.tableMelt(options, specRadio)
+			options = specRadio
 		end
 
 		--! If manual mode is used toghether with other modes it results in an
