@@ -64,9 +64,11 @@ config lime wifi
 #	list modes 'adhoc'				# See below for adhoc configuration
 #	list modes 'client'				# See below for client configuration
 	option ap_ssid 'LibreMesh.org'
+	option ap_network 'lan'
 #	option ap_key 'SomeWPA2PskKey'
 #	option ap_encryption 'psk2'
 	option apname_ssid 'LibreMesh.org/%H'
+	option apname_network 'lan'
 #	option apname_key 'SomeWPA2PskKey'
 #	option apname_encryption 'psk2'
 	option ieee80211s_mesh_fwding '0'		# Settings needed only for 802.11s
@@ -100,6 +102,7 @@ config wifi radio1 # you should ensure that the chosen radio name exists, for ex
 	option channel_5ghz '48'
 	option distance_2ghz '100'
 	option distance_5ghz '1000'
+	option ap_network 'lan'
 
 ## diable lime-config for radio2
 config wifi radio2 # you should ensure that the chosen radio name exists, for example with "wifi status" command
