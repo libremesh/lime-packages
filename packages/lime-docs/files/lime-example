@@ -82,22 +82,39 @@ config lime wifi
 ## use radio0 only for mesh
 config wifi radio0 # you should ensure that the chosen radio name exists, for example with "wifi status" command
 	list modes 'ieee80211s'
+#	option country 'ES'
+	option channel_2ghz '11'
+	option channel_5ghz '48'
+	option htmode_5ghz 'HT40'
+	option distance_2ghz '100'
+	option distance_5ghz '1000'
+	option ieee80211s_mesh_fwding '0'
+	option ieee80211s_mesh_id 'LiMe'
 
-## change ssid for radio1
+## change ssid for radio1 and use it just for AP
 config wifi radio1 # you should ensure that the chosen radio name exists, for example with "wifi status" command
+	list modes 'ap'	
 	option ap_ssid 'Special'
+#	option country 'ES'
+	option channel_2ghz '11'
+	option channel_5ghz '48'
+	option distance_2ghz '100'
+	option distance_5ghz '1000'
 
 ## diable lime-config for radio2
 config wifi radio2 # you should ensure that the chosen radio name exists, for example with "wifi status" command
 	option modes 'manual' # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
 
 
-## set radio3 to adhoc with specific channel
+## set radio3 to do just adhoc with specific channel
 config wifi radio3 # you should ensure that the chosen radio name exists, for example with "wifi status" command
 	list modes 'adhoc'
+#	option country 'ES'
 	option channel_2ghz '1'
 	option channel_5ghz '48'
-	option adhoc_ssid 'LiMe' # Parametrizable with %M, %H
+	option distance_2ghz '100'
+	option distance_5ghz '1000'
+	option adhoc_ssid 'LiMe'
 	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
 	option adhoc_mcast_rate_2ghz '24000'
 	option adhoc_mcast_rate_5ghz '6000'
