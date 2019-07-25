@@ -139,7 +139,7 @@ config net wirelessclientWAN
 	option linux_name 'wlan0-sta' # the client interface name could be named differently, like wlan1-sta
 	list protocols 'wan' # use wan to get Internet connectivity via DHCP
 
-## set radio5 as client of an access point part of the LibreMesh network, both the following "wifi" and "net" sections are required
+## set radio5 as client of an access point part of the LibreMesh network using BMX6, no specific configuration is needed on the AP, both the following "wifi" and "net" sections are required
 option wifi radio5 # you should ensure that the chosen radio name exists, for example with "wifi status" command
 	list modes 'client'
 	option channel_2ghz 'auto'
@@ -149,7 +149,51 @@ option wifi radio5 # you should ensure that the chosen radio name exists, for ex
 config net wirelessclientBackbone
 	option linux_name 'wlan0-sta' # the client interface name could be named differently, like wlan1-sta
 	list protocols 'client' # needed for setting up the new interface
-	list protocols 'bmx6:0' # use BMX6 routing on client interface. The :0 is needed for disabling the VLAN, as the AP usually does not have VLAN. In case VLAN is needed, it has to be set also as specific AP configuration, not implemented. LAN is not supported by wireless drivers. BATMAN-adv would need specific AP configuration, not implemented. Having both BMX6 and BATMAN-adv is hindered by the fact that BMX6 sets the proto of the interface as static.
+	list protocols 'bmx6:0' # use BMX6 routing on client interface. The :0 is needed for disabling the VLAN, as the AP usually does not have VLAN. Client interface in LAN bridge is not supported by wireless drivers.
+
+## set radio6 as client of an access point part of the LibreMesh network using Babeld and BATMAN-adv, specific configuration is needed both on the AP and on the client, for each, both a "wifi" and a "net" sections are required
+
+# on the AP:
+config wifi 'radio0' # you should ensure that the chosen radio name exists, for example with "wifi status" command
+#	list modes 'ap' # include this if you additionally want an AP for clients
+	list modes 'apname'
+#	list modes 'ieee80211s' # include this if you additionally want also do IEEE802.11s mesh on the same radio
+	option apname_ssid 'backbone/%H' # clients should not connect to this AP, SSID name should point it out
+#	option apname_key 'somePassword'
+#	option apname_encryption 'psk2'
+	option country 'ES'
+	option channel_2ghz '11'
+	option channel_5ghz '48'
+	option distance '1000' # maximum distance from clients, heavily affects performances
+#	option ap_ssid 'LibreMesh.org'
+#	option ap_key 'somePassword'
+#	option ap_encryption 'psk2'
+#	option ap_network 'lan' # if you use this radio also for clients, specify to include the interface for clients in the br-lan LAN bridge
+#	for this usecase, do NOT use anything like: option apname_network 'lan', as this apname interface has to be used only for Babeld and BATMAN-adv and should not be included in the LAN bridge
+#	option ieee80211s_mesh_id 'LiMe'
+#	option ieee80211s_mesh_fwding '0'
+
+config net 'backboneAP'
+	option linux_name 'wlan0-apname' # verify the name, the APname interface name could be named differently, like wlan1-apname
+	list protocols 'apname' # needed for setting up the interface
+	list protocols 'babeld:17'
+	list protocols 'batadv:%N1'
+
+# on the client:
+option wifi radio0 # you should ensure that the chosen radio name exists, for example with "wifi status" command
+	list modes 'client'
+	option country 'ES'
+	option channel 'auto'
+	option distance '1000' # maximum distance from AP, heavily affects performances
+	option client_ssid 'backbone/ddeeff' # specify here the name of the AP interface you want to connect for joining the LibreMesh network and you specifically configured for this
+#	option client_key 'somePassword'
+#	option client_encryption 'psk2'
+
+config net 'backboneClient'
+	option linux_name 'wlan0-sta' # verify the name, the client interface name could be named differently, like wlan1-sta
+	list protocols 'client' # needed for setting up the new interface
+	list protocols 'babeld:17'
+	list protocols 'batadv:%N1'
 
 ### Network interface specific options ( override general option )
 ### Available protocols: bmx6, bmx7, batadv, olsr, olsr6, olsr2, bgp, wan, lan, manual, static
