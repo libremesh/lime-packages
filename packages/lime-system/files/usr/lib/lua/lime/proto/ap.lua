@@ -4,10 +4,7 @@ local ap_mode = require("lime.mode.ap")
 
 local ap = {}
 
-ap.configured = false
-
 function ap.configure(args)
-	ap.configured = true
 end
 
 function ap.setup_interface(ifname, args)

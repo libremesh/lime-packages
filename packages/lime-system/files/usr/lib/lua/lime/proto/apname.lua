@@ -4,10 +4,7 @@ local apname_mode = require("lime.mode.apname")
 
 local apname = {}
 
-apname.configured = false
-
 function apname.configure(args)
-	apname.configured = true
 end
 
 function apname.setup_interface(ifname, args)
