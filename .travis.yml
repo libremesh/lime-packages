@@ -12,17 +12,12 @@ addons:
 
 env:
     global:
-    - IMAGE_NAME="aparcar/openwrt-sdk:18.06-ar71xx"
+    - IMAGE_NAME="openwrtorg/sdk:ar71xx-generic"
 
 before_script:
 - docker pull "$IMAGE_NAME" || true
 
 script:
-- |
-  cat <<EOF > key-build
-  untrusted comment: private key 7546f62c3d9f56b1
-  $KEY_BUILD
-  EOF
 - |
   cat <<EOF >> feeds.conf.default
   src-git base https://git.openwrt.org/openwrt/openwrt.git;v18.06.1
@@ -33,12 +28,12 @@ script:
   src-git libremesh https://github.com/libremesh/lime-packages.git;$TRAVIS_BRANCH
   EOF
 - docker run
-        -v "/output:/sdk/bin/packages/mips_24kc/libremesh"
-        -v "$(pwd)/feeds.conf.default:/sdk/feeds.conf.default"
-        -v "$(pwd)/key-build:/sdk/key-build"
-        -v "$(pwd)/libremesh.sdk.config:/sdk/config"
+        --user 0:0
+        -v "/output:/home/build/sdk/bin/packages/mips_24kc/libremesh"
+        -v "$(pwd)/feeds.conf.default:/home/build/sdk/feeds.conf.default"
+        -v "$(pwd)/libremesh.sdk.config:/home/build/sdk/config"
         "$IMAGE_NAME" /bin/bash -c
-        "./scripts/feeds update -a && ./scripts/feeds install -p libremesh -a && cp /sdk/config /sdk/.config && make defconfig && make -j2"
+        "./scripts/feeds update -a && ./scripts/feeds install -p libremesh -a && cp /home/build/sdk/config /home/build/sdk/.config && make defconfig && make -j2"
 
 deploy:
   - provider: script
