@@ -230,10 +230,8 @@ function upgrade(args)
     -- TODO: validate that the firmware is valid for this board using metadata
 
     if not args.do_not_preserve_config then
-        if args.preserve_full_config then
-            print('Preserving full config')
-            os.execute("sysupgrade  --create-backup /tmp/sysupgrade.tgz")
-        end
+        print('Preserving full config')
+        os.execute("sysupgrade  --create-backup /tmp/sysupgrade.tgz")
         --[[ TODO: implement preserve config lime for first boot wizard,
              the final file must be /tmp/sysupgrade.tgz
         ]]--
@@ -302,8 +300,6 @@ function parse_args()
         end
     end
     upgrade:argument("firmware", "firmware image (xxx-sysupgrade.bin)"):convert(validate_file_exists)
-    upgrade:flag("--preserve-full-config", ("Preserves the config files listed in /etc/sysupgrade.conf and " ..
-                                              "/lib/upgrade/keep.d/* like sysupgrade does."))
     upgrade:flag("-n --do-not-preserve-config", "Do not save configuration to the new partition")
     upgrade:flag("--disable-reboot-safety", "Disable the automatic reboot safety mechanism")
 
