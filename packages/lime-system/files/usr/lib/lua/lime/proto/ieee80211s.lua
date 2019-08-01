@@ -4,10 +4,7 @@ local ieee80211s_mode = require("lime.mode.ieee80211s")
 
 local ieee80211s = {}
 
-ieee80211s.configured = false
-
 function ieee80211s.configure(args)
-	ieee80211s.configured = true
 end
 
 function ieee80211s.setup_interface(ifname, args)
