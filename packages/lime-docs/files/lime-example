@@ -120,7 +120,7 @@ config wifi radio99 # you should ensure that the chosen radio name exists, for e
 # network specific one like in the following example.
 
 ## set radio99 as client of access point for internet access, both the following "wifi" and "net" sections are required
-option wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1. All the other non-specified options will be taken from the general "config lime wifi" section
+config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1. All the other non-specified options will be taken from the general "config lime wifi" section
 	list modes 'client'
 	option channel 'auto'
 	option client_ssid 'SomeWiFiNetwork'
@@ -129,20 +129,44 @@ option wifi radio99 # you should ensure that the chosen radio name exists, for e
 	option distance 300				# maximum distance to AP, heavily affects performances
 
 config net wirelessclientWAN
-	option linux_name 'wlan0-sta'			# the client interface name could be named differently, like wlan1-sta
+	option linux_name 'wlan0-sta'			# verify the name, the client interface name could be named differently, like wlan1-sta
 	list protocols 'wan'				# use wan to get Internet connectivity via DHCP
 
-## set radio99 as client of an access point part of the LibreMesh network using BMX6, no specific configuration is needed on the AP, both the following "wifi" and "net" sections are required
-option wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1. All the other non-specified options will be taken from the general "config lime wifi" section
+# If you want to use Wifi client and AP instead of mesh for builing the
+# backbone of your LibreMesh network (and you are using Batman-adv + Babeld)
+# you will need specific wifi and net configuration both on the client and
+# on the access point
+
+## set radio99 as backbone access point (not for users connection, specific client configuration reported below) part of the LibreMesh network structure using Batman-adv and Babeld, both the following "wifi" and "net" sections are required on the AP
+config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1
+#	list modes 'ap'					# include this if you additionally want an AP for clients on the same radio, check the maximum number of "interface combinations" with "iw phy phy0 info" command
+#	list modes 'apname'
+#	list modes 'ieee80211s'				# include this if you additionally want also do IEEE802.11s mesh on the same radio, check the maximum number of "interface combinations" with "iw phy phy0 info" command
+	list modes 'apbb'				# apbb stands for backbone AP, for other LibreMesh routers connection rather than for users connection
+	option apbb_ssid 'backbone/%H'		# clients should not connect to this AP, SSID name should point it out
+#	option apbb_key 'somePassword'
+#	option apbb_encryption 'psk2'
+
+config net wirelessAPbackbone
+	option linux_name 'wlan0-apbb'		# verify the name, the backbone AP interface name could be named differently, like wlan1-apbb
+	list protocols 'apbb'			# backbone AP proto, needed for setting up the interface
+	list protocols 'babeld:17'
+	list protocols 'batadv:%N1'
+
+## set radio99 as backbone client of a backbone access point (not for users connection, specific AP configuration reported above) using Batman-adv and Babeld, both the following "wifi" and "net" sections are required on the client
+config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1. All the other non-specified options will be taken from the general "config lime wifi" section
 	list modes 'client'
-	option channel 'auto'
-	option client_ssid 'LibreMesh.org'
+	option channel '11'
+	option client_ssid 'backbone/LiMe-ddeeff'	# specify here the name of the specifically configured backbone AP interface you want to connect to
+#	option client_key 'somePassword'
+#	option client_encryption 'psk2'
 	option distance 1000				# maximum distance to AP, heavily affects performances
 
-config net wirelessclientBackbone
-	option linux_name 'wlan0-sta'			# the client interface name could be named differently, like wlan1-sta
+config net wirelessclientbackbone
+	option linux_name 'wlan0-sta'			# verify the name, the client interface name could be named differently, like wlan1-sta
 	list protocols 'client'				# needed for setting up the new interface
-	list protocols 'bmx6:0'				# use BMX6 routing on client interface. The :0 is needed for disabling the VLAN, as the AP usually does not have VLAN. In case VLAN is needed, it has to be set also as specific AP configuration, not implemented. LAN is not supported by wireless drivers. BATMAN-adv would need specific AP configuration, not implemented. Having both BMX6 and BATMAN-adv is hindered by the fact that BMX6 sets the proto of the interface as static.
+	list protocols 'babeld:17'
+	list protocols 'batadv:%N1'
 
 ### Network interface specific options ( override general option )
 ### Available protocols: bmx6, bmx7, batadv, olsr, olsr6, olsr2, bgp, wan, lan, manual, static, babeld
