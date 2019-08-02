@@ -19,10 +19,20 @@
 local JSON = require("luci.jsonc")
 
 local outputTable = {}
+local filtredValues = {}
 
-for key,value in pairs(
-	JSON.parse(io.stdin:read("*all")) ) do
-	table.insert(outputTable, key.." "..value.data)
+for key,value in pairs(JSON.parse(io.stdin:read("*all")) ) do
+	if filtredValues[value.data] == nil or filtredValues[value.data].bleachTTL < value.bleachTTL then
+		filtredValues[value.data] = {
+			data = value.data,
+			key = key,
+			bleachTTL = value.bleachTTL
+		}
+	end
+end
+
+for _,value in pairs(filtredValues) do
+	table.insert(outputTable, value.key.." "..value.data)
 end
 
 io.output("/etc/bat-hosts"):write(table.concat(outputTable,"\n").."\n")
