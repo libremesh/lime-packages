@@ -37,7 +37,7 @@ function wireless.is5Ghz(radio)
 	return devModes.a or devModes.ac
 end
 
-wireless.availableModes = { adhoc=true, ap=true, apname=true, ieee80211s=true }
+wireless.availableModes = { adhoc=true, ap=true, apname=true, apbb=true, ieee80211s=true }
 function wireless.isMode(m)
 	return wireless.availableModes[m]
 end
