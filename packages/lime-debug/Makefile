@@ -23,12 +23,13 @@ define Package/$(PKG_NAME)
 	URL:=http://libremesh.org
 	DEPENDS:=+PACKAGE_lime-proto-batadv:batctl \
 		+busybox +ethtool +iwinfo +iw +mtr +ip +iputils-ping6 +iputils-ping \
-		+sprunge +safe-reboot +netperf +pv +tcpdump-mini +bwm-ng
+		+sprunge +safe-reboot +netperf +pv +tcpdump-mini +bwm-ng \
+		+lime-report
 	PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description
-	Debug utilities for LiMe node
+	Debug utilities for LibreMesh nodes
 endef
 
 define Package/$(PKG_NAME)/config
