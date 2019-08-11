@@ -1,0 +1,13 @@
+config bandwidth_test 'bandwidth_test'
+	option single_test_duration 20
+	option nonzero_tests 5
+	list server 'http://speedtest-lon1.digitalocean.com/10mb.test'
+	list server 'http://www.ovh.net/files/10Mio.dat'
+	list server 'http://cloudharmony.com/probe/test10mb.jpg'
+	list server 'http://frf1-speed-02.host.twtelecom.net.prod.hosts.ooklaserver.net:8080/download?size=12000000'
+	list server 'http://cdn.google.cloudharmony.net/probe/test10mb.jpg'
+	list server 'http://deb.debian.org/debian/ls-lR.gz'
+	list server 'http://speedtest.catnix.cat.prod.hosts.ooklaserver.net:8080/download?size=12000000'
+	list server 'http://ubuntu.inode.at/ubuntu/dists/bionic/main/installer-amd64/current/images/hd-media/initrd.gz'
+	list server 'http://cdn.kernel.org/pub/linux/kernel/v4.x/patch-4.9.gz'
+	list server 'http://ftp.belnet.be/ubuntu.com/ubuntu/dists/bionic/main/installer-amd64/current/images/hd-media/initrd.gz'
