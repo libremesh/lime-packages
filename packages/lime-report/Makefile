@@ -32,7 +32,7 @@ define Build/Compile
 endef
 
 define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/
+	$(INSTALL_DIR) $(1)/bin/
 	$(INSTALL_BIN) ./files/lime-report.sh $(1)/bin/lime-report
 endef
 
