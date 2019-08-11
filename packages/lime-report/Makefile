@@ -13,7 +13,7 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-	TITLE:=LibreMesh report utility
+	TITLE:=LibreMesh status report utility
 	CATEGORY:=LiMe
 	MAINTAINER:=Ilario Gelmetti <iochesonome@gmail.com>
 	URL:=https://libremesh.org
@@ -21,7 +21,8 @@ define Package/$(PKG_NAME)
 endef
 
 define Package/$(PKG_NAME)/description
-	Report utility for debugging LibreMesh
+	Outputs a report about the status and the main configuration
+	of a LibreMesh node, useful for debugging and issues reporting.
 endef
 
 define Package/$(PKG_NAME)/config
