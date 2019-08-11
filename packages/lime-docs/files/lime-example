@@ -32,7 +32,7 @@ config lime network
 	list protocols anygw
 	list protocols batadv:%N1			# Parametrizable with %Nn (which depends from ap_ssid), note that this will range between 16 and 272
 #	list protocols batadv:0				# If 0 VLAN tags are disabled and the routing is done on the raw interface
-	list protocols bmx6:13
+	list protocols bmx6:13				# The VLAN type can be provided as a third argument, for example bmx6:13:8021q for using VLAN 802.1q instead of the default 802.1ad
 	list protocols olsr:14
 	list protocols olsr6:15
 	list protocols olsr2:16
