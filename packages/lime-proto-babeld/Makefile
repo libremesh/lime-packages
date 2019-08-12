@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
   TITLE:=LiMe babeld proto support
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
-  URL:=http://libre-mesh.org
+  URL:=https://libremesh.org
   DEPENDS:=+babeld +lime-system
   PKGARCH:=all
 endef
