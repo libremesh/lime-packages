@@ -169,7 +169,7 @@ config net wirelessclientbackbone
 	list protocols 'batadv:%N1'
 
 ### Network interface specific options ( override general option )
-### Available protocols: bmx6, bmx7, batadv, olsr, olsr6, olsr2, bgp, wan, lan, manual, static, babeld
+### Available protocols: bmx6, bmx7, batadv, olsr, olsr6, olsr2, bgp, wan, lan, manual, static, babeld, apbb, client
 ### proto:vlan_number works too ( something like bmx6:13 is supported )
 ### If you use manual do not specify other protocols, may result in an unpredictable behavior/configuration (likely you loose connection to the node)
 
