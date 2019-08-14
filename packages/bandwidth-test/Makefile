@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
   CATEGORY:=LiMe
-  TITLE:=Available internet bandwidth measurement
+  TITLE:=Internet download bandwidth measurement
   MAINTAINER:=Ilario Gelmetti <iochesonome@gmail.com>
   URL:=https://libremesh.org
   DEPENDS:=+pv
@@ -28,7 +28,8 @@ endef
 
 
 define Package/$(PKG_NAME)/description
-  	Measure the maximum available bandwidth towards the internet, downloading a list of files.
+  	Measure the maximum available bandwidth towards the internet, in the download direction.
+	Downloading a list of files via HTTP connections.
 endef
 
 define Build/Compile

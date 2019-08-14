@@ -45,10 +45,10 @@ end
 
 if not singleTestDuration or not nonzeroTests or not serversList[1]:find("http") then
 	local help = {"Usage: "..arg[0].." [SINGLE_TEST_DURATION] [NONZERO_TESTS] [SERVERS_LIST]",
-		"Measures the maximum available bandwidth downloading a list of files.",
+		"Measures maximum available download bandwidth downloading a list of files from the internet.",
 		"The measurement will take approximately SINGLE_TEST_DURATION*NONZERO_TESTS seconds.",
-		"The download of each URL is attempted at most one time: multiple URLs should be provided.",
-		"The speed in B/s is printed to STDOUT.",
+		"Download of each URL is attempted at most one time: multiple URLs should be provided.",
+		"Speed in B/s is printed to STDOUT.",
 		"",
 		"  SINGLE_TEST_DURATION  fixed duration of each download process,",
 		"                          if missing reads from UCI status-report (default 20)",
