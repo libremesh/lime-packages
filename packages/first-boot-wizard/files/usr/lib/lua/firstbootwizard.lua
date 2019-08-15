@@ -8,7 +8,7 @@
 -- check_lock_file: Check /etc/first_run status
 -- read_configs: Return scan results
 
-local json = require 'luci.json'
+local json = require 'luci.jsonc'
 local ft = require('firstbootwizard.functools')
 local utils = require('firstbootwizard.utils')
 local iwinfo = require("iwinfo")
