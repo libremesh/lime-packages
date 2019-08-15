@@ -17,34 +17,36 @@ local fs = require("nixio.fs")
 local uci = require("uci")
 local nixio = require "nixio"
 
-function log(text)
+local fbw = {}
+
+function fbw.log(text)
     nixio.syslog('info', '[FBW] ' .. text)
 end
 
 -- Share your own default configuration
-function share_defualts()
+function fbw.share_defualts()
     utils.execute('ln -s /etc/config/lime-defaults /www/lime-defaults')
 end
 
 -- Write lock file at begin
-function start_scan_file()
+function fbw.start_scan_file()
     local file = io.open("/tmp/scanning", "w")
     file:write("true")
     file:close()
 end
 
 -- Remove old results
-function clean_tmp()
+function fbw.clean_tmp()
     utils.execute('rm /tmp/lime-defaults__*')
 end
 
 -- Save working copy of wireless
-function backup_wifi_config()
+function fbw.backup_wifi_config()
     utils.execute("cp /etc/config/wireless /tmp/wireless-temp")
 end
 
 -- Get networks in 5ghz radios
-function get_networks()
+function fbw.get_networks()
     -- Get all radios
     local radios = ft.map(utils.extract_prop(".name"), wireless.scandevices())
     -- Get only 5ghz radios
@@ -69,7 +71,7 @@ function get_networks()
 end
 
 -- Get macs from 5ghz radios
-function get_own_macs()
+function fbw.get_own_macs()
     local radios = ft.map(utils.extract_prop(".name"), wireless.scandevices())
     local radios_5ghz = ft.filter(wireless.is5Ghz,  radios)
     local phys = ft.map(utils.extract_phys_from_radios, radios_5ghz)
@@ -77,20 +79,20 @@ function get_own_macs()
 end
 
 -- Calc link local address and download lime-default
-function get_config(results, mesh_network)
-    log('Calc link local address and download lime-default - '.. json.encode(mesh_network))
+function fbw.get_config(results, mesh_network)
+    fbw.log('Calc link local address and download lime-default - '.. json.encode(mesh_network))
     local mode = mesh_network.mode == "Mesh Point" and 'mesh' or 'adhoc'
     local dev_id = 'wlan'..mesh_network['phy_idx']..'-'..mode
     local stations = {}
     local linksLocalIpv6 = {}
     -- Setup wireless interface
-    setup_wireless(mesh_network)
+    fbw.setup_wireless(mesh_network)
     -- Check if connected if not sleep some more until connected or ignore if 10s passed
     utils.is_connected(dev_id)
     -- Get associated stations
     stations = utils.get_stations_macs(dev_id)
     -- Remove own wifi networks
-    local own_macs = get_own_macs()
+    local own_macs = fbw.get_own_macs()
     stations = ft.filter(utils.not_own_network(own_macs), stations)
     -- Calc ipv6
     local linksLocalIpv6 = ft.map(utils.eui64, stations)
@@ -110,7 +112,7 @@ function get_config(results, mesh_network)
 end
 
 -- Setup wireless 
-function setup_wireless(mesh_network)
+function fbw.setup_wireless(mesh_network)
     local phy_idx = mesh_network["phy_idx"]
     local mode = mesh_network.mode == "Mesh Point" and 'mesh' or 'adhoc'
     local device_name = "lm_wlan"..phy_idx.."_"..mode.."_radio"..phy_idx
@@ -147,11 +149,11 @@ function setup_wireless(mesh_network)
 end
 
 -- Fetch remote configuration and save result
-function fetch_config(data)
-    log('Fetch config from '.. json.encode(data))
+function fbw.fetch_config(data)
+    fbw.log('Fetch config from '.. json.encode(data))
     local host = data.host
     local hostname = utils.execute("/bin/wget http://["..data.host.."]/cgi-bin/hostname -qO - "):gsub("\n", "")
-    log('Hostname found: '.. hostname)
+    fbw.log('Hostname found: '.. hostname)
     if (hostname == '') then hostname = host end
     local signal = data.signal
     local ssid = data.ssid
@@ -161,7 +163,7 @@ function fetch_config(data)
 end
 
 -- Restore previus wireless configuration
-function restore_wifi_config()
+function fbw.restore_wifi_config()
     utils.execute("cp /tmp/wireless-temp /etc/config/wireless")
     local allRadios = wireless.scandevices()
     for _, radio in pairs (allRadios) do
@@ -173,7 +175,7 @@ function restore_wifi_config()
 end
 
 -- Reset lime config file
-function clean_lime_config()
+function fbw.clean_lime_config()
     utils.execute("rm /etc/config/lime")
     local f = io.open("/etc/config/lime", "w")
     local command = [[
@@ -188,7 +190,7 @@ end
 -- Apply configuraation permanenty
 -- TODO: check if config is valid
 -- TODO: use safe-reboot
-function apply_file_config(file, hostname)
+function fbw.apply_file_config(file, hostname)
     local uci_cursor = uci.cursor()
     --Check if lime-defaults exist
     local filePath = "/tmp/"..file
@@ -212,14 +214,14 @@ function apply_file_config(file, hostname)
 end
 
 -- Remove scan lock file
-local function end_scan()
+function fbw.end_scan()
     local file = io.open("/tmp/scanning", "w")
     file:write("false")
     file:close()
 end
 
 -- Read scan status
-function check_scan_file()
+function fbw.check_scan_file()
     local file = io.open("/tmp/scanning", "r")
     if(file == nil) then
         return nil
@@ -228,7 +230,7 @@ function check_scan_file()
 end
 
 -- Read scan lock file
-function check_lock_file()
+function fbw.check_lock_file()
     local file = io.open("/etc/first_run", "r")
     if(file == nil) then
         return false
@@ -237,7 +239,7 @@ function check_lock_file()
 end
 
 -- Remove lock file
-function remove_lock_file()
+function fbw.remove_lock_file()
     utils.execute("rm /etc/first_run")
 end
 
@@ -252,7 +254,7 @@ local function getConfig(path)
 end
 
 -- List downloaded lime-defaults
-function read_configs()
+function fbw.read_configs()
     local tempFiles = fs.dir("/tmp/")
     local result = {}
     for file in tempFiles do
@@ -268,7 +270,7 @@ function read_configs()
 end
 
 -- Apply configuration for a new network ( used in ubus daemon)
-function apply_user_configs(configs, hostname)
+function fbw.apply_user_configs(configs, hostname)
     local uci_cursor = uci.cursor()
     -- Mesh network name
     local name = configs.ssid
@@ -294,24 +296,26 @@ function apply_user_configs(configs, hostname)
 end
 
 -- Scan for networks and fetch configurations files
-function get_all_networks()
+function fbw.get_all_networks()
     local networks = {}
     local configs = {}
 
-    log('Add lock file')
-    start_scan_file()
-    log('Clear previus scans')
-    clean_tmp()
-    log('Set wireless backup')
-    backup_wifi_config()
-    log('Get mesh networks')
-    networks = get_networks()
-    log('Get configs files')
+    fbw.log('Add lock file')
+    fbw.start_scan_file()
+    fbw.log('Clear previus scans')
+    fbw.clean_tmp()
+    fbw.log('Set wireless backup')
+    fbw.backup_wifi_config()
+    fbw.log('Get mesh networks')
+    networks = fbw.get_networks()
+    fbw.log('Get configs files')
     configs = ft.reduce(get_config, networks, {})
-    log('Restore previus wireless configuration')
-    restore_wifi_config()
-    log('Remove lock file')
-    end_scan()
-    log('Return configs files names')
+    fbw.log('Restore previus wireless configuration')
+    fbw.restore_wifi_config()
+    fbw.log('Remove lock file')
+    fbw.end_scan()
+    fbw.log('Return configs files names')
     return configs
 end
+
+return fbw

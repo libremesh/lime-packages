@@ -3,4 +3,4 @@
 local fbw = require('firstbootwizard')
 
 print("[FBW] Scanning...")
-get_all_networks()
+fbw.get_all_networks()
