@@ -119,7 +119,6 @@ function wireless.configure()
 				channel = options["channel"..freqSuffix] or options["channel"]
 				if type(channel) == "table" then
 					local chanIndex = 1 + radioName:match("%d+$") % #channel
-					chanIndex = chanIndex > 0 and chanIndex or 1
 					channel = channel[chanIndex]
 				end
 			else
