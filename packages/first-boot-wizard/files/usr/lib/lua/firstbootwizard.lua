@@ -14,7 +14,7 @@ local utils = require('firstbootwizard.utils')
 local iwinfo = require("iwinfo")
 local wireless = require("lime.wireless")
 local fs = require("nixio.fs")
-local uci = require("uci")
+local configs = require("lime.config")
 local nixio = require "nixio"
 
 local fbw = {}
@@ -116,7 +116,7 @@ function fbw.setup_wireless(mesh_network)
     local phy_idx = mesh_network["phy_idx"]
     local mode = mesh_network.mode == "Mesh Point" and 'mesh' or 'adhoc'
     local device_name = "lm_wlan"..phy_idx.."_"..mode.."_radio"..phy_idx
-    local uci_cursor = uci.cursor()
+    local uci_cursor = config.get_uci_cursor()
     -- Get acutal settings
     local current_channel = uci_cursor:get("wireless", 'radio'..phy_idx, "channel")
     local current_mode = uci_cursor:get("wireless", device_name, "mode")
@@ -191,7 +191,7 @@ end
 -- TODO: check if config is valid
 -- TODO: use safe-reboot
 function fbw.apply_file_config(file, hostname)
-    local uci_cursor = uci.cursor()
+    local uci_cursor = config.get_uci_cursor()
     --Check if lime-defaults exist
     local filePath = "/tmp/"..file
     utils.file_exists(filePath)
@@ -271,7 +271,7 @@ end
 
 -- Apply configuration for a new network ( used in ubus daemon)
 function fbw.apply_user_configs(configs, hostname)
-    local uci_cursor = uci.cursor()
+    local uci_cursor = config.get_uci_cursor()
     -- Mesh network name
     local name = configs.ssid
     -- Format hostname
