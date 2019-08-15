@@ -29,11 +29,11 @@ script:
   EOF
 - docker run
         --user 0:0
-        -v "/output:/home/build/sdk/bin/packages/mips_24kc/libremesh"
-        -v "$(pwd)/feeds.conf.default:/home/build/sdk/feeds.conf.default"
-        -v "$(pwd)/libremesh.sdk.config:/home/build/sdk/config"
+        -v "/output:/home/build/openwrt/bin/packages/mips_24kc/libremesh"
+        -v "$(pwd)/feeds.conf.default:/home/build/openwrt/feeds.conf.default"
+        -v "$(pwd)/libremesh.sdk.config:/home/build/openwrt/config"
         "$IMAGE_NAME" /bin/bash -c
-        "./scripts/feeds update -a && ./scripts/feeds install -p libremesh -a && cp /home/build/sdk/config /home/build/sdk/.config && make defconfig && make -j2"
+        "./scripts/feeds update -a && ./scripts/feeds install -p libremesh -a && cp /home/build/openwrt/config /home/build/openwrt/.config && make defconfig && make -j2"
 
 deploy:
   - provider: script
