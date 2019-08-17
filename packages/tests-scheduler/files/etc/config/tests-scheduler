@@ -1,0 +1,11 @@
+config probe 'probe'
+	list test 'ip neigh show nud reachable'
+	list test 'ping6 -n -c 2 ff02::1%br-lan'
+	list test 'batctl tl'
+	option stability 0.9
+	option data_file '/tmp/tests-scheduler-probe-data'
+
+config at 'at'
+	option data_file '/tmp/tests-scheduler-probe-data'
+	list peak_test 'lime-report | gzip -c >> /tmp/tests-peak.gz'
+	list night_test '(date && bandwidth-test) >> /tmp/tests-night'

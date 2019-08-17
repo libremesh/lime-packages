@@ -1,0 +1,15 @@
+#!/bin/sh
+
+hour=$(awk 'BEGIN{srand();print int(rand()*24)}')
+minute=$(awk 'BEGIN{srand();print int(rand()*60)}')
+
+unique_append()
+{
+	grep -qF "$1" "$2" || echo "$minute $hour $1" >> "$2"
+}
+
+unique_append \
+	'* * * ((/bin/tests-scheduler-at; shared-state sync tests-scheduler-night)&)'\
+	/etc/crontabs/root
+
+exit 0
