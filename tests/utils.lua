@@ -69,5 +69,10 @@ function utils.teardown_test_uci(uci)
 	uci:close()
 end
 
+function utils.get_board(name)
+	local board_path = 'tests/devices/' .. name .. '/board.json'
+	return limeutils.getBoardAsTable(board_path)
+end
+
 
 return utils

@@ -214,8 +214,11 @@ function utils.tableMelt(t1, t2)
 	return t1
 end
 
-function utils.getBoardAsTable()
-	return json.parse(fs.readfile(utils.BOARD_JSON_PATH))
+function utils.getBoardAsTable(board_path)
+	if board_path == nil then
+		board_path = utils.BOARD_JSON_PATH
+	end
+	return json.parse(fs.readfile(board_path))
 end
 
 return utils
