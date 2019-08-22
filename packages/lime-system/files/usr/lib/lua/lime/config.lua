@@ -52,10 +52,10 @@ function config.get(sectionname, option, fallback)
 		config.set(sectionname, option, defcnf)
 	elseif ( fallback ~= nil ) then
 		defcnf = fallback
-		print("Use fallback value for "..sectionname.."."..option..": "..tostring(defcnf))
+		config.log("Use fallback value for "..sectionname.."."..option..": "..tostring(defcnf))
 	else
-		print("WARNING: Attempt to access undeclared default for: "..sectionname.."."..option)
-		print(debug.traceback())
+		config.log("WARNING: Attempt to access undeclared default for: "..sectionname.."."..option)
+		config.log(debug.traceback())
 	end
 	return defcnf
 end
