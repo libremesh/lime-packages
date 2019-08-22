@@ -111,8 +111,10 @@ function network.setup_rp_filter()
 	
 	sysctl_options = sysctl_options .. "net.ipv4.conf.default.rp_filter=2\nnet.ipv4.conf.all.rp_filter=2\n";
 	sysctl_file = io.open(sysctl_file_path, "w");
-	sysctl_file:write(sysctl_options);
-	sysctl_file:close();
+	if sysctl_file ~= nil then
+		sysctl_file:write(sysctl_options);
+		sysctl_file:close();
+	end
 end
 
 function network.setup_dns()
