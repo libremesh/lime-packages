@@ -3,6 +3,10 @@
 utils = {}
 
 local config = require("lime.config")
+local json = require("luci.jsonc")
+local fs = require("nixio.fs")
+
+utils.BOARD_JSON_PATH = "/etc/board.json"
 
 function utils.split(string, sep)
 	local ret = {}
@@ -195,6 +199,10 @@ function utils.tableMelt(t1, t2)
 		t1[key] = value
 	end
 	return t1
+end
+
+function utils.getBoardAsTable()
+	return json.parse(fs.readfile(utils.BOARD_JSON_PATH))
 end
 
 return utils
