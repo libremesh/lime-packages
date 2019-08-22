@@ -14,6 +14,7 @@ function lan.configure(args)
 
 	local ipv4, ipv6 = network.primary_address()
 	local uci = config.get_uci_cursor()
+	uci:set("network", "lan", "interface")
 	uci:set("network", "lan", "ip6addr", ipv6:string())
 	uci:set("network", "lan", "ipaddr", ipv4:host():string())
 	uci:set("network", "lan", "netmask", ipv4:mask():string())
