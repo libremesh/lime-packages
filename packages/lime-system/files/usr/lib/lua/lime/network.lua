@@ -21,9 +21,8 @@ end
 function network.primary_interface()
 	local ifname = config.get("network", "primary_interface", "eth0")
 	if ifname == "auto" then
-		local handle = io.popen("sh /usr/lib/lua/lime/board.sh lan ifname")
-		ifname = handle:read("*a")
-		handle:close()
+		local board = utils.getBoardAsTable()
+		ifname = board['network']['lan']['ifname']
 	end
 
 	assert( ifname ~= nil and ifname ~= "",
