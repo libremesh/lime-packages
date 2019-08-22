@@ -3,6 +3,7 @@ local network = require 'lime.network'
 local utils = require 'lime.utils'
 local test_utils = require 'tests.utils'
 
+utils.disable_logging()
 local uci
 
 local BOARD = {
