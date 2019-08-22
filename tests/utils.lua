@@ -12,6 +12,14 @@ UCI_CONFIG_FILES = {
 	"uhttpd", "wireless",
 }
 
+function utils.disable_asserts()
+    _G['assert'] = function(expresion, message) return expresion end
+end
+
+function utils.enable_asserts()
+    _G['assert'] = utils.assert
+end
+
 -- Creates a custom empty uci environment to be used in unittesting.
 -- Should be called in a before_each block and must be followed by a call to
 -- teardown_test_uci in an after_each block.
