@@ -15,4 +15,16 @@ describe("Test utils tests", function()
         f = io.open(uci_confdir .. "/wireless")
         assert.is_nil(f)
     end)
+
+    it("test enable/disable asserts", function()
+        --! usinng _G to access the original assert function and not the
+        --! overrided by busted in this context
+        local original_assert = _G['assert']
+
+        test_utils.disable_asserts()
+        assert.are.Not.equal(_G['assert'], original_assert)
+
+        test_utils.enable_asserts()
+        assert.are.equal(_G['assert'], original_assert)
+    end)
 end)
