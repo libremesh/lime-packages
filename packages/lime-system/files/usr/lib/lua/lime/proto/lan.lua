@@ -3,7 +3,6 @@
 lan = {}
 
 local network = require("lime.network")
-local libuci = require("uci")
 local config = require("lime.config")
 local utils = require("lime.utils")
 
@@ -14,7 +13,7 @@ function lan.configure(args)
 	lan.configured = true
 
 	local ipv4, ipv6 = network.primary_address()
-	local uci = libuci:cursor()
+	local uci = config.get_uci_cursor()
 	uci:set("network", "lan", "ip6addr", ipv6:string())
 	uci:set("network", "lan", "ipaddr", ipv4:host():string())
 	uci:set("network", "lan", "netmask", ipv4:mask():string())
@@ -46,7 +45,7 @@ function lan.setup_interface(ifname, args)
 	if ifname:match("^wlan") then return end
 	if ifname:match(network.protoVlanSeparator.."%d+$") then return end
 
-	local uci = libuci:cursor()
+	local uci = config.get_uci_cursor()
 	local bridgedIfs = {}
 	local oldIfs = uci:get("network", "lan", "ifname") or {}
 	if type(oldIfs) == "string" then oldIfs = utils.split(oldIfs, " ") end

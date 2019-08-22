@@ -1,6 +1,5 @@
 #!/usr/bin/lua
 
-local libuci = require("uci")
 local hardware_detection = require("lime.hardware_detection")
 local config = require("lime.config")
 
