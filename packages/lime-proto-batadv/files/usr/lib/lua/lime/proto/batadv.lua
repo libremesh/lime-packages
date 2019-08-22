@@ -1,10 +1,10 @@
 #!/usr/bin/lua
 
-local libuci = require("uci")
 local fs = require("nixio.fs")
 local lan = require("lime.proto.lan")
 local utils = require("lime.utils")
 local network = require("lime.network")
+local config = require("lime.config")
 
 batadv = {}
 
@@ -16,7 +16,7 @@ function batadv.configure(args)
 
 	if not fs.lstat("/etc/config/batman-adv") then fs.writefile("/etc/config/batman-adv", "") end
 
-	local uci = libuci:cursor()
+	local uci = config.get_uci_cursor()
 
 	uci:set("batman-adv", "bat0", "mesh")
 	uci:set("batman-adv", "bat0", "bridge_loop_avoidance", "1")
@@ -73,7 +73,7 @@ function batadv.setup_interface(ifname, args)
 
 	local owrtInterfaceName, _, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 
-	local uci = libuci:cursor()
+	local uci = config.get_uci_cursor()
 	uci:set("network", owrtDeviceName, "mtu", mtu)
 	uci:set("network", owrtInterfaceName, "proto", "batadv")
 	uci:set("network", owrtInterfaceName, "mesh", "bat0")
