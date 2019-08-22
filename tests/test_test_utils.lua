@@ -27,4 +27,14 @@ describe("Test utils tests", function()
         test_utils.enable_asserts()
         assert.are.equal(_G['assert'], original_assert)
     end)
+
+    it("test enable package", function()
+        test_utils.enable_package('foobar')
+        local path = 'packages/foobar/files/usr/lib/lua/?.lua;'
+        assert.are.equal(path, string.sub(package.path, 1, string.len(path)))
+
+        test_utils.disable_package('foobar', 'foobar')
+        assert.are.Not.equal(path, string.sub(package.path, 1, string.len(path)))
+    end)
+
 end)

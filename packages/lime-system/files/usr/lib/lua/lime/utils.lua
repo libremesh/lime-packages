@@ -26,6 +26,12 @@ function utils.printf(fmt, ...)
 	print(string.format(fmt, ...))
 end
 
+--! escape the magic characters: ( ) . % + - * ? [ ] ^ $
+--! useful to use with gsub / match when finding exactly a string
+function utils.literalize(str)
+    return str:gsub("[%(%)%.%%%+%-%*%?%[%]%^%$]", function(c) return "%" .. c end)
+end
+
 function utils.isModuleAvailable(name)
 	if package.loaded[name] then 
 		return true
