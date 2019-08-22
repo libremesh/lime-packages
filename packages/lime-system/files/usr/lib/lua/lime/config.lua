@@ -32,9 +32,10 @@ config.uci = config.get_uci_cursor()
 
 --! Minimal /etc/config/lime santitizing
 function config.sanitize()
-	local cf = io.open("/etc/config/lime", "r")
+	local lime_path = config.uci:get_confdir() .. '/lime'
+	local cf = io.open(lime_path, "r")
 	if (cf == nil) then
-		cf = io.open("/etc/config/lime", "w")
+		cf = io.open(lime_path, "w")
 		cf:write("")
 	end
 	cf:close()
