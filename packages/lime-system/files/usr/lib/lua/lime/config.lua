@@ -9,7 +9,24 @@ local libuci = require("uci")
 
 config = {}
 
-config.uci = libuci:cursor()
+function config.log(...)
+	print(...)
+end
+
+config.uci = nil
+
+function config.get_uci_cursor()
+	if config.uci == nil then
+		config.uci = libuci:cursor()
+	end
+	return config.uci
+end
+
+function config.set_uci_cursor(cursor)
+	config.uci = cursor
+end
+
+config.uci = config.get_uci_cursor()
 
 --! Minimal /etc/config/lime santitizing
 function config.sanitize()
