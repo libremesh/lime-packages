@@ -1,0 +1,9 @@
+#!/usr/bin/awk -f
+
+/Package:/ {
+    package = $2
+}
+
+package == PACKAGE && /Filename:/ {
+    print $2
+}
