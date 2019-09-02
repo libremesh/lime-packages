@@ -9,7 +9,24 @@ local libuci = require("uci")
 
 config = {}
 
-config.uci = libuci:cursor()
+function config.log(...)
+	print(...)
+end
+
+config.uci = nil
+
+function config.get_uci_cursor()
+	if config.uci == nil then
+		config.uci = libuci:cursor()
+	end
+	return config.uci
+end
+
+function config.set_uci_cursor(cursor)
+	config.uci = cursor
+end
+
+config.uci = config.get_uci_cursor()
 
 --! Minimal /etc/config/lime santitizing
 function config.sanitize()
@@ -35,10 +52,10 @@ function config.get(sectionname, option, fallback)
 		config.set(sectionname, option, defcnf)
 	elseif ( fallback ~= nil ) then
 		defcnf = fallback
-		print("Use fallback value for "..sectionname.."."..option..": "..tostring(defcnf))
+		config.log("Use fallback value for "..sectionname.."."..option..": "..tostring(defcnf))
 	else
-		print("WARNING: Attempt to access undeclared default for: "..sectionname.."."..option)
-		print(debug.traceback())
+		config.log("WARNING: Attempt to access undeclared default for: "..sectionname.."."..option)
+		config.log(debug.traceback())
 	end
 	return defcnf
 end
