@@ -3,6 +3,23 @@
 utils = {}
 
 local config = require("lime.config")
+local json = require("luci.jsonc")
+local fs = require("nixio.fs")
+
+utils.BOARD_JSON_PATH = "/etc/board.json"
+
+function utils.log(...)
+	if DISABLE_LOGGING ~= nil then return end
+	print(...)
+end
+
+function utils.disable_logging()
+	DISABLE_LOGGING = 1
+end
+
+function utils.enable_logging()
+	DISABLE_LOGGING = nil
+end
 
 function utils.split(string, sep)
 	local ret = {}
@@ -24,6 +41,12 @@ end
 
 function utils.printf(fmt, ...)
 	print(string.format(fmt, ...))
+end
+
+--! escape the magic characters: ( ) . % + - * ? [ ] ^ $
+--! useful to use with gsub / match when finding exactly a string
+function utils.literalize(str)
+    return str:gsub("[%(%)%.%%%+%-%*%?%[%]%^%$]", function(c) return "%" .. c end)
 end
 
 function utils.isModuleAvailable(name)
@@ -189,6 +212,10 @@ function utils.tableMelt(t1, t2)
 		t1[key] = value
 	end
 	return t1
+end
+
+function utils.getBoardAsTable()
+	return json.parse(fs.readfile(utils.BOARD_JSON_PATH))
 end
 
 return utils
