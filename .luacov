@@ -1,0 +1,8 @@
+include = {
+	"packages",
+	"tests",
+}
+
+exclude = {
+	"tests/test_*"
+}
