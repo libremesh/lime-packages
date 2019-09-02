@@ -2,6 +2,7 @@
 
 local hardware_detection = require("lime.hardware_detection")
 local config = require("lime.config")
+local utils = require("lime.utils")
 
 local openwrt_wan = {}
 
@@ -15,9 +16,8 @@ end
 
 function openwrt_wan.detect_hardware()
 	if config.autogenerable(openwrt_wan.sectionName) then
-		local handle = io.popen("sh /usr/lib/lua/lime/board.sh wan ifname")
-		local ifname = handle:read("*a")
-		handle:close()
+		local board = utils.getBoardAsTable()
+		ifname = board['network']['wan']['ifname']
 		if ifname and ifname ~= "" then
 			local protos = {}
 			local net = require("lime.network")
