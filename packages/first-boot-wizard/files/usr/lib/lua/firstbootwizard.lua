@@ -14,7 +14,7 @@ local utils = require('firstbootwizard.utils')
 local iwinfo = require("iwinfo")
 local wireless = require("lime.wireless")
 local fs = require("nixio.fs")
-local configs = require("lime.config")
+local config = require("lime.config")
 local nixio = require "nixio"
 
 local fbw = {}
