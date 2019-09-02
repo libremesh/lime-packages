@@ -81,7 +81,7 @@ end
 
 -- Calc link local address and download lime-default
 function fbw.get_config(results, mesh_network)
-    fbw.log('Calc link local address and download lime-default - '.. json.encode(mesh_network))
+    fbw.log('Calc link local address and download lime-default - '.. json.stringify(mesh_network))
     local mode = mesh_network.mode == "Mesh Point" and 'mesh' or 'adhoc'
     local dev_id = 'wlan'..mesh_network['phy_idx']..'-'..mode
     local stations = {}
@@ -151,7 +151,7 @@ end
 
 -- Fetch remote configuration and save result
 function fbw.fetch_config(data)
-    fbw.log('Fetch config from '.. json.encode(data))
+    fbw.log('Fetch config from '.. json.stringify(data))
     local host = data.host
     local hostname = utils.execute("/bin/wget http://["..data.host.."]/cgi-bin/hostname -qO - "):gsub("\n", "")
     fbw.log('Hostname found: '.. hostname)
