@@ -36,15 +36,15 @@ endef
 
 define Build/Compile
 	@rm -rf ./build || true
-	@cp -r ./src ./build
-	@sed -i '/^\s*--!.*/d' build/*.lua || true
-	@sed -i '/^\s*#\[Doc\]/d' build/*.sh || true
+	@mkdir ./build
+	$(CP) ./files ./build
+	$(FIND) ./build -name '*.sh' -exec sed -i '/^\s*#\[Doc\]/d' {} +
+	$(FIND) ./build -name '*.lua' -exec sed -i '/^\s*--!.*/d' {} +
 endef
 
 define Package/$(PKG_NAME)/install
-	@mkdir -p $(1)/usr/lib/lua/lime/hwd || true
-	$(CP) ./build/ground_routing.lua $(1)/usr/lib/lua/lime/hwd/ground_routing.lua
-	@chmod +x $(1)/usr/lib/lua/lime/hwd/ground_routing.lua
+	$(INSTALL_DIR) $(1)/
+	$(CP) ./build/files/* $(1)/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
