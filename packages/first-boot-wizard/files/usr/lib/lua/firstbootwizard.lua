@@ -16,6 +16,7 @@ local wireless = require("lime.wireless")
 local fs = require("nixio.fs")
 local config = require("lime.config")
 local nixio = require "nixio"
+local uci = require "uci"
 
 local fbw = {}
 
