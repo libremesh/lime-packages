@@ -43,9 +43,9 @@ local methods = {
                 -- if done scanning return 2
                 elseif scan_file == "false" then scan_status = 2
                 end
-                local lock_file = check_lock_file()
+                local lock = fbw.check_lock()
                 local status = {
-                    lock = lock_file,
+                    lock = lock,
                     scan = scan_status
                 }
                 conn:reply(req, status)
@@ -60,7 +60,7 @@ local methods = {
                 -- os.execute('sleep 2s')
                 apply_file_config(file, hostname)
                 -- remove lock?
-                -- remove_lock_file()
+                -- fbw.remove_lock()
             end, { file = ubus.STRING, hostname = ubus.STRING }
         },
         create_network = {

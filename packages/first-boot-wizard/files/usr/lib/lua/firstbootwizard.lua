@@ -5,8 +5,10 @@
 -- apply_file_config: Set lime-default and apply configurations
 -- apply_user_configs: Set a new mesh network
 -- check_scan_file: Return /tmp/scanning status
--- check_lock_file: Check /etc/first_run status
+-- check_lock: Check uci lime.first_run status
 -- read_configs: Return scan results
+
+local fbw = {}
 
 local json = require 'luci.json'
 local ft = require('firstbootwizard.functools')
@@ -203,7 +205,7 @@ function apply_file_config(file, hostname)
     uci_cursor:set("lime", "system","hostname", hostname)
     uci_cursor:commit("lime")
     -- Remove FBW lock file
-    remove_lock_file()
+    fbw.remove_lock()
     -- Apply new configuration
     os.execute("/usr/bin/lime-config")
     -- Start sharing lime-defaults and reboot
@@ -219,7 +221,7 @@ local function end_scan()
 end
 
 -- Read scan status
-function check_scan_file()
+function check_scan()
     local file = io.open("/tmp/scanning", "r")
     if(file == nil) then
         return nil
@@ -228,17 +230,15 @@ function check_scan_file()
 end
 
 -- Read scan lock file
-function check_lock_file()
-    local file = io.open("/etc/first_run", "r")
-    if(file == nil) then
-        return false
-    end
-    return true
+function fbw.check_lock()
+  uci_cursor = uci.cursor()
+  return uci_cursor:get("lime", "first_run") or true
 end
 
 -- Remove lock file
-function remove_lock_file()
-    utils.execute("rm /etc/first_run")
+function fbw.remove_lock()
+  uci_cursor = uci.cursor()
+  uci_cursor:set("lime", "first_run", true)
 end
 
 -- Get config from lime-default file
@@ -289,7 +289,7 @@ function apply_user_configs(configs, hostname)
     os.execute("/usr/bin/lime-config")
     -- Start sharing lime-defaults and reboot
     share_defualts()
-    remove_lock_file()
+    fbw.remove_lock()
     os.execute("reboot")
 end
 
@@ -315,3 +315,5 @@ function get_all_networks()
     log('Return configs files names')
     return configs
 end
+
+return fbw
