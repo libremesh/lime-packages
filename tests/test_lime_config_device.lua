@@ -12,7 +12,7 @@ local uci
 local librerouter_board = test_utils.get_board('librerouter-v1')
 
 describe('LiMe Config tests', function()
-    it('test lime-config LibreRouter', function()
+    it('test lime-config for a LibreRouter device', function()
         config.set('system', 'lime')
         config.set('system', 'domain', 'lan')
         config.set('system', 'hostname', 'LiMe-%M4%M5%M6')
