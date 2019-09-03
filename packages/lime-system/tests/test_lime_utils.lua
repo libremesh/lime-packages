@@ -2,7 +2,7 @@ local utils = require 'lime.utils'
 local test_utils = require 'tests.utils'
 
 describe('LiMe Utils tests', function()
-    it('test literalize(str)', function()
+    it('test literalize(str) with a string that has all the reserved chars', function()
         local str = 'f+o[o]?.*(,)_-%a$l^'
         assert.is.equal('f%+o%[o%]%?%.%*%(,%)_%-%%a%$l%^', utils.literalize(str))
 
@@ -11,16 +11,20 @@ describe('LiMe Utils tests', function()
         assert.is.equal('bar', string.gsub(str, utils.literalize(str), 'bar'))
     end)
 
-    it('test isModuleAvailable', function()
+    it('test isModuleAvailable existing modules', function()
         assert.is_true(utils.isModuleAvailable('lime.utils'))
         assert.is_true(utils.isModuleAvailable('lime.firewall'))
+    end)
+
+    it('test isModuleAvailable non existing modules', function()
         assert.is_false(utils.isModuleAvailable('foobar'))
         assert.is_false(utils.isModuleAvailable('lime.foobar'))
+    end)
 
+    it('test isModuleAvailable enabling a package', function()
         test_utils.enable_package('lime-proto-anygw')
         assert.is_true(utils.isModuleAvailable('lime.proto.anygw'))
         test_utils.disable_package('lime-proto-anygw', 'lime.proto.anygw')
         assert.is_false(utils.isModuleAvailable('lime.proto.anygw'))
     end)
-
 end)
