@@ -6,7 +6,7 @@ local uci = nil
 
 describe('LiMe Wireless tests', function()
 
-    it('test get_mac for loopback', function()
+    it('test is5Ghz(phy) with single freq radios', function()
         iwinfo.fake.set_hwmodelist('phy0', { ["a"] = true, ["b"] = false, ["ac"] = false, ["g"] = false, ["n"] = true,})
         assert.is_true(wireless.is5Ghz('phy0'))
         iwinfo.fake.set_hwmodelist('phy0', { ["a"] = true, ["b"] = false, ["ac"] = false, ["g"] = false, ["n"] = false,})
