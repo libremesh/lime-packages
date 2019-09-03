@@ -1,6 +1,6 @@
 # Unit testing guide
 
-LibreMesh has unit tests that help us to add new features while keeping maintenance effort contained.
+LibreMesh has unit tests that help us add new features while keeping maintenance effort contained.
 
 We encourage contributors to write tests when adding new functionality and also while fixing regressions.
 
