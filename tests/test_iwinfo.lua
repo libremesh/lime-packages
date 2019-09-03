@@ -46,7 +46,7 @@ local scanlist_result = {
 
 
 describe('iwinfo fake tests', function()
-    it('test scanlist', function()
+    it('test scanlist returning a single station', function()
         iwinfo.fake.set_scanlist('phy0', scanlist_result)
         local scanlist = iwinfo.nl80211.scanlist('phy0')
         assert.are.equal(scanlist, scanlist_result)
@@ -61,7 +61,7 @@ describe('iwinfo fake tests', function()
     end)
 
 
-    it('test channel(phy)', function()
+    it('test channel(phy) in a device with two phys', function()
         iwinfo.fake.set_channel('phy0', 1)
         iwinfo.fake.set_channel('phy1', 48)
 
@@ -70,7 +70,7 @@ describe('iwinfo fake tests', function()
         assert.is.equal(nil, iwinfo.nl80211.channel('phy2'))
     end)
 
-    it('test assoclist(radio)', function()
+    it('test assoclist(radio) with one station associated', function()
         iwinfo.fake.set_assoclist('wlan1-apname', {})
 
         assert.are.same({}, iwinfo.nl80211.assoclist('wlan1-apname'))
@@ -91,7 +91,7 @@ describe('iwinfo fake tests', function()
 
     end)
 
-    it('test hwmodelist(radio_or_phy)', function()
+    it('test hwmodelist(radio_or_phy) with single freq radios', function()
         local hwmodelist_n_2ghz = { ["a"] = false, ["b"] = true, ["ac"] = false, ["g"] = true, ["n"] = true,}
         local hwmodelist_n_5ghz = { ["a"] = true, ["b"] = false, ["ac"] = false, ["g"] = false, ["n"] = true,}
 
@@ -111,7 +111,7 @@ describe('iwinfo fake tests', function()
         assert.are.same(hwmodelist_n_5ghz, iwinfo.nl80211.hwmodelist('wlan1-apname'))
     end)
 
-    it('test load_from_uci', function()
+    it('test load_from_uci for a single radio device', function()
         uci:set('wireless', 'radio0', 'wifi-device')
         uci:set('wireless', 'radio0', 'type', 'mac80211')
         uci:set('wireless', 'radio0', 'channel', '4')

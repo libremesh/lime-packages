@@ -29,7 +29,7 @@ describe('LiMe Network tests', function()
         assert.are.same({'00', '00', '00', '00', '00', '00'}, network.get_mac('lo'))
     end)
 
-    it('test primary_interface', function()
+    it('test primary_interface configured interface', function()
         -- disable assertions beacause there is a check to validate
         -- that the interface really exists in the system
         test_utils.disable_asserts()
@@ -42,14 +42,14 @@ describe('LiMe Network tests', function()
         test_utils.enable_asserts()
     end)
 
-    it('test primary_interface auto', function()
+    it('test primary_interface auto config', function()
         config.set('network', 'lime')
         config.set('network', 'primary_interface', 'auto')
         uci:commit('lime')
         assert.is.equal('lo', network.primary_interface())
     end)
 
-    it('test primary_address(offset)', function()
+    it('test primary_address(offset) ipv4 and ipv6 from config templates', function()
         config.set('network', 'lime')
         config.set('network', 'primary_interface', 'eth99')
         config.set('network', 'main_ipv4_address', '10.%N1.0.0/16')
