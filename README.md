@@ -1,6 +1,7 @@
 [![travis](https://api.travis-ci.org/libremesh/lime-packages.svg?branch=develop)](https://travis-ci.org/libremesh/lime-packages)
 [![Backers on Open Collective](https://opencollective.com/libremesh/backers/badge.svg)](#backers) 
 [![Sponsors on Open Collective](https://opencollective.com/libremesh/sponsors/badge.svg)](#sponsors) 
+[![codecov.io](http://codecov.io/github/libremesh/lime-packages/branch/master/graphs/badge.svg)](http://codecov.io/github/libremesh/lime-packages)
 
 # [LibreMesh][5] packages
 
