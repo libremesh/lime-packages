@@ -1,0 +1,92 @@
+stages:
+  - formal
+  - build
+  - deploy
+
+variables:
+  OPENWRT_VERSION: "18.06.4"
+  OPENWRT_BRANCH: "openwrt-18.06"
+  BRANCH: "master"
+
+formal:
+  image: "openwrtorg/sdk:$OPENWRT_VERSION"
+  stage: formal
+  script:
+    - |
+       echo_red()   { printf "\033[1;31m\$*\033[m\n"; }
+       echo_green() { printf "\033[1;32m\$*\033[m\n"; }
+       echo_blue()  { printf "\033[1;34m\$*\033[m\n"; }
+
+       RET=0
+       for commit in $(git rev-list HEAD ^origin/$BRANCH); do
+         echo_blue "=== Checking commit '$commit'"
+         if git show --format='%P' -s $commit | grep -qF ' '; then
+           echo_red "Pull request should not include merge commits"
+           RET=1
+         fi
+         author="$(git show -s --format=%aN $commit)"
+         if echo $author | grep -q '\S\+\s\+\S\+'; then
+           echo_green "Author name ($author) seems ok"
+         else
+           echo_red "Author name ($author) need to be your real name 'firstname lastname'"
+           RET=1
+         fi
+         subject="$(git show -s --format=%s $commit)"
+         if echo "$subject" | grep -q -e '^[0-9A-Za-z,+/_-]\+: ' -e '^Revert '; then
+           echo_green "Commit subject line seems ok ($subject)"
+         else
+           echo_red "Commit subject line MUST start with '<package name>: ' ($subject)"
+           RET=1
+         fi
+         body="$(git show -s --format=%b $commit)"
+         sob="$(git show -s --format='Signed-off-by: %aN <%aE>' $commit)"
+         if echo "$body" | grep -qF "$sob"; then
+           echo_green "Signed-off-by match author"
+         else
+           echo_red "Signed-off-by is missing or doesn't match author (should be '$sob')"
+           RET=1
+         fi
+       done
+       exit $RET
+
+build:
+  image: "openwrtorg/sdk:$OPENWRT_VERSION"
+  stage: build
+  script:
+    - cd /home/build/openwrt/
+    - |
+        cat <<EOF >> feeds.conf
+        src-git base https://git.openwrt.org/openwrt/openwrt.git;v$OPENWRT_VERSION
+        src-git packages https://git.openwrt.org/feed/packages.git;$OPENWRT_BRANCH
+        src-git luci https://git.openwrt.org/project/luci.git;$OPENWRT_BRANCH
+        src-git routing https://git.openwrt.org/feed/routing.git;$OPENWRT_BRANCH
+        src-git telephony https://git.openwrt.org/feed/telephony.git;$OPENWRT_BRANCH
+        src-git libremap https://github.com/libremesh/libremap-agent.git
+        src-link libremesh $CI_PROJECT_DIR
+        EOF
+    - ./scripts/feeds update -a || true
+    - ./scripts/feeds install -p libremesh -a
+    - cp "$CI_PROJECT_DIR/libremesh.sdk.config" .config
+    - make defconfig
+    - make -j "$(nproc)"
+    - mkdir -p "$CI_PROJECT_DIR/bin"
+    - cp -r ./bin/packages/x86_64/libremesh/ "$CI_PROJECT_DIR/bin"
+  artifacts:
+    paths:
+    - ./bin/
+
+deploy:
+  image: alpine
+  stage: deploy
+  dependencies:
+    - build
+  only:
+    - master
+    - gitlab
+  script:
+    - apk add rsync openssh sshpass
+    - |
+      rsync --delete-after -L -r -v \
+      -e "sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+        "$CI_PROJECT_DIR/bin/libremesh/" \
+        "ci@repo.libremesh.org:repo/snapshots/packages/"
