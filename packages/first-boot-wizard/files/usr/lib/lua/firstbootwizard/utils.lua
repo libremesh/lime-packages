@@ -3,7 +3,7 @@ local utils = {}
 local ft = require('firstbootwizard.functools')
 local fs = require("nixio.fs")
 local iwinfo = require("iwinfo")
-local json = require("luci.json")
+local json = require("luci.jsonc")
 local limeutils = require("lime.utils")
 
 function execute(cmd)
