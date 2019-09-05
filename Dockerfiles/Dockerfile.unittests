@@ -1,0 +1,25 @@
+FROM abaez/luarocks:lua5.1
+
+ARG OPENWRT_REPO=https://downloads.openwrt.org/releases/18.06.4/packages/x86_64
+
+WORKDIR /root
+
+RUN apk add --no-cache bash bash-completion git openssl wget
+
+RUN luarocks install luacov; \
+    luarocks install busted; \
+    luarocks install mobdebug;
+
+COPY tools /root/tools
+RUN /root/tools/dlpkg $OPENWRT_REPO/base/ liblua /root && \
+    /root/tools/dlpkg $OPENWRT_REPO/base/ libuci /root && \
+    /root/tools/dlpkg $OPENWRT_REPO/base/ libuci-lua /root && \
+    /root/tools/dlpkg $OPENWRT_REPO/base/ libubox /root && \
+    /root/tools/dlpkg $OPENWRT_REPO/base/ libjson-c /root && \
+    /root/tools/dlpkg $OPENWRT_REPO/base/ libnl-tiny /root && \
+    /root/tools/dlpkg $OPENWRT_REPO/luci/ luci-lib-nixio /root && \
+    /root/tools/dlpkg $OPENWRT_REPO/luci/ luci-lib-ip /root && \
+    /root/tools/dlpkg $OPENWRT_REPO/luci/ luci-lib-jsonc /root
+
+RUN for packet in /root/*.ipk; do tar xf $packet; tar xvf /root/data.tar.gz -C /; rm /root/data.tar.gz; done
+RUN mv /usr/lib/lua/* /usr/local/lib/lua/5.1/

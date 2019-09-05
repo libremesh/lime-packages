@@ -3,7 +3,6 @@
 local config = require("lime.config")
 local network = require("lime.network")
 local utils = require("lime.utils")
-local libuci = require("uci")
 local fs = require("nixio.fs")
 local iwinfo = require("iwinfo")
 
@@ -20,14 +19,14 @@ end
 
 function wireless.clean()
 	print("Clearing wireless config...")
-	local uci = libuci:cursor()
+	local uci = config.get_uci_cursor()
 	uci:foreach("wireless", "wifi-iface", function(s) uci:delete("wireless", s[".name"]) end)
 	uci:save("wireless")
 end
 
 function wireless.scandevices()
 	local devices = {}
-	local uci = libuci:cursor()
+	local uci = config.get_uci_cursor()
 	uci:foreach("wireless", "wifi-device", function(dev) devices[dev[".name"]] = dev end)
 	return devices
 end
@@ -54,7 +53,7 @@ function wireless.createBaseWirelessIface(radio, mode, nameSuffix, extras)
 	local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname:gsub("[^%w_]", "_").."_"..radioName
 	local networkInterfaceName = network.limeIfNamePrefix..ifname:gsub("[^%w_]", "_")
 
-	local uci = libuci:cursor()
+	local uci = config.get_uci_cursor()
 
 	uci:set("wireless", wirelessInterfaceName, "wifi-iface")
 	uci:set("wireless", wirelessInterfaceName, "mode", mode)
@@ -119,14 +118,13 @@ function wireless.configure()
 				channel = options["channel"..freqSuffix] or options["channel"]
 				if type(channel) == "table" then
 					local chanIndex = 1 + radioName:match("%d+$") % #channel
-					chanIndex = chanIndex > 0 and chanIndex or 1
 					channel = channel[chanIndex]
 				end
 			else
 				channel = specRadio["channel"..freqSuffix] or specRadio["channel"] or "auto"
 			end
 
-			local uci = libuci:cursor()
+			local uci = config.get_uci_cursor()
 			uci:set("wireless", radioName, "disabled", 0)
 			uci:set("wireless", radioName, "distance", distance)
 			uci:set("wireless", radioName, "noscan", 1)

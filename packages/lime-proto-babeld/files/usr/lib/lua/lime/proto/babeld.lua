@@ -17,8 +17,8 @@
 --! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local network = require("lime.network")
+local config = require("lime.config")
 local fs = require("nixio.fs")
-local libuci = require("uci")
 
 babeld = {}
 
@@ -32,7 +32,7 @@ function babeld.configure(args)
 
 	fs.writefile("/etc/config/babeld", "")
 
-	local uci = libuci:cursor()
+	local uci = config.get_uci_cursor()
 
 	if config.get("network", "babeld_over_librenet6", false) then
 		uci:set("babeld", "librenet6", "interface")
@@ -108,7 +108,7 @@ function babeld.setup_interface(ifname, args)
 
 	local ipv4, _ = network.primary_address()
 
-	local uci = libuci:cursor()
+	local uci = config.get_uci_cursor()
 
 	uci:set("network", owrtInterfaceName, "proto", "static")
 	uci:set("network", owrtInterfaceName, "ipaddr", ipv4:host():string())

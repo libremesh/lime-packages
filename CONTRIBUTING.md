@@ -98,13 +98,17 @@ The general workflow for branching is as follows:
 
     ```git checkout -b <branch name>```
 
-4. Make your changes
+4. Run the tests: read [[Testing docs](TESTING.md)].
 
-5. Push the changes to `origin` (i.e. your fork)
+5. Make your changes, we encourage you to try to add a test.
+
+6. Make sure the tests are still running with success.
+
+7. Push the changes to `origin` (i.e. your fork)
 
     ```git push origin <branch name>```
 
-6. Create a new Pull Request (see below).
+8. Create a new Pull Request (see below).
 
 #### Creating A Pull Request
 

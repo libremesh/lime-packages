@@ -75,6 +75,14 @@ Compile the firmware images.
 
 The resulting files will be present in _bin_ directory.
 
+## Testing
+
+LibreMesh has unit tests that help us add new features while keeping maintenance effort contained.
+
+To run the tests simply execute `./run_tests`.
+
+Please read the [[Unit Testing Guide](TESTING.md)] for more details about testing and how to add tests to LibreMesh.
+
 ## Get in Touch with LibreMesh Community
 
 ### Mailing Lists

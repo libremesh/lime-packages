@@ -1,0 +1,8 @@
+#!/bin/sh
+# Downloads a package from a repository
+
+wget -qO- "${1}/Packages.gz" | gzip -d | "$(dirname $0)/pkgfilename" -v "PACKAGE=${2}" | while read filename; do
+    echo "downloading ${1}/${filename}"
+    wget -P "${3}" "${1}/${filename}"
+done
+

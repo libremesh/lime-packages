@@ -27,13 +27,15 @@ endef
 
 define Build/Compile
 	@rm -rf ./build || true
-	@cp -r ./src ./build
-	@sed -i '/^--!.*/d' build/*.lua
+	@mkdir ./build
+	$(CP) ./files ./build
+	$(FIND) ./build -name '*.sh' -exec sed -i '/^\s*#\[Doc\]/d' {} +
+	$(FIND) ./build -name '*.lua' -exec sed -i '/^\s*--!.*/d' {} +
 endef
 
 define Package/$(PKG_NAME)/install
-	@mkdir -p $(1)/usr/lib/lua/lime/proto || true
-	$(CP) ./build/bgp.lua $(1)/usr/lib/lua/lime/proto/
+	$(INSTALL_DIR) $(1)/
+	$(CP) ./build/files/* $(1)/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))

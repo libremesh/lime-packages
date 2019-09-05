@@ -1,6 +1,5 @@
 #!/usr/bin/lua
 
-local libuci = require("uci")
 local hardware_detection = require("lime.hardware_detection")
 local config = require("lime.config")
 local utils = require("lime.utils")
@@ -10,13 +9,13 @@ local ground_routing = {}
 ground_routing.sectionNamePrefix = hardware_detection.sectionNamePrefix.."ground_routing_"
 
 function ground_routing.delete_all_switch_vlan_sections()
-	local uci = libuci:cursor()
+	local uci = config.get_uci_cursor()
 	uci:foreach("network", "switch_vlan", function(s) uci:delete("network", s[".name"]) end )
 	uci:save("network")
 end
 
 function ground_routing.clean()
-	local uci = libuci:cursor()
+	local uci = config.get_uci_cursor()
 
 	function cleanGrSection(section)
 		if utils.stringStarts(section[".name"], ground_routing.sectionNamePrefix) then
@@ -34,8 +33,7 @@ function ground_routing.detect_hardware()
 		local link_name = section[".name"]
 		local net_dev = section["net_dev"]
 		local vlan = section["vlan"]
-
-		local uci = libuci:cursor()
+		local uci = config.get_uci_cursor()
 
 		function create_8021q_dev(vlan_p)
 			local dev_secname = ground_routing.sectionNamePrefix..link_name.."_"..net_dev.."_"..vlan_p
