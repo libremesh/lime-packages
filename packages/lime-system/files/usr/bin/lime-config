@@ -35,29 +35,6 @@ function getopt( arg, options )
   return tab
 end
 
-function main()
-	config.sanitize()
-
-	local modules_name = { "hardware_detection", "wireless", "network", "firewall", "system" }
-	local modules = {}
-
-	for i, name in pairs(modules_name) do modules[i] = require("lime."..name) end
-	for _,module in pairs(modules) do
-		xpcall(module.clean, function(errmsg) print(errmsg) ; print(debug.traceback()) end)
-	end
-
-	for _,module in pairs(modules) do
-		xpcall(module.configure, function(errmsg) print(errmsg) ; print(debug.traceback()) end)
-	end
-
-	local hooksDir = "/etc/hotplug.d/lime-config"
-	for hook in fs.dir(hooksDir) do
-		local hookCmd = hooksDir.."/"..hook.." after"
-		print("executed hook:", hookCmd, os.execute(hookCmd))
-	end
-end
-
-
 local lockFilePath = "/var/run/lime-config.pid"
 local lockFile = io.open(lockFilePath,"r")
 if lockFile then
@@ -79,7 +56,7 @@ else
 		os.remove("/etc/config/lime")
 	end
 
-	main()
+	config.main()
 
 	--! using --no-commit doesn't guarantee filesystem will not be changed
 	--! mainly because many config files are not uci-based

@@ -1,8 +1,8 @@
 #!/usr/bin/lua
 
 local fs = require("nixio.fs")
-local libuci = require("uci")
 local utils = require("lime.utils")
+local config = require("lime.config")
 firewall = {}
 
 function firewall.clean()
@@ -11,7 +11,7 @@ end
 
 function firewall.configure()
     if utils.is_installed('firewall') then
-        local uci = libuci:cursor()
+        local uci = config:get_uci_cursor()
         local lanIfs = {}
         uci:foreach("firewall", "defaults",
             function(section)

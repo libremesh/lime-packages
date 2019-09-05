@@ -1,0 +1,28 @@
+#!/bin/bash
+DOCKER_IMAGE="libremesh/luatest:1.0"
+if ! docker inspect --type=image $DOCKER_IMAGE > /dev/null 2>&1; then
+    docker build -f Dockerfiles/Dockerfile.unittests . -t "$DOCKER_IMAGE"
+fi
+export DOCKER_IMAGE
+
+TESTS_PATHS='packages/*/tests/test*.lua  tests/test*.lua'
+
+LIB_PATHS='tests/fakes/?.lua;packages/safe-upgrade/files/usr/sbin/?'
+# autodiscover more LIB_PATHS
+for pkg in packages/*/files/usr/lib/lua/; do
+  LIB_PATHS="$LIB_PATHS;$pkg?.lua"
+done
+# append default paths
+LIB_PATHS="$LIB_PATHS;;"
+
+# create a temporaty script file to be able to run multiple commands inside docker
+temp_file=$(mktemp /tmp/lime_test.XXXX)
+trap "rm -f ${temp_file}" 0 2 3 15
+chmod +x ${temp_file}
+
+cat > ${temp_file}<< SCRIPT
+#!/bin/bash
+busted -v --coverage ${TESTS_PATHS} --lpath='${LIB_PATHS}' ${1} && luacov
+SCRIPT
+
+./tools/dockertestshell "${temp_file}"

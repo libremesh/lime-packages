@@ -17,7 +17,7 @@ local methods = {
     ['lime-fbw'] = {
         search_networks = {
             function(req, msg)
-                local scan_file = check_scan_file()
+                local scan_file = fbw.check_scan_file()
                 local status
                 if(scan_file == nil) or (msg.scan == true) then
                     os.execute("rm /tmp/scanning")
@@ -28,14 +28,14 @@ local methods = {
                 else
                     status = 'scanned'
                 end
-                conn:reply(req, {status= status, networks = read_configs()})
+                conn:reply(req, {status= status, networks = fbw.read_configs()})
 
             end, { scan = ubus.BOOLEAN }
         },
         status = {
             function(req, msg)
                 local scan_status
-                local scan_file = check_scan_file()
+                local scan_file = fbw.check_scan_file()
                 -- if no scan file return 0
                 if scan_file == nil then scan_status = 0
                 -- if scanning return 1
@@ -43,7 +43,7 @@ local methods = {
                 -- if done scanning return 2
                 elseif scan_file == "false" then scan_status = 2
                 end
-                local lock_file = check_lock_file()
+                local lock_file = fbw.check_lock_file()
                 local status = {
                     lock = lock_file,
                     scan = scan_status
@@ -71,7 +71,7 @@ local methods = {
                 end
                 if (configs ~= nil) then
                     conn:reply(req, { status = 'done' })
-                    apply_user_configs(configs, msg.hostname)
+                    fbw.apply_user_configs(configs, msg.hostname)
                     return
                 else
                     conn:reply(req, { status = 'error', msg = "Network name is required"})
