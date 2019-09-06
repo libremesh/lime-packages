@@ -110,6 +110,7 @@ function anygw.configure(args)
 
 	local content = { }
 	table.insert(content, "enable-ra")
+	table.insert(content, "ra-param=anygw,mtu:1350,120")
 	table.insert(content, "dhcp-range=tag:anygw,"..ipv6:network():string()..",ra-names,24h")
 	table.insert(content, "dhcp-option=tag:anygw,option6:domain-search,"..cloudDomain)
 	fs.writefile("/etc/dnsmasq.d/lime-proto-anygw-20-ipv6.conf", table.concat(content, "\n").."\n")
