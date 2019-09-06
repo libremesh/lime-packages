@@ -25,7 +25,7 @@ define Package/$(PKG_NAME)/description
   automatically configure it to connect as client to a predefined SSID/password and ask for DHCP.
   The idea is to provide internet access to a router, without needing to mess with LuCI or CLI.
   Just insert a supported USB device on the router, and open an AP with 3g/4g tethering on a phone.
-  By default, it will try connect to SSID "android" with password "internet"
+  By default, it will try connect to SSID "internet" with password "internet"
 endef
 
 define Build/Compile
