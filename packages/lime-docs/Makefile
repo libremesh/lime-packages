@@ -24,8 +24,8 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   TITLE:=LibreMesh English documentation
   DEPENDS:=+$(PKG_NAME)-minimal
-  MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
-  URL:=http://libremesh.org/docs/
+  MAINTAINER:=Ilario Gelmetti <iochesonome@gmail.com>
+  URL:=https://libremesh.org/docs/
   SUBMENU:=Offline Documentation
   PKGARCH:=all
 endef
@@ -34,8 +34,8 @@ define Package/$(PKG_NAME)-it
   CATEGORY:=LiMe
   TITLE:=LibreMesh Italian documentation
   DEPENDS:=+$(PKG_NAME)-minimal
-  MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
-  URL:=http://libremesh.org/docs/
+  MAINTAINER:=Ilario Gelmetti <iochesonome@gmail.com>
+  URL:=https://libremesh.org/docs/
   SUBMENU:=Offline Documentation
   PKGARCH:=all
 endef
@@ -43,8 +43,8 @@ endef
 define Package/$(PKG_NAME)-minimal
   CATEGORY:=LiMe
   TITLE:=LibreMesh minimal documentation
-  MAINTAINER:=Ilario Gelmetti <ilario@tgnu.ml>
-  URL:=http://libremesh.org/docs/
+  MAINTAINER:=Ilario Gelmetti <iochesonome@gmail.com>
+  URL:=https://libremesh.org/docs/
   SUBMENU:=Offline Documentation
   PKGARCH:=all
 endef
