@@ -25,15 +25,7 @@ endef
 
 define Package/$(PKG_NAME)/description
 	$(PKG_NAME) provides safe firmware upgrades using two partitions and a
-	confirmation step. When the new firmware boots it must be confirmed with
-	'$(PKG_NAME) confirm' before a defined period of time. If confirmation is not
-	done, because you don't like the new firmware or the firmware does not work
-	(you can't reach the device, etc), the device is automatically reverted to the
-	previous state. This automatic revert is performed by the hardware watchdog  if
-	the firmware crash before linux boots or by a linux userspace timer if the
-	firmware boots  but you don't confirm it. The state of which firmware partition
-	has to be booted and the logic that  allows booting a partition with rollback
-	is implemented by a u-boot script that is installed  by '$(PKG_NAME) install'.
+	confirmation step. See $(PKG_NAME)/Readme.md for more details.
 endef
 
 define Build/Configure
