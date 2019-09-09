@@ -11,6 +11,7 @@ require "ubus"
 local nixio = require "nixio",require "nixio.fs"
 local iwinfo = require("iwinfo")
 local json = require 'luci.json'
+local utils = require("lime.utils")
 
 local function printJson (obj)
     print(json.encode(obj))
@@ -122,6 +123,11 @@ function get_interfaces(msg)
 end
 
 local function spectral_scan(msg)
+    if utils.is_installed("fft-eval") == false then
+        local result = { error = "fft-eval not installed" }
+        printJson(result)
+        return
+    end
 
 	local device = msg.device
 	local spectrum = msg.spectrum
