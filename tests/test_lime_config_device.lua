@@ -1,4 +1,5 @@
 local config = require 'lime.config'
+local network = require 'lime.network'
 local utils = require 'lime.utils'
 local hw_detection = require 'lime.hardware_detection'
 local test_utils = require 'tests.utils'
@@ -31,6 +32,9 @@ describe('LiMe Config tests', function()
 		config.set('wifi', 'distance_5ghz', '1234')
 		config.set('wifi', 'htmode_5ghz', 'HT40')
         uci:commit('lime')
+
+        stub(network, "get_mac", utils.get_id)
+        stub(network, "assert_interface_exists", function () return true end)
 
         -- copy openwrt first boot generated configs
 		for _, config_name in ipairs({'network', 'wireless'}) do
