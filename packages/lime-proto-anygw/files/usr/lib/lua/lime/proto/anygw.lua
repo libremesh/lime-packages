@@ -9,6 +9,8 @@ anygw = {}
 
 anygw.configured = false
 
+anygw.SAFE_CLIENT_MTU = 1350
+
 function anygw.configure(args)
 	if anygw.configured then return end
 	anygw.configured = true
@@ -88,7 +90,7 @@ function anygw.configure(args)
 	uci:set("dhcp", owrtInterfaceName.."_dhcp", "force", "1")
 
 	uci:set("dhcp", owrtInterfaceName, "tag")
-	uci:set("dhcp", owrtInterfaceName, "dhcp_option", { "option:mtu,1350" } )
+	uci:set("dhcp", owrtInterfaceName, "dhcp_option", { "option:mtu,"..anygw.SAFE_CLIENT_MTU } )
 	uci:set("dhcp", owrtInterfaceName, "force", "1")
 
 	uci:foreach("dhcp", "dnsmasq",
@@ -110,7 +112,7 @@ function anygw.configure(args)
 
 	local content = { }
 	table.insert(content, "enable-ra")
-	table.insert(content, "ra-param=anygw,mtu:1350,120")
+	table.insert(content, "ra-param=anygw,mtu:"..anygw.SAFE_CLIENT_MTU..",120")
 	table.insert(content, "dhcp-range=tag:anygw,"..ipv6:network():string()..",ra-names,24h")
 	table.insert(content, "dhcp-option=tag:anygw,option6:domain-search,"..cloudDomain)
 	fs.writefile("/etc/dnsmasq.d/lime-proto-anygw-20-ipv6.conf", table.concat(content, "\n").."\n")
