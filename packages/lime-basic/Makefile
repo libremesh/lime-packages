@@ -28,7 +28,7 @@ define Package/$(PKG_NAME)
 	         +lime-proto-anygw +lime-proto-wan \
 	         +shared-state-dnsmasq_hosts +shared-state-dnsmasq_leases +lime-webui \
 	         +lime-hwd-openwrt-wan +lime-docs-minimal \
-	         +bmx6-auto-gw-mode +lime-hwd-ground-routing +smonit
+	         +bmx6-auto-gw-mode +lime-hwd-ground-routing
 endef
 
 define Package/$(PKG_NAME)-no-ui
@@ -43,7 +43,7 @@ define Package/$(PKG_NAME)-no-ui
 	         +lime-proto-anygw +lime-proto-wan \
 	         +shared-state-dnsmasq_hosts +shared-state-dnsmasq_leases \
 	         +lime-hwd-openwrt-wan +lime-docs-minimal \
-	         +bmx6-auto-gw-mode +lime-hwd-ground-routing +smonit
+	         +bmx6-auto-gw-mode +lime-hwd-ground-routing
 endef
 
 
