@@ -30,16 +30,13 @@ describe('LiMe Network tests', function()
     end)
 
     it('test primary_interface configured interface', function()
-        -- disable assertions beacause there is a check to validate
-        -- that the interface really exists in the system
-        test_utils.disable_asserts()
         config.set('network', 'lime')
         config.set('network', 'primary_interface', 'test0')
         uci:commit('lime')
         stub(utils, "getBoardAsTable", function () return BOARD end)
+        stub(network, "assert_interface_exists", function () return true end)
 
         assert.is.equal('test0', network.primary_interface())
-        test_utils.enable_asserts()
     end)
 
     it('test primary_interface auto config', function()
@@ -60,9 +57,10 @@ describe('LiMe Network tests', function()
         uci:commit('lime')
 
         stub(network, "get_mac", function () return  {'00', '00', '00', '00', '00', '00'} end)
-        test_utils.disable_asserts()
+        stub(network, "assert_interface_exists", function () return true end)
+
         local ipv4, ipv6 = network.primary_address()
-        test_utils.enable_asserts()
+
         assert.is.equal('10.13.0.0', ipv4:network():string())
         assert.is.equal(16, ipv4:prefix())
         -- as 'lo' interface MAC address is 00:00:00:00:00 then
@@ -94,10 +92,9 @@ describe('LiMe Network tests', function()
         stub(network, "get_mac", function () return  {'00', '00', '00', '00', '00', '00'} end)
         stub(network, "scandevices", function () return  {eth99={}} end)
         stub(utils, "getBoardAsTable", function () return BOARD end)
+        stub(network, "assert_interface_exists", function () return true end)
 
-        test_utils.disable_asserts()
         network.configure()
-        test_utils.enable_asserts()
 
         assert.is.equal("1500", uci:get("network", "lan", "mtu"))
         assert.is.equal("static", uci:get("network", "lan", "proto"))
