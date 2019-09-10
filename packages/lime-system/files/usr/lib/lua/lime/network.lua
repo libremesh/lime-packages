@@ -18,19 +18,21 @@ function network.get_mac(ifname)
 	return utils.split(macaddr, ":")
 end
 
+function network.assert_interface_exists(ifname)
+	assert( ifname ~= nil and ifname ~= "",
+	        "network.primary_interface() could not determine ifname!" )
+
+	assert( fs.lstat("/sys/class/net/"..ifname),
+	        "network.primary_interface() "..ifname.." doesn't exists!" )
+end
+
 function network.primary_interface()
 	local ifname = config.get("network", "primary_interface", "eth0")
 	if ifname == "auto" then
 		local board = utils.getBoardAsTable()
 		ifname = board['network']['lan']['ifname']
 	end
-
-	assert( ifname ~= nil and ifname ~= "",
-	        "network.primary_interface() could not determine ifname!" )
-
-	assert( fs.lstat("/sys/class/net/"..ifname),
-	        "network.primary_interface() "..ifname.." doesn't exists!" )
-
+	network.assert_interface_exists(ifname)
 	return ifname
 end
 
