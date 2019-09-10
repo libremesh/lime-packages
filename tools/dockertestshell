@@ -3,7 +3,7 @@
 PWD=$(printf "%q\n" "${PWD}")
 APP=${@:-/bin/bash}
 
-DOCKER_IMAGE="${DOCKER_IMAGE:-libremesh/luatest}"
+DOCKER_IMAGE="${DOCKER_IMAGE:-libremesh/luatest:1.0}"
 
 DOCKER_BASHRC=/tmp/.docker_${USER}_bashrc
 
