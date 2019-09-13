@@ -13,6 +13,7 @@ addons:
 env:
     global:
     - IMAGE_NAME="openwrtorg/sdk:ar71xx-generic"
+    - CODECOV_TOKEN="a2d4efa4-ec98-4768-a9cf-7f29c19c387a"
 
 jobs:
   include:
@@ -62,4 +63,7 @@ jobs:
           on:
             all_branches: true
             condition: $TRAVIS_BRANCH != master
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 
