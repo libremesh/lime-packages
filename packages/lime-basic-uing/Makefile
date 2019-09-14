@@ -24,8 +24,8 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Pau Escrich <p4u@dabax.net>
 	URL:=http://libremesh.org
 	DEPENDS:= +lime-system +lime-proto-bmx6 +lime-proto-batadv \
-	         +lime-proto-anygw +lime-proto-wan +dnsmasq-lease-share \
-	         +dnsmasq-distributed-hosts +lime-webui-ng \
+	         +lime-proto-anygw +lime-proto-wan \
+	         +shared-state-dnsmasq_hosts +shared-state-dnsmasq_leases +lime-webui-ng \
 	         +lime-hwd-openwrt-wan +bmx6-auto-gw-mode +lime-hwd-ground-routing \
 		 +lime-docs-minimal
 	PKGARCH:=all

@@ -25,10 +25,10 @@ define Package/$(PKG_NAME)
 	URL:=http://libremesh.org
 	PKGARCH:=all
 	DEPENDS:=+lime-system +lime-proto-bmx6 +lime-proto-batadv +kmod-ebtables \
-	         +lime-proto-anygw +lime-proto-wan +dnsmasq-lease-share \
-	         +dnsmasq-distributed-hosts +lime-webui \
-		 +lime-hwd-openwrt-wan +lime-docs-minimal \
-	         +bmx6-auto-gw-mode +lime-hwd-ground-routing +smonit
+	         +lime-proto-anygw +lime-proto-wan \
+	         +shared-state-dnsmasq_hosts +shared-state-dnsmasq_leases +lime-webui \
+	         +lime-hwd-openwrt-wan +lime-docs-minimal \
+	         +bmx6-auto-gw-mode +lime-hwd-ground-routing
 endef
 
 define Package/$(PKG_NAME)-no-ui
@@ -40,10 +40,10 @@ define Package/$(PKG_NAME)-no-ui
 	URL:=http://libremesh.org
 	PKGARCH:=all
 	DEPENDS:=+lime-system +lime-proto-bmx6 +lime-proto-batadv +kmod-ebtables \
-	         +lime-proto-anygw +lime-proto-wan +dnsmasq-lease-share \
-	         +dnsmasq-distributed-hosts \
-		 +lime-hwd-openwrt-wan +lime-docs-minimal \
-	         +bmx6-auto-gw-mode +lime-hwd-ground-routing +smonit
+	         +lime-proto-anygw +lime-proto-wan \
+	         +shared-state-dnsmasq_hosts +shared-state-dnsmasq_leases \
+	         +lime-hwd-openwrt-wan +lime-docs-minimal \
+	         +bmx6-auto-gw-mode +lime-hwd-ground-routing
 endef
 
 
