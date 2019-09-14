@@ -14,8 +14,8 @@ end
 
 local defaultTestsList = {
 			"ip neigh show nud reachable",
-			"ping6 -n -c 2 ff02::1%br-lan",
-			"batctl tl"
+			"ping6 -n -c 2 ff02::1%br-lan | grep '(DUP!)'",
+			"batctl tl | grep '(0x'"
 			}
 
 local temp = config_uci_get("test")

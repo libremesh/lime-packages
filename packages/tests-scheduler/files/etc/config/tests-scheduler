@@ -1,7 +1,7 @@
 config probe 'probe'
 	list test 'ip neigh show nud reachable'
-	list test 'ping6 -n -c 2 ff02::1%br-lan'
-	list test 'batctl tl'
+	list test 'ping6 -n -c 2 ff02::1%br-lan | grep "(DUP!)"'
+	list test 'batctl tl | grep "(0x"'
 	option stability 0.9
 	option data_file '/tmp/tests-scheduler-probe-data'
 
