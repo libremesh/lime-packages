@@ -18,25 +18,24 @@ local defaultTestsList = {
 			"batctl tl"
 			}
 
-local temp = config_uci_get(test)
+local temp = config_uci_get("test")
 local testsList = type(temp) == "table" and temp or defaultTestsList
 
 -- stability indicates how much of the previous measurement data
 -- (which could be from the previous day) is going to be considered
 -- 0 means that just the very last is used, avoid using 1
 -- consider that more than one measurement is performed each hour
-local stability = tonumber(config_uci_get(stability)) or 0.9
+local stability = tonumber(config_uci_get("stability")) or 0.9
 
-local dataFile = config_uci_get(data_file) or "/tmp/tests-scheduler-probe-data"
+local dataFile = config_uci_get("data_file") or "/tmp/tests-scheduler-probe-data"
 
 local function do_test(test)
 	io.stderr:write("Command: "..test.."\n")
 	local handle = io.popen(test, 'r')
 	local output = handle:read("*a")
-	local rc = {handle:close()}
+	handle:close()
 	local _,count = output:gsub('\n', '\n')
-	local exitCode = tonumber(rc[3])
-	return count, exitCode
+	return count
 end
 
 local function do_sum(arr, length)
@@ -48,12 +47,12 @@ local function do_tests_serie()
 	local i = 1
 	while testsList[i] do
 		local test = tostring(testsList[i])
-		local testResult,exitCode = do_test(test)
-		if exitCode == 0 then
+		local testResult = tonumber(do_test(test))
+		if testResult > 0 then
 			io.stderr:write("Result: "..tostring(testResult).."\n")
 			results[#results + 1] = testResult
 		else
-			io.stderr:write("Failed with exit code "..exitCode.."\n")
+			io.stderr:write("Failed or no output\n")
 		end
 		i = i + 1
 	end
