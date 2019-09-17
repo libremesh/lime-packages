@@ -343,11 +343,12 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 
 	local uci = config.get_uci_cursor()
 
+	owrtInterfaceName = owrtInterfaceName..openwrtNameSuffix.."_if"
+
 	if vid ~= 0 then
 		local vlanId = tostring(vid)
 		--! sanitize passed linuxBaseIfName for constructing uci section name
 		--! because only alphanumeric and underscores are allowed
-		owrtInterfaceName = owrtInterfaceName..openwrtNameSuffix.."_if"
 		owrtDeviceName = network.sanitizeIfaceName(linuxBaseIfname)..openwrtNameSuffix.."_dev"
 
 		if linuxBaseIfname:match("^wlan") then
