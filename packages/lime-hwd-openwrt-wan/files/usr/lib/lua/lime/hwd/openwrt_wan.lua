@@ -17,7 +17,10 @@ end
 function openwrt_wan.detect_hardware()
 	if config.autogenerable(openwrt_wan.sectionName) then
 		local board = utils.getBoardAsTable()
-		ifname = board['network']['wan']['ifname']
+		local wanTable = board['network']['wan']
+		if wanTable then
+			ifname = wanTable['ifname']
+		end
 		if ifname and ifname ~= "" then
 			local protos = {}
 			local net = require("lime.network")
