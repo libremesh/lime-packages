@@ -16,10 +16,14 @@ end
 
 function openwrt_wan.detect_hardware()
 	if config.autogenerable(openwrt_wan.sectionName) then
+		local ifname
 		local board = utils.getBoardAsTable()
-		local wanTable = board['network']['wan']
-		if wanTable then
-			ifname = wanTable['ifname']
+		local networkTable = board['network']
+		if networkTable then
+			local wanTable = networkTable['wan']
+			if wanTable then
+				ifname = wanTable['ifname']
+			end
 		end
 		if ifname and ifname ~= "" then
 			local protos = {}
