@@ -15,8 +15,7 @@ feeds_file="/etc/opkg/limefeeds.conf"
   exit 0
 }
 
-[ "$LIME_BRANCH" == "master" ] || [ "$LIME_BRANCH" == "develop" ] || \
-		[ "$LIME_BRANCH" == "staging" ] || [ -z "$LIME_RELEASE" ] && {
+[ "$LIME_CODENAME" == "development" ] && {
 	base_url="http://snapshots.libremesh.org/packages/$LEDE_ARCH";
 	key_name="7546f62c3d9f56b1"
 	key_content="RWR1RvYsPZ9WsTsmoVajHX9dyl2wL7grjcfFua1q8A99RWr2gF94lRdJ"
