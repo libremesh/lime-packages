@@ -61,6 +61,14 @@ describe('LiMe Config tests', function()
         assert.is.equal('17', uci:get('network', 'lm_net_eth0_babeld_dev', 'vid'))
         assert.is.equal('eth0_17', uci:get('network', 'lm_net_eth0_babeld_if', 'ifname'))
 
+        assert.is.equal(tostring(network.MTU_ETH_WITH_VLAN),
+                        uci:get('network', 'lm_net_eth0_babeld_dev', 'mtu'))
+
+        assert.is.equal('@lm_net_wlan1_mesh', uci:get('network', 'lm_net_wlan1_mesh_babeld_dev', 'ifname'))
+        assert.is.equal('17', uci:get('network', 'lm_net_wlan1_mesh_babeld_dev', 'vid'))
+        assert.is_nil(uci:get('network', 'lm_net_wlan1_mesh_babeld_dev', 'mtu'))
+
+
         assert.is_nil(uci:get('network', 'globals', 'ula_prefix'))
 		for _, radio in ipairs({'radio0', 'radio1', 'radio2'}) do
 			assert.is.equal('0', uci:get('wireless', radio, 'disabled'))
