@@ -51,6 +51,7 @@ config lime network
 	option bmx7_over_batman false
 	option bmx7_pref_gw none			# Force bmx7 to use a specific gateway to Internet (hostname must be used as identifier)
 	option bmx7_wifi_rate_max 'auto'
+	option babeld_over_batman false			# When Babeld is run without VLAN (babeld:0), it runs on the bridge which includes Batman-adv's bat0, keeping this false avoids to have Babeld metrics distorted by Batman-adv
 	option anygw_mac 'aa:aa:aa:%N1:%N2:aa'		# Parametrizable with %Nn. Keep in mind that the ebtables rule will use a mask of ff:ff:ff:00:00:00 so br-lan will not forward anything coming in that matches the first 3 bytes of it's own anygw_mac (aa:aa:aa: by default)
 #	option autoap_enabled 0				# Requires lime-ap-watchping installed. If enabled AP SSID is changed to ERROR when network issues
 #	option autoap_hosts "8.8.8.8 141.1.1.1"		# Requires lime-ap-watchping installed. Hosts used to check if the network is working fine
