@@ -103,17 +103,54 @@ function babeld.setup_interface(ifname, args)
 	local vlanProto = args[3] or "8021ad"
 	local nameSuffix = args[4] or "_babeld"
 
+	local addIPtoIf = true
+
+	--! If Babeld is without VLAN (vlanId is 0) it cannot run directly
+	--! on ethernet interfaces which are inside of a bridge (e.g. eth0 or eth0.1)
+	--! because they cannot have an IPv6 Link-Local, so Babeld has to run on 
+	--! the bridge interface br-lan
+	--! If Babeld's Hello packets run over Batman-adv (whose bat0 is also 
+	--! included in br-lan), the links will have a wrong quality metric,
+	--! so these hello on bat0 have to be filtered
+	if tonumber(vlanId) == 0 then
+		local hasBatman = false
+		local babeldOverBatman = config.get_bool("network", "babeld_over_batman")
+		local hasLan = false
+		for _,protoArgs in pairs(config.get("network", "protocols")) do
+			local proto =  utils.split(protoArgs, network.protoParamsSeparator)[1]
+			if(proto == "lan") then hasLan = true
+			elseif(proto == "batadv") then hasBatman = true end
+		end
+	
+		if hasLan and ifname:match("^eth%d") then
+			ifname = "br-lan"
+			addIPtoIf = false
+			if hasBatman and not babeldOverBatman then
+				ifname = "br-lan"
+				fs.mkdir("/etc/firewall.lime.d")
+				fs.writefile("/etc/firewall.lime.d/21-babeld-not-over-bat0-ebtables",
+					"ebtables -t nat -A POSTROUTING -o bat0 -p ipv6"..
+					" --ip6-proto udp --ip6-sport 6696 --ip6-dport 6696 -j DROP\n")
+			else
+				fs.remove("/etc/firewall.lime.d/21-babeld-not-over-bat0-ebtables")
+			end
+		end
+	end
+
 	local owrtInterfaceName, linuxVlanIfName, owrtDeviceName =
 	  network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 
-	local ipv4, _ = network.primary_address()
-
 	local uci = config.get_uci_cursor()
 
-	uci:set("network", owrtInterfaceName, "proto", "static")
-	uci:set("network", owrtInterfaceName, "ipaddr", ipv4:host():string())
-	uci:set("network", owrtInterfaceName, "netmask", "255.255.255.255")
-	uci:save("network")
+	if addIPtoIf then
+		local ipv4, _ = network.primary_address()
+	
+		uci:set("network", owrtInterfaceName, "ifname", "@"..owrtDeviceName)
+		uci:set("network", owrtInterfaceName, "proto", "static")
+		uci:set("network", owrtInterfaceName, "ipaddr", ipv4:host():string())
+		uci:set("network", owrtInterfaceName, "netmask", "255.255.255.255")
+		uci:save("network")
+	end
 
 	uci:set("babeld", owrtInterfaceName, "interface")
 	uci:set("babeld", owrtInterfaceName, "ifname", linuxVlanIfName)
