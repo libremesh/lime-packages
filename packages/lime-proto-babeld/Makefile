@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=https://libremesh.org
-  DEPENDS:=+babeld +lime-system
+  DEPENDS:=+babeld +lime-system +PACKAGE_lime-proto-batadv:kmod-ebtables-ipv6
   PKGARCH:=all
 endef
 
