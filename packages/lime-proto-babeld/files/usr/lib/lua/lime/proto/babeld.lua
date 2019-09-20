@@ -110,6 +110,10 @@ function babeld.setup_interface(ifname, args)
 
 	local uci = config.get_uci_cursor()
 
+	if(vlanId ~= 0 and ifname:match("^eth")) then
+		uci:set("network", owrtDeviceName, "mtu", tostring(network.MTU_ETH_WITH_VLAN))
+	end
+
 	uci:set("network", owrtInterfaceName, "proto", "static")
 	uci:set("network", owrtInterfaceName, "ipaddr", ipv4:host():string())
 	uci:set("network", owrtInterfaceName, "netmask", "255.255.255.255")
