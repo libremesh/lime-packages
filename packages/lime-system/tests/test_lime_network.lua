@@ -30,16 +30,13 @@ describe('LiMe Network tests', function()
     end)
 
     it('test primary_interface configured interface', function()
-        -- disable assertions beacause there is a check to validate
-        -- that the interface really exists in the system
-        test_utils.disable_asserts()
         config.set('network', 'lime')
         config.set('network', 'primary_interface', 'test0')
         uci:commit('lime')
         stub(utils, "getBoardAsTable", function () return BOARD end)
+        stub(network, "assert_interface_exists", function () return true end)
 
         assert.is.equal('test0', network.primary_interface())
-        test_utils.enable_asserts()
     end)
 
     it('test primary_interface auto config', function()
@@ -60,9 +57,10 @@ describe('LiMe Network tests', function()
         uci:commit('lime')
 
         stub(network, "get_mac", function () return  {'00', '00', '00', '00', '00', '00'} end)
-        test_utils.disable_asserts()
+        stub(network, "assert_interface_exists", function () return true end)
+
         local ipv4, ipv6 = network.primary_address()
-        test_utils.enable_asserts()
+
         assert.is.equal('10.13.0.0', ipv4:network():string())
         assert.is.equal(16, ipv4:prefix())
         -- as 'lo' interface MAC address is 00:00:00:00:00 then
@@ -94,16 +92,62 @@ describe('LiMe Network tests', function()
         stub(network, "get_mac", function () return  {'00', '00', '00', '00', '00', '00'} end)
         stub(network, "scandevices", function () return  {eth99={}} end)
         stub(utils, "getBoardAsTable", function () return BOARD end)
+        stub(network, "assert_interface_exists", function () return true end)
 
-        test_utils.disable_asserts()
         network.configure()
-        test_utils.enable_asserts()
 
         assert.is.equal("1500", uci:get("network", "lan", "mtu"))
         assert.is.equal("static", uci:get("network", "lan", "proto"))
         assert.is.equal(ifname, uci:get("network", "lan", "ifname")[1])
         network.get_mac:revert()
         network.scandevices:revert()
+    end)
+
+    it('test createVlanIface() for ethernet address #vlan', function()
+        local vid = 15
+        network.createVlanIface('eth99', vid, '_fooproto')
+
+        -- a device is created for the vlan
+        assert.is.equal('eth99_15', uci:get("network", "lm_net_eth99_fooproto_dev", "name"))
+        assert.is.equal('8021ad', uci:get("network", "lm_net_eth99_fooproto_dev", "type"))
+        assert.is.equal('eth99', uci:get("network", "lm_net_eth99_fooproto_dev", "ifname"))
+        assert.is.equal(tostring(vid), uci:get("network", "lm_net_eth99_fooproto_dev", "vid"))
+
+        -- the interface
+        assert.is.equal('eth99_15', uci:get("network", "lm_net_eth99_fooproto_if", "ifname"))
+        assert.is.equal('1', uci:get("network", "lm_net_eth99_fooproto_if", "auto"))
+        assert.is.equal('none', uci:get("network", "lm_net_eth99_fooproto_if", "proto"))
+    end)
+
+    it('test createVlanIface() for ethernet with vlan=0 #vlan', function()
+        local vid = 0
+
+        network.createVlanIface('eth99', vid, '_fooproto')
+
+        -- a device is not created for the vlan
+        assert.is_nil(uci:get("network", "lm_net_eth99_fooproto_dev", "name"))
+
+        -- the interface uses static protocol
+        assert.is.equal('eth99', uci:get("network", "lm_net_eth99_fooproto_if", "ifname"))
+        assert.is.equal('1', uci:get("network", "lm_net_eth99_fooproto_if", "auto"))
+        assert.is.equal('static', uci:get("network", "lm_net_eth99_fooproto_if", "proto"))
+    end)
+
+    it('test createVlanIface() for wireless #vlan', function()
+        local vid = 15
+
+        network.createVlanIface('wlan85', vid, '_fooproto')
+
+        -- a device is created for the vlan
+        assert.is.equal('wlan85_15', uci:get("network", "lm_net_wlan85_fooproto_dev", "name"))
+        assert.is.equal('8021ad', uci:get("network", "lm_net_wlan85_fooproto_dev", "type"))
+        assert.is.equal(tostring(vid), uci:get("network", "lm_net_wlan85_fooproto_dev", "vid"))
+        assert.is.equal('@lm_net_wlan85', uci:get("network", "lm_net_wlan85_fooproto_dev", "ifname"))
+
+        -- the interface
+        assert.is.equal('wlan85_15', uci:get("network", "lm_net_wlan85_fooproto_if", "ifname"))
+        assert.is.equal('1', uci:get("network", "lm_net_wlan85_fooproto_if", "auto"))
+        assert.is.equal('none', uci:get("network", "lm_net_wlan85_fooproto_if", "proto"))
     end)
 
     before_each('', function()

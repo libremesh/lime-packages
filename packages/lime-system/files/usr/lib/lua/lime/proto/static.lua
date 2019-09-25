@@ -6,11 +6,7 @@ local config = require("lime.config")
 
 static = {}
 
-static.configured = false
-
 function static.configure(args)
-	if static.configured then return end
-	static.configured = true
 end
 
 function static.setup_interface(ifname, args)
