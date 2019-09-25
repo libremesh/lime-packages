@@ -5,10 +5,7 @@ local client_mode = require("lime.mode.client")
 
 local client = {}
 
-client.configured = false
-
 function client.configure(args)
-	client.configured = true
 end
 
 function client.setup_interface(ifname, args)

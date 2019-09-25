@@ -1,6 +1,0 @@
-#!/bin/sh
-
-uci set alfred.alfred.disabled=
-uci commit alfred
-
-exit 0

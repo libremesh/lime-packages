@@ -43,7 +43,7 @@ else
 	serversList = type(temp) == "table" and temp or defaultServersList
 end
 
-if not singleTestDuration or not nonzeroTests or not serversList[1]:find("http") then
+if arg[1] == "-h" or arg[1] == "--help" or not serversList[1]:find("http") then
 	local help = {"Usage: "..arg[0].." [SINGLE_TEST_DURATION] [NONZERO_TESTS] [SERVERS_LIST]",
 		"Measures maximum available download bandwidth downloading a list of files from the internet.",
 		"The measurement will take approximately SINGLE_TEST_DURATION*NONZERO_TESTS seconds.",

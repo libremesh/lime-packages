@@ -1,14 +1,14 @@
 #!/usr/bin/lua
 
-local ap = {}
+local apname = {}
 
-ap.wifi_mode="ap"
+apname.wifi_mode="ap"
 
-function ap.setup_radio(radio, args)
+function apname.setup_radio(radio, args)
 --!	checks("table", "?table")
 
 	args["network"] = "lan"
-	return wireless.createBaseWirelessIface(radio, ap.wifi_mode, "name", args)
+	return wireless.createBaseWirelessIface(radio, apname.wifi_mode, "name", args)
 end
 
-return ap
+return apname
