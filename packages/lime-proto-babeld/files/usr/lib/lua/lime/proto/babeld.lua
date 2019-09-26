@@ -89,6 +89,18 @@ function babeld.configure(args)
 
 	uci:save("libremap")
 
+	--! If Babeld's Hello packets run over Batman-adv (whose bat0 is also
+	--! included in br-lan), all the Babeld nodes would appear as being direct
+	--! neighbors, so these Hello packets on bat0 have to be filtered
+	local babeldOverBatman = config.get_bool("network", "babeld_over_batman")
+	if utils.is_installed("kmod-batman-adv") and not babeldOverBatman then
+		fs.mkdir("/etc/firewall.lime.d")
+		fs.writefile("/etc/firewall.lime.d/21-babeld-not-over-bat0-ebtables",
+			"ebtables -t nat -A POSTROUTING -o bat0 -p ipv6"..
+			" --ip6-proto udp --ip6-sport 6696 --ip6-dport 6696 -j DROP\n")
+	else
+		fs.remove("/etc/firewall.lime.d/21-babeld-not-over-bat0-ebtables")
+	end
 end
 
 function babeld.setup_interface(ifname, args)
@@ -103,38 +115,22 @@ function babeld.setup_interface(ifname, args)
 	local vlanProto = args[3] or "8021ad"
 	local nameSuffix = args[4] or "_babeld"
 
+	--! If Babeld is without VLAN (vlanId is 0) it should run directly on plain
+	--! ethernet interfaces, but the ones which are inside of the LAN bridge
+	--! (e.g. eth0 or eth0.1) cannot have an IPv6 Link-Local and Babeld needs it.
+	--! So Babeld has to run on the bridge interface br-lan
 	local addIPtoIf = true
+	local isIntoLAN = false
+	for _,v in pairs(args["deviceProtos"]) do
+		if v == "lan" then
+			isIntoLAN = true
+			break
+		end
+	end
 
-	--! If Babeld is without VLAN (vlanId is 0) it cannot run directly
-	--! on ethernet interfaces which are inside of a bridge (e.g. eth0 or eth0.1)
-	--! because they cannot have an IPv6 Link-Local, so Babeld has to run on 
-	--! the bridge interface br-lan
-	--! If Babeld's Hello packets run over Batman-adv (whose bat0 is also 
-	--! included in br-lan), the links will have a wrong quality metric,
-	--! so these hello on bat0 have to be filtered
-	if tonumber(vlanId) == 0 then
-		local hasBatman = false
-		local babeldOverBatman = config.get_bool("network", "babeld_over_batman")
-		local hasLan = false
-		for _,protoArgs in pairs(config.get("network", "protocols")) do
-			local proto =  utils.split(protoArgs, network.protoParamsSeparator)[1]
-			if(proto == "lan") then hasLan = true
-			elseif(proto == "batadv") then hasBatman = true end
-		end
-	
-		if hasLan and ifname:match("^eth%d") then
-			ifname = "br-lan"
-			addIPtoIf = false
-			if hasBatman and not babeldOverBatman then
-				ifname = "br-lan"
-				fs.mkdir("/etc/firewall.lime.d")
-				fs.writefile("/etc/firewall.lime.d/21-babeld-not-over-bat0-ebtables",
-					"ebtables -t nat -A POSTROUTING -o bat0 -p ipv6"..
-					" --ip6-proto udp --ip6-sport 6696 --ip6-dport 6696 -j DROP\n")
-			else
-				fs.remove("/etc/firewall.lime.d/21-babeld-not-over-bat0-ebtables")
-			end
-		end
+	if tonumber(vlanId) == 0 and isIntoLAN then
+		ifname = "br-lan"
+		addIPtoIf = false
 	end
 
 	local owrtInterfaceName, linuxVlanIfName, owrtDeviceName =
@@ -144,7 +140,6 @@ function babeld.setup_interface(ifname, args)
 
 	if addIPtoIf then
 		local ipv4, _ = network.primary_address()
-	
 		uci:set("network", owrtInterfaceName, "ifname", "@"..owrtDeviceName)
 		uci:set("network", owrtInterfaceName, "proto", "static")
 		uci:set("network", owrtInterfaceName, "ipaddr", ipv4:host():string())
