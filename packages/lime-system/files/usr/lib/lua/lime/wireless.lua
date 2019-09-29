@@ -28,6 +28,24 @@ function wireless.scandevices()
 	local devices = {}
 	local uci = config.get_uci_cursor()
 	uci:foreach("wireless", "wifi-device", function(dev) devices[dev[".name"]] = dev end)
+
+	local sorted_devices = {}
+	for _, dev in pairs(devices) do
+		table.insert(sorted_devices, utils.indexFromName(dev[".name"])+1, dev)
+	end
+
+	local band_2ghz_index = 0
+	local band_5ghz_index = 0
+
+	for _, dev in pairs(sorted_devices) do
+		if wireless.is5Ghz(dev[".name"]) then
+			dev.per_band_index = band_5ghz_index
+			band_5ghz_index = band_5ghz_index + 1
+		else
+			dev.per_band_index = band_2ghz_index
+			band_2ghz_index = band_2ghz_index + 1
+		end
+	end
 	return devices
 end
 
