@@ -62,8 +62,8 @@ config lime wifi
 #	option country 'ES'				# set this to your location country code, for example in Spain, setting ES allows you to use channel 13
 	option channel_2ghz '11'			# May be either a list or a single option, in case of a list channel will be selected according to radio index
 #	option channel_5ghz '48'			# Check for allowed channels on https://en.wikipedia.org/wiki/List_of_WLAN_channels#regulatory_tables5.0ghz
-	list channel_5ghz '157'				# If channel is a list, each entry of the list is used for a different radio
-	list channel_5ghz '48'
+	list channel_5ghz '48'				# If channel is a list, each entry of the list is used for a different radio
+	list channel_5ghz '157'
 #	option htmode_2ghz 'HT20'
 	option htmode_5ghz 'HT40'
 	option distance_2ghz '100'			# Distance between the ap and the furthest client in meters, heavily affects performances

@@ -133,10 +133,10 @@ function wireless.configure()
 			--! fallback to "auto" in client mode
 			local channel
 			if modes[1] ~= "client" then
+
 				channel = options["channel"..freqSuffix] or options["channel"]
 				if type(channel) == "table" then
-					local chanIndex = 1 + radioName:match("%d+$") % #channel
-					channel = channel[chanIndex]
+					channel = channel[1 + radio.per_band_index % #channel]
 				end
 			else
 				channel = specRadio["channel"..freqSuffix] or specRadio["channel"] or "auto"
