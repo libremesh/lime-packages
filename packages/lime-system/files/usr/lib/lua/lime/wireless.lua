@@ -40,13 +40,13 @@ wireless.availableModes = { adhoc=true, ap=true, apname=true, apbb=true, ieee802
 function wireless.isMode(m)
 	return wireless.availableModes[m]
 end
- 
+
 function wireless.createBaseWirelessIface(radio, mode, nameSuffix, extras)
 --! checks("table", "string", "?string", "?table")
 --! checks(...) come from http://lua-users.org/wiki/LuaTypeChecking -> https://github.com/fab13n/checks
 	nameSuffix = nameSuffix or ""
 	local radioName = radio[".name"]
-	local phyIndex = radioName:match("%d+")
+	local phyIndex = tostring(utils.indexFromName(radioName))
 	local ifname = "wlan"..phyIndex..wireless.wifiModeSeparator..mode..nameSuffix
 	--! sanitize generated ifname for constructing uci section name
 	--! because only alphanumeric and underscores are allowed
