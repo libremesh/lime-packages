@@ -214,6 +214,16 @@ function utils.tableMelt(t1, t2)
 	return t1
 end
 
+function utils.tableLength(t)
+  local count = 0
+  for _ in pairs(t) do count = count + 1 end
+  return count
+end
+
+function utils.indexFromName(name)
+	return tonumber(name:match("%d+"))
+end
+
 function utils.getBoardAsTable(board_path)
 	if board_path == nil then
 		board_path = utils.BOARD_JSON_PATH

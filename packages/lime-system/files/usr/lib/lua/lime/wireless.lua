@@ -28,6 +28,24 @@ function wireless.scandevices()
 	local devices = {}
 	local uci = config.get_uci_cursor()
 	uci:foreach("wireless", "wifi-device", function(dev) devices[dev[".name"]] = dev end)
+
+	local sorted_devices = {}
+	for _, dev in pairs(devices) do
+		table.insert(sorted_devices, utils.indexFromName(dev[".name"])+1, dev)
+	end
+
+	local band_2ghz_index = 0
+	local band_5ghz_index = 0
+
+	for _, dev in pairs(sorted_devices) do
+		if wireless.is5Ghz(dev[".name"]) then
+			dev.per_band_index = band_5ghz_index
+			band_5ghz_index = band_5ghz_index + 1
+		else
+			dev.per_band_index = band_2ghz_index
+			band_2ghz_index = band_2ghz_index + 1
+		end
+	end
 	return devices
 end
 
@@ -40,13 +58,13 @@ wireless.availableModes = { adhoc=true, ap=true, apname=true, apbb=true, ieee802
 function wireless.isMode(m)
 	return wireless.availableModes[m]
 end
- 
+
 function wireless.createBaseWirelessIface(radio, mode, nameSuffix, extras)
 --! checks("table", "string", "?string", "?table")
 --! checks(...) come from http://lua-users.org/wiki/LuaTypeChecking -> https://github.com/fab13n/checks
 	nameSuffix = nameSuffix or ""
 	local radioName = radio[".name"]
-	local phyIndex = radioName:match("%d+")
+	local phyIndex = tostring(utils.indexFromName(radioName))
 	local ifname = "wlan"..phyIndex..wireless.wifiModeSeparator..mode..nameSuffix
 	--! sanitize generated ifname for constructing uci section name
 	--! because only alphanumeric and underscores are allowed
@@ -115,10 +133,10 @@ function wireless.configure()
 			--! fallback to "auto" in client mode
 			local channel
 			if modes[1] ~= "client" then
+
 				channel = options["channel"..freqSuffix] or options["channel"]
 				if type(channel) == "table" then
-					local chanIndex = 1 + radioName:match("%d+$") % #channel
-					channel = channel[chanIndex]
+					channel = channel[1 + radio.per_band_index % #channel]
 				end
 			else
 				channel = specRadio["channel"..freqSuffix] or specRadio["channel"] or "auto"
