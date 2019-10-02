@@ -12,6 +12,9 @@ network.limeIfNamePrefix="lm_net_"
 network.protoParamsSeparator=":"
 network.protoVlanSeparator="_"
 
+network.MTU_ETH = 1500
+network.MTU_ETH_WITH_VLAN = network.MTU_ETH - 4
+
 function network.get_mac(ifname)
 	local path = "/sys/class/net/"..ifname.."/address"
 	local macaddr = assert(fs.readfile(path), "network.get_mac(...) failed reading: "..path):gsub("\n","")
