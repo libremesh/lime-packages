@@ -58,7 +58,7 @@ local methods = {
                 -- apply lime config
                 conn:reply(req, { status = 'configuring' })
                 -- os.execute('sleep 2s')
-                apply_file_config(file, hostname)
+                fbw.apply_file_config(file, hostname)
                 -- remove lock?
                 -- remove_lock_file()
             end, { file = ubus.STRING, hostname = ubus.STRING }
