@@ -29,8 +29,7 @@ Chef][11].
 ## Building a Firmware Image on Your PC
 
 The LibreMesh firmware can be compiled either using the easy to use
-[lime-sdk][2] tool (recommended) or manually adding the feed to a [OpenWrt
-buildroot][1] environment.
+[lime-sdk][2] tool (recommended) or by following instructions found here: https://libremesh.org/development.html
 
 ### Using lime-sdk
 
