@@ -95,7 +95,7 @@ function network.primary_address(offset)
 	if invalid then
 		ipv4_template = mc:maxhost()
 		ipv4_template:prefix(tonumber(ipv4_maskbits))
-		print("INVALID main_ipv4_address " ..tostring(mc).. " IDENTICAL TO RESERVED "
+		utils.log("INVALID main_ipv4_address " ..tostring(mc).. " IDENTICAL TO RESERVED "
 			..invalid.. " ADDRESS. USING " ..tostring(ipv4_template))
 	end
 
@@ -143,7 +143,7 @@ function network.setup_dns()
 end
 
 function network.clean()
-	print("Clearing network config...")
+	utils.log("Clearing network config...")
 
 	local uci = config.get_uci_cursor()
 
@@ -167,20 +167,20 @@ function network.clean()
 	uci:save("network")
 
 	if config.get_bool("network", "use_odhcpd", false) then
-		print("Use odhcpd as dhcp server")
+		utils.log("Use odhcpd as dhcp server")
 		uci:set("dhcp", "odchpd", "maindhcp", 1)
 		os.execute("/etc/init.d/odhcpd enable")
 	else
-		print("Disabling odhcpd")
+		utils.log("Disabling odhcpd")
 		uci:set("dhcp", "odchpd", "maindhcp", 0)
 		os.execute("/etc/init.d/odhcpd disable")
 	end
 
-	print("Cleaning dnsmasq")
+	utils.log("Cleaning dnsmasq")
 	uci:foreach("dhcp", "dnsmasq", function(s) uci:delete("dhcp", s[".name"], "server") end)
 	uci:save("dhcp")
 
-	print("Disabling 6relayd...")
+	utils.log("Disabling 6relayd...")
 	fs.writefile("/etc/config/6relayd", "")
 end
 

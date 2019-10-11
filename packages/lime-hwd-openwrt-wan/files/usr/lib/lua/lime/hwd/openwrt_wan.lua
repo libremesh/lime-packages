@@ -48,7 +48,7 @@ function openwrt_wan.detect_hardware()
 			config.set(openwrt_wan.sectionName, "linux_name", ifname)
 			config.end_batch()
 		else
-			print("No wan interface detected")
+			utils.log("No wan interface detected")
 		end
 	end
 end
