@@ -129,6 +129,7 @@ function babeld.setup_interface(ifname, args)
 	end
 
 	if tonumber(vlanId) == 0 and isIntoLAN then
+		utils.log("Rather than "..ifname..", adding br-lan into Babeld interfaces")
 		ifname = "br-lan"
 		addIPtoIf = false
 	end
