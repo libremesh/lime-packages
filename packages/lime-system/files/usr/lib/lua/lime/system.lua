@@ -33,6 +33,7 @@ function system.configure()
     local uci = config.get_uci_cursor()
     uci:set("uhttpd", "main", "listen_http", "80")
     uci:set("uhttpd", "main", "listen_https", "443")
+    uci:set("uhttpd", "main", "max_requests", "6")
     uci:save("uhttpd")
 end
 
