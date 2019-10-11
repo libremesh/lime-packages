@@ -276,6 +276,8 @@ function network.configure()
 			flags["specific"] = true
 			flags["_specific_section"] = owrtIf
 		end
+		
+		flags["deviceProtos"] = deviceProtos
 
 		for _,protoParams in pairs(deviceProtos) do
 			local args = utils.split(protoParams, network.protoParamsSeparator)
