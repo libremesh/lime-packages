@@ -18,7 +18,7 @@ function wireless.get_phy_mac(phy)
 end
 
 function wireless.clean()
-	print("Clearing wireless config...")
+	utils.log("Clearing wireless config...")
 	local uci = config.get_uci_cursor()
 	uci:foreach("wireless", "wifi-iface", function(s) uci:delete("wireless", s[".name"]) end)
 	uci:save("wireless")
