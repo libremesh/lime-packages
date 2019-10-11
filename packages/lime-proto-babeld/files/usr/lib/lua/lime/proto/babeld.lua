@@ -119,18 +119,36 @@ function babeld.setup_interface(ifname, args)
 	--! ethernet interfaces, but the ones which are inside of the LAN bridge
 	--! (e.g. eth0 or eth0.1) cannot have an IPv6 Link-Local and Babeld needs it.
 	--! So Babeld has to run on the bridge interface br-lan
-	local addIPtoIf = true
 	local isIntoLAN = false
+	local addIPtoIf = true
 	for _,v in pairs(args["deviceProtos"]) do
 		if v == "lan" then
 			isIntoLAN = true
-			break
+		--! would be weird to add a static IP to the WAN interface
+		elseif v == "wan" then
+			addIPtoIf = false
+		end
+	end
+
+	if ifname:match("^wlan") then
+		--! currently (2019-10-12) mode-ap and mode-apname have an hardcoded
+		--! "option network lan" so they are always in the br-lan bridge
+		if ifname:match("^wlan.*ap$") or ifname:match("^wlan.*apname$") then
+			isIntoLAN = true
+
+		--! all the WLAN interfaces are ignored by proto-lan
+		--! so they are not in the bridge even if proto-lan is present
+		--! (except mode-ap and mode-apname as mentioned above)
+		else
+			isIntoLAN = false
 		end
 	end
 
 	if tonumber(vlanId) == 0 and isIntoLAN then
-		utils.log("Rather than "..ifname..", adding br-lan into Babeld interfaces")
+		utils.log("Rather than "..ifname..
+		  ", adding br-lan into Babeld interfaces")
 		ifname = "br-lan"
+		--! br-lan has already an IPv4, no need to add it
 		addIPtoIf = false
 	end
 
@@ -141,7 +159,16 @@ function babeld.setup_interface(ifname, args)
 
 	if addIPtoIf then
 		local ipv4, _ = network.primary_address()
-		uci:set("network", owrtInterfaceName, "ifname", "@"..owrtDeviceName)
+		--! the "else" way should always work but it fails in a weird way
+		--! with some wireless interfaces without VLAN
+		--! (e.g. works with wlan0-mesh and fails with wlan1-mesh)
+		--! so for these cases, the first way is used
+		--! (which indeed fails for most of the other cases)
+		if ifname:match("^wlan") and tonumber(vlanId) == 0 then
+			uci:set("network", owrtInterfaceName, "ifname", "@"..owrtDeviceName)
+		else
+			uci:set("network", owrtInterfaceName, "ifname", linuxVlanIfName)
+		end
 		uci:set("network", owrtInterfaceName, "proto", "static")
 		uci:set("network", owrtInterfaceName, "ipaddr", ipv4:host():string())
 		uci:set("network", owrtInterfaceName, "netmask", "255.255.255.255")
