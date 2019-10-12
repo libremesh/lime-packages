@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
-PKG_NAME:=safe-upgrade
+PKG_NAME:=deferable-reboot
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=Utilities
   TITLE:=$(PKG_NAME) provides a deferable reboot.
   MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
-  DEPENDS:=+lua-argparse
+  DEPENDS:=+lua +lime-system
   PKGARCH:=all
 endef
 
