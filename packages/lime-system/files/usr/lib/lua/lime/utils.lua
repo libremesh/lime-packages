@@ -231,4 +231,12 @@ function utils.getBoardAsTable(board_path)
 	return json.parse(fs.readfile(board_path))
 end
 
+--! for testing only
+utils._uptime_line = nil
+
+function utils.uptime_s()
+    local uptime_line = utils._uptime_line or io.open("/proc/uptime"):read("*l")
+    return tonumber(string.match(uptime_line, "^%S+"))
+end
+
 return utils

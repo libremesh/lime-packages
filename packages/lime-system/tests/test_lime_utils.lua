@@ -42,4 +42,16 @@ describe('LiMe Utils tests', function()
 		assert.is.equal(11, utils.indexFromName('phy11'))
     end)
 
+	it('test uptime_s #uptime', function()
+		utils._uptime_line = '20331.28 69742.87'
+		local uptime = utils.uptime_s()
+		assert.is.equal(uptime, 20331.28)
+		utils._uptime_line = nil
+
+		local uptime_1 = utils.uptime_s()
+		local uptime_2 = utils.uptime_s()
+		assert.is_true(uptime_2 >= uptime_1)
+    end)
+
+
 end)
