@@ -14,11 +14,11 @@ local function config_uci_get(option)
 	return result
 end
 
-local peakTestsList = config_uci_get(peak_test) or {arg[1]}
+local peakTestsList = config_uci_get("peak_test") or {arg[1]}
 
-local nightTestsList = config_uci_get(night_test) or {arg[2]}
+local nightTestsList = config_uci_get("night_test") or {arg[2]}
 
-local dataFile = config_uci_get(data_file) or "/tmp/tests-scheduler-probe-data"
+local dataFile = config_uci_get("data_file") or "/tmp/tests-scheduler-probe-data"
 
 -- see if the file exists
 function file_exists(file)
@@ -88,7 +88,7 @@ if complete then
 		local peakAtRaw = handlePeakAt:read("*a")
 		handlePeakAt:close()
 		local peakAtTime = do_split(peakAtRaw,"%C+")[1]
-		print(peakAtTime.."\t"..peakCommand)
+		print("Scheduled time:\t"..peakAtTime.."\tCommand:\t"..peakCommand)
 	end
 	if nightTestsList then
 		local datatemp = data
@@ -104,14 +104,15 @@ if complete then
 		local allTimesJson = handleAllTimesJson:read("*a")
 		handleAllTimesJson:close()
 		local allTimes = {}
-		for _,value in pairs(JSON.parse(allTimeJson)) do
+		for _,value in pairs(JSON.parse(allTimesJson)) do
 			allTimes[#allTimes + 1] = tonumber(value.data)
 		end
 
 		local hitsHours = {0,0,0,0,0,0}
 		for _,val in pairs(allTimes) do
 			for i = 1,6 do
-				local valHour = int(val/60)
+				local valHourFract = val / 60
+				local valHour = valHourFract - (valHourFract % 1)
 				if valHour == nightHours[i] then
 					hitsHours[i] = hitsHours[i] + 1
 					break
@@ -124,7 +125,8 @@ if complete then
 
 		local hits5minute = {0,0,0,0,0,0,0,0,0,0,0,0}
 		for _,val in pairs(allTimes) do
-			local valHour = int(val/60)
+			local valHourFract = val / 60
+			local valHour = valHourFract - (valHourFract % 1)
 			if valHour == nightHour then
 				local val5minute = 1 + int((val%60)/5)
 				hits5minute[val5minute] = hits5minute[val5minute] + 1
@@ -139,8 +141,11 @@ if complete then
 		local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
 		myTimeTable[hostname] = myTime
 		io.popen("shared-state insert tests-scheduler-night", "w"):write(JSON.stringify(myTimeTable))
-		for _,nightCommand in pairs(nightTestsList) do
-			local nightAt = "echo '"..nightCommand.."' | at -Mv "..nightHour..":"..nightMinute.." 2>&1"
+		for index,nightCommand in ipairs(nightTestsList) do
+			local nightMinuteIdx = nightMinute + index - 1
+			local nightMinuteIdxPad = string.format("%02d", nightMinuteIdx)
+			local nightAt = "echo '"..nightCommand.."' | at -Mv "..nightHour..":"..
+			  nightMinuteIdxPad.." 2>&1"
 			local handleNightAt = io.popen(nightAt, 'r')
 			local nightAtRaw = handleNightAt:read("*a")
 			handleNightAt:close()
