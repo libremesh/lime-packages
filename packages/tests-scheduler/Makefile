@@ -15,9 +15,9 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  CATEGORY:=LiMe
+  CATEGORY:=Utilities
   TITLE:=Tests scheduler at peak and night time
-  MAINTAINER:=Ilario Gelmetti <iochesonome@gmail.com>
+  MAINTAINER:=Ilario Gelmetti <ilario@sindominio.net>
   URL:=https://libremesh.org
   DEPENDS:=+at
   PKGARCH:=all
