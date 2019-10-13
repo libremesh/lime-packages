@@ -28,52 +28,8 @@ Chef][11].
 
 ## Building a Firmware Image on Your PC
 
-The LibreMesh firmware can be compiled either using the easy to use
-[lime-sdk][2] tool (recommended) or manually adding the feed to a [OpenWrt
-buildroot][1] environment.
+The LibreMesh firmware can be compiled by following [instructions found here][13].
 
-### Using lime-sdk
-
-Refer to [lime-sdk][2] README.
-
-### Using OpenWrt buildroot
-
-Clone OpenWrt stable repository, nowadays is version 18.06.1.
-
-    git clone https://www.github.com/openwrt/openwrt -b openwrt-18.06
-    cd openwrt
-
-Add lime-packages and libremap feeds to the default ones.
-
-    cp feeds.conf.default feeds.conf
-    echo "src-git libremesh https://github.com/libremesh/lime-packages.git" >> feeds.conf
-    echo "src-git libremap https://github.com/libremap/libremap-agent-openwrt.git" >> feeds.conf
-
-If you want to use a specific branch of lime-packages specify it adding
-;nameofthebranch at the end of the relative line. For example:
-
-    src-git lime https://github.com/libremesh/lime-packages.git;17.06
-
-Download the new packages.
-
-    scripts/feeds update -a
-    scripts/feeds install -a
-
-Select the router architecture, model and the needed packages in menuconfig.
-
-    make menuconfig
-
-We suggest you to deselect the package _dnsmasq_ from _Base system_ section and
-to select _dnsmasq-dhcpv6_ in the same section. Then to deselect _odhcpd_ from
-_Network_ section.
-
-Finally enter the _LiMe_ section and select the wanted LibreMesh features.
-
-Compile the firmware images.
-
-    make
-
-The resulting files will be present in _bin_ directory.
 
 ## Testing
 
@@ -127,7 +83,6 @@ Support this project by becoming a sponsor. Your logo will show up here with a l
 <a href="https://opencollective.com/libremesh/sponsor/9/website" target="_blank"><img src="https://opencollective.com/libremesh/sponsor/9/avatar.svg"></a>
 
 [1]: https://openwrt.org/docs/guide-developer/quickstart-build-images
-[2]: https://github.com/libremesh/lime-sdk
 [4]: http://libremesh.org/howitworks.html
 [5]: http://libremesh.org/
 [7]: https://lists.libremesh.org/mailman/listinfo/lime-dev
@@ -136,6 +91,7 @@ Support this project by becoming a sponsor. Your logo will show up here with a l
 [10]: https://github.com/libremesh/network-profiles/
 [11]: https://chef.libremesh.org/
 [12]: https://opencollective.com/libremesh
+[13]: https://libremesh.org/development.html
 
 
 
