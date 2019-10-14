@@ -8,5 +8,5 @@ config probe 'probe'
 
 config at 'at'
 	option data_file '/tmp/tests-scheduler-probe-data'
-	list peak_test 'lime-report | gzip -c >> /tmp/tests-peak.gz'
-	list night_test '(date && bandwidth-test) >> /tmp/tests-night'
+	list peak_test 'lime-report >> /tmp/tests-peak-lime-report'
+	list night_test '(date && bandwidth-test) >> /tmp/tests-night-bandwidth-test'
