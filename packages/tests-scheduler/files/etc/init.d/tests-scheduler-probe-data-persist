@@ -22,5 +22,5 @@ start_service() {
 }
 
 stop_service() {
-	[[ -e $FRESHFILE ]] && [[ -d $BACKUPDIR ]] && cp $FRESHFILE $BACKUPFILE
+	[[ $persist_to_flash == "true" ]] && [[ -e $FRESHFILE ]] && [[ -d $BACKUPDIR ]] && cp $FRESHFILE $BACKUPFILE
 }
