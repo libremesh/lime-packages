@@ -14,7 +14,7 @@ start_service() {
 	config_get persist_to_flash probe persist_to_flash
 	procd_open_instance
 	procd_set_param respawn
-	procd_set_param command [[ $persist_to_flash == "true" ]] && [[ -e $BACKUPFILE ]] && cp $BACKUPFILE $FRESHFILE
+	procd_set_param command $persist_to_flash && [[ -e $BACKUPFILE ]] && cp $BACKUPFILE $FRESHFILE
 	procd_set_param file /etc/config/tests-scheduler
 	procd_set_param stdout 1
 	procd_set_param stderr 1
@@ -22,5 +22,8 @@ start_service() {
 }
 
 stop_service() {
-	[[ $persist_to_flash == "true" ]] && [[ -e $FRESHFILE ]] && [[ -d $BACKUPDIR ]] && cp $FRESHFILE $BACKUPFILE
+	config_load "${CONFIGURATION}"
+	local persist_to_flash
+	config_get persist_to_flash probe persist_to_flash
+	$persist_to_flash && [[ -e $FRESHFILE ]] && [[ -d $BACKUPDIR ]] && cp $FRESHFILE $BACKUPFILE
 }
