@@ -3,7 +3,7 @@ local config = require "lime.config"
 
 local defreboot = {}
 
-defreboot.DEFAULT_REBOOT_UPTIME = 60*60*7
+defreboot.DEFAULT_REBOOT_UPTIME = 60*60*27
 defreboot.SLEEP_BEFORE_REBOOT_S = 30
 
 defreboot.POSTPONE_FILE_PATH = '/tmp/deferable-reboot.defer'
