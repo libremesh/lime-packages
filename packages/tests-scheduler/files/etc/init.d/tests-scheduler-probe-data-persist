@@ -3,7 +3,8 @@
 USE_PROCD=1
 START=45
 STOP=01
-BACKUPFILE=/etc/tests-scheduler/tests-scheduler-probe-data-persist
+BACKUPDIR=/etc/tests-scheduler
+BACKUPFILE=$BACKUPDIR/tests-scheduler-probe-data-persist
 FRESHFILE=/tmp/tests-scheduler-probe-data
 CONFIGURATION=tests-scheduler
 
@@ -21,5 +22,5 @@ start_service() {
 }
 
 stop_service() {
-	[[ -e $FRESHFILE ]] && cp $FRESHFILE $BACKUPFILE
+	[[ -e $FRESHFILE ]] && [[ -d $BACKUPDIR ]] && cp $FRESHFILE $BACKUPFILE
 }
