@@ -10,8 +10,10 @@ defreboot.POSTPONE_FILE_PATH = '/tmp/deferable-reboot.defer'
 
 function defreboot.config(min_uptime)
 	if min_uptime == nil then
-		min_uptime = tonumber(config.get("system", "deferable_reboot_uptime",
-										 defreboot.DEFAULT_REBOOT_UPTIME))
+		local uci = config.get_uci_cursor()
+		local lime_min_uptime = config.get("system", "deferable_reboot_uptime_s", false)
+		local general_min_uptime = uci:get("deferable-reboot", "options", "deferable_reboot_uptime_s")
+		min_uptime = tonumber(lime_min_uptime or general_min_uptime or defreboot.DEFAULT_REBOOT_UPTIME)
 	end
 	assert(type(min_uptime) == "number", "min_uptime must be a number")
 	defreboot.min_uptime = min_uptime

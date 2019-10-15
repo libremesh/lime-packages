@@ -10,7 +10,7 @@ UCI_CONFIG_FILES = {
 	"6relayd", "babeld", "batman-adv", "check-date", "dhcp", "dropbear", "fstab", "firewall",
 	"libremap", "lime", "lime-app", "lime-defaults", "lime-defaults-factory",
 	"luci", "network", "pirania", "rpcd", "shared-state", "system", "ucitrack",
-	"uhttpd", "wireless",
+	"uhttpd", "wireless", "deferable-reboot",
 }
 
 function utils.disable_asserts()
