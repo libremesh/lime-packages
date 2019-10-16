@@ -2,24 +2,20 @@
 
 local JSON = require("luci.jsonc")
 local utils = require("lime.utils")
+local fs = require("nixio.fs")
+local libuci = require("uci")
 
-local libuci_loaded, libuci = pcall(require, "uci")
-
-local function config_uci_get(option)
+result = libuci:cursor():get("tests-scheduler","probe",option)
+local function config_uci_get(sectionname, option)
 	local result
-	if libuci_loaded then
-		result = libuci:cursor():get("tests-scheduler","probe",option)
-	else
-		result = nil
-	end
+	result = libuci:cursor():get("tests-scheduler",sectionname,option)
 	return result
 end
 
---local peakTestsList = config_uci_get("peak_test") or {arg[1]}
+local dataFile = arg[1] or config_uci_get("probe","data_file")
+local peakHooksDir = arg[2] or config_uci_get("at","peak_hooks_dir")
+local nightHooksDir = arg[3] or config_uci_get("at","night_hooks_dir")
 
---local nightTestsList = config_uci_get("night_test") or {arg[2]}
-
-local dataFile = config_uci_get("data_file") or "/tmp/tests-scheduler-probe-data"
 
 -- check if a file exists
 function file_exists(file)
@@ -84,26 +80,27 @@ io.stderr:write("Found enough data in "..dataFile..", continuing.\n")
 local peakHour1,_ = max(data)
 local peakHour = peakHour1 - 1
 
-if not peakTestsList then
-	io.stderr:write("No tests configured to be run at the peak time.\n")
-end
-
-for index,peakCommand in ipairs(peakTestsList) do
-	local peakMinute = (index * 5) % 60
+local peakDirFun = fs.dir(peakHooksDir) or {}
+local peakIndex = 0
+for hook in fs.dir(peakHooksDir) do
+	local peakMinute = (peakIndex * 5) % 60
 	local peakMinutePad = string.format("%02d", peakMinute)
-	local peakAt = "echo '"..peakCommand.."' | at -Mv "..peakHour..":"..
+	local peakAt = "echo '"..peakHooksDir.."/"..hook.."' | at -Mv "..peakHour..":"..
 	  peakMinutePad.." 2>&1"
 	local handlePeakAt = io.popen(peakAt, 'r')
 	local peakAtRaw = handlePeakAt:read("*a")
 	handlePeakAt:close()
 	local peakAtTime = do_split(peakAtRaw,"%C+")[1]
-	utils.log("Scheduled time:\t"..peakAtTime.."\tCommand:\t"..peakCommand)
+	utils.log("Scheduled time:\t"..peakAtTime.."\tCommand:\t"..peakHooksDir.."/"..hook)
+	peakIndex = peakIndex + 1
 end
 
-if not nightTestsList then
+local nightDirFun = fs.dir(nightHooksDir) or {}
+if not nightDirFun(1) then
 	io.stderr:write("No tests configured to be run at the night time.\n")
 	os.exit(0)
 end
+local nightDirFun = fs.dir(nightHooksDir) or {}
 
 local datatemp = data
 local nightHours = {}
@@ -160,14 +157,16 @@ local handle = io.popen("shared-state insert tests-scheduler-night", "w")
 handle:write(JSON.stringify(myTimeTable))
 handle:close()
 
-for index,nightCommand in ipairs(nightTestsList) do
-	local nightMinuteIdx = (nightMinute + index - 1) % 60
+local nightIndex = 0
+for hook in nightDirFun do
+	local nightMinuteIdx = (nightMinute + nightIndex) % 60
 	local nightMinuteIdxPad = string.format("%02d", nightMinuteIdx)
-	local nightAt = "echo '"..nightCommand.."' | at -Mv "..nightHour..":"..
+	local nightAt = "echo '"..nightHooksDir.."/"..hook.."' | at -Mv "..nightHour..":"..
 	  nightMinuteIdxPad.." 2>&1"
 	local handleNightAt = io.popen(nightAt, 'r')
 	local nightAtRaw = handleNightAt:read("*a")
 	handleNightAt:close()
 	local nightAtTime = do_split(nightAtRaw,"%C+")[1]
-	utils.log("Scheduled time:\t"..nightAtTime.."\tCommand:\t"..nightCommand)
+	utils.log("Scheduled time:\t"..nightAtTime.."\tCommand:\t"..nightHooksDir.."/"..hook)
+	nightIndex = nightIndex + 1
 end

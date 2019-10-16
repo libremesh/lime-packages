@@ -7,3 +7,7 @@ config probe 'probe'
 	option backup_dir '/etc/tests-scheduler'
 	option backup_filename 'tests-scheduler-probe-data-backup'
 	option persist_to_flash true
+config at 'at'
+	option peak_hooks_dir '/etc/tests-scheduler/peakHooks.d'
+	option night_hooks_dir '/etc/tests-scheduler/nightHooks.d'
+
