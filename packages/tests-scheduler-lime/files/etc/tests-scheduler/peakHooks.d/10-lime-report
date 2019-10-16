@@ -1,0 +1,2 @@
+#!/bin/sh
+lime-report >> /tmp/tests-peak-lime-report

@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
   TITLE:=Tests scheduler at peak and night time
   MAINTAINER:=Ilario Gelmetti <ilario@sindominio.net>
   URL:=https://libremesh.org
-  DEPENDS:=+at +logrotate
+  DEPENDS:=+at
   PKGARCH:=all
 endef
 
@@ -37,15 +37,13 @@ endef
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/bin/
 	$(INSTALL_DIR) $(1)/etc/uci-defaults/
-	$(INSTALL_DIR) $(1)/etc/config/
 	$(INSTALL_DIR) $(1)/etc/init.d/
-	$(INSTALL_DIR) $(1)/etc/logrotate.d/
+	$(INSTALL_DIR) $(1)/etc/config/
 	$(INSTALL_DIR) $(1)/etc/tests-scheduler/
 	$(INSTALL_BIN) ./files/bin/tests-scheduler-at.lua $(1)/bin/tests-scheduler-at
 	$(INSTALL_BIN) ./files/bin/tests-scheduler-probe.lua $(1)/bin/tests-scheduler-probe
 	$(INSTALL_BIN) ./files/etc/uci-defaults/* $(1)/etc/uci-defaults
 	$(INSTALL_BIN) ./files/etc/init.d/* $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/etc/logrotate.d/* $(1)/etc/logrotate.d
 	$(INSTALL_CONF) ./files/etc/config/tests-scheduler $(1)/etc/config/
 endef
 

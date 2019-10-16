@@ -1,0 +1,2 @@
+#!/bin/sh
+(date && bandwidth-test) >> /tmp/tests-night-bandwidth-test

@@ -8,16 +8,16 @@ local libuci_loaded, libuci = pcall(require, "uci")
 local function config_uci_get(option)
 	local result
 	if libuci_loaded then
-		result = libuci:cursor():get("tests-scheduler","at",option)
+		result = libuci:cursor():get("tests-scheduler","probe",option)
 	else
 		result = nil
 	end
 	return result
 end
 
-local peakTestsList = config_uci_get("peak_test") or {arg[1]}
+--local peakTestsList = config_uci_get("peak_test") or {arg[1]}
 
-local nightTestsList = config_uci_get("night_test") or {arg[2]}
+--local nightTestsList = config_uci_get("night_test") or {arg[2]}
 
 local dataFile = config_uci_get("data_file") or "/tmp/tests-scheduler-probe-data"
 
@@ -156,10 +156,12 @@ local myTime = nightHour * 60 + nightMinute
 local myTimeTable = {}
 local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
 myTimeTable[hostname] = myTime
-io.popen("shared-state insert tests-scheduler-night", "w"):write(JSON.stringify(myTimeTable))
-local randomStart = math.random(0,4)
+local handle = io.popen("shared-state insert tests-scheduler-night", "w")
+handle:write(JSON.stringify(myTimeTable))
+handle:close()
+
 for index,nightCommand in ipairs(nightTestsList) do
-	local nightMinuteIdx = nightMinute + ((index + randomStart) % 5)
+	local nightMinuteIdx = (nightMinute + index - 1) % 60
 	local nightMinuteIdxPad = string.format("%02d", nightMinuteIdx)
 	local nightAt = "echo '"..nightCommand.."' | at -Mv "..nightHour..":"..
 	  nightMinuteIdxPad.." 2>&1"

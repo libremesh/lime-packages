@@ -4,9 +4,6 @@ config probe 'probe'
 	list test 'batctl tl | grep "(0x"'
 	option stability 0.95
 	option data_file '/tmp/tests-scheduler-probe-data'
+	option backup_dir '/etc/tests-scheduler'
+	option backup_filename 'tests-scheduler-probe-data-backup'
 	option persist_to_flash true
-
-config at 'at'
-	option data_file '/tmp/tests-scheduler-probe-data'
-	list peak_test 'lime-report >> /tmp/tests-peak-lime-report'
-	list night_test '(date && bandwidth-test) >> /tmp/tests-night-bandwidth-test'

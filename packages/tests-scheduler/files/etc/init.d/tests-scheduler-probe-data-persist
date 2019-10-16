@@ -3,18 +3,22 @@
 USE_PROCD=1
 START=45
 STOP=01
-BACKUPDIR=/etc/tests-scheduler
-BACKUPFILE=$BACKUPDIR/tests-scheduler-probe-data-persist
-FRESHFILE=/tmp/tests-scheduler-probe-data
 CONFIGURATION=tests-scheduler
 
 start_service() {
 	config_load "${CONFIGURATION}"
 	local persist_to_flash
+	local data_file
+	local backup_dir
+	local backup_filename
 	config_get persist_to_flash probe persist_to_flash
+	config_get data_file probe data_file
+	config_get backup_dir probe backup_dir
+	config_get backup_filename probe backup_filename
+	
 	procd_open_instance
 	procd_set_param respawn
-	procd_set_param command $persist_to_flash && [[ -e $BACKUPFILE ]] && cp $BACKUPFILE $FRESHFILE
+	procd_set_param command $persist_to_flash && [[ -e $backup_dir/$backup_filename ]] && cp $backup_dir/$backup_filename $data_file
 	procd_set_param file /etc/config/tests-scheduler
 	procd_set_param stdout 1
 	procd_set_param stderr 1
@@ -24,6 +28,13 @@ start_service() {
 stop_service() {
 	config_load "${CONFIGURATION}"
 	local persist_to_flash
+	local data_file
+	local backup_dir
+	local backup_filename
 	config_get persist_to_flash probe persist_to_flash
-	$persist_to_flash && [[ -e $FRESHFILE ]] && [[ -d $BACKUPDIR ]] && cp $FRESHFILE $BACKUPFILE
+	config_get data_file probe data_file
+	config_get backup_dir probe backup_dir
+	config_get backup_filename probe backup_filename
+	
+	$persist_to_flash && [[ -e $data_file ]] && [[ -d $backup_dir ]] && cp $data_file $backup_dir/$backup_filename
 }
