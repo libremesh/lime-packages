@@ -1,0 +1,5 @@
+#!/usr/bin/env lua
+
+local unstuck_wa = require 'wifi_unstuck_wa'
+
+unstuck_wa.do_workaround()
