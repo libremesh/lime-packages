@@ -1,4 +1,5 @@
 /tmp/tests-peak-lime-report {
+    daily
     compress
     rotate 5
     size 100k

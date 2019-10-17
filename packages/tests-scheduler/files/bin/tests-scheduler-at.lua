@@ -4,8 +4,9 @@ local JSON = require("luci.jsonc")
 local utils = require("lime.utils")
 local fs = require("nixio.fs")
 local libuci = require("uci")
+local SharedState = require("shared-state")
+require("nixio.util")
 
-result = libuci:cursor():get("tests-scheduler","probe",option)
 local function config_uci_get(sectionname, option)
 	local result
 	result = libuci:cursor():get("tests-scheduler",sectionname,option)
@@ -15,7 +16,6 @@ end
 local dataFile = arg[1] or config_uci_get("probe","data_file")
 local peakHooksDir = arg[2] or config_uci_get("at","peak_hooks_dir")
 local nightHooksDir = arg[3] or config_uci_get("at","night_hooks_dir")
-
 
 -- check if a file exists
 function file_exists(file)
@@ -95,20 +95,19 @@ for hook in fs.dir(peakHooksDir) do
 	peakIndex = peakIndex + 1
 end
 
-local nightDirFun = fs.dir(nightHooksDir) or {}
+local nightDirFun = fs.dir(nightHooksDir) or os.exit(0)
 if not nightDirFun(1) then
 	io.stderr:write("No tests configured to be run at the night time.\n")
 	os.exit(0)
 end
-local nightDirFun = fs.dir(nightHooksDir) or {}
+local nightDirFun = fs.dir(nightHooksDir)
 
-local datatemp = data
 local nightHours = {}
 
 for i = 1,6 do
-	nightHour1,_ = min(datatemp)
+	nightHour1,_ = min(data)
 	nightHours[i] = nightHour1 - 1
-	datatemp[nightHour1] = math.huge
+	data[nightHour1] = math.huge
 end
 
 local getCommand = "shared-state get tests-scheduler-night"
@@ -150,12 +149,20 @@ local min5minute1,_ = min(hits5minute)
 local min5minute = min5minute1 - 1
 local nightMinute = min5minute * 5
 local myTime = nightHour * 60 + nightMinute 
-local myTimeTable = {}
 local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
-myTimeTable[hostname] = myTime
-local handle = io.popen("shared-state insert tests-scheduler-night", "w")
-handle:write(JSON.stringify(myTimeTable))
-handle:close()
+local timeToLive = 24*60
+
+nixio.openlog("shared-state")
+local sharedState = SharedState("tests-scheduler-night", nixio.syslog)
+sharedState.lock()
+sharedState.load()
+sharedState.insert(hostname, myTime, timeToLive)
+sharedState.save()
+sharedState.unlock()
+nixio.closelog()
+--local handle = io.popen("shared-state insert tests-scheduler-night", "w")
+--handle:write(JSON.stringify(myTimeTable))
+--handle:close()
 
 local nightIndex = 0
 for hook in nightDirFun do
