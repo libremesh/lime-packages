@@ -13,7 +13,7 @@ function wu.get_stickable_ifaces()
 	local ifaces = {}
 
 	uci:foreach("wireless", "wifi-iface", function(entry)
-			if entry.mode == 'mesh' or entry.mode == 'adhoc' then
+			if entry.mode == 'mesh' or entry.mode == 'adhoc' or entry.mode == 'sta' then
 				table.insert(ifaces, entry.ifname)
 			end
 		end)
