@@ -20,9 +20,15 @@ temp_file=$(mktemp /tmp/lime_test.XXXX)
 trap "rm -f ${temp_file}" 0 2 3 15
 chmod +x ${temp_file}
 
+if [[ -z "${LUA_ENABLE_LOGGING}" ]]; then
+  LOGGING="LUA_DISABLE_LOGGING=1"
+else
+  LOGGING="LUA_ENABLE_LOGGING=1"
+fi
+
 cat > ${temp_file}<< SCRIPT
 #!/bin/bash
-busted -v --coverage ${TESTS_PATHS} --lpath='${LIB_PATHS}' ${1} && luacov
+${LOGGING} busted -v --coverage ${TESTS_PATHS} --lpath='${LIB_PATHS}' ${1} && luacov
 SCRIPT
 
 ./tools/dockertestshell "${temp_file}"

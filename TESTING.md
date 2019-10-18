@@ -17,6 +17,7 @@ Just execute `./run_tests`:
 This will build the testing Docker image automaticaly in the first run and then execute the tests and create the coverage report.
 Note: you must have Docker installed and running.
 
+Use `LUA_ENABLE_LOGGING=1 ./run_tests` if you want to send the logging to stdout.
 
 ## Testing directory structure
 
