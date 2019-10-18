@@ -10,6 +10,7 @@ utils.BOARD_JSON_PATH = "/etc/board.json"
 
 function utils.log(...)
 	if DISABLE_LOGGING ~= nil then return end
+	if os.getenv("LUA_DISABLE_LOGGING") ~= nil and os.getenv("LUA_ENABLE_LOGGING") == nil then return end
 	print(...)
 end
 

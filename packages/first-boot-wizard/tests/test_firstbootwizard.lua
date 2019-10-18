@@ -5,8 +5,6 @@ local utils = require 'lime.utils'
 local test_utils = require 'tests.utils'
 local fs = require("nixio.fs")
 
-utils.disable_logging()
-
 local uci = nil
 
 describe('FirstBootWizard tests', function()
