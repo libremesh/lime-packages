@@ -6,7 +6,7 @@
 | lime-openairview | get_stations       | {device:STRING}                    | List of stations transmitting on the same frequency as the selected device/interface.                                                      |
 | lime-openairview | get_iface_stations | {iface:STRING}                     | List of stations attached to the interface.                                                                                                |
 | lime-openairview | get_station_signal | {station_mac:STRING, iface:STRING} | Get the signal level with which an interface sees a particular device                                                                      |
-| lime-openairview | spectral_scan      | {device:STRING, spectrum:STRING}   | Get the fft-eval scan results. specturm can by: 2ghz, 5ghz or current. "current" means scan only the channel on which the interface is set |
+| lime-openairview | spectral_scan      | {device:STRING, spectrum:STRING}   | Get the fft-eval scan results. specturm can by: 2ghz, 5ghz or current. "current" means scan only the channel on which the interface is set. This will work only if fft-eval is installed |
 
 ## Examples
 
