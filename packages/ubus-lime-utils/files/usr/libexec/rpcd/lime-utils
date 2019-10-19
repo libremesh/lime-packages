@@ -132,8 +132,7 @@ local function get_node_status(msg)
         most_active.tx_bytes = station_traffic.tx_bytes
         result.most_active = most_active
     end
-    local uptime = shell("awk '{print $1}' /proc/uptime")
-    result.uptime = uptime
+    result.uptime = tostring(utils.uptime_s())
 
     result.status = "ok"
     printJson(result)

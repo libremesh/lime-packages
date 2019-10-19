@@ -27,4 +27,31 @@ describe('LiMe Utils tests', function()
         test_utils.disable_package('lime-proto-anygw', 'lime.proto.anygw')
         assert.is_false(utils.isModuleAvailable('lime.proto.anygw'))
     end)
+
+	it('test tableLength', function()
+        assert.is.equal(0, utils.tableLength({}))
+		assert.is.equal(3, utils.tableLength({'a', 3, 9}))
+		assert.is.equal(1, utils.tableLength({['foo'] = 'foo'}))
+		assert.is.equal(2, utils.tableLength({['foo'] = 'foo', ['bar'] = 'bar'}))
+    end)
+
+    it('test indexFromName', function()
+        assert.is.equal(0, utils.indexFromName('radio0'))
+		assert.is.equal(0, utils.indexFromName('phy0'))
+		assert.is.equal(1, utils.indexFromName('phy1'))
+		assert.is.equal(11, utils.indexFromName('phy11'))
+    end)
+
+	it('test uptime_s #uptime', function()
+		utils._uptime_line = '20331.28 69742.87'
+		local uptime = utils.uptime_s()
+		assert.is.equal(uptime, 20331.28)
+		utils._uptime_line = nil
+
+		local uptime_1 = utils.uptime_s()
+		local uptime_2 = utils.uptime_s()
+		assert.is_true(uptime_2 >= uptime_1)
+    end)
+
+
 end)

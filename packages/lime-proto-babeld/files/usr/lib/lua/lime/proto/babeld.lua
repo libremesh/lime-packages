@@ -28,7 +28,7 @@ function babeld.configure(args)
 	if babeld.configured then return end
 	babeld.configured = true
 
-	print("lime.proto.babeld.configure(...)")
+	utils.log("lime.proto.babeld.configure(...)")
 
 	fs.writefile("/etc/config/babeld", "")
 
@@ -93,11 +93,11 @@ end
 
 function babeld.setup_interface(ifname, args)
 	if not args["specific"] and ifname:match("^wlan%d+.ap") then
-		print("lime.proto.babeld.setup_interface(...)", ifname, "ignored")
+		utils.log("lime.proto.babeld.setup_interface(...)", ifname, "ignored")
 		return
 	end
 
-	print("lime.proto.babeld.setup_interface(...)", ifname)
+	utils.log("lime.proto.babeld.setup_interface(...)", ifname)
 
 	local vlanId = args[2] or 17
 	local vlanProto = args[3] or "8021ad"
@@ -109,6 +109,10 @@ function babeld.setup_interface(ifname, args)
 	local ipv4, _ = network.primary_address()
 
 	local uci = config.get_uci_cursor()
+
+	if(vlanId ~= 0 and ifname:match("^eth")) then
+		uci:set("network", owrtDeviceName, "mtu", tostring(network.MTU_ETH_WITH_VLAN))
+	end
 
 	uci:set("network", owrtInterfaceName, "proto", "static")
 	uci:set("network", owrtInterfaceName, "ipaddr", ipv4:host():string())

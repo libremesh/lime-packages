@@ -5,6 +5,8 @@ local test_utils = require 'tests.utils'
 
 local uci
 
+utils.disable_logging()
+
 local COMPLETE_BOARD = {
     ["network"] = {
         ["lan"] = {
