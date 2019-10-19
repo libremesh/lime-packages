@@ -7,6 +7,7 @@ local test_utils = require 'tests.utils'
 
 -- disable logging in config module
 config.log = function() end
+utils.disable_logging()
 
 local uci
 
@@ -27,7 +28,7 @@ describe('LiMe Config tests', function()
         config.set('wifi', 'ap_ssid', 'LibreMesh.org')
         config.set('wifi', 'modes', {'ap', 'apname', 'ieee80211s'})
         config.set('wifi', 'channel_2ghz', '11')
-        config.set('wifi', 'channel_5ghz', {'157', '48'})
+        config.set('wifi', 'channel_5ghz', {'48', '157'})
 		config.set('wifi', 'distance_2ghz', '123')
 		config.set('wifi', 'distance_5ghz', '1234')
 		config.set('wifi', 'htmode_5ghz', 'HT40')
@@ -60,6 +61,14 @@ describe('LiMe Config tests', function()
         assert.is.equal('eth0', uci:get('network', 'lm_net_eth0_babeld_dev', 'ifname'))
         assert.is.equal('17', uci:get('network', 'lm_net_eth0_babeld_dev', 'vid'))
         assert.is.equal('eth0_17', uci:get('network', 'lm_net_eth0_babeld_if', 'ifname'))
+
+        assert.is.equal(tostring(network.MTU_ETH_WITH_VLAN),
+                        uci:get('network', 'lm_net_eth0_babeld_dev', 'mtu'))
+
+        assert.is.equal('@lm_net_wlan1_mesh', uci:get('network', 'lm_net_wlan1_mesh_babeld_dev', 'ifname'))
+        assert.is.equal('17', uci:get('network', 'lm_net_wlan1_mesh_babeld_dev', 'vid'))
+        assert.is_nil(uci:get('network', 'lm_net_wlan1_mesh_babeld_dev', 'mtu'))
+
 
         assert.is_nil(uci:get('network', 'globals', 'ula_prefix'))
 		for _, radio in ipairs({'radio0', 'radio1', 'radio2'}) do

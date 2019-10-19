@@ -26,13 +26,15 @@ function system.clean()
 end
 
 function system.configure()
-    print("Configuring system...")
+    utils.log("Configuring system...")
     system.set_hostname()
 
-    print("Let uhttpd listen on IPv4/IPv6")
+    utils.log("Let uhttpd listen on IPv4/IPv6")
     local uci = config.get_uci_cursor()
     uci:set("uhttpd", "main", "listen_http", "80")
     uci:set("uhttpd", "main", "listen_https", "443")
+    uci:set("uhttpd", "main", "max_requests", "6")
+    uci:set("uhttpd", "main", "script_timeout", "15")
     uci:save("uhttpd")
 end
 

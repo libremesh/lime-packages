@@ -214,11 +214,29 @@ function utils.tableMelt(t1, t2)
 	return t1
 end
 
+function utils.tableLength(t)
+  local count = 0
+  for _ in pairs(t) do count = count + 1 end
+  return count
+end
+
+function utils.indexFromName(name)
+	return tonumber(name:match("%d+"))
+end
+
 function utils.getBoardAsTable(board_path)
 	if board_path == nil then
 		board_path = utils.BOARD_JSON_PATH
 	end
 	return json.parse(fs.readfile(board_path))
+end
+
+--! for testing only
+utils._uptime_line = nil
+
+function utils.uptime_s()
+    local uptime_line = utils._uptime_line or io.open("/proc/uptime"):read("*l")
+    return tonumber(string.match(uptime_line, "^%S+"))
 end
 
 return utils
