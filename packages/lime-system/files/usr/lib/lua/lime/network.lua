@@ -280,6 +280,8 @@ function network.configure()
 			flags["_specific_section"] = owrtIf
 		end
 
+		flags["deviceProtos"] = deviceProtos
+
 		for _,protoParams in pairs(deviceProtos) do
 			local args = utils.split(protoParams, network.protoParamsSeparator)
 			if args[1] == "manual" then break end -- If manual is specified do not configure interface
