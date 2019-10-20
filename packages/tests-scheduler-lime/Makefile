@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
   TITLE:=LibreMesh tests for tests-scheduler
   MAINTAINER:=Ilario Gelmetti <ilario@sindominio.net>
   URL:=https://libremesh.org
-  DEPENDS:=+logrotate +lime-report +bandwidth-test
+  DEPENDS:=+logrotate +lime-report +bandwidth-test +tests-scheduler
   PKGARCH:=all
 endef
 
