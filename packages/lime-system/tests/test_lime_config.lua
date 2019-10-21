@@ -40,6 +40,17 @@ describe('LiMe Config tests', function()
         assert.is.equal('default_value', config.get('section_foo', 'option_bar3'))
     end)
 
+    it('test get with lime-default not storing into lime', function()
+        -- there was a regression that after a config.get if the value was not
+        -- found in config/lime then the result of geting it from lime-defaults was
+        -- also stored into config/lime
+        uci:set('lime-defaults', 'section_foo', 'type_foo')
+        uci:set('lime', 'section_foo', 'type_foo') -- a section installed is necesary
+        uci:set('lime-defaults', 'section_foo', 'option_bar3', 'default_value')
+        assert.is.equal('default_value', config.get('section_foo', 'option_bar3'))
+        assert.is_nil(config.uci:get('lime', 'section_foo', 'option_bar3'))
+    end)
+
     it('test get precedence of fallback and lime-default', function()
         -- lime-default wins over fallback
         uci:set('lime-defaults', 'section_foo2', 'type_foo')
