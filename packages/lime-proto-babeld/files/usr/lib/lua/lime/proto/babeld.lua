@@ -110,7 +110,7 @@ function babeld.setup_interface(ifname, args)
 
 	utils.log("lime.proto.babeld.setup_interface(...)", ifname)
 
-	local vlanId = args[2] or 17
+	local vlanId = tonumber(args[2]) or 17
 	local vlanProto = args[3] or "8021ad"
 	local nameSuffix = args[4] or "_babeld"
 
@@ -144,7 +144,7 @@ function babeld.setup_interface(ifname, args)
 		end
 	end
 
-	if tonumber(vlanId) == 0 and isIntoLAN then
+	if vlanId == 0 and isIntoLAN then
 		utils.log("Rather than "..ifname..
 		  ", adding br-lan into Babeld interfaces")
 		ifname = "br-lan"
@@ -157,7 +157,7 @@ function babeld.setup_interface(ifname, args)
 
 	local uci = config.get_uci_cursor()
 
-	if tonumber(vlanId) ~= 0 and ifname:match("^eth") then
+	if(vlanId ~= 0 and ifname:match("^eth")) then
 		uci:set("network", owrtDeviceName, "mtu", tostring(network.MTU_ETH_WITH_VLAN))
 	end
 
