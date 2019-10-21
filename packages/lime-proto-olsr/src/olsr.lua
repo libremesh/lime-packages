@@ -41,7 +41,7 @@ function olsr.setup_interface(ifname, args)
 		if ifname:match("^wlan%d+.ap") then return end
 	end
 
-	local vlanId = args[2] or 14
+	local vlanId = tonumber(args[2]) or 14
 	local vlanProto = args[3] or "8021ad"
 	local nameSuffix = args[4] or "_olsr"
 	local ipPrefixTemplate = args[5] or "169.254.%M5.%M6/16"
