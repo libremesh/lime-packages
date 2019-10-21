@@ -48,7 +48,7 @@ function olsr2.setup_interface(ifname, args)
 	if not args["specific"] then
 		if ifname:match("^wlan%d+.ap") then return end
 	end
-	local vlanId = args[2] or 16
+	local vlanId = tonumber(args[2]) or 16
 	local vlanProto = args[3] or "8021ad"
 	local nameSuffix = args[4] or "_olsr"
 	local owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)

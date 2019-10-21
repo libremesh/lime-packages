@@ -190,7 +190,7 @@ function bmx7.setup_interface(ifname, args)
 		( ifname:match("^wlan%d+.ap") or ifname:match("^eth%d+") )
 	then return end
 
-	vlanId = args[2] or 18
+	vlanId = tonumber(args[2]) or 18
 	vlanProto = args[3] or "8021ad"
 	nameSuffix = args[4] or "_bmx7"
 
