@@ -52,7 +52,7 @@ function config.get(sectionname, option, fallback)
 
 	local defcnf = config.uci:get("lime-defaults", sectionname, option)
 	if ( defcnf ~= nil ) then
-		config.set(sectionname, option, defcnf)
+		--! just returning the lime-defaults value
 	elseif ( fallback ~= nil ) then
 		defcnf = fallback
 		config.log("Use fallback value for "..sectionname.."."..option..": "..tostring(defcnf))
@@ -81,7 +81,6 @@ function config.get_all(sectionname)
 		if lime_def_section then
 			for key,value in pairs(lime_def_section) do
 				if (ret[key] == nil) then
-					config.set(sectionname, key, value)
 					ret[key] = value
 				end
 			end
