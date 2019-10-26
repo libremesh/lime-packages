@@ -122,6 +122,28 @@ describe('LiMe Config tests', function()
 
     end)
 
+    it('test config.node_foreach only loading from config/lime with lime-defaults', function()
+        uci:set('lime', 'wifi', 'type')
+        uci:set('lime', 'wifi', 'wlan0', 'foo')
+        uci:set('lime-defaults', 'wifi', 'type')
+        uci:set('lime-defaults', 'wifi', 'wlan0', 'bar')
+        uci:set('lime-defaults', 'wifi', 'wlan1', 'bar')
+        local results = {}
+        config.node_foreach('type', function(a) table.insert(results, a) end)
+
+        assert.is.equal(1, #results)
+        assert.is.equal('foo', results[1].wlan0)
+    end)
+
+    it('test config.node_foreach only loading from config/lime', function()
+        uci:set('lime-defaults', 'wifi', 'type')
+        uci:set('lime-defaults', 'wifi', 'wlan0', 'bar')
+        local results = {}
+        config.node_foreach('type', function(a) table.insert(results, a) end)
+
+        assert.is.equal(0, #results)
+    end)
+
     before_each('', function()
         uci = test_utils.setup_test_uci()
     end)
