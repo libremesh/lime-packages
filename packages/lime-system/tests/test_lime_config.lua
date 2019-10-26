@@ -108,6 +108,20 @@ describe('LiMe Config tests', function()
         assert.is.equal('1', config.get_all('wifi').wlan1)
     end)
 
+    it('test get_all not storing into config/lime', function()
+        uci:set('lime', 'wifi', 'type')
+        uci:set('lime-defaults', 'wifi', 'type')
+        uci:set('lime-defaults', 'wifi', 'wlan0', '0')
+        uci:set('lime-defaults', 'wifi', 'wlan1', '1')
+
+        assert.is.equal('0', config.get_all('wifi').wlan0)
+        assert.is.equal('1', config.get_all('wifi').wlan1)
+
+        assert.is_nil(config.uci:get('lime', 'wifi', 'wlan0'))
+        print_r(config.uci:get_all('lime-defaults'))
+
+    end)
+
     before_each('', function()
         uci = test_utils.setup_test_uci()
     end)
