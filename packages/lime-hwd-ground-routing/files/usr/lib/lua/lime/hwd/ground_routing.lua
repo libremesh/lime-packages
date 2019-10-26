@@ -86,10 +86,10 @@ function ground_routing.detect_hardware()
 	end
 
 	local clean_needed -- if there are no hwd_gr sections defined, don't clean all switch_vlan sections
-	config.foreach("hwd_gr", function(s) clean_needed = true end)
+	config.node_foreach("hwd_gr", function(s) clean_needed = true end)
 	if clean_needed then ground_routing.delete_all_switch_vlan_sections() end
 
-	config.foreach("hwd_gr", parse_gr)
+	config.node_foreach("hwd_gr", parse_gr)
 end
 
 return ground_routing

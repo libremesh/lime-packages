@@ -44,7 +44,7 @@ local function get_config()
     function add_to_result(section)
         table.insert(result.config, section)
     end
-    config.foreach("hwd_gr", add_to_result)
+    config.node_foreach("hwd_gr", add_to_result)
     result.board = readFile('/etc/board.json') or '{}'
     result.board = json.decode(result.board)
     result.devices = network.scandevices()
