@@ -118,7 +118,6 @@ describe('LiMe Config tests', function()
         assert.is.equal('1', config.get_all('wifi').wlan1)
 
         assert.is_nil(config.uci:get('lime', 'wifi', 'wlan0'))
-        print_r(config.uci:get_all('lime-defaults'))
 
     end)
 
