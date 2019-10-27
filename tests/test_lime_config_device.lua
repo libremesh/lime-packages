@@ -7,7 +7,6 @@ local test_utils = require 'tests.utils'
 
 -- disable logging in config module
 config.log = function() end
-utils.disable_logging()
 
 local uci
 
