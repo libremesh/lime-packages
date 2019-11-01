@@ -92,7 +92,8 @@ function babeld.configure(args)
 	--! If Babeld's Hello packets run over Batman-adv (whose bat0 is also
 	--! included in br-lan), all the Babeld nodes would appear as being direct
 	--! neighbors, so these Hello packets on bat0 have to be filtered
-	if utils.is_installed("kmod-batman-adv") then
+	local babeldOverBatman = config.get_bool("network", "babeld_over_batman")
+	if utils.is_installed("kmod-batman-adv") and not babeldOverBatman then
 		fs.mkdir("/etc/firewall.lime.d")
 		fs.writefile("/etc/firewall.lime.d/21-babeld-not-over-bat0-ebtables",
 		  "ebtables -t nat -A POSTROUTING -o bat0 -p ipv6"..
