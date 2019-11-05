@@ -92,7 +92,7 @@ protocol bgp {
 			bird4_config = bird4_config .. utils.expandVars(peer_template, s)
 		end
 	end
-	config.node_foreach("bgp_peer", apply_peer_template)
+	config.foreach("bgp_peer", apply_peer_template)
 
 	fs.writefile("/etc/bird4.conf", bird4_config)
 	fs.writefile("/etc/bird6.conf", bird6_config)

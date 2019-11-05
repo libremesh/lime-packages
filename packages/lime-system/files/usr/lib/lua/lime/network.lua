@@ -248,7 +248,7 @@ end
 function network.configure()
 	local specificIfaces = {}
 
-	config.node_foreach("net", function(iface)
+	config.foreach("net", function(iface)
 		if iface["linux_name"] then
 			specificIfaces[iface["linux_name"]] = iface
 		end
