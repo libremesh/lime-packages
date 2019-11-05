@@ -23,9 +23,8 @@ describe('LiMe Config tests', function()
     end)
 
     it('test simple get', function()
-        uci:set('lime', 'section_foo', 'type_foo')
-        uci:set('lime', 'section_foo', 'option_bar', 'value')
-        uci:commit('lime')
+        uci:set(config.UCI_CONFIG_NAME, 'section_foo', 'type_foo')
+        uci:set(config.UCI_CONFIG_NAME, 'section_foo', 'option_bar', 'value')
         assert.is.equal('value', config.get('section_foo', 'option_bar'))
     end)
 
@@ -33,44 +32,16 @@ describe('LiMe Config tests', function()
         assert.is.equal('fallback', config.get('section_foo', 'option_bar', 'fallback'))
     end)
 
-    it('test get with lime-default', function()
-        uci:set('lime-defaults', 'section_foo', 'type_foo')
-        uci:set('lime-defaults', 'section_foo', 'option_bar3', 'default_value')
-        uci:commit('lime-defaults')
-        assert.is.equal('default_value', config.get('section_foo', 'option_bar3'))
-    end)
-
-    it('test get with lime-default not storing into lime', function()
-        -- there was a regression that after a config.get if the value was not
-        -- found in config/lime then the result of geting it from lime-defaults was
-        -- also stored into config/lime
-        uci:set('lime-defaults', 'section_foo', 'type_foo')
-        uci:set('lime', 'section_foo', 'type_foo') -- a section installed is necesary
-        uci:set('lime-defaults', 'section_foo', 'option_bar3', 'default_value')
-        assert.is.equal('default_value', config.get('section_foo', 'option_bar3'))
-        assert.is_nil(config.uci:get('lime', 'section_foo', 'option_bar3'))
-    end)
-
-    it('test get precedence of fallback and lime-default', function()
-        -- lime-default wins over fallback
-        uci:set('lime-defaults', 'section_foo2', 'type_foo')
-        uci:set('lime-defaults', 'section_foo2', 'option_bar', 'default_value')
-        uci:commit('lime-defaults')
-        assert.is.equal('default_value', config.get('section_foo2', 'option_bar', 'fallback'))
-    end)
-
     it('test get_bool', function()
         for _, value in pairs({'1', 'on', 'true', 'enabled'}) do
-            uci:set('lime', 'foo', 'type')
-            uci:set('lime', 'foo', 'bar', value)
-            uci:commit('lime')
+            uci:set(config.UCI_CONFIG_NAME, 'foo', 'type')
+            uci:set(config.UCI_CONFIG_NAME, 'foo', 'bar', value)
             assert.is_true(config.get_bool('foo', 'bar'))
         end
 
         for _, value in pairs({'0', 'off', 'anything', 'false'}) do
-            uci:set('lime', 'foo', 'type')
-            uci:set('lime', 'foo', 'bar', value)
-            uci:commit('lime')
+            uci:set(config.UCI_CONFIG_NAME, 'foo', 'type')
+            uci:set(config.UCI_CONFIG_NAME, 'foo', 'bar', value)
             assert.is_false(config.get_bool('foo', 'bar'))
         end
     end)
@@ -79,7 +50,7 @@ describe('LiMe Config tests', function()
         config.set('wlan0', 'type')
         config.set('wlan0', 'htmode', 'HT20')
         assert.is.equal('HT20', config.get('wlan0', 'htmode'))
-        assert.is.equal('HT20', uci:get('lime', 'wlan0', 'htmode'))
+        assert.is.equal('HT20', uci:get(config.UCI_CONFIG_NAME, 'wlan0', 'htmode'))
     end)
 
     it('test set nonstrings', function()
