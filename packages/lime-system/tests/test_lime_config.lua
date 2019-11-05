@@ -87,9 +87,57 @@ describe('LiMe Config tests', function()
 
         assert.is.equal('0', config.get_all('wifi').wlan0)
         assert.is.equal('1', config.get_all('wifi').wlan1)
+    end)
 
-        assert.is_nil(config.uci:get('lime', 'wifi', 'wlan0'))
+    it('test config.uci_merge_files', function()
 
+        local high_prio = [[
+        config interface 'wan'
+            option proto 'dhcp'
+
+        config interface      'lan'
+            option proto      'dhcp'
+            list lan_list     'eth0'
+            list lan_list     'eth1'
+
+        config interface 'only_high'
+            option proto 'static'
+        ]]
+
+        local low_prio = [[
+        config interface 'wan'
+            option proto    'static'
+            option ifname   'eth0.1'
+            list wan_list   'false'
+
+        config interface 'lan'
+            option proto     'dhcp'
+            list lan_list    'foo'
+
+        config interface 'only_low'
+            option proto 'static'
+        ]]
+
+        test_utils.write_uci_file(uci, 'high_prio', high_prio)
+        test_utils.write_uci_file(uci, 'low_prio', low_prio)
+
+        -- create empty config (needed by uci)
+        test_utils.write_uci_file(uci, 'result', '')
+
+        config.uci_merge_files('high_prio', 'low_prio', 'result')
+
+        assert.is.equal('dhcp', uci:get('result', 'wan', 'proto'))
+        assert.is.equal('eth0.1', uci:get('result', 'wan', 'ifname'))
+        assert.are.same({'false'}, uci:get('result', 'wan', 'wan_list'))
+
+        assert.is.equal('dhcp', uci:get('result', 'lan', 'proto'))
+        assert.are.same({'eth0', 'eth1'}, uci:get('result', 'lan', 'lan_list'))
+
+        assert.is.equal('static', uci:get('result', 'only_high', 'proto'))
+        assert.is.equal('static', uci:get('result', 'only_low', 'proto'))
+
+        local result = uci:get_all('result')
+        assert.is.equal('interface', result['lan']['.type'])
     end)
 
     it('test config.node_foreach only loading from config/lime with lime-defaults', function()
