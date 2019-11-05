@@ -1,2 +1,3 @@
-/etc/config/lime
+/etc/config/lime-node
+/etc/config/lime-network
 /etc/config/libremap

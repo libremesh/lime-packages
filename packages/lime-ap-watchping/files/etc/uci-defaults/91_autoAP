@@ -1,4 +1,4 @@
 #!/bin/sh
-uci -q get lime.network.autoap_enabled || uci set lime.network.autoap_enabled=0
-uci -q get lime.network.autoap_hosts || uci set lime.network.autoap_hosts="8.8.8.8 8.8.4.4"
+uci -q get lime-autogen.network.autoap_enabled || uci set lime-autogen.network.autoap_enabled=0
+uci -q get lime-autogen.network.autoap_hosts || uci set lime-autogen.network.autoap_hosts="8.8.8.8 8.8.4.4"
 exit 0
