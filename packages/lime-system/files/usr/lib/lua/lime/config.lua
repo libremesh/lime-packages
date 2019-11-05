@@ -37,7 +37,7 @@ config.UCI_FACTORY_NAME = 'lime-defaults-factory'
 config.UCI_CONFIG_NAME = config.UCI_AUTOGEN_NAME
 
 function config.get_config_path()
-    return config.uci:get_confdir() .. '/' .. config.UCI_CONFIG_NAME
+	return config.uci:get_confdir() .. '/' .. config.UCI_CONFIG_NAME
 end
 
 --! Minimal /etc/config/lime santitizing
