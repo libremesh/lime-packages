@@ -1,5 +1,6 @@
 local config = require 'lime.config'
 local network = require 'lime.network'
+local wireless = require 'lime.wireless'
 local utils = require 'lime.utils'
 local hw_detection = require 'lime.hardware_detection'
 local test_utils = require 'tests.utils'
@@ -13,26 +14,11 @@ local uci
 local librerouter_board = test_utils.get_board('librerouter-v1')
 
 describe('LiMe Config tests', function()
-    it('test lime-config for a LibreRouter device', function()
-        config.set('system', 'lime')
-        config.set('system', 'domain', 'lan')
-        config.set('system', 'hostname', 'LiMe-%M4%M5%M6')
-        config.set('network', 'lime')
-        config.set('network', 'primary_interface', 'eth0')
-        config.set('network', 'main_ipv4_address', '10.%N1.0.0/16')
-        config.set('network', 'main_ipv6_address', '2a00:1508:0a%N1:%N200::/64')
-        config.set('network', 'resolvers', {'4.2.2.2'})
-        config.set('network', 'protocols', {'static', 'lan', 'batadv:%N1', 'babeld:17', 'ieee80211s'})
-        config.set('wifi', 'lime')
-        config.set('wifi', 'ap_ssid', 'LibreMesh.org')
-        config.set('wifi', 'modes', {'ap', 'apname', 'ieee80211s'})
-        config.set('wifi', 'channel_2ghz', '11')
-        config.set('wifi', 'channel_5ghz', {'48', '157'})
-		config.set('wifi', 'distance_2ghz', '123')
-		config.set('wifi', 'distance_5ghz', '1234')
-		config.set('wifi', 'htmode_5ghz', 'HT40')
-        uci:commit('lime')
+    it('test lime-config for a LibreRouter device #librerouter', function()
+		local factory_defaults = io.open('./packages/lime-system/files/etc/config/lime-defaults-factory'):read("*all")
+		test_utils.write_uci_file(uci, config.UCI_FACTORY_NAME, factory_defaults)
 
+		stub(wireless, "get_phy_mac", utils.get_id)
         stub(network, "get_mac", utils.get_id)
         stub(network, "assert_interface_exists", function () return true end)
 
@@ -48,8 +34,6 @@ describe('LiMe Config tests', function()
 
         local iwinfo = require 'iwinfo'
 		iwinfo.fake.load_from_uci(uci)
-
-
 
         stub(utils, "getBoardAsTable", function () return librerouter_board end)
         table.insert(hw_detection.search_paths, 'packages/*hwd*/files/usr/lib/lua/lime/hwd/*.lua')
@@ -83,9 +67,9 @@ describe('LiMe Config tests', function()
 		assert.is.equal('HT40', uci:get('wireless', 'radio1', 'htmode'))
 		assert.is.equal('HT40', uci:get('wireless', 'radio2', 'htmode'))
 
-		assert.is.equal('123', uci:get('wireless', 'radio0', 'distance'))
-		assert.is.equal('1234', uci:get('wireless', 'radio1', 'distance'))
-		assert.is.equal('1234', uci:get('wireless', 'radio2', 'distance'))
+		assert.is.equal('100', uci:get('wireless', 'radio0', 'distance'))
+		assert.is.equal('1000', uci:get('wireless', 'radio1', 'distance'))
+		assert.is.equal('1000', uci:get('wireless', 'radio2', 'distance'))
     end)
 
 	setup('', function()
