@@ -159,8 +159,23 @@ function config.uci_merge_files(high_prio, low_prio, output)
 	uci:commit(output)
 end
 
+function config.uci_autogen()
+	--! start clearing the config
+	local f = io.open(config.get_config_path(), "w")
+	f:write('')
+	f:close()
+
+	for _, cfg_name in pairs({config.UCI_FACTORY_NAME, config.UCI_NETWORK_NAME, config.UCI_NODE_NAME}) do
+		local cfg = io.open(config.uci:get_confdir() .. '/' .. cfg_name)
+		if cfg ~= nil then
+			config.uci_merge_files(cfg_name, config.UCI_AUTOGEN_NAME, config.UCI_AUTOGEN_NAME)
+		end
+	end
+end
+
 function config.main()
 	config.sanitize()
+	config.uci_autogen()
 
 	local modules_name = { "hardware_detection", "wireless", "network", "firewall", "system" }
 	local modules = {}
