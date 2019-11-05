@@ -40,6 +40,12 @@ function config.get_config_path()
 	return config.uci:get_confdir() .. '/' .. config.UCI_CONFIG_NAME
 end
 
+function config.reset_node_config()
+	local f = io.open(config.uci:get_confdir() .. '/' .. config.UCI_NODE_NAME, "w")
+	f:write('')
+	f:close()
+end
+
 --! Minimal /etc/config/lime santitizing
 function config.sanitize()
 	local lime_path = config.get_config_path()
