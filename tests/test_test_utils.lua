@@ -1,7 +1,10 @@
 local fs = require 'nixio.fs'
+local config = require 'lime.config'
 local test_utils = require "tests.utils"
 
-describe("Test utils tests", function()
+local uci = nil
+
+describe("Test utils tests #testutils", function()
     it("test setup_test_uci check creation of empty config files", function()
         local uci = test_utils.setup_test_uci()
         local uci_confdir = uci:get_confdir()
@@ -35,6 +38,25 @@ describe("Test utils tests", function()
 
         test_utils.disable_package('foobar', 'foobar')
         assert.are.Not.equal(path, string.sub(package.path, 1, string.len(path)))
+    end)
+
+    it("test write_uci_file", function()
+        local content = [[
+        config interface 'wan'
+            option ifname 'eth0.1'
+            option proto 'dhcp'
+        ]]
+        test_utils.write_uci_file(uci, 'foo', content)
+        assert.is.equal('dhcp', uci:get_all('foo', 'wan', 'proto'))
+        assert.is.equal(content, test_utils.read_uci_file(uci, 'foo'))
+    end)
+
+    before_each('', function()
+        uci = test_utils.setup_test_uci()
+    end)
+
+    after_each('', function()
+        test_utils.teardown_test_uci(uci)
     end)
 
 end)

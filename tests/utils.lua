@@ -74,5 +74,22 @@ function utils.get_board(name)
 	return limeutils.getBoardAsTable(board_path)
 end
 
+function utils.write_uci_file(uci, filename, content)
+    local confdir = uci:get_confdir()
+    local f = io.open(confdir .. '/' .. filename, "w")
+    f:write(content)
+    f:close()
+end
+
+function utils.read_uci_file(uci, filename)
+    local confdir = uci:get_confdir()
+    local f = io.open(confdir .. '/' .. filename, "r")
+    local content = nil
+    if f ~= nil then
+        content = f:read('*all')
+        f:close()
+    end
+    return content
+end
 
 return utils
