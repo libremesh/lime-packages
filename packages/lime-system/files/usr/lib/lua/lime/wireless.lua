@@ -92,7 +92,7 @@ end
 
 function wireless.configure()
 	local specificRadios = {}
-	config.node_foreach("wifi", function(radio)
+	config.foreach("wifi", function(radio)
 		specificRadios[radio[".name"]] = radio
 	end)
 

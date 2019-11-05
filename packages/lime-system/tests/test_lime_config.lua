@@ -79,14 +79,13 @@ describe('LiMe Config tests', function()
         assert.is.equal('1', config.get_all('wifi').wlan1)
     end)
 
-    it('test get_all not storing into config/lime', function()
-        uci:set('lime', 'wifi', 'type')
+    it('test config.foreach only loading from config/lime', function()
         uci:set('lime-defaults', 'wifi', 'type')
-        uci:set('lime-defaults', 'wifi', 'wlan0', '0')
-        uci:set('lime-defaults', 'wifi', 'wlan1', '1')
+        uci:set('lime-defaults', 'wifi', 'wlan0', 'bar')
+        local results = {}
+        config.foreach('type', function(a) table.insert(results, a) end)
 
-        assert.is.equal('0', config.get_all('wifi').wlan0)
-        assert.is.equal('1', config.get_all('wifi').wlan1)
+        assert.is.equal(0, #results)
     end)
 
     it('test config.uci_merge_files', function()
