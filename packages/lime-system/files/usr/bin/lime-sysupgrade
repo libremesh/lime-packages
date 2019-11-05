@@ -3,7 +3,7 @@
 FIRMWARE="$1"                                     
 shift                                             
 BACKUP_FILES="$@" 
-KEEP_LISTS="$(uci -q get lime.system.keep_on_upgrade || uci -q get lime-defaults.system.keep_on_upgrade)"
+KEEP_LISTS="$(uci -q get lime-autogen.system.keep_on_upgrade)"
 
 add_file() {
   for l in `cat $1 | sed -e s/#.*$// -e /^$/d`; do
