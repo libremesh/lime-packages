@@ -140,26 +140,76 @@ describe('LiMe Config tests', function()
         assert.is.equal('interface', result['lan']['.type'])
     end)
 
-    it('test config.node_foreach only loading from config/lime with lime-defaults', function()
-        uci:set('lime', 'wifi', 'type')
-        uci:set('lime', 'wifi', 'wlan0', 'foo')
-        uci:set('lime-defaults', 'wifi', 'type')
-        uci:set('lime-defaults', 'wifi', 'wlan0', 'bar')
-        uci:set('lime-defaults', 'wifi', 'wlan1', 'bar')
-        local results = {}
-        config.node_foreach('type', function(a) table.insert(results, a) end)
+    it('test config.uci_autogen standard config', function()
 
-        assert.is.equal(1, #results)
-        assert.is.equal('foo', results[1].wlan0)
+        local node = [[
+        config interface 'wan'
+            option proto 'dhcp'
+        ]]
+
+        local network = [[
+        config interface 'wan'
+            option proto    'static'
+        ]]
+
+        local factory = [[
+        config interface 'wan'
+            option proto    'static'
+			option ifname    'eth0'
+        ]]
+
+        test_utils.write_uci_file(uci, config.UCI_NODE_NAME, node)
+        test_utils.write_uci_file(uci, config.UCI_NETWORK_NAME, network)
+		test_utils.write_uci_file(uci, config.UCI_FACTORY_NAME, factory)
+
+		config.uci_autogen()
+
+		assert.is.equal('dhcp', config.get('wan', 'proto'))
+        assert.is.equal('eth0', config.get('wan', 'ifname'))
     end)
 
-    it('test config.node_foreach only loading from config/lime', function()
-        uci:set('lime-defaults', 'wifi', 'type')
-        uci:set('lime-defaults', 'wifi', 'wlan0', 'bar')
-        local results = {}
-        config.node_foreach('type', function(a) table.insert(results, a) end)
+    it('test config.uci_autogen missing node', function()
 
-        assert.is.equal(0, #results)
+        local network = [[
+        config interface 'wan'
+            option proto    'dhcp'
+        ]]
+
+        local factory = [[
+        config interface 'wan'
+            option proto    'static'
+			option ifname    'eth0'
+        ]]
+
+        test_utils.write_uci_file(uci, config.UCI_NETWORK_NAME, network)
+		test_utils.write_uci_file(uci, config.UCI_FACTORY_NAME, factory)
+
+		config.uci_autogen()
+
+		assert.is.equal('dhcp', config.get('wan', 'proto'))
+		assert.is.equal('eth0', config.get('wan', 'ifname'))
+    end)
+
+    it('test config.uci_autogen missing network', function()
+
+        local node = [[
+        config interface 'wan'
+            option proto    'dhcp'
+        ]]
+
+        local factory = [[
+        config interface 'wan'
+            option proto    'static'
+			option ifname    'eth0'
+        ]]
+
+		test_utils.write_uci_file(uci, config.UCI_NODE_NAME, node)
+		test_utils.write_uci_file(uci, config.UCI_FACTORY_NAME, factory)
+
+		config.uci_autogen()
+
+		assert.is.equal('dhcp', config.get('wan', 'proto'))
+		assert.is.equal('eth0', config.get('wan', 'ifname'))
     end)
 
     before_each('', function()
