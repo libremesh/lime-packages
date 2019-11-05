@@ -1,6 +1,6 @@
-# The /etc/config/lime-defaults file contains the default configuration.
-# To configure LibreMesh insert options in /etc/config/lime file, these will override the default ones.
-# Interface specific options have to be included in /etc/config/lime, if in /etc/config/lime-defaults they'll cause unpredictable behaviour.
+# The /etc/config/lime-network file contains the default configuration.
+# To configure LibreMesh insert options in /etc/config/lime-node or /etc/config/lime-network file, these will override the default ones.
+# Interface specific options have to be included in /etc/config/lime-node, if in /etc/config/lime-network they'll cause unpredictable behaviour.
 #
 # The options marked with "Parametrizable with %Mn, %Nn, %H"
 # can include %Mn templates that will be substituted
@@ -27,7 +27,7 @@ config lime network
 	option anygw_dhcp_start '2'			# First IP in the subnet to be used for DHCP for clients. For example, if the subnet is 10.x.0.0/16 and you want the clients to get an IPv4 from a DHCP pool starting from 10.x.100.2, the start parameter will have to be 100 * 256 + 2 = 25602.
 	option anygw_dhcp_limit '0'			# Number of IPs available for DHCP. Use zero for having the DHCP pool ranging from anygw_dhcp_start up to the end of the subnet. For example, if the subnet is 10.x.0.0/16, the start of the DHCP pool is at 10.x.100.2 and you want the DHCP pool to finish at 10.x.127.254, the limit parameter will have to be (127 - 100) * 256 + (254 - 2) + 1 = 7165. Instead, if you want the DHCP pool to go from 10.x.100.2 up to 10.x.255.254 (last valid IPv4 in the /16 subnet) you can just set the limit to zero.
 	option main_ipv6_address '2a00:1508:0a%N1:%N200::/64'	# Parametrizable in the same way as main_ipv4_address. If used, the IP autocompletion will fill maximum the last 24 bits, so specifying an IP autocompletion range bigger than /104 is not useful.
-	list protocols ieee80211s			# List of protocols configured by LiMe, some of these require the relative package "lime-proto-...". Note that if you set here some protocols, you overwrite the *whole* list of protocols set in /etc/config/lime-defaults
+	list protocols ieee80211s			# List of protocols configured by LiMe, some of these require the relative package "lime-proto-...". Note that if you set here some protocols, you overwrite the *whole* list of protocols set in /etc/config/lime-defaults-factory
 	list protocols lan
 	list protocols anygw
 	list protocols batadv:%N1			# Parametrizable with %Nn (which depends from ap_ssid), note that this will range between 16 and 272
@@ -91,7 +91,7 @@ config lime wifi
 #	option ieee80211s_key 'SomePsk2AESKey'
 
 
-# The following interface specific options have to be included in /etc/config/lime, not in /etc/config/lime-defaults
+# The following interface specific options have to be included in /etc/config/lime, not in /etc/config/lime-network
 
 ### WiFi interface specific options ( override defaults options )
 

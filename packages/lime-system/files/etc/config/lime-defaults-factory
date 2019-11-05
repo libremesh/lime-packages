@@ -1,5 +1,5 @@
-# Beware this file is NOT supposed to be edited by the end user, modify /etc/config/lime instead
-# If the same option or list is defined both in /etc/config/lime and lime-defaults file, the former will prevail
+# Beware this file is NOT supposed to be edited by the end user, modify /etc/config/lime-node instead
+# If the same option or list is defined both in /etc/config/lime-node and lime-network file, the former will prevail
 # Beware this file is not supposed to store interface specific configuration, like "config net eth0"
 
 # Read the documentation in /docs directory
