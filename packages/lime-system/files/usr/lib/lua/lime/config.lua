@@ -30,9 +30,19 @@ end
 
 config.uci = config.get_uci_cursor()
 
+config.UCI_AUTOGEN_NAME = 'lime-autogen'
+config.UCI_NODE_NAME = 'lime-node'
+config.UCI_NETWORK_NAME = 'lime-network'
+config.UCI_FACTORY_NAME = 'lime-defaults-factory'
+config.UCI_CONFIG_NAME = config.UCI_AUTOGEN_NAME
+
+function config.get_config_path()
+    return config.uci:get_confdir() .. '/' .. config.UCI_CONFIG_NAME
+end
+
 --! Minimal /etc/config/lime santitizing
 function config.sanitize()
-	local lime_path = config.uci:get_confdir() .. '/lime'
+	local lime_path = config.get_config_path()
 	local cf = io.open(lime_path, "r")
 	if (cf == nil) then
 		cf = io.open(lime_path, "w")
@@ -40,56 +50,33 @@ function config.sanitize()
 	end
 	cf:close()
 
-
 	for _,sectName in pairs({"system","network","wifi"}) do
 		config.set(sectName, "lime")
 	end
 end
 
 function config.get(sectionname, option, fallback)
-	local limeconf = config.uci:get("lime", sectionname, option)
+	local limeconf = config.uci:get(config.UCI_CONFIG_NAME, sectionname, option)
 	if limeconf then return limeconf end
 
-	local defcnf = config.uci:get("lime-defaults", sectionname, option)
-	if ( defcnf ~= nil ) then
-		--! just returning the lime-defaults value
-	elseif ( fallback ~= nil ) then
-		defcnf = fallback
-		config.log("Use fallback value for "..sectionname.."."..option..": "..tostring(defcnf))
+	if ( fallback ~= nil ) then
+		config.log("Use fallback value for "..sectionname.."."..option..": "..tostring(fallback))
+		return fallback
 	else
 		config.log("WARNING: Attempt to access undeclared default for: "..sectionname.."."..option)
 		config.log(debug.traceback())
+		return nil
 	end
-	return defcnf
 end
 
 --! Execute +callback+ for each config of type +configtype+ found in
---! +/etc/config/lime+.
---! beware this function doesn't look in +/etc/config/lime-default+ for default
---! values as it is designed for use with node specific sections only
-function config.node_foreach(configtype, callback)
-	return config.uci:foreach("lime", configtype, callback)
+--! +/etc/config/lime-autogen+.
+function config.foreach(configtype, callback)
+	return config.uci:foreach(config.UCI_CONFIG_NAME, configtype, callback)
 end
 
 function config.get_all(sectionname)
-	local lime_section = config.uci:get_all("lime", sectionname)
-	local lime_def_section = config.uci:get_all("lime-defaults", sectionname)
-
-	if lime_section or lime_def_section then
-		local ret = lime_section or {}
-
-		if lime_def_section then
-			for key,value in pairs(lime_def_section) do
-				if (ret[key] == nil) then
-					ret[key] = value
-				end
-			end
-		end
-
-		return ret
-	end
-
-	return nil
+	return config.uci:get_all(config.UCI_CONFIG_NAME, sectionname)
 end
 
 function config.get_bool(sectionname, option, default)
@@ -108,18 +95,18 @@ function config.set(...)
 	if (aty ~= "nil" and aty ~= "string" and aty ~= "table") then
 		arg[3] = tostring(arg[3])
 	end
-	config.uci:set("lime", unpack(arg))
-	if(not config.batched) then config.uci:save("lime") end
+	config.uci:set(config.UCI_CONFIG_NAME, unpack(arg))
+	if(not config.batched) then config.uci:save(config.UCI_CONFIG_NAME) end
 end
 
 function config.delete(...)
-	config.uci:delete("lime", unpack(arg))
-	if(not config.batched) then config.uci:save("lime") end
+	config.uci:delete(config.UCI_CONFIG_NAME, unpack(arg))
+	if(not config.batched) then config.uci:save(config.UCI_CONFIG_NAME) end
 end
 
 function config.end_batch()
 	if(config.batched) then
-		config.uci:save("lime")
+		config.uci:save(config.UCI_CONFIG_NAME)
 		config.batched = false
 	end
 end
