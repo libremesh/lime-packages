@@ -74,7 +74,7 @@ local function getDevices()
 end
 
 local function isWritable(devicePath)
-	return fs.stat(devicePath..'/.read-only') == nil
+	return fs.stat(devicePath..'/.shared_state_persist_ignore_device') == nil
 end
 
 local function runPersist()
