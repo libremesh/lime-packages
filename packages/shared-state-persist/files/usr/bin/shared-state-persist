@@ -79,7 +79,7 @@ local function runPersist()
 
 	for mntPath in getDevices() do
 		-- Setup first device as valid
-		if selectedPath == nil and selectedOption == 2 then
+		if selectedPath == nil and selectedOption == NON_DEVICE then
 			selectedOption = NEW_DEVICE
 			selectedPath = mntPath
 		end
