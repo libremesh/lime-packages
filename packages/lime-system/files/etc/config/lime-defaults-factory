@@ -59,5 +59,7 @@ config lime wifi
 	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
 	option adhoc_mcast_rate_2ghz '24000'
 	option adhoc_mcast_rate_5ghz '6000'
+	option ieee80211s_mcast_rate_2ghz '24000'
+	option ieee80211s_mcast_rate_5ghz '6000'
 	option ieee80211s_mesh_fwding '0'
 	option ieee80211s_mesh_id 'LiMe'
