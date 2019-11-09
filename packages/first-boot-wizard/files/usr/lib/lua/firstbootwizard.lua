@@ -179,6 +179,7 @@ end
 -- TODO: check if config is valid
 -- TODO: use safe-reboot
 function fbw.apply_file_config(file, hostname)
+    fbw.log('apply_file_config(file=' .. file .. ', hostname=' .. hostname .. ')')
     local uci_cursor = config.get_uci_cursor()
     --Check if lime-network exist
     local filePath = "/tmp/"..file
@@ -258,6 +259,7 @@ end
 
 -- Apply configuration for a new network ( used in ubus daemon)
 function fbw.apply_user_configs(configs, hostname)
+    fbw.log('apply_file_config(ssid=' .. configs.ssid .. ', hostname=' .. hostname .. ')')
     local uci_cursor = config.get_uci_cursor()
     -- Mesh network name
     local name = configs.ssid
