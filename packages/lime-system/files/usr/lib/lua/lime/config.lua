@@ -191,6 +191,7 @@ end
 
 function config.main()
 	config.sanitize()
+	config.sanitize(config.UCI_NODE_NAME)
 	config.uci_autogen()
 
 	local modules_name = { "hardware_detection", "wireless", "network", "firewall", "system" }
