@@ -191,14 +191,7 @@ function fbw.apply_file_config(file, hostname)
     utils.execute("cp "..filePath.." /etc/config/" .. config.UCI_NETWORK_NAME)
     -- Run lime-config as first boot and  setup new hostname
     uci_cursor:set(config.UCI_NODE_NAME, "system", "hostname", hostname)
-    uci_cursor:commit(config.UCI_NODE_NAME)
-    -- Remove FBW lock file
-    fbw.remove_lock_file()
-    -- Apply new configuration
-    os.execute("/usr/bin/lime-config")
-    -- Start sharing lime-network and reboot
-    fbw.share_defualts()
-    os.execute("reboot")
+    fbw.end_config()
 end
 
 -- Remove scan lock file
@@ -273,9 +266,14 @@ function fbw.apply_user_configs(configs, hostname)
     uci_cursor:commit("lime-network")
     -- Apply new configuration and setup hostname
     config.reset_node_config()
-
     uci_cursor:set("lime-node", 'system', 'hostname', hostname)
-    uci_cursor:commit('lime-node')
+    fbw.end_config()
+end
+
+function fbw.end_config()
+    local uci_cursor = config.get_uci_cursor()
+    uci_cursor:commit(config.UCI_NODE_NAME)
+    fbw.log('commiting lime-node')
     -- Apply new configuration
     os.execute("/usr/bin/lime-config")
     -- Start sharing lime-network and reboot
