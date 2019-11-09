@@ -175,8 +175,10 @@ function config.uci_autogen()
 	local f = io.open(config.get_config_path(), "w")
 	f:write('')
 	f:close()
-    --! clean uci cache
-	config.uci:load(config.UCI_AUTOGEN_NAME)
+
+	--! clean uci cache
+	local uci = config.get_uci_cursor()
+	uci:load(config.UCI_AUTOGEN_NAME)
 
 	for _, cfg_name in pairs({config.UCI_FACTORY_NAME, config.UCI_NETWORK_NAME, config.UCI_NODE_NAME}) do
 		local cfg = io.open(config.uci:get_confdir() .. '/' .. cfg_name)
