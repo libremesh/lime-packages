@@ -64,8 +64,6 @@ local methods = {
                 local configs = {}
                 if (msg.network ~= nil) then
                     configs.ssid = msg.network
-                end
-                if (configs ~= nil) then
                     conn:reply(req, { status = 'done' })
                     fbw.apply_user_configs(configs, msg.hostname)
                     return
