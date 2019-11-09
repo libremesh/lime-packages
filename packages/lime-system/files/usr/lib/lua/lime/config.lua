@@ -41,14 +41,17 @@ function config.get_config_path()
 end
 
 function config.reset_node_config()
-	local f = io.open(config.uci:get_confdir() .. '/' .. config.UCI_NODE_NAME, "w")
+	local path = config.uci:get_confdir() .. '/' .. config.UCI_NODE_NAME
+	local f = io.open(path, "w")
 	f:write('')
 	f:close()
+	config.sanitize(config.UCI_NODE_NAME)
 end
 
 --! Minimal /etc/config/lime santitizing
-function config.sanitize()
-	local lime_path = config.get_config_path()
+function config.sanitize(config_name)
+	local config_name = config_name or config.UCI_AUTOGEN_NAME
+	local lime_path = config.uci:get_confdir() .. '/' .. config_name
 	local cf = io.open(lime_path, "r")
 	if (cf == nil) then
 		cf = io.open(lime_path, "w")
@@ -56,9 +59,11 @@ function config.sanitize()
 	end
 	cf:close()
 
+	local uci = config.get_uci_cursor()
 	for _,sectName in pairs({"system","network","wifi"}) do
-		config.set(sectName, "lime")
+		uci:set(config_name, sectName, "lime")
 	end
+	uci:commit(config_name)
 end
 
 function config.get(sectionname, option, fallback)
