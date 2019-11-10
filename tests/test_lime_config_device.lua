@@ -15,8 +15,8 @@ local librerouter_board = test_utils.get_board('librerouter-v1')
 
 describe('LiMe Config tests', function()
     it('test lime-config for a LibreRouter device #librerouter', function()
-		local factory_defaults = io.open('./packages/lime-system/files/etc/config/lime-defaults-factory'):read("*all")
-		test_utils.write_uci_file(uci, config.UCI_FACTORY_NAME, factory_defaults)
+		local defaults = io.open('./packages/lime-system/files/etc/config/lime-defaults'):read("*all")
+		test_utils.write_uci_file(uci, config.UCI_DEFAULTS_NAME, defaults)
 
 		stub(wireless, "get_phy_mac", utils.get_id)
         stub(network, "get_mac", utils.get_id)
