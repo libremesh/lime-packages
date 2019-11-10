@@ -37,7 +37,7 @@ endef
 
 define Package/$(PKG_NAME)/conffiles
 	/etc/config/lime-node
-	/etc/config/lime-network
+	/etc/config/lime-community
 endef
 
 define Build/Compile

@@ -183,7 +183,7 @@ local function change_config (msg)
             main_ipv6_address = msg.ip.ipv6 
         }})
         conn:call("uci", "set", {config="lime-node", section="wifi", values=  msg.wireless })
-        conn:call("uci", "set", {config="lime-network", section="wifi", values= {
+        conn:call("uci", "set", {config="lime-community", section="wifi", values= {
             channel_2ghz = msg.wireless.channel_2ghz,
             channel_5ghz = msg.wireless.channel_5ghz,
             ieee80211s_mesh_id = msg.wireless.ieee80211s_mesh_id ,
