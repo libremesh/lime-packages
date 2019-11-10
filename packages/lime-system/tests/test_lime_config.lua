@@ -151,15 +151,15 @@ describe('LiMe Config tests', function()
             option proto    'static'
         ]]
 
-        local factory = [[
+        local defaults = [[
         config interface 'wan'
             option proto    'static'
 			option ifname    'eth0'
         ]]
 
         test_utils.write_uci_file(uci, config.UCI_NODE_NAME, node)
-        test_utils.write_uci_file(uci, config.UCI_NETWORK_NAME, network)
-		test_utils.write_uci_file(uci, config.UCI_FACTORY_NAME, factory)
+        test_utils.write_uci_file(uci, config.UCI_COMMUNITY_NAME, network)
+		test_utils.write_uci_file(uci, config.UCI_DEFAULTS_NAME, defaults)
 
 		config.uci_autogen()
 
@@ -174,14 +174,14 @@ describe('LiMe Config tests', function()
             option proto    'dhcp'
         ]]
 
-        local factory = [[
+        local defaults = [[
         config interface 'wan'
             option proto    'static'
 			option ifname    'eth0'
         ]]
 
-        test_utils.write_uci_file(uci, config.UCI_NETWORK_NAME, network)
-		test_utils.write_uci_file(uci, config.UCI_FACTORY_NAME, factory)
+        test_utils.write_uci_file(uci, config.UCI_COMMUNITY_NAME, network)
+		test_utils.write_uci_file(uci, config.UCI_DEFAULTS_NAME, defaults)
 
 		config.uci_autogen()
 
@@ -196,14 +196,14 @@ describe('LiMe Config tests', function()
             option proto    'dhcp'
         ]]
 
-        local factory = [[
+        local defaults = [[
         config interface 'wan'
             option proto    'static'
 			option ifname    'eth0'
         ]]
 
 		test_utils.write_uci_file(uci, config.UCI_NODE_NAME, node)
-		test_utils.write_uci_file(uci, config.UCI_FACTORY_NAME, factory)
+		test_utils.write_uci_file(uci, config.UCI_DEFAULTS_NAME, defaults)
 
 		config.uci_autogen()
 

@@ -33,7 +33,7 @@ config.uci = config.get_uci_cursor()
 config.UCI_AUTOGEN_NAME = 'lime-autogen'
 config.UCI_NODE_NAME = 'lime-node'
 config.UCI_COMMUNITY_NAME = 'lime-community'
-config.UCI_FACTORY_NAME = 'lime-defaults-factory'
+config.UCI_DEFAULTS_NAME = 'lime-defaults'
 config.UCI_CONFIG_NAME = config.UCI_AUTOGEN_NAME
 
 function config.get_config_path()
@@ -180,7 +180,7 @@ function config.uci_autogen()
 	local uci = config.get_uci_cursor()
 	uci:load(config.UCI_AUTOGEN_NAME)
 
-	for _, cfg_name in pairs({config.UCI_FACTORY_NAME, config.UCI_COMMUNITY_NAME, config.UCI_NODE_NAME}) do
+	for _, cfg_name in pairs({config.UCI_DEFAULTS_NAME, config.UCI_COMMUNITY_NAME, config.UCI_NODE_NAME}) do
 		local cfg = io.open(config.uci:get_confdir() .. '/' .. cfg_name)
 		if cfg ~= nil then
 			config.uci_merge_files(cfg_name, config.UCI_AUTOGEN_NAME, config.UCI_AUTOGEN_NAME)
