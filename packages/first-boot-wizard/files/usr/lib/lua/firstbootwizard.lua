@@ -15,10 +15,18 @@ local iwinfo = require("iwinfo")
 local wireless = require("lime.wireless")
 local fs = require("nixio.fs")
 local config = require("lime.config")
+local lutils = require("lime.utils")
 local nixio = require "nixio"
 local uci = require "uci"
 
 local fbw = {}
+
+
+
+fbw.WORKDIR = '/tmp/fbw/'
+fbw.HOST_CONFIG_PREFIX = 'lime-community__host__'
+
+utils.execute('mkdir -p ' .. fbw.WORKDIR)
 
 function fbw.log(text)
     nixio.syslog('info', '[FBW] ' .. text)
@@ -38,7 +46,7 @@ end
 
 -- Remove old results
 function fbw.clean_tmp()
-    utils.execute('rm /tmp/lime-community__*')
+    utils.execute('rm ' .. fbw.WORKDIR .. fbw.HOST_CONFIG_PREFIX .. '*')
 end
 
 -- Save working copy of wireless
@@ -158,8 +166,8 @@ function fbw.fetch_config(data)
     if (hostname == '') then hostname = host end
     local signal = data.signal
     local ssid = data.ssid
-    local filename = "/tmp/lime-community__host__"..hostname
-    utils.execute("/bin/wget http://["..data.host.."]/lime-community -O "..filename) -- FIXME
+    local filename = fbw.WORKDIR .. fbw.HOST_CONFIG_PREFIX .. hostname
+    utils.execute("/bin/wget http://[" .. data.host .. "]/lime-community -O " .. filename)
     return { host = host, filename = filename, success = utils.file_exists(filename) }
 end
 
@@ -182,13 +190,13 @@ function fbw.apply_file_config(file, hostname)
     fbw.log('apply_file_config(file=' .. file .. ', hostname=' .. hostname .. ')')
     local uci_cursor = config.get_uci_cursor()
     --Check if lime-community exist
-    local filePath = "/tmp/"..file
+    local filePath = fbw.WORKDIR .. file
     utils.file_exists(filePath)
     -- Format hostname
     hostname = hostname or config.get("system", "hostname")
     -- Clean previus lime configuration and replace lime-community
     config.reset_node_config()
-    utils.execute("cp "..filePath.." /etc/config/" .. config.UCI_COMMUNITY_NAME)
+    utils.execute("cp " .. filePath .. " /etc/config/" .. config.UCI_COMMUNITY_NAME)
     -- Run lime-config as first boot and  setup new hostname
     uci_cursor:set(config.UCI_NODE_NAME, "system", "hostname", hostname)
     fbw.end_config()
@@ -226,7 +234,7 @@ end
 
 -- Get config from lime-default file
 local function getConfig(path)
-    local uci_cursor = uci.cursor("/tmp")
+    local uci_cursor = uci.cursor(fbw.WORKDIR)
     local config = uci_cursor:get_all(path)
     if config ~= nil then
         return config
@@ -236,10 +244,10 @@ end
 
 -- List downloaded lime-community
 function fbw.read_configs()
-    local tempFiles = fs.dir("/tmp/")
+    local tempFiles = fs.dir(fbw.WORKDIR)
     local result = {}
     for file in tempFiles do
-        if (file ~= nil and file:sub(1, 12) == config.UCI_COMMUNITY_NAME) then
+        if (file ~= nil and file:match("^" .. lutils.literalize(fbw.HOST_CONFIG_PREFIX))) then
             local config = getConfig(file)
             table.insert(result, {
                 config = config,
