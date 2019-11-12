@@ -71,13 +71,13 @@ describe('FirstBootWizard tests #fbw', function()
     end)
 
     before_each('', function()
+        fbw_utils.execute('rm -f /tmp/fbw/*')
+        fbw_utils.execute('rm -f /tmp/scanning')
         uci = test_utils.setup_test_uci()
     end)
 
     after_each('', function()
         test_utils.teardown_test_uci(uci)
-        fbw_utils.execute('rm -f /tmp/fbw/*')
-        fbw_utils.execute('rm -f /tmp/scanning')
     end)
 
 end)
