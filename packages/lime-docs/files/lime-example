@@ -36,7 +36,7 @@ config lime network
 	list protocols olsr:14
 	list protocols olsr6:15
 	list protocols olsr2:16
-	lisr protocols babeld:17
+	list protocols babeld:17
 	list protocols bmx7:18
 	list resolvers 4.2.2.2 # b.resolvers.Level3.net	# DNS servers node will use
 	list resolvers 141.1.1.1 # cns1.cw.net		# Set every entry empty for using the upstream (ISP) DNS server
@@ -83,6 +83,8 @@ config lime wifi
 #	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
 #	option adhoc_mcast_rate_2ghz '24000'
 #	option adhoc_mcast_rate_5ghz '6000'
+	option ieee80211s_mcast_rate_2ghz '24000'
+	option ieee80211s_mcast_rate_5ghz '6000'
 	option ieee80211s_mesh_fwding '0'		# Settings needed only for 802.11s
 	option ieee80211s_mesh_id 'LiMe'
 #	option ieee80211s_encryption 'psk2/aes'		# in order to use encrypted mesh, the wpad-mini package have to be replaced with wpad-mesh package either manually or by the selected network-profile
