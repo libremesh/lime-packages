@@ -7,8 +7,11 @@ You may obtain a copy of the License at
     http://www.apache.org/licenses/LICENSE-3.0
 ]]--
 
+
 require "ubus"
-local json = require 'luci.json'
+require "iwinfo"
+local json = require "luci.json"
+local wireless = require "lime.wireless"
 
 local function shell(command)
     -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
@@ -65,16 +68,17 @@ end
 
 local function nodes_and_links()
   local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
-  local macs = lines(shell("iw dev | grep addr | cut -d \\  -f 2 | sort -u | head -c -1"))
+  local macs = lines(shell("cat /sys/class/net/wlan*/address | sort -u | head -c -1"))
+
   local coordinates = _get_location().location
   local iface, currneigh, _, n
 
-  local interfaces = lines(shell("iw dev | grep adhoc | cut -d \\  -f 2 | head -c -1"))
+  local interfaces = wireless.mesh_ifaces()
   local links = {}
   for _, iface in pairs(interfaces) do
-    currneigh = lines(shell("iw dev "..iface.." station dump | grep ^Station  | cut -d \\  -f2 | head -c -1"))
-    for _, n in pairs(currneigh) do
-        table.insert(links, n)
+    currneigh = iwinfo.nl80211.assoclist(iface)
+    for mac, station in pairs(currneigh) do
+        table.insert(links, string.lower(mac))
     end
   end
       result = {}
