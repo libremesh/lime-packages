@@ -8,9 +8,10 @@ utils.assert = assert
 
 UCI_CONFIG_FILES = {
 	"6relayd", "babeld", "batman-adv", "check-date", "dhcp", "dropbear", "fstab", "firewall",
-	"libremap", "lime", "lime-app", "lime-defaults", "lime-defaults-factory",
+	"libremap", "lime", "lime-app",
 	"luci", "network", "pirania", "rpcd", "shared-state", "system", "ucitrack",
-	"uhttpd", "wireless", "deferable-reboot",
+	"uhttpd", "wireless", "deferable-reboot", config.UCI_AUTOGEN_NAME, config.UCI_NODE_NAME,
+	config.UCI_COMMUNITY_NAME, config.UCI_DEFAULTS_NAME
 }
 
 function utils.disable_asserts()
@@ -74,5 +75,22 @@ function utils.get_board(name)
 	return limeutils.getBoardAsTable(board_path)
 end
 
+function utils.write_uci_file(uci, filename, content)
+    local confdir = uci:get_confdir()
+    local f = io.open(confdir .. '/' .. filename, "w")
+    f:write(content)
+    f:close()
+end
+
+function utils.read_uci_file(uci, filename)
+    local confdir = uci:get_confdir()
+    local f = io.open(confdir .. '/' .. filename, "r")
+    local content = nil
+    if f ~= nil then
+        content = f:read('*all')
+        f:close()
+    end
+    return content
+end
 
 return utils

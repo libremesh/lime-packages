@@ -36,8 +36,8 @@ define Package/$(PKG_NAME)/description
 endef
 
 define Package/$(PKG_NAME)/conffiles
-	/etc/config/lime
-	/etc/config/lime-defaults
+	/etc/config/lime-node
+	/etc/config/lime-community
 endef
 
 define Build/Compile

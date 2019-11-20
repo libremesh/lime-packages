@@ -177,13 +177,13 @@ end
 
 local function change_config (msg)
     if msg.hostname ~= nil then
-        conn:call("uci", "set", {config="lime", section="system", values= { hostname = msg.hostname }})
-        conn:call("uci", "set", {config="lime", section="network", values= {
+        conn:call("uci", "set", {config="lime-node", section="system", values= { hostname = msg.hostname }})
+        conn:call("uci", "set", {config="lime-node", section="network", values= {
             main_ipv4_address = msg.ip.ipv4,
             main_ipv6_address = msg.ip.ipv6 
         }})
-        conn:call("uci", "set", {config="lime", section="wifi", values=  msg.wireless })
-        conn:call("uci", "set", {config="lime-defaults", section="wifi", values= {
+        conn:call("uci", "set", {config="lime-node", section="wifi", values=  msg.wireless })
+        conn:call("uci", "set", {config="lime-community", section="wifi", values= {
             channel_2ghz = msg.wireless.channel_2ghz,
             channel_5ghz = msg.wireless.channel_5ghz,
             ieee80211s_mesh_id = msg.wireless.ieee80211s_mesh_id ,

@@ -52,10 +52,6 @@ else
 
 	opts = getopt( arg, "" )
 
-	if opts["reset"] or opts["r"] then
-		os.remove("/etc/config/lime")
-	end
-
 	config.main()
 
 	--! using --no-commit doesn't guarantee filesystem will not be changed
