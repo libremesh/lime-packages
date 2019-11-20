@@ -73,13 +73,17 @@ local function getDevices()
 	return shell("block info | grep -oE \"(\/mnt\/+[a-z]*[0-9])\""):gmatch("[^'\n']+")
 end
 
+local function isWritable(devicePath)
+	return fs.stat(devicePath..'/shared_state_persist_ignore_device') == nil
+end
+
 local function runPersist()
 	local selectedPath = nil
 	local selectedOption = NON_DEVICE
 
 	for mntPath in getDevices() do
 		-- Setup first device as valid
-		if selectedPath == nil and selectedOption == 2 then
+		if selectedPath == nil and selectedOption == NON_DEVICE and isWritable(mntPath) then
 			selectedOption = NEW_DEVICE
 			selectedPath = mntPath
 		end
