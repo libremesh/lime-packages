@@ -53,5 +53,11 @@ describe('LiMe Utils tests', function()
 		assert.is_true(uptime_2 >= uptime_1)
     end)
 
+	it('test read_file / write_file', function()
+		local filename = '/tmp/test_foo'
+		local content = 'bar'
+		utils.write_file(filename, content)
+		assert.is.equal(content, utils.read_file(filename))
+    end)
 
 end)

@@ -55,12 +55,8 @@ local methods = {
             function(req, msg)
                 local file = msg.file
                 local hostname = msg.hostname
-                -- apply lime config
                 conn:reply(req, { status = 'configuring' })
-                -- os.execute('sleep 2s')
                 fbw.apply_file_config(file, hostname)
-                -- remove lock?
-                -- remove_lock_file()
             end, { file = ubus.STRING, hostname = ubus.STRING }
         },
         create_network = {
@@ -68,8 +64,6 @@ local methods = {
                 local configs = {}
                 if (msg.network ~= nil) then
                     configs.ssid = msg.network
-                end
-                if (configs ~= nil) then
                     conn:reply(req, { status = 'done' })
                     fbw.apply_user_configs(configs, msg.hostname)
                     return

@@ -186,6 +186,27 @@ function utils.file_exists(name)
 	if f~=nil then io.close(f) return true else return false end
 end
 
+function utils.read_file(name)
+	local f = io.open(name,"r")
+	local ret = nil
+	if f ~= nil then
+		ret = f:read("*all")
+		f:close()
+	end
+	return ret
+end
+
+function utils.write_file(name, content)
+	local f = io.open(name, "w")
+    local ret = false
+	if f ~= nil then
+		f:write(content)
+		f:close()
+		ret = true
+	end
+	return ret
+end
+
 function utils.is_installed(pkg)
 	return utils.file_exists('/usr/lib/opkg/info/'..pkg..'.control')
 end

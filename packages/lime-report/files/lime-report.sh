@@ -28,9 +28,10 @@ generate_deviceinfo() {
 }
 
 generate_config() {
-    paste_file /etc/config/lime
+    paste_file /etc/config/lime-node
+    paste_file /etc/config/lime-community
     paste_file /etc/config/lime-defaults
-    paste_file /etc/config/lime-defaults-factory
+    paste_file /etc/config/lime-autogen
     paste_file /etc/config/network
     paste_file /etc/config/wireless
 }
