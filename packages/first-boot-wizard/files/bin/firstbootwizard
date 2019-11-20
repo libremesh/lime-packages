@@ -2,5 +2,7 @@
 
 local fbw = require('firstbootwizard')
 
-print("[FBW] Scanning...")
-fbw.get_all_networks()
+if not fbw.is_configured() then
+    print("[FBW] Scanning...")
+    fbw.get_all_networks()
+end
