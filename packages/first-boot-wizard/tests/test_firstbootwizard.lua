@@ -22,13 +22,30 @@ config lime 'wifi'
 
 describe('FirstBootWizard tests #fbw', function()
 
-    it('test start/end_scan()', function()
+    it('test start/end_scan() and check_scan_file()', function()
+        assert.is_nil(fbw.check_scan_file())
+
         fbw.start_scan_file()
         assert.are.same('true', io.open("/tmp/scanning"):read("*a"))
+        assert.is.equal('true', fbw.check_scan_file())
+
         fbw.end_scan()
         assert.are.same('false', io.open("/tmp/scanning"):read("*a"))
+        assert.is.equal('false', fbw.check_scan_file())
     end)
 
+    it('test is_configured() / mark_as_configured() ', function()
+
+        assert.is.equal(false, fbw.is_configured())
+
+        uci:set(config.UCI_NODE_NAME, 'system', 'lime')
+        fbw.mark_as_configured()
+        assert.is.equal('true', uci:get(config.UCI_NODE_NAME, 'system', 'firstbootwizard_configured'))
+
+        config.uci_autogen()
+        assert.is.equal(true, fbw.is_configured())
+
+    end)
 
     it('test get_networks()', function()
         fbw.get_networks() -- TODO
@@ -42,7 +59,9 @@ describe('FirstBootWizard tests #fbw', function()
     it('test get_networks() empty', function()
         local configs = fbw.read_configs()
         assert.is.equal(0, #configs)
+    end)
 
+    it('test get_networks() empty', function()
         utils.write_file('/tmp/fbw/lime-community__host__foonode', community_file)
 
         local configs = fbw.read_configs()
@@ -52,12 +71,13 @@ describe('FirstBootWizard tests #fbw', function()
     end)
 
     before_each('', function()
+        fbw_utils.execute('rm -f /tmp/fbw/*')
+        fbw_utils.execute('rm -f /tmp/scanning')
         uci = test_utils.setup_test_uci()
     end)
 
     after_each('', function()
         test_utils.teardown_test_uci(uci)
-        fbw_utils.execute('rm -f /tmp/fbw/*')
     end)
 
 end)

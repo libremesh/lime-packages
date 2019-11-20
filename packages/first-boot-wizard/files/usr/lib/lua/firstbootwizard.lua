@@ -5,7 +5,8 @@
 -- apply_file_config: Set lime-community and apply configurations
 -- apply_user_configs: Set a new mesh network
 -- check_scan_file: Return /tmp/scanning status
--- check_lock_file: Check /etc/first_run status
+-- is_configured: returns true if FBW has already configured the node
+-- mark_as_configured: save the status of FBW as configured (is_configured will return true)
 -- read_configs: Return scan results
 
 local json = require 'luci.jsonc'
@@ -218,18 +219,13 @@ function fbw.check_scan_file()
     return assert(file:read("*a"), nil)
 end
 
--- Read scan lock file
-function fbw.check_lock_file()
-    local file = io.open("/etc/first_run", "r")
-    if(file == nil) then
-        return false
-    end
-    return true
+function fbw.is_configured()
+    return config.get_bool('system', 'firstbootwizard_configured', false)
 end
 
--- Remove lock file
-function fbw.remove_lock_file()
-    utils.execute("rm /etc/first_run")
+function fbw.mark_as_configured()
+    local uci_cursor = config.get_uci_cursor()
+    uci_cursor:set(config.UCI_NODE_NAME, 'system', 'firstbootwizard_configured', 'true')
 end
 
 -- Get config from lime-default file
@@ -280,13 +276,15 @@ end
 
 function fbw.end_config()
     local uci_cursor = config.get_uci_cursor()
-    uci_cursor:commit(config.UCI_NODE_NAME)
+    fbw.mark_as_configured()
     fbw.log('commiting lime-node')
+    uci_cursor:commit(config.UCI_NODE_NAME)
     -- Apply new configuration
+
     os.execute("/usr/bin/lime-config")
+
     -- Start sharing lime-community and reboot
     fbw.share_defualts()
-    fbw.remove_lock_file()
     os.execute("reboot")
 end
 
