@@ -4,7 +4,7 @@ local iwinfo = require('iwinfo')
 
 local uci = nil
 
-describe('LiMe Wireless tests', function()
+describe('LiMe Wireless tests #wireless', function()
 
     it('test is5Ghz(phy) with single freq radios', function()
         iwinfo.fake.set_hwmodelist('phy0', { ["a"] = true, ["b"] = false, ["ac"] = false, ["g"] = false, ["n"] = true,})
@@ -94,6 +94,32 @@ describe('LiMe Wireless tests', function()
 		assert.is.equal(1, devices['radio2'].per_band_index)
 
     end)
+
+    it('test mesh_ifaces() tho devs 5ghz, 1 dev 2ghz', function()
+        uci:set('wireless', 'wlan0_mesh_foo', 'wifi-iface')
+        uci:set('wireless', 'wlan0_mesh_foo', 'mode', 'mesh')
+        uci:set('wireless', 'wlan0_mesh_foo', 'ifname', 'wlan0-mesh')
+
+        uci:set('wireless', 'wlan1_mesh_foo', 'wifi-iface')
+        uci:set('wireless', 'wlan1_mesh_foo', 'mode', 'adhoc')
+        uci:set('wireless', 'wlan1_mesh_foo', 'ifname', 'wlan1-adhoc')
+        uci:set('wireless', 'wlan1_mesh_foo', 'disabled', '0')
+
+        uci:set('wireless', 'wlan2_mesh_foo', 'wifi-iface')
+        uci:set('wireless', 'wlan2_mesh_foo', 'mode', 'adhoc')
+        uci:set('wireless', 'wlan2_mesh_foo', 'ifname', 'wlan2-adhoc')
+        uci:set('wireless', 'wlan2_mesh_foo', 'disabled', '1')
+
+        uci:set('wireless', 'wlan2_ap_foo', 'wifi-iface')
+        uci:set('wireless', 'wlan2_ap_foo', 'mode', 'ap')
+        uci:set('wireless', 'wlan2_ap_foo', 'ifname', 'wlan2-ap')
+        uci:set('wireless', 'wlan2_ap_foo', 'disabled', '1')
+
+        local ifaces = wireless.mesh_ifaces()
+        assert.is.equal(#ifaces, 2)
+
+    end)
+
 
     before_each('', function()
         uci = test_utils.setup_test_uci()

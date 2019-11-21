@@ -59,6 +59,18 @@ function wireless.isMode(m)
 	return wireless.availableModes[m]
 end
 
+function wireless.mesh_ifaces()
+	local uci = config.get_uci_cursor()
+	local ifaces = {}
+
+	uci:foreach("wireless", "wifi-iface", function(entry)
+			if entry.disabled ~= '1' and (entry.mode == 'mesh' or entry.mode == 'adhoc') then
+				table.insert(ifaces, entry.ifname)
+			end
+		end)
+	return ifaces
+end
+
 function wireless.createBaseWirelessIface(radio, mode, nameSuffix, extras)
 --! checks("table", "string", "?string", "?table")
 --! checks(...) come from http://lua-users.org/wiki/LuaTypeChecking -> https://github.com/fab13n/checks
