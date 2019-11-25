@@ -10,11 +10,11 @@ paste_file() {
 
 paste_cmd() {
     echo -e "\n### CMD $@\n"
-    eval $@ 2>&1
+    eval $@ 2>&1 | grep -v key | grep -v pass
 }
 
 header() {
-    paste_cmd echo $HOSTNAME
+    paste_cmd echo hostname $HOSTNAME
     paste_cmd date \'+%Y-%m-%d %H:%M:%S\'
     paste_cmd uptime
 }
