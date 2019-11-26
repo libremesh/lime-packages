@@ -68,8 +68,8 @@ config lime wifi
 	option htmode_5ghz 'HT40'
 	option distance_2ghz '100'			# Distance between the ap and the furthest client in meters, heavily affects performances
 	option distance_5ghz '1000'			# Distance between this node and the furthest connected node in meters, heavily affects performances
-	list modes 'ap'					# You can specify if the mode is applied to all radios or just some particular type, for example apname_2ghz and adhoc_5ghz to have an access point in 2ghz and the adhoc in 5ghz. These suffixes (_2ghz and _5ghz) work for all modes
-	list modes 'apname'
+	list modes 'ap_2ghz'					# You can specify if the mode is applied to all radios or just some particular type, for example apname_2ghz and adhoc_5ghz to have an access point in 2ghz and the adhoc in 5ghz. These suffixes (_2ghz and _5ghz) work for all modes
+	list modes 'apname_2ghz'
 	list modes 'ieee80211s'
 #	list modes 'adhoc'				# See below for adhoc configuration
 #	list modes 'client'				# See below for client configuration
