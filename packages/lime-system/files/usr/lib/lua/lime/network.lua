@@ -138,7 +138,15 @@ function network.setup_dns()
 	)
 	uci:save("dhcp")
 
-	fs.writefile("/etc/dnsmasq.conf", "conf-dir=/etc/dnsmasq.d\n")
+	--! some dynamic scripts prefer to use confdir=/tmp/dnsmasq.d (which is the openwrt default)
+	--! so we add all the /etc/dnsmasq.d/*.conf files as individual conf-file options instead
+	--! of using uci set confdir=/etc/dnsmasq.d
+	local dnsmasq_conf_file = ""
+	for conf_file in fs.glob("/etc/dnsmasq.d/*.conf") do
+		dnsmasq_conf_file = dnsmasq_conf_file .. "conf-file=" .. conf_file .. "\n"
+	end
+
+	fs.writefile("/etc/dnsmasq.conf", dnsmasq_conf_file)
 	fs.mkdir("/etc/dnsmasq.d")
 end
 
