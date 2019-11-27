@@ -25,7 +25,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=Network
 	TITLE:=$(PKG_NAME)
 	MAINTAINER:=Marcos Gutierrez <gmarcos@altermundi.net>
-	DEPENDS:= +ip6tables-mod-nat +ipset
+	DEPENDS:= +ip6tables-mod-nat +ipset +uhttpd-mod-lua
 	PKGARCH:=all
 endef
 
