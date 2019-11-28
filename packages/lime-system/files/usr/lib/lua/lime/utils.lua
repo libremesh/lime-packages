@@ -109,13 +109,13 @@ end
 
 function utils.applyNetTemplate16(template)
 	local netid = utils.network_id()
-	for i=1,3,1 do template = template:gsub("%%N"..i, netid[i]) end
+	for i=1,6,1 do template = template:gsub("%%N"..i, netid[i]) end
 	return template
 end
 
 function utils.applyNetTemplate10(template)
 	local netid = utils.network_id()
-	for i=1,3,1 do template = template:gsub("%%N"..i, tonumber(netid[i], 16)) end
+	for i=1,6,1 do template = template:gsub("%%N"..i, tonumber(netid[i], 16)) end
 	return template
 end
 
