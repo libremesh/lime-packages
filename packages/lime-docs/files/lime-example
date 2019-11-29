@@ -5,7 +5,7 @@
 # The options marked with "Parametrizable with %Mn, %Nn, %H"
 # can include %Mn templates that will be substituted
 # with the n'th byte of the primary_interface MAC
-# and %Nn templates that will be replaced by the n'th (n = 1,2,3) network-identifier byte,
+# and %Nn templates that will be replaced by the n'th (n = 1..5) network-identifier byte,
 # calculated from the hash of the ap_ssid value, so that all the nodes that
 # form a mesh cloud (share the same ap_ssid) will produce the same value
 # and %H template that will be replaced by hostname
@@ -73,7 +73,7 @@ config lime wifi
 	list modes 'ieee80211s'
 #	list modes 'adhoc'				# See below for adhoc configuration
 #	list modes 'client'				# See below for client configuration
-	option ap_ssid 'LibreMesh.org'			# set here your network name, **this value is required even if AP is not used**, as it is used for calculating fields with %N1, %N2, %N3
+	option ap_ssid 'LibreMesh.org'			# set here your network name, **this value is required even if AP is not used**, as it is used for calculating fields with %Nn
 #	option ap_key 'SomeWPA2PskKey'
 #	option ap_encryption 'psk2'
  	option apname_ssid 'LibreMesh.org/%H'		# a user can connect to the named AP to avoid roaming
