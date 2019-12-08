@@ -116,7 +116,7 @@ function wireless.configure()
 		local options = config.get_all("wifi")
 
 		if specRadio then
-			modes = specRadio["modes"]
+			modes = specRadio["modes"] or modes
 			options = utils.tableMelt(options, specRadio)
 		end
 
