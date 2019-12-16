@@ -10,17 +10,23 @@ feeds_file="/etc/opkg/limefeeds.conf"
   exit 0
 }
 
-[ -z "$LEDE_ARCH" ] && {
+ARCH="$OPENWRT_ARCH"
+[ -z "$ARCH" ] && { # compatibility with openwrt versions prior to 19.07
+    ARCH="$LEDE_ARCH"
+}
+
+
+[ -z "$ARCH" ] && {
   echo "Release information not available, skipping opkg configuration"
   exit 0
 }
 
 [ "$LIME_CODENAME" == "development" ] && {
-	base_url="http://snapshots.libremesh.org/packages/$LEDE_ARCH";
+	base_url="http://snapshots.libremesh.org/packages/$ARCH";
 	key_name="7546f62c3d9f56b1"
 	key_content="RWR1RvYsPZ9WsTsmoVajHX9dyl2wL7grjcfFua1q8A99RWr2gF94lRdJ"
 } || {
-	base_url="http://repo.libremesh.org/releases/$LIME_RELEASE/packages/$LEDE_ARCH"
+	base_url="http://repo.libremesh.org/releases/$LIME_RELEASE/packages/$ARCH"
 	key_name="a71b3c8285abd28b"
 	key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
 }
