@@ -101,6 +101,9 @@ config wifi radio99 # you should ensure that the chosen radio name exists, for e
 
 ## change ssid for radio99
 config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1. All the other non-specified options will be taken from the general "config lime wifi" section
+	list modes 'ap'	# the modes list has to be specified, it will not be taken from the general "config lime wifi" section
+	list modes 'apname'
+	list modes 'ieee80211s'
 	option ap_ssid 'Special'
 
 ## disable lime-config for radio99
