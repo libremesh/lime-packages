@@ -16,8 +16,10 @@
 
 config lime system
 	option hostname 'LiMe-%M4%M5%M6'		# Parametrizable with %Mn
-	option domain 'lan'				# DNS domain for the L2 cloud it could be something like mycloud.mynetwork.tld, hosts that get their IP by DHCP will also get a fully qualified domain name like hostname.mycloud.mynetwork.tld
+	option domain 'thisnode.info'				# DNS domain for the L2 cloud it could be something like mycloud.mynetwork.tld, hosts that get their IP by DHCP will also get a fully qualified domain name like hostname.mycloud.mynetwork.tld
 	option keep_on_upgrade 'libremesh base-files-essential /etc/sysupgrade.conf'	# Files defining the list of files and directories to backup when upgrade. Relative to /lib/upgrade/keep.d if no '/' defined.
+	option deferable_reboot_uptime_s '97200'
+	option firstbootwizard_configured false
 
 ### Network general option
 
@@ -26,7 +28,7 @@ config lime network
 	option main_ipv4_address '10.%N1.0.0/16'	# Here you have 4 possibilities: set a static IP and the subnet, like '10.0.2.1/16'; parametrize with %Mn and %Nn, and set the subnet, like '10.%N1.%M5.%M6/16'; set a whole network address (not a specific IP) for getting the IP autocompleted in that network with bits from MAC address, this works also with netmasks other than /24 or /16, like '10.0.128.0/17' (but not valid network addresses, for example '192.0.128.0/16' or '192.0.129.0/17' won't get parametrized); set two different parameters, the first for subnet and the second for IP parameterization, like '10.0.128.0/16/17', this results in /16 subnet but IP parametrized in a /17 range (from 10.0.128.1 to 10.0.255.254).
 	option anygw_dhcp_start '2'			# First IP in the subnet to be used for DHCP for clients. For example, if the subnet is 10.x.0.0/16 and you want the clients to get an IPv4 from a DHCP pool starting from 10.x.100.2, the start parameter will have to be 100 * 256 + 2 = 25602.
 	option anygw_dhcp_limit '0'			# Number of IPs available for DHCP. Use zero for having the DHCP pool ranging from anygw_dhcp_start up to the end of the subnet. For example, if the subnet is 10.x.0.0/16, the start of the DHCP pool is at 10.x.100.2 and you want the DHCP pool to finish at 10.x.127.254, the limit parameter will have to be (127 - 100) * 256 + (254 - 2) + 1 = 7165. Instead, if you want the DHCP pool to go from 10.x.100.2 up to 10.x.255.254 (last valid IPv4 in the /16 subnet) you can just set the limit to zero.
-	option main_ipv6_address '2a00:1508:0a%N1:%N200::/64'	# Parametrizable in the same way as main_ipv4_address. If used, the IP autocompletion will fill maximum the last 24 bits, so specifying an IP autocompletion range bigger than /104 is not useful.
+	option main_ipv6_address 'fd%N1:%N2%N3:%N4%N5::/64'	# Parametrizable in the same way as main_ipv4_address. If used, the IP autocompletion will fill maximum the last 24 bits, so specifying an IP autocompletion range bigger than /104 is not useful.
 	list protocols ieee80211s			# List of protocols configured by LiMe, some of these require the relative package "lime-proto-...". Note that if you set here some protocols, you overwrite the *whole* list of protocols set in /etc/config/lime-defaults
 	list protocols lan
 	list protocols anygw
@@ -68,7 +70,10 @@ config lime wifi
 	option htmode_5ghz 'HT40'
 	option distance_2ghz '100'			# Distance between the ap and the furthest client in meters, heavily affects performances
 	option distance_5ghz '1000'			# Distance between this node and the furthest connected node in meters, heavily affects performances
-	list modes 'ap'					# You can specify if the mode is applied to all radios or just some particular type, for example apname_2ghz and adhoc_5ghz to have an access point in 2ghz and the adhoc in 5ghz. These suffixes (_2ghz and _5ghz) work for all modes
+#	list modes 'ap_2ghz'				# You can specify if the mode is applied to all radios or just some particular type, for example apname_2ghz and adhoc_5ghz to have an access point in 2ghz and the adhoc in 5ghz. These suffixes (_2ghz and _5ghz) work for all modes
+#	list modes 'apname_2ghz'			# For networks where only dual band routers are used, AP and APname can be on the 2.4 GHz radio...
+#	list modes 'ieee80211s_5ghz'			# ...while the 5 GHz radio can be reserved for the node-to-node connections
+	list modes 'ap'
 	list modes 'apname'
 	list modes 'ieee80211s'
 #	list modes 'adhoc'				# See below for adhoc configuration
@@ -76,18 +81,18 @@ config lime wifi
 	option ap_ssid 'LibreMesh.org'			# set here your network name, **this value is required even if AP is not used**, as it is used for calculating fields with %Nn
 #	option ap_key 'SomeWPA2PskKey'
 #	option ap_encryption 'psk2'
- 	option apname_ssid 'LibreMesh.org/%H'		# a user can connect to the named AP to avoid roaming
+	option apname_ssid 'LibreMesh.org/%H'		# a user can connect to the named AP to avoid roaming
 #	option apname_key 'SomeWPA2PskKey'
 #	option apname_encryption 'psk2'
-#	option adhoc_ssid 'LiMe'			# adhoc configuration
-#	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
-#	option adhoc_mcast_rate_2ghz '24000'
-#	option adhoc_mcast_rate_5ghz '6000'
+	option adhoc_ssid 'LiMe'			# adhoc configuration
+	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
+	option adhoc_mcast_rate_2ghz '24000'
+	option adhoc_mcast_rate_5ghz '6000'
 	option ieee80211s_mcast_rate_2ghz '24000'
 	option ieee80211s_mcast_rate_5ghz '6000'
 	option ieee80211s_mesh_fwding '0'		# Settings needed only for 802.11s
 	option ieee80211s_mesh_id 'LiMe'
-#	option ieee80211s_encryption 'psk2/aes'		# in order to use encrypted mesh, the wpad-mini package have to be replaced with wpad-mesh package either manually or by the selected network-profile
+#	option ieee80211s_encryption 'psk2/aes'		# in order to use encrypted mesh, the wpad-mini package have to be replaced with wpad-mesh-wolfssl package either manually or by the selected network-profile
 #	option ieee80211s_key 'SomePsk2AESKey'
 
 
