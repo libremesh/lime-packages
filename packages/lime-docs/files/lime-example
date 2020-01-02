@@ -112,6 +112,12 @@ config wifi radio99 # you should ensure that the chosen radio name exists, for e
 config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1
 	option modes 'manual' # If you use manual protocol you must not specify other protocol, or your configuration will be broken!
 
+## decrease power output for radio99
+# decreasing the output power is rarely a good idea, do it just if you are very sure of what you are doing
+# be aware that decreasing the output power can create a "hidden node problem", see https://en.wikipedia.org/wiki/Hidden_node_problem
+config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1
+	option txpower '14' # For knowing the current txpower, use the "iwinfo" command.
+
 ## set radio99 to do only adhoc and set the channel
 config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1. All the other non-specified options will be taken from the general "config lime wifi" section
 	list modes 'adhoc'
