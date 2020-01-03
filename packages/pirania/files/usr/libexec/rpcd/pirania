@@ -83,21 +83,20 @@ local function add_visitor_voucher(msg)
     local hostname = string.gsub(hostnameOutput, "%s+", "")
     local noteHiph = string.gsub(msg.note, "%s+", "-")
     local note = string.lower(noteHiph)
-    local secret = msg.secret
-    local epoc = msg.epoc
     local key = hostname..'-visitor-'..note
+    local db = dba.load(config.db)
     result.hostname = hostname
     result.key = key
-    local vouchers = ft.map(
-        function (val)
-            local randomKey = val.key
-            local newKey = key..'-'..randomKey
-            return json.stringify(val)
+    result.vouchers = {}
+    for _, voucher in pairs (msg.vouchers) do
+        local randomKey = voucher.key
+        local newKey = key..'-'..randomKey
+        local output = { logic.add_voucher(db, newKey, voucher.voucher, voucher.epoc, 10, 10, 1) }
+        if (tonumber(output[1]) ~= 0 ) then
+            result.vouchers[_] = voucher.voucher
         end
-    , msg.vouchers)
-    local voucher = io.popen("voucher add_many_vouchers", 'w')
-    result.table = table.concat(vouchers, '\n')
-    -- result.success = assert(voucher:write(table.concat(vouchers, '\n')))
+    end
+    dba.save(config.db, db)
     printJson(result)
 end
 
