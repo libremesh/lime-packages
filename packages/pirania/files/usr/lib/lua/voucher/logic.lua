@@ -159,8 +159,17 @@ function logic.check_mac_validity(mac)
 end
 
 function logic.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)
-    local rawvoucher = dba.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)
-    return get_limit_from_rawvoucher(db, rawvoucher)
+    local exists = false
+    for _, v in pairs (db.data) do
+        if (v[2] == voucher) then
+            exists = true
+        end
+    end
+    if (exists == false) then
+        local rawvoucher = dba.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)
+        return get_limit_from_rawvoucher(db, rawvoucher)
+    end
+    return '0', '0', '0', '0'
 end
 
 function logic.valid_macs(db)
