@@ -43,7 +43,6 @@ describe('Pirania tests #voucher', function()
     it ('create same voucher', function ()
         local db = dba.load(dbFile)
         local output = { logic.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)}
-        print(luci.jsonc.stringify(output))
         assert.is.equal('0', output[2])
         utils.from_table_to_csv(dbFile, formatData(db))
     end)
