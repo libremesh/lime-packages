@@ -64,10 +64,6 @@ captive_portal.url = function(context)
     print(url)
 end
 
--- Update voucher date
-local 
-
-
 --[[
 --Checks if a context(defined by a mac and a voucher code)
 --is authorized to be used, and associates the mac to the
@@ -212,18 +208,9 @@ captive_portal.add_voucher = function(context)
     local exists = false
 
     local db = dba.load(config.db)
-    for _, v in pairs (db.data) do
-        if (v[2] == voucher) then
-            exists = true
-        end
-    end
-    if exists == false then
-        local retval = { logic.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)}
-        dba.save(config.db, db)
-        print ( unpack(retval) )
-    else
-        print(0)
-    end
+    local retval = { logic.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)}
+    dba.save(config.db, db)
+    print ( unpack(retval) )
 end
 
 captive_portal.renew_many_vouchers = function(context, data)
@@ -235,8 +222,8 @@ captive_portal.renew_many_vouchers = function(context, data)
     local vouchersToUpdate = ft.map(
         function(row, index)
             if (row[2] == voucherList.voucher) then
-                unchangedVouchers
-            else unchangedVouchers
+                return row
+            else unchangedVouchers[index] = row
             end
         end, db.data
     )

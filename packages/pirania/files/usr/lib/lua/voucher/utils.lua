@@ -52,7 +52,7 @@ utils.from_csv_to_table = function(filename)
     lines = {}
 
     fh, err = io.open(filename)
-    if err then print("OOps"); return; end
+    if err then print("Cant open file", filename); return nil; end
 
     while true do
         line = fh:read()
