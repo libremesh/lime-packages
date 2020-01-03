@@ -69,14 +69,6 @@ local function renew_many_vouchers(msg)
     printJson(output)
 end
 
-local function add_many_vouchers(msg)
-    local result = {}
-    local vouchers = ft.map(function(val) return json.stringify(val) end, msg.vouchers)
-    local voucher = io.popen("voucher add_many_vouchers", 'w')
-    result.success = assert(voucher:write(table.concat(vouchers, '\n')))
-    printJson(result)
-end
-
 local function add_visitor_voucher(msg)
     local result = {}
     local hostnameOutput = shell("cat /proc/sys/kernel/hostname")
@@ -124,29 +116,6 @@ local function add_member_voucher(msg)
         result.amountofmacsallowed = 1
     end
     dba.save(config.db, db)
-    printJson(result)
-end
-
-local function add_voucher(msg)
-    local result = {}
-    local key = msg.key
-    local secret = msg.secret
-    local epoc = msg.epoc
-    local upload = msg.upload
-    local download = msg.download
-    local amountofmacsallowed = msg.amountofmacsallowed
-    local output = shell('voucher add_voucher '..key..' '..secret..' '..epoc..' '..download..' '..upload..' '..amountofmacsallowed)
-    local parsed = string.gsub(output, "%s+", "")
-    if tonumber(parsed) == 0 then
-        result.success = false
-    else
-        result.key = key
-        result.secret = secret
-        result.epoc = epoc
-        result.upload = upload
-        result.download = download
-        result.amountofmacsallowed = amountofmacsallowed
-    end
     printJson(result)
 end
 
@@ -204,15 +173,6 @@ local methods = {
     note = 'value',
     epoc = 0
   },
-  add_voucher = {
-    key = 'value',
-    secret = 'value',
-    epoc = 0,
-    upload = 0,
-    download = 0,
-    amountofmacsallowed = 0
-  },
-  add_many_vouchers = { vouchers = 'value' },
   auth_voucher = { mac = 'value', voucher = 'value' },
   print_valid_macs = { no_params = 0 },
   list_vouchers = { no_params = 0 },
@@ -231,10 +191,8 @@ end
 if arg[1] == 'call' then
   local msg = io.read()
   msg = json.parse(msg)
-  if       arg[2] == 'add_voucher'	        then add_voucher(msg)
-  elseif   arg[2] == 'add_member_voucher'	then add_member_voucher(msg)
+  if   arg[2] == 'add_member_voucher'	then add_member_voucher(msg)
   elseif   arg[2] == 'add_visitor_voucher'	then add_visitor_voucher(msg)
-  elseif   arg[2] == 'add_many_vouchers'	then add_many_vouchers(msg)
   elseif   arg[2] == 'auth_voucher'	        then auth_voucher(msg)
   elseif   arg[2] == 'print_valid_macs'	    then print_valid_macs(msg)
   elseif   arg[2] == 'list_vouchers'	    then list_vouchers(msg)
