@@ -36,9 +36,9 @@ local function shell(command)
 end
 
 local function show_active_vouchers(msg)
+    local db = dba.load(config.db)
     local result = {}
-    result = json.parse(shell('voucher show_active_vouchers'))
-    printJson({ vouchers = result })
+    printJson(result)
 end
 
 local function list_vouchers(msg)
