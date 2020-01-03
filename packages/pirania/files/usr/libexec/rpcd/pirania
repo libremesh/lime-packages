@@ -1,0 +1,171 @@
+#!/usr/bin/env lua
+--[[
+Copyright 2018 Marcos Gutierrez <gmarcos87@gmail.com>
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-3.0
+]]--
+
+require "ubus"
+local json = require 'luci.json'
+local ft = require('voucher.functools')
+local utils = require('voucher.utils')
+local logic = require('voucher.logic')
+local dba = require('voucher.db')
+
+local uci = require('uci')
+
+local uci_cursor = uci.cursor()
+
+local function printJson (obj)
+    print(json.encode(obj))
+end
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function shell(command)
+    -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+    return result
+end
+
+local function list_vouchers(msg)
+    local result = {}
+    result = json.decode(shell('voucher list_vouchers'))
+    printJson({ vouchers = result })
+end
+
+local function renew_voucher(msg)
+    local name = msg.name
+    local date = msg.date
+    local result = {}
+    result = json.decode(shell('voucher renew_voucher '..name..' '..date))
+    printJson(result)
+  end
+
+local function remove_voucher(msg)
+  local name = msg.name
+  local result = {}
+  result = json.decode(shell('voucher remove_voucher '..name))
+  printJson(result)
+end
+
+local function add_many_vouchers(msg)
+    local result = {}
+    local vouchers = ft.map(function(val) return json.encode(val) end, msg.vouchers)
+    local voucher = io.popen("voucher add_many_vouchers", 'w')
+    result.success = assert(voucher:write(table.concat(vouchers, '\n')))
+    printJson(result)
+end
+
+local function add_voucher(msg)
+    local result = {}
+    local key = msg.key
+    local secret = msg.secret
+    local epoc = msg.epoc
+    local upload = msg.upload
+    local download = msg.download
+    local amountofmacsallowed = msg.amountofmacsallowed
+    local output = shell('voucher add_voucher '..key..' '..secret..' '..epoc..' '..download..' '..upload..' '..amountofmacsallowed)
+    local parsed = string.gsub(output, "%s+", "")
+    if tonumber(parsed) == 0 then
+        result.success = false
+    else
+        result.key = key
+        result.secret = secret
+        result.epoc = epoc
+        result.upload = upload
+        result.download = download
+        result.amountofmacsallowed = amountofmacsallowed
+    end
+    printJson(result)
+end
+
+local function auth_voucher(msg)
+    local result = {}
+    local mac = msg.mac
+    local voucher = msg.voucher
+    result.mac = mac
+    result.voucher = voucher
+    local db = dba.load(config.db)
+    local res = logic.auth_voucher(db, mac, voucher)
+    result.success = res.success
+    -- BUG: Saving to DB causes ubus to timeout
+    dba.save(config.db, db)
+    printJson(result)
+end
+
+local function print_valid_macs(msg)
+    local result = {}
+    result.macs = {}
+    local output = shell('voucher print_valid_macs')
+    for line in output:gmatch("[^\n]+") do
+        -- local words = {}
+        -- for w in line:gmatch("%S+") do if w ~= "" then table.insert(words, w) end end
+        -- local mac = words[2]
+        table.insert(result.macs, line)
+    end
+    printJson(result);
+end
+
+local function show_url(msg)
+    local result = {}
+    local url = uci_cursor:get("pirania", "base_config", "portal_url")
+    result.url = url
+    printJson(result);
+end
+
+local function change_url(msg)
+    local result = {}
+    local url = msg.url
+    uci_cursor:set("pirania", "base_config", "portal_url", url)
+    uci_cursor:commit("pirania")
+    result.url = url
+    printJson(result);
+end
+
+
+local methods = {
+  add_voucher = {
+    key = 'value',
+    secret = 'value',
+    epoc = 0,
+    upload = 0,
+    download = 0,
+    amountofmacsallowed = 0
+  },
+  add_many_vouchers = { vouchers = 'value' },
+  auth_voucher = { mac = 'value', voucher = 'value' },
+  print_valid_macs = { no_params = 0 },
+  list_vouchers = { no_params = 0 },
+  remove_voucher = { name = 'value' },
+  renew_voucher = { name = 'value', date = 0 },
+  show_url = { no_params = 0 },
+  change_url = { url = 'value' },
+}
+
+if arg[1] == 'list' then
+    printJson(methods)
+end
+
+if arg[1] == 'call' then
+  local msg = io.read()
+  msg = json.decode(msg)
+  if       arg[2] == 'add_voucher'	        then add_voucher(msg)
+  elseif   arg[2] == 'add_many_vouchers'	then add_many_vouchers(msg)
+  elseif   arg[2] == 'auth_voucher'	        then auth_voucher(msg)
+  elseif   arg[2] == 'print_valid_macs'	    then print_valid_macs(msg)
+  elseif   arg[2] == 'list_vouchers'	    then list_vouchers(msg)
+  elseif   arg[2] == 'remove_voucher'	    then remove_voucher(msg)
+  elseif   arg[2] == 'renew_voucher'	    then renew_voucher(msg)
+  elseif   arg[2] == 'show_url'	            then show_url(msg)
+  elseif   arg[2] == 'change_url'	        then change_url(msg)
+  else                                      printJson({ error = "Method not found" })
+  end
+end

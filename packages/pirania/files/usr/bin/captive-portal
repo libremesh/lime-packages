@@ -1,0 +1,133 @@
+#!/bin/sh
+# requires ip6tables-mod-nat and ipset
+
+clean_tables () {
+	echo "Cleaning captive-portal rules"
+	for ipvX in ipv4 ipv6 ; do
+		if [ "$ipvX" = "ipv4" ] ; then
+			iptables=iptables
+			family=inet
+			ipaddr=ipaddr
+		else
+			iptables=ip6tables
+			family=inet6
+			ipaddr=ip6addr
+		fi
+
+		### Cleanup
+		for interface in br-lan anygw; do
+			$iptables -t mangle -D PREROUTING -i $interface -j pirania
+		done
+
+		$iptables -t nat -D PREROUTING -j pirania
+		$iptables -t filter -D FORWARD -j pirania
+
+		for table in mangle nat filter; do
+			$iptables -t $table -F pirania
+			$iptables -t $table -X pirania
+		done
+	done
+}
+
+clean_sets () {
+	ipset flush pirania-auth-macs
+	for ipvX in ipv4 ipv6 ; do
+		ipset flush pirania-whitelist-$ipvX
+	done
+}
+
+set_iptables () {
+	echo "Apply captive-portal rules"
+
+	append_ipt_rules=$(uci get pirania.base_config.append_ipt_rules 2> /dev/null)
+	if [ "$append_ipt_rules" = "1" ] ; then
+	    AorI="A"
+	else
+	    AorI="I"
+	fi
+
+	for ipvX in ipv4 ipv6 ; do
+		if [ "$ipvX" = "ipv4" ] ; then
+			iptables=iptables
+			family=inet
+			ipaddr=ipaddr
+			anygw=$(uci get network.lm_net_br_lan_anygw_if.ipaddr)
+		else
+			iptables=ip6tables
+			family=inet6
+			ipaddr=ip6addr
+			anygw=[$(uci get network.lan.ip6addr | cut -d/ -f1)]
+		fi
+
+		### Buildup
+		for table in mangle nat filter; do
+			$iptables -t $table -N pirania
+		done
+
+		$iptables -t nat -$AorI PREROUTING -j pirania
+		$iptables -t filter -$AorI FORWARD -j pirania
+
+		for interface in $(uci get pirania.base_config.catch_interfaces); do
+			$iptables -t mangle -$AorI PREROUTING -i $interface -j pirania
+		done
+
+		$iptables -t nat -A pirania -p udp  -m set ! --match-set pirania-whitelist-$ipvX src -m set ! --match-set pirania-auth-macs src --dport 53 -j DNAT --to-destination $anygw:59053
+
+		$iptables -t mangle -A pirania -m set --match-set pirania-auth-macs src -j RETURN
+		$iptables -t mangle -A pirania -m set --match-set pirania-whitelist-$ipvX dst -j RETURN
+		$iptables -t mangle -A pirania -j MARK --set-mark 0x66/0xff  # everything not auth nor whitelisted will be marked for REJECT
+		$iptables -t mangle -A pirania -p tcp -m tcp --dport 80 -j MARK --set-mark 0x80/0xff  # unless is dport 80, re-set mark for REDIRECT
+
+		$iptables -t nat    -A pirania -p tcp -m tcp -m mark --mark 0x80/0xff -j REDIRECT --to-ports 59080
+		$iptables -t filter -A pirania -p tcp -m mark --mark 0x66/0xff -j REJECT --reject-with tcp-reset
+		$iptables -t filter -A pirania -m mark --mark 0x66/0xff -j REJECT
+	done
+}
+
+set_ipsets () {
+	ipset -exist create pirania-auth-macs hash:mac timeout 0
+	for mac in $(voucher print_valid_macs) ; do
+		ipset -exist add pirania-auth-macs $mac
+	done
+	for ipvX in ipv4 ipv6 ; do
+		if [ "$ipvX" = "ipv4" ] ; then
+			family=inet
+		else
+			family=inet6
+		fi
+		ipset -exist create pirania-whitelist-$ipvX hash:net family $family
+		for item in $(uci get pirania.base_config.whitelist_$ipvX); do
+			ipset -exist add pirania-whitelist-$ipvX $item
+		done
+	done
+}
+
+# check if captive-portal is enabled in /etc/config/pirania
+enabled=$(uci get pirania.base_config.enabled)
+
+if  [ "$1" = "start" ]; then
+	echo "Running captive-portal"
+	clean_tables
+	clean_sets
+	set_ipsets
+	set_iptables
+	exit
+elif [ "$1" = "update" ] ; then
+	clean_sets
+	set_ipsets
+	exit
+elif [ "$1" = "clean" ] || [ "$1" = "stop" ] ; then
+	clean_tables
+	clean_sets
+	exit
+elif [ "$enabled" = "1" ]; then
+	clean_tables
+	clean_sets
+	set_ipsets
+	set_iptables
+	exit
+else
+	echo "Pirania captive-portal is disabled. Try running captive-portal start"
+	exit
+fi
+
