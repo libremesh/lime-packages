@@ -63,19 +63,10 @@ local function remove_voucher(msg)
 end
 
 local function renew_many_vouchers(msg)
-    local date = msg.date
-    local result = {}
-    local vouchers = ft.map(
-        function(val)
-            local v = {}
-            v.voucher = val
-            v.date = date
-            return v
-        end, msg.vouchers)
-    result.vouchers = vouchers
-    local voucher = io.popen("voucher renew_many_vouchers", 'w')
-    result.success = assert(voucher:write(table.concat(vouchers, '\n')))
-    printJson(result)
+    local db = dba.load(config.db)
+    local output = logic.update_many_vouchers_date(msg.vouchers, msg.date, db)
+    dba.save(config.db, db)
+    printJson(output)
 end
 
 local function add_many_vouchers(msg)
