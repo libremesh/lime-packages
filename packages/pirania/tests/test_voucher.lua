@@ -40,6 +40,13 @@ describe('Pirania tests #voucher', function()
         assert.is.equal(amountofmacsallowed, tonumber(output[4]))
         utils.from_table_to_csv(dbFile, formatData(db))
     end)
+    it ('create same voucher', function ()
+        local db = dba.load(dbFile)
+        local output = { logic.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)}
+        print(luci.jsonc.stringify(output))
+        assert.is.equal('0', output[2])
+        utils.from_table_to_csv(dbFile, formatData(db))
+    end)
     it('renew voucher', function()
         local db = dba.load(dbFile)
         local index = #db.data
