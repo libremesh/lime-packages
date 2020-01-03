@@ -122,6 +122,56 @@ function logic.getIpv4AndMac()
     end
 end
 
+function logic.show_vouchers (db)
+    local result = {}
+    local vName = 1
+    local vSecret = 2
+    local vExpire = 3
+    local vMacsAllowed = 6
+    local usedMacs = 7
+    for _, v in pairs(db.data) do
+        result[_] = {}
+        local startName = 3
+        local nameInfo = {}
+        for word in v[vName]:gmatch("[^-]+") do
+            table.insert(nameInfo, word)
+        end
+        if (nameInfo[1] == 'm') then
+            result[_].type = 'member'
+        else
+            result[_].node = nameInfo[1]
+            result[_].type = 'visitor'
+            startName = 2
+        end
+        if (nameInfo[2] and startName == 3) then
+            result[_].node = nameInfo[2]
+        end
+        if (#nameInfo > startName) then
+            local t = nameInfo[startName]
+            for k,v in ipairs(nameInfo) do
+                if (k > startName) then
+                    t = t..'-'..v
+                end
+            end
+            result[_].note = t
+        else result[_].note = nameInfo[startName]
+        end
+        local expireDate = tonumber(v[vExpire]) or 0
+        if (expireDate < dateNow()) then
+            result[_].type = 'invalid'
+        end
+        result[_].name = v[vName]
+        result[_].expires = v[vExpire]
+        result[_].voucher = v[vSecret]
+        result[_].macsAllowed = v[vMacsAllowed]
+        if (#v[usedMacs] > 0) then
+            result[_].macs = split(v[usedMacs])
+        else result[_].macs = {}
+        end
+    end
+    return result
+end
+
 function logic.show_active_vouchers (db)
     local result = {}
     local vName = 1
