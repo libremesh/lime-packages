@@ -213,43 +213,6 @@ captive_portal.add_voucher = function(context)
     print ( unpack(retval) )
 end
 
-captive_portal.renew_many_vouchers = function(context, data)
-    local result = {}
-    local table = utils.split(data, "\n")
-    local db = dba.load(config.db)
-    local voucherList = ft.map(function(val) return json.encode(val) end, table)
-    local unchangedVouchers = {}
-    local vouchersToUpdate = ft.map(
-        function(row, index)
-            if (row[2] == voucherList.voucher) then
-                return row
-            else unchangedVouchers[index] = row
-            end
-        end, db.data
-    )
-    -- local vouchers = ft.map(function(val) return json.encode(val) end, vouchersToUpdate)
-    -- for _,val in pairs (table) do
-    --     local jdata = json.decode(val)
-    --     local toRenew = {}
-    --     for _, voucher in pairs (db.data) do
-    --         if (voucher[2] == jdata.voucher) then
-    --             toRenew = voucher
-    --         end
-    --     end
-    --     if (#toRenew > 0) then
-    --         result.success = true
-    --         toRenew[3] = tonumber(jdata.date)
-    --         local validVouchers = ft.filter(function(row, index) return row[2] ~= jdata.voucher end, db.data)
-    --         newDb.data = validVouchers
-    --         table.insert(newDb.data, toRenew)
-    --         else result.success = false
-    --     end
-    -- end
-    result.newDb = newDb
-    -- dba.save(config.db, newDb)
-    printJson(result)
-end
-
 captive_portal.add_many_vouchers = function(context, data)
     local result = {}
     local table = utils.split(data, "\n")
@@ -282,7 +245,7 @@ if debug.getinfo(2).name == nil then
     arguments = { ... }
     action = arguments[1]
     context = ft.filter(function(row, index) return index > 1 end, arguments)
-    if (action == 'add_many_vouchers' or action == 'renew_many_vouchers') then stdin = io.stdin:read("*all") end
+    if (action == 'add_many_vouchers') then stdin = io.stdin:read("*all") end
     captive_portal[action](context, stdin)
 end
 
