@@ -1,0 +1,18 @@
+{
+  "provider": {
+    "payday": 24,
+    "cost": "150,00",
+    "name": "Internet Service Provider Name",
+    "speed": "10Mbs"
+  },
+  "community": {
+    "payday": 20,
+    "maintenance": "200,00",
+    "reserve": "00,00",
+    "currency": "R$"
+  },
+  "member": {
+    "cost": "50,00",
+    "vouchers": 5
+  }
+}

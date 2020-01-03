@@ -15,8 +15,22 @@ local context
 
 captive_portal = {}
 
+local function shell(command)
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+    return result
+end
+
 local function printJson (obj)
     print(json.encode(obj))
+end
+
+local function dateNow()
+    local output = shell('date +%s000')
+    local parsed = string.gsub(output, "%s+", "")
+    local dateNow = tonumber(parsed)
+    return dateNow
 end
 
 local function shell(command)
@@ -51,27 +65,7 @@ captive_portal.url = function(context)
 end
 
 -- Update voucher date
-local function updateVoucher(name, date)
-    local result = {}
-    local db = dba.load(config.db)
-    local toRenew = {}
-    for _, voucher in pairs (db.data) do
-        if (voucher[1] == name) then
-            toRenew = voucher
-        end
-    end
-    if (#toRenew > 0) then
-        result.success = true
-        toRenew[3] = tonumber(date)
-        local validVouchers = ft.filter(function(row, index) return row[1] ~= name end, db.data)
-        local newDb = db
-        newDb.data = validVouchers
-        table.insert(newDb.data, toRenew)
-        dba.save(config.db, newDb)
-        else result.success = false
-    end
-    return result
-end
+local 
 
 
 --[[
@@ -97,14 +91,51 @@ end
 --[[
 --Checks if the mac of the given context is allowed to browse.
 --]]
-captive_portal.status = function(context)
+captive_portal.voucher_status = function(context)
     local mac = context[1]
 
     local db = dba.load(config.db)
-    print ( logic.status(db, mac) )
+    print ( logic.voucher_status(db, mac) )
 end
 
--- List all
+-- Show numbers of active vouchers
+captive_portal.show_active_vouchers = function()
+    local result = {}
+    local vName = 1
+    local vExpire = 3
+    local usedMacs = 7
+    members = 0
+    visitors = 0
+    local db = dba.load(config.db)
+    for _, v in pairs(db.data) do
+        local expireDate = tonumber(v[vExpire]) or 0
+        local active = function ()
+            if (#v[usedMacs] > 0) then
+                return true
+            end
+            return false
+        end
+        if (expireDate > dateNow() and active() == true) then
+            local nameInfo = {}
+            for word in v[vName]:gmatch("[^-]+") do
+                table.insert(nameInfo, word)
+            end
+            if (nameInfo[1] == 'm') then
+                local nextN = members + 1
+                members = nextN
+            else
+                local nextN = visitors + 1
+                visitors = nextN
+            end
+        end
+        result.members = members
+        result.visitors = visitors
+    end
+    printJson(result)
+end
+
+
+-- List all vouchers
 captive_portal.list_vouchers = function()
     local result = {}
     local vName = 1
@@ -115,6 +146,35 @@ captive_portal.list_vouchers = function()
     local db = dba.load(config.db)
     for _, v in pairs(db.data) do
         result[_] = {}
+        local startName = 3
+        local nameInfo = {}
+        for word in v[vName]:gmatch("[^-]+") do
+            table.insert(nameInfo, word)
+        end
+        if (nameInfo[1] == 'm') then
+            result[_].type = 'member'
+        else
+            result[_].node = nameInfo[1]
+            result[_].type = 'visitor'
+            startName = 2
+        end
+        if (nameInfo[2] and startName == 3) then
+            result[_].node = nameInfo[2]
+        end
+        if (#nameInfo > startName) then
+            local t = nameInfo[startName]
+            for k,v in ipairs(nameInfo) do
+                if (k > startName) then
+                    t = t..'-'..v
+                end
+            end
+            result[_].note = t
+        else result[_].note = nameInfo[startName]
+        end
+        local expireDate = tonumber(v[vExpire]) or 0
+        if (expireDate < dateNow()) then
+            result[_].type = 'invalid'
+        end
         result[_].name = v[vName]
         result[_].expires = v[vExpire]
         result[_].voucher = v[vSecret]
@@ -126,15 +186,17 @@ end
 
 -- Renew voucher
 captive_portal.renew_voucher = function(context)
-    local voucherName = context[1]
+    local db = dba.load(config.db)
+    local voucherSecret = context[1]
     local renewDate = context[2]
-    printJson(updateVoucher(voucherName, renewDate))
+    printJson(logic.update)
+    dba.save(config.db, newDb)
 end
 
 -- Remove voucher
 captive_portal.remove_voucher = function(context)
-    local voucherName = context[1]
-    printJson(updateVoucher(voucherName, 0))
+    local voucherSecret = context[1]
+    printJson(updateVoucher(voucherSecret, 0))
 end
 
 --[[
@@ -151,7 +213,7 @@ captive_portal.add_voucher = function(context)
 
     local db = dba.load(config.db)
     for _, v in pairs (db.data) do
-        if (v[1] == key) then
+        if (v[2] == voucher) then
             exists = true
         end
     end
@@ -162,6 +224,43 @@ captive_portal.add_voucher = function(context)
     else
         print(0)
     end
+end
+
+captive_portal.renew_many_vouchers = function(context, data)
+    local result = {}
+    local table = utils.split(data, "\n")
+    local db = dba.load(config.db)
+    local voucherList = ft.map(function(val) return json.encode(val) end, table)
+    local unchangedVouchers = {}
+    local vouchersToUpdate = ft.map(
+        function(row, index)
+            if (row[2] == voucherList.voucher) then
+                unchangedVouchers
+            else unchangedVouchers
+            end
+        end, db.data
+    )
+    -- local vouchers = ft.map(function(val) return json.encode(val) end, vouchersToUpdate)
+    -- for _,val in pairs (table) do
+    --     local jdata = json.decode(val)
+    --     local toRenew = {}
+    --     for _, voucher in pairs (db.data) do
+    --         if (voucher[2] == jdata.voucher) then
+    --             toRenew = voucher
+    --         end
+    --     end
+    --     if (#toRenew > 0) then
+    --         result.success = true
+    --         toRenew[3] = tonumber(jdata.date)
+    --         local validVouchers = ft.filter(function(row, index) return row[2] ~= jdata.voucher end, db.data)
+    --         newDb.data = validVouchers
+    --         table.insert(newDb.data, toRenew)
+    --         else result.success = false
+    --     end
+    -- end
+    result.newDb = newDb
+    -- dba.save(config.db, newDb)
+    printJson(result)
 end
 
 captive_portal.add_many_vouchers = function(context, data)
@@ -196,7 +295,7 @@ if debug.getinfo(2).name == nil then
     arguments = { ... }
     action = arguments[1]
     context = ft.filter(function(row, index) return index > 1 end, arguments)
-    if (action == 'add_many_vouchers') then stdin = io.stdin:read("*all") end
+    if (action == 'add_many_vouchers' or action == 'renew_many_vouchers') then stdin = io.stdin:read("*all") end
     captive_portal[action](context, stdin)
 end
 
