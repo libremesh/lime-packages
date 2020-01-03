@@ -1,0 +1,23 @@
+{
+    "unauthenticated": {
+        "description": "Pirania public access",
+        "write": {
+            "ubus": {
+                    "pirania-app": [ "get_clients", "read_content" ]
+            }
+        }
+    },
+    "root": {
+        "description": "Pirania administration access",
+        "write": {
+            "ubus": {
+                    "pirania-app": ["*"]
+            }
+        },
+        "read": {
+            "ubus": {
+                    "pirania-app": ["*"]
+            }
+        }
+    }
+}

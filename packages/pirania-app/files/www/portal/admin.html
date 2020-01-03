@@ -1,0 +1,124 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <title>Pirania | Admin</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/loader2.css">
+</head>
+
+<body>
+  <main class="main">
+    <a href="//thisnode.info/portal"><img id="content-logo" src="" alt="logo" /></a>
+    <div class="admin-login">
+      <form onsubmit="event.preventDefault(); adminAuth();">
+        <label>Login admin</label>
+        <br />
+        <input type="password" id="adminInput">
+        <br />
+        <input class="int-continue" type="submit">
+      </form>
+    </div>
+    <div id="tabs" class="tab-contents no-js hidden">
+      <div class="tab-nav">
+        <a href="#" class="tab-link is-active">
+          <nav class="int-listVouchers hidden"></nav>
+          <svg id="i-eye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none"
+            stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+            <circle cx="17" cy="15" r="1" />
+            <circle cx="16" cy="16" r="6" />
+            <path d="M2 16 C2 16 7 6 16 6 25 6 30 16 30 16 30 16 25 26 16 26 7 26 2 16 2 16 Z" />
+          </svg>
+        </a>
+        <a href="#" class="tab-link">
+          <nav class="int-createManyVouchers hidden"></nav>
+          <svg id="i-book" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none"
+            stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+            <path
+              d="M16 7 C16 7 9 1 2 6 L2 28 C9 23 16 28 16 28 16 28 23 23 30 28 L30 6 C23 1 16 7 16 7 Z M16 7 L16 28" />
+          </svg>
+        </a>
+        <a href="#" class="tab-link">
+          <nav class="int-changeContent hidden"></nav>
+          <svg id="i-photo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none"
+            stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+            <path d="M20 24 L12 16 2 26 2 2 30 2 30 24 M16 20 L22 14 30 22 30 30 2 30 2 24" />
+            <circle cx="10" cy="9" r="3" />
+          </svg>
+
+        </a>
+      </div>
+      <div class="tab-content is-active">
+        <button onclick="listVouchers()" id="voucher-list-button" class="hidden">
+          <svg id="i-reload" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none"
+            stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+            <path d="M29 16 C29 22 24 29 16 29 8 29 3 22 3 16 3 10 8 3 16 3 21 3 25 6 27 9 M20 10 L27 9 28 2" />
+          </svg>
+        </button>
+        <div id="voucher-list-loader">
+          <div class="lds-ring">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+        </div>
+        <div id="voucher-list"></div>
+      </div>
+      <div class="tab-content">
+        <div class="admin-create-many">
+          <form onsubmit="event.preventDefault(); createManyVouchers();">
+            <label class="int-name"></label>
+            <input type="text" id="adminManyInputKey">
+            <label class="int-days"></label>
+            <input type="number" value="1" min="1" id="adminManyInputDays">
+            <label class="int-numberOfVouchers"></label>
+            <input id="adminManyInputVouchers" type="number" value="1" min="1" max="100">
+            <input class="int-continue" type="submit">
+            <div id="voucher-create-loader" class="hidden">
+              <div class="lds-ring">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
+            </div>
+          </form>
+          <h3 id="many-result"></h3>
+        </div>
+      </div>
+      <div class="tab-content">
+        <div class="admin-content">
+          <form onsubmit="event.preventDefault(); updateContent();">
+            <label class="int-title"></label>
+            <input type="text" id="adminInputTitle">
+            <label class="int-welcome"></label>
+            <textarea rows="3" cols="50" id="adminInputWelcome"></textarea>
+            <label class="int-body"></label>
+            <textarea rows="10" cols="50" id="adminInputBody"></textarea>
+            <label class="int-backgroundColor"></label>
+            <input type="color" id="adminInputBackground">
+            <label class="int-rules"></label>
+            <textarea rows="3" cols="50" id="adminInputRules"></textarea>
+            <div id="logo-upload">
+              <input id="logo-file" type="file" accept="image/*">
+            </div>
+            <input type="submit">
+          </form>
+        </div>
+      </div>
+    </div>
+    <h4 id="error" class="hidden"></h4>
+  </main>
+  <script src="js/int.js"></script>
+  <script src="js/ubusFetch.js"></script>
+  <script src="js/content.js"></script>
+  <script src="js/tabs.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+
+</html>

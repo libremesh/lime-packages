@@ -1,0 +1,17 @@
+#!/usr/bin/lua
+
+local json = require 'luci.json'
+local voucher = require('voucher.logic')
+
+print ("Content-type: application/json\n")
+
+
+local ipv4AndMac = voucher.getIpv4AndMac()
+
+
+local response = {}
+response.ip = ipv4AndMac.ip
+response.mac = ipv4AndMac.mac
+response.valid = voucher.check_mac_validity(ipv4AndMac.mac) > 0
+
+print(json.encode(response))

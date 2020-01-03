@@ -1,0 +1,94 @@
+#!/usr/bin/env lua
+--[[
+Copyright 2018 Marcos Gutierrez <gmarcos87@gmail.com>
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-3.0
+]]--
+
+require "ubus"
+local json = require 'luci.json'
+local path = '/etc/pirania/content.json'
+
+local function printJson (obj)
+    print(json.encode(obj))
+end
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function shell(command)
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+    return result
+end
+
+local function get_clients(msg)
+    local result = {}
+    result.clients = {}
+    local output = shell("for ip in $(ip n show | grep -v IP | awk '{print $1}' | sort -ut '|' -k 1,2); do grep $ip /tmp/dhcp.leases; done")
+    for line in output:gmatch("[^\n]+") do
+        local words = {}
+        for w in line:gmatch("%S+") do if w ~= "" then table.insert(words, w) end end
+        local mac = words[2]
+        local ip = words[3]
+        local station = words[4]
+        table.insert(result.clients, { station=station, ip=ip, mac=mac })
+    end
+    printJson(result);
+end
+
+local function read_content(msg)
+    local contents = ""
+    local myTable = {}
+    local file = io.open( path, "r" )
+
+    if file then
+        -- read all contents of file into a string
+        local contents = file:read( "*a" )
+        myTable = json.decode(contents)
+        io.close( file )
+    end
+    printJson(myTable)
+end
+
+local function write_content(msg)
+    local file = io.open(path, "w")
+    if file then
+        local contents = json.encode(msg)
+        file:write( contents )
+        io.close( file )
+        read_content()
+    end
+end
+
+local methods = {
+    read_content = { no_params = 0 },
+    get_clients = { no_params = 0 },
+    write_content = {
+        title = 'value',
+        backgroundColor = 'value',
+        welcome = 'value',
+        body = 'value',
+        logo = 'value',
+        rules = 'value'
+    }
+}
+
+if arg[1] == 'list' then
+    printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = io.read()
+    msg = json.decode(msg)
+    if arg[2] == 'read_content' then read_content(msg)
+    elseif arg[2] == 'get_clients' then get_clients(msg)
+    elseif arg[2] == 'write_content' then write_content(msg)
+    else printJson({ error = "Method not found" })
+    end
+end

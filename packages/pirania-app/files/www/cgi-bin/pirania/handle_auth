@@ -1,0 +1,46 @@
+#!/usr/bin/lua
+
+local http = require('luci.http')
+local logic = require('voucher.logic')
+local dba = require('voucher.db')
+local query_string = os.getenv("QUERY_STRING")
+local db = dba.load(config.db)
+local redirect_page = require('voucher.utils').redirect_page
+local uci_cursor = require('uci').cursor()
+
+local url_authenticated = uci_cursor:get("pirania", "base_config", "url_authenticated")
+local url_fail = uci_cursor:get("pirania", "base_config", "url_fail")
+
+print("Content-type: text/html \n\n")
+
+local res = logic.getIpv4AndMac()
+params = http.urldecode_params(query_string)
+local voucher = params['voucher']
+local mac = res.mac
+local prevUrl = params['prev']
+local valid = logic.check_mac_validity(res.mac)
+
+local url = url_fail
+local output
+local success = false
+
+if (voucher and mac) then
+  local res = logic.auth_voucher(db, mac, voucher)
+  if (res.success == true or valid > 0) then
+    if (res.success == true) then
+      success = true
+    end
+    if (prevUrl ~= nil) then
+      url = 'http://'..prevUrl
+    else
+      url = url_authenticated
+    end
+   end
+end
+
+print(redirect_page(url))
+
+
+if (success == true) then
+  dba.save(config.db, db)
+end
