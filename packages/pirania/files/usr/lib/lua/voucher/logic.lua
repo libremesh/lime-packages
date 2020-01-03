@@ -2,6 +2,8 @@
 
 local dba = require('voucher.db')
 local config = require('voucher.config')
+local utils = require('voucher.utils')
+local ft = require('voucher.functools')
 
 logic = {}
 
@@ -158,7 +160,6 @@ end
 
 function logic.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)
     local rawvoucher = dba.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)
-
     return get_limit_from_rawvoucher(db, rawvoucher)
 end
 
@@ -200,7 +201,7 @@ function logic.status(db, mac)
     return '0', '0', '0', '0'
 end
 
-function update_voucher_date(secret, date, db)
+function logic.update_voucher_date(secret, date, db)
     local result = {}
     local toRenew = {}
     for _, voucher in pairs (db.data) do
