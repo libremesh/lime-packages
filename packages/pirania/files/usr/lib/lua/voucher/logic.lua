@@ -148,21 +148,6 @@ local function setIpset(mac, expiretime)
     os.execute("ipset -exist add pirania-auth-macs " .. mac .. " timeout ".. expiretime)
 end
 
-function logic.auth_voucher(db, mac, voucherid)
-    local response = {
-        success=false,
-        limit={'0', '0', '0', '0'}
-    }
-    local res = logic.check_voucher_validity(voucherid, db)
-    if (res.valid) then
-        use_voucher(db, res.voucher, mac)
-        setIpset(mac, res.voucher[3])
-        response.limit={ res.voucher[3], res.voucher[4], res.voucher[5], res.voucher[6] }
-        response.success=true
-    end
-    return response
-end
-
 function logic.check_mac_validity(mac)
     local command = 'voucher print_valid_macs | grep -o '..mac..' | wc -l | grep "[^[:blank:]]"'
     fd = io.popen(command, 'r')
@@ -214,5 +199,27 @@ function logic.status(db, mac)
 
     return '0', '0', '0', '0'
 end
+
+function update_voucher_date(secret, date, db)
+    local result = {}
+    local toRenew = {}
+    for _, voucher in pairs (db.data) do
+        if (voucher[2] == secret) then
+            toRenew = voucher
+        end
+    end
+    if (#toRenew > 0) then
+        result.success = true
+        toRenew[3] = tonumber(date)
+        local validVouchers = ft.filter(function(row, index) return row[2] ~= secret end, db.data)
+        local newDb = db
+        newDb.data = validVouchers
+        table.insert(newDb.data, toRenew)
+        else result.success = false
+    end
+    return result
+end
+
+
 
 return logic

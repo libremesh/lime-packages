@@ -27,6 +27,12 @@ local function shell(command)
     return result
 end
 
+local function show_governance(msg)
+    local result = {}
+    result = json.decode(shell('cat /etc/pirania/governance.json'))
+    printJson(result)
+end
+
 local function get_clients(msg)
     local result = {}
     result.clients = {}
@@ -76,7 +82,8 @@ local methods = {
         body = 'value',
         logo = 'value',
         rules = 'value'
-    }
+    },
+    show_governance = { no_params = 0 },
 }
 
 if arg[1] == 'list' then
@@ -86,9 +93,10 @@ end
 if arg[1] == 'call' then
     local msg = io.read()
     msg = json.decode(msg)
-    if arg[2] == 'read_content' then read_content(msg)
-    elseif arg[2] == 'get_clients' then get_clients(msg)
-    elseif arg[2] == 'write_content' then write_content(msg)
+    if      arg[2] == 'read_content'    then read_content(msg)
+    elseif  arg[2] == 'get_clients'     then get_clients(msg)
+    elseif  arg[2] == 'write_content'   then write_content(msg)
+    elseif  arg[2] == 'show_governance' then show_governance(msg)
     else printJson({ error = "Method not found" })
     end
 end
