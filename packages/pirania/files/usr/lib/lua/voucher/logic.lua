@@ -210,6 +210,29 @@ function logic.status(db, mac)
     return '0', '0', '0', '0'
 end
 
+function logic.update_many_vouchers_date(vouchers, date, db)
+    local result = {
+        success = false
+    }
+    local changed = 0
+    local newDb = {}
+    for _, voucher in pairs (db.data) do
+        for __, voucherToChange in pairs (vouchers) do
+            if (voucher[2] == voucherToChange) then
+                newDb[_] = voucher
+                newDb[_][3] = date
+                changed = changed+1
+            else
+                newDb[_] = voucher
+            end
+        end
+        result.updated = changed
+        result.success = true
+    end
+    return result
+end
+
+
 function logic.update_voucher_date(secret, date, db)
     local result = {}
     local toRenew = {}
