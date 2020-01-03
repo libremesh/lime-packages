@@ -105,7 +105,7 @@ end
 -- List all vouchers
 captive_portal.list_vouchers = function()
     local db = dba.load(config.db)
-    local result = logic.list_vouchers(db)
+    local result = logic.show_vouchers(db)
     printJson(result)
 end
 

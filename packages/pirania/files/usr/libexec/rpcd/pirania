@@ -42,9 +42,9 @@ local function show_active_vouchers(msg)
 end
 
 local function list_vouchers(msg)
-    local result = {}
-    result = json.parse(shell('voucher list_vouchers'))
-    printJson({ vouchers = result })
+    local db = dba.load(config.db)
+    local result = logic.show_vouchers(db)
+    printJson(result)
 end
 
 local function renew_voucher(msg)
