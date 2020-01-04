@@ -9,7 +9,7 @@ You may obtain a copy of the License at
 
 require "ubus"
 local json = require 'luci.json'
-local path = '/etc/pirania/content.json'
+local utils = require('voucher.utils')
 
 local function printJson (obj)
     print(json.encode(obj))
@@ -27,9 +27,10 @@ local function shell(command)
     return result
 end
 
-local function show_governance(msg)
+local function read_governance(msg)
     local result = {}
-    result = json.decode(shell('cat /etc/pirania/governance.json'))
+    local path = '/etc/pirania/governance.json'
+    result = utils.readJsonFile(path)
     printJson(result)
 end
 
@@ -49,27 +50,15 @@ local function get_clients(msg)
 end
 
 local function read_content(msg)
-    local contents = ""
-    local myTable = {}
-    local file = io.open( path, "r" )
-
-    if file then
-        -- read all contents of file into a string
-        local contents = file:read( "*a" )
-        myTable = json.decode(contents)
-        io.close( file )
-    end
-    printJson(myTable)
+    local result = {}
+    local path = '/etc/pirania/content.json'
+    result = utils.readJsonFile(path)
+    printJson(result)
 end
 
 local function write_content(msg)
-    local file = io.open(path, "w")
-    if file then
-        local contents = json.encode(msg)
-        file:write( contents )
-        io.close( file )
-        read_content()
-    end
+    local path = '/etc/pirania/content.json'
+    printJson(utils.writeJsonFile(path, msg))
 end
 
 local methods = {
@@ -83,7 +72,7 @@ local methods = {
         logo = 'value',
         rules = 'value'
     },
-    show_governance = { no_params = 0 },
+    read_governance = { no_params = 0 },
 }
 
 if arg[1] == 'list' then
@@ -96,7 +85,7 @@ if arg[1] == 'call' then
     if      arg[2] == 'read_content'    then read_content(msg)
     elseif  arg[2] == 'get_clients'     then get_clients(msg)
     elseif  arg[2] == 'write_content'   then write_content(msg)
-    elseif  arg[2] == 'show_governance' then show_governance(msg)
+    elseif  arg[2] == 'read_governance' then read_governance(msg)
     else printJson({ error = "Method not found" })
     end
 end
