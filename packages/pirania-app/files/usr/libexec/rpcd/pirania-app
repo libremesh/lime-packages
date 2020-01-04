@@ -34,6 +34,11 @@ local function read_governance(msg)
     printJson(result)
 end
 
+local function write_governance((msg)
+    local path = '/etc/pirania/governance.json'
+    printJson(utils.writeJsonFile(path, msg))
+end
+
 local function get_clients(msg)
     local result = {}
     result.clients = {}
@@ -86,6 +91,7 @@ if arg[1] == 'call' then
     elseif  arg[2] == 'get_clients'     then get_clients(msg)
     elseif  arg[2] == 'write_content'   then write_content(msg)
     elseif  arg[2] == 'read_governance' then read_governance(msg)
+    elseif  arg[2] == 'write_governance' then write_governance(msg)
     else printJson({ error = "Method not found" })
     end
 end

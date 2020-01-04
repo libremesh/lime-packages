@@ -35,17 +35,26 @@ local function shell(command)
     return result
 end
 
+local function status(msg)
+	local status = uci_cursor:get("pirania", "base_config", "enabled")
+	if (status == '1') then
+		printJson({ enabled = true })
+	else
+		printJson({ enabled = false })
+	end
+end
+
 local function enable(msg)
-		uci_cursor:set("pirania", "base_config", "enabled", '1')
+		uci_cursor:set("pirania", "base_config", "enabled", "1")
 		uci_cursor:commit("pirania")
-    shell('captive-portal start')
+    shell("captive-portal start")
     printJson({ success = true })
 end
 
 local function disable(msg)
-		uci_cursor:set("pirania", "base_config", "enabled", '0')
+		uci_cursor:set("pirania", "base_config", "enabled", "0")
 		uci_cursor:commit("pirania")
-    shell('captive-portal stop')
+    shell("captive-portal stop")
     printJson({ success = true }) 
 end
 
@@ -176,6 +185,7 @@ end
 
 
 local methods = {
+	status = { no_params = 0 },
 	enable = { no_params = 0 },
 	disable = { no_params = 0 },
   add_visitor_voucher = {
@@ -204,8 +214,9 @@ end
 
 if arg[1] == 'call' then
   local msg = io.read()
-  msg = json.parse(msg)
-  if   arg[2] == 'enable'										then enable(msg)
+	msg = json.parse(msg)
+	if   arg[2] == 'status'										then status(msg)
+	elseif   arg[2] == 'enable'								then enable(msg)
   elseif   arg[2] == 'disable'							then disable(msg)
   elseif   arg[2] == 'add_member_voucher'		then add_member_voucher(msg)
   elseif   arg[2] == 'add_visitor_voucher'	then add_visitor_voucher(msg)
