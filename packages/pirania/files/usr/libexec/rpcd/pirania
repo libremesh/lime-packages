@@ -35,6 +35,20 @@ local function shell(command)
     return result
 end
 
+local function enable(msg)
+		uci_cursor:set("pirania", "base_config", "enabled", '1')
+		uci_cursor:commit("pirania")
+    shell('captive-portal start')
+    printJson({ success = true })
+end
+
+local function disable(msg)
+		uci_cursor:set("pirania", "base_config", "enabled", '0')
+		uci_cursor:commit("pirania")
+    shell('captive-portal stop')
+    printJson({ success = true }) 
+end
+
 local function show_active_vouchers(msg)
     local db = dba.load(config.db)
     printJson(logic.show_active_vouchers(db))
@@ -162,6 +176,8 @@ end
 
 
 local methods = {
+	enable = { no_params = 0 },
+	disable = { no_params = 0 },
   add_visitor_voucher = {
     note = 'value',
     vouchers = 'value'
@@ -189,17 +205,19 @@ end
 if arg[1] == 'call' then
   local msg = io.read()
   msg = json.parse(msg)
-  if   arg[2] == 'add_member_voucher'	then add_member_voucher(msg)
+  if   arg[2] == 'enable'										then enable(msg)
+  elseif   arg[2] == 'disable'							then disable(msg)
+  elseif   arg[2] == 'add_member_voucher'		then add_member_voucher(msg)
   elseif   arg[2] == 'add_visitor_voucher'	then add_visitor_voucher(msg)
-  elseif   arg[2] == 'auth_voucher'	        then auth_voucher(msg)
-  elseif   arg[2] == 'print_valid_macs'	    then print_valid_macs(msg)
-  elseif   arg[2] == 'list_vouchers'	    then list_vouchers(msg)
+  elseif   arg[2] == 'auth_voucher'	      	then auth_voucher(msg)
+  elseif   arg[2] == 'print_valid_macs'	  	then print_valid_macs(msg)
+  elseif   arg[2] == 'list_vouchers'	    	then list_vouchers(msg)
   elseif   arg[2] == 'show_active_vouchers'	then show_active_vouchers(msg)
-  elseif   arg[2] == 'remove_voucher'	    then remove_voucher(msg)
-  elseif   arg[2] == 'renew_voucher'	    then renew_voucher(msg)
+  elseif   arg[2] == 'remove_voucher'	    	then remove_voucher(msg)
+  elseif   arg[2] == 'renew_voucher'	    	then renew_voucher(msg)
   elseif   arg[2] == 'renew_many_vouchers'	then renew_many_vouchers(msg)
   elseif   arg[2] == 'show_url'	            then show_url(msg)
-  elseif   arg[2] == 'change_url'	        then change_url(msg)
+  elseif   arg[2] == 'change_url'	        	then change_url(msg)
   else                                      printJson({ error = "Method not found" })
   end
 end
