@@ -26,8 +26,6 @@ define Package/$(PKG_NAME)
   MENU:=1
   PKGARCH:=all
   DEPENDS:=+luci-base +lime-system \
-	+PACKAGE_lime-proto-bmx6:luci-app-bmx6 \
-	+PACKAGE_lime-proto-batadv:luci-app-batman-adv \
 	+luci-mod-status +uhttpd +libiwinfo-lua \
 	+luci-theme-bootstrap +luci-i18n-base-en \
 	+LIMEWEBUI_ES:luci-i18n-base-es +LIMEWEBUI_PT:luci-i18n-base-pt \
