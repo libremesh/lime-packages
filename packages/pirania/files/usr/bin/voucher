@@ -40,17 +40,6 @@ local function shell(command)
     return result
 end
 
-local function split(inputstr, sep)
-    if sep == nil then
-            sep = "+"
-    end
-    local t={}
-    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
-            table.insert(t, str)
-    end
-    return t
-end
-
 -- Show or change portal url
 captive_portal.url = function(context)
     local url = ''

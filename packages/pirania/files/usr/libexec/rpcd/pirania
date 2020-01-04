@@ -37,14 +37,12 @@ end
 
 local function show_active_vouchers(msg)
     local db = dba.load(config.db)
-    local result = {}
-    printJson(result)
+    printJson(logic.show_active_vouchers(db))
 end
 
 local function list_vouchers(msg)
     local db = dba.load(config.db)
-    local result = logic.show_vouchers(db)
-    printJson(result)
+    printJson({ vouchers = logic.show_vouchers(db) })
 end
 
 local function renew_voucher(msg)

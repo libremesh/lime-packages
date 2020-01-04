@@ -31,7 +31,16 @@ local function dateNow()
     return dateNow
 end
 
-
+local function split(inputstr, sep)
+    if sep == nil then
+            sep = "+"
+    end
+    local t={}
+    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+            table.insert(t, str)
+    end
+    return t
+end
 
 local function use_voucher(db, voucher, mac)
     macs = voucher[7]
@@ -122,7 +131,7 @@ function logic.getIpv4AndMac()
     end
 end
 
-function logic.show_vouchers (db)
+function logic.show_vouchers(db)
     local result = {}
     local vName = 1
     local vSecret = 2
@@ -164,15 +173,12 @@ function logic.show_vouchers (db)
         result[_].expires = v[vExpire]
         result[_].voucher = v[vSecret]
         result[_].macsAllowed = v[vMacsAllowed]
-        if (#v[usedMacs] > 0) then
-            result[_].macs = split(v[usedMacs])
-        else result[_].macs = {}
-        end
+        result[_].macs = split(v[usedMacs])
     end
     return result
 end
 
-function logic.show_active_vouchers (db)
+function logic.show_active_vouchers(db)
     local result = {}
     local vName = 1
     local vExpire = 3
@@ -233,6 +239,22 @@ local function setIpset(mac, expiretime)
     if tonumber(expiretime) > 4294967 then expiretime = 4294967 end
     os.execute("ipset -exist add pirania-auth-macs " .. mac .. " timeout ".. expiretime)
 end
+
+function logic.auth_voucher(db, mac, voucherid)
+    local response = {
+        success=false,
+        limit={'0', '0', '0', '0'}
+    }
+    local res = logic.check_voucher_validity(voucherid, db)
+    if (res.valid) then
+        use_voucher(db, res.voucher, mac)
+        setIpset(mac, res.voucher[3])
+        response.limit={ res.voucher[3], res.voucher[4], res.voucher[5], res.voucher[6] }
+        response.success=true
+    end
+    return response
+end
+
 
 function logic.check_mac_validity(mac)
     local command = 'voucher print_valid_macs | grep -o '..mac..' | wc -l | grep "[^[:blank:]]"'
