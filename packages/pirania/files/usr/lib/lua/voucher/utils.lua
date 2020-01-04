@@ -49,7 +49,6 @@ utils.writeJsonFile = function(path, content)
       file:write(jsonContent)
       io.close(file)
       res.success = true
-      local res = readJsonFile(path)
   end
   return res
 end
