@@ -13,7 +13,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Luandro <luandro@gmail.com>
   SUBMENU:=3. Applications
   TITLE:=Libremesh first boot wizard ubus module
-  DEPENDS:= +ip6tables-mod-nat +ipset +uhttpd-mod-lua
+  DEPENDS:= +pirania
   PKGARCH:=all
 endef
 

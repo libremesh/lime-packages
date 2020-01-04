@@ -1,5 +1,7 @@
 #!/bin/lua
 
+local json = require('luci.jsonc')
+
 utils = {}
 
 -- Used to escape "'s by toCSV
@@ -37,13 +39,29 @@ local function fromCSV (s)
   return t
 end
 
--- Convert from table to CSV string
-local function toCSV (tt)
-  local s = ""
-  for _,p in ipairs(tt) do
-    s = s .. "," .. escapeCSV(p)
+utils.writeJsonFile = function(path, content)
+  local res = {
+      success = false
+  }
+  local file = io.open(path, "w")
+  if file then
+      local jsonContent = json.stringify(content)
+      file:write(jsonContent)
+      io.close(file)
+      res.success = true
+      local res = readJsonFile(path)
   end
-  return string.sub(s, 2)      -- remove first comma
+  return res
+end
+
+utils.readJsonFile = function(path)
+    local file = io.open( path, "r" )
+    local result = {}
+    if file then
+      local contents = file:read( "*a" )
+      result = json.parse(contents);
+    end
+    return result
 end
 
 utils.from_csv_to_table = function(filename)
@@ -64,6 +82,15 @@ utils.from_csv_to_table = function(filename)
     fh:close()
 
     return lines
+end
+
+-- Convert from table to CSV string
+local function toCSV (tt)
+  local s = ""
+  for _,p in ipairs(tt) do
+    s = s .. "," .. escapeCSV(p)
+  end
+  return string.sub(s, 2)      -- remove first comma
 end
 
 utils.from_table_to_csv = function(filename, table)
