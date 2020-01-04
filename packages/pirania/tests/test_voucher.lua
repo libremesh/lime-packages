@@ -16,6 +16,7 @@ local epoc = 1579647256049
 local upload = 10
 local download = 10
 local amountofmacsallowed = 1
+local mac = '08:8C:2C:40:51:C4'
 local renewDate = 0
 local renewManyDate = 15796472566666
 
@@ -44,6 +45,19 @@ describe('Pirania tests #voucher', function()
         local db = dba.load(dbFile)
         local output = { logic.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)}
         assert.is.equal('0', output[2])
+        utils.from_table_to_csv(dbFile, formatData(db))
+    end)
+    it ('Authenticate voucher', function ()
+        local db = dba.load(dbFile)
+        local res = logic.auth_voucher(db, mac, voucher)
+        assert.is.equal(true, res.success)
+        assert.is.equal(tostring(amountofmacsallowed), res.limit[4])
+        utils.from_table_to_csv(dbFile, formatData(db))
+    end)
+    it ('Authenticate same voucher', function ()
+        local db = dba.load(dbFile)
+        local res = logic.auth_voucher(db, mac, voucher)
+        assert.is.equal(false, res.success)
         utils.from_table_to_csv(dbFile, formatData(db))
     end)
     it('renew voucher', function()
