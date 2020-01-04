@@ -8,11 +8,11 @@ You may obtain a copy of the License at
 ]]--
 
 require "ubus"
-local json = require 'luci.json'
+local json = require 'luci.jsonc'
 local utils = require('voucher.utils')
 
 local function printJson (obj)
-    print(json.encode(obj))
+    print(json.stringify(obj))
 end
 
 local conn = ubus.connect()
@@ -34,9 +34,26 @@ local function read_governance(msg)
     printJson(result)
 end
 
-local function write_governance((msg)
+local function write_governance(msg)
     local path = '/etc/pirania/governance.json'
-    printJson(utils.writeJsonFile(path, msg))
+    local content = {}
+    content.community = {
+        currency = msg.communityCurrency,
+        maintenance = msg.communityMaintenance,
+        reserve = msg.communityReserve,
+        payday = msg.communityPayday
+    }
+    content.member = {
+        cost = msg.memberCost,
+        vouchers = msg.memberVouchers
+    }
+    content.provider = {
+        name = msg.providerName,
+        cost = msg.providerCost,
+        speed = msg.providerSpeed,
+        payday = msg.providerPayday
+    }
+    printJson(utils.writeJsonFile(path, content))
 end
 
 local function get_clients(msg)
@@ -78,6 +95,18 @@ local methods = {
         rules = 'value'
     },
     read_governance = { no_params = 0 },
+    write_governance = {
+        communityCurrency = 'value',
+        communityMaintenance = 0,
+        communityReserve = 0,
+        communityPayday = 0,
+        memberCost = 0,
+        memberVouchers = 0,
+        providerName = 'value',
+        providerCost = 0,
+        providerSpeed = 'value',
+        providerPayday = 0
+    },
 }
 
 if arg[1] == 'list' then
@@ -86,7 +115,7 @@ end
 
 if arg[1] == 'call' then
     local msg = io.read()
-    msg = json.decode(msg)
+    msg = json.parse(msg)
     if      arg[2] == 'read_content'    then read_content(msg)
     elseif  arg[2] == 'get_clients'     then get_clients(msg)
     elseif  arg[2] == 'write_content'   then write_content(msg)
