@@ -351,9 +351,8 @@ function logic.update_voucher_date(secret, date, db)
         result.success = true
         toRenew[3] = tonumber(date)
         local validVouchers = ft.filter(function(row, index) return row[2] ~= secret end, db.data)
-        local newDb = db
-        newDb.data = validVouchers
-        table.insert(newDb.data, toRenew)
+        db.data = validVouchers
+        table.insert(db.data, toRenew)
         else result.success = false
     end
     return result

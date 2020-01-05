@@ -103,14 +103,16 @@ captive_portal.renew_voucher = function(context)
     local db = dba.load(config.db)
     local voucherSecret = context[1]
     local renewDate = context[2]
-    printJson(logic.update)
-    dba.save(config.db, newDb)
+    printJson(logic.update_voucher_date(voucherSecret, renewDate))
+    dba.save(config.db, db)
 end
 
 -- Remove voucher
 captive_portal.remove_voucher = function(context)
+    local db = dba.load(config.db)
     local voucherSecret = context[1]
-    printJson(updateVoucher(voucherSecret, 0))
+    printJson(logic.update_voucher_date(voucherSecret, 0, db))
+    dba.save(config.db, db)
 end
 
 --[[

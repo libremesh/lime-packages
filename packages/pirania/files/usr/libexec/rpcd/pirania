@@ -69,18 +69,17 @@ local function list_vouchers(msg)
 end
 
 local function renew_voucher(msg)
-    local name = msg.voucher
-    local date = msg.date
-    local result = {}
-    result = json.parse(shell('voucher renew_voucher '..name..' '..date))
-    printJson(result)
-  end
+	local db = dba.load(config.db)
+	local output = logic.update_voucher_date(msg.voucher, msg.date, db)
+	dba.save(config.db, db)
+	printJson(output)
+end
 
 local function remove_voucher(msg)
-  local name = msg.voucher
-  local result = {}
-  result = json.parse(shell('voucher remove_voucher '..name))
-  printJson(result)
+	local db = dba.load(config.db)
+	local output = logic.update_voucher_date(msg.voucher, 0, db)
+	dba.save(config.db, db)
+	printJson(output)
 end
 
 local function renew_many_vouchers(msg)
