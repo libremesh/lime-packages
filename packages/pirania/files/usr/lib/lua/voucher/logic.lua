@@ -260,7 +260,7 @@ function logic.valid_macs(db)
     return macs
 end
 
-function logic.ipset_status()
+function logic.iptables_status()
     local result = {
         onStart = false,
         enabled = false
@@ -269,7 +269,7 @@ function logic.ipset_status()
 	if (status == '1') then
 		result.onStart = true
     end
-    local output = utils.shell("ipset list | grep -A 9 pirania-whitelist-ipv4 | grep -A 1 Member | sed -n 2p")
+    local output = utils.shell("iptables --list | grep tcp-reset")
     local contentLen = string.len(output)
     if (contentLen > 1) then
         result.enabled = true
