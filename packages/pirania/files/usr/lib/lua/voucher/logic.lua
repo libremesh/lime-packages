@@ -205,9 +205,10 @@ function logic.show_active_vouchers(db)
                 visitors = nextN
             end
         end
-        result.members = members
-        result.visitors = visitors
+
     end
+    result.members = members
+    result.visitors = visitors
     return result
 end
 
