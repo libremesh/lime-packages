@@ -10,13 +10,6 @@ local uci_cursor = uci.cursor()
 
 logic = {}
 
-local function shell(command)
-    local handle = io.popen(command)
-    local result = handle:read("*a")
-    handle:close()
-    return result
-end
-
 local function isMac(string)
     local string = string:match("%w%w:%w%w:%w%w:%w%w:%w%w:%w%w")
     if string then
@@ -26,21 +19,16 @@ local function isMac(string)
     end
 end
 
-
-local function dateNow()
-    local output = shell('date +%s000')
-    local parsed = string.gsub(output, "%s+", "")
-    local dateNow = tonumber(parsed)
-    return dateNow
-end
-
-local function split(inputstr, sep)
+local function split_macs(inputstr, sep)
     if sep == nil then
-            sep = "+"
+        sep = "+"
     end
     local t={}
     for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
-            table.insert(t, str)
+        table.insert(t, str)
+    end
+    if (#t < 1 and #inputstr > 1) then
+        t[1] = inputstr
     end
     return t
 end
@@ -76,7 +64,7 @@ local function get_limit_from_rawvoucher(db, rawvoucher)
         voucher = dba.describe_values (db, rawvoucher)
 
         if tonumber(voucher.expiretime) ~= nil then
-            expiretime = tostring( tonumber( voucher.expiretime ) - dateNow())
+            expiretime = tostring( tonumber( voucher.expiretime ) - utils.dateNow())
             uploadlimit = voucher.uploadlimit ~= '0' and voucher.uploadlimit or config.uploadlimit
             downloadlimit = voucher.downloadlimit ~= '0' and voucher.downloadlimit or config.downloadlimit
             currentmacs = table.getn(utils.string_split(voucher.usedmacs, '+'))
@@ -142,37 +130,12 @@ function logic.show_vouchers(db)
     local vMacsAllowed = 6
     local usedMacs = 7
     for _, v in pairs(db.data) do
-        result[_] = {}
-        local startName = 3
-        local nameInfo = {}
-        for word in v[vName]:gmatch("[^-]+") do
-            table.insert(nameInfo, word)
-        end
-        result[_].node = nameInfo[1]
-        if (nameInfo[2] == 'm') then
-            result[_].type = 'member'
-        else
-            result[_].type = 'visitor'
-        end
-        if (#nameInfo > startName) then
-            local t = nameInfo[startName]
-            for k,v in ipairs(nameInfo) do
-                if (k > startName) then
-                    t = t..'-'..v
-                end
-            end
-            result[_].note = t
-        else result[_].note = nameInfo[startName]
-        end
-        local expireDate = tonumber(v[vExpire]) or 0
-        if (expireDate < dateNow()) then
-            result[_].type = 'invalid'
-        end
+        result[_] = utils.parse_voucher_key(v[vName], v[vExpire])
         result[_].name = v[vName]
         result[_].expires = v[vExpire]
         result[_].voucher = v[vSecret]
         result[_].macsAllowed = v[vMacsAllowed]
-        result[_].macs = split(v[usedMacs])
+        result[_].macs = split_macs(v[usedMacs])
     end
     return result
 end
@@ -185,27 +148,21 @@ function logic.show_active_vouchers(db)
     members = 0
     visitors = 0
     for _, v in pairs(db.data) do
-        local expireDate = tonumber(v[vExpire]) or 0
+        local macs = split_macs(v[usedMacs])
         local active = function ()
-            if (#v[usedMacs] > 0) then
+            if (#macs > 0) then
                 return true
             end
             return false
         end
-        if (expireDate > dateNow() and active() == true) then
-            local nameInfo = {}
-            for word in v[vName]:gmatch("[^-]+") do
-                table.insert(nameInfo, word)
-            end
-            if (nameInfo[1] == 'm') then
-                local nextN = members + 1
-                members = nextN
-            else
-                local nextN = visitors + 1
-                visitors = nextN
-            end
+        local info = utils.parse_voucher_key(v[vName], v[vExpire])
+        if (info.type == 'member') then
+            local nextN = members + 1
+            members = nextN
+        elseif (info.type == 'visitor') then
+            local nextN = visitors + 1
+            visitors = nextN
         end
-
     end
     result.members = members
     result.visitors = visitors
@@ -215,7 +172,7 @@ end
 function logic.check_valid_voucher(db, row)
     local expireDate = tonumber(dba.describe_values(db, row).expiretime) or 0
     if (expireDate ~= nil) then
-        return expireDate > dateNow()
+        return expireDate > utils.dateNow()
     end
 end
 
@@ -312,7 +269,7 @@ function logic.ipset_status()
 	if (status == '1') then
 		result.onStart = true
     end
-    local output = shell("ipset list | grep -A 9 pirania-whitelist-ipv4 | grep -A 1 Member | sed -n 2p")
+    local output = utils.shell("ipset list | grep -A 9 pirania-whitelist-ipv4 | grep -A 1 Member | sed -n 2p")
     local contentLen = string.len(output)
     if (contentLen > 1) then
         result.enabled = true
