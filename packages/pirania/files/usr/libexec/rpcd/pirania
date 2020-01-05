@@ -36,24 +36,20 @@ local function shell(command)
 end
 
 local function status(msg)
-	local status = uci_cursor:get("pirania", "base_config", "enabled")
-	if (status == '1') then
-		printJson({ enabled = true })
-	else
-		printJson({ enabled = false })
-	end
+    local output = logic.ipset_status()
+    printJson(output)
 end
 
 local function enable(msg)
-		uci_cursor:set("pirania", "base_config", "enabled", "1")
-		uci_cursor:commit("pirania")
+    uci_cursor:set("pirania", "base_config", "enabled", "1")
+    uci_cursor:commit("pirania")
     shell("captive-portal start")
     printJson({ success = true })
 end
 
 local function disable(msg)
-		uci_cursor:set("pirania", "base_config", "enabled", "0")
-		uci_cursor:commit("pirania")
+    uci_cursor:set("pirania", "base_config", "enabled", "0")
+    uci_cursor:commit("pirania")
     shell("captive-portal stop")
     printJson({ success = true }) 
 end
