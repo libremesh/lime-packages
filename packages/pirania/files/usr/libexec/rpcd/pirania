@@ -28,7 +28,7 @@ if not conn then
 end
 
 local function status(msg)
-    local output = logic.ipset_status()
+    local output = logic.iptables_status()
     printJson(output)
 end
 
