@@ -4,13 +4,14 @@ local logic = require('voucher.logic')
 local utils = require('voucher.utils')
 local test_utils = require 'tests.utils'
 
--- local fs = require("nixio.fs")
+local fs = require("nixio.fs")
 
 local uci = nil
 local dbFile = '/tmp/pirania'
+local hostname = fs.readfile("/proc/sys/kernel/hostname"):gsub("\n","")
 math.randomseed(os.time())
 
-local key = 'm-belaelu-marcos-android'
+local note = 'Marcos Android'
 local voucher = tostring(math.random())
 local epoc = 1579647256049
 local upload = 10
@@ -19,6 +20,9 @@ local amountofmacsallowed = 1
 local mac = '08:8C:2C:40:51:C4'
 local renewDate = 0
 local renewManyDate = 15796472566666
+
+local memberKey = ''
+local visitorKey = ''
 
 function formatData (db)
     data = {}
@@ -33,9 +37,17 @@ function formatData (db)
 end
 
 describe('Pirania tests #voucher', function()
+    it ('Format member voucher key', function ()
+        memberKey = utils.format_voucher_key(note, 'member')
+        assert.is.equal(hostname..'-m-marcos-android', memberKey)
+    end)
+    it ('Format visitor voucher key', function ()
+        visitorKey = utils.format_voucher_key(note, 'visitor')
+        assert.is.equal(hostname..'-v-marcos-android', visitorKey)
+    end)
     it ('create voucher', function ()
         local db = dba.load(dbFile)
-        local output = { logic.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)}
+        local output = { logic.add_voucher(db, memberKey, voucher, epoc, upload, download, amountofmacsallowed)}
         assert.is.equal(upload, output[2])
         assert.is.equal(download, output[3])
         assert.is.equal(amountofmacsallowed, tonumber(output[4]))
@@ -43,7 +55,7 @@ describe('Pirania tests #voucher', function()
     end)
     it ('create same voucher', function ()
         local db = dba.load(dbFile)
-        local output = { logic.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)}
+        local output = { logic.add_voucher(db, memberKey, voucher, epoc, upload, download, amountofmacsallowed)}
         assert.is.equal('0', output[2])
         utils.from_table_to_csv(dbFile, formatData(db))
     end)
@@ -84,5 +96,7 @@ describe('Pirania tests #voucher', function()
         local db = dba.load(dbFile)
         local output = logic.show_vouchers(db)
         assert.is.equal(voucher, output[#output].voucher)
+        assert.is.equal('member', output[#output].type)
+        assert.is.equal(hostname, output[#output].node)
     end)
 end)
