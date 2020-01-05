@@ -27,14 +27,6 @@ if not conn then
     error("Failed to connect to ubus")
 end
 
-local function shell(command)
-    -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
-    local handle = io.popen(command)
-    local result = handle:read("*a")
-    handle:close()
-    return result
-end
-
 local function status(msg)
     local output = logic.ipset_status()
     printJson(output)
@@ -43,14 +35,14 @@ end
 local function enable(msg)
     uci_cursor:set("pirania", "base_config", "enabled", "1")
     uci_cursor:commit("pirania")
-    shell("captive-portal start")
+    utils.shell("captive-portal start")
     printJson({ success = true })
 end
 
 local function disable(msg)
     uci_cursor:set("pirania", "base_config", "enabled", "0")
     uci_cursor:commit("pirania")
-    shell("captive-portal stop")
+    utils.shell("captive-portal stop")
     printJson({ success = true }) 
 end
 
@@ -146,7 +138,7 @@ end
 local function print_valid_macs(msg)
     local result = {}
     result.macs = {}
-    local output = shell('voucher print_valid_macs')
+    local output = utils.shell('voucher print_valid_macs')
     for line in output:gmatch("[^\n]+") do
         -- local words = {}
         -- for w in line:gmatch("%S+") do if w ~= "" then table.insert(words, w) end end

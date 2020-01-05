@@ -15,29 +15,8 @@ local context
 
 captive_portal = {}
 
-local function shell(command)
-    local handle = io.popen(command)
-    local result = handle:read("*a")
-    handle:close()
-    return result
-end
-
 local function printJson (obj)
     print(json.encode(obj))
-end
-
-local function dateNow()
-    local output = shell('date +%s000')
-    local parsed = string.gsub(output, "%s+", "")
-    local dateNow = tonumber(parsed)
-    return dateNow
-end
-
-local function shell(command)
-    local handle = io.popen(command)
-    local result = handle:read("*a")
-    handle:close()
-    return result
 end
 
 -- Show or change portal url

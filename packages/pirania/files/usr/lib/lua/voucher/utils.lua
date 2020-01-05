@@ -5,12 +5,28 @@ local fs = require("nixio.fs")
 
 utils = {}
 
+-- Used to get shell output
+local function shell (command)
+  -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
+  local handle = io.popen(command)
+  local result = handle:read("*a")
+  handle:close()
+  return result
+end
+
 -- Used to escape "'s by toCSV
 local function escapeCSV (s)
   if string.find(s, '[,"]') then
     s = '"' .. string.gsub(s, '"', '""') .. '"'
   end
   return s
+end
+
+local function dateNow ()
+  local output = shell('date +%s000')
+  local parsed = string.gsub(output, "%s+", "")
+  local dateNow = tonumber(parsed)
+  return dateNow
 end
 
 -- Convert from CSV string to table (converts a single line of a CSV file)
@@ -138,6 +154,40 @@ utils.format_voucher_key = function (input, type)
   local result = {}
   return key
 end
+
+utils.parse_voucher_key = function (key, expire)
+  local result = {}
+  local startName = 3
+  local nameInfo = {}
+  for word in key:gmatch("[^-]+") do
+      table.insert(nameInfo, word)
+  end
+  result.node = nameInfo[1]
+  if (nameInfo[2] == 'm') then
+      result.type = 'member'
+  else
+      result.type = 'visitor'
+  end
+  if (#nameInfo > startName) then
+      local t = nameInfo[startName]
+      for k,v in ipairs(nameInfo) do
+          if (k > startName) then
+              t = t..'-'..v
+          end
+      end
+      result.note = t
+  else result.note = nameInfo[startName]
+  end
+  local expireDate = tonumber(expire) or 0
+  if (expireDate < dateNow()) then
+      result.type = 'invalid'
+  end
+  return result
+end
+
+utils.dateNow = dateNow
+
+utils.shell = shell
 
 utils.redirect_page = function(url)
   return string.format([[
