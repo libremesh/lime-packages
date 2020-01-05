@@ -1,6 +1,7 @@
 #!/bin/lua
 
 local json = require('luci.jsonc')
+local fs = require("nixio.fs")
 
 utils = {}
 
@@ -37,6 +38,15 @@ local function fromCSV (s)
     end
   until fieldstart > string.len(s)
   return t
+end
+
+-- Convert from table to CSV string
+local function toCSV (tt)
+  local s = ""
+  for _,p in ipairs(tt) do
+    s = s .. "," .. escapeCSV(p)
+  end
+  return string.sub(s, 2)      -- remove first comma
 end
 
 utils.writeJsonFile = function(path, content)
@@ -83,15 +93,6 @@ utils.from_csv_to_table = function(filename)
     return lines
 end
 
--- Convert from table to CSV string
-local function toCSV (tt)
-  local s = ""
-  for _,p in ipairs(tt) do
-    s = s .. "," .. escapeCSV(p)
-  end
-  return string.sub(s, 2)      -- remove first comma
-end
-
 utils.from_table_to_csv = function(filename, table)
     local fho, err
     -- Open a file for write
@@ -121,6 +122,21 @@ utils.split = function(string, sep)
   local ret = {}
   for token in string.gmatch(string, "[^"..sep.."]+") do table.insert(ret, token) end
   return ret
+end
+
+utils.format_voucher_key = function (input, type)
+  local hostname = fs.readfile("/proc/sys/kernel/hostname"):gsub("\n","")
+  local noteHiph = string.gsub(input, "%s+", "-")
+  local noteLower = string.lower(noteHiph)
+  local key = ''
+  if (type == 'member') then
+    key = hostname..'-m-'..noteLower
+  else
+    key = hostname..'-v-'..noteLower
+  end
+
+  local result = {}
+  return key
 end
 
 utils.redirect_page = function(url)

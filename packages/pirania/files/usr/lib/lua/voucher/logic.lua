@@ -148,15 +148,11 @@ function logic.show_vouchers(db)
         for word in v[vName]:gmatch("[^-]+") do
             table.insert(nameInfo, word)
         end
-        if (nameInfo[1] == 'm') then
+        result[_].node = nameInfo[1]
+        if (nameInfo[2] == 'm') then
             result[_].type = 'member'
         else
-            result[_].node = nameInfo[1]
             result[_].type = 'visitor'
-            startName = 2
-        end
-        if (nameInfo[2] and startName == 3) then
-            result[_].node = nameInfo[2]
         end
         if (#nameInfo > startName) then
             local t = nameInfo[startName]
@@ -343,15 +339,14 @@ function logic.update_many_vouchers_date(vouchers, date, db)
         success = false
     }
     local changed = 0
-    local newDb = {}
     for _, voucher in pairs (db.data) do
         for __, voucherToChange in pairs (vouchers) do
             if (voucher[2] == voucherToChange) then
-                newDb[_] = voucher
-                newDb[_][3] = date
+                db.data[_] = voucher
+                db.data[_][3] = date
                 changed = changed+1
             else
-                newDb[_] = voucher
+                db.data[_] = voucher
             end
         end
         result.updated = changed
