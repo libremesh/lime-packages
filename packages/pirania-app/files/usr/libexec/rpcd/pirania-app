@@ -28,10 +28,8 @@ local function shell(command)
 end
 
 local function read_governance(msg)
-    local result = {}
     local path = '/etc/pirania/governance.json'
-    result = utils.readJsonFile(path)
-    printJson(result)
+    printJson(utils.readJsonFile(path))
 end
 
 local function write_governance(msg)
@@ -57,8 +55,7 @@ local function write_governance(msg)
 end
 
 local function get_clients(msg)
-    local result = {}
-    result.clients = {}
+    local clients = {}
     local output = shell("for ip in $(ip n show | grep -v IP | awk '{print $1}' | sort -ut '|' -k 1,2); do grep $ip /tmp/dhcp.leases; done")
     for line in output:gmatch("[^\n]+") do
         local words = {}
@@ -66,16 +63,14 @@ local function get_clients(msg)
         local mac = words[2]
         local ip = words[3]
         local station = words[4]
-        table.insert(result.clients, { station=station, ip=ip, mac=mac })
+        table.insert(clients, { station=station, ip=ip, mac=mac })
     end
-    printJson(result);
+    printJson({ client });
 end
 
 local function read_content(msg)
-    local result = {}
     local path = '/etc/pirania/content.json'
-    result = utils.readJsonFile(path)
-    printJson(result)
+    printJson(utils.readJsonFile(path))
 end
 
 local function write_content(msg)
