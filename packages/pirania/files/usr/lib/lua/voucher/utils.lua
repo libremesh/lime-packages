@@ -150,8 +150,6 @@ utils.format_voucher_key = function (input, type)
   else
     key = hostname..'-v-'..noteLower
   end
-
-  local result = {}
   return key
 end
 
