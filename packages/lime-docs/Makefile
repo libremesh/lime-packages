@@ -66,21 +66,18 @@ define Build/Compile
 endef
 
 define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/www/docs/
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/en_*.txt $(1)/www/docs/
-	@ln -s /www/docs $(1)/docs
+	$(INSTALL_DIR) $(1)/docs/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/en_*.txt $(1)/docs/
 endef
 
 define Package/$(PKG_NAME)-it/install
-	$(INSTALL_DIR) $(1)/www/docs/
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/it_*.txt $(1)/www/docs/
-	@ln -s /www/docs $(1)/docs
+	$(INSTALL_DIR) $(1)/docs/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/it_*.txt $(1)/docs/
 endef
 
 define Package/$(PKG_NAME)-minimal/install
-	$(INSTALL_DIR) $(1)/www/docs/
-	$(INSTALL_DATA) ./files/lime-example $(1)/www/docs/
-	@ln -s /www/docs $(1)/docs
+	$(INSTALL_DIR) $(1)/docs/
+	$(INSTALL_DATA) ./files/lime-example $(1)/docs/
 endef
 
 $(eval $(call BuildPackage,lime-docs))
