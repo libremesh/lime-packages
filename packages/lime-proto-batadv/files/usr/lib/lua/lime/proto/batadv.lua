@@ -67,9 +67,9 @@ function batadv.setup_interface(ifname, args)
 	local mtu = 1532
 
 	--! Unless a specific integer is passed, parse network_id (%N1) template
-	--! and use that number + 16 to get a vlanId between 16 and 271 for batadv
+	--! and use that number + 50 to get a vlanId between 50 and 305 for batadv
 	--! (to avoid overlapping with other protocols)
-	if not tonumber(vlanId) then vlanId = 16 + utils.applyNetTemplate10(vlanId) end
+	if not tonumber(vlanId) then vlanId = 50 + utils.applyNetTemplate10(vlanId) end
 
 	local owrtInterfaceName, _, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 
