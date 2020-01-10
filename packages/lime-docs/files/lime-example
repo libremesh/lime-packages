@@ -30,10 +30,10 @@ config lime network
 	list protocols ieee80211s			# List of protocols configured by LiMe, some of these require the relative package "lime-proto-...". Note that if you set here some protocols, you overwrite the *whole* list of protocols set in /etc/config/lime-defaults
 	list protocols lan
 	list protocols anygw
-	list protocols batadv:%N1			# Parametrizable with %Nn (which depends from ap_ssid), note that this will range between 16 and 272
+	list protocols batadv:%N1			# Parametrizable with %Nn (which depends from ap_ssid), note that this will range between 29 and 284
 #	list protocols batadv:0				# If 0 VLAN tags are disabled and the routing is done on the raw interface
 	list protocols bmx6:13				# The VLAN type can be provided as a third argument, for example bmx6:13:8021q for using VLAN 802.1q instead of the default 802.1ad
-	list protocols olsr:14
+	list protocols olsr:14				# Do not use a VLAN ID between 29 and 284 as this range is reserved for batadv:%N1 parameterization, maximum ID is 4095
 	list protocols olsr6:15
 	list protocols olsr2:16
 	list protocols babeld:17
