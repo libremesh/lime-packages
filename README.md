@@ -37,13 +37,13 @@ Clone LEDE stable repository, nowadays is version 17.01 (Reboot).
 Add lime-packages, libremap and lime-ui-ng feeds to the default ones.
 
     cp feeds.conf.default feeds.conf
-    echo "src-git libremesh https://github.com/libremesh/lime-packages.git" >> feeds.conf
+    echo "src-git libremesh https://github.com/libremesh/lime-packages.git;17.06" >> feeds.conf
     echo "src-git libremap https://github.com/libremap/libremap-agent-openwrt.git" >> feeds.conf
     echo "src-git limeui https://github.com/libremesh/lime-ui-ng.git" >> feeds.conf
 
 If you want to use a specific branch of lime-packages specify it adding ;nameofthebranch at the end of the relative line. For example:
 
-    src-git lime https://github.com/libremesh/lime-packages.git;17.06
+    src-git lime https://github.com/libremesh/lime-packages.git;master
 
 Download the new packages.
 
