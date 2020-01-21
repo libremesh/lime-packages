@@ -1,6 +1,18 @@
 #!/bin/lua
 
+local json = require('luci.jsonc')
+local fs = require("nixio.fs")
+
 utils = {}
+
+-- Used to get shell output
+local function shell (command)
+  -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
+  local handle = io.popen(command)
+  local result = handle:read("*a")
+  handle:close()
+  return result
+end
 
 -- Used to escape "'s by toCSV
 local function escapeCSV (s)
@@ -8,6 +20,13 @@ local function escapeCSV (s)
     s = '"' .. string.gsub(s, '"', '""') .. '"'
   end
   return s
+end
+
+local function dateNow ()
+  local output = shell('date +%s000')
+  local parsed = string.gsub(output, "%s+", "")
+  local dateNow = tonumber(parsed)
+  return dateNow
 end
 
 -- Convert from CSV string to table (converts a single line of a CSV file)
@@ -46,13 +65,37 @@ local function toCSV (tt)
   return string.sub(s, 2)      -- remove first comma
 end
 
+utils.writeJsonFile = function(path, content)
+  local res = {
+      success = false
+  }
+  local file = io.open(path, "w")
+  if file then
+      local jsonContent = json.stringify(content)
+      file:write(jsonContent)
+      io.close(file)
+      res.success = true
+  end
+  return res
+end
+
+utils.readJsonFile = function(path)
+    local file = io.open( path, "r" )
+    local result = {}
+    if file then
+      local contents = file:read( "*a" )
+      result = json.parse(contents);
+    end
+    return result
+end
+
 utils.from_csv_to_table = function(filename)
     local line, lines, fh, err
 
     lines = {}
 
     fh, err = io.open(filename)
-    if err then print("OOps"); return; end
+    if err then print("Cant open file", filename); return nil; end
 
     while true do
         line = fh:read()
@@ -96,6 +139,53 @@ utils.split = function(string, sep)
   for token in string.gmatch(string, "[^"..sep.."]+") do table.insert(ret, token) end
   return ret
 end
+
+utils.format_voucher_key = function (input, type)
+  local hostname = fs.readfile("/proc/sys/kernel/hostname"):gsub("\n","")
+  local noteHiph = string.gsub(input, "%s+", "-")
+  local noteLower = string.lower(noteHiph)
+  local key = ''
+  if (type == 'member') then
+    key = hostname..'-m-'..noteLower
+  else
+    key = hostname..'-v-'..noteLower
+  end
+  return key
+end
+
+utils.parse_voucher_key = function (key, expire)
+  local result = {}
+  local startName = 3
+  local nameInfo = {}
+  for word in key:gmatch("[^-]+") do
+      table.insert(nameInfo, word)
+  end
+  result.node = nameInfo[1]
+  if (nameInfo[2] == 'm') then
+      result.type = 'member'
+  else
+      result.type = 'visitor'
+  end
+  if (#nameInfo > startName) then
+      local t = nameInfo[startName]
+      for k,v in ipairs(nameInfo) do
+          if (k > startName) then
+              t = t..'-'..v
+          end
+      end
+      result.note = t
+  else result.note = nameInfo[startName]
+  end
+  local expireDate = tonumber(expire) or 0
+  if (expireDate < dateNow()) then
+      result.type = 'invalid'
+  end
+  return result
+end
+
+utils.dateNow = dateNow
+
+utils.shell = shell
 
 utils.redirect_page = function(url)
   return string.format([[

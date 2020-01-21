@@ -11,6 +11,7 @@ local function read_db_from_csv(dbinfo)
     if rawtable == nil then
         fho,err = io.open(dbinfo, "w")
         fho:write('key,voucher,expiretime,uploadlimit,downloadlimit,amountofmacsallowed,usedmacs,')
+        fho:close()
         rawtable = utils.from_csv_to_table(dbinfo);
     end
     local table = {

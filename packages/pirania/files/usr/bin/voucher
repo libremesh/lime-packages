@@ -19,24 +19,6 @@ local function printJson (obj)
     print(json.encode(obj))
 end
 
-local function shell(command)
-    local handle = io.popen(command)
-    local result = handle:read("*a")
-    handle:close()
-    return result
-end
-
-local function split(inputstr, sep)
-    if sep == nil then
-            sep = "+"
-    end
-    local t={}
-    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
-            table.insert(t, str)
-    end
-    return t
-end
-
 -- Show or change portal url
 captive_portal.url = function(context)
     local url = ''
@@ -49,30 +31,6 @@ captive_portal.url = function(context)
     end
     print(url)
 end
-
--- Update voucher date
-local function updateVoucher(name, date)
-    local result = {}
-    local db = dba.load(config.db)
-    local toRenew = {}
-    for _, voucher in pairs (db.data) do
-        if (voucher[1] == name) then
-            toRenew = voucher
-        end
-    end
-    if (#toRenew > 0) then
-        result.success = true
-        toRenew[3] = tonumber(date)
-        local validVouchers = ft.filter(function(row, index) return row[1] ~= name end, db.data)
-        local newDb = db
-        newDb.data = validVouchers
-        table.insert(newDb.data, toRenew)
-        dba.save(config.db, newDb)
-        else result.success = false
-    end
-    return result
-end
-
 
 --[[
 --Checks if a context(defined by a mac and a voucher code)
@@ -97,44 +55,43 @@ end
 --[[
 --Checks if the mac of the given context is allowed to browse.
 --]]
-captive_portal.status = function(context)
+captive_portal.voucher_status = function(context)
     local mac = context[1]
 
     local db = dba.load(config.db)
-    print ( logic.status(db, mac) )
+    print ( logic.voucher_status(db, mac) )
 end
 
--- List all
-captive_portal.list_vouchers = function()
-    local result = {}
-    local vName = 1
-    local vSecret = 2
-    local vExpire = 3
-    local vMacsAllowed = 6
-    local usedMacs = 7
+-- Show numbers of active vouchers
+captive_portal.show_active_vouchers = function()
     local db = dba.load(config.db)
-    for _, v in pairs(db.data) do
-        result[_] = {}
-        result[_].name = v[vName]
-        result[_].expires = v[vExpire]
-        result[_].voucher = v[vSecret]
-        result[_].macsAllowed = v[vMacsAllowed]
-        result[_].macs = split(v[usedMacs])
-    end
+    local result = logic.show_active_vouchers(db)
+    printJson(result)
+end
+
+
+-- List all vouchers
+captive_portal.list_vouchers = function()
+    local db = dba.load(config.db)
+    local result = logic.show_vouchers(db)
     printJson(result)
 end
 
 -- Renew voucher
 captive_portal.renew_voucher = function(context)
-    local voucherName = context[1]
+    local db = dba.load(config.db)
+    local voucherSecret = context[1]
     local renewDate = context[2]
-    printJson(updateVoucher(voucherName, renewDate))
+    printJson(logic.update_voucher_date(voucherSecret, renewDate))
+    dba.save(config.db, db)
 end
 
 -- Remove voucher
 captive_portal.remove_voucher = function(context)
-    local voucherName = context[1]
-    printJson(updateVoucher(voucherName, 0))
+    local db = dba.load(config.db)
+    local voucherSecret = context[1]
+    printJson(logic.update_voucher_date(voucherSecret, 0, db))
+    dba.save(config.db, db)
 end
 
 --[[
@@ -150,18 +107,9 @@ captive_portal.add_voucher = function(context)
     local exists = false
 
     local db = dba.load(config.db)
-    for _, v in pairs (db.data) do
-        if (v[1] == key) then
-            exists = true
-        end
-    end
-    if exists == false then
-        local retval = { logic.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)}
-        dba.save(config.db, db)
-        print ( unpack(retval) )
-    else
-        print(0)
-    end
+    local retval = { logic.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)}
+    dba.save(config.db, db)
+    print ( unpack(retval) )
 end
 
 captive_portal.add_many_vouchers = function(context, data)

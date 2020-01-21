@@ -8,11 +8,11 @@ You may obtain a copy of the License at
 ]]--
 
 require "ubus"
-local json = require 'luci.json'
-local path = '/etc/pirania/content.json'
+local json = require 'luci.jsonc'
+local utils = require('voucher.utils')
 
 local function printJson (obj)
-    print(json.encode(obj))
+    print(json.stringify(obj))
 end
 
 local conn = ubus.connect()
@@ -27,9 +27,35 @@ local function shell(command)
     return result
 end
 
+local function read_governance(msg)
+    local path = '/etc/pirania/governance.json'
+    printJson(utils.readJsonFile(path))
+end
+
+local function write_governance(msg)
+    local path = '/etc/pirania/governance.json'
+    local content = {}
+    content.community = {
+        currency = msg.communityCurrency,
+        maintenance = msg.communityMaintenance,
+        reserve = msg.communityReserve,
+        payday = msg.communityPayday
+    }
+    content.member = {
+        cost = msg.memberCost,
+        vouchers = msg.memberVouchers
+    }
+    content.provider = {
+        name = msg.providerName,
+        cost = msg.providerCost,
+        speed = msg.providerSpeed,
+        payday = msg.providerPayday
+    }
+    printJson(utils.writeJsonFile(path, content))
+end
+
 local function get_clients(msg)
-    local result = {}
-    result.clients = {}
+    local clients = {}
     local output = shell("for ip in $(ip n show | grep -v IP | awk '{print $1}' | sort -ut '|' -k 1,2); do grep $ip /tmp/dhcp.leases; done")
     for line in output:gmatch("[^\n]+") do
         local words = {}
@@ -37,33 +63,19 @@ local function get_clients(msg)
         local mac = words[2]
         local ip = words[3]
         local station = words[4]
-        table.insert(result.clients, { station=station, ip=ip, mac=mac })
+        table.insert(clients, { station=station, ip=ip, mac=mac })
     end
-    printJson(result);
+    printJson({ client });
 end
 
 local function read_content(msg)
-    local contents = ""
-    local myTable = {}
-    local file = io.open( path, "r" )
-
-    if file then
-        -- read all contents of file into a string
-        local contents = file:read( "*a" )
-        myTable = json.decode(contents)
-        io.close( file )
-    end
-    printJson(myTable)
+    local path = '/etc/pirania/content.json'
+    printJson(utils.readJsonFile(path))
 end
 
 local function write_content(msg)
-    local file = io.open(path, "w")
-    if file then
-        local contents = json.encode(msg)
-        file:write( contents )
-        io.close( file )
-        read_content()
-    end
+    local path = '/etc/pirania/content.json'
+    printJson(utils.writeJsonFile(path, msg))
 end
 
 local methods = {
@@ -76,7 +88,20 @@ local methods = {
         body = 'value',
         logo = 'value',
         rules = 'value'
-    }
+    },
+    read_governance = { no_params = 0 },
+    write_governance = {
+        communityCurrency = 'value',
+        communityMaintenance = 0,
+        communityReserve = 0,
+        communityPayday = 0,
+        memberCost = 0,
+        memberVouchers = 0,
+        providerName = 'value',
+        providerCost = 0,
+        providerSpeed = 'value',
+        providerPayday = 0
+    },
 }
 
 if arg[1] == 'list' then
@@ -85,10 +110,12 @@ end
 
 if arg[1] == 'call' then
     local msg = io.read()
-    msg = json.decode(msg)
-    if arg[2] == 'read_content' then read_content(msg)
-    elseif arg[2] == 'get_clients' then get_clients(msg)
-    elseif arg[2] == 'write_content' then write_content(msg)
+    msg = json.parse(msg)
+    if      arg[2] == 'read_content'    then read_content(msg)
+    elseif  arg[2] == 'get_clients'     then get_clients(msg)
+    elseif  arg[2] == 'write_content'   then write_content(msg)
+    elseif  arg[2] == 'read_governance' then read_governance(msg)
+    elseif  arg[2] == 'write_governance' then write_governance(msg)
     else printJson({ error = "Method not found" })
     end
 end
