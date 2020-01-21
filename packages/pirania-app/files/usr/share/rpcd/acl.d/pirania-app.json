@@ -1,9 +1,17 @@
 {
     "unauthenticated": {
         "description": "Pirania public access",
-        "write": {
+        "read": {
             "ubus": {
-                    "pirania-app": [ "get_clients", "read_content" ]
+                    "pirania-app": [ "get_clients", "read_content", "read_governance" ]
+            }
+        }
+    },
+    "lime-app": {
+        "description": "lime-app public access",
+        "read": {
+            "ubus": {
+                    "pirania-app": [ "get_clients", "read_content", "read_governance" ]
             }
         }
     },
