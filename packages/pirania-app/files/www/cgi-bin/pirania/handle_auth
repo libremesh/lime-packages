@@ -3,6 +3,7 @@
 local http = require('luci.http')
 local logic = require('voucher.logic')
 local dba = require('voucher.db')
+local config = require('voucher.config')
 local query_string = os.getenv("QUERY_STRING")
 local db = dba.load(config.db)
 local redirect_page = require('voucher.utils').redirect_page

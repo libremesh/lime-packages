@@ -2,6 +2,7 @@
 
 local http = require('luci.http')
 local logic = require('voucher.logic')
+local config = require('voucher.config')
 local redirect_page = require('voucher.utils').redirect_page
 local uci_cursor = require('uci').cursor()
 local dba = require('voucher.db')
