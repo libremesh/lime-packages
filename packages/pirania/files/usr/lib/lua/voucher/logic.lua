@@ -213,12 +213,15 @@ function logic.auth_voucher(db, mac, voucherid)
 end
 
 
-function logic.check_mac_validity(mac)
-    local command = 'voucher print_valid_macs | grep -o '..mac..' | wc -l | grep "[^[:blank:]]"'
-    fd = io.popen(command, 'r')
-    local output = fd:read('*all')
-    fd:close()
-    return tonumber(output)
+function logic.check_mac_validity(db, mac)
+    local macs = logic.valid_macs(db)
+    local mac_in_valid_vouchers = 0
+    for _, valid_mac in ipairs(macs) do
+        if mac == valid_mac then
+            mac_in_valid_vouchers = mac_in_valid_vouchers + 1
+        end
+    end
+    return mac_in_valid_vouchers
 end
 
 function logic.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)
