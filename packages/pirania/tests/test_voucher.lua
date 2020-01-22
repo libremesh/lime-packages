@@ -9,7 +9,7 @@ local fs = require("nixio.fs")
 local uci = nil
 local dbFile = '/tmp/pirania'
 local hostname = fs.readfile("/proc/sys/kernel/hostname"):gsub("\n","")
-math.randomseed(os.time())
+math.randomseed(0)
 
 local note = 'Marcos Android'
 local voucherId = tostring(math.random())
