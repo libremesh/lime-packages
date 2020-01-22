@@ -125,8 +125,7 @@ describe('Pirania tests #voucher', function()
     it('check mac validity', function()
         create_test_voucher()
         local db = dba.load(dbFile)
-
-
+        stub(logic, "_setIpset", function () end)
         assert.is.equal(0, logic.check_mac_validity(db, mac))
 
         -- use the voucher
