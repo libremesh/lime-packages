@@ -121,6 +121,20 @@ describe('Pirania tests #voucher', function()
         assert.is.equal(hostname, output[#output].node)
     end)
 
+    it('check mac validity', function()
+        create_test_voucher()
+        local db = dba.load(dbFile)
+
+
+        assert.is.equal(0, logic.check_mac_validity(db, mac))
+
+        -- use the voucher
+
+        local res = logic.auth_voucher(db, mac, voucherId)
+        assert.is.equal(1, logic.check_mac_validity(db, mac))
+        assert.is.equal(0, logic.check_mac_validity(db, 'AA:BB:CC:DD:EE:FF'))
+    end)
+
     before_each('', function()
         local p = io.popen("rm -f " .. dbFile)
         p:read('*all')
