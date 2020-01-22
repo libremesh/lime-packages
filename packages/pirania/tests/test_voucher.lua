@@ -13,7 +13,7 @@ math.randomseed(os.time())
 
 local note = 'Marcos Android'
 local voucherId = tostring(math.random())
-local expirationEpocMs = utils.dateNow() + 600
+local expirationEpocMs = utils.dateNow() + (600 * 1000)
 local upload = 10
 local download = 10
 local amountofmacsallowed = 1
