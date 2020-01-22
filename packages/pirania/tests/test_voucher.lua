@@ -21,8 +21,8 @@ local mac = '08:8C:2C:40:51:C4'
 local renewDate = 0
 local renewManyDate = 15796472566666
 
-local memberKey = ''
-local visitorKey = ''
+local memberKey = 'mynotebook-m-marcos-android'
+local visitorKey = 'mynotebook-v-marcos-android'
 
 function formatData (db)
     data = {}
@@ -46,11 +46,11 @@ local snapshot
 
 describe('Pirania tests #voucher', function()
     it ('format member voucher key', function ()
-        memberKey = utils.format_voucher_key(note, 'member')
+        local memberKey = utils.format_voucher_key(note, 'member')
         assert.is.equal(hostname..'-m-marcos-android', memberKey)
     end)
     it ('format visitor voucher key', function ()
-        visitorKey = utils.format_voucher_key(note, 'visitor')
+        local visitorKey = utils.format_voucher_key(note, 'visitor')
         assert.is.equal(hostname..'-v-marcos-android', visitorKey)
     end)
     it ('create voucher', function ()
@@ -119,7 +119,7 @@ describe('Pirania tests #voucher', function()
         local output = logic.show_vouchers(db)
         assert.is.equal(voucherId, output[#output].voucher)
         assert.is.equal('member', output[#output].type)
-        assert.is.equal(hostname, output[#output].node)
+        assert.is.equal('mynotebook', output[#output].node)
     end)
 
     it('check mac validity', function()
