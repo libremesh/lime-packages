@@ -231,7 +231,7 @@ function logic.add_voucher(db, key, voucher, epoc, upload, download, amountofmac
             exists = true
         end
     end
-    if (exists == false) then
+    if not exists then
         local rawvoucher = dba.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)
         return get_limit_from_rawvoucher(db, rawvoucher)
     end
