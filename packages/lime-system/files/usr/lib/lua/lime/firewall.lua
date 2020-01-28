@@ -64,8 +64,14 @@ function firewall.configure()
 		fs.writefile(
 			firewall.RULES_DIR.."/20-lime-system-mtu_fix",
 			"\n" ..
+		--! Workaround PMTU discovery being historically broken on IPv4 Internet
 		"iptables -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" ..
-		"iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
+		"iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" ..
+
+		--! For some reason with some websites like https://www.rt.com/ PMTU
+		--! discovery doesn't work even for IPv6, so workaround this too
+		"ip6tables -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" ..
+		"ip6tables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 		)
 	end
 end
