@@ -191,9 +191,9 @@ function logic.check_voucher_validity(voucherid, db)
     return res
 end
 
-local function setIpset(mac, expiretime)
-    -- ipset only supports timeout up to 4294967
-    if tonumber(expiretime) > 4294967 then expiretime = 4294967 end
+function logic._setIpset(mac, expiretime)
+    local IPSET_MAX_TIMEOUT = 4294967 -- ipset only supports timeout up to 4294967
+    if tonumber(expiretime) > IPSET_MAX_TIMEOUT then expiretime = IPSET_MAX_TIMEOUT end
     os.execute("ipset -exist add pirania-auth-macs " .. mac .. " timeout ".. expiretime)
 end
 
@@ -205,7 +205,7 @@ function logic.auth_voucher(db, mac, voucherid)
     local res = logic.check_voucher_validity(voucherid, db)
     if (res.valid) then
         use_voucher(db, res.voucher, mac)
-        setIpset(mac, res.voucher[3])
+        logic._setIpset(mac, res.voucher[3])
         response.limit={ res.voucher[3], res.voucher[4], res.voucher[5], res.voucher[6] }
         response.success=true
     end
@@ -213,12 +213,15 @@ function logic.auth_voucher(db, mac, voucherid)
 end
 
 
-function logic.check_mac_validity(mac)
-    local command = 'voucher print_valid_macs | grep -o '..mac..' | wc -l | grep "[^[:blank:]]"'
-    fd = io.popen(command, 'r')
-    local output = fd:read('*all')
-    fd:close()
-    return tonumber(output)
+function logic.check_mac_validity(db, mac)
+    local macs = logic.valid_macs(db)
+    local mac_in_valid_vouchers = 0
+    for _, valid_mac in ipairs(macs) do
+        if mac == valid_mac then
+            mac_in_valid_vouchers = mac_in_valid_vouchers + 1
+        end
+    end
+    return mac_in_valid_vouchers
 end
 
 function logic.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)
@@ -228,7 +231,7 @@ function logic.add_voucher(db, key, voucher, epoc, upload, download, amountofmac
             exists = true
         end
     end
-    if (exists == false) then
+    if not exists then
         local rawvoucher = dba.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)
         return get_limit_from_rawvoucher(db, rawvoucher)
     end
