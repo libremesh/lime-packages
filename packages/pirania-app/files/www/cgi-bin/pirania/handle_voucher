@@ -6,12 +6,16 @@ local config = require('voucher.config')
 local redirect_page = require('voucher.utils').redirect_page
 local uci_cursor = require('uci').cursor()
 local dba = require('voucher.db')
+local config = require('voucher.config')
 local query_string = os.getenv("QUERY_STRING")
 -- send("Status: 302 \r\n")
 print("Content-type: text/html \n\n")
+
 params = http.urldecode_params(query_string)
+
+local db = dba.load(config.db)
 local res = logic.getIpv4AndMac()
-local valid = logic.check_mac_validity(res.mac)
+local valid = logic.check_mac_validity(db, res.mac)
 local noJs = params['nojs']
 
 local url_authenticated = uci_cursor:get("pirania", "base_config", "url_authenticated")
@@ -21,7 +25,6 @@ local url_info = uci_cursor:get("pirania", "base_config", "url_info")
 local url
 
 if (valid < 1) then
-  local db = dba.load(config.db)
   local output
   local mac = res.mac
   local voucher = params['voucher']

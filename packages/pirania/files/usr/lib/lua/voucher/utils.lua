@@ -23,10 +23,7 @@ local function escapeCSV (s)
 end
 
 local function dateNow ()
-  local output = shell('date +%s000')
-  local parsed = string.gsub(output, "%s+", "")
-  local dateNow = tonumber(parsed)
-  return dateNow
+  return os.time() * 1000
 end
 
 -- Convert from CSV string to table (converts a single line of a CSV file)
@@ -95,7 +92,9 @@ utils.from_csv_to_table = function(filename)
     lines = {}
 
     fh, err = io.open(filename)
-    if err then print("Cant open file", filename); return nil; end
+    if err then
+        return nil
+    end
 
     while true do
         line = fh:read()
