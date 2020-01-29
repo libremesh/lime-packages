@@ -3,7 +3,7 @@
 local json = require('luci.jsonc')
 local fs = require("nixio.fs")
 
-utils = {}
+local utils = {}
 
 -- Used to get shell output
 local function shell (command)
@@ -125,7 +125,7 @@ utils.string_split = function(inputstr, sep)
     if sep == nil then
         sep = "%s"
     end
-    local t={} ; i=1
+    local t={} ; local i=1
     for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
         t[i] = str
         i = i + 1

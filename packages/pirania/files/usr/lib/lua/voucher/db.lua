@@ -3,8 +3,9 @@
 local utils = require('voucher.utils')
 local ft = require('voucher.functools')
 local hooks = require('voucher.hooks')
+local functools = require('voucher.functools')
 
-dba = {}
+local dba = {}
 
 local function read_db_from_csv(dbinfo)
     local rawtable = utils.from_csv_to_table(dbinfo);
@@ -22,7 +23,7 @@ local function read_db_from_csv(dbinfo)
 end
 
 local function write_db_to_csv(csvname, db)
-    data = {}
+    local data = {}
     data[1] = db.headers
     local idx = 2
 
