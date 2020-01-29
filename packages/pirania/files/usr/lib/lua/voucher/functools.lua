@@ -1,4 +1,4 @@
-functools = {}
+local functools = {}
 
 -- Lua implementation of the curry function
 -- Developed by tinylittlelife.org

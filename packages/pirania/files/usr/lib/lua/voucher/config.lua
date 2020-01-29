@@ -1,9 +1,9 @@
 local uci = require("uci")
 local pirania_config = 'pirania'
 
-ucicursor = uci.cursor()
+local ucicursor = uci.cursor()
 
-config = {
+local config = {
     db = ucicursor:get(pirania_config, 'base_config', 'db_path'),
     uploadlimit = ucicursor:get(pirania_config, 'base_config', 'uploadlimit'),
     downloadlimit = ucicursor:get(pirania_config, 'base_config', 'downloadlimit'),

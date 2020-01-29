@@ -13,7 +13,7 @@ local hooks = function(action)
 end
 
 if debug.getinfo(2).name == nil then
-    arguments = { ... }
+    local arguments = { ... }
     if (arguments ~= nil and arguments[1] ~= nil) then
         hooks(arguments[1])
     end

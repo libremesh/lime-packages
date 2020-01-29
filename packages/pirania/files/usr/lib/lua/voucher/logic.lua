@@ -34,7 +34,7 @@ local function split_macs(inputstr, sep)
 end
 
 local function use_voucher(db, voucher, mac)
-    macs = voucher[7]
+    local macs = voucher[7]
 
     if (string.find(macs, mac) == nil) then
         if (macs == '') then
@@ -240,9 +240,8 @@ end
 
 function logic.valid_macs(db)
     local rawvouchers, rawvoucher, macs, currentmacs
-    macs = {}
+    local macs = {}
     rawvouchers = dba.get_all_vouchers(db)
-
     for _, rawvoucher in ipairs( rawvouchers ) do
         if logic.check_valid_voucher(db, rawvoucher) then
             local voucher = dba.describe_values(db, rawvoucher)
