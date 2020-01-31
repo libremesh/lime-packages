@@ -138,22 +138,7 @@ local function get_last_internet_path(msg)
     printJson(result)
 end
 
-local function _get_path(target)
-    local node = target
-    local result = {}
-    local path = {}
-    local path_str = shell("traceroute6 -q 1 "..node..".mesh | grep ms | awk '{ print $2 }' | cut -d'.' -f1")
-    for l in path_str:gmatch("[^\n]*") do
-        if l ~= "" then
-            table.insert(path, l)
-        end
-    end
-    result.path = path
-    result.status = "ok"
-    return result
-end
 local function get_path(msg)
-    --printJson(_get_path(msg.target))
     get_last_internet_path()
 end
 
