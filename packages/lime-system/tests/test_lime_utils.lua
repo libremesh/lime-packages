@@ -1,7 +1,7 @@
 local utils = require 'lime.utils'
 local test_utils = require 'tests.utils'
 
-describe('LiMe Utils tests', function()
+describe('LiMe Utils tests #limeutils', function()
     it('test literalize(str) with a string that has all the reserved chars', function()
         local str = 'f+o[o]?.*(,)_-%a$l^'
         assert.is.equal('f%+o%[o%]%?%.%*%(,%)_%-%%a%$l%^', utils.literalize(str))
@@ -59,5 +59,21 @@ describe('LiMe Utils tests', function()
 		utils.write_file(filename, content)
 		assert.is.equal(content, utils.read_file(filename))
     end)
+
+	it('test shell_quote', function()
+		assert.is.equal("'foo'", utils.shell_quote("foo"))
+		assert.is.equal("'ls ; cmd'", utils.shell_quote("ls ; cmd"))
+		assert.is.equal([['"']], utils.shell_quote('"'))
+		assert.is.equal([['$'"'"'b']], utils.shell_quote("$'b"))
+	end)
+
+	it('test unsafe_shell', function()
+		assert.is.equal("1\n", utils.unsafe_shell("echo 1"))
+	end)
+
+	it('test unsafe_shell returns only stdout', function()
+		assert.is.equal("", utils.unsafe_shell("ls /wrong/path 2>/dev/null"))
+		assert.is.equal("", utils.unsafe_shell("echo 1 2>/dev/null 1>&2"))
+	end)
 
 end)
