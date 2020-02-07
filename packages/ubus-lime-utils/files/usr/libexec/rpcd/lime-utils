@@ -306,7 +306,7 @@ if arg[1] == 'list' then
 end
 
 if arg[1] == 'call' then
-    local msg = io.read()
+    local msg = utils.rpcd_readline()
     msg = json.decode(msg)
     if      arg[2] == 'get_cloud_nodes' then get_cloud_nodes(msg)
     elseif  arg[2] == 'get_node_status' then get_node_status(msg)
