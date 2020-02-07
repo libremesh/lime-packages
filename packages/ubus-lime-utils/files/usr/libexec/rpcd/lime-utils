@@ -9,6 +9,7 @@
 
 local ubus = require "ubus"
 local json = require 'luci.jsonc'
+local config = require("lime.config")
 local limewireless = require 'lime.wireless'
 local utils = require 'lime.utils'
 local nixio = require 'nixio'
@@ -50,7 +51,8 @@ end
 
 local function get_node_status(msg)
     local result = {}
-    result.hostname = conn:call("system","board", {}).hostname
+    local uci = config.get_uci_cursor()
+    result.hostname = uci:get("system", "hostname")
     result.ips = {}
     local ips = utils.unsafe_shell("ip a s br-lan | grep inet | awk '{ print $1, $2 }'")
     for line in ips:gmatch("[^\n]+") do
@@ -64,7 +66,7 @@ local function get_node_status(msg)
             table.insert(result.ips, { version="4", address=address })
         end
     end
-    local ifaces = conn:call("lime-openairview", "get_interfaces", {}).interfaces
+    local ifaces = limewireless.mesh_ifaces()
     local stations = {}
     for _, iface  in ipairs(ifaces) do
         if iface.name then
