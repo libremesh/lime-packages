@@ -3,6 +3,8 @@ include = {
 	"tests",
 }
 
+codefromstrings = true
+
 exclude = {
 	"tests/test_*"
 }
