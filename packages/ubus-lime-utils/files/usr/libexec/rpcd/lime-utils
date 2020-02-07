@@ -18,10 +18,6 @@ if not conn then
     error("Failed to connect to ubus")
 end
 
-local function printJson (obj)
-    print(json.encode(obj))
-end
-
 local function shell(command)
     -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
     local handle = io.popen(command)
@@ -62,7 +58,7 @@ local function get_cloud_nodes(msg)
         end
     end
     result.status = "ok"
-    printJson(result)
+    utils.printJson(result)
     return
 end
 
@@ -135,14 +131,14 @@ local function get_node_status(msg)
     result.uptime = tostring(utils.uptime_s())
 
     result.status = "ok"
-    printJson(result)
+    utils.printJson(result)
 end
 
 local function get_notes()
     local result = {}
     result.notes = get_text_file('/etc/banner.notes')
     result.status = "ok"
-    printJson(result)
+    utils.printJson(result)
 end
 
 local function set_notes(msg)
@@ -168,9 +164,9 @@ local function get_community_settings ()
         table.removekey(config,".anonymous")
         table.removekey(config,".type")
         
-        printJson(config)
+        utils.printJson(config)
     else
-        printJson({error = "config not found"})
+        utils.printJson({error = "config not found"})
     end
     
 end
@@ -191,9 +187,9 @@ local function change_config (msg)
             country = country
         }})
         shell("lime-config && reboot")
-        printJson({ status = 'ok'})
+        utils.printJson({ status = 'ok'})
     else
-        printJson({ status = 'error', msg = 'You must enter a hostname' })
+        utils.printJson({ status = 'error', msg = 'You must enter a hostname' })
     end
 end
 
@@ -220,7 +216,7 @@ end
 local function get_config ()
   local result = conn:call("uci", "get", {config="lime", section="wifi"})
   result.channels = get_channels()
-  printJson(result)
+  utils.printJson(result)
 end
 
 local function safe_reboot(msg)
@@ -233,7 +229,7 @@ local function safe_reboot(msg)
 
   -- Get safe-reboot status
   if msg.action == nil then
-    return printJson({ error = true })
+    return utils.printJson({ error = true })
   end
   if msg.action == 'status' then
     result.stauts = getStatus()
@@ -287,7 +283,7 @@ local function safe_reboot(msg)
     end
   end
 
-  return printJson(result)
+  return utils.printJson(result)
 end
 
 local methods = {
@@ -302,7 +298,7 @@ local methods = {
 }
 
 if arg[1] == 'list' then
-    printJson(methods)
+    utils.printJson(methods)
 end
 
 if arg[1] == 'call' then
@@ -316,6 +312,6 @@ if arg[1] == 'call' then
     elseif  arg[2] == 'change_config' then change_config(msg)
     elseif  arg[2] == 'get_config' then get_config(msg)
     elseif  arg[2] == 'safe_reboot' then safe_reboot(msg)
-    else printJson({ error = "Method not found" })
+    else utils.printJson({ error = "Method not found" })
     end
 end
