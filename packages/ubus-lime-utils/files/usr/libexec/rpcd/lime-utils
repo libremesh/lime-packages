@@ -112,12 +112,9 @@ local function get_notes()
 end
 
 local function set_notes(msg)
-    local result = {}
     local banner = utils.write_file('/etc/banner.notes', msg.text)
-    result = get_notes()
-    printJson(result)
+    get_notes()
 end
-
 
 local function get_community_settings ()
     local config = conn:call("uci", "get", {config="lime-app"})
