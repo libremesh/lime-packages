@@ -18,14 +18,6 @@ if not conn then
     error("Failed to connect to ubus")
 end
 
-local function shell(command)
-    -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
-    local handle = io.popen(command)
-    local result = handle:read("*a")
-    handle:close()
-    return result
-end
-
 local function file_exists(file)
     -- check if the file exists
     local f = io.open(file, "rb")
@@ -49,7 +41,7 @@ local function write_text_file(file,text)
 end
 
 local function get_cloud_nodes(msg)
-    local nodes = shell("cat /tmp/bat-hosts | grep bat0 | cut -d' ' -f2 | sed 's/_bat0//' | sed 's/_/-/g' | sort | uniq")
+    local nodes = utils.unsafe_shell("cat /tmp/bat-hosts | grep bat0 | cut -d' ' -f2 | sed 's/_bat0//' | sed 's/_/-/g' | sort | uniq")
     local result = {}
     result.nodes = {}
     for line in nodes:gmatch("[^\n]*") do
@@ -66,7 +58,7 @@ local function get_station_traffic(params)
     local iface = params.iface
     local mac = params.station_mac
     local result = {}
-    local traffic = shell("iw "..iface.." station get "..mac.." | grep bytes | awk '{ print $3}'")
+    local traffic = utils.unsafe_shell("iw "..iface.." station get "..mac.." | grep bytes | awk '{ print $3}'")
     words = {}
     for w in traffic:gmatch("[^\n]+") do table.insert(words, w) end
     rx = words[1]
@@ -82,7 +74,7 @@ local function get_node_status(msg)
     local result = {}
     result.hostname = conn:call("system","board", {}).hostname
     result.ips = {}
-    local ips = shell("ip a s br-lan | grep inet | awk '{ print $1, $2 }'")
+    local ips = utils.unsafe_shell("ip a s br-lan | grep inet | awk '{ print $1, $2 }'")
     for line in ips:gmatch("[^\n]+") do
         local words = {}
         for w in line:gmatch("%S+") do if w ~= "" then table.insert(words, w) end end
@@ -111,7 +103,7 @@ local function get_node_status(msg)
         local most_active_rx = 0
         local most_active = nil
         for _, station in ipairs(stations) do
-            local traffic = shell("iw "..station.iface.." station get "..station.station_mac.." | grep bytes | awk '{ print $3}'")
+            local traffic = utils.unsafe_shell("iw "..station.iface.." station get "..station.station_mac.." | grep bytes | awk '{ print $3}'")
             words = {}
             for w in traffic:gmatch("[^\n]+") do table.insert(words, w) end
             rx = words[1]
@@ -186,7 +178,7 @@ local function change_config (msg)
             adhoc_ssid = msg.wireless.adhoc_ssid,
             country = country
         }})
-        shell("lime-config && reboot")
+        utils.unsafe_shell("lime-config && reboot")
         utils.printJson({ status = 'ok'})
     else
         utils.printJson({ status = 'error', msg = 'You must enter a hostname' })
@@ -207,7 +199,7 @@ local function get_channels ()
   end
   local frequencies = {}
   for _, phy in pairs (phys) do
-    local info = shell("iw "..phy.phy.." info | sed -n '/Frequencies:/,/valid/p' | sed '1d;$d' | grep -v radar | grep -v disabled | sed -e 's/.*\\[\\(.*\\)\\].*/\\1/'")
+    local info = utils.unsafe_shell("iw "..phy.phy.." info | sed -n '/Frequencies:/,/valid/p' | sed '1d;$d' | grep -v radar | grep -v disabled | sed -e 's/.*\\[\\(.*\\)\\].*/\\1/'")
     frequencies[phy.freq] = utils.split(info, '\n')
   end
   return frequencies
