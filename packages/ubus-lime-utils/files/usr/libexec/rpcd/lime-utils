@@ -7,7 +7,7 @@
   Copyright 2017 Nicolas Echaniz <nicoechaniz@altermundi.net>
 ]]--
 
-require "ubus"
+local ubus = require "ubus"
 local json = require 'luci.jsonc'
 local limewireless = require 'lime.wireless'
 local utils = require 'lime.utils'
