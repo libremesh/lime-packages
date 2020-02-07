@@ -8,7 +8,7 @@
 ]]--
 
 require "ubus"
-local json = require 'luci.json'
+local json = require 'luci.jsonc'
 local limewireless = require 'lime.wireless'
 local utils = require 'lime.utils'
 local nixio = require 'nixio'
@@ -303,7 +303,7 @@ end
 
 if arg[1] == 'call' then
     local msg = utils.rpcd_readline()
-    msg = json.decode(msg)
+    msg = json.parse(msg)
     if      arg[2] == 'get_cloud_nodes' then get_cloud_nodes(msg)
     elseif  arg[2] == 'get_node_status' then get_node_status(msg)
     elseif  arg[2] == 'get_notes' then get_notes(msg)
