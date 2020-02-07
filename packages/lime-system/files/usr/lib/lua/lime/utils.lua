@@ -257,6 +257,12 @@ function utils.printJson(obj)
     print(json.stringify(obj))
 end
 
+--! use rpcd_readline() in libexec/rpcd/ scripts to access the arguments that
+--! are passed through stdin. The use of this functions allows testing.
+function utils.rpcd_readline()
+    return io.read()
+end
+
 --! for testing only
 utils._uptime_line = nil
 
