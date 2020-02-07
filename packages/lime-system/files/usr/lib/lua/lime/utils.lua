@@ -253,6 +253,10 @@ function utils.getBoardAsTable(board_path)
 	return json.parse(fs.readfile(board_path))
 end
 
+function utils.printJson(obj)
+    print(json.stringify(obj))
+end
+
 --! for testing only
 utils._uptime_line = nil
 
