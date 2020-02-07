@@ -18,28 +18,6 @@ if not conn then
     error("Failed to connect to ubus")
 end
 
-local function file_exists(file)
-    -- check if the file exists
-    local f = io.open(file, "rb")
-    if f then f:close() end
-    return f ~= nil
-end
-
-local function get_text_file(file)
-  if not file_exists(file) then return '' end
-  local text_file = io.open(file,'rb')
-  local content = text_file:read "*a"
-  text_file:close()
-  return content
-end
-
-local function write_text_file(file,text)
-  local text_file = io.open(file,'w')
-  text_file:write(text)
-  text_file:close()
-  return 1
-end
-
 local function get_cloud_nodes(msg)
     local nodes = utils.unsafe_shell("cat /tmp/bat-hosts | grep bat0 | cut -d' ' -f2 | sed 's/_bat0//' | sed 's/_/-/g' | sort | uniq")
     local result = {}
@@ -128,14 +106,14 @@ end
 
 local function get_notes()
     local result = {}
-    result.notes = get_text_file('/etc/banner.notes')
+    result.notes = utils.read_file('/etc/banner.notes')
     result.status = "ok"
     utils.printJson(result)
 end
 
 local function set_notes(msg)
     local result = {}
-    local banner = write_text_file('/etc/banner.notes', msg.text)
+    local banner = utils.write_file('/etc/banner.notes', msg.text)
     result = get_notes()
     printJson(result)
 end
