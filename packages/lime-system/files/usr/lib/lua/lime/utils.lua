@@ -261,4 +261,21 @@ function utils.uptime_s()
     return tonumber(string.match(uptime_line, "^%S+"))
 end
 
+--! Escape strings for safe shell usage.
+function utils.shell_quote(s)
+    --! Based on Python's shlex.quote()
+    return "'" .. string.gsub(s, "'", "'\"'\"'") .. "'"
+end
+
+--! Excutes a shell command, waits for completion and returns stdout.
+--! Warning! Use this function carefully as it could be exploted if used with
+--! untrusted input. Always use function utils.shell_quote() to escape untrusted
+--! input.
+function utils.unsafe_shell(command)
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+    return result
+end
+
 return utils
