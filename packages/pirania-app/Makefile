@@ -8,11 +8,11 @@ GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  SECTION:=ubus
-  CATEGORY:=Ubus
+  SUBMENU:=Captive Portals
+  SECTION:=net
+  CATEGORY:=Network
   MAINTAINER:=Luandro <luandro@gmail.com>
-  SUBMENU:=3. Applications
-  TITLE:=Libremesh first boot wizard ubus module
+  TITLE:=A wireless captive portal solution frontend
   DEPENDS:= +pirania
   PKGARCH:=all
 endef
