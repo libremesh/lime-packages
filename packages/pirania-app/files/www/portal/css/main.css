@@ -1,0 +1,370 @@
+body {
+  border: 10px solid white;
+}
+
+a {
+  text-decoration: none;
+}
+
+input[type=number] {
+  /*for absolutely positioning spinners*/
+  position: relative;
+  padding: 5px;
+  padding-right: 25px;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  opacity: 1;
+}
+
+
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: inner-spin-button !important;
+  width: 25px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+}
+
+
+input[type=text],
+input[type=number] {
+  padding: 5px;
+  border: 2px solid #ccc;
+  -webkit-border-radius: 15px;
+  border-radius: 15px;
+}
+
+input[type=text]:focus,
+input[type=number]:focus {
+  border-color: #333;
+}
+
+input[type=submit],
+button {
+  padding: 10px 25px;
+  background: #ccc;
+  border: 0 none;
+  cursor: pointer;
+  -webkit-border-radius: 5px;
+  border-radius: 5px;
+}
+
+input,
+textarea {
+  max-width: 100%;
+  padding: 5px;
+  border: 2px solid #ccc;
+  -webkit-border-radius: 15px;
+  border-radius: 15px;
+}
+
+#link input {
+  margin-top: 15vh;
+}
+
+video {
+  min-width: 100%;
+}
+
+#content-media {
+  margin: 0 auto;
+  padding: 5vh 0;
+}
+
+#content-media img {
+  max-width: 300px;
+}
+
+#user-valid {
+  font-size: 45px;
+}
+
+select {
+  display: block;
+  font-family: sans-serif;
+  color: #444;
+  line-height: 1.3;
+  padding: .6em 1.4em .5em .8em;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  border: 1px solid #aaa;
+  box-shadow: 0 1px 0 1px rgba(0, 0, 0, .04);
+  border-radius: .5em;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: #fff;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-6.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'),
+    linear-gradient(to bottom, #ffffff 0%, #e5e5e5 100%);
+  background-repeat: no-repeat, repeat;
+  background-position: right .7em top 50%, 0 0;
+  background-size: .65em auto, 100%;
+}
+
+select::-ms-expand {
+  display: none;
+}
+
+select:hover {
+  border-color: #888;
+}
+
+select:focus {
+  border-color: #aaa;
+  box-shadow: 0 0 1px 3px rgba(59, 153, 252, .7);
+  box-shadow: 0 0 0 3px -moz-mac-focusring;
+  color: #222;
+  outline: none;
+}
+
+select option {
+  font-weight: normal;
+}
+
+.main {
+  margin: 0 auto;
+  max-width: 968px;
+  padding: 5%;
+  text-align: center;
+  animation: ease-in;
+  min-height: 90vh;
+}
+
+/* Tabs */
+.tab-nav {
+  margin: 0;
+  padding: 0;
+}
+
+.tab-link {
+  margin-right: 5px;
+  padding: 10px 20px;
+  color: #fff;
+  display: inline-block;
+  background-color: #b3b3b3;
+}
+
+.tab-link:last-child {
+  margin-right: 0;
+}
+
+.tab-link:hover {
+  color: #6d6d6d;
+}
+
+.tab-link.is-active {
+  color: lightcoral;
+  background-color: #e7e7e7;
+}
+
+/* Tab Content */
+.tab-contents svg {
+  height: 15px;
+  width: 15px;
+}
+
+.tab-content {
+  display: none;
+  /* background-color: #e7e7e7; */
+}
+
+.tab-content.is-active {
+  display: block;
+  padding: 20px;
+}
+
+.content {
+  max-width: 968px;
+  margin: 0 auto;
+}
+
+.login {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  text-decoration: none;
+  color: black;
+}
+
+.voucher {
+  padding-top: 30px;
+}
+
+.voucher form {
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  justify-content: space-around;
+  height: 33vh;
+}
+
+.voucher form * {
+  width: 250px;
+}
+
+.admin-login,
+#tabs {
+  margin-top: 50px;
+  padding: 10px;
+}
+
+.admin-login {
+  border: 1px solid #444;
+}
+
+.admin-login form,
+.admin-create form,
+.admin-content form,
+.admin-create-many form {
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  align-content: center;
+  justify-content: space-around;
+  margin: 0 auto;
+  max-width: 300px;
+  min-height: 20vh;
+}
+
+.admin-create form {
+  min-height: 35vh;
+}
+
+.admin-create-many form {
+  min-height: 45vh;
+}
+
+.admin-content form {
+  min-height: 100vh;
+}
+
+.voucher-item svg {
+  width: 12px;
+  height: 12px;
+}
+
+.voucher-item {
+  position: relative;
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-between;
+  align-items: center;
+  align-content: flex-start;
+  padding: 15px 0;
+}
+
+.voucher-item-name,
+.voucher-item-voucher {
+  width: 30%
+}
+
+.voucher-item-expires,
+.voucher-item-remove,
+.voucher-item-renew {
+  width: 10%;
+}
+
+.voucher-item-voucher {
+  display: none;
+  font-family: monospace;
+  color: #6d6d6d;
+}
+
+.voucher-item-mq {
+  position: absolute;
+  left: -20px;
+  background: #444;
+  border-radius: 50%;
+  padding: 0 5px;
+  color: white;
+}
+
+.voucher-item-macs {
+  display: none;
+}
+
+.voucher-item-name:hover~.voucher-item-macs {
+  display: block;
+  position: absolute;
+  bottom: -5px;
+}
+
+#voucher-list-button {
+  position: fixed;
+  top: 5%;
+  right: 5%;
+  border-radius: 25px;
+  z-index: 999;
+}
+
+#voucher-list-loader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}
+
+#error, .error {
+  margin: 0 auto;
+  text-align: center;
+  padding: 10px 0;
+  background: darkseagreen;
+  border-radius: 8px;
+  background: indianred;
+}
+
+.hidden {
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  z-index: -1;
+}
+
+#other-devices {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  margin: 0 auto;
+  border-radius: 25px;
+  height: 45px;
+  width: 45px;
+  display: flex;
+  flex-flow: row nowrap;
+  text-align: center;
+  justify-content: center;
+}
+
+#other-devices span {
+  font-size: 20px;
+  position: relative;
+  right: 10px;
+}
+
+@media only screen and (max-width: 480px) {
+  .voucher-item-name:hover~.voucher-item-voucher {
+    display: block;
+    position: absolute;
+    top: -5px;
+  }
+}
+
+@media only screen and (min-width: 480px) {
+  .tab-contents svg {
+    height: 32px;
+    width: 32px;
+  }
+
+  .voucher-item svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .voucher-item-voucher {
+    display: block;
+  }
+}

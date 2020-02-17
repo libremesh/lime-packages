@@ -1,0 +1,215 @@
+#!/usr/bin/env lua
+--[[
+Copyright 2018 Marcos Gutierrez <gmarcos87@gmail.com>
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-3.0
+]]--
+
+require "ubus"
+local json = require 'luci.jsonc'
+local ft = require('voucher.functools')
+local utils = require('voucher.utils')
+local logic = require('voucher.logic')
+local dba = require('voucher.db')
+
+local uci = require('uci')
+
+local uci_cursor = uci.cursor()
+
+local function printJson (obj)
+    print(json.stringify(obj))
+end
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function status(msg)
+    local output = logic.iptables_status()
+    printJson(output)
+end
+
+local function enable(msg)
+    uci_cursor:set("pirania", "base_config", "enabled", "1")
+    uci_cursor:commit("pirania")
+    utils.shell("captive-portal start")
+    printJson({ success = true })
+end
+
+local function disable(msg)
+    uci_cursor:set("pirania", "base_config", "enabled", "0")
+    uci_cursor:commit("pirania")
+    utils.shell("captive-portal stop")
+    printJson({ success = true }) 
+end
+
+local function show_active_vouchers(msg)
+    local db = dba.load(config.db)
+    printJson(logic.show_active_vouchers(db))
+end
+
+local function list_vouchers(msg)
+    local db = dba.load(config.db)
+    printJson({ vouchers = logic.show_vouchers(db) })
+end
+
+local function renew_voucher(msg)
+	local db = dba.load(config.db)
+	local output = logic.update_voucher_date(msg.voucher, msg.date, db)
+	dba.save(config.db, db)
+	printJson(output)
+end
+
+local function remove_voucher(msg)
+	local db = dba.load(config.db)
+	local output = logic.update_voucher_date(msg.voucher, 0, db)
+	dba.save(config.db, db)
+	printJson(output)
+end
+
+local function renew_many_vouchers(msg)
+    local db = dba.load(config.db)
+    local output = logic.update_many_vouchers_date(msg.vouchers, msg.date, db)
+    dba.save(config.db, db)
+    printJson(output)
+end
+
+local function add_visitor_voucher(msg)
+    local result = {}
+    local db = dba.load(config.db)
+    local key = utils.format_voucher_key(msg.note, 'visitor')
+    result.node = hostname
+    result.type = 'visitor'
+    result.key = key
+    result.vouchers = {}
+    for _, voucher in pairs (msg.vouchers) do
+        local randomKey = voucher.key
+        local newKey = key..'-'..randomKey
+        local output = { logic.add_voucher(db, newKey, voucher.voucher, voucher.epoc, 10, 10, 1) }
+        if (tonumber(output[1]) ~= 0 ) then
+            result.vouchers[_] = voucher.voucher
+        end
+    end
+    dba.save(config.db, db)
+    printJson(result)
+end
+
+local function add_member_voucher(msg)
+    local result = {}
+    local db = dba.load(config.db)
+    local key = utils.format_voucher_key(msg.note, 'member')
+    local secret = msg.secret
+    -- Should come from a shared-state json
+    local epoc = msg.epoc
+    local output = { logic.add_voucher(db, key, secret, epoc, 10, 10, 1) }
+    if (tonumber(output[0]) == 0) then
+        result.message = 'Error creating voucher'
+    else
+        result.node = hostname
+        result.key = key
+        result.type = 'member'
+        result.secret = secret
+        result.epoc = epoc
+        result.upload = 10
+        result.download = 10
+        result.amountofmacsallowed = 1
+    end
+    dba.save(config.db, db)
+    printJson(result)
+end
+
+local function auth_voucher(msg)
+    local result = {}
+    local mac = msg.mac
+    local voucher = msg.voucher
+    result.mac = mac
+    result.voucher = voucher
+    local db = dba.load(config.db)
+    local res = logic.auth_voucher(db, mac, voucher)
+    result.success = res.success
+    -- BUG: Saving to DB causes ubus to timeout
+    dba.save(config.db, db)
+    printJson(result)
+end
+
+local function print_valid_macs(msg)
+    local result = {}
+    result.macs = {}
+    local output = utils.shell('voucher print_valid_macs')
+    for line in output:gmatch("[^\n]+") do
+        -- local words = {}
+        -- for w in line:gmatch("%S+") do if w ~= "" then table.insert(words, w) end end
+        -- local mac = words[2]
+        table.insert(result.macs, line)
+    end
+    printJson(result);
+end
+
+local function show_url(msg)
+    local result = {}
+    local url = uci_cursor:get("pirania", "base_config", "portal_url")
+    result.url = url
+    printJson(result);
+end
+
+local function change_url(msg)
+    local result = {}
+    local url = msg.url
+    uci_cursor:set("pirania", "base_config", "portal_url", url)
+    uci_cursor:commit("pirania")
+    result.url = url
+    printJson(result);
+end
+
+
+local methods = {
+	status = { no_params = 0 },
+	enable = { no_params = 0 },
+	disable = { no_params = 0 },
+  add_visitor_voucher = {
+    note = 'value',
+    vouchers = 'value'
+  },
+  add_member_voucher = {
+    secret = 'value',
+    note = 'value',
+    epoc = 'value'
+  },
+  auth_voucher = { mac = 'value', voucher = 'value' },
+  print_valid_macs = { no_params = 0 },
+  list_vouchers = { no_params = 0 },
+  show_active_vouchers = { no_params = 0 },
+  remove_voucher = { voucher = 'value' },
+  renew_voucher = { voucher = 'value', date = 0 },
+  renew_many_vouchers = {  date = 0, vouchers = 'value' },
+  show_url = { no_params = 0 },
+  change_url = { url = 'value' },
+}
+
+if arg[1] == 'list' then
+    printJson(methods)
+end
+
+if arg[1] == 'call' then
+  local msg = io.read()
+	msg = json.parse(msg)
+	if   arg[2] == 'status'										then status(msg)
+	elseif   arg[2] == 'enable'								then enable(msg)
+  elseif   arg[2] == 'disable'							then disable(msg)
+  elseif   arg[2] == 'add_member_voucher'		then add_member_voucher(msg)
+  elseif   arg[2] == 'add_visitor_voucher'	then add_visitor_voucher(msg)
+  elseif   arg[2] == 'auth_voucher'	      	then auth_voucher(msg)
+  elseif   arg[2] == 'print_valid_macs'	  	then print_valid_macs(msg)
+  elseif   arg[2] == 'list_vouchers'	    	then list_vouchers(msg)
+  elseif   arg[2] == 'show_active_vouchers'	then show_active_vouchers(msg)
+  elseif   arg[2] == 'remove_voucher'	    	then remove_voucher(msg)
+  elseif   arg[2] == 'renew_voucher'	    	then renew_voucher(msg)
+  elseif   arg[2] == 'renew_many_vouchers'	then renew_many_vouchers(msg)
+  elseif   arg[2] == 'show_url'	            then show_url(msg)
+  elseif   arg[2] == 'change_url'	        	then change_url(msg)
+  else                                      printJson({ error = "Method not found" })
+  end
+end

@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=pirania
+PKG_NAME:=pirania-app
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
@@ -12,13 +12,13 @@ define Package/$(PKG_NAME)
   SECTION:=net
   CATEGORY:=Network
   MAINTAINER:=Luandro <luandro@gmail.com>
-  TITLE:=Captive portal with vouchers.
-  DEPENDS:= +ip6tables-mod-nat +ipset +uhttpd-mod-lua
+  TITLE:=A wireless captive portal solution frontend
+  DEPENDS:= +pirania
   PKGARCH:=all
 endef
 
-define Package/$(PKG_NAME)/description
-	Captive Portal for routers that want to share their Internet connection via vouchers.
+define Package/$(PKG_NAME)-app/description
+	Simple web interface of Pirania. Allows you to manage vouchers and configure the initial screen.
 endef
 
 define Build/Compile
