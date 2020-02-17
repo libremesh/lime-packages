@@ -1,0 +1,26 @@
+#!/bin/sh /etc/rc.common
+
+START=50
+
+USE_PROCD=1
+
+DNSMASQ_BIN="/usr/sbin/dnsmasq"
+
+start_service() {
+	procd_open_instance
+	procd_set_param command $DNSMASQ_BIN \
+		--keep-in-foreground \
+		--port=59053 \
+		--no-resolv \
+		--server=/$(uci get dhcp.@dnsmasq[0].domain)/$(uci get network.lm_net_br_lan_anygw_if.ipaddr) \
+		--addn-hosts=/var/hosts/shared-state-dnsmasq_hosts \
+		--address=/thisnode.info/$(uci get network.lm_net_br_lan_anygw_if.ipaddr) \
+		--address=/\#/1.2.3.4
+
+	# respawn automatically if something died, be careful if you have an alternative process supervisor
+	# if process dies sooner than respawn_threshold, it is considered crashed and after 5 retries the service is stopped
+	procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
+
+	procd_set_param stderr 1 # forward stderr of the command to logd
+	procd_close_instance
+}
