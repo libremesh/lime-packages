@@ -119,25 +119,25 @@ local function set_notes(msg)
 end
 
 local function get_community_settings ()
-    local config = conn:call("uci", "get", {config="lime-app"})
+    local config = conn:call("uci", "get", {config="lime-app"}).values
     if config ~=  nil then
-        config = config.values.cfg02541a
-        -- TODO: Find a best way to remove uci keys
-        function table.removekey(table, key)
-            local element = table[key]
-            table[key] = nil
-            return element
+        for name, value in pairs(config) do
+            -- TODO: Find a best way to remove uci keys
+            function table.removekey(table, key)
+                local element = table[key]
+                table[key] = nil
+                return element
+            end
+            table.removekey(value,".name")
+            table.removekey(value,".index")
+            table.removekey(value,".anonymous")
+            table.removekey(value,".type")
+            utils.printJson(value)
+            break
         end
-        table.removekey(config,".name")
-        table.removekey(config,".index")
-        table.removekey(config,".anonymous")
-        table.removekey(config,".type")
-        
-        utils.printJson(config)
     else
         utils.printJson({error = "config not found"})
     end
-    
 end
 
 local function change_config (msg)
