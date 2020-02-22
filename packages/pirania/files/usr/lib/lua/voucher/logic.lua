@@ -124,38 +124,30 @@ end
 
 function logic.show_vouchers(db)
     local result = {}
-    local vName = 1
-    local vSecret = 2
-    local vExpire = 3
-    local vMacsAllowed = 6
-    local usedMacs = 7
-    for _, v in pairs(db.data) do
-        result[_] = utils.parse_voucher_key(v[vName], v[vExpire])
-        result[_].name = v[vName]
-        result[_].expires = v[vExpire]
-        result[_].voucher = v[vSecret]
-        result[_].macsAllowed = v[vMacsAllowed]
-        result[_].macs = split_macs(v[usedMacs])
+    for index, v in pairs(db.parsed_data) do
+        result[index] = utils.parse_voucher_key(v.key, v.expiretime)
+        result[index].name = v.key
+        result[index].expires = v.expiretime
+        result[index].voucher = v.voucher
+        result[index].macsAllowed = v.amountofmacsallowed
+        result[index].macs = split_macs(v.usedmacs)
     end
     return result
 end
 
 function logic.show_active_vouchers(db)
     local result = {}
-    local vName = 1
-    local vExpire = 3
-    local usedMacs = 7
     members = 0
     visitors = 0
-    for _, v in pairs(db.data) do
-        local macs = split_macs(v[usedMacs])
+    for _, v in pairs(db.parsed_data) do
+        local macs = split_macs(v.usedmacs)
         local active = function ()
             if (#macs > 0) then
                 return true
             end
             return false
         end
-        local info = utils.parse_voucher_key(v[vName], v[vExpire])
+        local info = utils.parse_voucher_key(v.key, v.expiretime)
         if (info.type == 'member') then
             local nextN = members + 1
             members = nextN
@@ -299,14 +291,11 @@ function logic.update_many_vouchers_date(vouchers, date, db)
         success = false
     }
     local changed = 0
-    for _, voucher in pairs (db.data) do
-        for __, voucherToChange in pairs (vouchers) do
-            if (voucher[2] == voucherToChange) then
-                db.data[_] = voucher
-                db.data[_][3] = date
-                changed = changed+1
-            else
-                db.data[_] = voucher
+    for voucher_index, voucher in pairs (db.parsed_data) do
+        for _, voucherToChange in pairs (vouchers) do
+            if (voucher.voucher == voucherToChange) then
+                voucher.expiretime = date
+                changed = changed + 1
             end
         end
         result.updated = changed
