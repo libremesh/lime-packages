@@ -183,7 +183,7 @@ local function get_channels ()
 end
 
 local function get_config ()
-  local result = conn:call("uci", "get", {config="lime", section="wifi"})
+  local result = conn:call("uci", "get", {config="lime-autogen", section="wifi"})
   result.channels = get_channels()
   utils.printJson(result)
 end
