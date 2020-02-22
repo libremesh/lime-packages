@@ -21,6 +21,13 @@ describe('ubus-lime-utils tests #ubuslimeutils', function()
         assert.is.equal("ok", response.status)
         assert.is.equal("a note", response.notes)
         assert.stub(utils.read_file).was.called_with('/etc/banner.notes')
+        utils.read_file:revert()
+    end)
+
+    it('test get_notes when there are no notes', function()
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'get_notes'}, '')
+        assert.is.equal("ok", response.status)
+        assert.is.equal("", response.notes)
     end)
 
     it('test set_notes', function()
