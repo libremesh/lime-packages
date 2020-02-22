@@ -10,15 +10,27 @@ local dba = {}
 local function read_db_from_csv(dbinfo)
     local rawtable = utils.from_csv_to_table(dbinfo);
     if rawtable == nil then
-        fho,err = io.open(dbinfo, "w")
+		local fho = io.open(dbinfo, "w")
         fho:write('key,voucher,expiretime,uploadlimit,downloadlimit,amountofmacsallowed,usedmacs,')
         fho:close()
         rawtable = utils.from_csv_to_table(dbinfo);
     end
+
     local table = {
         headers = rawtable[1],
-        data = ft.filter(function(row, index) return index > 1 end, rawtable)
+        data = ft.filter(function(row, index) return index > 1 end, rawtable),
     }
+
+    local parsed_data = {}
+    for element_index, _ in pairs(table.data) do
+        local element = {}
+        for attribute_index, attribute_name in pairs(rawtable[1]) do
+            element[attribute_name] = table.data[element_index][attribute_index]
+        end
+        parsed_data[element_index] = element
+    end
+    table.parsed_data = parsed_data
+
     return table
 end
 
