@@ -108,7 +108,7 @@ end
 
 local function get_notes()
     local result = {}
-    result.notes = utils.read_file('/etc/banner.notes')
+    result.notes = utils.read_file('/etc/banner.notes') or ''
     result.status = "ok"
     utils.printJson(result)
 end
