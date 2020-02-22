@@ -135,6 +135,12 @@ describe('Pirania tests #voucher', function()
         assert.is.equal(0, logic.check_mac_validity(db, 'AA:BB:CC:DD:EE:FF'))
     end)
 
+    it('vouchera init', function()
+        local config = {db = dbFile}
+        local vouchera = require('voucher.vouchera').init(config)
+
+    end)
+
     before_each('', function()
         local p = io.popen("rm -f " .. dbFile)
         p:read('*all')
