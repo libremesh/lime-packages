@@ -13,6 +13,7 @@ local ft = require('voucher.functools')
 local utils = require('voucher.utils')
 local logic = require('voucher.logic')
 local dba = require('voucher.db')
+local config = require('voucher.config')
 
 local uci = require('uci')
 
