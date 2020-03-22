@@ -10,7 +10,7 @@ You may obtain a copy of the License at
 
 require "ubus"
 require "iwinfo"
-local json = require "luci.json"
+local json = require "luci.jsonc"
 local wireless = require "lime.wireless"
 
 local function shell(command)
@@ -22,7 +22,7 @@ local function shell(command)
 end
 
 local function printJson (obj)
-    print(json.encode(obj))
+    print(json.stringify(obj))
 end
 
 local conn = ubus.connect()
@@ -109,7 +109,7 @@ end
 
 if arg[1] == 'call' then
     local msg = io.read()
-	msg = json.decode(msg)
+	msg = json.parse(msg)
     if       arg[2] == 'get'	        then get_location(msg)
 	elseif   arg[2] == 'set'	        then set_location(msg)
 	elseif   arg[2] == 'nodes_and_links'	        then nodes_and_links(msg)

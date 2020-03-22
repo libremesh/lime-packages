@@ -10,10 +10,10 @@ You may obtain a copy of the License at
 require "ubus"
 local nixio = require "nixio",require "nixio.fs"
 local split = require 'lime.utils'.split
-local json = require 'luci.json'
+local json = require 'luci.jsonc'
 
 local function printJson (obj)
-    print(json.encode(obj))
+    print(json.stringify(obj))
 end
 
 local function shell(command)
@@ -65,7 +65,7 @@ function bmx6get(field, host)
 	local data = nil
 
     if raw and raw:len() > 10 then
-		data = json.decode( raw )
+		data = json.parse( raw )
 	end
 
 	return data
@@ -247,11 +247,11 @@ function topology(msg)
 		cachefd:write(os.time()..'\n')
 		cachefd:write(topology)
 		cachefd:close()
-        printJson({ topology = json.decode( topology ) })
+        printJson({ topology = json.parse( topology ) })
         return
 	end
 
-    printJson({ topology = json.decode( topology )  })
+    printJson({ topology = json.parse( topology )  })
 
 end
 
@@ -274,7 +274,7 @@ end
 
 if arg[1] == 'call' then
     local msg = io.read()
-	msg = json.decode(msg)
+	msg = json.parse(msg)
     if       arg[2] == 'status'  		        then status(msg)
 	elseif   arg[2] == 'originators'	        then originators(msg)
     elseif   arg[2] == 'links'		            then links(msg)

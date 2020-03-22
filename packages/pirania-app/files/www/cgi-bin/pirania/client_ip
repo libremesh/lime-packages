@@ -1,6 +1,6 @@
 #!/usr/bin/lua
 
-local json = require 'luci.json'
+local json = require 'luci.jsonc'
 local voucher = require('voucher.logic')
 local dba = require('voucher.db')
 local config = require('voucher.config')
@@ -16,4 +16,4 @@ response.ip = ipv4AndMac.ip
 response.mac = ipv4AndMac.mac
 response.valid = voucher.check_mac_validity(db, ipv4AndMac.mac) > 0
 
-print(json.encode(response))
+print(json.stringify(response))
