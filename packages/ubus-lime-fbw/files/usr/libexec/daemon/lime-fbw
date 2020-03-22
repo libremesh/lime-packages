@@ -4,7 +4,7 @@ require "ubus"
 require "uloop"
 local fbw = require 'firstbootwizard'
 local nixio = require "nixio"
-local json = require 'luci.json'
+local json = require 'luci.jsonc'
 
 uloop.init()
 
