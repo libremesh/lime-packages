@@ -6,7 +6,7 @@ local logic = require('voucher.logic')
 local ft = require('voucher.functools')
 local utils = require('voucher.utils')
 local uci = require('uci')
-local json = require 'luci.json'
+local json = require 'luci.jsonc'
 
 local uci_cursor = uci.cursor()
 local arguments
@@ -16,7 +16,7 @@ local context
 captive_portal = {}
 
 local function printJson (obj)
-    print(json.encode(obj))
+    print(json.stringify(obj))
 end
 
 -- Show or change portal url
@@ -118,7 +118,7 @@ captive_portal.add_many_vouchers = function(context, data)
     local db = dba.load(config.db)
     local error = false
     for _,val in pairs (table) do
-        local jdata = json.decode(val)
+        local jdata = json.parse(val)
         local upload = jdata.upload and jdata.upload or '10'
         local download = jdata.download and jdata.download or '10'
         local amountofmacsallowed = jdata.amountofmacsallowed and jdata.amountofmacsallowed or '1'

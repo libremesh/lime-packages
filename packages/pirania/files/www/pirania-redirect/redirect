@@ -1,7 +1,7 @@
 #!/usr/bin/lua
 
 local uci = require('uci')
-local json = require('luci.json')
+local json = require('luci.jsonc')
 local uci_cursor = uci.cursor()
 local redirect_page = require('voucher.utils').redirect_page
 
