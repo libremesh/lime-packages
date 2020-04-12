@@ -76,4 +76,10 @@ describe('LiMe Utils tests #limeutils', function()
 		assert.is.equal("", utils.unsafe_shell("echo 1 2>/dev/null 1>&2"))
 	end)
 
+	it('test set_password', function()
+		stub(os, "execute", function (cmd) return cmd end)
+		assert.is.equal("(echo 'mypassword'; sleep 1; echo 'mypassword') | passwd 'root' >/dev/null 2>&1",
+						utils.set_password("root", "mypassword"))
+	end)
+
 end)

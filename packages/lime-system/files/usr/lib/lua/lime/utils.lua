@@ -288,4 +288,12 @@ function utils.unsafe_shell(command)
     return result
 end
 
+--! based on luci.sys.setpassword
+function utils.set_password(username, password)
+	local user = utils.shell_quote(username)
+	local pass = utils.shell_quote(password)
+	return os.execute(string.format("(echo %s; sleep 1; echo %s) | passwd %s >/dev/null 2>&1",
+									pass, pass, user))
+end
+
 return utils
