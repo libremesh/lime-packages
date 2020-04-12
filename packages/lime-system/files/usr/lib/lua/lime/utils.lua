@@ -7,6 +7,7 @@ local json = require("luci.jsonc")
 local fs = require("nixio.fs")
 
 utils.BOARD_JSON_PATH = "/etc/board.json"
+utils.SHADOW_FILENAME = "/etc/shadow"
 
 function utils.log(...)
 	if DISABLE_LOGGING ~= nil then return end
@@ -294,6 +295,37 @@ function utils.set_password(username, password)
 	local pass = utils.shell_quote(password)
 	return os.execute(string.format("(echo %s; sleep 1; echo %s) | passwd %s >/dev/null 2>&1",
 									pass, pass, user))
+end
+
+function utils.get_root_secret()
+	local f = io.open(utils.SHADOW_FILENAME, "r")
+	if f ~= nil then
+		local root_line = f:read("*l") --! root user is always in the first line
+		local secret = root_line:match("root:(.-):")
+		return secret
+	end
+end
+
+function utils.set_root_secret(secret)
+	local f = io.open(utils.SHADOW_FILENAME, "r")
+	local ret = nil
+	if f ~= nil then
+		--! perform a backup of the shadow
+		local f_bkp = io.open(utils.SHADOW_FILENAME .. "-", "w")
+		f_bkp:write(f:read("*a"))
+		f:seek("set")
+		f_bkp:close()
+
+		local root_line = f:read("*l") --! root user is always in the first line
+		local starts, ends = string.find(root_line, "root:.-:")
+		local content = "root:" .. secret .. root_line:sub(ends) .. "\n"
+		content = content .. f:read("*a")
+		f:close()
+		f = io.open(utils.SHADOW_FILENAME, "w")
+		f:write(content)
+		f:close()
+	end
+	return ret
 end
 
 return utils
