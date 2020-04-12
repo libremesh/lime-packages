@@ -165,4 +165,10 @@ dnsmasq:*:18362:0:99999:7:::
 		assert.is.equal(shadow_content_with_old_password, utils.read_file(TEST_SHADOW_FILENAME .. "-"))
 	end)
 
+	it('test random_string', function()
+		assert.is.equal(5, #utils.random_string(5))
+		assert.is.not_equal(utils.random_string(5), utils.random_string(5))
+		assert.is.equal("number", type(tonumber(utils.random_string(5, function (c) return c:match('%d') ~= nil end))))
+	end)
+
 end)
