@@ -60,16 +60,14 @@ local methods = {
         },
         create_network = {
             function(req, msg)
-                local configs = {}
-                if (msg.network ~= nil) then
-                    configs.ssid = msg.network
+                if (msg.network ~= nil and msg.hostname ~= nil) then
                     conn:reply(req, { status = 'done' })
-                    fbw.apply_user_configs(configs, msg.hostname)
+                    fbw.create_network(msg.network, msg.hostname, msg.password)
                     return
                 else
-                    conn:reply(req, { status = 'error', msg = "Network name is required"})
+                    conn:reply(req, { status = 'error', msg = "Network and hostname are required" })
                 end
-            end, { network = ubus.STRING, hostname = ubus.STRING }
+            end, { network = ubus.STRING, hostname = ubus.STRING, password = ubus.STRING }
         }
     }
 }
