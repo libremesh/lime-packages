@@ -308,7 +308,6 @@ end
 
 function utils.set_root_secret(secret)
 	local f = io.open(utils.SHADOW_FILENAME, "r")
-	local ret = nil
 	if f ~= nil then
 		--! perform a backup of the shadow
 		local f_bkp = io.open(utils.SHADOW_FILENAME .. "-", "w")
@@ -325,7 +324,6 @@ function utils.set_root_secret(secret)
 		f:write(content)
 		f:close()
 	end
-	return ret
 end
 
 --! returns a random string. filter is an optional function to reduce the possible characters.
