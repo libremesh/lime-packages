@@ -19,6 +19,7 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
         local response  = rpcd_call(ubus_lime_utils, {'call', 'set_root_password'},
                                     '{"password": "foo"}')
         assert.is.equal("ok", response.status)
+        assert.stub(utils.set_password).was.called_with('root', 'foo')
     end)
 
     before_each('', function()
