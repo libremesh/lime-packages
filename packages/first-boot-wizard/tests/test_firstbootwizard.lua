@@ -82,6 +82,7 @@ describe('FirstBootWizard tests #fbw', function()
 
         assert.is.equal('SET_SECRET', uci:get("lime-community", 'system', 'root_password_policy'))
         assert.is.equal('mysecret', uci:get("lime-community", 'system', 'root_password_secret'))
+        assert.stub(utils.set_password).was.called_with('root', "mypassword")
     end)
 
     before_each('', function()

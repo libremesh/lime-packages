@@ -15,11 +15,15 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
     end)
 
     it('test set_root_password', function()
+        uci:set('lime-community', 'system', 'lime')
         stub(utils, "set_password", function (user, pass) return pass end)
+
         local response  = rpcd_call(ubus_lime_utils, {'call', 'set_root_password'},
                                     '{"password": "foo"}')
+
         assert.is.equal("ok", response.status)
         assert.stub(utils.set_password).was.called_with('root', 'foo')
+        assert.is.equal("SET_SECRET", uci:get("lime-community", 'system', 'root_password_policy'))
     end)
 
     before_each('', function()
