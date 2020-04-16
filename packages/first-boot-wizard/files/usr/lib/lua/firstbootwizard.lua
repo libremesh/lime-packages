@@ -261,9 +261,7 @@ function fbw.create_network(ssid, hostname, password)
 
     -- Save changes in lime-community
     if password ~= nil and password ~= '' then
-        lutils.set_password('root', password) -- this takes 1 second, it may be replaced with nixio.crypt(password, '$1$vv44cu1H')
-        uci_cursor:set("lime-community", 'system', 'root_password_policy', 'SET_SECRET')
-        uci_cursor:set("lime-community", 'system', 'root_password_secret', lutils.get_root_secret())
+        lutils.set_shared_root_password(password)
     end
     uci_cursor:set("lime-community", 'wifi', 'ap_ssid', ssid)
     uci_cursor:set("lime-community", 'wifi', 'apname_ssid', ssid..'/%H')
