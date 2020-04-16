@@ -24,7 +24,6 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(CP) ./files/* $(1)/
-	@chmod a+x $(1)/etc/init.d/firstbootwizard
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
