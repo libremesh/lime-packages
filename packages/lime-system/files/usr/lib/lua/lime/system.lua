@@ -37,6 +37,9 @@ function system.setup_root_password()
 			utils.set_root_secret(secret)
 		end
 	elseif policy == "RANDOM" then
+		--! Not having a password can be specified by the secret being empty
+		--! or also being '*' or '!'. So we asume there is no password set
+		--! in both cases.
 		if #utils.get_root_secret() <= 1 then
 			utils.set_password('root', utils.random_string(30))
 		end
