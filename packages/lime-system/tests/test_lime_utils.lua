@@ -76,4 +76,99 @@ describe('LiMe Utils tests #limeutils', function()
 		assert.is.equal("", utils.unsafe_shell("echo 1 2>/dev/null 1>&2"))
 	end)
 
+	it('test set_password', function()
+		stub(os, "execute", function (cmd) return cmd end)
+		assert.is.equal("(echo 'mypassword'; sleep 1; echo 'mypassword') | passwd 'root' >/dev/null 2>&1",
+						utils.set_password("root", "mypassword"))
+	end)
+
+	it('test get_root_secret', function()
+		local TEST_SHADOW_FILENAME = '/tmp/test_shadow'
+
+		local shadow_content_empty = [[root::0:0:99999:7:::
+daemon:*:0:0:99999:7:::
+ftp:*:0:0:99999:7:::
+network:*:0:0:99999:7:::
+nobody:*:0:0:99999:7:::
+dnsmasq:*:18362:0:99999:7:::
+]]
+
+		local shadow_content_with_password = [[root:$1$abdccu1H$Y/wmslafly12Tqtwiy1la/:0:0:99999:7:::
+daemon:*:0:0:99999:7:::
+ftp:*:0:0:99999:7:::
+network:*:0:0:99999:7:::
+nobody:*:0:0:99999:7:::
+dnsmasq:*:18362:0:99999:7:::
+]]
+		utils.SHADOW_FILENAME = TEST_SHADOW_FILENAME
+
+        utils.write_file(TEST_SHADOW_FILENAME, shadow_content_empty)
+
+		assert.is.equal("", utils.get_root_secret())
+
+		utils.write_file(TEST_SHADOW_FILENAME, shadow_content_with_password)
+		assert.is.equal("$1$abdccu1H$Y/wmslafly12Tqtwiy1la/", utils.get_root_secret())
+	end)
+
+
+
+	it('test set_root_secret with empty root password', function()
+		local TEST_SHADOW_FILENAME = '/tmp/test_shadow'
+		local shadow_content_empty = [[root::0:0:99999:7:::
+daemon:*:0:0:99999:7:::
+ftp:*:0:0:99999:7:::
+network:*:0:0:99999:7:::
+nobody:*:0:0:99999:7:::
+dnsmasq:*:18362:0:99999:7:::
+]]
+
+		local expected_shadow_content = [[root:$1$vv44cu1H$Y/wT9laa7yJ7TqtwiyVO2/:0:0:99999:7:::
+daemon:*:0:0:99999:7:::
+ftp:*:0:0:99999:7:::
+network:*:0:0:99999:7:::
+nobody:*:0:0:99999:7:::
+dnsmasq:*:18362:0:99999:7:::
+]]
+		utils.write_file(TEST_SHADOW_FILENAME, shadow_content_empty)
+		utils.SHADOW_FILENAME = TEST_SHADOW_FILENAME
+
+		utils.set_root_secret('$1$vv44cu1H$Y/wT9laa7yJ7TqtwiyVO2/')
+
+		assert.is.equal(expected_shadow_content, utils.read_file(TEST_SHADOW_FILENAME))
+		assert.is.equal(shadow_content_empty, utils.read_file(TEST_SHADOW_FILENAME .. "-"))
+	end)
+
+	it('test set_root_secret with root password present', function()
+		local TEST_SHADOW_FILENAME = '/tmp/test_shadow'
+
+		local shadow_content_with_old_password = [[root:$1$abdccu1H$Y/wmslafly12Tqtwiy1la/:0:0:99999:7:::
+daemon:*:0:0:99999:7:::
+ftp:*:0:0:99999:7:::
+network:*:0:0:99999:7:::
+nobody:*:0:0:99999:7:::
+dnsmasq:*:18362:0:99999:7:::
+]]
+
+		local expected_shadow_content = [[root:$1$vv44cu1H$Y/wT9laa7yJ7TqtwiyVO2/:0:0:99999:7:::
+daemon:*:0:0:99999:7:::
+ftp:*:0:0:99999:7:::
+network:*:0:0:99999:7:::
+nobody:*:0:0:99999:7:::
+dnsmasq:*:18362:0:99999:7:::
+]]
+		utils.write_file(TEST_SHADOW_FILENAME, shadow_content_with_old_password)
+		utils.SHADOW_FILENAME = TEST_SHADOW_FILENAME
+
+		utils.set_root_secret('$1$vv44cu1H$Y/wT9laa7yJ7TqtwiyVO2/')
+
+		assert.is.equal(expected_shadow_content, utils.read_file(TEST_SHADOW_FILENAME))
+		assert.is.equal(shadow_content_with_old_password, utils.read_file(TEST_SHADOW_FILENAME .. "-"))
+	end)
+
+	it('test random_string', function()
+		assert.is.equal(5, #utils.random_string(5))
+		assert.is.not_equal(utils.random_string(5), utils.random_string(5))
+		assert.is.equal("number", type(tonumber(utils.random_string(5, function (c) return c:match('%d') ~= nil end))))
+	end)
+
 end)
