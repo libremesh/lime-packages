@@ -1,4 +1,4 @@
-# Unit testing guide
+# Testing guide
 
 LibreMesh has unit tests that help us add new features while keeping maintenance effort contained.
 
@@ -7,6 +7,9 @@ We encourage contributors to write tests when adding new functionality and also 
 LibreMesh unit testing is based in the powerful [busted](https://olivinelabs.com/busted/) library which has a very good documentation.
 
 Tests are run inside a x86_64 Docker image with some lua and openwrt libraries avaible.
+
+We also have a development qemu virtual machine, this is a full libremesh image that can be used
+in development.
 
 ## How to run the tests
 
@@ -145,3 +148,62 @@ The idea behind this script is simple:
 * runs the tests using the dockertestshell
 
 `run_tests` also passes the first argument as an argument to busted so you can do things like`./run_tests --help` to see the busted help, or `./run_tests '--tags=footag --verbose'` so only the tests that have the tag `#footag` in the description of the test are run
+
+
+## Development with qemu virtual machine
+
+This image is not a perfect firmware image, it does not have wifi for example but ethernet network
+LAN and WAN is supported. All the files inside the packages `files/` can be copied into the rootfs,
+overwriting a precooked image that is a full LibreMesh x86_64 image.
+So don't expect that everything runs exactly as in a wireless router but most things will perform
+as expected:
+
+* initialization scripts: uci-defaults, init.d, etc
+* lime-config
+* ubus / rpcd
+* lime-app
+
+
+### How to start and stop the image
+
+You will need a rootfs and ramfs LibreMesh files. To generate one you can use a libremesh buildroot
+and select x86_64 target and select the option to generate an initramfs.
+
+Prebuilt development images can be downloaded from here:
+* http://repo.libremesh.org/tmp/openwrt-18.06-x86-64-generic-rootfs.tar.gz
+* http://repo.libremesh.org/tmp/openwrt-18.06-x86-64-ramfs.bzImage
+
+#### Start it
+
+```
+$ sudo ./tools/qemu_dev_start  path/to/openwrt-x86-64-generic-rootfs.tar.gz path/to/openwrt-x86-64-ramfs.bzImage
+```
+
+#### Stop it
+
+```
+$ ./tools/qemu_dev_stop
+```
+
+#### Update with local libremesh code
+
+If you want to update the qemu image with new LibreMesh files of a local repository you can use
+the option `--libremesh-workdir path/to/workdir`, for example:
+
+```
+$ sudo ./tools/qemu_dev_start  path/to/rootfs.tar.gz path/to/bzImage --libremesh-workdir .
+```
+
+#### Enable WAN and share internet to the virtual machine
+
+Use the --enable-wan, this will create a NAT and share your internet connection to the virtual machine.
+
+### Lime-App
+
+If you want to test a specific version of the Lime-App you can copy the build files into the
+lime-app package after each build:
+
+```
+[lime-app ]$ mkdir -p path/to/lime-packages/packages/lime-app/files/www/app/
+[lime-app ]$ npm run build:dev_router  && cp -r build/* path/to/lime-packages/packages/lime-app/files/www/app/
+```
