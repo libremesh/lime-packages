@@ -173,6 +173,8 @@ Prebuilt development images can be downloaded from here:
 * http://repo.libremesh.org/tmp/openwrt-18.06-x86-64-generic-rootfs.tar.gz
 * http://repo.libremesh.org/tmp/openwrt-18.06-x86-64-ramfs.bzImage
 
+Install the package `qemu-system-x86_64` if you don't have already installed.
+
 #### Start it
 
 ```
