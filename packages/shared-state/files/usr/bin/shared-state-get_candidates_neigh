@@ -38,7 +38,6 @@ currUptime="$(get_uptime)"
 
 candidateAddresses="$(
 for iface in $(ls /sys/class/net/) ; do
-	echo ${iface} | grep -q '^dummy' && continue
 	ls /sys/class/net/${iface}/upper_bat? &> /dev/null || continue
 
 	ping6 -c 2 ff02::1%${iface} 2> /dev/null | \
