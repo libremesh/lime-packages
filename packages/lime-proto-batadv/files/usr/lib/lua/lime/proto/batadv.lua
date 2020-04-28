@@ -58,13 +58,13 @@ end
 function batadv.setup_interface(ifname, args)
 	if not args["specific"] then
 		if ifname:match("^wlan%d+.ap") then return end
-		if ifname:match("^eth") then return end
 	end
 
 	local vlanId = args[2] or "%N1"
 	local vlanProto = args[3] or "8021ad"
 	local nameSuffix = args[4] or "_batadv"
 	local mtu = 1532
+	if ifname:match("^eth") then mtu = 1496 end
 
 	--! Unless a specific integer is passed, parse network_id (%N1) template
 	--! and use that number to get a vlanId between 29 and 284 for batadv
