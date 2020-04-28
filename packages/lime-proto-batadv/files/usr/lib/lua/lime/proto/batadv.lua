@@ -34,20 +34,6 @@ function batadv.configure(args)
 	uci:save("batman-adv")
 	lan.setup_interface("bat0", nil)
 
-	--! Avoid dmesg flooding caused by BLA. Create a dummy0 interface with
-	--! custom MAC, as dummy0 is created very soon on boot it is added as
-	--! first and then main interface to batman so BLA messages are sent
-	--! from that MAC avoiding generating warning like:  
-	--! br-lan: received packet on bat0 with own address as source address
-	local owrtInterfaceName = network.limeIfNamePrefix.."batadv_dummy_if"
-	local dummyMac = network.primary_mac(); dummyMac[1] = "aa"
-	uci:set("network", owrtInterfaceName, "interface")
-	uci:set("network", owrtInterfaceName, "ifname", "dummy0")
-	uci:set("network", owrtInterfaceName, "macaddr", table.concat(dummyMac, ":"))
-	uci:set("network", owrtInterfaceName, "proto", "batadv")
-	uci:set("network", owrtInterfaceName, "mesh", "bat0")
-	uci:save("network")
-
 	-- enable alfred on bat0 if installed
 	if utils.is_installed("alfred") then
 		uci:set("alfred", "alfred", "batmanif", "bat0")
