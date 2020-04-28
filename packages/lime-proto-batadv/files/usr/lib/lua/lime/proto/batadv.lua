@@ -74,8 +74,18 @@ function batadv.setup_interface(ifname, args)
 
 	local owrtInterfaceName, _, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 
+	--! Avoid dmesg flooding caused by BLA with messages like "br-lan:
+	--! received packet on bat0 with own address as source address".
+	--! Randomize MAC address for each of the interfaces included in Batman-adv.
+	local id = utils.get_id(ifname)
+	local randomMac = network.primary_mac();
+	randomMac[1] = id[1]
+	randomMac[2] = id[2]
+	randomMac[3] = id[3]
+
 	local uci = config.get_uci_cursor()
 	uci:set("network", owrtDeviceName, "mtu", mtu)
+	uci:set("network", owrtDeviceName, "macaddr", table.concat(randomMac, ":"))
 	uci:set("network", owrtInterfaceName, "proto", "batadv")
 	uci:set("network", owrtInterfaceName, "mesh", "bat0")
 	uci:save("network")
