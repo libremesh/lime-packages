@@ -7,6 +7,7 @@ local json = require("luci.jsonc")
 local fs = require("nixio.fs")
 
 utils.BOARD_JSON_PATH = "/etc/board.json"
+utils.SHADOW_FILENAME = "/etc/shadow"
 
 function utils.log(...)
 	if DISABLE_LOGGING ~= nil then return end
@@ -286,6 +287,61 @@ function utils.unsafe_shell(command)
     local result = handle:read("*a")
     handle:close()
     return result
+end
+
+--! based on luci.sys.setpassword
+function utils.set_password(username, password)
+	local user = utils.shell_quote(username)
+	local pass = utils.shell_quote(password)
+	return os.execute(string.format("(echo %s; sleep 1; echo %s) | passwd %s >/dev/null 2>&1",
+									pass, pass, user))
+end
+
+function utils.get_root_secret()
+	local f = io.open(utils.SHADOW_FILENAME, "r")
+	if f ~= nil then
+		local root_line = f:read("*l") --! root user is always in the first line
+		local secret = root_line:match("root:(.-):")
+		return secret
+	end
+end
+
+function utils.set_root_secret(secret)
+	local f = io.open(utils.SHADOW_FILENAME, "r")
+	if f ~= nil then
+		--! perform a backup of the shadow
+		local f_bkp = io.open(utils.SHADOW_FILENAME .. "-", "w")
+		f_bkp:write(f:read("*a"))
+		f:seek("set")
+		f_bkp:close()
+
+		local root_line = f:read("*l") --! root user is always in the first line
+		local starts, ends = string.find(root_line, "root:.-:")
+		local content = "root:" .. secret .. root_line:sub(ends) .. "\n"
+		content = content .. f:read("*a")
+		f:close()
+		f = io.open(utils.SHADOW_FILENAME, "w")
+		f:write(content)
+		f:close()
+	end
+end
+
+--! returns a random string. filter is an optional function to reduce the possible characters.
+--! by default the filter allows all the alphanumeric characters
+function utils.random_string(length, filter)
+    if filter == nil then
+        --! all alphanumeric characters
+        filter = function (c) return string.match(c, "%w") ~= nil end
+    end
+    local urandom = io.open("/dev/urandom", "rb")
+    local out = ""
+    while length > #out do
+        local c = urandom:read(1)
+        if filter(c) then
+            out = out .. c
+        end
+    end
+    return out
 end
 
 return utils
