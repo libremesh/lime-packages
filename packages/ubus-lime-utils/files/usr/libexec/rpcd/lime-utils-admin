@@ -1,0 +1,43 @@
+#!/usr/bin/env lua
+--[[
+  Copyright (C) 2020 LibreMesh.org
+  This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
+
+  Copyright 2020 Santiago Piccinini <spiccinini@altermindi.net>
+]]--
+
+local ubus = require "ubus"
+local json = require 'luci.jsonc'
+local utils = require 'lime.utils'
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function set_root_password(msg)
+    local result = nil
+    if type(msg.password) ~= "string" then
+        result = {status = 'error', msg = 'Password must be a string'}
+    else
+        utils.set_password('root', msg.password or '')
+        result = {status = 'ok'}
+    end
+    return utils.printJson(result)
+end
+
+local methods = {
+    set_root_password = { password = 'value'}
+}
+
+if arg[1] == 'list' then
+    utils.printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = utils.rpcd_readline()
+    msg = json.parse(msg)
+    if      arg[2] == 'set_root_password' then set_root_password(msg)
+    else utils.printJson({ error = "Method not found" })
+    end
+end
