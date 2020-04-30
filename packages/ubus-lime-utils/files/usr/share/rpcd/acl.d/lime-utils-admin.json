@@ -1,0 +1,15 @@
+{
+	"root": {
+		"description": "root access only",
+		"read": {
+			"ubus": {
+					"lime-utils-admin": [ "*" ]
+			}
+		},
+		"write": {
+			"ubus": {
+					"lime-utils-admin": [ "*" ]
+			}
+		}
+	}
+}
