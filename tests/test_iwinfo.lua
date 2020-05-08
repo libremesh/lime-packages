@@ -45,7 +45,7 @@ local scanlist_result = {
 }
 
 
-describe('iwinfo fake tests', function()
+describe('iwinfo fake tests #iwinfo', function()
     it('test scanlist returning a single station', function()
         iwinfo.fake.set_scanlist('phy0', scanlist_result)
         local scanlist = iwinfo.nl80211.scanlist('phy0')
@@ -71,6 +71,8 @@ describe('iwinfo fake tests', function()
     end)
 
     it('test assoclist(radio) with one station associated', function()
+        assert.are.same({}, iwinfo.nl80211.assoclist('wlan-foo'))
+
         iwinfo.fake.set_assoclist('wlan1-apname', {})
 
         assert.are.same({}, iwinfo.nl80211.assoclist('wlan1-apname'))
