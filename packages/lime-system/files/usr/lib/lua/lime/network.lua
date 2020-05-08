@@ -21,6 +21,27 @@ function network.get_mac(ifname)
 	return utils.split(macaddr, ":")
 end
 
+--! Return a table of macs based on the interface globing filter
+function network.get_own_macs(intarface_filter)
+	if intarface_filter == nil then
+		intarface_filter = '*'
+	end
+
+	local macs = {}
+	local search_path = "/sys/class/net/" .. intarface_filter .. "/address"
+	for address_path in fs.glob(search_path) do
+		mac = io.open(address_path):read("*l")
+		macs[mac] = 1
+	end
+
+	local result = {}
+	for mac, _ in pairs(macs) do
+		table.insert(result, mac)
+	end
+	return result
+end
+
+
 function network.assert_interface_exists(ifname)
 	assert( ifname ~= nil and ifname ~= "",
 	        "network.primary_interface() could not determine ifname!" )
