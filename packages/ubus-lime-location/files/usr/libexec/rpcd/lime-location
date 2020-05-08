@@ -8,9 +8,10 @@ You may obtain a copy of the License at
 ]]--
 
 
-require "ubus"
-require "iwinfo"
+local ubus = require "ubus"
+local iwinfo = require "iwinfo"
 local json = require "luci.jsonc"
+local config = require("lime.config")
 local wireless = require "lime.wireless"
 local utils = require 'lime.utils'
 
@@ -99,8 +100,8 @@ if arg[1] == 'list' then
 end
 
 if arg[1] == 'call' then
-    local msg = io.read()
-	msg = json.parse(msg)
+    local msg = utils.rpcd_readline()
+    msg = json.parse(msg)
     if       arg[2] == 'get'	        then get_location(msg)
 	elseif   arg[2] == 'set'	        then set_location(msg)
 	elseif   arg[2] == 'nodes_and_links'	        then nodes_and_links(msg)
