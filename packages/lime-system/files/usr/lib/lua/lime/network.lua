@@ -21,13 +21,13 @@ function network.get_mac(ifname)
 end
 
 --! Return a table of macs based on the interface globing filter
-function network.get_own_macs(intarface_filter)
-	if intarface_filter == nil then
-		intarface_filter = '*'
+function network.get_own_macs(interface_filter)
+	if interface_filter == nil then
+		interface_filter = '*'
 	end
 
 	local macs = {}
-	local search_path = "/sys/class/net/" .. intarface_filter .. "/address"
+	local search_path = "/sys/class/net/" .. interface_filter .. "/address"
 	for address_path in fs.glob(search_path) do
 		mac = io.open(address_path):read("*l")
 		macs[mac] = 1
