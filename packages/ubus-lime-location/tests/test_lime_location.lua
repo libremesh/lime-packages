@@ -1,6 +1,8 @@
 local utils = require "lime.utils"
 local test_utils = require "tests.utils"
 local config = require 'lime.config'
+local network = require 'lime.network'
+local iwinfo = require('iwinfo')
 
 local test_file_name = "packages/ubus-lime-location/files/usr/libexec/rpcd/lime-location"
 local ubus_lime_loc = test_utils.load_lua_file_as_function(test_file_name)
@@ -18,7 +20,6 @@ describe('ubus-lime-utils tests #ubuslimelocation', function()
         uci:set("libremap", "settings", "libremap")
         lat = uci:set("libremap", "settings", "community_lat", "23.123")
         lon = uci:set("libremap", "settings", "community_lon", "-45")
-        uci:commit("libremap")
 
         local response  = rpcd_call(ubus_lime_loc, {'call', 'get'}, '')
         assert.is.equal("ok", response.status)
@@ -42,7 +43,7 @@ describe('ubus-lime-utils tests #ubuslimelocation', function()
 
     it('test set location', function()
         local f = io.open("/tmp/lime_location_testing", "w")
-        stub(utils, "unsafe_shell", function () return '00:11:7f:13:36:16\n02:ce:26:aa:83:51\n02:ce:16:aa:83:52' end)
+        stub(network, "get_own_macs", function () return {"00:11:7f:13:36:16", "02:ce:16:aa:83:52"} end)
         stub(io, "popen", function () return f end)
 
         local response  = rpcd_call(ubus_lime_loc, {'call', 'set'}, '{"lat":"1", "lon":"3.14"}')
@@ -53,12 +54,31 @@ describe('ubus-lime-utils tests #ubuslimelocation', function()
     end)
 
     it('test nodes_and_links', function()
+        uci:set("libremap", "settings", "libremap")
+        lat = uci:set("libremap", "settings", "community_lat", "23.123")
+        lon = uci:set("libremap", "settings", "community_lon", "-45")
+
+        local own_macs = {"00:11:7f:13:36:16", "02:ce:16:aa:83:52"}
+        uci:set('wireless', 'wlan0_mesh_foo', 'wifi-iface')
+        uci:set('wireless', 'wlan0_mesh_foo', 'mode', 'mesh')
+        uci:set('wireless', 'wlan0_mesh_foo', 'ifname', 'wlan0-mesh')
+
+        uci:set('wireless', 'wlan1_mesh_foo', 'wifi-iface')
+        uci:set('wireless', 'wlan1_mesh_foo', 'mode', 'adhoc')
+        uci:set('wireless', 'wlan1_mesh_foo', 'ifname', 'wlan1-adhoc')
+        iwinfo.fake.load_from_uci(uci)
+        local sta = iwinfo.fake.gen_assoc_station("HT20", "HT40", -66, 50, 10000, 300, 120)
+        local assoclist = {['AA:BB:CC:DD:EE:FF'] = sta}
+        iwinfo.fake.set_assoclist('wlan1-adhoc', assoclist)
+
+        stub(network, "get_own_macs", function () return own_macs end)
         local response  = rpcd_call(ubus_lime_loc, {'call', 'nodes_and_links'}, '')
         local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
         assert.is.equal(hostname, response[hostname].hostname)
-        assert.is.not_nil(response[hostname].macs)
-        assert.is.not_nil(response[hostname].coordinates)
-        assert.is.not_nil(response[hostname].links)
+
+        assert.are.same(own_macs, response[hostname].macs)
+        assert.are.same({lat='23.123', lon='-45'}, response[hostname].coordinates)
+        assert.are.same({'aa:bb:cc:dd:ee:ff'}, response[hostname].links)
     end)
 
     before_each('', function()

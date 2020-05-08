@@ -13,6 +13,7 @@ local iwinfo = require "iwinfo"
 local json = require "luci.jsonc"
 local config = require("lime.config")
 local wireless = require "lime.wireless"
+local network = require 'lime.network'
 local utils = require 'lime.utils'
 
 
@@ -52,17 +53,9 @@ local function set_location(msg)
     utils.printJson({ lat = msg.lat, lon = msg.lon, status = 'ok' });
 end
 
-local function lines(str)
-  -- split a string into lines separated by line endings
-  local t = {}
-  local function helper(line) table.insert(t, line) return "" end
-  helper((str:gsub("(.-)\r?\n", helper)))
-  return t
-end
-
-local function nodes_and_links()
+function _nodes_and_links()
   local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
-  local macs = lines(utils.unsafe_shell("cat /sys/class/net/wlan*/address | sort -u | head -c -1"))
+  local macs = network.get_own_macs("wlan*")
 
   local coordinates = _get_location().location
   local iface, currneigh, _, n
@@ -75,15 +68,13 @@ local function nodes_and_links()
         table.insert(links, string.lower(mac))
     end
   end
-      result = {}
-      result[hostname] = {
-      hostname=hostname,
-      macs=macs,
-      coordinates=coordinates,
-      links=links
-      }
-	utils.printJson(result)
+  result = {}
+  result[hostname] = {hostname=hostname, macs=macs, coordinates=coordinates, links=links}
+  return result
+end
 
+local function nodes_and_links()
+  utils.printJson(_nodes_and_links())
 end
 
 function all_nodes_and_links(msg)
