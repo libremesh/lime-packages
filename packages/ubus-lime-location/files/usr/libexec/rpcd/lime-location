@@ -36,6 +36,8 @@ local function _get_location(msg)
         result.location.lon = uci:get("libremap", "settings", "community_lon")
         result.default = true
     end
+
+    result.status = "ok"
     return result;
 end
 
@@ -47,7 +49,7 @@ local function set_location(msg)
     local uci = config.get_uci_cursor()
     uci:set("libremap", "location", "latitude", msg.lon)
     uci:set("libremap", "location", "longitude", msg.lat)
-    utils.printJson({ lat = msg.lat, lon = msg.lon });
+    utils.printJson({ lat = msg.lat, lon = msg.lon, status = 'ok' });
 end
 
 local function lines(str)
