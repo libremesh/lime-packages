@@ -149,6 +149,13 @@ describe('LiMe Network tests', function()
         assert.is.equal('none', uci:get("network", "lm_net_wlan85_fooproto_if", "proto"))
     end)
 
+    it('test get_own_macs', function()
+        assert.are.same({"00:00:00:00:00:00"}, network.get_own_macs("lo"))
+        assert.are.same(network.get_own_macs(), network.get_own_macs("*"))
+        assert.are.Not.same(network.get_own_macs("wlan0"), network.get_own_macs("*"))
+        assert.are.Not.same(network.get_own_macs("wlan0"), network.get_own_macs("lo"))
+    end)
+
     before_each('', function()
         uci = test_utils.setup_test_uci()
     end)
