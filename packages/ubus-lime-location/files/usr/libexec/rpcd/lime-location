@@ -32,18 +32,18 @@ end
 
 local function _get_location(msg)
     local result = {location = {}, default = false}
-    local lat = conn:call("uci", "get", {config="libremap", section="location", option="latitude" }).value
-    local lon = conn:call("uci", "get", {config="libremap", section="location", option="longitude" }).value
+    local uci = config.get_uci_cursor()
+
+    local lat = uci:get("libremap", "location", "latitude")
+    local lon = uci:get("libremap", "location", "longitude")
 
     if (type(tonumber(lat)) == "number" and type(tonumber(lon)) == "number") then
         result.location.lat = lat
         result.location.lon = lon
     else
-        result.location.lat = conn:call("uci", "get", {config="libremap", section="@libremap[0]",
-                                              option="community_lat" }).value
-        result.location.lon = conn:call("uci", "get", {config="libremap", section="@libremap[0]",
-                                              option="community_lon" }).value
-        result.default = true                                              
+        result.location.lat = uci:get("libremap", "settings", "community_lat")
+        result.location.lon = uci:get("libremap", "settings", "community_lon")
+        result.default = true
     end
     return result;
 end
@@ -53,8 +53,9 @@ local function get_location(msg)
 end
 
 local function set_location(msg)
-    local result = {}
-    conn:call("uci", "set", {config="libremap", section="location", values={ longitude = msg.lon, latitude = msg.lat } })
+    local uci = config.get_uci_cursor()
+    uci:set("libremap", "location", "latitude", msg.lon)
+    uci:set("libremap", "location", "longitude", msg.lat)
     printJson({ lat = msg.lat, lon = msg.lon });
 end
 
