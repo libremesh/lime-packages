@@ -1,6 +1,7 @@
 #!/usr/bin/env lua
 --[[
 Copyright 2017 Marcos Gutierrez <gmarcos87@gmail.com>
+Copyright 2020 Santiago Piccinini <spiccinini@altermundi.net>
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -50,6 +51,8 @@ local function set_location(msg)
     local uci = config.get_uci_cursor()
     uci:set("libremap", "location", "latitude", msg.lon)
     uci:set("libremap", "location", "longitude", msg.lat)
+
+    io.popen("shared-state insert nodes_and_links", "w"):write(json.stringify(_nodes_and_links()))
     utils.printJson({ lat = msg.lat, lon = msg.lon, status = 'ok' });
 end
 
