@@ -14,24 +14,24 @@ function batadv.configure(args)
 	if batadv.configured then return end
 	batadv.configured = true
 
-	if not fs.lstat("/etc/config/batman-adv") then fs.writefile("/etc/config/batman-adv", "") end
-
 	local uci = config.get_uci_cursor()
 
-	uci:set("batman-adv", "bat0", "mesh")
-	uci:set("batman-adv", "bat0", "bridge_loop_avoidance", "1")
-	uci:set("batman-adv", "bat0", "multicast_mode", "0")
+	uci:set("network", "bat0", "interface")
+	uci:set("network", "bat0", "proto", "batadv")
+	uci:set("network", "bat0", "interface")
+	uci:set("network", "bat0", "bridge_loop_avoidance", "1")
+	uci:set("network", "bat0", "multicast_mode", "0")
 
 	-- if anygw enabled disable DAT that doesn't play well with it
 	-- and set gw_mode=client everywhere. Since there's no gw_mode=server, this makes bat0 never forward requests
 	-- so a rogue DHCP server doesn't affect whole network (DHCP requests are always answered locally)
 	for _,proto in pairs(config.get("network", "protocols")) do
 		if proto == "anygw" then
-			uci:set("batman-adv", "bat0", "distributed_arp_table", "0")
-			uci:set("batman-adv", "bat0", "gw_mode", "client")
+			uci:set("network", "bat0", "distributed_arp_table", "0")
+			uci:set("network", "bat0", "gw_mode", "client")
 		end
 	end
-	uci:save("batman-adv")
+
 	lan.setup_interface("bat0", nil)
 
 	--! Avoid dmesg flooding caused by BLA. Create a dummy0 interface with
@@ -44,8 +44,8 @@ function batadv.configure(args)
 	uci:set("network", owrtInterfaceName, "interface")
 	uci:set("network", owrtInterfaceName, "ifname", "dummy0")
 	uci:set("network", owrtInterfaceName, "macaddr", table.concat(dummyMac, ":"))
-	uci:set("network", owrtInterfaceName, "proto", "batadv")
-	uci:set("network", owrtInterfaceName, "mesh", "bat0")
+	uci:set("network", owrtInterfaceName, "proto", "batadv_hardif")
+	uci:set("network", owrtInterfaceName, "master", "bat0")
 	uci:save("network")
 
 	-- enable alfred on bat0 if installed
@@ -76,8 +76,8 @@ function batadv.setup_interface(ifname, args)
 
 	local uci = config.get_uci_cursor()
 	uci:set("network", owrtDeviceName, "mtu", mtu)
-	uci:set("network", owrtInterfaceName, "proto", "batadv")
-	uci:set("network", owrtInterfaceName, "mesh", "bat0")
+	uci:set("network", owrtInterfaceName, "proto", "batadv_hardif")
+	uci:set("network", owrtInterfaceName, "master", "bat0")
 	uci:save("network")
 end
 
