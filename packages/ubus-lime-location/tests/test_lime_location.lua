@@ -30,14 +30,16 @@ describe('ubus-lime-utils tests #ubuslimelocation', function()
 
     it('test get with location', function()
         uci:set("libremap", "location", "plugin")
-        lat = uci:set("libremap", "location", "latitude", "15.123")
-        lon = uci:set("libremap", "location", "longitude", "-5")
+        local latitude = "15.123"
+        local longitude = "-5"
+        lat = uci:set("libremap", "location", "latitude", latitude)
+        lon = uci:set("libremap", "location", "longitude", longitude)
         uci:commit("libremap")
 
         local response  = rpcd_call(ubus_lime_loc, {'call', 'get'}, '')
         assert.is.equal("ok", response.status)
-        assert.is.equal("15.123", response.location.lat)
-        assert.is.equal("-5", response.location.lon)
+        assert.is.equal(latitude, response.location.lat)
+        assert.is.equal(longitude, response.location.lon)
         assert.is.equal(false, response.default)
     end)
 
@@ -46,11 +48,17 @@ describe('ubus-lime-utils tests #ubuslimelocation', function()
         stub(network, "get_own_macs", function () return {"00:11:7f:13:36:16", "02:ce:16:aa:83:52"} end)
         stub(io, "popen", function () return f end)
 
+        uci:set("libremap", "location", "plugin")
+        lat = uci:set("libremap", "location", "latitude", "15.123")
+        lon = uci:set("libremap", "location", "longitude", "-5")
+
         local response  = rpcd_call(ubus_lime_loc, {'call', 'set'}, '{"lat":"1", "lon":"3.14"}')
         io.popen:revert()
         assert.is.equal("ok", response.status)
         assert.is.equal("1", response.lat)
         assert.is.equal("3.14", response.lon)
+        assert.is.equal("1", uci:get("libremap", "location", "latitude"))
+        assert.is.equal("3.14", uci:get("libremap", "location", "longitude"))
     end)
 
     it('test nodes_and_links', function()

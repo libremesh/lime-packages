@@ -49,8 +49,8 @@ end
 
 local function set_location(msg)
     local uci = config.get_uci_cursor()
-    uci:set("libremap", "location", "latitude", msg.lon)
-    uci:set("libremap", "location", "longitude", msg.lat)
+    uci:set("libremap", "location", "latitude", msg.lat)
+    uci:set("libremap", "location", "longitude", msg.lon)
     uci:commit("libremap")
 
     io.popen("shared-state insert nodes_and_links", "w"):write(json.stringify(_nodes_and_links()))
