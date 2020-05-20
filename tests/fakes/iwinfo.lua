@@ -62,7 +62,7 @@ function iwinfo.fake.set_assoclist(radio, assoclist)
 end
 
 function iwinfo.nl80211.assoclist(radio)
-    return iwinfo.fake._assoclists[radio]
+    return iwinfo.fake._assoclists[radio] or {}
 end
 
 function iwinfo.fake.gen_assoc_station(rx_ht_mode, tx_ht_mode, signal, quality, inactive_ms,

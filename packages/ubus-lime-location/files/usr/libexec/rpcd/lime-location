@@ -1,6 +1,7 @@
 #!/usr/bin/env lua
 --[[
 Copyright 2017 Marcos Gutierrez <gmarcos87@gmail.com>
+Copyright 2020 Santiago Piccinini <spiccinini@altermundi.net>
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -8,22 +9,14 @@ You may obtain a copy of the License at
 ]]--
 
 
-require "ubus"
-require "iwinfo"
+local ubus = require "ubus"
+local iwinfo = require "iwinfo"
 local json = require "luci.jsonc"
+local config = require("lime.config")
 local wireless = require "lime.wireless"
+local network = require 'lime.network'
+local utils = require 'lime.utils'
 
-local function shell(command)
-    -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
-    local handle = io.popen(command)
-    local result = handle:read("*a")
-    handle:close()
-    return result
-end
-
-local function printJson (obj)
-    print(json.stringify(obj))
-end
 
 local conn = ubus.connect()
 if not conn then
@@ -32,43 +25,41 @@ end
 
 local function _get_location(msg)
     local result = {location = {}, default = false}
-    local lat = conn:call("uci", "get", {config="libremap", section="location", option="latitude" }).value
-    local lon = conn:call("uci", "get", {config="libremap", section="location", option="longitude" }).value
+    local uci = config.get_uci_cursor()
+
+    local lat = uci:get("libremap", "location", "latitude")
+    local lon = uci:get("libremap", "location", "longitude")
 
     if (type(tonumber(lat)) == "number" and type(tonumber(lon)) == "number") then
         result.location.lat = lat
         result.location.lon = lon
     else
-        result.location.lat = conn:call("uci", "get", {config="libremap", section="@libremap[0]",
-                                              option="community_lat" }).value
-        result.location.lon = conn:call("uci", "get", {config="libremap", section="@libremap[0]",
-                                              option="community_lon" }).value
-        result.default = true                                              
+        result.location.lat = uci:get("libremap", "settings", "community_lat")
+        result.location.lon = uci:get("libremap", "settings", "community_lon")
+        result.default = true
     end
+
+    result.status = "ok"
     return result;
 end
 
 local function get_location(msg)
-  printJson(_get_location(msg))
+  utils.printJson(_get_location(msg))
 end
 
 local function set_location(msg)
-    local result = {}
-    conn:call("uci", "set", {config="libremap", section="location", values={ longitude = msg.lon, latitude = msg.lat } })
-    printJson({ lat = msg.lat, lon = msg.lon });
+    local uci = config.get_uci_cursor()
+    uci:set("libremap", "location", "latitude", msg.lat)
+    uci:set("libremap", "location", "longitude", msg.lon)
+    uci:commit("libremap")
+
+    io.popen("shared-state insert nodes_and_links", "w"):write(json.stringify(_nodes_and_links()))
+    utils.printJson({ lat = msg.lat, lon = msg.lon, status = 'ok' });
 end
 
-local function lines(str)
-  -- split a string into lines separated by line endings
-  local t = {}
-  local function helper(line) table.insert(t, line) return "" end
-  helper((str:gsub("(.-)\r?\n", helper)))
-  return t
-end
-
-local function nodes_and_links()
+function _nodes_and_links()
   local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
-  local macs = lines(shell("cat /sys/class/net/wlan*/address | sort -u | head -c -1"))
+  local macs = network.get_own_macs("wlan*")
 
   local coordinates = _get_location().location
   local iface, currneigh, _, n
@@ -81,19 +72,17 @@ local function nodes_and_links()
         table.insert(links, string.lower(mac))
     end
   end
-      result = {}
-      result[hostname] = {
-      hostname=hostname,
-      macs=macs,
-      coordinates=coordinates,
-      links=links
-      }
-	printJson(result)
+  result = {}
+  result[hostname] = {hostname=hostname, macs=macs, coordinates=coordinates, links=links}
+  return result
+end
 
+local function nodes_and_links()
+  utils.printJson(_nodes_and_links())
 end
 
 function all_nodes_and_links(msg)
-  print('{"result":'..shell("shared-state get nodes_and_links")..'}')
+  print('{"result":'..utils.unsafe_shell("shared-state get nodes_and_links")..'}')
 end
 
 local methods = {
@@ -104,16 +93,16 @@ local methods = {
 }
 
 if arg[1] == 'list' then
-    printJson(methods)
+    utils.printJson(methods)
 end
 
 if arg[1] == 'call' then
-    local msg = io.read()
-	msg = json.parse(msg)
+    local msg = utils.rpcd_readline()
+    msg = json.parse(msg)
     if       arg[2] == 'get'	        then get_location(msg)
 	elseif   arg[2] == 'set'	        then set_location(msg)
 	elseif   arg[2] == 'nodes_and_links'	        then nodes_and_links(msg)
 	elseif   arg[2] == 'all_nodes_and_links'	        then all_nodes_and_links(msg)
-    else                                printJson({ error = "Method not found" })
+    else utils.printJson({ error = "Method not found" })
     end
 end
