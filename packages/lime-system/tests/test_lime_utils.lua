@@ -1,6 +1,8 @@
 local utils = require 'lime.utils'
 local test_utils = require 'tests.utils'
 
+local uci = nil
+
 describe('LiMe Utils tests #limeutils', function()
     it('test literalize(str) with a string that has all the reserved chars', function()
         local str = 'f+o[o]?.*(,)_-%a$l^'
@@ -165,10 +167,29 @@ dnsmasq:*:18362:0:99999:7:::
 		assert.is.equal(shadow_content_with_old_password, utils.read_file(TEST_SHADOW_FILENAME .. "-"))
 	end)
 
+    it('test set_shared_root_password', function()
+		uci:set('lime-community', 'system', 'lime')
+		stub(utils, "set_password", function (user, pass) return pass end)
+
+		utils.set_shared_root_password('foo')
+
+		assert.stub(utils.set_password).was.called_with('root', 'foo')
+		assert.is.equal("SET_SECRET", uci:get("lime-community", 'system', 'root_password_policy'))
+		assert.is_not("", uci:get("lime-community", 'system', 'root_password_secret'))
+	end)
+
 	it('test random_string', function()
 		assert.is.equal(5, #utils.random_string(5))
 		assert.is.not_equal(utils.random_string(5), utils.random_string(5))
 		assert.is.equal("number", type(tonumber(utils.random_string(5, function (c) return c:match('%d') ~= nil end))))
 	end)
+
+    before_each('', function()
+        uci = test_utils.setup_test_uci()
+    end)
+
+    after_each('', function()
+        test_utils.teardown_test_uci(uci)
+    end)
 
 end)
