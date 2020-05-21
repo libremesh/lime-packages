@@ -255,22 +255,21 @@ function fbw.read_configs()
 end
 
 -- Apply configuration for a new network ( used in ubus daemon)
-function fbw.apply_user_configs(configs, hostname)
-    fbw.log('apply_file_config(ssid=' .. configs.ssid .. ', hostname=' .. hostname .. ')')
+function fbw.create_network(ssid, hostname, password)
+    fbw.log('apply_file_config(ssid=' .. ssid .. ', hostname=' .. hostname .. ')')
     local uci_cursor = config.get_uci_cursor()
-    -- Mesh network name
-    local name = configs.ssid
-    -- Format hostname
-    hostname = hostname or config.get("system", "hostname")
+
     -- Save changes in lime-community
-    uci_cursor:set("lime-community", 'wifi', 'ap_ssid', name)
-    uci_cursor:set("lime-community", 'wifi', 'apname_ssid', name..'/%H')
-    uci_cursor:set("lime-community", 'wifi', 'adhoc_ssid', 'LiMe.%H')
-    uci_cursor:set("lime-community", 'wifi', 'ieee80211s_mesh_id', 'LiMe')
+    if password ~= nil and password ~= '' then
+        lutils.set_shared_root_password(password)
+    end
+    uci_cursor:set("lime-community", 'wifi', 'ap_ssid', ssid)
+    uci_cursor:set("lime-community", 'wifi', 'apname_ssid', ssid..'/%H')
     uci_cursor:commit("lime-community")
+
     -- Apply new configuration and setup hostname
     config.reset_node_config()
-    uci_cursor:set("lime-node", 'system', 'hostname', hostname)
+    uci_cursor:set("lime-node", 'system', 'hostname', hostname or config.get("system", "hostname"))
     fbw.end_config()
 end
 

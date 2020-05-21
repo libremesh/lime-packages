@@ -20,7 +20,7 @@ local function set_root_password(msg)
     if type(msg.password) ~= "string" then
         result = {status = 'error', msg = 'Password must be a string'}
     else
-        utils.set_password('root', msg.password or '')
+        utils.set_shared_root_password(msg.password or '')
         result = {status = 'ok'}
     end
     return utils.printJson(result)
