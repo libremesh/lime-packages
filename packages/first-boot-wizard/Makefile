@@ -12,7 +12,7 @@ define Package/$(PKG_NAME)
     CATEGORY:=LiMe
     MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
     URL:=http://libremesh.org
-
+    PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description
