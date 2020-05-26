@@ -1,0 +1,11 @@
+#!/bin/sh
+
+DEFAULT_TIMEOUT_S=10
+TIMEOUT_S="${1:-$DEFAULT_TIMEOUT_S}"
+DETECTION_URL="http://detectportal.firefox.com/success.txt"
+
+detection_out=$(wget -q $DETECTION_URL --timeout="$TIMEOUT_S" -O - 2> /dev/null)
+
+test "$detection_out" = "success"
+
+exit $?
