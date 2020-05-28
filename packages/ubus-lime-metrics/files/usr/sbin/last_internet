@@ -8,7 +8,7 @@
 
 result=''
 # if 8.8.8.8 is accessible, print internet path
-if ping -q -c5 -w10 8.8.8.8 &>/dev/null; then
+if check-internet; then
     #BMX6 Path to INternet
     if [[ -f '/usr/lib/opkg/info/lime-proto-bmx6.control' ]]; then 
         default_dev=`ip r | grep "default dev" | cut -d' ' -f3`;
