@@ -21,21 +21,21 @@ function batadv.configure(args)
 	if batadv.configured then return end
 	batadv.configured = true
 
-    --! Detect batman config API until 2019.0-2/OpenWrt 18.06.x
-    local cfg_file = 'network'
+	--! Detect batman config API until 2019.0-2/OpenWrt 18.06.x
+	local cfg_file = 'network'
 	if batadv.detect_old_cfg_api() then
 		batadv.old_cfg_api = true
 		cfg_file = 'batman-adv'
 		batadv.ifc_proto = 'batadv'
 		batadv.type_option = 'mesh'
-    end
+	end
 
 	local uci = config.get_uci_cursor()
 
 	if not batadv.old_cfg_api then
 		uci:set(cfg_file, "bat0", "interface")
 		uci:set(cfg_file, "bat0", "proto", "batadv")
-    else
+	else
 		uci:set(cfg_file, "bat0", "mesh")
 	end
 
