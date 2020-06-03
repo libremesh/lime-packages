@@ -80,20 +80,20 @@ config lime wifi
 	list modes 'ieee80211s'
 #	list modes 'adhoc'				# See below for adhoc configuration
 #	list modes 'client'				# See below for client configuration
-	option ap_ssid 'LibreMesh.org'			# set here your network name, **this value is required even if AP is not used**, as it is used for calculating fields with %Nn
+	option ap_ssid 'LibreMesh.org'			# set here your network name, **this value is required even if AP is not used**, as it is used for calculating fields with %Nn. Connect to this network to roam across APs.
 #	option ap_key 'SomeWPA2PskKey'
 #	option ap_encryption 'psk2'
-	option apname_ssid 'LibreMesh.org/%H'		# a user can connect to the named AP to avoid roaming
+	option apname_ssid 'LibreMesh.org/%H'		# SSID specific to each AP. A user can connect to the named AP to avoid roaming
 #	option apname_key 'SomeWPA2PskKey'
 #	option apname_encryption 'psk2'
-	option adhoc_ssid 'LiMe'			# adhoc configuration
+	option adhoc_ssid 'LiMe'			# SSID of the APs (nodes) when meshing in ad-hoc mode, i.e., the nodes form an IBSS. Not used when meshing in 802.11s (the default)
 	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
 	option adhoc_mcast_rate_2ghz '24000'
 	option adhoc_mcast_rate_5ghz '6000'
 	option ieee80211s_mcast_rate_2ghz '24000'
 	option ieee80211s_mcast_rate_5ghz '6000'
 	option ieee80211s_mesh_fwding '0'		# Settings needed only for 802.11s
-	option ieee80211s_mesh_id 'LiMe'
+	option ieee80211s_mesh_id 'LiMe'		# Mesh cloud identifier (close to SSID in concept). Used by the nodes to join and participate in the mesh network.
 #	option ieee80211s_encryption 'psk2/aes'		# in order to use encrypted mesh, the wpad-mini package have to be replaced with wpad-mesh-wolfssl package either manually or by the selected network-profile
 #	option ieee80211s_key 'SomePsk2AESKey'
 
