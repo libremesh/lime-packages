@@ -26,8 +26,15 @@ local function set_root_password(msg)
     return utils.printJson(result)
 end
 
+local function is_upgrade_confirm_supported(msg)
+    local exit_value = os.execute("safe-upgrade board-supported")
+    local supported = exit_value == 0
+    return utils.printJson({status = 'ok', supported = supported})
+end
+
 local methods = {
-    set_root_password = { password = 'value'}
+    set_root_password = { password = 'value'},
+    is_upgrade_confirm_supported = { no_params = 0 }
 }
 
 if arg[1] == 'list' then
@@ -38,6 +45,7 @@ if arg[1] == 'call' then
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
     if      arg[2] == 'set_root_password' then set_root_password(msg)
+    elseif  arg[2] == 'is_upgrade_confirm_supported' then is_upgrade_confirm_supported(msg)
     else utils.printJson({ error = "Method not found" })
     end
 end
