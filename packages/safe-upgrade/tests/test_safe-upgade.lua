@@ -93,4 +93,57 @@ mtd8: 00010000 00010000 "ART"
         su.get_current_device:revert()
     end)
 
+    it('test preserve_files_to_new_partition preserve some', function()
+        local preserve_file = test_dir .. 'foo'
+        local preserve_inexistent_file = test_dir .. 'inexistent_foo'
+        utils.write_file(preserve_file, '')
+        stub(utils, 'keep_on_upgrade_files', function() return {preserve_file, preserve_inexistent_file} end)
+        local args = {reboot_safety_timeout=600}
+        local files_preserved = su.preserve_files_to_new_partition(args)
+        local expected = {
+            'etc/safe_upgrade_auto_reboot_confirm_timeout_s',
+            'etc/rc.d/S11safe_upgrade_auto_reboot',
+            'etc/init.d/safe_upgrade_auto_reboot',
+             string.sub(preserve_file, 2)
+        }
+        assert.are.same(expected, files_preserved)
+    end)
+
+    it('test preserve_files_to_new_partition do not preserve', function()
+        local preserve_file = test_dir .. 'foo'
+        local preserve_inexistent_file = test_dir .. 'inexistent_foo'
+        utils.write_file(preserve_file, '')
+        stub(utils, 'keep_on_upgrade_files', function() return {preserve_file, preserve_inexistent_file} end)
+        local args = {reboot_safety_timeout=600, do_not_preserve_config=true}
+        local files_preserved = su.preserve_files_to_new_partition(args)
+        local expected = {
+            'etc/safe_upgrade_auto_reboot_confirm_timeout_s',
+            'etc/rc.d/S11safe_upgrade_auto_reboot',
+            'etc/init.d/safe_upgrade_auto_reboot',
+        }
+        assert.are.same(expected, files_preserved)
+    end)
+
+    it('test preserve_files_to_new_partition with archive', function()
+        local preserve_archive = test_dir .. 'backup.tar.gz'
+        os.execute('tar cfz ' .. preserve_archive .. ' /proc/version 2> /dev/null')
+        stub(utils, 'keep_on_upgrade_files', function() return {} end)
+        local args = {reboot_safety_timeout=600, preserve_archive=preserve_archive}
+        local files_preserved = su.preserve_files_to_new_partition(args)
+        local expected = {
+            'etc/safe_upgrade_auto_reboot_confirm_timeout_s',
+            'etc/rc.d/S11safe_upgrade_auto_reboot',
+            'etc/init.d/safe_upgrade_auto_reboot',
+            'proc/version',
+        }
+        assert.are.same(expected, files_preserved)
+    end)
+
+    before_each('', function()
+        test_dir = test_utils.setup_test_dir()
+    end)
+
+    after_each('', function()
+        test_utils.teardown_test_dir()
+    end)
 end)

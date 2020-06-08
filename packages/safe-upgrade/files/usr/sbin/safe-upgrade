@@ -205,7 +205,8 @@ function su.is_firmware_valid(metadata)
     return false
 end
 
-local function preserve_files_to_new_partition(args)
+function su.preserve_files_to_new_partition(args)
+    os.execute("rm -rf /tmp/_to_sysupgradetgz/")
     os.execute("mkdir -p /tmp/_to_sysupgradetgz/etc/init.d/")
     os.execute("mkdir -p /tmp/_to_sysupgradetgz/etc/rc.d/")
     local f = io.open("/tmp/_to_sysupgradetgz/etc/init.d/safe_upgrade_auto_reboot", "w")
@@ -215,18 +216,46 @@ local function preserve_files_to_new_partition(args)
     os.execute("chmod +x /tmp/_to_sysupgradetgz/etc/init.d/safe_upgrade_auto_reboot")
     os.execute("ln -s ../init.d/safe_upgrade_auto_reboot /tmp/_to_sysupgradetgz/etc/rc.d/S11safe_upgrade_auto_reboot")
 
-
     if not args.disable_reboot_safety then
         local f = io.open("/tmp/_to_sysupgradetgz/etc/safe_upgrade_auto_reboot_confirm_timeout_s", "w")
         f:write(args.reboot_safety_timeout)
         f:close()
     end
 
-    -- append files from existing /tmp/sysupgrade.tgz
-    if file_exists("/tmp/sysupgrade.tgz") then
-        os.execute("tar xfz /tmp/sysupgrade.tgz -C /tmp/_to_sysupgradetgz/")
+    if args.do_not_preserve_config then
+        utils.log('Not preserving config.')
+    else
+        utils.log('Preserving libremesh minimal config.')
+        local files = ""
+        for _, file_name in pairs(utils.keep_on_upgrade_files()) do
+            if utils.file_exists(file_name) then
+                files = files .. " " .. file_name
+            end
+        end
+        if files ~= '' then
+            --! using an intermediate tar file for simplicity
+            os.execute("tar cf /tmp/_safe_upgrade_intermadiate.tar " .. files .. " 2> /dev/null")
+            os.execute("tar xf /tmp/_safe_upgrade_intermadiate.tar -C /tmp/_to_sysupgradetgz/")
+        end
     end
+
+    if args.preserve_archive then
+        os.execute("tar xfz " .. args.preserve_archive .. " -C /tmp/_to_sysupgradetgz/")
+    end
+
     os.execute("tar cfz /tmp/sysupgrade.tgz -C /tmp/_to_sysupgradetgz/ `ls /tmp/_to_sysupgradetgz/`")
+    utils.log('List of files that are being preserved:')
+    local file_list = {}
+    local out = io.popen("tar tfz /tmp/sysupgrade.tgz")
+    for line in out:lines() do
+        --! skip directories
+        if not utils.stringEnds(line, '/') then
+            table.insert(file_list, line)
+            utils.log('\t' .. line)
+        end
+    end
+    out:close()
+    return file_list
 end
 
 local function bootstrap(args)
@@ -287,15 +316,7 @@ local function upgrade(args)
         end
     end
 
-    if not args.do_not_preserve_config then
-        print('Preserving full config')
-        os.execute("sysupgrade  --create-backup /tmp/sysupgrade.tgz")
-        --[[ TODO: implement preserve config lime for first boot wizard,
-             the final file must be /tmp/sysupgrade.tgz
-        ]]--
-    end
-
-    preserve_files_to_new_partition(args)
+    su.preserve_files_to_new_partition(args)
 
     -- postpone 10m defarable-reboot
     os.execute("awk '{print $1 + 600}' /proc/uptime > /tmp/deferable-reboot.defer")
@@ -380,6 +401,9 @@ local function parse_args()
     upgrade:flag("-n --do-not-preserve-config", "Do not save configuration to the new partition")
     upgrade:flag("--disable-reboot-safety", "Disable the automatic reboot safety mechanism")
     upgrade:flag("--force", "Upgrade even if firmware is not valid")
+    upgrade:option("--preserve-archive", [[Specify additional files to preserve as a tar.gz (Like the sysupgrade -f).
+    To preserve a full config you may use sysupgrade --create-backup and use this .tar.gz.]])
+                   :convert(validate_file_exists)
     upgrade:option("--reboot-safety-timeout",
                    "Set the timeout (in seconds) of the automatic reboot safety mechanism")
                    :default('600'):convert(validate_safety_timeout)
