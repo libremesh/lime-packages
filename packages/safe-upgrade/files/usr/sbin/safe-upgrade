@@ -18,6 +18,8 @@
 
 local io = require "io"
 local argparse = require 'argparse'
+local json = require "luci.jsonc"
+local utils = require "lime.utils"
 
 local su = {}
 
@@ -25,6 +27,7 @@ su.version = '1.0'
 local firmware_size_bytes = 7936*1024
 local fw1_addr = 0x9f050000
 local fw2_addr = 0x9f050000 + firmware_size_bytes
+su._supported_devices = {'librerouter-v1'}
 
 -- safe upgrade script, generated with bootscript.py, DO NOT edit here!
 local bootcmd = 'run preboot; boot_part=${stable_part}; if test ${testing_part} -ne 0; then echo Testing part ${testing_part}; boot_part=${testing_part}; set testing_part 0; saveenv; fi; if test ${boot_part} -eq 2; then fw_addr=${fw2_addr}; run boot_2; else fw_addr=${fw1_addr}; run boot_1; fi; run boot_1; bootm ${fw1_addr};'
@@ -169,6 +172,24 @@ function assert_su_installed()
         print('safe-upgrade is not installed, aborting')
         os.exit(114)
     end
+end
+
+function su.get_current_device()
+    return utils.read_file("/tmp/sysinfo/board_name")
+end
+
+function su.get_supported_devices()
+    return su._supported_devices
+end
+
+function su.is_current_board_supported()
+    local current_device = su.get_current_device()
+    for _, supported_device in pairs(su.get_supported_devices()) do
+        if string.find(current_device, utils.literalize(supported_device)) then
+            return true
+        end
+    end
+    return false
 end
 
 function preserve_files_to_new_partition(args)
@@ -334,6 +355,8 @@ function parse_args()
 
     local test_other_parition = parser:command('test-other-partition',
         'Mark the other partition as testing partition.')
+
+    local board_supported = parser:command('board-supported', 'Exits with 0 if board is supported')
     --local swap_stable = parser:command('swap', 'Change the stable partition to the other partition.')
     local args = parser:parse()
 
@@ -359,6 +382,13 @@ else
         confirm(args)
     elseif args['test-other-partition'] then
         test_other_partition(args)
+    elseif args['board-supported'] then
+        if su.is_current_board_supported() then
+            os.exit(0)
+        else
+            print("This board is not supported")
+            os.exit(198)
+        end
     elseif args.show then
         local su_installed_version = get_uboot_env('su_version')
         if su_installed_version == nil then
