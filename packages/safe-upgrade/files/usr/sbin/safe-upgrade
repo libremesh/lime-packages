@@ -216,6 +216,9 @@ function su.preserve_files_to_new_partition(args)
 
     if args.do_not_preserve_config then
         utils.log('Not preserving config.')
+    elseif args.preserve_archive then
+        utils.log('Preserving from archive')
+        os.execute("tar xfz " .. args.preserve_archive .. " -C /tmp/_to_sysupgradetgz/")
     else
         utils.log('Preserving libremesh minimal config.')
         local files = ""
@@ -229,10 +232,6 @@ function su.preserve_files_to_new_partition(args)
             os.execute("tar cf /tmp/_safe_upgrade_intermadiate.tar " .. files .. " 2> /dev/null")
             os.execute("tar xf /tmp/_safe_upgrade_intermadiate.tar -C /tmp/_to_sysupgradetgz/")
         end
-    end
-
-    if args.preserve_archive then
-        os.execute("tar xfz " .. args.preserve_archive .. " -C /tmp/_to_sysupgradetgz/")
     end
 
     os.execute('find /tmp/_to_sysupgradetgz/ -type f -o -type l | sed "s|^\/tmp\/_to_sysupgradetgz\/||" | sort -u > /tmp/_to_persist')
