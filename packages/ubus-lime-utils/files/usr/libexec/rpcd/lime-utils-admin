@@ -15,6 +15,8 @@ if not conn then
     error("Failed to connect to ubus")
 end
 
+UPGRADE_ID_FILE = "/etc/upgrade_id"
+
 local function set_root_password(msg)
     local result = nil
     if type(msg.password) ~= "string" then
@@ -27,14 +29,62 @@ local function set_root_password(msg)
 end
 
 local function is_upgrade_confirm_supported(msg)
-    local exit_value = os.execute("safe-upgrade board-supported")
+    local exit_value = os.execute("safe-upgrade board-supported > /dev/null 2>&1")
     local supported = exit_value == 0
     return utils.printJson({status = 'ok', supported = supported})
 end
 
+local function firmware_verify(msg)
+    if not utils.file_exists(msg.fw_path) then
+        return utils.printJson({status = 'error',
+                                message = "Firmware file not found"})
+    end
+    local command
+    if is_upgrade_confirm_supported() then
+        command = "safe-upgrade verify "
+    else
+        command = "sysupgrade --test "
+    end
+    command = command ..  msg.fw_path .. " > /dev/null 2>&1"
+    local exit_value = os.execute(command)
+    if exit_value ~= 0 then
+        return utils.printJson({status = 'error', message = 'Invalid firmware'})
+    end
+    return utils.printJson({status = 'ok'})
+end
+
+local function firmware_upgrade(msg)
+    if not utils.file_exists(msg.fw_path) then
+        return utils.printJson({status = 'error',
+                                message = "Firmware file not found"})
+    end
+
+    local ugrade_id = utils.random_string(6)
+    utils.write_file(UPGRADE_ID_FILE, ugrade_id)
+
+    --! Give some time so the response can be returned to the client
+    local cmd = "sleep 3; lime-sysupgrade " ..  msg.fw_path .. " /etc/upgrade_id"
+    utils.execute_daemonized(cmd)
+
+    return utils.printJson({status = 'ok', upgrade_id = ugrade_id})
+end
+
+local function get_current_upgrade_id(msg)
+    local upgrade_id = nil
+    if utils.file_exists(UPGRADE_ID_FILE) then
+        upgrade_id = utils.read_file(UPGRADE_ID_FILE)
+    end
+
+    return utils.printJson({status = 'ok', upgrade_id = upgrade_id})
+end
+
+
 local methods = {
     set_root_password = { password = 'value'},
-    is_upgrade_confirm_supported = { no_params = 0 }
+    is_upgrade_confirm_supported = { no_params = 0 },
+    firmware_verify = { fw_path = 'value' },
+    firmware_upgrade = { fw_path = 'value', preserve_config = 'value'},
+    get_current_upgrade_id = { no_params = 0 }
 }
 
 if arg[1] == 'list' then
@@ -46,6 +96,9 @@ if arg[1] == 'call' then
     msg = json.parse(msg)
     if      arg[2] == 'set_root_password' then set_root_password(msg)
     elseif  arg[2] == 'is_upgrade_confirm_supported' then is_upgrade_confirm_supported(msg)
+    elseif  arg[2] == 'firmware_verify' then firmware_verify(msg)
+    elseif  arg[2] == 'firmware_upgrade' then firmware_upgrade(msg)
+    elseif  arg[2] == 'get_current_upgrade_id' then get_current_upgrade_id(msg)
     else utils.printJson({ error = "Method not found" })
     end
 end
