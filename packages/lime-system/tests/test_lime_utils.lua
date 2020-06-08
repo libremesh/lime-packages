@@ -186,12 +186,27 @@ dnsmasq:*:18362:0:99999:7:::
 		assert.is.equal("number", type(tonumber(utils.random_string(5, function (c) return c:match('%d') ~= nil end))))
 	end)
 
+    it('test keep_on_upgrade_files()', function()
+        local test_dir = test_utils.setup_test_dir()
+        local absolute_keep_file_path = test_dir .. 'absolute_keep_file'
+        config.set('system', 'lime')
+        config.set('system', 'keep_on_upgrade', 'relative_keep_file inexistent_keep_file  ' .. absolute_keep_file_path)
+
+        utils.KEEP_ON_UPGRADE_FILES_BASE_PATH = test_dir
+        utils.write_file(test_dir .. 'relative_keep_file', "# comment \n\n/foo\n/bar")
+        utils.write_file(absolute_keep_file_path, "/baz")
+
+        local files = utils.keep_on_upgrade_files()
+        assert.are.same({'/foo', '/bar', '/baz'}, files)
+    end)
+
     before_each('', function()
         uci = test_utils.setup_test_uci()
     end)
 
     after_each('', function()
         test_utils.teardown_test_uci(uci)
+        test_utils.teardown_test_dir()
     end)
 
 end)
