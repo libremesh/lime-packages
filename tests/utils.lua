@@ -71,6 +71,22 @@ function utils.teardown_test_uci(uci)
 	uci:close()
 end
 
+-- Create a temporal empty directory and return its path with a trailin '/'
+-- eg: '/tmp/tmp.occigb/'
+-- utils.teardown_test_dir() must be called for cleanup
+function utils.setup_test_dir()
+	utils._tmpdir = io.popen("mktemp -d"):read('*l') .. "/"
+	return utils._tmpdir
+end
+
+function utils.teardown_test_dir()
+	if(utils._tmpdir ~= nil and string.find(utils._tmpdir, '^/tmp') ~= nil) then
+		local out = io.popen("rm -rf " .. utils._tmpdir)
+		out:read('*all') -- this allows waiting for popen completion
+		out:close()
+	end
+end
+
 function utils.get_board(name)
 	local board_path = 'tests/devices/' .. name .. '/board.json'
 	return limeutils.getBoardAsTable(board_path)
