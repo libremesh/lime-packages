@@ -162,6 +162,7 @@ function wireless.configure()
 			uci:set("wireless", radioName, "noscan", 1)
 			uci:set("wireless", radioName, "channel", channel)
 			if options["country"] then uci:set("wireless", radioName, "country", options["country"]) end
+			if options["legacy_rates"] and not wireless.is5Ghz(radioName) then uci:set("wireless", radioName, "legacy_rates", options["legacy_rates"]) end
 			if options["txpower"] then uci:set("wireless", radioName, "txpower", options["txpower"]) end
 			if htmode then uci:set("wireless", radioName, "htmode", htmode) end
 			uci:save("wireless")
@@ -178,6 +179,7 @@ function wireless.configure()
 					                and (not key:match("^%."))
 					                and (not key:match("channel"))
 					                and (not key:match("country"))
+					                and (not key:match("legacy_rates"))
 					                and (not key:match("txpower"))
 					                and (not key:match("htmode"))
 					                and (not (wireless.isMode(keyPrefix) and keyPrefix ~= modeName))

@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libremesh.org
   DEPENDS:=+bmx7 +bmx7-json +bmx7-sms +bmx7-table +bmx7-uci-config +bmx7-tun \
-  +!PACKAGE_firewall:iptables +lime-system +lua +libuci-lua
+  +lime-system +lua +libuci-lua +kmod-ebtables-ipv6 +ebtables
   PKGARCH:=all
 endef
 

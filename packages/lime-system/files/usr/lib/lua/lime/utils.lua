@@ -326,6 +326,13 @@ function utils.set_root_secret(secret)
 	end
 end
 
+function utils.set_shared_root_password(password)
+    local uci = config.get_uci_cursor()
+    utils.set_password('root', password) -- this takes 1 second, it may be replaced with nixio.crypt(password, '$1$vv44cu1H')
+    uci:set("lime-community", 'system', 'root_password_policy', 'SET_SECRET')
+    uci:set("lime-community", 'system', 'root_password_secret', utils.get_root_secret())
+end
+
 --! returns a random string. filter is an optional function to reduce the possible characters.
 --! by default the filter allows all the alphanumeric characters
 function utils.random_string(length, filter)

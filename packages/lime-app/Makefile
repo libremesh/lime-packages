@@ -6,11 +6,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lime-app
-PKG_VERSION:=v0.2.3
+PKG_VERSION:=v0.2.5
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_HASH:=83387bc75746cde7e73bd8003d9e865c51ebc0072d2199715a9b35d553dd76dd
+PKG_HASH:=8b182cf9c55b79f87b7abb902fcfab0f0d04fde1708a7e56ba1f2fde407ba38f
 PKG_SOURCE_URL:=https://github.com/libremesh/lime-app/releases/download/$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
@@ -36,12 +36,7 @@ endef
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/www/app/
 	$(CP) $(BUILD_DIR)/build/* $(1)/www/app/
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/lime-app.defaults $(1)/etc/uci-defaults/90_lime-app
-	$(INSTALL_BIN) ./files/95-lime-app-rpc-acl $(1)/etc/uci-defaults/
-	$(INSTALL_BIN) ./files/96-lime-app-index_page $(1)/etc/uci-defaults/
 	$(INSTALL_DIR) $(1)/usr/share/rpcd/acl.d || true
-	$(INSTALL_DATA) ./files/lime_app_index.html $(1)/www/
 endef
 
 define Package/$(PKG_NAME)/postinst
