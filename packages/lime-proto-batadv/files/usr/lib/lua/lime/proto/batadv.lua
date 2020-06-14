@@ -70,6 +70,7 @@ function batadv.setup_interface(ifname, args)
 	local vlanProto = args[3] or "8021ad"
 	local nameSuffix = args[4] or "_batadv"
 	local mtu = 1532
+	if ifname:match("^eth") then mtu = 1496 end
 
 	--! Unless a specific integer is passed, parse network_id (%N1) template
 	--! and use that number to get a vlanId between 29 and 284 for batadv
@@ -78,6 +79,15 @@ function batadv.setup_interface(ifname, args)
 	if not tonumber(vlanId) then vlanId = 29 + (utils.applyNetTemplate10(vlanId) - 13) % 256 end
 
 	local owrtInterfaceName, _, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
+
+	--! Avoid dmesg flooding caused by BLA with messages like "br-lan:
+	--! received packet on bat0 with own address as source address".
+	--! Randomize MAC address for each of the interfaces included in Batman-adv.
+	local id = utils.get_id(ifname)
+	local randomMac = network.primary_mac();
+	randomMac[1] = id[1]
+	randomMac[2] = id[2]
+	randomMac[3] = id[3]
 
 	local uci = config.get_uci_cursor()
 	uci:set("network", owrtInterfaceName, "proto", batadv.ifc_proto)
