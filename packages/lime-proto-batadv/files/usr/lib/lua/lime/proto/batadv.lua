@@ -86,7 +86,7 @@ function batadv.setup_interface(ifname, args)
 	if ifname:match("^eth") then
 		--! TODO: Use DSA to check if ethernet device is capable of bigger MTU
 		--! reducing it
-		mtu = 1496
+		mtu = network.MTU_ETH_WITH_VLAN
 		
 		--! Avoid dmesg flooding caused by BLA with messages like "br-lan:
 		--! received packet on bat0 with own address as source address".
