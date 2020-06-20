@@ -24,9 +24,6 @@ describe('LiMe proto Batman-adv #protobatadv', function()
         assert.is.equal('1', uci:get('network', 'bat0', 'bridge_loop_avoidance'))
         assert.is.equal('0', uci:get('network', 'bat0', 'multicast_mode'))
 
-        assert.is.equal('batadv_hardif', uci:get("network", "lm_net_batadv_dummy_if", "proto"))
-        assert.is.equal('bat0', uci:get("network", "lm_net_batadv_dummy_if", "master"))
-
         -- anygw is disabled
         assert.is_nil(uci:get('network', 'bat0', 'distributed_arp_table'))
         assert.is_nil(uci:get('network', 'bat0', 'gw_mode'))
@@ -58,9 +55,6 @@ describe('LiMe proto Batman-adv #protobatadv', function()
 
         assert.is.equal('1', uci:get('batman-adv', 'bat0', 'bridge_loop_avoidance'))
         assert.is.equal('0', uci:get('batman-adv', 'bat0', 'multicast_mode'))
-
-        assert.is.equal('batadv', uci:get("network", "lm_net_batadv_dummy_if", "proto"))
-        assert.is.equal('bat0', uci:get("network", "lm_net_batadv_dummy_if", "mesh"))
     end)
 
     before_each('', function()
