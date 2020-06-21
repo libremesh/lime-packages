@@ -142,6 +142,11 @@ function bmx7.configure(args)
 		uci:set("bmx7", "librenet6", "dev", "librenet6")
 	end
 
+	local enablePKI = config.get_bool("network", "bmx7_enable_pki")
+	if (enablePKI) then
+		uci:set(bmx7.f, "general", "trustedNodesDir", "/etc/bmx7/trustedNodes")
+	end
+
 	if(hasLan) then
 		uci:set("bmx7", "lm_net_br_lan", "dev")
 		uci:set("bmx7", "lm_net_br_lan", "dev", "br-lan")
