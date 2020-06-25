@@ -54,20 +54,6 @@ function batadv.configure(args)
 	uci:save(cfg_file)
 	lan.setup_interface("bat0", nil)
 
-	--! Avoid dmesg flooding caused by BLA. Create a dummy0 interface with
-	--! custom MAC, as dummy0 is created very soon on boot it is added as
-	--! first and then main interface to batman so BLA messages are sent
-	--! from that MAC avoiding generating warning like:
-	--! br-lan: received packet on bat0 with own address as source address
-	local owrtInterfaceName = network.limeIfNamePrefix.."batadv_dummy_if"
-	local dummyMac = network.primary_mac(); dummyMac[1] = "aa"
-	uci:set("network", owrtInterfaceName, "interface")
-	uci:set("network", owrtInterfaceName, "ifname", "dummy0")
-	uci:set("network", owrtInterfaceName, "macaddr", table.concat(dummyMac, ":"))
-	uci:set("network", owrtInterfaceName, "proto", batadv.ifc_proto)
-	uci:set("network", owrtInterfaceName, batadv.type_option, "bat0")
-	uci:save("network")
-
 	-- enable alfred on bat0 if installed
 	if utils.is_installed("alfred") then
 		uci:set("alfred", "alfred", "batmanif", "bat0")
@@ -78,7 +64,6 @@ end
 function batadv.setup_interface(ifname, args)
 	if not args["specific"] then
 		if ifname:match("^wlan%d+.ap") then return end
-		if ifname:match("^eth") then return end
 	end
 
 	local vlanId = args[2] or "%N1"
@@ -95,9 +80,28 @@ function batadv.setup_interface(ifname, args)
 	local owrtInterfaceName, _, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 
 	local uci = config.get_uci_cursor()
-	uci:set("network", owrtDeviceName, "mtu", mtu)
 	uci:set("network", owrtInterfaceName, "proto", batadv.ifc_proto)
 	uci:set("network", owrtInterfaceName, batadv.type_option, "bat0")
+
+	if ifname:match("^eth") then
+		--! TODO: Use DSA to check if ethernet device is capable of bigger MTU
+		--! reducing it
+		mtu = network.MTU_ETH_WITH_VLAN
+		
+		--! Avoid dmesg flooding caused by BLA with messages like "br-lan:
+		--! received packet on bat0 with own address as source address".
+		--! Tweak MAC address for each of the interfaces used by Batman-adv
+		--! 00 + Locally administered unicast .. 2 bytes from interface name
+		--! .. 3 bytes from main interface
+		local id = utils.get_id(ifname)
+		local vMacaddr = network.primary_mac();
+		vMacaddr[1] = "02"
+		vMacaddr[2] = id[2]
+		vMacaddr[3] = id[3]
+		uci:set("network", owrtDeviceName, "macaddr", table.concat(vMacaddr, ":"))
+	end
+
+	uci:set("network", owrtDeviceName, "mtu", mtu)
 	uci:save("network")
 end
 
