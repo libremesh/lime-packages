@@ -42,7 +42,7 @@ into a new partition after running `safe-upgrade upgrade` or `safe-upgrade test-
 ### bootstrap (advanced)
 
 Use `safe-upgrade bootstrap` to install the `safe-upgrade` mechanism in the bootloader. Run this only
-if `safe-upgade` exits with 'safe-upgrade is not installed, aborting.'
+if `safe-upgrade` exits with 'safe-upgrade is not installed, aborting.'
 
 ## How `safe-upgrade` works
 
