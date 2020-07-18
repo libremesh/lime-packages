@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lime-app
 PKG_VERSION:=v0.2.5
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_HASH:=8b182cf9c55b79f87b7abb902fcfab0f0d04fde1708a7e56ba1f2fde407ba38f
@@ -34,6 +34,8 @@ define Build/Compile
 endef
 
 define Package/$(PKG_NAME)/install
+	$(INSTALL_DIR) $(1)/
+	$(CP) ./files/* $(1)/
 	$(INSTALL_DIR) $(1)/www/app/
 	$(CP) $(BUILD_DIR)/build/* $(1)/www/app/
 	$(INSTALL_DIR) $(1)/usr/share/rpcd/acl.d || true
