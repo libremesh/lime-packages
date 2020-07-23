@@ -202,7 +202,8 @@ function config.main()
 	config.sanitize(config.UCI_NODE_NAME)
 	config.uci_autogen()
 
-	local modules_name = { "hardware_detection", "wireless", "network", "firewall", "system" }
+	local modules_name = { "hardware_detection", "wireless", "network", "firewall", "system",
+                           "generic_config" }
 	local modules = {}
 
 	for i, name in pairs(modules_name) do modules[i] = require("lime."..name) end
