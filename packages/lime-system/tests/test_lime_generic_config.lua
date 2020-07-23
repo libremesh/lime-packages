@@ -27,6 +27,34 @@ describe('LiMe Generic config tests #genericconfig', function()
         assert.are.same({}, uci:changes())
     end)
 
+    it('test config.do_copy_asset file not found', function()
+        local content = [[
+        config copy_asset collectd
+            option asset 'collectd.conf'
+            option dst '/tmp/lime_test/collectd.conf'
+        ]]
+
+        test_utils.write_uci_file(uci, config.UCI_CONFIG_NAME, content)
+        assert.is_false(gen_cfg.do_copy_asset())
+    end)
+
+    it('test config.do_copy_asset', function()
+        local content = [[
+        config copy_asset collectd
+            option asset 'collectd.conf'
+            option dst '/tmp/lime_test/collectd.conf'
+        ]]
+        gen_cfg.NODE_ASSET_DIR = '/tmp/lime-assets/node/'
+        os.execute('mkdir -p /tmp/lime-assets/node/')
+        os.execute('printf "foo" > /tmp/lime-assets/node/collectd.conf')
+        test_utils.write_uci_file(uci, config.UCI_CONFIG_NAME, content)
+
+        gen_cfg.do_copy_asset()
+
+        assert.is.equal('foo', utils.read_file('/tmp/lime_test/collectd.conf'))
+        os.execute("rm -r /tmp/lime-assets /tmp/lime_test")
+    end)
+
     before_each('', function()
         uci = test_utils.setup_test_uci()
     end)
