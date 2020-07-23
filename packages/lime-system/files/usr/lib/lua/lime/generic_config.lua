@@ -14,6 +14,7 @@ end
 
 function gen_cfg.configure()
     gen_cfg.do_generic_uci_config()
+    gen_cfg.do_copy_asset()
 end
 
 --! Generic UCI configuration from libremesh. Eg usage:
@@ -37,6 +38,40 @@ function gen_cfg.do_generic_uci_config()
     end)
     config.uci_commit_all()
     utils.log("Done applying generic configs.")
+    return ok
+end
+
+function gen_cfg.do_copy_asset()
+    local uci = config.get_uci_cursor()
+    local ok = true
+    utils.log("Copying assets:")
+    config.foreach("copy_asset", function(copy_asset)
+        utils.log("  " .. copy_asset[".name"])
+        local asset = copy_asset["asset"]
+        local dst = copy_asset["dst"]
+        local node_asset = gen_cfg.NODE_ASSET_DIR .. asset
+        local community_asset = gen_cfg.COMMUNITY_ASSET_DIR .. asset
+        local src = nil
+        if utils.file_exists(node_asset) then
+            src = node_asset
+        elseif utils.file_exists(community_asset) then
+            src = community_asset
+        else
+            utils.log(" Error copying asset '" .. asset .. "': file not found")
+            ok = false
+        end
+        if src ~= nil then
+            local dst_dirname = dst:match("(.*/)")
+            if not utils.file_exists(dst_dirname) then
+                os.execute("mkdir -p " .. utils.shell_quote(dst_dirname))
+            end
+
+            src = utils.shell_quote(src)
+            dst = utils.shell_quote(dst)
+            os.execute('cp -dpf ' .. src .. ' ' .. dst)
+        end
+    end)
+    utils.log("Done copying assets.")
     return ok
 end
 
