@@ -189,6 +189,14 @@ function config.uci_autogen()
 	uci:load(config.UCI_AUTOGEN_NAME)
 end
 
+--! commit all uci changes not yet commited
+function config.uci_commit_all()
+    local uci = config.get_uci_cursor()
+    for k, _ in pairs(uci:changes()) do
+        assert(uci:commit(k))
+    end
+end
+
 function config.main()
 	config.sanitize()
 	config.sanitize(config.UCI_NODE_NAME)
