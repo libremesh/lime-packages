@@ -6,7 +6,7 @@ config.log = function() end
 
 local uci = nil
 
-describe('LiMe Config tests', function()
+describe('LiMe Config tests #limeconfig', function()
 
     it('test get/set_uci_cursor', function()
         local cursor = config.get_uci_cursor()
@@ -210,6 +210,27 @@ describe('LiMe Config tests', function()
 		assert.is.equal('dhcp', config.get('wan', 'proto'))
 		assert.is.equal('eth0', config.get('wan', 'ifname'))
     end)
+
+    it('test config.uci_commit_all (not commiting)', function()
+        uci:set('wireless', 'wifi', 'type')
+        uci:set('wireless', 'wifi', 'wlan0', 'foo')
+
+        -- this is read from the uci cache
+        assert.is.equal('foo', uci:get('wireless', 'wifi', 'wlan0'))
+
+        -- reloading shows that is not commited
+        uci:load('wireless')
+        assert.is.equal(nil, uci:get('wireless', 'wifi', 'wlan0'))
+    end)
+
+    it('test config.uci_commit_all (commiting)', function()
+        uci:set('wireless', 'wifi', 'type')
+        uci:set('wireless', 'wifi', 'wlan0', 'foo')
+        config.uci_commit_all()
+        uci:load('wireless')
+        assert.is.equal('foo', uci:get('wireless', 'wifi', 'wlan0'))
+    end)
+
 
     before_each('', function()
         uci = test_utils.setup_test_uci()
