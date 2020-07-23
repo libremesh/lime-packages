@@ -13,9 +13,10 @@ function gen_cfg.clean()
 end
 
 function gen_cfg.configure()
-    gen_cfg.do_generic_uci_config()
-    gen_cfg.do_copy_asset()
+    gen_cfg.do_generic_uci_configs()
+    gen_cfg.do_copy_assets()
 end
+
 
 --! Generic UCI configuration from libremesh. Eg usage:
 --!   config generic_uci_config libremap
@@ -23,7 +24,7 @@ end
 --!     list uci_set "libremap.settings.community=our.libre.org"
 --!     list uci_set "libremap.settings.community_lat=-200.123"
 --!     list uci_set "libremap.settings.community_lon=500.9"
-function gen_cfg.do_generic_uci_config()
+function gen_cfg.do_generic_uci_configs()
     local uci = config.get_uci_cursor()
     local ok = true
     utils.log("Applying generic configs:")
@@ -41,7 +42,15 @@ function gen_cfg.do_generic_uci_config()
     return ok
 end
 
-function gen_cfg.do_copy_asset()
+--! copy_asset copy an file from the assets directory into a specified path.
+--! The node asset directory (/etc/lime-assets/node) has priority over the community directory when
+--! both assets exists. Use this to specify a per node configuration.
+--!
+--! config copy_asset collectd
+--!    option asset 'collectd.conf' # relative to /etc/lime-assets/node or /etc/lime-assets/community/
+--!    option path '/etc/collectd.conf'
+--!
+function gen_cfg.do_copy_assets()
     local uci = config.get_uci_cursor()
     local ok = true
     utils.log("Copying assets:")

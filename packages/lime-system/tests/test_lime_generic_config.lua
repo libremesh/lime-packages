@@ -6,7 +6,7 @@ local uci = nil
 
 describe('LiMe Generic config tests #genericconfig', function()
 
-    it('test config.do_generic_uci_config', function()
+    it('test config.do_generic_uci_configs', function()
 
         local content = [[
         config generic_uci_config libremap
@@ -17,7 +17,7 @@ describe('LiMe Generic config tests #genericconfig', function()
         ]]
 
         test_utils.write_uci_file(uci, config.UCI_CONFIG_NAME, content)
-        assert.is_true(gen_cfg.do_generic_uci_config())
+        assert.is_true(gen_cfg.do_generic_uci_configs())
 
         -- check that everything is commited
         uci:load('libremap')
@@ -27,7 +27,7 @@ describe('LiMe Generic config tests #genericconfig', function()
         assert.are.same({}, uci:changes())
     end)
 
-    it('test config.do_copy_asset file not found', function()
+    it('test config.do_copy_assets file not found', function()
         local content = [[
         config copy_asset collectd
             option asset 'collectd.conf'
@@ -35,10 +35,10 @@ describe('LiMe Generic config tests #genericconfig', function()
         ]]
 
         test_utils.write_uci_file(uci, config.UCI_CONFIG_NAME, content)
-        assert.is_false(gen_cfg.do_copy_asset())
+        assert.is_false(gen_cfg.do_copy_assets())
     end)
 
-    it('test config.do_copy_asset', function()
+    it('test config.do_copy_assets', function()
         local content = [[
         config copy_asset collectd
             option asset 'collectd.conf'
