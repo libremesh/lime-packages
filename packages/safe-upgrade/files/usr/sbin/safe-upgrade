@@ -291,24 +291,17 @@ function test_other_partition(args)
 end
 
 
-function parse_args()
-    local parser = argparse('safe-upgrade', 'Safe upgrade mechanism for dual-boot systems')
-    parser:command_target('command')
-    local show = parser:command('show', 'Show the status of the system partitions.')
 
-    local upgrade = parser:command('upgrade', 'Upgrade firmware in a non permanent way.')
-    function validate_file_exists(filename)
+function parse_args()
+    local function validate_file_exists(filename)
         if file_exists(filename) then
             return filename
         else
             return nil, string.format("file %q does not exists", filename)
         end
     end
-    upgrade:argument("firmware", "firmware image (xxx-sysupgrade.bin)"):convert(validate_file_exists)
-    upgrade:flag("-n --do-not-preserve-config", "Do not save configuration to the new partition")
-    upgrade:flag("--disable-reboot-safety", "Disable the automatic reboot safety mechanism")
 
-    function validate_safety_timeout(value)
+    local function validate_safety_timeout(value)
         local timeout = tonumber(value)
         if timeout == nil then
             return nil, string.format("invalid --reboot-safety-timeout value: %q", value)
@@ -318,6 +311,18 @@ function parse_args()
         end
         return timeout
     end
+
+
+    local parser = argparse('safe-upgrade', 'Safe upgrade mechanism for dual-boot systems')
+    parser:command_target('command')
+
+    local show = parser:command('show', 'Show the status of the system partitions.')
+
+    local upgrade = parser:command('upgrade', 'Upgrade firmware in a non permanent way.')
+    upgrade:argument("firmware", "firmware image (xxx-sysupgrade.bin)"):convert(validate_file_exists)
+    upgrade:flag("-n --do-not-preserve-config", "Do not save configuration to the new partition")
+    upgrade:flag("--disable-reboot-safety", "Disable the automatic reboot safety mechanism")
+    upgrade:flag("-f --force", "Upgrade even if firmware is not valid")
     upgrade:option("--reboot-safety-timeout",
                    "Set the timeout (in seconds) of the automatic reboot safety mechanism")
                    :default('600'):convert(validate_safety_timeout)
