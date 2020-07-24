@@ -11,6 +11,8 @@ describe('LiMe Utils tests #limeutils', function()
         -- check that when replacing the original string with the literalized string
         -- the result is that all the string is replaced
         assert.is.equal('bar', string.gsub(str, utils.literalize(str), 'bar'))
+        -- return only the new string
+        assert.is.equal(1, #table.pack(utils.literalize(str)))
     end)
 
     it('test isModuleAvailable existing modules', function()
