@@ -32,10 +32,10 @@ su._supported_devices = {'librerouter-v1'}
 -- safe upgrade script, generated with bootscript.py, DO NOT edit here!
 local bootcmd = 'run preboot; boot_part=${stable_part}; if test ${testing_part} -ne 0; then echo Testing part ${testing_part}; boot_part=${testing_part}; set testing_part 0; saveenv; fi; if test ${boot_part} -eq 2; then fw_addr=${fw2_addr}; run boot_2; else fw_addr=${fw1_addr}; run boot_1; fi; run boot_1; bootm ${fw1_addr};'
 
-STABLE_PARTITION_NAME = 'stable_part'
-TESTING_PARTITION_NAME = 'testing_part'
+local STABLE_PARTITION_NAME = 'stable_part'
+local TESTING_PARTITION_NAME = 'testing_part'
 
-safe_upgrade_auto_reboot_script = [[#!/bin/sh /etc/rc.common
+local safe_upgrade_auto_reboot_script = [[#!/bin/sh /etc/rc.common
 
 REBOOT_FILE_CONFIG_TIMEOUT_S="/etc/safe_upgrade_auto_reboot_confirm_timeout_s"
 MINIMUM_REBOOT_TIMEOUT_S=60
@@ -73,7 +73,7 @@ stop() {
 }
 ]]
 
-function get_uboot_env(key)
+local function get_uboot_env(key)
     local handle = io.popen("fw_printenv -n " .. key .. " 2>&1")
     local value = handle:read("*a")
     handle:close()
@@ -87,7 +87,7 @@ function get_uboot_env(key)
     end
 end
 
-function set_uboot_env(key, value)
+local function set_uboot_env(key, value)
     print("DEBUG: seting key:" .. key)
     print("DEBUG: value:" .. value)
     local handle = io.popen("fw_setenv " .. key .. " '" .. value .. "'")
@@ -95,31 +95,31 @@ function set_uboot_env(key, value)
     handle:close()
 end
 
-function file_exists(filename)
+local function file_exists(filename)
     local f = io.open(filename, "rb")
     if f then f:close() end
     return f ~= nil
 end
 
-function fw_env_configured()
+local function fw_env_configured()
     return file_exists('/etc/fw_env.config')
 end
 
-function assert_fw_env_configured()
+local function assert_fw_env_configured()
     if not fw_env_configured() then
         print('/etc/fw_env.confg does not exist, aborting')
         os.exit(115)
     end
 end
 
-function get_current_cmdline()
+local function get_current_cmdline()
     local handle = io.open('/proc/cmdline', 'r')
     local data = handle:read()
     handle:close()
     return data
 end
 
-function get_current_partition()
+local function get_current_partition()
     local handle = io.open('/proc/mtd', 'r')
     local data = handle:read("*all")
     handle:close()
@@ -130,7 +130,7 @@ function get_current_partition()
     end
 end
 
-function get_partitions()
+local function get_partitions()
     local p = {}
     p.current = get_current_partition()
     if p.current == 1 then
@@ -144,34 +144,41 @@ function get_partitions()
     return p
 end
 
-function get_su_version()
+local function get_su_version()
     return get_uboot_env('su_version')
 end
 
-function is_su_installed()
+local function is_su_installed()
     return get_su_version() ~= nil
 end
 
-function fw_env_config()
+local function fw_env_config()
     if not fw_env_configured() then
         print('fw_env.config not found, installing /etc/fw_env.config')
         fw_env_configure()
     end
 end
 
-function set_testing_partition(partition)
+local function set_testing_partition(partition)
     set_uboot_env(TESTING_PARTITION_NAME, tostring(partition))
 end
 
-function set_stable_partition(partition)
+local function set_stable_partition(partition)
     set_uboot_env(STABLE_PARTITION_NAME, tostring(partition))
 end
 
-function assert_su_installed()
+local function assert_su_installed()
     if not is_su_installed() then
         print('safe-upgrade is not installed, aborting')
         os.exit(114)
     end
+end
+
+local function read_fw_metadata(path)
+    local handle = io.popen("fwtool -i - " .. path)
+    local metadata = json.parse(handle:read("*a"))
+    handle:close()
+    return metadata
 end
 
 function su.get_current_device()
@@ -192,7 +199,27 @@ function su.is_current_board_supported()
     return false
 end
 
-function preserve_files_to_new_partition(args)
+function su.is_firmware_valid(metadata)
+    local current_device = su.get_current_device()
+    if metadata ~= nil then
+        local fw_devices = metadata['supported_devices']
+        if fw_devices ~= nil then
+            for _, fw_device in pairs(fw_devices) do
+                for _, supported_device in pairs(su.get_supported_devices()) do
+                    --! Check that the firmware is supported by safe upgrade
+                    --! and that the current board is among the firmware devices
+                    if string.find(fw_device, utils.literalize(supported_device)) and
+                       string.find(fw_device, utils.literalize(current_device)) then
+                        return true
+                    end
+                end
+            end
+        end
+    end
+    return false
+end
+
+local function preserve_files_to_new_partition(args)
     os.execute("mkdir -p /tmp/_to_sysupgradetgz/etc/init.d/")
     os.execute("mkdir -p /tmp/_to_sysupgradetgz/etc/rc.d/")
     local f = io.open("/tmp/_to_sysupgradetgz/etc/init.d/safe_upgrade_auto_reboot", "w")
@@ -216,7 +243,7 @@ function preserve_files_to_new_partition(args)
     os.execute("tar cfz /tmp/sysupgrade.tgz -C /tmp/_to_sysupgradetgz/ `ls /tmp/_to_sysupgradetgz/`")
 end
 
-function bootstrap(args)
+local function bootstrap(args)
     --TODO: add --force option to upgrade SU
     if is_su_installed() then
         print(string.format("safe-upgrade version '%s' is already installed, aborting",
@@ -246,11 +273,20 @@ function bootstrap(args)
     print('succesfully bootstraped safe-upgrade')
 end
 
-function upgrade(args)
+local function upgrade(args)
     assert_su_installed()
     local partitions = get_partitions()
 
-    -- TODO: validate that the firmware is valid for this board using metadata
+    local fw_metadata = read_fw_metadata(args.firmware)
+    fw_valid = fw_metadata ~= nil and su.is_firmware_valid(fw_metadata)
+    if not fw_valid then
+        print("Invalid firmware!")
+        if args.force then
+            print("Forcing upgrade to continue as requested")
+        else
+            exit(111)
+        end
+    end
 
     if not args.do_not_preserve_config then
         print('Preserving full config')
@@ -288,7 +324,7 @@ function upgrade(args)
     set_testing_partition(partitions.other)
 end
 
-function confirm(args)
+local function confirm(args)
     assert_su_installed()
     local partitions = get_partitions()
     if partitions.current == partitions.stable then
@@ -304,7 +340,7 @@ function confirm(args)
     print(string.format('Confirmed partition %d as stable partition', partitions.current))
 end
 
-function test_other_partition(args)
+local function test_other_partition(args)
     assert_su_installed()
     local partitions = get_partitions()
     set_testing_partition(partitions.other)
@@ -312,8 +348,7 @@ function test_other_partition(args)
 end
 
 
-
-function parse_args()
+local function parse_args()
     local function validate_file_exists(filename)
         if file_exists(filename) then
             return filename
