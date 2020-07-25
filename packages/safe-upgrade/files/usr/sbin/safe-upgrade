@@ -273,13 +273,26 @@ local function bootstrap(args)
     print('succesfully bootstraped safe-upgrade')
 end
 
+local function _verify(firmware)
+    local fw_metadata = read_fw_metadata(firmware)
+    local fw_valid = fw_metadata ~= nil and su.is_firmware_valid(fw_metadata)
+    return fw_valid
+end
+
+local function verify(args)
+    if _verify(args.firmware) then
+        exit(0)
+    else
+        print("Invalid firmware!")
+        exit(111)
+    end
+end
+
 local function upgrade(args)
     assert_su_installed()
     local partitions = get_partitions()
 
-    local fw_metadata = read_fw_metadata(args.firmware)
-    fw_valid = fw_metadata ~= nil and su.is_firmware_valid(fw_metadata)
-    if not fw_valid then
+    if not _verify(args.firmware) then
         print("Invalid firmware!")
         if args.force then
             print("Forcing upgrade to continue as requested")
@@ -368,11 +381,13 @@ local function parse_args()
         return timeout
     end
 
-
     local parser = argparse('safe-upgrade', 'Safe upgrade mechanism for dual-boot systems')
     parser:command_target('command')
 
     local show = parser:command('show', 'Show the status of the system partitions.')
+
+    local verify = parser:command('verify', 'Verify that the firmware is valid and can be installed.')
+    verify:argument("firmware", "firmware image (xxx-sysupgrade.bin)"):convert(validate_file_exists)
 
     local upgrade = parser:command('upgrade', 'Upgrade firmware in a non permanent way.')
     upgrade:argument("firmware", "firmware image (xxx-sysupgrade.bin)"):convert(validate_file_exists)
@@ -415,6 +430,8 @@ else
         upgrade(args)
     elseif args.confirm then
         confirm(args)
+    elseif args.verify then
+        verify(args)
     elseif args['test-other-partition'] then
         test_other_partition(args)
     elseif args['board-supported'] then
