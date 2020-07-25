@@ -1,5 +1,6 @@
 local fs = require 'nixio.fs'
 local config = require 'lime.config'
+local utils = require 'lime.utils'
 local test_utils = require "tests.utils"
 
 local uci = nil
@@ -49,6 +50,15 @@ describe("Test utils tests #testutils", function()
         test_utils.write_uci_file(uci, 'foo', content)
         assert.is.equal('dhcp', uci:get_all('foo', 'wan', 'proto'))
         assert.is.equal(content, test_utils.read_uci_file(uci, 'foo'))
+    end)
+
+    it("test setup and teardown _test_dir", function()
+        local dir = test_utils.setup_test_dir()
+        assert.is_true(utils.file_exists(dir))
+        assert.is_true(utils.stringStarts(dir, "/tmp/"))
+        assert.is_true(utils.stringEnds(dir, "/"))
+        test_utils.teardown_test_dir()
+        assert.is_false(utils.file_exists(dir))
     end)
 
     before_each('', function()
