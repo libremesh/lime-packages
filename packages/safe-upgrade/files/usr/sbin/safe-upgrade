@@ -393,7 +393,7 @@ local function parse_args()
     upgrade:argument("firmware", "firmware image (xxx-sysupgrade.bin)"):convert(validate_file_exists)
     upgrade:flag("-n --do-not-preserve-config", "Do not save configuration to the new partition")
     upgrade:flag("--disable-reboot-safety", "Disable the automatic reboot safety mechanism")
-    upgrade:flag("-f --force", "Upgrade even if firmware is not valid")
+    upgrade:flag("--force", "Upgrade even if firmware is not valid")
     upgrade:option("--reboot-safety-timeout",
                    "Set the timeout (in seconds) of the automatic reboot safety mechanism")
                    :default('600'):convert(validate_safety_timeout)
