@@ -28,12 +28,13 @@ local firmware_size_bytes = 7936*1024
 local fw1_addr = 0x9f050000
 local fw2_addr = 0x9f050000 + firmware_size_bytes
 su._supported_devices = {'librerouter-v1'}
+su._mtd_partitions_desc = '/proc/mtd'
 
 -- safe upgrade script, generated with bootscript.py, DO NOT edit here!
 local bootcmd = 'run preboot; boot_part=${stable_part}; if test ${testing_part} -ne 0; then echo Testing part ${testing_part}; boot_part=${testing_part}; set testing_part 0; saveenv; fi; if test ${boot_part} -eq 2; then fw_addr=${fw2_addr}; run boot_2; else fw_addr=${fw1_addr}; run boot_1; fi; run boot_1; bootm ${fw1_addr};'
 
-local STABLE_PARTITION_NAME = 'stable_part'
-local TESTING_PARTITION_NAME = 'testing_part'
+su.STABLE_PARTITION_NAME = 'stable_part'
+su.TESTING_PARTITION_NAME = 'testing_part'
 
 local safe_upgrade_auto_reboot_script = [[#!/bin/sh /etc/rc.common
 
@@ -73,10 +74,8 @@ stop() {
 }
 ]]
 
-local function get_uboot_env(key)
-    local handle = io.popen("fw_printenv -n " .. key .. " 2>&1")
-    local value = handle:read("*a")
-    handle:close()
+function su.get_uboot_env(key)
+    local value = utils.unsafe_shell("fw_printenv -n " .. key .. " 2>&1")
 
     if value:find('## Error:') == nil then
         -- remove EOL
@@ -90,19 +89,11 @@ end
 local function set_uboot_env(key, value)
     print("DEBUG: seting key:" .. key)
     print("DEBUG: value:" .. value)
-    local handle = io.popen("fw_setenv " .. key .. " '" .. value .. "'")
-    local value = handle:read("*a")
-    handle:close()
-end
-
-local function file_exists(filename)
-    local f = io.open(filename, "rb")
-    if f then f:close() end
-    return f ~= nil
+    local value = utils.unsafe_shell("fw_setenv " .. key .. " '" .. value .. "'")
 end
 
 local function fw_env_configured()
-    return file_exists('/etc/fw_env.config')
+    return utils.file_exists('/etc/fw_env.config')
 end
 
 local function assert_fw_env_configured()
@@ -113,16 +104,11 @@ local function assert_fw_env_configured()
 end
 
 local function get_current_cmdline()
-    local handle = io.open('/proc/cmdline', 'r')
-    local data = handle:read()
-    handle:close()
-    return data
+    return utils.read_file('/proc/cmdline')
 end
 
-local function get_current_partition()
-    local handle = io.open('/proc/mtd', 'r')
-    local data = handle:read("*all")
-    handle:close()
+function su.get_current_partition()
+    local data = utils.read_file(su._mtd_partitions_desc)
     if data:find("fw2") == nil then
         return 2
     else
@@ -130,22 +116,22 @@ local function get_current_partition()
     end
 end
 
-local function get_partitions()
+function su.get_partitions()
     local p = {}
-    p.current = get_current_partition()
+    p.current = su.get_current_partition()
     if p.current == 1 then
         p.other = 2
     else
         p.other = 1
     end
-    p.stable = tonumber(get_uboot_env(STABLE_PARTITION_NAME))
-    p.testing = tonumber(get_uboot_env(TESTING_PARTITION_NAME))
+    p.stable = tonumber(su.get_uboot_env(su.STABLE_PARTITION_NAME))
+    p.testing = tonumber(su.get_uboot_env(su.TESTING_PARTITION_NAME))
 
     return p
 end
 
 local function get_su_version()
-    return get_uboot_env('su_version')
+    return su.get_uboot_env('su_version')
 end
 
 local function is_su_installed()
@@ -160,11 +146,11 @@ local function fw_env_config()
 end
 
 local function set_testing_partition(partition)
-    set_uboot_env(TESTING_PARTITION_NAME, tostring(partition))
+    set_uboot_env(su.TESTING_PARTITION_NAME, tostring(partition))
 end
 
 local function set_stable_partition(partition)
-    set_uboot_env(STABLE_PARTITION_NAME, tostring(partition))
+    set_uboot_env(su.STABLE_PARTITION_NAME, tostring(partition))
 end
 
 local function assert_su_installed()
@@ -252,7 +238,7 @@ local function bootstrap(args)
     end
 
 
-    if get_current_partition() ~= 1 then
+    if su.get_current_partition() ~= 1 then
         print("installing safe-upgrade from partition 2 is not supported yet")
         os.exit(120)
     end
@@ -281,23 +267,23 @@ end
 
 local function verify(args)
     if _verify(args.firmware) then
-        exit(0)
+        os.exit(0)
     else
         print("Invalid firmware!")
-        exit(111)
+        os.exit(111)
     end
 end
 
 local function upgrade(args)
     assert_su_installed()
-    local partitions = get_partitions()
+    local partitions = su.get_partitions()
 
     if not _verify(args.firmware) then
         print("Invalid firmware!")
         if args.force then
-            print("Forcing upgrade to continue as requested")
+            print("Forcing upgrade to continue as requested.")
         else
-            exit(111)
+            os.exit(111)
         end
     end
 
@@ -339,7 +325,7 @@ end
 
 local function confirm(args)
     assert_su_installed()
-    local partitions = get_partitions()
+    local partitions = su.get_partitions()
     if partitions.current == partitions.stable then
         print(string.format('the current partition: %d is already the stable partition, aborting', partitions.current))
         os.exit(113)
@@ -355,7 +341,7 @@ end
 
 local function test_other_partition(args)
     assert_su_installed()
-    local partitions = get_partitions()
+    local partitions = su.get_partitions()
     set_testing_partition(partitions.other)
     print(string.format('Next boot will run partition: %d. You may confirm it if you like after reboot.', partitions.other))
 end
@@ -363,7 +349,7 @@ end
 
 local function parse_args()
     local function validate_file_exists(filename)
-        if file_exists(filename) then
+        if utils.file_exists(filename) then
             return filename
         else
             return nil, string.format("file %q does not exists", filename)
@@ -442,13 +428,13 @@ else
             os.exit(198)
         end
     elseif args.show then
-        local su_installed_version = get_uboot_env('su_version')
+        local su_installed_version = su.get_uboot_env('su_version')
         if su_installed_version == nil then
             print('safe-upgrade is not installed, aborting.')
             os.exit(199)
         end
         print('safe-upgrade version: ' .. su_installed_version)
-        local partitions = get_partitions()
+        local partitions = su.get_partitions()
         --TODO show labels of partitions (maybe store them when flashing from a metadata file)
         print(string.format('current partition: %d', partitions.current))
         print(string.format('stable partition: %d', partitions.stable))
