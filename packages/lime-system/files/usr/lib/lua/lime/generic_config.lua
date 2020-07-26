@@ -7,6 +7,7 @@ gen_cfg = {}
 
 gen_cfg.NODE_ASSET_DIR = '/etc/lime-assets/node/'
 gen_cfg.COMMUNITY_ASSET_DIR = '/etc/lime-assets/community/'
+gen_cfg.CONFIG_FIRST_BOOT_SIGNAL_FILE = '/etc/.cfg_first_boot_already_run'
 
 function gen_cfg.clean()
     -- nothing to clean
@@ -15,6 +16,11 @@ end
 function gen_cfg.configure()
     gen_cfg.do_generic_uci_configs()
     gen_cfg.do_copy_assets()
+    if not utils.file_exists(gen_cfg.CONFIG_FIRST_BOOT_SIGNAL_FILE) then
+        gen_cfg.do_run_assets('FIRSTBOOT')
+        utils.write_file(gen_cfg.CONFIG_FIRST_BOOT_SIGNAL_FILE, '')
+    end
+    gen_cfg.do_run_assets('RECONFIG')
 end
 
 
@@ -42,6 +48,18 @@ function gen_cfg.do_generic_uci_configs()
     return ok
 end
 
+function gen_cfg.get_asset(asset)
+    local node_asset = gen_cfg.NODE_ASSET_DIR .. asset
+    local community_asset = gen_cfg.COMMUNITY_ASSET_DIR .. asset
+    local src = nil
+    if utils.file_exists(node_asset) then
+        src = node_asset
+    elseif utils.file_exists(community_asset) then
+        src = community_asset
+    end
+    return src
+end
+
 --! copy_asset copy an file from the assets directory into a specified path.
 --! The node asset directory (/etc/lime-assets/node) has priority over the community directory when
 --! both assets exists. Use this to specify a per node configuration.
@@ -55,20 +73,10 @@ function gen_cfg.do_copy_assets()
     local ok = true
     utils.log("Copying assets:")
     config.foreach("copy_asset", function(copy_asset)
-        utils.log("  " .. copy_asset[".name"])
         local asset = copy_asset["asset"]
+        utils.log("  %s (%s)", copy_asset[".name"], asset)
         local dst = copy_asset["dst"]
-        local node_asset = gen_cfg.NODE_ASSET_DIR .. asset
-        local community_asset = gen_cfg.COMMUNITY_ASSET_DIR .. asset
-        local src = nil
-        if utils.file_exists(node_asset) then
-            src = node_asset
-        elseif utils.file_exists(community_asset) then
-            src = community_asset
-        else
-            utils.log(" Error copying asset '" .. asset .. "': file not found")
-            ok = false
-        end
+        local src = gen_cfg.get_asset(asset)
         if src ~= nil then
             local dst_dirname = dst:match("(.*/)")
             if not utils.file_exists(dst_dirname) then
@@ -78,10 +86,43 @@ function gen_cfg.do_copy_assets()
             src = utils.shell_quote(src)
             dst = utils.shell_quote(dst)
             os.execute('cp -dpf ' .. src .. ' ' .. dst)
+        else
+            utils.log(" Error copying asset '%s': file not found.", asset)
+            ok = false
         end
     end)
     utils.log("Done copying assets.")
     return ok
 end
+
+--! Executes a file from the assets directory
+--! config run_asset dropbear
+--!     option asset 'dropbear.sh'
+--!     option when 'FIRSTBOOT' # FIRSTBOOT, RECONFIG
+--!
+function gen_cfg.do_run_assets(when)
+    local uci = config.get_uci_cursor()
+    local ok = true
+    utils.log("Running assets on " .. when .. " :")
+    config.foreach("run_asset", function(run_asset)
+        local asset = run_asset["asset"]
+        if run_asset["when"] == when then
+            utils.log("  %s (%s)", run_asset[".name"], asset)
+            local src = gen_cfg.get_asset(asset)
+            if src ~= nil then
+                local retval = os.execute("chmod +x " .. src .. "; " .. src)
+                if retval ~= 0 then
+                    utils.log(" Warning: the asset '%s': returnen non zero status.", src)
+                end
+            else
+                utils.log(" Error running asset '%s': file not found .", asset)
+                ok = false
+            end
+        end
+    end)
+    utils.log("Done running assets.")
+    return ok
+end
+
 
 return gen_cfg
