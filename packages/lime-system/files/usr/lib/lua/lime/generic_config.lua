@@ -32,7 +32,7 @@ function gen_cfg.do_generic_uci_configs()
         utils.log(" " .. gen_uci_cfg[".name"])
         for _, v in pairs(gen_uci_cfg["uci_set"]) do
             if uci:set(v) ~= true then
-                utils.log(" Error on generic config uci_set: " .. v)
+                utils.log(" Error on generic config uci_set: %s", v)
                 ok = false
             end
         end

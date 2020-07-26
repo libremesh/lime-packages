@@ -12,7 +12,7 @@ utils.SHADOW_FILENAME = "/etc/shadow"
 function utils.log(...)
 	if DISABLE_LOGGING ~= nil then return end
 	if os.getenv("LUA_DISABLE_LOGGING") ~= nil and os.getenv("LUA_ENABLE_LOGGING") == nil then return end
-	print(...)
+	print(string.format(...))
 end
 
 function utils.disable_logging()
