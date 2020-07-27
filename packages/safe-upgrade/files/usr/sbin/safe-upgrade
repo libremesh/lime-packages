@@ -336,6 +336,11 @@ local function upgrade(args)
     local boot_script = string.format(boot_script_tpl, fw_mtd_str, partitions.other)
     set_uboot_env(string.format('boot_%d', partitions.other), boot_script)
     set_testing_partition(partitions.other)
+
+    if not args.no_reboot then
+        print("Rebooting into the new firmware. Do the confirm step if everything is ok.")
+        os.execute("reboot")
+    end
 end
 
 local function confirm(args)
@@ -396,7 +401,8 @@ local function parse_args()
     upgrade:flag("-n --do-not-preserve-config", "Do not save configuration to the new partition")
     upgrade:flag("--disable-reboot-safety", "Disable the automatic reboot safety mechanism")
     upgrade:flag("--force", "Upgrade even if firmware is not valid")
-    upgrade:option("--preserve-archive", [[Specify additional files to preserve as a tar.gz (Like the sysupgrade -f).
+    upgrade:flag("--no-reboot", "Do not reboot automatically after flashing")
+    upgrade:option("--preserve-archive", [[Specify the files to be preserved as a tar.gz (Like the sysupgrade -f).
     To preserve a full config you may use sysupgrade --create-backup and use this .tar.gz.]])
                    :convert(validate_file_exists)
     upgrade:option("--reboot-safety-timeout",
