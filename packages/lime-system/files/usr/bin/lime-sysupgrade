@@ -48,5 +48,10 @@ echo "Ready to perform the upgrade. Press [ENTER] to continue or CTRL+C to cance
 [ "$FORCE" == "1" ] || read
 echo ""
 
-[ -n "$BACKUP_FILES" ] && OPTIONS="-f $BACKUP_ARCHIVE" || OPTIONS="-n"
-sysupgrade $OPTIONS $FIRMWARE &
+if safe-upgrade board-supported > /dev/null 2>&1; then
+    [ -n "$BACKUP_FILES" ] && OPTIONS="--preserve-archive $BACKUP_ARCHIVE" || OPTIONS="-n"
+    safe-upgrade $OPTIONS $FIRMWARE
+else
+    [ -n "$BACKUP_FILES" ] && OPTIONS="-f $BACKUP_ARCHIVE" || OPTIONS="-n"
+    sysupgrade $OPTIONS $FIRMWARE &
+fi
