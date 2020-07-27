@@ -66,7 +66,7 @@ end
 --!
 --! config copy_asset collectd
 --!    option asset 'collectd.conf' # relative to /etc/lime-assets/node or /etc/lime-assets/community/
---!    option path '/etc/collectd.conf'
+--!    option dst '/etc/collectd.conf'
 --!
 function gen_cfg.do_copy_assets()
     local uci = config.get_uci_cursor()
