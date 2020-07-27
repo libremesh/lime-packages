@@ -101,9 +101,9 @@ mtd8: 00010000 00010000 "ART"
         local args = {reboot_safety_timeout=600}
         local files_preserved = su.preserve_files_to_new_partition(args)
         local expected = {
-            'etc/safe_upgrade_auto_reboot_confirm_timeout_s',
-            'etc/rc.d/S11safe_upgrade_auto_reboot',
             'etc/init.d/safe_upgrade_auto_reboot',
+            'etc/rc.d/S11safe_upgrade_auto_reboot',
+            'etc/safe_upgrade_auto_reboot_confirm_timeout_s',
              string.sub(preserve_file, 2)
         }
         assert.are.same(expected, files_preserved)
@@ -117,9 +117,9 @@ mtd8: 00010000 00010000 "ART"
         local args = {reboot_safety_timeout=600, do_not_preserve_config=true}
         local files_preserved = su.preserve_files_to_new_partition(args)
         local expected = {
-            'etc/safe_upgrade_auto_reboot_confirm_timeout_s',
-            'etc/rc.d/S11safe_upgrade_auto_reboot',
             'etc/init.d/safe_upgrade_auto_reboot',
+            'etc/rc.d/S11safe_upgrade_auto_reboot',
+            'etc/safe_upgrade_auto_reboot_confirm_timeout_s',
         }
         assert.are.same(expected, files_preserved)
     end)
@@ -131,9 +131,9 @@ mtd8: 00010000 00010000 "ART"
         local args = {reboot_safety_timeout=600, preserve_archive=preserve_archive}
         local files_preserved = su.preserve_files_to_new_partition(args)
         local expected = {
-            'etc/safe_upgrade_auto_reboot_confirm_timeout_s',
-            'etc/rc.d/S11safe_upgrade_auto_reboot',
             'etc/init.d/safe_upgrade_auto_reboot',
+            'etc/rc.d/S11safe_upgrade_auto_reboot',
+            'etc/safe_upgrade_auto_reboot_confirm_timeout_s',
             'proc/version',
         }
         assert.are.same(expected, files_preserved)

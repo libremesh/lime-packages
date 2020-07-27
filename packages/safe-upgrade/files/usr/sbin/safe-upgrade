@@ -242,7 +242,9 @@ function su.preserve_files_to_new_partition(args)
         os.execute("tar xfz " .. args.preserve_archive .. " -C /tmp/_to_sysupgradetgz/")
     end
 
-    os.execute("tar cfz /tmp/sysupgrade.tgz -C /tmp/_to_sysupgradetgz/ `ls /tmp/_to_sysupgradetgz/`")
+    os.execute('find /tmp/_to_sysupgradetgz/ -type f -o -type l | sed "s|^\/tmp\/_to_sysupgradetgz\/||" | sort -u > /tmp/_to_persist')
+    os.execute("tar cfz /tmp/sysupgrade.tgz -C /tmp/_to_sysupgradetgz/ -T /tmp/_to_persist 2>/dev/null")
+
     utils.log('List of files that are being preserved:')
     local file_list = {}
     local out = io.popen("tar tfz /tmp/sysupgrade.tgz")
