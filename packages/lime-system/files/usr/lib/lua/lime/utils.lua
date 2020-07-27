@@ -374,4 +374,14 @@ function utils.keep_on_upgrade_files()
     return files
 end
 
+--! Run a command in a shell and daemonized directly in pid 1 (similar to diswon/nohup)
+--! If out_file optional arg is passed then stdout and stderr will go to that file.
+function utils.execute_daemonized(cmd, out_file)
+    if out_file == nil then
+        out_file = "/dev/null"
+    end
+    return os.execute("(( " .. cmd .. "  0<&- &> " .. out_file .. " &) &)")
+end
+
+
 return utils
