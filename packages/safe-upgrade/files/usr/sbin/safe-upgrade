@@ -17,7 +17,6 @@
 ]]--
 
 local io = require "io"
-local argparse = require 'argparse'
 local json = require "luci.jsonc"
 local utils = require "lime.utils"
 
@@ -388,6 +387,7 @@ local function parse_args()
         return timeout
     end
 
+    local argparse = require 'argparse'
     local parser = argparse('safe-upgrade', 'Safe upgrade mechanism for dual-boot systems')
     parser:command_target('command')
 
