@@ -88,7 +88,7 @@ end
 local function set_uboot_env(key, value)
     print("DEBUG: seting key:" .. key)
     print("DEBUG: value:" .. value)
-    local value = utils.unsafe_shell("fw_setenv " .. key .. " '" .. value .. "'")
+    utils.unsafe_shell("fw_setenv " .. key .. " '" .. value .. "'")
 end
 
 local function fw_env_configured()
@@ -135,13 +135,6 @@ end
 
 local function is_su_installed()
     return get_su_version() ~= nil
-end
-
-local function fw_env_config()
-    if not fw_env_configured() then
-        print('fw_env.config not found, installing /etc/fw_env.config')
-        fw_env_configure()
-    end
 end
 
 local function set_testing_partition(partition)
@@ -333,7 +326,7 @@ local function upgrade(args)
                              args.firmware, partitions.other))
 
     -- TODO: load bootargs from acompaning image, here is hardcoded!!
-
+    local fw_mtd_str = ''
     if partitions.other == 2 then
         fw_mtd_str = '7936k(fw1),7936k(firmware)'
     else
