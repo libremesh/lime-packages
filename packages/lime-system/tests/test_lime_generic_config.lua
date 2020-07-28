@@ -23,7 +23,7 @@ describe('LiMe Generic config tests #genericconfig', function()
         uci:load('libremap')
         assert.is.equal('our.libre.org', uci:get("libremap.settings.community"))
         assert.is.equal('-200.123', uci:get("libremap.settings.community_lat"))
-        assert.is.equal('-200.123', uci:get("libremap.settings.community_lat"))
+        assert.is.equal('500.9', uci:get("libremap.settings.community_lon"))
         assert.are.same({}, uci:changes())
     end)
 

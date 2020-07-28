@@ -10,7 +10,7 @@ gen_cfg.COMMUNITY_ASSET_DIR = '/etc/lime-assets/community/'
 gen_cfg.CONFIG_FIRST_BOOT_SIGNAL_FILE = '/etc/.cfg_first_boot_already_run'
 
 function gen_cfg.clean()
-    -- nothing to clean
+    -- nothing to clean, but needs to be declared to comply with the API
 end
 
 function gen_cfg.configure()
