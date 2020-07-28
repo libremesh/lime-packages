@@ -321,7 +321,7 @@ local function upgrade(args)
     -- with the file /tmp/sysupgrade.tgz because there are hooks in place
     -- to unpack this tar and install the files at boot
     print(string.format("writing partition %d", partitions.other))
-    os.execute(string.format("mtd -j /tmp/sysupgrade.tgz write %s fw%d",
+    os.execute(string.format("mtd -j /tmp/sysupgrade.tgz write '%s' fw%d",
                              args.firmware, partitions.other))
 
     -- TODO: load bootargs from acompaning image, here is hardcoded!!
