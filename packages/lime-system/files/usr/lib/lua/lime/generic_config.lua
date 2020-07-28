@@ -113,6 +113,7 @@ function gen_cfg.do_run_assets(when)
                 local retval = os.execute("chmod +x " .. src .. "; " .. src)
                 if retval ~= 0 then
                     utils.log(" Warning: the asset '%s': returnen non zero status.", src)
+                    ok = false
                 end
             else
                 utils.log(" Error running asset '%s': file not found .", asset)
