@@ -6,7 +6,7 @@ local uci = nil
 
 describe('LiMe Generic config tests #genericconfig', function()
 
-    it('test config.do_generic_uci_configs', function()
+    it('test do_generic_uci_configs', function()
 
         local content = [[
         config generic_uci_config libremap
@@ -25,6 +25,36 @@ describe('LiMe Generic config tests #genericconfig', function()
         assert.is.equal('-200.123', uci:get("libremap.settings.community_lat"))
         assert.is.equal('500.9', uci:get("libremap.settings.community_lon"))
         assert.are.same({}, uci:changes())
+    end)
+
+    it('test do_generic_uci_configs with an invalid or non-existent key', function()
+
+        local content = [[
+        config generic_uci_config invalid
+            list uci_set "invalid.settings.foo=bar"
+        ]]
+
+        test_utils.write_uci_file(uci, config.UCI_CONFIG_NAME, content)
+        assert.is_false(gen_cfg.do_generic_uci_configs())
+    end)
+
+    it('test generic_uci_configs with invalid key and good key', function()
+
+        local content = [[
+        config generic_uci_config invalid_syntax
+            list uci_set "this is bad s!ntax=='1000'"
+            list uci_set "libremap.settings=libremap"
+            list uci_set "libremap.settings.community=our.libre.org"
+        ]]
+
+        test_utils.write_uci_file(uci, config.UCI_CONFIG_NAME, content)
+
+        assert.is_false(gen_cfg.do_generic_uci_configs())
+
+        uci:load('libremap')
+        -- check that even having one uci_set not working it will correctly set the other
+        -- keys without crashing
+        assert.is.equal('our.libre.org', uci:get("libremap.settings.community"))
     end)
 
     it('test config.do_copy_assets file not found', function()
@@ -69,6 +99,33 @@ describe('LiMe Generic config tests #genericconfig', function()
 
         assert.is_true(gen_cfg.do_run_assets('RECONFIG'))
         assert.is_false(utils.file_exists("/tmp/assets_testing_file"))
+        os.execute("rm -rf /tmp/lime-assets/ /tmp/assets_testing_file")
+    end)
+
+    it('test run_assets on a script that returns non-zero status', function()
+        local content = [[
+        config run_asset dropbear
+            option asset 'dropbear.sh'
+            option when 'RECONFIG'
+        ]]
+        gen_cfg.COMMUNITY_ASSET_DIR = '/tmp/lime-assets/community/'
+        os.execute('mkdir -p /tmp/lime-assets/community/')
+        os.execute('printf "#!/bin/sh\nexit 1" > /tmp/lime-assets/community/dropbear.sh')
+        test_utils.write_uci_file(uci, config.UCI_CONFIG_NAME, content)
+
+        assert.is_false(gen_cfg.do_run_assets('RECONFIG'))
+        os.execute("rm -rf /tmp/lime-assets/")
+    end)
+
+    it('test run_assets with a non-existent script', function()
+        local content = [[
+        config run_asset dropbear
+            option asset 'i_dont_exist.sh'
+            option when 'RECONFIG'
+        ]]
+        test_utils.write_uci_file(uci, config.UCI_CONFIG_NAME, content)
+
+        assert.is_false(gen_cfg.do_run_assets('RECONFIG'))
     end)
 
     before_each('', function()
