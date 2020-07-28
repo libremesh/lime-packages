@@ -42,6 +42,34 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
         os.execute:revert()
     end)
 
+    it('test firmware_verify inexistent file', function()
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'firmware_verify'},
+                                    '{"fw_path": "/foo"}')
+        assert.is.equal("error", response.status)
+        assert.is.equal("Firmware file not found", response.message)
+    end)
+
+    it('test firmware_verify with confirm method', function()
+        stub(os, "execute", function() return 0 end)
+        stub(utils, "file_exists", function() return true end)
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'firmware_verify'},
+                                    '{"fw_path": "/foo"}')
+        assert.is.equal("ok", response.status)
+        os.execute:revert()
+        utils.file_exists:revert()
+    end)
+
+    it('test firmware_upgrade', function()
+        stub(os, "execute", function() return 0 end)
+        stub(utils, "file_exists", function() return true end)
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'firmware_upgrade'},
+                                    '{"fw_path": "/foo"}')
+        assert.is.equal("ok", response.status)
+        assert.is.not_nil("ok", response.upgrade_id)
+        os.execute:revert()
+        utils.file_exists:revert()
+    end)
+
     before_each('', function()
         uci = test_utils.setup_test_uci()
     end)
