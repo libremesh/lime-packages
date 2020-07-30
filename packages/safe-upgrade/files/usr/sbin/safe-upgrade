@@ -440,9 +440,8 @@ if pcall(debug.getlocal, 4, 1) then
 else
     -- Main script mode
 
-    assert_fw_env_configured()
-
     local args = parse_args()
+    assert_fw_env_configured()
     if args.bootstrap then
         bootstrap(args)
     elseif args.upgrade then
