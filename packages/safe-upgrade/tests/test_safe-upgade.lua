@@ -139,6 +139,11 @@ mtd8: 00010000 00010000 "ART"
         assert.are.same(expected, files_preserved)
     end)
 
+    it('test cmdline help', function()
+        local out = utils.unsafe_shell('lua ./packages/safe-upgrade/files/usr/sbin/safe-upgrade --help')
+        assert.not_nil(string.match(out, "Safe upgrade mechanism"))
+    end)
+
     before_each('', function()
         test_dir = test_utils.setup_test_dir()
     end)
