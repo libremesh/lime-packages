@@ -35,6 +35,15 @@ local bootcmd = 'run preboot; boot_part=${stable_part}; if test ${testing_part} 
 su.STABLE_PARTITION_NAME = 'stable_part'
 su.TESTING_PARTITION_NAME = 'testing_part'
 
+su.EXIT_ERROR_OK = 0
+su.EXIT_STATUS_INVALID_FIRMWARE = 111
+su.EXIT_STATUS_ALREADY_CONFIRMED = 113
+su.EXIT_STATUS_FW_ENV_NOT_FOUND = 115
+su.EXIT_STATUS_BOARD_NOT_SUPPORTED = 198
+su.EXIT_STATUS_NOT_INSTALLED = 199
+su.EXIT_STATUS_INSTALL_FROM_PART2 = 120
+su.EXIT_STATUS_ALREADY_INSTALLED = 121
+
 local safe_upgrade_auto_reboot_script = [[#!/bin/sh /etc/rc.common
 
 REBOOT_FILE_CONFIG_TIMEOUT_S="/etc/safe_upgrade_auto_reboot_confirm_timeout_s"
@@ -98,7 +107,7 @@ end
 local function assert_fw_env_configured()
     if not fw_env_configured() then
         print('/etc/fw_env.confg does not exist, aborting')
-        os.exit(115)
+        os.exit(su.EXIT_STATUS_FW_ENV_NOT_FOUND)
     end
 end
 
@@ -148,7 +157,7 @@ end
 local function assert_su_installed()
     if not is_su_installed() then
         print('safe-upgrade is not installed, aborting')
-        os.exit(114)
+        os.exit(su.EXIT_STATUS_NOT_INSTALLED)
     end
 end
 
@@ -256,13 +265,13 @@ local function bootstrap(args)
     if is_su_installed() then
         print(string.format("safe-upgrade version '%s' is already installed, aborting",
                             get_su_version()))
-        os.exit(121)
+        os.exit(su.EXIT_STATUS_ALREADY_INSTALLED)
     end
 
 
     if su.get_current_partition() ~= 1 then
         print("installing safe-upgrade from partition 2 is not supported yet")
-        os.exit(120)
+        os.exit(su.EXIT_STATUS_INSTALL_FROM_PART2)
     end
 
     set_stable_partition(1)
@@ -289,10 +298,10 @@ end
 
 local function verify(args)
     if _verify(args.firmware) then
-        os.exit(0)
+        os.exit(su.EXIT_STATUS_OK)
     else
         print("Invalid firmware!")
-        os.exit(111)
+        os.exit(su.EXIT_STATUS_INVALID_FIRMWARE)
     end
 end
 
@@ -305,7 +314,7 @@ local function upgrade(args)
         if args.force then
             print("Forcing upgrade to continue as requested.")
         else
-            os.exit(111)
+            os.exit(su.EXIT_STATUS_INVALID_FIRMWARE)
         end
     end
 
@@ -347,7 +356,7 @@ local function confirm(args)
     local partitions = su.get_partitions()
     if partitions.current == partitions.stable then
         print(string.format('the current partition: %d is already the stable partition, aborting', partitions.current))
-        os.exit(113)
+        os.exit(su.EXIT_STATUS_ALREADY_CONFIRMED)
     end
 
     print("Canceling and disabling automatic reboot")
@@ -446,18 +455,14 @@ else
         test_other_partition(args)
     elseif args['board-supported'] then
         if su.is_current_board_supported() then
-            os.exit(0)
+            os.exit(su.EXIT_STATUS_OK)
         else
             print("This board is not supported")
-            os.exit(198)
+            os.exit(su.EXIT_STATUS_BOARD_NOT_SUPPORTED)
         end
     elseif args.show then
-        local su_installed_version = su.get_uboot_env('su_version')
-        if su_installed_version == nil then
-            print('safe-upgrade is not installed, aborting.')
-            os.exit(199)
-        end
-        print('safe-upgrade version: ' .. su_installed_version)
+        assert_su_installed()
+        print('safe-upgrade version: ' .. get_su_version())
         local partitions = su.get_partitions()
         --TODO show labels of partitions (maybe store them when flashing from a metadata file)
         print(string.format('current partition: %d', partitions.current))
