@@ -2,40 +2,124 @@
 
 local dba = require('voucher.db')
 local logic = require('voucher.logic')
+local store = require('voucher.store')
+local config = require('voucher.config')
 
-_module = {}
 
-function _module.init(config)
-    if config == nil then
-        config = require('voucher.config')
+local function deepcompare(t1, t2)
+    local ty1 = type(t1)
+    local ty2 = type(t2)
+    if ty1 ~= ty2 then return false end
+    -- non-table types can be directly compared
+    if ty1 ~= 'table' and ty2 ~= 'table' then return t1 == t2 end
+    for k1, v1 in pairs(t1) do
+        local v2 = t2[k1]
+        if v2 == nil or not deepcompare(v1, v2) then return false end
     end
-
-    local vouchera = {}
-    vouchera.config = config
-    vouchera.db = dba.load(config.db)
-    vouchera._initialized = true
-
-    function vouchera.is_mac_valid(mac)
-        return logic.check_mac_validity(vouchera.db, mac)
+    for k2, v2 in pairs(t2) do
+        local v1 = t1[k2]
+        if v1 == nil or not deepcompare(v1, v2) then
+            return false
+        end
     end
-
-    function vouchera.is_valid(secret)
-        return logic.check_voucher_validity(secret, vouchera.db)
-    end
-
-	function vouchera.create_with_expiration()
-        return nil
-    end
-
-    function vouchera.create_with_duration()
-        return nil
-    end
-
-    function vouchera.auth(mac, voucher)
-    end
-
-    return vouchera
+    return true
 end
 
+--! Simplify the comparison of vouchers using a metatable for the == operator
+local voucher_metatable = {
+    __eq = function(self, value)
+        return deepcompare(self, value)
+    end
+}
 
-return _module
+--! obj attrs name, code, mac, expiration_date, duration_m, vtype, mod_counter
+function voucher_init(obj)
+    local voucher = {}
+    voucher.name = obj.name
+
+    if type(obj.code) ~= "string" then
+        return nil, "code must be a string"
+    end
+    voucher.code = obj.code
+
+    if type(obj.mac) == "string" and #obj.mac ~= 17 then
+        return nil, "invalid mac"
+    end
+    voucher.mac = obj.mac
+
+    if obj.expiration_date == nil and obj.duration_m == nil then
+        return nil
+    elseif obj.expiration_date ~= nil then
+        voucher.expiration_date = obj.expiration_date
+    elseif obj.duration_m ~= nil then
+        voucher.duration_m = obj.duration_m
+    end
+
+    voucher.vtype = obj.vtype
+    voucher.mod_counter = obj.mod_counter or 1
+
+    setmetatable(voucher, voucher_metatable)
+    return voucher
+end
+
+local vouchera = {}
+
+function vouchera.init(cfg)
+    if cfg ~= nil then
+        config = cfg
+    end
+    vouchera.config = config
+    vouchera.vouchers = store.load_db(config.db_path, voucher_init)
+end
+
+--! Activate a voucher returning true or false depending on the status of the operation.
+function vouchera.activate(code, mac)
+    local voucher = vouchera.is_activable(code)
+    if voucher then
+        voucher.mac = mac
+        --! If the voucher has a duration then create the expiration_date from it
+        if voucher.duration_m then
+           voucher.expiration_date = os.time() + duration_m * 60
+        end
+        store.add_voucher(config.db_path, voucher, voucher_init)
+    end
+    return voucher
+end
+
+--! Return true if there is an activated voucher that grants a access to the specified MAC
+function vouchera.is_mac_valid(mac)
+    for k, v in pairs(vouchera.vouchers) do
+        if v.mac == mac and v.expiration_date > os.time() then
+            return true
+        end
+    end
+    return false
+end
+
+--! Check if a code would be good to be activated but without activating it right away.
+function vouchera.is_activable(code)
+    for k, v in pairs(vouchera.vouchers) do
+        if v.code == code and v.mac == nil then
+            if v.expiration_date ~= nil and v.expiration_date > os.time() then
+                return v
+            end
+            return v
+        end
+    end
+    return false
+end
+
+function vouchera.add(obj)
+    local voucher = voucher_init(obj)
+    if vouchera.vouchers[obj.name] ~= nil then
+        return nil, "voucher with same name already exists"
+    end
+    vouchera.vouchers[obj.name] = voucher
+    if voucher and store.add_voucher(config.db_path, voucher, voucher_init) then
+        return voucher
+    end
+end
+
+vouchera.voucher = voucher_init
+
+return vouchera
