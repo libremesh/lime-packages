@@ -62,7 +62,7 @@ describe('Vouchera tests #vouchera', function()
     it('activate vouchers', function()
         vouchera.init()
         expiration_date = os.time() + 1000
-        assert.is_false(vouchera.is_mac_valid("aa:bb:cc:dd:ee:ff"))
+        assert.is_false(vouchera.is_mac_authorized("aa:bb:cc:dd:ee:ff"))
         assert.is_false(vouchera.is_activable('secret_code'))
         
         local voucher = vouchera.add({name='myvoucher', code='secret_code', expiration_date=expiration_date, 
@@ -72,11 +72,12 @@ describe('Vouchera tests #vouchera', function()
         assert.is.not_false(vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff"))
         
         assert.is_false(vouchera.is_activable('secret_code'))
-        assert.is_true(vouchera.is_mac_valid("aa:bb:cc:dd:ee:ff"))
+        assert.is_true(vouchera.is_mac_authorized("aa:bb:cc:dd:ee:ff"))
         
         --! let's pretend that the expiration date is in the past now
         stub(os, "time", function () return expiration_date + 1 end)
-        assert.is_false(vouchera.is_mac_valid("aa:bb:cc:dd:ee:ff"))
+        assert.is_false(vouchera.is_mac_authorized("aa:bb:cc:dd:ee:ff"))
+        os.time:revert()
     end)
 
     after_each('', function()
