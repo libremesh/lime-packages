@@ -6,7 +6,7 @@ local uci = require('uci')
 local uci_cursor = uci.cursor()
 
 function handle_request (env)
-  local method = 'http://' --! TODO: handle https somehow
+  local method = 'http://'
   local origin_url = utils.urlencode(method .. env.HTTP_HOST .. env.REQUEST_URI)
   local own_ipv4 = uci_cursor:get("network", "lan", "ipaddr")
   local auth_url = uci_cursor:get("pirania", "base_config", "url_auth")
