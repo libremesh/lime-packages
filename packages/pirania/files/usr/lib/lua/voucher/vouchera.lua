@@ -1,7 +1,5 @@
 #!/bin/lua
 
-local dba = require('voucher.db')
-local logic = require('voucher.logic')
 local store = require('voucher.store')
 local config = require('voucher.config')
 
@@ -87,10 +85,12 @@ function vouchera.activate(code, mac)
 end
 
 --! Return true if there is an activated voucher that grants a access to the specified MAC
-function vouchera.is_mac_valid(mac)
-    for k, v in pairs(vouchera.vouchers) do
-        if v.mac == mac and v.expiration_date > os.time() then
-            return true
+function vouchera.is_mac_authorized(mac)
+    if mac ~= nil then
+        for k, v in pairs(vouchera.vouchers) do
+            if v.mac == mac and v.expiration_date > os.time() then
+                return true
+            end
         end
     end
     return false
