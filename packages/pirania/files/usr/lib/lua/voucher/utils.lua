@@ -207,4 +207,11 @@ utils.redirect_page = function(url)
     ]], url, url , url)
 end
 
+--! NEW
+local nixio = require('nixio')
+
+function utils.log(...)
+    nixio.syslog(...)
+end
+
 return utils
