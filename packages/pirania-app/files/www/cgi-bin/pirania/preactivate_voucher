@@ -1,0 +1,9 @@
+#!/usr/bin/lua
+
+local handlers = require("voucher.cgi_handlers")
+
+local redirect_url = handlers.preactivate_voucher()
+
+print("Status: 302 \r\n")
+print("Location: " .. redirect_url .. "\r\n")
+print("\r\n") --! indicate uhttpd to send the response
