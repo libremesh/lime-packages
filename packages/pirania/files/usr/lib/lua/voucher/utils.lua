@@ -82,4 +82,20 @@ function utils.urldecode_params(url, tbl)
     return params
 end
 
+function utils.urlencode(value)
+    if value ~= nil then
+        local str = tostring(value)
+        return lhttp.urlencode(str, lhttp.ENCODE_IF_NEEDED + lhttp.ENCODE_FULL) or str
+    end
+    return nil
+end
+
+function utils.urldecode(value)
+    if value ~= nil then
+        local str = tostring(value)
+        return lhttp.urldecode(str, lhttp.DECODE_IF_NEEDED) or str
+    end
+    return nil
+end
+
 return utils
