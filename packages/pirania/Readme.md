@@ -103,7 +103,7 @@ files/
     /etc/init.d/pirania-uhttpd starts a uhttpd on port 59080 that replies any request with a redirect towards a preset URL
 
     /usr/lib/lua/voucher/ contains lua libraries used by /usr/bin/voucher
-    /usr/bin/voucher is a CLI to manage the db (has functions show, show_active, show_authorized_macs, add, activate, deactivate, is_mac_authorized, and url)
+    /usr/bin/voucher is a CLI to manage the db (has functions show, show_active, show_authorized_macs, add, activate, deactivate and is_mac_authorized)
     /usr/bin/captive-portal sets up iptables rules to capture traffic
 
     /usr/libexec/rpcd/pirania ubus pirania API (this is used by the web frontend)

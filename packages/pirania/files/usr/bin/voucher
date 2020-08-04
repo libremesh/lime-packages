@@ -14,17 +14,6 @@ captive_portal = {}
 
 vouchera.init()
 
--- Show or change portal url
-captive_portal.url = function(argument)
-    if argument == 'show' then
-        return uci_cursor:get("pirania", "base_config", "portal_url")
-    else
-        uci_cursor:set("pirania", "base_config", "portal_url", argument)
-        uci_cursor:commit("pirania")
-        return(argument)
-    end
-end
-
 captive_portal.activate = function(code, mac)
     local mac = mac or ''
     local code = code or ''
