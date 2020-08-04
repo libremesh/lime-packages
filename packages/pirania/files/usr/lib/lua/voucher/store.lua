@@ -13,7 +13,7 @@ function store.load_db(db_path, voucher_init)
     if f ~= nil then
         io.close(f)
     else
-        os.execute("mkdir " .. db_path)
+        os.execute("mkdir -p " .. db_path)
     end
 
     for fname in fs.glob(db_path .. '/*.json') do
