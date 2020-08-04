@@ -25,7 +25,7 @@ captive_portal.url = function(argument)
     end
 end
 
-captive_portal.activate_voucher = function(mac, code)
+captive_portal.activate = function(code, mac)
     local mac = mac or ''
     local code = code or ''
     local res = vouchera.activate(code, mac)
@@ -39,7 +39,7 @@ end
 --[[
 --Checks if the mac of the given context is allowed to browse.
 --]]
-captive_portal.is_mac_authorized = function(mac)    
+captive_portal.is_mac_authorized = function(mac)
     if vouchera.is_mac_authorized(mac or '') then
         print('true')
         sys.exit(0)
@@ -49,16 +49,16 @@ captive_portal.is_mac_authorized = function(mac)
     end
 end
 
-captive_portal.show_active_vouchers = function()
+captive_portal.show_active = function()
     for _, voucher in pairs(vouchera.vouchers) do
-        if vouchera.is_active(voucher) then 
+        if vouchera.is_active(voucher) then
             print(voucher.tostring())
         end
     end
 end
 
 -- List all vouchers
-captive_portal.list_vouchers = function()
+captive_portal.show = function()
     for _, voucher in pairs(vouchera.vouchers) do
         print(voucher.tostring())
     end
@@ -73,11 +73,17 @@ end
 --    dba.save(config.db, db)
 --end
 
-captive_portal.invalidate_voucher = function(name)
-    
+captive_portal.deactivate = function(name)
+    if vouchera.deactivate(name) then
+        print('ok')
+        os.exit(0)
+    else
+        print("error")
+        os.exit(1)
+    end
 end
 
-captive_portal.add_voucher = function(name, code, expiration_date)
+captive_portal.add = function(name, code, expiration_date)
     local v = {name=name, code=code, expiration_date=tonumber(expiration_date)}
     res, msg = vouchera.add(v)
     if res ~= nil then
@@ -91,7 +97,7 @@ end
 
 captive_portal.show_authorized_macs = function()
     for _, voucher in pairs(vouchera.vouchers) do
-        if vouchera.is_active(voucher) then 
+        if vouchera.is_active(voucher) then
             print(voucher.mac)
         end
     end
@@ -102,7 +108,12 @@ if debug.getinfo(2).name == nil then
     local arguments = { ... }
     local action = table.remove(arguments, 1)
     local context = arguments
-    print(captive_portal[action](unpack(context)))
+    local f = captive_portal[action]
+    if f ~= nil then
+        f(unpack(context))
+    else
+        print("invalid command: " .. tostring(action))
+    end
 end
 
 return captive_portal
