@@ -85,11 +85,11 @@ describe('LiMe Generic config tests #genericconfig', function()
         os.execute("rm -r /tmp/lime-assets /tmp/lime_test")
     end)
 
-    it('test run_assets on RECONFIG', function()
+    it('test run_assets ATCONFIG', function()
         local content = [[
         config run_asset dropbear
             option asset 'dropbear.sh'
-            option when 'RECONFIG'
+            option when 'ATCONFIG'
         ]]
         gen_cfg.NODE_ASSET_DIR = '/tmp/lime-assets/node/'
         os.execute('mkdir -p /tmp/lime-assets/node/')
@@ -97,7 +97,7 @@ describe('LiMe Generic config tests #genericconfig', function()
         os.execute('printf "#!/bin/sh\nrm /tmp/assets_testing_file" > /tmp/lime-assets/node/dropbear.sh')
         test_utils.write_uci_file(uci, config.UCI_CONFIG_NAME, content)
 
-        assert.is_true(gen_cfg.do_run_assets('RECONFIG'))
+        assert.is_true(gen_cfg.do_run_assets(gen_cfg.RUN_ASSET_AT_CONFIG))
         assert.is_false(utils.file_exists("/tmp/assets_testing_file"))
         os.execute("rm -rf /tmp/lime-assets/ /tmp/assets_testing_file")
     end)
@@ -106,14 +106,14 @@ describe('LiMe Generic config tests #genericconfig', function()
         local content = [[
         config run_asset dropbear
             option asset 'dropbear.sh'
-            option when 'RECONFIG'
+            option when 'ATCONFIG'
         ]]
         gen_cfg.COMMUNITY_ASSET_DIR = '/tmp/lime-assets/community/'
         os.execute('mkdir -p /tmp/lime-assets/community/')
         os.execute('printf "#!/bin/sh\nexit 1" > /tmp/lime-assets/community/dropbear.sh')
         test_utils.write_uci_file(uci, config.UCI_CONFIG_NAME, content)
 
-        assert.is_false(gen_cfg.do_run_assets('RECONFIG'))
+        assert.is_false(gen_cfg.do_run_assets(gen_cfg.RUN_ASSET_AT_CONFIG))
         os.execute("rm -rf /tmp/lime-assets/")
     end)
 
@@ -121,11 +121,11 @@ describe('LiMe Generic config tests #genericconfig', function()
         local content = [[
         config run_asset dropbear
             option asset 'i_dont_exist.sh'
-            option when 'RECONFIG'
+            option when 'ATCONFIG'
         ]]
         test_utils.write_uci_file(uci, config.UCI_CONFIG_NAME, content)
 
-        assert.is_false(gen_cfg.do_run_assets('RECONFIG'))
+        assert.is_false(gen_cfg.do_run_assets(gen_cfg.RUN_ASSET_AT_CONFIG))
     end)
 
     before_each('', function()

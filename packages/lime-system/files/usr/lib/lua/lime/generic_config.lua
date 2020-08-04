@@ -8,6 +8,8 @@ gen_cfg = {}
 gen_cfg.NODE_ASSET_DIR = '/etc/lime-assets/node/'
 gen_cfg.COMMUNITY_ASSET_DIR = '/etc/lime-assets/community/'
 gen_cfg.CONFIG_FIRST_BOOT_SIGNAL_FILE = '/etc/.cfg_first_boot_already_run'
+gen_cfg.RUN_ASSET_FIRSTBOOT = 'FIRSTBOOT'
+gen_cfg.RUN_ASSET_AT_CONFIG = 'ATCONFIG'
 
 function gen_cfg.clean()
     -- nothing to clean, but needs to be declared to comply with the API
@@ -17,10 +19,10 @@ function gen_cfg.configure()
     gen_cfg.do_generic_uci_configs()
     gen_cfg.do_copy_assets()
     if not utils.file_exists(gen_cfg.CONFIG_FIRST_BOOT_SIGNAL_FILE) then
-        gen_cfg.do_run_assets('FIRSTBOOT')
+        gen_cfg.do_run_assets(gen_cfg.RUN_ASSET_FIRSTBOOT)
         utils.write_file(gen_cfg.CONFIG_FIRST_BOOT_SIGNAL_FILE, '')
     end
-    gen_cfg.do_run_assets('RECONFIG')
+    gen_cfg.do_run_assets(gen_cfg.RUN_ASSET_AT_CONFIG)
 end
 
 
@@ -98,7 +100,7 @@ end
 --! Executes a file from the assets directory
 --! config run_asset dropbear
 --!     option asset 'dropbear.sh'
---!     option when 'FIRSTBOOT' # FIRSTBOOT, RECONFIG
+--!     option when 'FIRSTBOOT' # FIRSTBOOT, ATCONFIG
 --!
 function gen_cfg.do_run_assets(when)
     local uci = config.get_uci_cursor()
