@@ -94,6 +94,11 @@ function vouchera.deactivate(name)
     return voucher
 end
 
+function vouchera.update_with(voucher)
+    vouchera.vouchers[voucher.name] = voucher
+    return store.add_voucher(config.db_path, voucher, voucher_init)
+end
+
 --! Return true if there is an activated voucher that grants a access to the specified MAC
 function vouchera.is_mac_authorized(mac)
     if mac ~= nil then
