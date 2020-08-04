@@ -108,6 +108,9 @@ files/
 
     /usr/libexec/rpcd/pirania ubus pirania API (this is used by the web frontend)
     /usr/share/rpcd/acl.d/pirania.json ACL for the ubus pirania API
+
+    /etc/shared-state/publishers/shared-state-publish_vouchers inserts into shared-state the local voucher db
+    /etc/shared-state/hooks/pirania/generate_vouchers bring updated or new vouchers from the shared-state database into the local voucher db
 ```
 
 ### Trafic capture
