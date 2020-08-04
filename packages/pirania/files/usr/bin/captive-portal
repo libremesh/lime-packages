@@ -41,9 +41,9 @@ set_iptables () {
 
 	append_ipt_rules=$(uci get pirania.base_config.append_ipt_rules 2> /dev/null)
 	if [ "$append_ipt_rules" = "1" ] ; then
-	    AorI="A"
+		AorI="A"
 	else
-	    AorI="I"
+		AorI="I"
 	fi
 
 	for ipvX in ipv4 ipv6 ; do
@@ -59,25 +59,35 @@ set_iptables () {
 			anygw=[$(uci get network.lan.ip6addr | cut -d/ -f1)]
 		fi
 
-		### Buildup
+		### Buildup: create a pirania chain in each table
 		for table in mangle nat filter; do
 			$iptables -t $table -N pirania
 		done
 
-		$iptables -t nat -$AorI PREROUTING -j pirania
-		$iptables -t filter -$AorI FORWARD -j pirania
+		# send the packets that we want to filter to the pirania chains
+		# 'nat' table is consulted when a packet that creates a new connection is encountered and with PREROUTING, as soon as they come in.
+		$iptables -t nat -$AorI PREROUTING --jump pirania
+		# 'filter' table is the default table, FORWARD for packets being routed through the box
+		$iptables -t filter -$AorI FORWARD --jump pirania
 
+		# we are going to modify only the packets specified in 'catch_interfaces', so sending them to the pirania chain
 		for interface in $(uci get pirania.base_config.catch_interfaces); do
 			$iptables -t mangle -$AorI PREROUTING -i $interface -j pirania
 		done
 
+		# send DNS requests, that are not from valid ips or macs, to our own captive portal DNS at 59053
 		$iptables -t nat -A pirania -p udp  -m set ! --match-set pirania-whitelist-$ipvX src -m set ! --match-set pirania-auth-macs src --dport 53 -j DNAT --to-destination $anygw:59053
 
+		# stop processing the chain for authorized macs and whitelisted ips (so they are accepted)
 		$iptables -t mangle -A pirania -m set --match-set pirania-auth-macs src -j RETURN
 		$iptables -t mangle -A pirania -m set --match-set pirania-whitelist-$ipvX dst -j RETURN
+
+		# mark packages to be redirected (puerto 80) and to be rejected (the resto)
 		$iptables -t mangle -A pirania -j MARK --set-mark 0x66/0xff  # everything not auth nor whitelisted will be marked for REJECT
 		$iptables -t mangle -A pirania -p tcp -m tcp --dport 80 -j MARK --set-mark 0x80/0xff  # unless is dport 80, re-set mark for REDIRECT
 
+		# redirect packets marked with 0x80/0xff redirect redirect to 59080
+		# reject packets marked with 0x66/0xff (drop the packet and send an error to the client)
 		$iptables -t nat    -A pirania -p tcp -m tcp -m mark --mark 0x80/0xff -j REDIRECT --to-ports 59080
 		$iptables -t filter -A pirania -p tcp -m mark --mark 0x66/0xff -j REJECT --reject-with tcp-reset
 		$iptables -t filter -A pirania -m mark --mark 0x66/0xff -j REJECT
