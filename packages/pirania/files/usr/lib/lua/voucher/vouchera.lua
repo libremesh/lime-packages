@@ -34,7 +34,7 @@ local voucher_metatable = {
     end
 }
 
---! obj attrs name, code, mac, expiration_date, duration_m, vtype, mod_counter
+--! obj attrs name, code, mac, expiration_date, duration_m, mod_counter
 function voucher_init(obj)
     local voucher = {}
     voucher.name = obj.name
@@ -57,13 +57,12 @@ function voucher_init(obj)
         voucher.duration_m = obj.duration_m
     end
 
-    voucher.vtype = obj.vtype
     voucher.mod_counter = obj.mod_counter or 1
 
     voucher.tostring = function()
         local v = voucher
-        return(string.format('%s\t%s\t%s\t%s', v.name, v.code, v.mac or 'xx:xx:xx:xx:xx:xx',
-                             os.date("%c", v.expiration_date) or ''))
+        return(string.format('%s\t%s\t%s\t%s\t%s', v.name, v.code, v.mac or 'xx:xx:xx:xx:xx:xx',
+                             os.date("%c", v.expiration_date) or '', v.mod_counter))
     end
 
     setmetatable(voucher, voucher_metatable)
