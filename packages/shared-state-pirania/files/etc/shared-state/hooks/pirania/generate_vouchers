@@ -3,6 +3,7 @@
 --! LibreMesh
 --! Copyright (C) 2019  Marcos Gutierrez <gmarcos@altermundi.net>
 --! Copyright (C) 2019  Luandro <luandro@gmail.com>
+--! Copyright (C) 2020  Santiago Piccinini <spiccinini@altermundi.net>
 --!
 --! This program is free software: you can redistribute it and/or modify
 --! it under the terms of the GNU Affero General Public License as
@@ -17,70 +18,48 @@
 --! You should have received a copy of the GNU Affero General Public License
 --! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-local JSON = require("luci.jsonc")
+local json = require("luci.jsonc")
 local uci = require("uci")
 local uci_conf = uci.cursor()
+local vouchera = require("voucher.vouchera")
+local utils = require("voucher.utils")
 
-local inputTable = JSON.parse(io.stdin:read("*all"))
-local dbPath = uci_conf:get("pirania", "base_config", "db_path")
-local outputTable ={"key,voucher,expiretime,uploadlimit,downloadlimit,amountofmacsallowed,usedmacs,"}
+--! This script loads the new shared-state information of the vouchers into the local database.
 
-local function shell(command)
-    local handle = io.popen(command)
-    local result = handle:read("*a")
-    handle:close()
-    return result
-end
+vouchera.init()
 
-local function macs2string(macs)
-	macs = macs or {}
-	return table.concat(macs, '+')
-end
-
-local function reduce(cb, tab, default)
-    local result = default
-    for k, act in pairs(tab) do
-        result = cb(result,act) 
+--! load the shared-state database
+local shared_db = {}
+local input_table = json.parse(io.stdin:read("*all"))
+for key, value in pairs(input_table) do
+    local voucher = vouchera.voucher(value.data)
+    if voucher then
+        shared_db[key] = voucher
     end
-    return result
 end
 
-local initialHash = shell('md5sum '..dbPath..' | cut -d \' \' -f 1'):gsub("\n","")
-local sortedTable = {}
-
--- Get vouchers data
-for key,sharedData in pairs(inputTable) do
- 	table.insert(sortedTable,sharedData.data)
-end
-
--- Sort vouchers by secret key
-table.sort(sortedTable, function (left, right)	
-    return left.voucher < right.voucher
-end)
-
--- Reduce vouchers to update macs and expires values
-local result = reduce(function(prev, act)
-    if prev[act.voucher] == nil then 
-        prev[act.voucher] = act
-    elseif tonumber(act.expires) == 0 then
-        prev[act.voucher] = act
-    elseif #prev[act.voucher].macs < #act.macs then
-        prev[act.voucher] = act
+local new_voucher_info = false
+for key, shared_voucher in pairs(shared_db) do
+    local local_voucher = vouchera[shared_voucher.name]
+    if local_voucher and local_voucher ~= shared_voucher then
+        if shared_voucher.mod_counter > local_voucher then
+            --! new information, local voucher needs to be updated
+            utils.log("debug", "generate_vouchers - updating voucher " .. local_voucher.name)
+            vouchera.update_with(shared_voucher)
+            new_voucher_info = true
+        elseif shared_voucher.mod_counter == local_voucher then
+            utils.log("warning", "generate_vouchers - vouchers differ but have the same mod_counter!")
+        else
+            utils.log("debug", "generate_vouchers - disregard shared-state voucher as we have newer data")
+        end
+    elseif local_voucher == nil then
+        utils.log("debug", "generate_vouchers - adding new voucher " .. shared_voucher.name)
+        vouchera.update_with(shared_voucher)
+        new_voucher_info = true
     end
-    return prev
-end , sortedTable, {})
-    
--- Generate db lines
-for key,vo in pairs(result) do
-    table.insert(outputTable, vo.name..','..vo.voucher..','..vo.expires..',10,10,'..vo.macsAllowed..','..macs2string(vo.macs))
 end
 
-
--- Write result and calc new md5hash
-io.output(dbPath):write(table.concat(outputTable, '\n').."\n")
-local finalHash = shell('md5sum '..dbPath..' | cut -d \' \' -f 1')
-
--- If db change trigger captive-portal and setup the new state
-if initialHash ~= finalHash then
+-- If there is updated status from the shared-state trigger captive-portal to update the firwall
+if new_voucher_info then
     shell('captive-portal update')
 end
