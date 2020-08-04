@@ -14,6 +14,8 @@ for pkg in packages/*/files/usr/lib/lua/; do
 done
 # append default paths
 LIB_PATHS="$LIB_PATHS;;"
+LUA_PATH=$LIB_PATHS
+export LUA_PATH
 
 # create a temporaty script file to be able to run multiple commands inside docker
 temp_file=$(mktemp /tmp/lime_test.XXXX)
@@ -28,7 +30,7 @@ fi
 
 cat > ${temp_file}<< SCRIPT
 #!/bin/bash
-${LOGGING} busted -v --coverage ${TESTS_PATHS} --lpath='${LIB_PATHS}' ${1} && luacov
+${LOGGING} LUA_PATH='$LUA_PATH' busted -v --coverage ${TESTS_PATHS} --lpath='${LIB_PATHS}' ${1} && luacov
 SCRIPT
 
 ./tools/dockertestshell "${temp_file}"

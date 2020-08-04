@@ -8,6 +8,7 @@ local fs = require("nixio.fs")
 
 utils.BOARD_JSON_PATH = "/etc/board.json"
 utils.SHADOW_FILENAME = "/etc/shadow"
+utils.KEEP_ON_UPGRADE_FILES_BASE_PATH = '/lib/upgrade/keep.d/'
 
 function utils.log(...)
 	if DISABLE_LOGGING ~= nil then return end
@@ -48,7 +49,8 @@ end
 --! escape the magic characters: ( ) . % + - * ? [ ] ^ $
 --! useful to use with gsub / match when finding exactly a string
 function utils.literalize(str)
-    return str:gsub("[%(%)%.%%%+%-%*%?%[%]%^%$]", function(c) return "%" .. c end)
+    local ret, _ = str:gsub("[%(%)%.%%%+%-%*%?%[%]%^%$]", function(c) return "%" .. c end)
+    return ret
 end
 
 function utils.isModuleAvailable(name)
@@ -349,6 +351,27 @@ function utils.random_string(length, filter)
         end
     end
     return out
+end
+
+--! Return a list of files to keep when upgrading. Existence of the files is not guaranteed.
+function utils.keep_on_upgrade_files()
+    local file_lists = config.get("system", "keep_on_upgrade", "")
+    local files = {}
+    for _, list in pairs(utils.split(file_lists, " ")) do
+        --! convert non absolute paths to absolute
+        if not utils.stringStarts(list, "/") then
+            list =  utils.KEEP_ON_UPGRADE_FILES_BASE_PATH .. list
+        end
+        if utils.file_exists(list) then
+            for file_name in io.lines(list) do
+                --! exclude comments, blank lines, etc
+                if utils.stringStarts(file_name, "/") then
+                    table.insert(files, file_name)
+                end
+            end
+        end
+    end
+    return files
 end
 
 return utils
