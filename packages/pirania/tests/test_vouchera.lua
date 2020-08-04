@@ -25,13 +25,13 @@ describe('Vouchera tests #vouchera', function()
         local voucher_b = vouchera.voucher(v)
         v.name = 'othername'
         local voucher_c = vouchera.voucher(v)
-        v.name, v.code = 'myvoucher', 'othercode' 
+        v.name, v.code = 'myvoucher', 'othercode'
         local voucher_d = vouchera.voucher(v)
         v.code, v.expiration_date = 'myvoucher', v.expiration_date + 1
         local voucher_e = vouchera.voucher(v)
         local voucher_f = vouchera.voucher({name='myvoucher', code='secret_code', expiration_date=expiration_date, mod_counter=2})
         local voucher_g = vouchera.voucher({name='myvoucher', code='secret_code', expiration_date=expiration_date, mod_counter=3})
-        
+
         assert.is.equal(voucher_a, voucher_b)
 
         assert.is.not_equal(voucher_a, voucher_c)
@@ -44,14 +44,14 @@ describe('Vouchera tests #vouchera', function()
     it('vouchera create and reload database', function()
         vouchera.init()
         expiration_date = os.time()
-        local voucher = vouchera.add({name='myvoucher', code='secret_code', expiration_date=expiration_date, 
+        local voucher = vouchera.add({name='myvoucher', code='secret_code', expiration_date=expiration_date,
                                       vtype='renewable'})
         assert.is.equal('myvoucher', voucher.name)
         assert.is.equal('secret_code', voucher.code)
         assert.is_nil(voucher.mac)
         assert.is.equal(expiration_date, voucher.expiration_date)
         assert.is.equal('renewable', voucher.vtype)
-        
+
         v1 = vouchera.vouchers['myvoucher']
         vouchera.init()
         v2 = vouchera.vouchers['myvoucher']
@@ -64,20 +64,42 @@ describe('Vouchera tests #vouchera', function()
         expiration_date = os.time() + 1000
         assert.is_false(vouchera.is_mac_authorized("aa:bb:cc:dd:ee:ff"))
         assert.is_false(vouchera.is_activable('secret_code'))
-        
-        local voucher = vouchera.add({name='myvoucher', code='secret_code', expiration_date=expiration_date, 
-                                      vtype='renewable'})
 
+        local voucher = vouchera.add({name='myvoucher', code='secret_code', expiration_date=expiration_date,
+                                      vtype='renewable'})
+        assert.is.equal(1, voucher.mod_counter)
         assert.is.not_false(vouchera.is_activable('secret_code'))
         assert.is.not_false(vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff"))
-        
+
+        assert.is.equal(2, voucher.mod_counter)
         assert.is_false(vouchera.is_activable('secret_code'))
         assert.is_true(vouchera.is_mac_authorized("aa:bb:cc:dd:ee:ff"))
-        
+
         --! let's pretend that the expiration date is in the past now
         stub(os, "time", function () return expiration_date + 1 end)
         assert.is_false(vouchera.is_mac_authorized("aa:bb:cc:dd:ee:ff"))
         os.time:revert()
+    end)
+
+    it('deactivate vouchers', function()
+        vouchera.init()
+        expiration_date = os.time() + 1000
+
+        local voucher = vouchera.add({name='myvoucher', code='secret_code', expiration_date=expiration_date,
+                                      vtype='renewable'})
+
+        assert.is.equal(1, voucher.mod_counter)
+
+        local voucher = vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff")
+        assert.is.not_false(voucher)
+        assert.is_true(vouchera.is_mac_authorized("aa:bb:cc:dd:ee:ff"))
+        assert.is.equal(2, voucher.mod_counter)
+
+        local ret = vouchera.deactivate('myvoucher')
+        assert.is.equal(3, voucher.mod_counter)
+        assert.is.equal(0, voucher.expiration_date)
+        assert.is_true(ret)
+        assert.is_false(vouchera.is_mac_authorized("aa:bb:cc:dd:ee:ff"))
     end)
 
     after_each('', function()
