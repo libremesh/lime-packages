@@ -8,6 +8,10 @@ local function deepcompare(t1, t2)
     local ty1 = type(t1)
     local ty2 = type(t2)
     if ty1 ~= ty2 then return false end
+    -- exclude functions
+    if ty1 == 'function' and ty1 == ty2 then
+        return true
+    end
     -- non-table types can be directly compared
     if ty1 ~= 'table' and ty2 ~= 'table' then return t1 == t2 end
     for k1, v1 in pairs(t1) do
@@ -56,6 +60,12 @@ function voucher_init(obj)
     voucher.vtype = obj.vtype
     voucher.mod_counter = obj.mod_counter or 1
 
+    voucher.tostring = function()
+        local v = voucher
+        return(string.format('%s\t%s\t%s\t%s', v.name, v.code, v.mac or 'xx:xx:xx:xx:xx:xx',
+                             os.date("%c", v.expiration_date) or ''))
+    end
+
     setmetatable(voucher, voucher_metatable)
     return voucher
 end
@@ -70,6 +80,18 @@ function vouchera.init(cfg)
     vouchera.vouchers = store.load_db(config.db_path, voucher_init)
 end
 
+function vouchera.add(obj)
+    local voucher = voucher_init(obj)
+    if vouchera.vouchers[obj.name] ~= nil then
+        return nil, "voucher with same name already exists"
+    end
+    if voucher and store.add_voucher(config.db_path, voucher, voucher_init) then
+        vouchera.vouchers[obj.name] = voucher
+        return voucher
+    end
+    return nil, "can't create voucher"
+end
+
 --! Activate a voucher returning true or false depending on the status of the operation.
 function vouchera.activate(code, mac)
     local voucher = vouchera.is_activable(code)
@@ -79,7 +101,19 @@ function vouchera.activate(code, mac)
         if voucher.duration_m then
            voucher.expiration_date = os.time() + duration_m * 60
         end
+        voucher.mod_counter = voucher.mod_counter + 1
         store.add_voucher(config.db_path, voucher, voucher_init)
+    end
+    return voucher
+end
+
+function vouchera.deactivate(name)
+    local voucher = vouchera.vouchers[name]
+    if voucher then
+        voucher.mac = mac
+        voucher.expiration_date = 0
+        voucher.mod_counter = voucher.mod_counter + 1
+        return store.add_voucher(config.db_path, voucher, voucher_init)
     end
     return voucher
 end
@@ -88,7 +122,7 @@ end
 function vouchera.is_mac_authorized(mac)
     if mac ~= nil then
         for k, v in pairs(vouchera.vouchers) do
-            if v.mac == mac and v.expiration_date > os.time() then
+            if v.mac == mac and vouchera.is_active(v) then
                 return true
             end
         end
@@ -109,15 +143,8 @@ function vouchera.is_activable(code)
     return false
 end
 
-function vouchera.add(obj)
-    local voucher = voucher_init(obj)
-    if vouchera.vouchers[obj.name] ~= nil then
-        return nil, "voucher with same name already exists"
-    end
-    vouchera.vouchers[obj.name] = voucher
-    if voucher and store.add_voucher(config.db_path, voucher, voucher_init) then
-        return voucher
-    end
+function vouchera.is_active(voucher)
+    return voucher.mac ~= nil and voucher.expiration_date > os.time()
 end
 
 vouchera.voucher = voucher_init
