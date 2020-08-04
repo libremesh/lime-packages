@@ -3,34 +3,10 @@
 local store = require('voucher.store')
 local config = require('voucher.config')
 
-
-local function deepcompare(t1, t2)
-    local ty1 = type(t1)
-    local ty2 = type(t2)
-    if ty1 ~= ty2 then return false end
-    -- exclude functions
-    if ty1 == 'function' and ty1 == ty2 then
-        return true
-    end
-    -- non-table types can be directly compared
-    if ty1 ~= 'table' and ty2 ~= 'table' then return t1 == t2 end
-    for k1, v1 in pairs(t1) do
-        local v2 = t2[k1]
-        if v2 == nil or not deepcompare(v1, v2) then return false end
-    end
-    for k2, v2 in pairs(t2) do
-        local v1 = t1[k2]
-        if v1 == nil or not deepcompare(v1, v2) then
-            return false
-        end
-    end
-    return true
-end
-
 --! Simplify the comparison of vouchers using a metatable for the == operator
 local voucher_metatable = {
     __eq = function(self, value)
-        return deepcompare(self, value)
+        return self.tostring() == value.tostring()
     end
 }
 
@@ -59,10 +35,11 @@ function voucher_init(obj)
 
     voucher.mod_counter = obj.mod_counter or 1
 
+    --! tostring must reflect all the state of a voucher (so vouchers can be compared reliably using tostring)
     voucher.tostring = function()
         local v = voucher
-        return(string.format('%s\t%s\t%s\t%s\t%s', v.name, v.code, v.mac or 'xx:xx:xx:xx:xx:xx',
-                             os.date("%c", v.expiration_date) or '', v.mod_counter))
+        return(string.format('%s\t%s\t%s\t%s\t%s\t%s', v.name, v.code, v.mac or 'xx:xx:xx:xx:xx:xx',
+                             os.date("%c", v.expiration_date) or '', tostring(v.duration_m), v.mod_counter))
     end
 
     setmetatable(voucher, voucher_metatable)
