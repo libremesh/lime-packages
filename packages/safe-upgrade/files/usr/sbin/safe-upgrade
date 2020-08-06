@@ -169,7 +169,7 @@ local function read_fw_metadata(path)
 end
 
 function su.get_current_device()
-    return utils.read_file("/tmp/sysinfo/board_name")
+    return utils.read_file("/tmp/sysinfo/board_name"):gsub("\n","")
 end
 
 function su.get_supported_devices()
