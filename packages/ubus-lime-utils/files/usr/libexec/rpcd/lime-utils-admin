@@ -28,9 +28,13 @@ local function set_root_password(msg)
     return utils.printJson(result)
 end
 
-local function is_upgrade_confirm_supported(msg)
+local function _is_upgrade_confirm_supported()
     local exit_value = os.execute("safe-upgrade board-supported > /dev/null 2>&1")
-    local supported = exit_value == 0
+    return exit_value == 0
+end
+
+local function is_upgrade_confirm_supported(msg)
+    local supported = _is_upgrade_confirm_supported()
     return utils.printJson({status = 'ok', supported = supported})
 end
 
@@ -40,7 +44,7 @@ local function firmware_verify(msg)
                                 message = "Firmware file not found"})
     end
     local command
-    if is_upgrade_confirm_supported() then
+    if _is_upgrade_confirm_supported() then
         command = "safe-upgrade verify "
     else
         command = "sysupgrade --test "
@@ -71,11 +75,13 @@ end
 
 local function get_current_upgrade_id(msg)
     local upgrade_id = nil
+    local status = 'error'
     if utils.file_exists(UPGRADE_ID_FILE) then
         upgrade_id = utils.read_file(UPGRADE_ID_FILE)
+        status = ok
     end
 
-    return utils.printJson({status = 'ok', upgrade_id = upgrade_id})
+    return utils.printJson({status = status, upgrade_id = upgrade_id})
 end
 
 
