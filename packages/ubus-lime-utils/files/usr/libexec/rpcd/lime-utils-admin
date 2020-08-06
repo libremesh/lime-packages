@@ -67,7 +67,7 @@ local function firmware_upgrade(msg)
     utils.write_file(UPGRADE_ID_FILE, ugrade_id)
 
     --! Give some time so the response can be returned to the client
-    local cmd = "sleep 3; lime-sysupgrade " ..  msg.fw_path .. " /etc/upgrade_id"
+    local cmd = "sleep 3; FORCE=1 lime-sysupgrade " ..  msg.fw_path .. " /etc/upgrade_id"
     utils.execute_daemonized(cmd)
 
     return utils.printJson({status = 'ok', upgrade_id = ugrade_id})
@@ -84,13 +84,28 @@ local function get_current_upgrade_id(msg)
     return utils.printJson({status = status, upgrade_id = upgrade_id})
 end
 
+local function firmware_confirm(msg)
+    local upgrade_id = nil
+    if utils.file_exists(UPGRADE_ID_FILE) then
+        upgrade_id = utils.read_file(UPGRADE_ID_FILE)
+    end
+
+    local exit_code = os.execute("safe-upgrade confirm > /dev/null 2>&1")
+    local status = 'error'
+    if exit_code == 0 then
+        status = 'ok'
+    end
+    return utils.printJson({status = status, exit_code = exit_code,
+                            upgrade_id = ugrade_id})
+end
 
 local methods = {
     set_root_password = { password = 'value'},
     is_upgrade_confirm_supported = { no_params = 0 },
     firmware_verify = { fw_path = 'value' },
     firmware_upgrade = { fw_path = 'value', preserve_config = 'value'},
-    get_current_upgrade_id = { no_params = 0 }
+    get_current_upgrade_id = { no_params = 0 },
+    firmware_confirm = { no_params = 0 }
 }
 
 if arg[1] == 'list' then
@@ -105,6 +120,7 @@ if arg[1] == 'call' then
     elseif  arg[2] == 'firmware_verify' then firmware_verify(msg)
     elseif  arg[2] == 'firmware_upgrade' then firmware_upgrade(msg)
     elseif  arg[2] == 'get_current_upgrade_id' then get_current_upgrade_id(msg)
+    elseif  arg[2] == 'firmware_confirm' then firmware_confirm(msg)
     else utils.printJson({ error = "Method not found" })
     end
 end

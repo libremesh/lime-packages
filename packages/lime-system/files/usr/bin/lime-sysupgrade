@@ -50,7 +50,7 @@ echo ""
 
 if safe-upgrade board-supported > /dev/null 2>&1; then
     [ -n "$BACKUP_FILES" ] && OPTIONS="--preserve-archive $BACKUP_ARCHIVE" || OPTIONS="-n"
-    safe-upgrade $OPTIONS $FIRMWARE
+    safe-upgrade upgrade $OPTIONS $FIRMWARE
 else
     [ -n "$BACKUP_FILES" ] && OPTIONS="-f $BACKUP_ARCHIVE" || OPTIONS="-n"
     sysupgrade $OPTIONS $FIRMWARE &

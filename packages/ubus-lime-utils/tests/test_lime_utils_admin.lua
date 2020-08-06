@@ -70,6 +70,13 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
         utils.file_exists:revert()
     end)
 
+    it('test firmware_confirm', function()
+        stub(os, "execute", function() return 0 end)
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'firmware_confirm'}, '')
+        assert.is.equal("ok", response.status)
+        os.execute:revert()
+    end)
+
     before_each('', function()
         uci = test_utils.setup_test_uci()
     end)
