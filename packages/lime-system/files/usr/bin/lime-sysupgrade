@@ -1,9 +1,11 @@
 #!/bin/sh
 
-FIRMWARE="$1"                                     
-shift                                             
-BACKUP_FILES="$@" 
-KEEP_LISTS="$(uci -q get lime-autogen.system.keep_on_upgrade)"
+FIRMWARE="$1"
+shift
+BACKUP_FILES="$@"
+
+[ ! "$DO_NOT_BACKUP" ] && KEEP_LISTS="$(uci -q get lime-autogen.system.keep_on_upgrade)"
+
 BACKUP_ARCHIVE="/tmp/upgrade.tar.gz"
 
 add_file() {
