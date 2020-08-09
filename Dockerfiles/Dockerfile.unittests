@@ -1,6 +1,6 @@
 FROM abaez/luarocks:lua5.1
 
-ARG OPENWRT_REPO=https://downloads.openwrt.org/releases/18.06.4/packages/x86_64
+ARG OPENWRT_REPO=https://downloads.openwrt.org/releases/18.06.8/packages/x86_64
 
 WORKDIR /root
 
