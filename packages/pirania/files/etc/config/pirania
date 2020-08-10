@@ -1,5 +1,6 @@
 config base_config 'base_config'
     option enabled '0'
+    option prune_expired_for_days '30'
     option portal_url 'http://thisnode.info/portal/'
     option url_auth '/portal/auth.html'
     option url_authenticated '/portal/authenticated.html'
