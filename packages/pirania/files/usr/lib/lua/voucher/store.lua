@@ -21,7 +21,12 @@ function store.load_db(db_path, voucher_init)
         if f ~= nil then
             local json_obj = json.parse(f:read("*all"))
             f:close()
-            local voucher, err = voucher_init(json_obj)
+            local voucher, err
+            if json_obj then
+                voucher, err = voucher_init(json_obj)
+            else
+                err = "invalid json"
+            end
 
             if voucher ~= nil then
                 if vouchers[voucher.name] ~= nil then

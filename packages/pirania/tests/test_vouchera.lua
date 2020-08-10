@@ -17,6 +17,12 @@ describe('Vouchera tests #vouchera', function()
         assert.is.equal(0, #vouchera.vouchers)
     end)
 
+    it('vouchera init with broken database does not crash', function()
+        os.execute("mkdir /tmp/pirania; echo '{asdasd,,,asd.' > /tmp/pirania/broken.json")
+        vouchera.init()
+        assert.is.equal(0, #vouchera.vouchers)
+    end)
+
     it('init and compare vouchers', function()
         vouchera.init()
         expiration_date = os.time()
