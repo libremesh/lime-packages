@@ -3,6 +3,8 @@
 local store = require('voucher.store')
 local config = require('voucher.config')
 
+local vouchera = {}
+
 --! Simplify the comparison of vouchers using a metatable for the == operator
 local voucher_metatable = {
     __eq = function(self, value)
@@ -46,14 +48,21 @@ function voucher_init(obj)
     return voucher
 end
 
-local vouchera = {}
 
 function vouchera.init(cfg)
     if cfg ~= nil then
         config = cfg
     end
     vouchera.config = config
+    vouchera.PRUNE_OLDER_THAN_S = tonumber(config.prune_expired_for_days) * 60 * 60 * 24
     vouchera.vouchers = store.load_db(config.db_path, voucher_init)
+
+    --! Automatic voucher pruning
+    for _, voucher in pairs(vouchera.vouchers) do
+        if vouchera.should_be_pruned(voucher) then
+            vouchera.remove(voucher.name)
+        end
+    end
 end
 
 function vouchera.add(obj)
@@ -67,6 +76,20 @@ function vouchera.add(obj)
     end
     return nil, "can't create voucher"
 end
+
+--! Remove a voucher from the local db
+function vouchera.remove(name)
+    if vouchera.vouchers[name] ~= nil then
+        if store.remove_voucher(config.db_path, vouchera.vouchers[name]) then
+            vouchera.vouchers[name] = nil
+            return true
+        else
+            return nil, "can't remove voucher"
+        end
+    end
+    return nil, "can't find voucher to remove"
+end
+
 
 --! Activate a voucher returning true or false depending on the status of the operation.
 function vouchera.activate(code, mac)
@@ -126,6 +149,10 @@ end
 
 function vouchera.is_active(voucher)
     return voucher.mac ~= nil and voucher.expiration_date > os.time()
+end
+
+function vouchera.should_be_pruned(voucher)
+    return voucher.expiration_date >= (os.time() + vouchera.PRUNE_OLDER_THAN_S)
 end
 
 vouchera.voucher = voucher_init

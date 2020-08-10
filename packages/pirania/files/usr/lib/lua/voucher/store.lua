@@ -59,6 +59,12 @@ function store.add_voucher(db_path, voucher, voucher_init)
     return true
 end
 
+function store.remove_voucher(db_path, voucher)
+    local fname = db_path .. "/" .. voucher.name .. ".json"
+    local ret_code = os.execute("rm " .. fname)
+    return ret_code == 0
+end
+
 function store.save_db(db_path, vouchers, voucher_init)
     local changed = false
     for name, voucher in pairs(vouchers) do
@@ -73,6 +79,5 @@ function store.save_db(db_path, vouchers, voucher_init)
         utils.log("info", "voucher.store: db_change")
     end
 end
-
 
 return store

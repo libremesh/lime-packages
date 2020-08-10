@@ -3,6 +3,7 @@ local fs = require("nixio.fs")
 
 local config = require('voucher.config')
 config.db_path = '/tmp/pirania'
+config.prune_expired_for_days = '30'
 local vouchera = require('voucher.vouchera')
 local utils = require('voucher.utils')
 
@@ -102,6 +103,48 @@ describe('Vouchera tests #vouchera', function()
         assert.is.equal(0, voucher.expiration_date)
         assert.is_true(ret)
         assert.is_false(vouchera.is_mac_authorized("aa:bb:cc:dd:ee:ff"))
+    end)
+
+    it('add an remove vouchers', function()
+        vouchera.init()
+        expiration_date = os.time()
+
+        local voucher = vouchera.add({name='myvoucher', code='secret_code', expiration_date=expiration_date})
+        assert.is_true(vouchera.remove('myvoucher'))
+        assert.is_nil(vouchera.vouchers['myvoucher'])
+        vouchera.init()
+        assert.is_nil(vouchera.vouchers['myvoucher'])
+        assert.is_nil(vouchera.remove('myvoucher'))
+    end)
+
+    it('test automatic pruning of old voucher', function()
+        config.prune_expired_for_days = '30'
+        vouchera.init()
+        expiration_date = os.time() + vouchera.PRUNE_OLDER_THAN_S
+        local v = vouchera.voucher({name='myvoucher', code='secret_code', expiration_date=expiration_date, mod_counter=2})
+
+        local voucher = vouchera.add(v)
+
+        assert.is_not_nil(vouchera.vouchers['myvoucher'])
+
+        -- voucher is pruned when vouchera is initialized
+        vouchera.init()
+        assert.is_nil(vouchera.vouchers['myvoucher'])
+    end)
+
+    it('test automatic pruning is not removing a not too old voucher', function()
+        config.prune_expired_for_days = '100'
+        vouchera.init()
+        expiration_date = os.time() + vouchera.PRUNE_OLDER_THAN_S - 100
+        local v = vouchera.voucher({name='myvoucher', code='secret_code', expiration_date=expiration_date, mod_counter=2})
+
+        local voucher = vouchera.add(v)
+
+        assert.is_not_nil(vouchera.vouchers['myvoucher'])
+
+        -- voucher is not pruned when vouchera is initialized
+        vouchera.init()
+        assert.is_not_nil(vouchera.vouchers['myvoucher'])
     end)
 
     after_each('', function()
