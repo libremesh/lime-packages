@@ -40,7 +40,7 @@ end
 
 local new_voucher_info = false
 for key, shared_voucher in pairs(shared_db) do
-    local local_voucher = vouchera[shared_voucher.name]
+    local local_voucher = vouchera.vouchers[shared_voucher.name]
     if local_voucher and local_voucher ~= shared_voucher then
         if shared_voucher.mod_counter > local_voucher.mod_counter then
             --! new information, local voucher needs to be updated
