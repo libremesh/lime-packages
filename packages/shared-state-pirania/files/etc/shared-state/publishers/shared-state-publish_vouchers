@@ -34,7 +34,6 @@ vouchera.init()
 --! So a vocher may be in multiple keys of the shared-state database but the "old"
 --! keys will die beacause of the bleachTTL when all the nodes pick up the last updated
 --! version of the voucher.
---!
 local result = {}
 for _, voucher in pairs(vouchera.vouchers) do
     local text = voucher.tostring()

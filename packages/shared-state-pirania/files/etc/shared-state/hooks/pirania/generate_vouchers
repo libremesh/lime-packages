@@ -53,9 +53,11 @@ for key, shared_voucher in pairs(shared_db) do
             utils.log("debug", "generate_vouchers - disregard shared-state voucher as we have newer data")
         end
     elseif local_voucher == nil then
-        utils.log("debug", "generate_vouchers - adding new voucher " .. shared_voucher.name)
-        vouchera.update_with(shared_voucher)
-        new_voucher_info = true
+        if not vouchera.should_be_pruned(shared_voucher) then
+            utils.log("debug", "generate_vouchers - adding new voucher " .. shared_voucher.name)
+            vouchera.update_with(shared_voucher)
+            new_voucher_info = true
+        end
     end
 end
 
