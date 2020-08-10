@@ -35,6 +35,7 @@ vouchera.init()
 --! keys will die beacause of the bleachTTL when all the nodes pick up the last updated
 --! version of the voucher.
 --!
+local result = {}
 for _, voucher in pairs(vouchera.vouchers) do
     local text = voucher.tostring()
     local hash = shell('echo "'..text..'" | md5sum | cut -c -8'):gsub("\n","")

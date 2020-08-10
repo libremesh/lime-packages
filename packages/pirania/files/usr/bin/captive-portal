@@ -96,7 +96,7 @@ set_iptables () {
 
 set_ipsets () {
 	ipset -exist create pirania-auth-macs hash:mac timeout 0
-	for mac in $(voucher print_valid_macs) ; do
+	for mac in $(voucher show_authorized_macs) ; do
 		ipset -exist add pirania-auth-macs $mac
 	done
 	for ipvX in ipv4 ipv6 ; do
