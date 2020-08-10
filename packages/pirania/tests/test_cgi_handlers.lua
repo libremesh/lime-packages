@@ -56,7 +56,6 @@ describe('Vouchera tests #piraniahandlers', function()
         vouchera.activate('secret_code', 'AA:BB:CC:DD:EE:FF')
 
         local url = handlers.preactivate_voucher()
-        -- redirecting to info as there is it is a validable code
         assert.is.equal('/authenticated', url)
         os.getenv:revert()
         utils.getIpv4AndMac:revert()

@@ -42,7 +42,7 @@ local new_voucher_info = false
 for key, shared_voucher in pairs(shared_db) do
     local local_voucher = vouchera[shared_voucher.name]
     if local_voucher and local_voucher ~= shared_voucher then
-        if shared_voucher.mod_counter > local_voucher then
+        if shared_voucher.mod_counter > local_voucher.mod_counter then
             --! new information, local voucher needs to be updated
             utils.log("debug", "generate_vouchers - updating voucher " .. local_voucher.name)
             vouchera.update_with(shared_voucher)
@@ -61,5 +61,5 @@ end
 
 -- If there is updated status from the shared-state trigger captive-portal to update the firwall
 if new_voucher_info then
-    shell('captive-portal update')
+    os.execute('captive-portal update')
 end
