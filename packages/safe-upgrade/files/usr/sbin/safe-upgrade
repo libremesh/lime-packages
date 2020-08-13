@@ -399,7 +399,7 @@ local function parse_args()
     local parser = argparse('safe-upgrade', 'Safe upgrade mechanism for dual-boot systems')
     parser:command_target('command')
 
-    local show = parser:command('show', 'Show the status of the system partitions.')
+    parser:command('show', 'Show the status of the system partitions.')
 
     local verify = parser:command('verify', 'Verify that the firmware is valid and can be installed.')
     verify:argument("firmware", "firmware image (xxx-sysupgrade.bin)"):convert(validate_file_exists)
@@ -417,16 +417,17 @@ local function parse_args()
                    "Set the timeout (in seconds) of the automatic reboot safety mechanism")
                    :default('600'):convert(validate_safety_timeout)
 
-    local confirm = parser:command('confirm', ('Confirm the current partition. Use when after an upgrade ' ..
-                                              'or after running "test-other-partition".'))
+    parser:command('confirm', ('Confirm the current partition. Use when after an upgrade ' ..
+                               'or after running "test-other-partition".'))
 
-    local bootstrap = parser:command('bootstrap', 'Install the safe-upgrade mechanism')
+    parser:command('bootstrap', 'Install the safe-upgrade mechanism')
 
-    local test_other_parition = parser:command('test-other-partition',
-        'Mark the other partition as testing partition.')
+    parser:command('test-other-partition', 'Mark the other partition as testing partition.')
 
-    local board_supported = parser:command('board-supported', 'Exits with 0 if board is supported')
-    --local swap_stable = parser:command('swap', 'Change the stable partition to the other partition.')
+    parser:command('board-supported', 'Exits with 0 if board is supported')
+    parser:command('confirm-remaining', ('Return the remaining seconds to confirm until the ' ..
+                                         'automatic reboot is done or -1 if not in a confirmable state.'))
+
     local args = parser:parse()
 
 
@@ -458,6 +459,14 @@ else
         else
             print("This board is not supported")
             os.exit(su.EXIT_STATUS_BOARD_NOT_SUPPORTED)
+        end
+    elseif args['confirm-remaining'] then
+        local f = io.open("/etc/safe_upgrade_auto_reboot_confirm_timeout_s")
+        if f then
+            io.write(f:read('*l'))
+            f:close()
+        else
+            io.write("-1")
         end
     elseif args.show then
         assert_su_installed()
