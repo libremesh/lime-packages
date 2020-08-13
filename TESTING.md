@@ -204,7 +204,8 @@ $ sudo ./tools/qemu_dev_start  path/to/rootfs.tar.gz path/to/bzImage --libremesh
 
 #### Enable WAN and share internet to the virtual machine
 
-Use the --enable-wan, this will create a NAT and share your internet connection to the virtual machine.
+Use the `--enable-wan IFC`, this will create a NAT and share your internet connection to the virtual machine
+using the specified interface IFC.
 
 ### Lime-App
 
