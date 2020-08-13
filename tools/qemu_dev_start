@@ -17,7 +17,7 @@
 #
 # ARG_OPTIONAL_SINGLE([libremesh-workdir],[],[Optional path to a libremesh working directory to include it as a layer over the rootfs.])
 # ARG_OPTIONAL_SINGLE([node-number],[],[Optional node number from 0 to 9. Use this when running multiple qemu nodes.],[0])
-# ARG_OPTIONAL_BOOLEAN([enable-wan],[],[Enable wan (needs dnsmasq installed)],[])
+# ARG_OPTIONAL_SINGLE([enable-wan],[],[Enable wan (needs dnsmasq installed) with interface (eg wlan0).])
 # ARG_OPTIONAL_BOOLEAN([verbose],[],[Turn on verbose mode],[])
 # ARG_POSITIONAL_SINGLE([rootfs],[Path to a x86-64-generic-rootfs.tar.gz],[])
 # ARG_POSITIONAL_SINGLE([ramfs],[Path to a x86-64-ramfs.bzImage],[])
@@ -51,19 +51,19 @@ _positionals=()
 # THE DEFAULTS INITIALIZATION - OPTIONALS
 _arg_libremesh_workdir=
 _arg_node_number="0"
-_arg_enable_wan="off"
+_arg_enable_wan=
 _arg_verbose="off"
 
 
 print_help()
 {
 	printf '%s\n' "Helper to run libremesh in a qemu x86_64 for development purposes"
-	printf 'Usage: %s [--libremesh-workdir <arg>] [--node-number <arg>] [--(no-)enable-wan] [--(no-)verbose] [-h|--help] <rootfs> <ramfs>\n' "$0"
+	printf 'Usage: %s [--libremesh-workdir <arg>] [--node-number <arg>] [--enable-wan <arg>] [--(no-)verbose] [-h|--help] <rootfs> <ramfs>\n' "$0"
 	printf '\t%s\n' "<rootfs>: Path to a x86-64-generic-rootfs.tar.gz"
 	printf '\t%s\n' "<ramfs>: Path to a x86-64-ramfs.bzImage"
 	printf '\t%s\n' "--libremesh-workdir: Optional path to a libremesh working directory to include it as a layer over the rootfs. (no default)"
-	printf '\t%s\n' "--node-number: Optional node number. Use this when running multiple qemu nodes. (default: '0')"
-	printf '\t%s\n' "--enable-wan, --no-enable-wan: Enable wan (needs dnsmasq installed) (off by default)"
+	printf '\t%s\n' "--node-number: Optional node number from 0 to 9. Use this when running multiple qemu nodes. (default: '0')"
+	printf '\t%s\n' "--enable-wan: Enable wan (needs dnsmasq installed) with interface. (no default)"
 	printf '\t%s\n' "--verbose, --no-verbose: Turn on verbose mode (off by default)"
 	printf '\t%s\n' "-h, --help: Prints help"
 }
@@ -92,9 +92,13 @@ parse_commandline()
 			--node-number=*)
 				_arg_node_number="${_key##--node-number=}"
 				;;
-			--no-enable-wan|--enable-wan)
-				_arg_enable_wan="on"
-				test "${1:0:5}" = "--no-" && _arg_enable_wan="off"
+			--enable-wan)
+				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+				_arg_enable_wan="$2"
+				shift
+				;;
+			--enable-wan=*)
+				_arg_enable_wan="${_key##--enable-wan=}"
 				;;
 			--no-verbose|--verbose)
 				_arg_verbose="on"
@@ -173,7 +177,7 @@ ip link set "$LAN_IFC" up
 ip link set "$LAN_IFC" master "$BRIDGE_IFC"
 
 
-if [[ "$_arg_enable_wan" == "on" ]]; then
+if [ -n "$_arg_enable_wan" ]; then
     # WAN ifc
     ip tuntap add name "$WAN_IFC" mode tap
     ip addr add 172.99.0.1/24 dev "$WAN_IFC"
@@ -184,9 +188,9 @@ if [[ "$_arg_enable_wan" == "on" ]]; then
 
     # enable forwarding and NAT
     echo 1 > /proc/sys/net/ipv4/ip_forward
-    iptables -t nat -A POSTROUTING -o wlan0 -j MASQUERADE
+    iptables -t nat -A POSTROUTING -o "$_arg_enable_wan" -j MASQUERADE
     iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-    iptables -A FORWARD -i  "$WAN_IFC"  -o wlan0 -j ACCEPT
+    iptables -A FORWARD -i  "$WAN_IFC"  -o "$_arg_enable_wan" -j ACCEPT
 fi
 
 # Convert the rootfs.tar.gz into a cpio file
@@ -233,7 +237,7 @@ qemu-system-x86_64 \
 # cleanup
 ip tuntap del name ${LAN_IFC} mode tap
 
-if [[ "$_arg_enable-wan" == "on" ]]; then
+if [ -n "$_arg_enable_wan" ]; then
 
     ip tuntap del name "${WAN_IFC}" mode tap
 
