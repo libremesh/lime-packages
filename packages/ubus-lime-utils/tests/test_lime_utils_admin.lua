@@ -8,6 +8,15 @@ local ubus_lime_utils = test_utils.load_lua_file_as_function(test_file_name)
 local rpcd_call = test_utils.rpcd_call
 local uci
 
+local openwrt_release = [[DISTRIB_ID='LiMe'
+DISTRIB_RELEASE='96dcfa439d2757067bc73812b218aa689be9ea57'
+DISTRIB_REVISION='96dcfa4'
+DISTRIB_TARGET='ar71xx/generic'
+DISTRIB_ARCH='mips_24kc'
+DISTRIB_DESCRIPTION='LiMe 96dcfa439d27570...'
+DISTRIB_TAINTS='no-all busybox'
+]]
+
 describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
     it('test list methods', function()
         local response  = rpcd_call(ubus_lime_utils, {'list'})
@@ -59,15 +68,57 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
         utils.file_exists:revert()
     end)
 
-    it('test firmware_upgrade', function()
+    it('test firmware_upgrade without new metadata', function()
+
         stub(os, "execute", function() return 0 end)
         stub(utils, "file_exists", function() return true end)
+        stub(utils, "read_file", function() return openwrt_release end)
         local response  = rpcd_call(ubus_lime_utils, {'call', 'firmware_upgrade'},
                                     '{"fw_path": "/foo"}')
         assert.is.equal("ok", response.status)
-        assert.is.not_nil("ok", response.upgrade_id)
-        os.execute:revert()
-        utils.file_exists:revert()
+        assert.is.equal("LiMe 96dcfa439d27570...", response.metadata.old_release_description)
+        assert.is_false(response.metadata.config_preserved)
+    end)
+
+    it('test firmware_upgrade with metadata', function()
+
+        stub(os, "execute", function() return 0 end)
+        stub(utils, "file_exists", function() return true end)
+        stub(utils, "read_file", function() return openwrt_release end)
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'firmware_upgrade'},
+                                   '{"fw_path": "/foo", "preserve_config": true, "metadata": {"foo": 1}}')
+        assert.is.equal("ok", response.status)
+        assert.is.equal("LiMe 96dcfa439d27570...", response.metadata.old_release_description)
+        assert.is_true(response.metadata.config_preserved)
+        assert.is.equal(1, response.metadata.foo)
+    end)
+
+    it('test last_upgrade_metadata', function()
+        stub(utils, "file_exists", function() return true end)
+        stub(utils, "read_file", function() return '{"foo": "bar"}' end)
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'last_upgrade_metadata'}, '')
+        assert.is.equal("ok", response.status)
+        assert.is.equal("bar", response.metadata.foo)
+    end)
+
+    it('test last_upgrade_metadata but no metadata is available', function()
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'last_upgrade_metadata'}, '')
+        assert.is.equal("error", response.status)
+        assert.is.equal("No metadata available", response.message)
+    end)
+
+    it('test safe_upgrade_confirm_remaining_s', function()
+        stub(utils, "unsafe_shell", function() return "253" end)
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'safe_upgrade_confirm_remaining_s'}, '')
+        assert.is.equal("ok", response.status)
+        assert.is.equal(253, response.remaining_s)
+    end)
+
+    it('test safe_upgrade_confirm_remaining_s when not in a confirmable state', function()
+        stub(utils, "unsafe_shell", function() return "-1" end)
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'safe_upgrade_confirm_remaining_s'}, '')
+        assert.is.equal("ok", response.status)
+        assert.is.equal(-1, response.remaining_s)
     end)
 
     it('test firmware_confirm', function()

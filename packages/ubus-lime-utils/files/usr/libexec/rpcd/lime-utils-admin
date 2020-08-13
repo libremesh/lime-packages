@@ -15,7 +15,7 @@ if not conn then
     error("Failed to connect to ubus")
 end
 
-UPGRADE_ID_FILE = "/etc/upgrade_id"
+UPGRADE_METADATA_FILE = "/etc/upgrade_metadata"
 
 local function set_root_password(msg)
     local result = nil
@@ -62,49 +62,66 @@ local function firmware_upgrade(msg)
         return utils.printJson({status = 'error',
                                 message = "Firmware file not found"})
     end
-
-    local ugrade_id = utils.random_string(6)
-    utils.write_file(UPGRADE_ID_FILE, ugrade_id)
-
-    --! Give some time so the response can be returned to the client
-    local cmd = "sleep 3; FORCE=1 lime-sysupgrade " ..  msg.fw_path .. " /etc/upgrade_id"
-    utils.execute_daemonized(cmd)
-
-    return utils.printJson({status = 'ok', upgrade_id = ugrade_id})
-end
-
-local function get_current_upgrade_id(msg)
-    local upgrade_id = nil
-    local status = 'error'
-    if utils.file_exists(UPGRADE_ID_FILE) then
-        upgrade_id = utils.read_file(UPGRADE_ID_FILE)
-        status = ok
+    local metadata = msg.metadata or {}
+    local backup = ""
+    if not msg.preserve_config then
+        backup = "DO_NOT_BACKUP=1"
     end
 
-    return utils.printJson({status = status, upgrade_id = upgrade_id})
+    metadata['config_preserved'] = msg.preserve_config or false
+
+    -- store info of the current firmware
+    local release_data = utils.read_file("/etc/openwrt_release")
+    if release_data then
+        local current_fw_description = release_data:match("DISTRIB_DESCRIPTION='(%C*)'")
+        metadata['old_release_description'] = current_fw_description
+    end
+
+    utils.write_file(UPGRADE_METADATA_FILE, json.stringify(metadata))
+
+    --! Give some time so the response can be returned to the client
+    local cmd = "sleep 3; FORCE=1 " .. backup .. " lime-sysupgrade " ..  msg.fw_path .. " " .. UPGRADE_METADATA_FILE
+    utils.execute_daemonized(cmd)
+
+    return utils.printJson({status = 'ok', metadata = metadata})
+end
+
+local function last_upgrade_metadata(msg)
+    local metadata
+    if utils.file_exists(UPGRADE_METADATA_FILE) then
+        metadata = json.parse(utils.read_file(UPGRADE_METADATA_FILE))
+        return utils.printJson({status = 'ok', metadata = metadata})
+    else
+        return utils.printJson({status = 'error', message = 'No metadata available'})
+    end
 end
 
 local function firmware_confirm(msg)
-    local upgrade_id = nil
-    if utils.file_exists(UPGRADE_ID_FILE) then
-        upgrade_id = utils.read_file(UPGRADE_ID_FILE)
-    end
-
     local exit_code = os.execute("safe-upgrade confirm > /dev/null 2>&1")
     local status = 'error'
     if exit_code == 0 then
         status = 'ok'
     end
-    return utils.printJson({status = status, exit_code = exit_code,
-                            upgrade_id = ugrade_id})
+    return utils.printJson({status = status, exit_code = exit_code})
 end
+
+
+local function safe_upgrade_confirm_remaining_s(msg)
+    local remaining_s = tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining"))
+    if not remaining_s then
+        remaining_s = -1
+    end
+    return utils.printJson({status = 'ok', remaining_s = remaining_s})
+end
+
 
 local methods = {
     set_root_password = { password = 'value'},
     is_upgrade_confirm_supported = { no_params = 0 },
     firmware_verify = { fw_path = 'value' },
-    firmware_upgrade = { fw_path = 'value', preserve_config = 'value'},
-    get_current_upgrade_id = { no_params = 0 },
+    firmware_upgrade = { fw_path = 'value', preserve_config = 'value', metadata = 'value'},
+    last_upgrade_metadata = { no_params = 0 },
+    safe_upgrade_confirm_remaining_s = { no_params = 0 },
     firmware_confirm = { no_params = 0 }
 }
 
@@ -119,7 +136,8 @@ if arg[1] == 'call' then
     elseif  arg[2] == 'is_upgrade_confirm_supported' then is_upgrade_confirm_supported(msg)
     elseif  arg[2] == 'firmware_verify' then firmware_verify(msg)
     elseif  arg[2] == 'firmware_upgrade' then firmware_upgrade(msg)
-    elseif  arg[2] == 'get_current_upgrade_id' then get_current_upgrade_id(msg)
+    elseif  arg[2] == 'last_upgrade_metadata' then last_upgrade_metadata(msg)
+    elseif  arg[2] == 'safe_upgrade_confirm_remaining_s' then safe_upgrade_confirm_remaining_s(msg)
     elseif  arg[2] == 'firmware_confirm' then firmware_confirm(msg)
     else utils.printJson({ error = "Method not found" })
     end
