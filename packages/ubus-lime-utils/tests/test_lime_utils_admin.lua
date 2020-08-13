@@ -18,6 +18,7 @@ DISTRIB_TAINTS='no-all busybox'
 ]]
 
 describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
+    local snapshot -- to revert luassert stubs and spies
     it('test list methods', function()
         local response  = rpcd_call(ubus_lime_utils, {'list'})
         assert.is.equal(nil, response.set_root_password.no_params)
@@ -40,7 +41,6 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
         local response  = rpcd_call(ubus_lime_utils, {'call', 'is_upgrade_confirm_supported'}, '')
         assert.is.equal("ok", response.status)
         assert.is_false(response.supported)
-        os.execute:revert()
     end)
 
     it('test is_upgrade_confirm_supported in supported board', function()
@@ -48,7 +48,6 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
         local response  = rpcd_call(ubus_lime_utils, {'call', 'is_upgrade_confirm_supported'}, '')
         assert.is.equal("ok", response.status)
         assert.is_true(response.supported)
-        os.execute:revert()
     end)
 
     it('test firmware_verify inexistent file', function()
@@ -64,8 +63,6 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
         local response  = rpcd_call(ubus_lime_utils, {'call', 'firmware_verify'},
                                     '{"fw_path": "/foo"}')
         assert.is.equal("ok", response.status)
-        os.execute:revert()
-        utils.file_exists:revert()
     end)
 
     it('test firmware_upgrade without new metadata', function()
@@ -125,14 +122,15 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
         stub(os, "execute", function() return 0 end)
         local response  = rpcd_call(ubus_lime_utils, {'call', 'firmware_confirm'}, '')
         assert.is.equal("ok", response.status)
-        os.execute:revert()
     end)
 
     before_each('', function()
+        snapshot = assert:snapshot()
         uci = test_utils.setup_test_uci()
     end)
 
     after_each('', function()
+        snapshot:revert()
         test_utils.teardown_test_uci(uci)
     end)
 end)
