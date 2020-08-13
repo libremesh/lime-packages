@@ -7,6 +7,7 @@
 			}
 		},
 		"write": {
+			"cgi-io": [ "upload" ],
 			"ubus": {
 					"lime-utils-admin": [ "*" ]
 			}
