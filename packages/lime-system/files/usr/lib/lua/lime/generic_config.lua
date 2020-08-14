@@ -5,8 +5,9 @@ local utils = require("lime.utils")
 
 gen_cfg = {}
 
-gen_cfg.NODE_ASSET_DIR = '/etc/lime-assets/node/'
-gen_cfg.COMMUNITY_ASSET_DIR = '/etc/lime-assets/community/'
+gen_cfg.ASSET_BASE_DIR = '/etc/lime-assets/'
+gen_cfg.NODE_ASSET_DIRNAME = 'node/'
+gen_cfg.COMMUNITY_ASSET_DIRNAME = 'community/'
 gen_cfg.CONFIG_FIRST_BOOT_SIGNAL_FILE = '/etc/.cfg_first_boot_already_run'
 gen_cfg.RUN_ASSET_AT_FIRSTBOOT = 'ATFIRSTBOOT'
 gen_cfg.RUN_ASSET_AT_CONFIG = 'ATCONFIG'
@@ -51,25 +52,24 @@ function gen_cfg.do_generic_uci_configs()
 end
 
 function gen_cfg.get_asset(asset)
-    local node_asset = gen_cfg.NODE_ASSET_DIR .. asset
-    local community_asset = gen_cfg.COMMUNITY_ASSET_DIR .. asset
-    local src = nil
-    if utils.file_exists(node_asset) then
-        src = node_asset
-    elseif utils.file_exists(community_asset) then
-        src = community_asset
+    if (utils.stringStarts(asset, gen_cfg.NODE_ASSET_DIRNAME) or
+        utils.stringStarts(asset, gen_cfg.COMMUNITY_ASSET_DIRNAME)) then
+        local asset = gen_cfg.ASSET_BASE_DIR .. asset
+        if utils.file_exists(asset) then
+            return asset
+        end
     end
-    return src
 end
 
 --! copy_asset copy an file from the assets directory into a specified path.
---! The node asset directory (/etc/lime-assets/node) has priority over the community directory when
---! both assets exists. Use this to specify a per node configuration.
+--! The node asset directories are /etc/lime-assets/node and /etc/lime-assets/community.
+--! The community directory should contain the same files in all the community nodes.
 --!
 --! config copy_asset collectd
---!    option asset 'collectd.conf' # relative to /etc/lime-assets/node or /etc/lime-assets/community/
+--!    option asset 'community/collectd.conf' # or 'node/collectd.conf' or 'community/mynode_collectd.conf'
 --!    option dst '/etc/collectd.conf'
 --!
+
 function gen_cfg.do_copy_assets()
     local uci = config.get_uci_cursor()
     local ok = true
@@ -97,9 +97,10 @@ function gen_cfg.do_copy_assets()
     return ok
 end
 
---! Executes a file from the assets directory
+--! Executes a file from the assets directory scheme explained in copy_asset.
+--!
 --! config run_asset dropbear
---!     option asset 'dropbear.sh'
+--!     option asset 'community/dropbear.sh'
 --!     option when 'ATFIRSTBOOT' # ATFIRSTBOOT, ATCONFIG
 --!
 function gen_cfg.do_run_assets(when)

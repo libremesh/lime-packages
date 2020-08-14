@@ -4,6 +4,8 @@ local test_utils = require 'tests.utils'
 
 local uci = nil
 
+gen_cfg.ASSET_BASE_DIR = '/tmp/lime-assets/'
+
 describe('LiMe Generic config tests #genericconfig', function()
 
     it('test do_generic_uci_configs', function()
@@ -60,67 +62,58 @@ describe('LiMe Generic config tests #genericconfig', function()
     it('test config.do_copy_assets file not found', function()
         local content = [[
         config copy_asset collectd
-            option asset 'collectd.conf'
-            option dst '/tmp/lime_test/collectd.conf'
+            option asset 'community/collectd.conf'
+            option dst '/tmp/lime-test/collectd.conf'
         ]]
 
         test_utils.write_uci_file(uci, config.UCI_CONFIG_NAME, content)
         assert.is_false(gen_cfg.do_copy_assets())
     end)
 
-    it('test config.do_copy_assets', function()
+    it('test config.do_copy_assets node ', function()
         local content = [[
         config copy_asset collectd
-            option asset 'collectd.conf'
-            option dst '/tmp/lime_test/collectd.conf'
+            option asset 'node/collectd.conf'
+            option dst '/tmp/lime-test/collectd.conf'
         ]]
-        gen_cfg.NODE_ASSET_DIR = '/tmp/lime-assets/node/'
-        os.execute('mkdir -p /tmp/lime-assets/node/')
-        os.execute('printf "foo" > /tmp/lime-assets/node/collectd.conf')
+
+        utils.write_file("/tmp/lime-assets/node/collectd.conf", "foo")
         test_utils.write_uci_file(uci, config.UCI_CONFIG_NAME, content)
 
         gen_cfg.do_copy_assets()
 
-        assert.is.equal('foo', utils.read_file('/tmp/lime_test/collectd.conf'))
-        os.execute("rm -r /tmp/lime-assets /tmp/lime_test")
+        assert.is.equal('foo', utils.read_file('/tmp/lime-test/collectd.conf'))
     end)
 
-    it('test run_assets ATCONFIG', function()
+    it('test run_assets ATCONFIG #asdf', function()
         local content = [[
         config run_asset dropbear
-            option asset 'dropbear.sh'
+            option asset 'node/dropbear.sh'
             option when 'ATCONFIG'
         ]]
-        gen_cfg.NODE_ASSET_DIR = '/tmp/lime-assets/node/'
-        os.execute('mkdir -p /tmp/lime-assets/node/')
-        utils.write_file("/tmp/assets_testing_file", "")
-        os.execute('printf "#!/bin/sh\nrm /tmp/assets_testing_file" > /tmp/lime-assets/node/dropbear.sh')
+        utils.write_file("/tmp/lime-test/assets_testing_file", "")
+        utils.write_file("/tmp/lime-assets/node/dropbear.sh", "#!/bin/sh\nrm /tmp/lime-test/assets_testing_file")
         test_utils.write_uci_file(uci, config.UCI_CONFIG_NAME, content)
 
         assert.is_true(gen_cfg.do_run_assets(gen_cfg.RUN_ASSET_AT_CONFIG))
-        assert.is_false(utils.file_exists("/tmp/assets_testing_file"))
-        os.execute("rm -rf /tmp/lime-assets/ /tmp/assets_testing_file")
+        assert.is_false(utils.file_exists("/tmp/lime-test/assets_testing_file"))
     end)
 
     it('test run_assets on a script that returns non-zero status', function()
         local content = [[
         config run_asset dropbear
-            option asset 'dropbear.sh'
+            option asset 'community/dropbear.sh'
             option when 'ATCONFIG'
         ]]
-        gen_cfg.COMMUNITY_ASSET_DIR = '/tmp/lime-assets/community/'
-        os.execute('mkdir -p /tmp/lime-assets/community/')
-        os.execute('printf "#!/bin/sh\nexit 1" > /tmp/lime-assets/community/dropbear.sh')
+        utils.write_file("/tmp/lime-assets/community/dropbear.sh", "#!/bin/sh\nexit 1")
         test_utils.write_uci_file(uci, config.UCI_CONFIG_NAME, content)
-
         assert.is_false(gen_cfg.do_run_assets(gen_cfg.RUN_ASSET_AT_CONFIG))
-        os.execute("rm -rf /tmp/lime-assets/")
     end)
 
     it('test run_assets with a non-existent script', function()
         local content = [[
         config run_asset dropbear
-            option asset 'i_dont_exist.sh'
+            option asset 'comunity/i_dont_exist.sh'
             option when 'ATCONFIG'
         ]]
         test_utils.write_uci_file(uci, config.UCI_CONFIG_NAME, content)
@@ -129,10 +122,12 @@ describe('LiMe Generic config tests #genericconfig', function()
     end)
 
     before_each('', function()
+        os.execute('mkdir -p /tmp/lime-test /tmp/lime-assets/node/ /tmp/lime-assets/community/')
         uci = test_utils.setup_test_uci()
     end)
 
     after_each('', function()
+        os.execute("rm -rf /tmp/lime-assets /tmp/lime-test")
         test_utils.teardown_test_uci(uci)
     end)
 end)
