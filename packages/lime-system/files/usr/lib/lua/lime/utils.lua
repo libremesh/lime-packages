@@ -13,7 +13,7 @@ utils.KEEP_ON_UPGRADE_FILES_BASE_PATH = '/lib/upgrade/keep.d/'
 function utils.log(...)
 	if DISABLE_LOGGING ~= nil then return end
 	if os.getenv("LUA_DISABLE_LOGGING") ~= nil and os.getenv("LUA_ENABLE_LOGGING") == nil then return end
-	print(...)
+	print(string.format(...))
 end
 
 function utils.disable_logging()
