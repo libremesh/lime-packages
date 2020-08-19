@@ -23,7 +23,7 @@ local function escapeCSV (s)
 end
 
 local function dateNow ()
-  return os.time() * 1000
+  return os.time()
 end
 
 -- Convert from CSV string to table (converts a single line of a CSV file)
