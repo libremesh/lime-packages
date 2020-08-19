@@ -376,11 +376,17 @@ end
 
 --! Run a command in a shell and daemonized directly in pid 1 (similar to diswon/nohup)
 --! If out_file optional arg is passed then stdout and stderr will go to that file.
-function utils.execute_daemonized(cmd, out_file)
+function utils.execute_daemonized(cmd, out_file, stdin)
     if out_file == nil then
         out_file = "/dev/null"
     end
-    return os.execute("(( " .. cmd .. "  0<&- &> " .. out_file .. " &) &)")
+    if not stdin then
+        stdin = "0<&-" -- closing standard input
+    else
+        stdin = "0<" .. stdin
+    end
+
+    return os.execute("(( " .. cmd .. " " .. stdin .. " &> " .. out_file .. " &) &)")
 end
 
 
