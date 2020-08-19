@@ -78,8 +78,8 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
     end)
 
     it('test firmware_upgrade with metadata', function()
-
         stub(os, "execute", function() return 0 end)
+        stub(os, "time", function() return 1500 end)
         stub(utils, "file_exists", function() return true end)
         stub(utils, "read_file", function() return openwrt_release end)
         local response  = rpcd_call(ubus_lime_utils, {'call', 'firmware_upgrade'},
@@ -88,6 +88,7 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
         assert.is.equal("LiMe 96dcfa439d27570...", response.metadata.old_release_description)
         assert.is_true(response.metadata.config_preserved)
         assert.is.equal(1, response.metadata.foo)
+        assert.is.equal(1500, response.metadata.local_timestamp)
     end)
 
     it('test last_upgrade_metadata', function()
