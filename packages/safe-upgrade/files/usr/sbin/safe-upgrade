@@ -43,6 +43,7 @@ su.EXIT_STATUS_BOARD_NOT_SUPPORTED = 198
 su.EXIT_STATUS_NOT_INSTALLED = 199
 su.EXIT_STATUS_INSTALL_FROM_PART2 = 120
 su.EXIT_STATUS_ALREADY_INSTALLED = 121
+su.REBOOT_FILE_CONFIG_TIMEOUT_S = "/etc/safe_upgrade_auto_reboot_confirm_timeout_s"
 
 local safe_upgrade_auto_reboot_script = [[#!/bin/sh /etc/rc.common
 
@@ -461,13 +462,16 @@ else
             os.exit(su.EXIT_STATUS_BOARD_NOT_SUPPORTED)
         end
     elseif args['confirm-remaining'] then
-        local f = io.open("/etc/safe_upgrade_auto_reboot_confirm_timeout_s")
+        local out = "-1"
+        local f = io.open(su.REBOOT_FILE_CONFIG_TIMEOUT_S)
         if f then
-            io.write(f:read('*l'))
+            local total_time_s = tonumber(f:read('*l'))
+            if total_time_s then
+                out = string.format("%d", math.floor(total_time_s - utils.uptime_s()))
+            end
             f:close()
-        else
-            io.write("-1")
         end
+        io.write(out)
     elseif args.show then
         assert_su_installed()
         print('safe-upgrade version: ' .. get_su_version())
