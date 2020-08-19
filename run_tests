@@ -1,5 +1,5 @@
 #!/bin/bash
-DOCKER_IMAGE="libremesh/luatest:1.1"
+DOCKER_IMAGE="libremesh/luatest:1.2"
 if ! docker inspect --type=image $DOCKER_IMAGE > /dev/null 2>&1; then
     echo "Pulling docker image '$DOCKER_IMAGE'."
     echo "If you want to build it locally run 'docker build -f Dockerfiles/Dockerfile.unittests -t $DOCKER_IMAGE .'"
