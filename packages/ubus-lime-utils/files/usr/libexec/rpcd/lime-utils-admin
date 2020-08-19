@@ -16,6 +16,7 @@ if not conn then
 end
 
 UPGRADE_METADATA_FILE = "/etc/upgrade_metadata"
+LIME_SYSUPGRADE_BACKUP_EXTRA_DIR = "/tmp/lime-sysupgrade/preserve"
 
 local function set_root_password(msg)
     local result = nil
@@ -58,9 +59,11 @@ local function firmware_verify(msg)
 end
 
 local function firmware_upgrade(msg)
+    if not msg.fw_path then
+        return utils.printJson({status = 'error', message = "Firmware file needed"})
+    end
     if not utils.file_exists(msg.fw_path) then
-        return utils.printJson({status = 'error',
-                                message = "Firmware file not found"})
+        return utils.printJson({status = 'error', message = "Firmware file not found"})
     end
     local metadata = msg.metadata or {}
     local backup = ""
@@ -77,11 +80,18 @@ local function firmware_upgrade(msg)
         metadata['old_release_description'] = current_fw_description
     end
 
-    utils.write_file(UPGRADE_METADATA_FILE, json.stringify(metadata))
+    --! Use the BACKUP_EXTRA_DIR function of lime-sysupgrade to store the medatada file
+    utils.unsafe_shell("mkdir -p " .. LIME_SYSUPGRADE_BACKUP_EXTRA_DIR .. "/etc")
+    local meta_file_path = LIME_SYSUPGRADE_BACKUP_EXTRA_DIR .. UPGRADE_METADATA_FILE
+    if not utils.write_file(meta_file_path, json.stringify(metadata)) then
+        return utils.printJson({status = 'error', message = "Can't write " .. meta_file_path})
+    end
 
     --! Give some time so the response can be returned to the client
-    local cmd = "sleep 3; FORCE=1 " .. backup .. " lime-sysupgrade " ..  msg.fw_path .. " " .. UPGRADE_METADATA_FILE
-    utils.execute_daemonized(cmd)
+    local cmd = "sleep 3; FORCE=1 " .. backup .. " lime-sysupgrade " ..  msg.fw_path
+    --! stdin must be /dev/null because of a tar bug when using gzip that tries to read from stin and fails
+    --! if it is closed
+    utils.execute_daemonized(cmd, "/tmp/lime-sysupgrade.log", "/dev/null")
 
     return utils.printJson({status = 'ok', metadata = metadata})
 end
