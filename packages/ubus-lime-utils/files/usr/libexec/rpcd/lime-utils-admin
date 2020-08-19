@@ -80,6 +80,8 @@ local function firmware_upgrade(msg)
         metadata['old_release_description'] = current_fw_description
     end
 
+    metadata['local_timestamp'] = os.time()
+
     --! Use the BACKUP_EXTRA_DIR function of lime-sysupgrade to store the medatada file
     utils.unsafe_shell("mkdir -p " .. LIME_SYSUPGRADE_BACKUP_EXTRA_DIR .. "/etc")
     local meta_file_path = LIME_SYSUPGRADE_BACKUP_EXTRA_DIR .. UPGRADE_METADATA_FILE
