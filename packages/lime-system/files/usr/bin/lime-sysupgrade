@@ -7,6 +7,7 @@ BACKUP_FILES="$@"
 [ ! "$DO_NOT_BACKUP" ] && KEEP_LISTS="$(uci -q get lime-autogen.system.keep_on_upgrade)"
 
 BACKUP_ARCHIVE="/tmp/upgrade.tar.gz"
+BACKUP_EXTRA_DIR="/tmp/lime-sysupgrade/preserve/"
 
 add_file() {
   for l in `cat $1 | sed -e s/#.*$// -e /^$/d`; do
@@ -17,12 +18,14 @@ add_file() {
 usage() {
   echo "Usage: lime-sysupgrade <firmware> [backup_file1 backup_file2 ...]"
   echo "Use system variable FORCE=1 for not being asked for confirmation"
+  echo "Use DO_NOT_BACKUP=1 to disable 'lime-autogen.system.keep_on_upgrade' file lists"
+  echo "The content of /tmp/lime-sysupgrade/preserve/ will be also backup"
   echo ""
   echo "In addition to the user specified backup files, the content of the following lists will also be included:"
   for f in $KEEP_LISTS; do
     echo $f | grep -q '/' && echo " -> $f" || echo " -> /lib/upgrade/keep.d/$f"
   done
-  exit 0
+  exit 1
 }
 
 [ ! -f "$FIRMWARE" ] && usage
@@ -32,16 +35,22 @@ for f in $KEEP_LISTS; do
   [ -f "$file" ] && add_file $file || echo "Warning: Cannot read $file file"
 done
 
-[ -n "$BACKUP_FILES" ] && ( tar czf $BACKUP_ARCHIVE $BACKUP_FILES 2>/dev/null || {
-  echo "Error: Cannot create tar.gz backup file"
-  echo "Command: tar czf /tmp/upgrade.tar.gz $BACKUP_FILES"
-  exit 1
-})
+rm -f $BACKUP_ARCHIVE
+
+if [ -d "$BACKUP_EXTRA_DIR" ] ; then
+    cd $BACKUP_EXTRA_DIR
+    tar cvfz $BACKUP_ARCHIVE -C $BACKUP_EXTRA_DIR * $BACKUP_FILES || exit 1
+    echo "FOO"
+    cd -
+elif [ -n "$BACKUP_FILES" ] ; then
+    tar czf $BACKUP_ARCHIVE $BACKUP_FILES || exit 1
+fi
+
 echo "Upgrading the system..."
 echo ""
 echo "Files to be saved"
 echo "------------------"
-for l in $BACKUP_FILES; do echo $l; done
+[ -e $BACKUP_ARCHIVE ] && tar tvfz $BACKUP_ARCHIVE
 echo "------------------"
 echo ""
 echo "The device model is $(cat /tmp/sysinfo/model)"
@@ -51,9 +60,9 @@ echo "Ready to perform the upgrade. Press [ENTER] to continue or CTRL+C to cance
 echo ""
 
 if safe-upgrade board-supported > /dev/null 2>&1; then
-    [ -n "$BACKUP_FILES" ] && OPTIONS="--preserve-archive $BACKUP_ARCHIVE" || OPTIONS="-n"
+    [ -e "$BACKUP_ARCHIVE" ] && OPTIONS="--preserve-archive $BACKUP_ARCHIVE" || OPTIONS="-n"
     safe-upgrade upgrade $OPTIONS $FIRMWARE
 else
-    [ -n "$BACKUP_FILES" ] && OPTIONS="-f $BACKUP_ARCHIVE" || OPTIONS="-n"
+    [ -e "$BACKUP_FILES" ] && OPTIONS="-f $BACKUP_ARCHIVE" || OPTIONS="-n"
     sysupgrade $OPTIONS $FIRMWARE &
 fi
