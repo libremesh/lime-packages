@@ -7,6 +7,7 @@ local ubus_lime_utils = test_utils.load_lua_file_as_function(test_file_name)
 
 local rpcd_call = test_utils.rpcd_call
 local uci
+local snapshot -- to revert luassert stubs and spies
 
 describe('ubus-lime-utils tests #ubuslimeutils', function()
     it('test list methods', function()
@@ -21,7 +22,6 @@ describe('ubus-lime-utils tests #ubuslimeutils', function()
         assert.is.equal("ok", response.status)
         assert.is.equal("a note", response.notes)
         assert.stub(utils.read_file).was.called_with('/etc/banner.notes')
-        utils.read_file:revert()
     end)
 
     it('test get_notes when there are no notes', function()
@@ -57,11 +57,32 @@ describe('ubus-lime-utils tests #ubuslimeutils', function()
         assert.is.equal("123", response.uptime)
     end)
 
+    it('test get_upgrade_info', function()
+        stub(utils, "unsafe_shell", function () return '-1' end)
+        stub(os, "execute", function () return '0' end)
+
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'get_upgrade_info'}, '')
+        assert.is.equal("ok", response.status)
+        assert.is_false(response.is_upgrade_confirm_supported)
+        assert.are.same(-1, response.safe_upgrade_confirm_remaining_s)
+
+        utils.write_file("/tmp/upgrade_info_cache", '{"safe_upgrade_confirm_remaining_s": 123}')
+        stub(utils, "unsafe_shell", function () return '101' end)
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'get_upgrade_info'}, '')
+        assert.is.equal("ok", response.status)
+        assert.are.same(101, response.safe_upgrade_confirm_remaining_s)
+
+        os.execute:revert()
+        os.execute("rm -f /tmp/upgrade_info_cache")
+    end)
+
     before_each('', function()
+        snapshot = assert:snapshot()
         uci = test_utils.setup_test_uci()
     end)
 
     after_each('', function()
+        snapshot:revert()
         test_utils.teardown_test_uci(uci)
     end)
 end)
