@@ -33,11 +33,6 @@ function fbw.log(text)
     nixio.syslog('info', '[FBW] ' .. text)
 end
 
--- Share your own default configuration
-function fbw.share_defualts()
-    utils.execute('ln -s /etc/config/lime-community /www/lime-community')
-end
-
 -- Write lock file at begin
 function fbw.start_scan_file()
     local file = io.open("/tmp/scanning", "w")
@@ -169,6 +164,17 @@ function fbw.fetch_config(data)
     local ssid = data.ssid
     local filename = fbw.WORKDIR .. fbw.HOST_CONFIG_PREFIX .. hostname
     utils.execute("/bin/wget http://[" .. data.host .. "]/lime-community -O " .. filename)
+
+    -- Remove lime-community files that are not yet configured.
+    -- For this we asume that no ap_ssid options equals not configured.
+    if utils.file_exists(filename) then
+        local f = io.open(filename)
+        local content = f:read("*a")
+        f:close()
+        if not content:match("ap_ssid") then
+            utils.execute("rm " .. filename)
+        end
+    end
     return { host = host, filename = filename, success = utils.file_exists(filename) }
 end
 
@@ -282,8 +288,6 @@ function fbw.end_config()
 
     os.execute("/usr/bin/lime-config")
 
-    -- Start sharing lime-community and reboot
-    fbw.share_defualts()
     os.execute("reboot")
 end
 
