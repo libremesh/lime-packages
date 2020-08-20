@@ -47,7 +47,7 @@ end
 
 -- Remove old results
 function fbw.clean_tmp()
-    utils.execute('rm ' .. fbw.WORKDIR .. fbw.HOST_CONFIG_PREFIX .. '*')
+    utils.execute('rm -f ' .. fbw.WORKDIR .. fbw.HOST_CONFIG_PREFIX .. '*')
 end
 
 -- Save working copy of wireless
