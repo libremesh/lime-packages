@@ -16,8 +16,8 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 # ARG_OPTIONAL_SINGLE([libremesh-workdir],[],[Optional path to a libremesh working directory to include it as a layer over the rootfs.])
-# ARG_OPTIONAL_SINGLE([node-number],[],[Optional node number from 0 to 9. Use this when running multiple qemu nodes.],[0])
-# ARG_OPTIONAL_SINGLE([enable-wan],[],[Enable wan (needs dnsmasq installed) with interface (eg wlan0).])
+# ARG_OPTIONAL_SINGLE([node-id],[],[An ID number from 0 to 9. Use this when running multiple qemu nodes, each node must have a different ID.],[0])
+# ARG_OPTIONAL_SINGLE([enable-wan],[],[Provide the node with NATed access to the local netork. An ifc must be provided, eg wlan0. Needs dnsmasq installed.)])
 # ARG_OPTIONAL_BOOLEAN([verbose],[],[Turn on verbose mode],[])
 # ARG_POSITIONAL_SINGLE([rootfs],[Path to a x86-64-generic-rootfs.tar.gz],[])
 # ARG_POSITIONAL_SINGLE([ramfs],[Path to a x86-64-ramfs.bzImage],[])
@@ -50,7 +50,7 @@ begins_with_short_option()
 _positionals=()
 # THE DEFAULTS INITIALIZATION - OPTIONALS
 _arg_libremesh_workdir=
-_arg_node_number="0"
+_arg_node_id="0"
 _arg_enable_wan=
 _arg_verbose="off"
 
@@ -58,12 +58,12 @@ _arg_verbose="off"
 print_help()
 {
 	printf '%s\n' "Helper to run libremesh in a qemu x86_64 for development purposes"
-	printf 'Usage: %s [--libremesh-workdir <arg>] [--node-number <arg>] [--enable-wan <arg>] [--(no-)verbose] [-h|--help] <rootfs> <ramfs>\n' "$0"
+	printf 'Usage: %s [--libremesh-workdir <arg>] [--node-id <arg>] [--enable-wan <arg>] [--(no-)verbose] [-h|--help] <rootfs> <ramfs>\n' "$0"
 	printf '\t%s\n' "<rootfs>: Path to a x86-64-generic-rootfs.tar.gz"
 	printf '\t%s\n' "<ramfs>: Path to a x86-64-ramfs.bzImage"
 	printf '\t%s\n' "--libremesh-workdir: Optional path to a libremesh working directory to include it as a layer over the rootfs. (no default)"
-	printf '\t%s\n' "--node-number: Optional node number from 0 to 9. Use this when running multiple qemu nodes. (default: '0')"
-	printf '\t%s\n' "--enable-wan: Enable wan (needs dnsmasq installed) with interface. (no default)"
+	printf '\t%s\n' "--node-id: An ID number from 0 to 9. Use this when running multiple qemu nodes, each node must have a different ID. (default: '0')"
+	printf '\t%s\n' "--enable-wan: Provide the node with NATed access to the local netork. An ifc must be provided, eg wlan0. Needs dnsmasq installed. (no default)"
 	printf '\t%s\n' "--verbose, --no-verbose: Turn on verbose mode (off by default)"
 	printf '\t%s\n' "-h, --help: Prints help"
 }
@@ -84,13 +84,13 @@ parse_commandline()
 			--libremesh-workdir=*)
 				_arg_libremesh_workdir="${_key##--libremesh-workdir=}"
 				;;
-			--node-number)
+			--node-id)
 				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
-				_arg_node_number="$2"
+				_arg_node_id="$2"
 				shift
 				;;
-			--node-number=*)
-				_arg_node_number="${_key##--node-number=}"
+			--node-id=*)
+				_arg_node_id="${_key##--node-id=}"
 				;;
 			--enable-wan)
 				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
@@ -157,11 +157,11 @@ if [[ "$_arg_verbose" == "on" ]]; then
 fi
 
 BRIDGE_IFC="lime_br0"
-NODE_NUMBER="${_arg_node_number}"
-LAN_MAC="52:00:00:ab:cd:0${NODE_NUMBER}"
-WAN_MAC="52:00:00:ab:cd:a${NODE_NUMBER}"
-LAN_IFC="lime_tap${NODE_NUMBER}0"
-WAN_IFC="lime_tap${NODE_NUMBER}1"
+NODE_ID="${_arg_node_id}"
+LAN_MAC="52:00:00:ab:cd:0${NODE_ID}"
+WAN_MAC="52:00:00:ab:cd:a${NODE_ID}"
+LAN_IFC="lime_tap${NODE_ID}0"
+WAN_IFC="lime_tap${NODE_ID}1"
 OWN_LAN_IP="10.13.0.2/16"
 
 
@@ -214,7 +214,7 @@ cd /tmp/lime_rootfs
 find . -depth | cpio --quiet -o -H newc  > /tmp/lime_rootfs.cpio
 cd - > /dev/null
 
-MONITOR_PORT="4545${NODE_NUMBER}"
+MONITOR_PORT="4545${NODE_ID}"
 
 qemu-system-x86_64 \
 -m 128 \

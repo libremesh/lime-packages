@@ -177,7 +177,7 @@ Install the package `qemu-system-x86_64` if you don't have already installed.
 
 ### Build a mesh network
 
-Up to 10 qemu nodes can be setup. Use the `--node-number N`. All the node's LAN interfaces are
+Up to 10 qemu nodes can be setup. Use the `--node-id N`. All the node's LAN interfaces are
 bridged together. You can use `--enable-wan` in only one of the nodes to share your internet connection
 to the network.
 
