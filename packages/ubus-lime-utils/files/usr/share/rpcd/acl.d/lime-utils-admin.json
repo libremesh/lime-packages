@@ -4,13 +4,16 @@
 		"read": {
 			"ubus": {
 					"lime-utils-admin": [ "*" ]
-			}
+			},
+			"uci": [ "*" ]
 		},
 		"write": {
 			"cgi-io": [ "upload" ],
 			"ubus": {
-					"lime-utils-admin": [ "*" ]
-			}
+					"lime-utils-admin": [ "*" ],
+					"system": [ "*" ]
+			},
+			"uci": [ "*" ]
 		}
 	}
 }
