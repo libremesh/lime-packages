@@ -175,6 +175,12 @@ Prebuilt development images can be downloaded from here:
 
 Install the package `qemu-system-x86_64` if you don't have already installed.
 
+### Build a mesh network
+
+Up to 10 qemu nodes can be setup. Use the `--node-id N`. All the node's LAN interfaces are
+bridged together. You can use `--enable-wan` in only one of the nodes to share your internet connection
+to the network.
+
 #### Start it
 
 ```
@@ -198,7 +204,8 @@ $ sudo ./tools/qemu_dev_start  path/to/rootfs.tar.gz path/to/bzImage --libremesh
 
 #### Enable WAN and share internet to the virtual machine
 
-Use the --enable-wan, this will create a NAT and share your internet connection to the virtual machine.
+Use the `--enable-wan IFC`, this will create a NAT and share your internet connection to the virtual machine
+using the specified interface IFC.
 
 ### Lime-App
 
