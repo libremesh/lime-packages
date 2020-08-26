@@ -40,7 +40,6 @@ rm -f $BACKUP_ARCHIVE
 if [ -d "$BACKUP_EXTRA_DIR" ] ; then
     cd $BACKUP_EXTRA_DIR
     tar cvfz $BACKUP_ARCHIVE -C $BACKUP_EXTRA_DIR * $BACKUP_FILES || exit 1
-    echo "FOO"
     cd -
 elif [ -n "$BACKUP_FILES" ] ; then
     tar czf $BACKUP_ARCHIVE $BACKUP_FILES || exit 1
