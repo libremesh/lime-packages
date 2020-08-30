@@ -102,6 +102,17 @@ function wireless.createBaseWirelessIface(radio, mode, nameSuffix, extras)
 	return uci:get_all("wireless", wirelessInterfaceName)
 end
 
+local function getFreqSuffixOption(param, freqSuffix, specRadioOptions, options)
+    local value
+    if specRadioOptions then
+        value = specRadioOptions[param..freqSuffix] or specRadioOptions[param]
+    end
+    if not value then
+        value = options[param..freqSuffix] or options[param]
+    end
+    return value
+end
+
 function wireless.configure()
 	local specificRadios = {}
 	config.foreach("wifi", function(radio)
@@ -131,24 +142,17 @@ function wireless.configure()
 			if wireless.is5Ghz(radioName) then
 				freqSuffix = "_5ghz"
 				ignoredSuffix = "_2ghz"
-				distance = options["distance"..freqSuffix] or options["distance"] or 1000
-				htmode = options["htmode"..freqSuffix] or options["htmode"] or "HT40"
 			else
 				freqSuffix = "_2ghz"
 				ignoredSuffix = "_5ghz"
-				distance = options["distance"..freqSuffix] or options["distance"] or 100
-				htmode = options["htmode"..freqSuffix] or options["htmode"] or "HT20"
 			end
-
-			--! up to 10km links by default
-			local distance = options["distance"..freqSuffix] or options["distance"] or 10000
-			local htmode = options["htmode"..freqSuffix] or options["htmode"]
+			local distance = getFreqSuffixOption("distance", freqSuffix, specRadio, options)
+			local htmode = getFreqSuffixOption("htmode", freqSuffix, specRadio, options)
 
 			--! fallback to "auto" in client mode
 			local channel
 			if modes[1] ~= "client" then
-
-				channel = options["channel"..freqSuffix] or options["channel"]
+				channel = getFreqSuffixOption("channel", freqSuffix, specRadio, options)
 				if type(channel) == "table" then
 					channel = channel[1 + radio.per_band_index % #channel]
 				end
@@ -173,6 +177,7 @@ function wireless.configure()
 				modeName = utils.split(modeName, "_")[1]	
 				local mode = require("lime.mode."..modeName)
 
+				-- gather mode specific configs (eg ieee80211s_mcast_rate_5ghz)
 				for key,value in pairs(options) do
 					local keyPrefix = utils.split(key, "_")[1]
 					local isGoodOption = ( (key ~= "modes")
@@ -191,7 +196,6 @@ function wireless.configure()
 							value = utils.applyMacTemplate16(value, network.primary_mac())
 							value = string.sub(value, 1, 32)
 						end
-
 						args[nk] = value
 					end
 				end
