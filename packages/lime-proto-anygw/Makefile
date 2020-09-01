@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LiMe
 	MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
 	URL:=http://libremesh.org
-	DEPENDS:=+dnsmasq-dhcpv6 @(!PACKAGE_dnsmasq) +ebtables +libuci-lua \
+	DEPENDS:=+dnsmasq-dhcpv6 +ebtables +libuci-lua \
 		+lime-system +lua +kmod-ebtables +kmod-macvlan \
 		+shared-state +shared-state-dnsmasq_leases +kmod-ebtables-ipv6
   PKGARCH:=all
