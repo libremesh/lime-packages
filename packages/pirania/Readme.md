@@ -117,8 +117,8 @@ files/
 `/usr/bin/captive-portal` sets up iptables rules to capture traffic.
 It creates a set of rules that apply to 3 allowed "ipsets":
 * pirania-auth-macs: authorized macs go into this rule. starts empty.
-* pirania-whitelist-ipv4: with the members of the whitelist in the config file (10.0.0.0/8, 192.168.0.0/16, 172.16.0.0/12)
-* pirania-whitelist-ipv6: same as ipv4 but for ipv6
+* pirania-allowlist-ipv4: with the members of the allowlist in the config file (10.0.0.0/8, 192.168.0.0/16, 172.16.0.0/12)
+* pirania-allowlist-ipv6: same as ipv4 but for ipv6
 
 Rules:
 * DNS packets, that are not from the allowed ipsets, are redirected to our own captive portal DNS at 59053
@@ -128,10 +128,10 @@ Rules:
 
 ### HTTP flow
 
-`/etc/init.d/pirania-uhttpd` starts a HTTP server (uhttpd) on port 59080 that replies any request with a redirect towards a preset URL (`pirania.base_config.portal_url`). This is performed by the lua script `/www/pirania-redirect/redirect`. As `pirania.base_config.portal_url` is in the whitelisted ip range (http://thisnode.info/portal/ by default) then the "normal" HTTP server listening in port 80 will answer after the redirect.
+`/etc/init.d/pirania-uhttpd` starts a HTTP server (uhttpd) on port 59080 that replies any request with a redirect towards a preset URL (`pirania.base_config.portal_url`). This is performed by the lua script `/www/pirania-redirect/redirect`. As `pirania.base_config.portal_url` is in the allowlist ip range (http://thisnode.info/portal/ by default) then the "normal" HTTP server listening in port 80 will answer after the redirect.
 
 So the flow is:
-* navigate to a non whitelisted ip: for example `http://orignal.org/baz/?foo=bar`
+* navigate to a non allowed ip: for example `http://orignal.org/baz/?foo=bar`
 * get redirected with a 302 where you can put a voucher code to enter: `http://thisnode.info/cgi-bin/portal/auth.html?prev=http%3A%2F%2Foriginal.org%2Fbaz%2F%3Ffoo%3Dbar`
 * submiting the form should perform a GET to `http://thisnode.info/cgi-bin/pirania/preactivate_voucher?voucher=secretcode&prev=http%3A%2F%2Foriginal.org%2Fbaz%2F%3Ffoo%3Dbar`
 * The preactivate_voucher script does two different depending on javascript support:
