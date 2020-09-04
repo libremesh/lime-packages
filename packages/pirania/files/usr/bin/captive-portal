@@ -32,7 +32,7 @@ clean_tables () {
 clean_sets () {
 	ipset flush pirania-auth-macs
 	for ipvX in ipv4 ipv6 ; do
-		ipset flush pirania-whitelist-$ipvX
+		ipset flush pirania-allowlist-$ipvX
 	done
 }
 
@@ -76,14 +76,14 @@ set_iptables () {
 		done
 
 		# send DNS requests, that are not from valid ips or macs, to our own captive portal DNS at 59053
-		$iptables -t nat -A pirania -p udp  -m set ! --match-set pirania-whitelist-$ipvX src -m set ! --match-set pirania-auth-macs src --dport 53 -j DNAT --to-destination $anygw:59053
+		$iptables -t nat -A pirania -p udp  -m set ! --match-set pirania-allowlist-$ipvX src -m set ! --match-set pirania-auth-macs src --dport 53 -j DNAT --to-destination $anygw:59053
 
-		# stop processing the chain for authorized macs and whitelisted ips (so they are accepted)
+		# stop processing the chain for authorized macs and allowed ips (so they are accepted)
 		$iptables -t mangle -A pirania -m set --match-set pirania-auth-macs src -j RETURN
-		$iptables -t mangle -A pirania -m set --match-set pirania-whitelist-$ipvX dst -j RETURN
+		$iptables -t mangle -A pirania -m set --match-set pirania-allowlist-$ipvX dst -j RETURN
 
 		# mark packages to be redirected (puerto 80) and to be rejected (the resto)
-		$iptables -t mangle -A pirania -j MARK --set-mark 0x66/0xff  # everything not auth nor whitelisted will be marked for REJECT
+		$iptables -t mangle -A pirania -j MARK --set-mark 0x66/0xff  # everything not auth nor in allowlist will be marked for REJECT
 		$iptables -t mangle -A pirania -p tcp -m tcp --dport 80 -j MARK --set-mark 0x80/0xff  # unless is dport 80, re-set mark for REDIRECT
 
 		# redirect packets marked with 0x80/0xff redirect redirect to 59080
@@ -105,9 +105,9 @@ set_ipsets () {
 		else
 			family=inet6
 		fi
-		ipset -exist create pirania-whitelist-$ipvX hash:net family $family
-		for item in $(uci get pirania.base_config.whitelist_$ipvX); do
-			ipset -exist add pirania-whitelist-$ipvX $item
+		ipset -exist create pirania-allowlist-$ipvX hash:net family $family
+		for item in $(uci get pirania.base_config.allowlist_$ipvX); do
+			ipset -exist add pirania-allowlist-$ipvX $item
 		done
 	done
 }
