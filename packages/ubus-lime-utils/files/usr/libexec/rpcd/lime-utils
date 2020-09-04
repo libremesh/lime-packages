@@ -68,15 +68,13 @@ local function get_node_status(msg)
     local ifaces = limewireless.mesh_ifaces()
     local stations = {}
     for _, iface  in ipairs(ifaces) do
-        if iface.name then
-            iface_stations = conn:call("lime-openairview", "get_stations", {device = iface.name}).stations
-            if iface_stations then
-                for _, station in pairs(iface_stations) do
-                    station['iface'] = iface.name
-                    table.insert(stations, station)
-                end
+        iface_stations = conn:call("lime-openairview", "get_stations", {device = iface}).stations
+        if iface_stations then
+            for _, station in pairs(iface_stations) do
+                station['iface'] = iface
+                table.insert(stations, station)
             end
-        end     
+        end
     end
     if next(stations) ~= nil then
         local most_active_rx = 0
