@@ -15,6 +15,9 @@ if not conn then
     error("Failed to connect to ubus")
 end
 
+UPGRADE_METADATA_FILE = "/etc/upgrade_metadata"
+LIME_SYSUPGRADE_BACKUP_EXTRA_DIR = "/tmp/lime-sysupgrade/preserve"
+
 local function set_root_password(msg)
     local result = nil
     if type(msg.password) ~= "string" then
@@ -26,8 +29,102 @@ local function set_root_password(msg)
     return utils.printJson(result)
 end
 
+local function _is_upgrade_confirm_supported()
+    local exit_value = os.execute("safe-upgrade board-supported > /dev/null 2>&1")
+    return exit_value == 0
+end
+
+local function is_upgrade_confirm_supported(msg)
+    local supported = _is_upgrade_confirm_supported()
+    return utils.printJson({status = 'ok', supported = supported})
+end
+
+local function firmware_verify(msg)
+    if not utils.file_exists(msg.fw_path) then
+        return utils.printJson({status = 'error',
+                                message = "Firmware file not found"})
+    end
+    local command
+    if _is_upgrade_confirm_supported() then
+        command = "safe-upgrade verify "
+    else
+        command = "sysupgrade --test "
+    end
+    command = command ..  msg.fw_path .. " > /dev/null 2>&1"
+    local exit_value = os.execute(command)
+    if exit_value ~= 0 then
+        return utils.printJson({status = 'error', message = 'Invalid firmware'})
+    end
+    return utils.printJson({status = 'ok'})
+end
+
+local function firmware_upgrade(msg)
+    if not msg.fw_path then
+        return utils.printJson({status = 'error', message = "Firmware file needed"})
+    end
+    if not utils.file_exists(msg.fw_path) then
+        return utils.printJson({status = 'error', message = "Firmware file not found"})
+    end
+    local metadata = msg.metadata or {}
+    local backup = ""
+    if not msg.preserve_config then
+        backup = "DO_NOT_BACKUP=1"
+    end
+
+    metadata['config_preserved'] = msg.preserve_config or false
+
+    -- store info of the current firmware
+    local release_data = utils.read_file("/etc/openwrt_release")
+    if release_data then
+        local current_fw_description = release_data:match("DISTRIB_DESCRIPTION='(%C*)'")
+        metadata['old_release_description'] = current_fw_description
+    end
+
+    metadata['local_timestamp'] = os.time()
+
+    --! Use the BACKUP_EXTRA_DIR function of lime-sysupgrade to store the medatada file
+    utils.unsafe_shell("mkdir -p " .. LIME_SYSUPGRADE_BACKUP_EXTRA_DIR .. "/etc")
+    local meta_file_path = LIME_SYSUPGRADE_BACKUP_EXTRA_DIR .. UPGRADE_METADATA_FILE
+    if not utils.write_file(meta_file_path, json.stringify(metadata)) then
+        return utils.printJson({status = 'error', message = "Can't write " .. meta_file_path})
+    end
+
+    --! Give some time so the response can be returned to the client
+    local cmd = "sleep 3; FORCE=1 " .. backup .. " lime-sysupgrade " ..  msg.fw_path
+    --! stdin must be /dev/null because of a tar bug when using gzip that tries to read from stin and fails
+    --! if it is closed
+    utils.execute_daemonized(cmd, "/tmp/lime-sysupgrade.log", "/dev/null")
+
+    return utils.printJson({status = 'ok', metadata = metadata})
+end
+
+local function last_upgrade_metadata(msg)
+    local metadata
+    if utils.file_exists(UPGRADE_METADATA_FILE) then
+        metadata = json.parse(utils.read_file(UPGRADE_METADATA_FILE))
+        return utils.printJson({status = 'ok', metadata = metadata})
+    else
+        return utils.printJson({status = 'error', message = 'No metadata available'})
+    end
+end
+
+local function firmware_confirm(msg)
+    local exit_code = os.execute("safe-upgrade confirm > /dev/null 2>&1")
+    local status = 'error'
+    if exit_code == 0 then
+        status = 'ok'
+    end
+    return utils.printJson({status = status, exit_code = exit_code})
+end
+
+
 local methods = {
-    set_root_password = { password = 'value'}
+    set_root_password = { password = 'value'},
+    is_upgrade_confirm_supported = { no_params = 0 },
+    firmware_verify = { fw_path = 'value' },
+    firmware_upgrade = { fw_path = 'value', preserve_config = 'value', metadata = 'value'},
+    last_upgrade_metadata = { no_params = 0 },
+    firmware_confirm = { no_params = 0 }
 }
 
 if arg[1] == 'list' then
@@ -38,6 +135,11 @@ if arg[1] == 'call' then
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
     if      arg[2] == 'set_root_password' then set_root_password(msg)
+    elseif  arg[2] == 'is_upgrade_confirm_supported' then is_upgrade_confirm_supported(msg)
+    elseif  arg[2] == 'firmware_verify' then firmware_verify(msg)
+    elseif  arg[2] == 'firmware_upgrade' then firmware_upgrade(msg)
+    elseif  arg[2] == 'last_upgrade_metadata' then last_upgrade_metadata(msg)
+    elseif  arg[2] == 'firmware_confirm' then firmware_confirm(msg)
     else utils.printJson({ error = "Method not found" })
     end
 end
