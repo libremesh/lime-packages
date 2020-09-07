@@ -13,13 +13,13 @@ math.randomseed(0)
 
 local note = 'Marcos Android'
 local voucherId = tostring(math.random())
-local expirationEpocMs = utils.dateNow() + (600 * 1000)
+local expirationEpocMs = utils.dateNow() + 600
 local upload = 10
 local download = 10
 local amountofmacsallowed = 1
 local mac = '08:8C:2C:40:51:C4'
 local renewDate = 0
-local renewManyDate = 15796472566666
+local renewManyDate = 1579647256
 
 local memberKey = 'mynotebook-m-marcos-android'
 local visitorKey = 'mynotebook-v-marcos-android'

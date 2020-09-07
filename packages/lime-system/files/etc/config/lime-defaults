@@ -8,7 +8,7 @@
 config lime system
 	option hostname 'LiMe-%M4%M5%M6'
 	option domain 'thisnode.info'
-	option keep_on_upgrade 'libremesh base-files-essential /etc/sysupgrade.conf'
+	option keep_on_upgrade 'libremesh dropbear minimum-essential /etc/sysupgrade.conf'
 	option root_password_policy 'DO_NOTHING'
 	option root_password_secret ''
 	option deferable_reboot_uptime_s '97200'
