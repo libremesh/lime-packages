@@ -9,6 +9,7 @@
 local ubus = require "ubus"
 local json = require 'luci.jsonc'
 local utils = require 'lime.utils'
+local config = require 'lime.config'
 
 local conn = ubus.connect()
 if not conn then
@@ -27,6 +28,18 @@ local function set_root_password(msg)
         result = {status = 'ok'}
     end
     return utils.printJson(result)
+end
+
+local function set_hostname(msg)
+    if msg.hostname ~= nil then
+        local uci = config.get_uci_cursor()
+        uci:set(config.UCI_NODE_NAME, 'system', 'hostname', msg.hostname)
+        uci:commit(config.UCI_NODE_NAME)
+        utils.unsafe_shell("lime-config && lime-apply")
+        return utils.printJson({ status = 'ok'})
+    else
+        return utils.printJson({ status = 'error', msg = 'You must provide a hostname' })
+    end
 end
 
 local function _is_upgrade_confirm_supported()
@@ -120,6 +133,7 @@ end
 
 local methods = {
     set_root_password = { password = 'value'},
+    set_hostname = { hostname = 'value'},
     is_upgrade_confirm_supported = { no_params = 0 },
     firmware_verify = { fw_path = 'value' },
     firmware_upgrade = { fw_path = 'value', preserve_config = 'value', metadata = 'value'},
@@ -135,6 +149,7 @@ if arg[1] == 'call' then
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
     if      arg[2] == 'set_root_password' then set_root_password(msg)
+    elseif  arg[2] == 'set_hostname' then set_hostname(msg)
     elseif  arg[2] == 'is_upgrade_confirm_supported' then is_upgrade_confirm_supported(msg)
     elseif  arg[2] == 'firmware_verify' then firmware_verify(msg)
     elseif  arg[2] == 'firmware_upgrade' then firmware_upgrade(msg)
