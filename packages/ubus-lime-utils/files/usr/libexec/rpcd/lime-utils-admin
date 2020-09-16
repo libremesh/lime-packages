@@ -31,14 +31,20 @@ local function set_root_password(msg)
 end
 
 local function set_hostname(msg)
-    if msg.hostname ~= nil then
+    if msg.hostname ~= nil and utils.is_valid_hostname(msg.hostname) then
         local uci = config.get_uci_cursor()
         uci:set(config.UCI_NODE_NAME, 'system', 'hostname', msg.hostname)
         uci:commit(config.UCI_NODE_NAME)
         utils.unsafe_shell("lime-config && lime-apply")
         return utils.printJson({ status = 'ok'})
     else
-        return utils.printJson({ status = 'error', msg = 'You must provide a hostname' })
+        local err
+        if msg.hostname then
+            err = 'Invalid hostname'
+        else
+            err = 'Hostname not provided'
+        end
+        return utils.printJson({ status = 'error', msg = err })
     end
 end
 
