@@ -48,6 +48,12 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
 
         local response  = rpcd_call(ubus_lime_utils, {'call', 'set_hostname'}, '{}')
         assert.is.equal("error", response.status)
+        assert.is.equal("Hostname not provided", response.msg)
+        assert.is.equal("foo", uci:get(config.UCI_NODE_NAME, 'system', 'hostname'))
+
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'set_hostname'}, '{"hostname": "inv@lid-"}')
+        assert.is.equal("error", response.status)
+        assert.is.equal("Invalid hostname", response.msg)
         assert.is.equal("foo", uci:get(config.UCI_NODE_NAME, 'system', 'hostname'))
     end)
 
