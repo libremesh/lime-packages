@@ -184,6 +184,16 @@ function utils.sanitize_hostname(hostname)
 	return hostname
 end
 
+--! validate that a hostname is also DNS valid
+function utils.is_valid_hostname(hostname)
+    if hostname and (#hostname < 64) and
+       hostname:match("^[a-zA-Z0-9][a-zA-Z0-9%-]*[a-zA-Z0-9]$")
+    then
+        return true
+    end
+    return false
+end
+
 function utils.file_exists(name)
 	local f=io.open(name,"r")
 	if f~=nil then io.close(f) return true else return false end
