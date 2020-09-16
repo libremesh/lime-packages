@@ -139,28 +139,6 @@ local function get_community_settings ()
     end
 end
 
-local function change_config (msg)
-    if msg.hostname ~= nil then
-        conn:call("uci", "set", {config="lime-node", section="system", values= { hostname = msg.hostname }})
-        conn:call("uci", "set", {config="lime-node", section="network", values= {
-            main_ipv4_address = msg.ip.ipv4,
-            main_ipv6_address = msg.ip.ipv6 
-        }})
-        conn:call("uci", "set", {config="lime-node", section="wifi", values=  msg.wireless })
-        conn:call("uci", "set", {config="lime-community", section="wifi", values= {
-            channel_2ghz = msg.wireless.channel_2ghz,
-            channel_5ghz = msg.wireless.channel_5ghz,
-            ieee80211s_mesh_id = msg.wireless.ieee80211s_mesh_id ,
-            adhoc_ssid = msg.wireless.adhoc_ssid,
-            country = country
-        }})
-        utils.unsafe_shell("lime-config && reboot")
-        utils.printJson({ status = 'ok'})
-    else
-        utils.printJson({ status = 'error', msg = 'You must enter a hostname' })
-    end
-end
-
 local function get_channels ()
   local devices = limewireless.scandevices()
   local phys = {}
@@ -295,7 +273,6 @@ local methods = {
     get_notes = { no_params = 0},
     set_notes = { text = 'value' },
     get_community_settings = { no_params = 0},
-    change_config = { name = 'value', ip = 'value' },
     get_config = { no_params = 0 },
     get_upgrade_info = { no_params = 0 },
     safe_reboot = { action = 'value', value = 'value' }
@@ -313,7 +290,6 @@ if arg[1] == 'call' then
     elseif  arg[2] == 'get_notes' then get_notes(msg)
     elseif  arg[2] == 'set_notes' then set_notes(msg)
     elseif  arg[2] == 'get_community_settings' then get_community_settings(msg)
-    elseif  arg[2] == 'change_config' then change_config(msg)
     elseif  arg[2] == 'get_config' then get_config(msg)
     elseif  arg[2] == 'get_upgrade_info' then get_upgrade_info(msg)
     elseif  arg[2] == 'safe_reboot' then safe_reboot(msg)

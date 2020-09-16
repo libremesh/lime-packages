@@ -36,6 +36,27 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
         assert.is.equal("SET_SECRET", uci:get("lime-community", 'system', 'root_password_policy'))
     end)
 
+    it('test set_hostname', function()
+        stub(utils, "unsafe_shell", function () return '-1' end)
+        stub(os, "execute", function () return '0' end)
+        uci:set(config.UCI_NODE_NAME, 'system', 'lime')
+        uci:set(config.UCI_NODE_NAME, 'system', 'hostname', 'oldname')
+
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'set_hostname'}, '{"hostname": "foo"}')
+        assert.is.equal("ok", response.status)
+        assert.is.equal("foo", uci:get(config.UCI_NODE_NAME, 'system', 'hostname'))
+
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'set_hostname'}, '{}')
+        assert.is.equal("error", response.status)
+        assert.is.equal("Hostname not provided", response.msg)
+        assert.is.equal("foo", uci:get(config.UCI_NODE_NAME, 'system', 'hostname'))
+
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'set_hostname'}, '{"hostname": "inv@lid-"}')
+        assert.is.equal("error", response.status)
+        assert.is.equal("Invalid hostname", response.msg)
+        assert.is.equal("foo", uci:get(config.UCI_NODE_NAME, 'system', 'hostname'))
+    end)
+
     it('test is_upgrade_confirm_supported in unsupported board', function()
         stub(os, "execute", function() return 1 end)
         local response  = rpcd_call(ubus_lime_utils, {'call', 'is_upgrade_confirm_supported'}, '')
