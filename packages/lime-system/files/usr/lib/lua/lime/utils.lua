@@ -399,5 +399,31 @@ function utils.execute_daemonized(cmd, out_file, stdin)
     return os.execute("(( " .. cmd .. " " .. stdin .. " &> " .. out_file .. " &) &)")
 end
 
+function utils.bitwise_xor(a, b)
+  local r = 0
+  for i = 0, 31 do
+    local x = a / 2 + b / 2
+    if x ~= math.floor(x) then
+      r = r + 2^i
+    end
+    a = math.floor(a / 2)
+    b = math.floor(b / 2)
+  end
+  return r
+end
+
+function utils.mac2ipv6linklocal(text)
+    function f(mac0, mac1, mac2, mac3, mac4, mac5, mac6)
+        local mac0 = string.format("%x", utils.bitwise_xor(tonumber(mac0, 16), 0x02))
+        --! going from and to string to remove leading zeroes and convert to lowercase
+        local gr1 = string.format("%x", tonumber(mac0 .. mac1, 16))
+        local gr2 = string.format("%x", tonumber(mac2 .. 'ff', 16))
+        local gr3 = string.format("%x", tonumber('fe' .. mac3, 16))
+        local gr4 = string.format("%x", tonumber(mac4 .. mac5, 16))
+        return 'fe80::' .. gr1 .. ":" .. gr2 .. ":" .. gr3 .. ":" .. gr4
+    end
+    local ret, _ = string.gsub(text, "(%x%x):(%x%x):(%x%x):(%x%x):(%x%x):(%x%x)", f)
+    return ret
+end
 
 return utils
