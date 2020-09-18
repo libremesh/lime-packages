@@ -217,6 +217,16 @@ dnsmasq:*:18362:0:99999:7:::
         assert.are.same({'/foo', '/bar', '/baz'}, files)
     end)
 
+    it('test mac2ipv6linklocal', function()
+        assert.is.equal('foo', utils.mac2ipv6linklocal('foo'))
+        assert.is.equal('fe80::200:ff:fe00:0', utils.mac2ipv6linklocal('00:00:00:00:00:00'))
+        assert.is.equal('fe80::200:ff:fe00:fff', utils.mac2ipv6linklocal('00:00:00:00:0f:ff'))
+        assert.is.equal('fe80::ceaa:bbff:feff:11fe', utils.mac2ipv6linklocal('CC:AA:BB:FF:11:FE'))
+        assert.is.equal('fe80::aa40:41ff:fe1c:84d1', utils.mac2ipv6linklocal('a8:40:41:1c:84:d1'))
+        assert.is.equal('FOOfe80::aa40:41ff:fe1c:84d1BARfe80::aa40:41ff:fe1c:84d1',
+                         utils.mac2ipv6linklocal('FOOa8:40:41:1c:84:d1BARa8:40:41:1c:84:d1'))
+     end)
+
     before_each('', function()
         uci = test_utils.setup_test_uci()
     end)
