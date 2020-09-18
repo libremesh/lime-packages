@@ -49,12 +49,12 @@ done | sort -u -r)"
 wifi_get_macs="
 wireless = require('lime.wireless')
 iwinfo = require('iwinfo')
-ip = require('luci.ip')
+utils = require('lime.utils')
 
 for _, ifc in ipairs(wireless.mesh_ifaces()) do
 	for mac, sta in  pairs(iwinfo.nl80211.assoclist(ifc)) do
 		if sta.inactive < 5000 then
-			print(tostring(ip.new(mac):tolinklocal()) .. '%' .. ifc)
+			print(utils.mac2ipv6linklocal(mac) .. '%' .. ifc)
 		end
 	end
 end
