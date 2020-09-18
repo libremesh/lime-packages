@@ -1,0 +1,5 @@
+#!/usr/bin/lua
+
+local utils = require("lime.utils")
+
+io.stdout:write(utils.mac2ipv6linklocal(io.stdin:read("*all")))
