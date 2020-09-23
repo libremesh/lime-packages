@@ -1,0 +1,151 @@
+#!/usr/bin/lua
+
+local config = require('voucher.config')
+local dba = require('voucher.db')
+local logic = require('voucher.logic')
+local ft = require('voucher.functools')
+local utils = require('voucher.utils')
+local uci = require('uci')
+local json = require 'luci.jsonc'
+
+local uci_cursor = uci.cursor()
+local arguments
+local action
+local context
+
+captive_portal = {}
+
+local function printJson (obj)
+    print(json.stringify(obj))
+end
+
+-- Show or change portal url
+captive_portal.url = function(context)
+    local url = ''
+    if (context[1] == 'show') then
+        url = uci_cursor:get("pirania", "base_config", "portal_url")
+    else
+        url = context[1] and context[1] or "http://thisnode.info/portal"
+        uci_cursor:set("pirania", "base_config", "portal_url", url)
+        uci_cursor:commit("pirania")
+    end
+    print(url)
+end
+
+--[[
+--Checks if a context(defined by a mac and a voucher code)
+--is authorized to be used, and associates the mac to the
+--voucher code if needed.
+--]]
+captive_portal.auth_voucher = function(context)
+    local mac = context[1]
+    local voucher = context[2]
+
+    local db = dba.load(config.db)
+    local res = logic.auth_voucher(db, mac, voucher)
+    print ( res.limit[1], res.limit[2], res.limit[3], res.limit[4] )
+    if (res.success == true) then
+        print('Saving to DB')
+        print('...')
+            dba.save(config.db, db)
+        print('saved!')
+    end
+end
+
+--[[
+--Checks if the mac of the given context is allowed to browse.
+--]]
+captive_portal.voucher_status = function(context)
+    local mac = context[1]
+
+    local db = dba.load(config.db)
+    print ( logic.voucher_status(db, mac) )
+end
+
+-- Show numbers of active vouchers
+captive_portal.show_active_vouchers = function()
+    local db = dba.load(config.db)
+    local result = logic.show_active_vouchers(db)
+    printJson(result)
+end
+
+
+-- List all vouchers
+captive_portal.list_vouchers = function()
+    local db = dba.load(config.db)
+    local result = logic.show_vouchers(db)
+    printJson(result)
+end
+
+-- Renew voucher
+captive_portal.renew_voucher = function(context)
+    local db = dba.load(config.db)
+    local voucherSecret = context[1]
+    local renewDate = context[2]
+    printJson(logic.update_voucher_date(voucherSecret, renewDate))
+    dba.save(config.db, db)
+end
+
+-- Remove voucher
+captive_portal.remove_voucher = function(context)
+    local db = dba.load(config.db)
+    local voucherSecret = context[1]
+    printJson(logic.update_voucher_date(voucherSecret, 0, db))
+    dba.save(config.db, db)
+end
+
+--[[
+--Adds a voucher to the db with the params defined by context.
+--]]
+captive_portal.add_voucher = function(context)
+    local key = context[1]
+    local voucher = context[2]
+    local epoc = context[3]
+    local upload = context[4] and context[4] or '0'
+    local download = context[5] and context[5] or '0'
+    local amountofmacsallowed = context[6] and context[6] or '0'
+    local exists = false
+
+    local db = dba.load(config.db)
+    local retval = { logic.add_voucher(db, key, voucher, epoc, upload, download, amountofmacsallowed)}
+    dba.save(config.db, db)
+    print ( unpack(retval) )
+end
+
+captive_portal.add_many_vouchers = function(context, data)
+    local result = {}
+    local table = utils.split(data, "\n")
+    local db = dba.load(config.db)
+    local error = false
+    for _,val in pairs (table) do
+        local jdata = json.parse(val)
+        local upload = jdata.upload and jdata.upload or '10'
+        local download = jdata.download and jdata.download or '10'
+        local amountofmacsallowed = jdata.amountofmacsallowed and jdata.amountofmacsallowed or '1'
+        local res = logic.add_voucher(db, jdata.key, jdata.voucher, jdata.epoc, upload, download, amountofmacsallowed)
+        if (res == nil) then error = true end
+    end
+    result.success = not error
+    dba.save(config.db, db)
+    printJson(result)
+end
+
+-- TODO refactor eliminate bash portion awk sed bash-isms
+captive_portal.print_valid_macs = function()
+    local db = dba.load(config.db)
+    local macs = logic.valid_macs(db)
+    for _, mac in ipairs(macs) do
+        print ( mac )
+    end
+end
+
+-- if is main
+if debug.getinfo(2).name == nil then
+    arguments = { ... }
+    action = arguments[1]
+    context = ft.filter(function(row, index) return index > 1 end, arguments)
+    if (action == 'add_many_vouchers') then stdin = io.stdin:read("*all") end
+    captive_portal[action](context, stdin)
+end
+
+return captive_portal

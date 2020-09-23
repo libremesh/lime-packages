@@ -30,23 +30,41 @@ lastRunFile="/tmp/shared-state-get_candidates_neigh.lastrun"
 lastRun=$(if [ -s $lastRunFile ]; then echo $(cat $lastRunFile); else  echo -9999; fi)
 currUptime="$(get_uptime)"
 
-[ "$(($currUptime - $lastRun))" -lt "90" ] &&
+[ "$(($currUptime - $lastRun))" -lt "30" ] &&
 {
 	cat "$cacheFile"
 	exit 0
 }
 
-candidateAddresses="$(
+batmanNonMeshCandidateAddresses="$(
 for iface in $(ls /sys/class/net/) ; do
-	echo ${iface} | grep -q '^dummy' && continue
 	ls /sys/class/net/${iface}/upper_bat? &> /dev/null || continue
 
-	ping6 -c 2 ff02::1%${iface} 2> /dev/null | \
+	echo "${iface}" | grep -E "mesh|adhoc" &> /dev/null && continue
+
+	ping6 -i 0.1 -c 2 ff02::1%${iface} 2> /dev/null | \
 		awk '{if ($3 == "from") print substr($4, 1, length($4)-1)'"\"%${iface}\""'}'
 done | sort -u -r)"
 
-candidateAddresses="$candidateAddresses
-$(ping6 -c 2 ff02::1%br-lan | \
+wifi_get_macs="
+wireless = require('lime.wireless')
+iwinfo = require('iwinfo')
+utils = require('lime.utils')
+
+for _, ifc in ipairs(wireless.mesh_ifaces()) do
+	for mac, sta in  pairs(iwinfo.nl80211.assoclist(ifc)) do
+		if sta.inactive < 5000 then
+			print(utils.mac2ipv6linklocal(mac) .. '%' .. ifc)
+		end
+	end
+end
+"
+
+wirelessCandidateAddresses=$(echo "$wifi_get_macs" | lua -  | sort -u -r)
+
+candidateAddresses="$batmanNonMeshCandidateAddresses
+$wirelessCandidateAddresses
+$(ping6 -i 0.1 -c 2 ff02::1%br-lan | \
 	awk '{if ($3 == "from" && substr($7,6)+0 < 2) print substr($4, 1, length($4)-1)"%br-lan" }' | sort -u)"
 
 for ownAddr in $(ip -6 address show | awk '{if ($1 == "inet6") print $2}' | awk -F/ '{print $1}') ; do

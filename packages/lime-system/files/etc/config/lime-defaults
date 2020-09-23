@@ -8,7 +8,9 @@
 config lime system
 	option hostname 'LiMe-%M4%M5%M6'
 	option domain 'thisnode.info'
-	option keep_on_upgrade 'libremesh base-files-essential /etc/sysupgrade.conf'
+	option keep_on_upgrade 'libremesh dropbear minimum-essential /etc/sysupgrade.conf'
+	option root_password_policy 'DO_NOTHING'
+	option root_password_secret ''
 	option deferable_reboot_uptime_s '97200'
 	option firstbootwizard_configured false
 
@@ -41,6 +43,7 @@ config lime network
 	option bmx7_over_batman false
 	option bmx7_pref_gw none
 	option bmx7_wifi_rate_max 'auto'
+	option bmx7_enable_pki false
 	option anygw_mac "aa:aa:aa:%N1:%N2:aa"
 	option use_odhcpd false
 
@@ -48,6 +51,7 @@ config lime wifi
 	option channel_2ghz '11'
 	list channel_5ghz '48'
 	list channel_5ghz '157'
+	option htmode_2ghz 'HT20'
 	option htmode_5ghz 'HT40'
 	option distance_2ghz '100'
 	option distance_5ghz '1000'

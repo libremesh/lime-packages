@@ -33,11 +33,6 @@ function fbw.log(text)
     nixio.syslog('info', '[FBW] ' .. text)
 end
 
--- Share your own default configuration
-function fbw.share_defualts()
-    utils.execute('ln -s /etc/config/lime-community /www/lime-community')
-end
-
 -- Write lock file at begin
 function fbw.start_scan_file()
     local file = io.open("/tmp/scanning", "w")
@@ -169,6 +164,17 @@ function fbw.fetch_config(data)
     local ssid = data.ssid
     local filename = fbw.WORKDIR .. fbw.HOST_CONFIG_PREFIX .. hostname
     utils.execute("/bin/wget http://[" .. data.host .. "]/lime-community -O " .. filename)
+
+    -- Remove lime-community files that are not yet configured.
+    -- For this we asume that no ap_ssid options equals not configured.
+    if utils.file_exists(filename) then
+        local f = io.open(filename)
+        local content = f:read("*a")
+        f:close()
+        if not content:match("ap_ssid") then
+            utils.execute("rm " .. filename)
+        end
+    end
     return { host = host, filename = filename, success = utils.file_exists(filename) }
 end
 
@@ -255,22 +261,21 @@ function fbw.read_configs()
 end
 
 -- Apply configuration for a new network ( used in ubus daemon)
-function fbw.apply_user_configs(configs, hostname)
-    fbw.log('apply_file_config(ssid=' .. configs.ssid .. ', hostname=' .. hostname .. ')')
+function fbw.create_network(ssid, hostname, password)
+    fbw.log('apply_file_config(ssid=' .. ssid .. ', hostname=' .. hostname .. ')')
     local uci_cursor = config.get_uci_cursor()
-    -- Mesh network name
-    local name = configs.ssid
-    -- Format hostname
-    hostname = hostname or config.get("system", "hostname")
+
     -- Save changes in lime-community
-    uci_cursor:set("lime-community", 'wifi', 'ap_ssid', name)
-    uci_cursor:set("lime-community", 'wifi', 'apname_ssid', name..'/%H')
-    uci_cursor:set("lime-community", 'wifi', 'adhoc_ssid', 'LiMe.%H')
-    uci_cursor:set("lime-community", 'wifi', 'ieee80211s_mesh_id', 'LiMe')
+    if password ~= nil and password ~= '' then
+        lutils.set_shared_root_password(password)
+    end
+    uci_cursor:set("lime-community", 'wifi', 'ap_ssid', ssid)
+    uci_cursor:set("lime-community", 'wifi', 'apname_ssid', ssid..'/%H')
     uci_cursor:commit("lime-community")
+
     -- Apply new configuration and setup hostname
     config.reset_node_config()
-    uci_cursor:set("lime-node", 'system', 'hostname', hostname)
+    uci_cursor:set("lime-node", 'system', 'hostname', hostname or config.get("system", "hostname"))
     fbw.end_config()
 end
 
@@ -283,8 +288,6 @@ function fbw.end_config()
 
     os.execute("/usr/bin/lime-config")
 
-    -- Start sharing lime-community and reboot
-    fbw.share_defualts()
     os.execute("reboot")
 end
 

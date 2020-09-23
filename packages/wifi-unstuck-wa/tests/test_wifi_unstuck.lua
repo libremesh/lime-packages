@@ -9,10 +9,10 @@ local uci = nil
 describe('Wireless unstuck workarounds #unstuck', function()
     local snapshot -- to revert luassert stubs and spies
 
-    it('test get stickable interfaces only mesh or adhoc', function()
+    it('test get stickable interfaces', function()
         local ifaces = unstuck_wa.get_stickable_ifaces()
-        assert.is.equal(2, #ifaces)
-        assert.are.same({'wlan1-mesh', 'wlan2-mesh'}, ifaces)
+        assert.is.equal(3, #ifaces)
+        assert.are.same({'wlan0-ap', 'wlan1-mesh', 'wlan2-mesh'}, ifaces)
     end)
 
     it('test get scan freq for iface', function()

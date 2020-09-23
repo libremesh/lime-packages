@@ -10,11 +10,11 @@ You may obtain a copy of the License at
 require "ubus"
 local nixio = require "nixio",require "nixio.fs"
 local iwinfo = require("iwinfo")
-local json = require 'luci.json'
+local json = require 'luci.jsonc'
 local utils = require("lime.utils")
 
 local function printJson (obj)
-    print(json.encode(obj))
+    print(json.stringify(obj))
 end
 
 local function shell(command)
@@ -151,7 +151,7 @@ local function spectral_scan(msg)
         samples = sample_current_channel(path_ath9k)
     end
 
-	samples = json.decode( samples )
+	samples = json.parse( samples )
 
 	-- Convert values to string (avoid ubus bug)
 	for _, dev in pairs(samples[1].data) do
@@ -251,7 +251,7 @@ end
 
 if arg[1] == 'call' then
     local msg = io.read()
-    msg = json.decode(msg)
+    msg = json.parse(msg)
     if       arg[2] == 'get_stations'           then get_stations(msg)
     elseif   arg[2] == 'get_interfaces'         then get_interfaces(msg)
     elseif   arg[2] == 'spectral_scan'          then spectral_scan(msg)

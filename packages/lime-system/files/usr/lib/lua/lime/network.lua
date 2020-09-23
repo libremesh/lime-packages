@@ -16,10 +16,30 @@ network.MTU_ETH = 1500
 network.MTU_ETH_WITH_VLAN = network.MTU_ETH - 4
 
 function network.get_mac(ifname)
-	local path = "/sys/class/net/"..ifname.."/address"
-	local macaddr = assert(fs.readfile(path), "network.get_mac(...) failed reading: "..path):gsub("\n","")
+	local _, macaddr = next(network.get_own_macs(ifname))
 	return utils.split(macaddr, ":")
 end
+
+--! Return a table of macs based on the interface globing filter
+function network.get_own_macs(interface_filter)
+	if interface_filter == nil then
+		interface_filter = '*'
+	end
+
+	local macs = {}
+	local search_path = "/sys/class/net/" .. interface_filter .. "/address"
+	for address_path in fs.glob(search_path) do
+		mac = io.open(address_path):read("*l")
+		macs[mac] = 1
+	end
+
+	local result = {}
+	for mac, _ in pairs(macs) do
+		table.insert(result, mac)
+	end
+	return result
+end
+
 
 function network.assert_interface_exists(ifname)
 	assert( ifname ~= nil and ifname ~= "",
