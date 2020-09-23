@@ -8,7 +8,7 @@
 ]]--
 
 require "ubus"
-local json = require 'luci.json'
+local json = require 'luci.jsonc'
 local utils = require("lime.utils")
 
 local function shell(command)
@@ -25,7 +25,7 @@ if not conn then
 end
 
 local function printJson (obj)
-    print(json.encode(obj))
+    print(json.stringify(obj))
 end
 
 local function file_exists(file)
@@ -96,27 +96,19 @@ end
 
 local function _get_gateway() 
     local result = {}
-    local default_dev = shell("echo -n $(ip r | grep 'default' | cut -d' ' -f3)")
     local gw = nil
 
-    if utils.is_installed("lime-proto-bmx6") then
-        default_dev = shell("bmx6 -c show tunnels | grep "..default_dev.." | grep inet4 ")
-        local res = {}
-        for w in default_dev:gmatch("%S+") do table.insert(res, w) end
-        gw = res[10]
+    local internet_path_file = io.open("/etc/last_internet_path", "r")
+    if internet_path_file then
+        local path_content = assert(internet_path_file:read("*a"), nil)
+        internet_path_file:close()
+        path = json.parse(path_content) or nil
+        if utils.tableLength(path) > 0 then
+            return { status="ok", gateway=path[utils.tableLength(path)] }
+        end
     end
 
-    if utils.is_installed("lime-proto-babeld") then
-        gw = shell('echo -n $(echo dump | nc ::1 30003 | mac2bat | grep "installed yes" | grep ::/0 | cut -d" "  -f 11 | bab2host)')
-    end
-
-    if gw ~= "" then
-        result.status = "ok"
-        result.gateway = gw
-        return result
-    else
-        return {status="error", error={msg="Not found. No gateway available.", code="1"}}
-    end
+    return {status="error", error={msg="Not found. No gateway available.", code="1"}}
 
 end
 local function get_gateway(msg)
@@ -125,35 +117,22 @@ end
 
 local function get_last_internet_path(msg)
     local internet_path_file = io.open("/etc/last_internet_path", "r")
-    path_content = assert(internet_path_file:read("*a"), nil)
-    internet_path_file:close()
-    path = json.decode(path_content) or nil
-    local result = {}
-    if path ~= nil then
-        result.path = path 
-        result.status = "ok"
+    if internet_path_file then
+        path_content = assert(internet_path_file:read("*a"), nil)
+        internet_path_file:close()
+        path = json.parse(path_content) or nil
+        local result = {}
+        if path ~= nil then
+            result.path = path 
+            result.status = "ok"
+            printJson(result)
+        end
     else
-        result = {status="error", error={msg="Not found. No known Internet path.", code="1"}}
+        printJson({status="error", error={msg="Not found. No known Internet path.", code="1"}})
     end
-    printJson(result)
 end
 
-local function _get_path(target)
-    local node = target
-    local result = {}
-    local path = {}
-    local path_str = shell("traceroute6 -q 1 "..node..".mesh | grep ms | awk '{ print $2 }' | cut -d'.' -f1")
-    for l in path_str:gmatch("[^\n]*") do
-        if l ~= "" then
-            table.insert(path, l)
-        end
-    end
-    result.path = path
-    result.status = "ok"
-    return result
-end
 local function get_path(msg)
-    --printJson(_get_path(msg.target))
     get_last_internet_path()
 end
 
@@ -213,7 +192,7 @@ end
 
 if arg[1] == 'call' then
     local msg = io.read()
-    msg = json.decode(msg)
+    msg = json.parse(msg)
     if       arg[2] == 'get_metrics'            then get_metrics(msg)
     elseif   arg[2] == 'get_gateway'            then get_gateway(msg)
     elseif   arg[2] == 'get_path'               then get_path(msg)

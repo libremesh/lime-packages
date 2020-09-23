@@ -52,6 +52,7 @@ describe('LiMe Config tests', function()
         assert.is.equal('17', uci:get('network', 'lm_net_wlan1_mesh_babeld_dev', 'vid'))
         assert.is_nil(uci:get('network', 'lm_net_wlan1_mesh_babeld_dev', 'mtu'))
 
+        assert.is.equal('29', uci:get('network', 'lm_net_wlan1_mesh_batadv_dev', 'vid'))
 
         assert.is_nil(uci:get('network', 'globals', 'ula_prefix'))
 		for _, radio in ipairs({'radio0', 'radio1', 'radio2'}) do

@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+NAME=pirania
+PROG=/usr/bin/captive-portal
+
+start() {
+    if  [ $(uci get pirania.base_config.enabled) == 1 ]; then
+        logger -t pirania "Running portal captive"
+        $PROG
+        /usr/lib/lua/voucher/hooks.lua start
+    else
+        logger -t pirania "Portal captive is disabled"
+    fi
+}
+
+stop () {
+    /usr/lib/lua/voucher/hooks.lua stop
+    $PROG stop
+    logger -t pirania "Portal captive stopped"
+}

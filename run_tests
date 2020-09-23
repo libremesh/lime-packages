@@ -1,7 +1,9 @@
 #!/bin/bash
-DOCKER_IMAGE="libremesh/luatest:1.0"
+DOCKER_IMAGE="libremesh/luatest:1.2"
 if ! docker inspect --type=image $DOCKER_IMAGE > /dev/null 2>&1; then
-    docker build -f Dockerfiles/Dockerfile.unittests . -t "$DOCKER_IMAGE"
+    echo "Pulling docker image '$DOCKER_IMAGE'."
+    echo "If you want to build it locally run 'docker build -f Dockerfiles/Dockerfile.unittests -t $DOCKER_IMAGE .'"
+    docker pull "$DOCKER_IMAGE"
 fi
 export DOCKER_IMAGE
 
@@ -14,6 +16,8 @@ for pkg in packages/*/files/usr/lib/lua/; do
 done
 # append default paths
 LIB_PATHS="$LIB_PATHS;;"
+LUA_PATH=$LIB_PATHS
+export LUA_PATH
 
 # create a temporaty script file to be able to run multiple commands inside docker
 temp_file=$(mktemp /tmp/lime_test.XXXX)
@@ -28,7 +32,7 @@ fi
 
 cat > ${temp_file}<< SCRIPT
 #!/bin/bash
-${LOGGING} busted -v --coverage ${TESTS_PATHS} --lpath='${LIB_PATHS}' ${1} && luacov
+${LOGGING} LUA_PATH='$LUA_PATH' busted -v --coverage ${TESTS_PATHS} --lpath='${LIB_PATHS}' ${1} && luacov
 SCRIPT
 
 ./tools/dockertestshell "${temp_file}"

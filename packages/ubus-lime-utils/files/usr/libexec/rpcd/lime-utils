@@ -7,8 +7,9 @@
   Copyright 2017 Nicolas Echaniz <nicoechaniz@altermundi.net>
 ]]--
 
-require "ubus"
-local json = require 'luci.json'
+local ubus = require "ubus"
+local json = require 'luci.jsonc'
+local config = require("lime.config")
 local limewireless = require 'lime.wireless'
 local utils = require 'lime.utils'
 local nixio = require 'nixio'
@@ -18,42 +19,8 @@ if not conn then
     error("Failed to connect to ubus")
 end
 
-local function printJson (obj)
-    print(json.encode(obj))
-end
-
-local function shell(command)
-    -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
-    local handle = io.popen(command)
-    local result = handle:read("*a")
-    handle:close()
-    return result
-end
-
-local function file_exists(file)
-    -- check if the file exists
-    local f = io.open(file, "rb")
-    if f then f:close() end
-    return f ~= nil
-end
-
-local function get_text_file(file)
-  if not file_exists(file) then return '' end
-  local text_file = io.open(file,'rb')
-  local content = text_file:read "*a"
-  text_file:close()
-  return content
-end
-
-local function write_text_file(file,text)
-  local text_file = io.open(file,'w')
-  text_file:write(text)
-  text_file:close()
-  return 1
-end
-
 local function get_cloud_nodes(msg)
-    local nodes = shell("cat /tmp/bat-hosts | grep bat0 | cut -d' ' -f2 | sed 's/_bat0//' | sed 's/_/-/g' | sort | uniq")
+    local nodes = utils.unsafe_shell("cat /tmp/bat-hosts | grep bat0 | cut -d' ' -f2 | sed 's/_bat0//' | sed 's/_/-/g' | sort | uniq")
     local result = {}
     result.nodes = {}
     for line in nodes:gmatch("[^\n]*") do
@@ -62,7 +29,7 @@ local function get_cloud_nodes(msg)
         end
     end
     result.status = "ok"
-    printJson(result)
+    utils.printJson(result)
     return
 end
 
@@ -70,7 +37,7 @@ local function get_station_traffic(params)
     local iface = params.iface
     local mac = params.station_mac
     local result = {}
-    local traffic = shell("iw "..iface.." station get "..mac.." | grep bytes | awk '{ print $3}'")
+    local traffic = utils.unsafe_shell("iw "..iface.." station get "..mac.." | grep bytes | awk '{ print $3}'")
     words = {}
     for w in traffic:gmatch("[^\n]+") do table.insert(words, w) end
     rx = words[1]
@@ -84,9 +51,9 @@ end
 
 local function get_node_status(msg)
     local result = {}
-    result.hostname = conn:call("system","board", {}).hostname
+    result.hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
     result.ips = {}
-    local ips = shell("ip a s br-lan | grep inet | awk '{ print $1, $2 }'")
+    local ips = utils.unsafe_shell("ip a s br-lan | grep inet | awk '{ print $1, $2 }'")
     for line in ips:gmatch("[^\n]+") do
         local words = {}
         for w in line:gmatch("%S+") do if w ~= "" then table.insert(words, w) end end
@@ -98,24 +65,22 @@ local function get_node_status(msg)
             table.insert(result.ips, { version="4", address=address })
         end
     end
-    local ifaces = conn:call("lime-openairview", "get_interfaces", {}).interfaces
+    local ifaces = limewireless.mesh_ifaces()
     local stations = {}
     for _, iface  in ipairs(ifaces) do
-        if iface.name then
-            iface_stations = conn:call("lime-openairview", "get_stations", {device = iface.name}).stations
-            if iface_stations then
-                for _, station in pairs(iface_stations) do
-                    station['iface'] = iface.name
-                    table.insert(stations, station)
-                end
+        iface_stations = conn:call("lime-openairview", "get_stations", {device = iface}).stations
+        if iface_stations then
+            for _, station in pairs(iface_stations) do
+                station['iface'] = iface
+                table.insert(stations, station)
             end
-        end     
+        end
     end
     if next(stations) ~= nil then
         local most_active_rx = 0
         local most_active = nil
         for _, station in ipairs(stations) do
-            local traffic = shell("iw "..station.iface.." station get "..station.station_mac.." | grep bytes | awk '{ print $3}'")
+            local traffic = utils.unsafe_shell("iw "..station.iface.." station get "..station.station_mac.." | grep bytes | awk '{ print $3}'")
             words = {}
             for w in traffic:gmatch("[^\n]+") do table.insert(words, w) end
             rx = words[1]
@@ -135,65 +100,40 @@ local function get_node_status(msg)
     result.uptime = tostring(utils.uptime_s())
 
     result.status = "ok"
-    printJson(result)
+    utils.printJson(result)
 end
 
 local function get_notes()
     local result = {}
-    result.notes = get_text_file('/etc/banner.notes')
+    result.notes = utils.read_file('/etc/banner.notes') or ''
     result.status = "ok"
-    printJson(result)
+    utils.printJson(result)
 end
 
 local function set_notes(msg)
-    local result = {}
-    local banner = write_text_file('/etc/banner.notes', msg.text)
-    result = get_notes()
-    printJson(result)
+    local banner = utils.write_file('/etc/banner.notes', msg.text)
+    get_notes()
 end
-
 
 local function get_community_settings ()
-    local config = conn:call("uci", "get", {config="lime-app"})
+    local config = conn:call("uci", "get", {config="lime-app"}).values
     if config ~=  nil then
-        config = config.values.cfg02541a
-        -- TODO: Find a best way to remove uci keys
-        function table.removekey(table, key)
-            local element = table[key]
-            table[key] = nil
-            return element
+        for name, value in pairs(config) do
+            -- TODO: Find a best way to remove uci keys
+            function table.removekey(table, key)
+                local element = table[key]
+                table[key] = nil
+                return element
+            end
+            table.removekey(value,".name")
+            table.removekey(value,".index")
+            table.removekey(value,".anonymous")
+            table.removekey(value,".type")
+            utils.printJson(value)
+            break
         end
-        table.removekey(config,".name")
-        table.removekey(config,".index")
-        table.removekey(config,".anonymous")
-        table.removekey(config,".type")
-        
-        printJson(config)
     else
-        printJson({error = "config not found"})
-    end
-    
-end
-
-local function change_config (msg)
-    if msg.hostname ~= nil then
-        conn:call("uci", "set", {config="lime-node", section="system", values= { hostname = msg.hostname }})
-        conn:call("uci", "set", {config="lime-node", section="network", values= {
-            main_ipv4_address = msg.ip.ipv4,
-            main_ipv6_address = msg.ip.ipv6 
-        }})
-        conn:call("uci", "set", {config="lime-node", section="wifi", values=  msg.wireless })
-        conn:call("uci", "set", {config="lime-community", section="wifi", values= {
-            channel_2ghz = msg.wireless.channel_2ghz,
-            channel_5ghz = msg.wireless.channel_5ghz,
-            ieee80211s_mesh_id = msg.wireless.ieee80211s_mesh_id ,
-            adhoc_ssid = msg.wireless.adhoc_ssid,
-            country = country
-        }})
-        shell("lime-config && reboot")
-        printJson({ status = 'ok'})
-    else
-        printJson({ status = 'error', msg = 'You must enter a hostname' })
+        utils.printJson({error = "config not found"})
     end
 end
 
@@ -211,16 +151,51 @@ local function get_channels ()
   end
   local frequencies = {}
   for _, phy in pairs (phys) do
-    local info = shell("iw "..phy.phy.." info | sed -n '/Frequencies:/,/valid/p' | sed '1d;$d' | grep -v radar | grep -v disabled | sed -e 's/.*\\[\\(.*\\)\\].*/\\1/'")
+    local info = utils.unsafe_shell("iw "..phy.phy.." info | sed -n '/Frequencies:/,/valid/p' | sed '1d;$d' | grep -v radar | grep -v disabled | sed -e 's/.*\\[\\(.*\\)\\].*/\\1/'")
     frequencies[phy.freq] = utils.split(info, '\n')
   end
   return frequencies
 end
 
 local function get_config ()
-  local result = conn:call("uci", "get", {config="lime", section="wifi"})
+  local result = conn:call("uci", "get", {config="lime-autogen", section="wifi"})
   result.channels = get_channels()
-  printJson(result)
+  utils.printJson(result)
+end
+
+local function _safe_upgrade_confirm_remaining_s()
+    local remaining_s = tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining"))
+    if not remaining_s then
+        remaining_s = -1
+    end
+    return remaining_s
+end
+
+local function _is_upgrade_confirm_supported()
+    local exit_value = os.execute("safe-upgrade board-supported > /dev/null 2>&1")
+    return exit_value == 0
+end
+
+UPGRADE_INFO_CACHE_FILE = '/tmp/upgrade_info_cache'
+
+local function get_upgrade_info(msg)
+    local result = {}
+
+    if not utils.file_exists(UPGRADE_INFO_CACHE_FILE) then
+        result.safe_upgrade_confirm_remaining_s = _safe_upgrade_confirm_remaining_s()
+        result.is_upgrade_confirm_supported = _is_upgrade_confirm_supported()
+        utils.write_file(UPGRADE_INFO_CACHE_FILE, json.stringify(result))
+    else
+        result = json.parse(utils.read_file(UPGRADE_INFO_CACHE_FILE))
+        if result.safe_upgrade_confirm_remaining_s ~= -1 then
+            result.safe_upgrade_confirm_remaining_s = _safe_upgrade_confirm_remaining_s()
+        end
+        if not result then
+            return utils.printJson({status = "error"})
+        end
+    end
+    result.status = 'ok'
+    return utils.printJson(result)
 end
 
 local function safe_reboot(msg)
@@ -233,7 +208,7 @@ local function safe_reboot(msg)
 
   -- Get safe-reboot status
   if msg.action == nil then
-    return printJson({ error = true })
+    return utils.printJson({ error = true })
   end
   if msg.action == 'status' then
     result.stauts = getStatus()
@@ -287,7 +262,7 @@ local function safe_reboot(msg)
     end
   end
 
-  return printJson(result)
+  return utils.printJson(result)
 end
 
 local methods = {
@@ -296,26 +271,26 @@ local methods = {
     get_notes = { no_params = 0},
     set_notes = { text = 'value' },
     get_community_settings = { no_params = 0},
-    change_config = { name = 'value', ip = 'value' },
     get_config = { no_params = 0 },
+    get_upgrade_info = { no_params = 0 },
     safe_reboot = { action = 'value', value = 'value' }
 }
 
 if arg[1] == 'list' then
-    printJson(methods)
+    utils.printJson(methods)
 end
 
 if arg[1] == 'call' then
-    local msg = io.read()
-    msg = json.decode(msg)
+    local msg = utils.rpcd_readline()
+    msg = json.parse(msg)
     if      arg[2] == 'get_cloud_nodes' then get_cloud_nodes(msg)
     elseif  arg[2] == 'get_node_status' then get_node_status(msg)
     elseif  arg[2] == 'get_notes' then get_notes(msg)
     elseif  arg[2] == 'set_notes' then set_notes(msg)
     elseif  arg[2] == 'get_community_settings' then get_community_settings(msg)
-    elseif  arg[2] == 'change_config' then change_config(msg)
     elseif  arg[2] == 'get_config' then get_config(msg)
+    elseif  arg[2] == 'get_upgrade_info' then get_upgrade_info(msg)
     elseif  arg[2] == 'safe_reboot' then safe_reboot(msg)
-    else printJson({ error = "Method not found" })
+    else utils.printJson({ error = "Method not found" })
     end
 end

@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=Utilities
   TITLE:=$(PKG_NAME) provides safe firmware upgrades using two partitions.
   MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
-  DEPENDS:=+lua-argparse
+  DEPENDS:=+lua-argparse +luci-lib-jsonc +lime-system
   PKGARCH:=all
 endef
 

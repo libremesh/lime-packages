@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libremesh.org
-  DEPENDS:=+lime-system +lua +libuci-lua +kmod-batman-adv +kmod-dummy
+  DEPENDS:=+lime-system +lua +libuci-lua +kmod-batman-adv
   PKGARCH:=all
 endef
 

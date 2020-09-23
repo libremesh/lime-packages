@@ -1,0 +1,19 @@
+{
+	"root": {
+		"description": "root access only",
+		"read": {
+			"ubus": {
+					"lime-utils-admin": [ "*" ]
+			},
+			"uci": [ "*" ]
+		},
+		"write": {
+			"cgi-io": [ "upload" ],
+			"ubus": {
+					"lime-utils-admin": [ "*" ],
+					"system": [ "*" ]
+			},
+			"uci": [ "*" ]
+		}
+	}
+}

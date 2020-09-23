@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Redirect</title>
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta http-equiv="Refresh" id="refresh" content="0; url=/cgi-bin/pirania/portal">
+    <!-- If the meta tag doesn't work, try JavaScript to redirect. -->
+    <script type="text/javascript">
+      var param = "?prev="
+      var prevUrl = window.location.search.split(param)[1].split('//')[1]
+      var redirect = "/cgi-bin/pirania/portal"
+      var url = prevUrl ? redirect+param+prevUrl : redirect
+      window.location.href = url
+      document.getElementById("refresh").setAttribute("content", "0; url="+url)
+    </script>
+  </head>
+  <body>
+      <noscript>
+          <p><a href=/cgi-bin/pirania/portal>ENTER</a></p>
+      </noscript>    
+  </body>
+</html>

@@ -1,6 +1,7 @@
 local limeutils = require 'lime.utils'
 local config = require 'lime.config'
 local libuci = require 'uci'
+local stub = require 'luassert.stub'
 
 local utils = {}
 
@@ -70,6 +71,22 @@ function utils.teardown_test_uci(uci)
 	uci:close()
 end
 
+-- Create a temporal empty directory and return its path with a trailin '/'
+-- eg: '/tmp/tmp.occigb/'
+-- utils.teardown_test_dir() must be called for cleanup
+function utils.setup_test_dir()
+	utils._tmpdir = io.popen("mktemp -d"):read('*l') .. "/"
+	return utils._tmpdir
+end
+
+function utils.teardown_test_dir()
+	if(utils._tmpdir ~= nil and string.find(utils._tmpdir, '^/tmp') ~= nil) then
+		local out = io.popen("rm -rf " .. utils._tmpdir)
+		out:read('*all') -- this allows waiting for popen completion
+		out:close()
+	end
+end
+
 function utils.get_board(name)
 	local board_path = 'tests/devices/' .. name .. '/board.json'
 	return limeutils.getBoardAsTable(board_path)
@@ -91,6 +108,40 @@ function utils.read_uci_file(uci, filename)
         f:close()
     end
     return content
+end
+
+function utils.load_lua_file_as_function(filename)
+    local f = io.open(filename)
+
+    local content = ""
+
+    -- removes the shebang if it is the first line
+    local first_line = f:read("*l")
+    if not first_line:find("^#!") then
+        content = first_line .. content
+    end
+
+    content = content .. f:read("*a")
+    f:close()
+
+    -- mimic lua executable arguments handling injecting arg variable from varargs
+    content = 'local arg = {...}\n' .. content
+    return loadstring(content, filename)
+end
+
+-- Use this function to test libexec/rpcd "json API" calls
+function utils.rpcd_call(f, script_args, call_args)
+    local response = nil
+
+    stub(limeutils, "printJson", function (x) response = x end)
+    stub(limeutils, "rpcd_readline", function () return call_args end)
+
+    f(unpack(script_args))
+
+    -- revert the stub
+    limeutils.printJson:revert()
+    limeutils.rpcd_readline:revert()
+    return response
 end
 
 return utils

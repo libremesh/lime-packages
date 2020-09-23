@@ -1,0 +1,31 @@
+{
+    "unauthenticated": {
+        "description": "Pirania public access",
+        "read": {
+            "ubus": {
+                    "pirania-app": [ "get_clients", "read_content", "read_governance" ]
+            }
+        }
+    },
+    "lime-app": {
+        "description": "lime-app public access",
+        "read": {
+            "ubus": {
+                    "pirania-app": [ "get_clients", "read_content", "read_governance" ]
+            }
+        }
+    },
+    "root": {
+        "description": "Pirania administration access",
+        "write": {
+            "ubus": {
+                    "pirania-app": ["*"]
+            }
+        },
+        "read": {
+            "ubus": {
+                    "pirania-app": ["*"]
+            }
+        }
+    }
+}

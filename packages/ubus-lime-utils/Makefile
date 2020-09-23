@@ -13,7 +13,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
   SUBMENU:=3. Applications
   TITLE:=LIbremesh ubus utils module
-  DEPENDS:= +lua +libubox-lua +libubus-lua +libuci
+  DEPENDS:= +lua +libubox-lua +libubus-lua +libuci +cgi-io +rpcd-mod-file
   PKGARCH:=all
 endef
 
@@ -23,7 +23,6 @@ endef
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
-	@chmod a+x $(1)/usr/libexec/rpcd/lime-utils
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))

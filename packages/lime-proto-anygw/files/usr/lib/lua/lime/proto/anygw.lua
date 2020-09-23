@@ -3,6 +3,7 @@
 local fs = require("nixio.fs")
 local network = require("lime.network")
 local config = require("lime.config")
+local system = require("lime.system")
 
 
 anygw = {}
@@ -10,11 +11,13 @@ anygw = {}
 anygw.configured = false
 
 anygw.SAFE_CLIENT_MTU = 1350
+anygw.FQDN = {"thisnode.info", "minodo.info"}
 
 function anygw.configure(args)
 	if anygw.configured then return end
 	anygw.configured = true
 
+	local cloudDomain = config.get("system", "domain")
 	local ipv4, ipv6 = network.primary_address()
 	local anygw_mac = config.get("network", "anygw_mac")
 	anygw_mac = utils.applyNetTemplate16(anygw_mac)
@@ -93,14 +96,26 @@ function anygw.configure(args)
 	uci:set("dhcp", owrtInterfaceName, "dhcp_option", { "option:mtu,"..anygw.SAFE_CLIENT_MTU } )
 	uci:set("dhcp", owrtInterfaceName, "force", "1")
 
-	--! useing host-record to declare own DNS entries (and not dnsmasq address as it wildcards subdomains)
+	--! Avoid node hostname being resolved to anygw IP
+	uci:foreach("dhcp", "dnsmasq",
+		function(s)
+			uci:set("dhcp", s[".name"], "add_local_fqdn", "0")
+		end
+	)
+
+	--! Now define host records with proper node IPs
+	local hostname = system.get_hostname()
+	uci:set("dhcp", "node_name_dns", "hostrecord")
+	uci:set("dhcp", "node_name_dns", "name", {hostname, hostname.."."..cloudDomain})
+	uci:set("dhcp", "node_name_dns", "ip", ipv4:host():string() .. "," .. ipv6:host():string())
+
+	--! Use host-record to declare own DNS entries (and not dnsmasq address as
+	--! it wildcards subdomains)
 	uci:set("dhcp", "anygw_dns", "hostrecord")
-	uci:set("dhcp", "anygw_dns", "name", {"anygw", "thisnode.info", "minodo.info"})
+	uci:set("dhcp", "anygw_dns", "name", {"anygw", unpack(anygw.FQDN)})
 	uci:set("dhcp", "anygw_dns", "ip", anygw_ipv4:host():string() .. "," .. anygw_ipv6:host():string())
 
 	uci:save("dhcp")
-
-	local cloudDomain = config.get("system", "domain")
 
 	local content = { }
 	table.insert(content, "enable-ra")

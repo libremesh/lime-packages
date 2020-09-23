@@ -35,15 +35,15 @@ In order to create a fork:
     This will create yet another complete copy of the repository: one that will reside
     on your workstation.
 
-4. Checkout the `develop` branch.
-   ```git checkout develop```
+4. Checkout the `master` branch.
+   ```git checkout master```
 
 ### Branching
 
 Any changes that are made to the lime-packages code-base should be done in their own branch.  The branch
-should be made from the tip of `develop`, which is the development branch.  Before starting
+should be made from the tip of `master`, which is the development branch.  Before starting
 any piece of work, ensure that you fetch the latest upstream changes from the repository.
-Doing so will ensure that you have an up-to-date copy of `develop`, that changes made by others
+Doing so will ensure that you have an up-to-date copy of `master`, that changes made by others
 will not be lost, and will also reduce the chances of conflicts when it comes time to merging the
 changes back to lime-packages.
 
@@ -51,8 +51,8 @@ changes back to lime-packages.
 
 There is only one key branch:
 
-- `develop`: this branch is the working version that is currently under development.  All
-    new feature branches should be made from the tip of `develop` and all PR's should have `develop`
+- `master`: this branch is the working version that is currently under development.  All
+    new feature branches should be made from the tip of `master` and all PR's should have `master`
     set as the target.
 
 For any new feature branches, the following naming convention is recommended:
@@ -84,15 +84,15 @@ The general workflow for branching is as follows:
 
 1. Fetch the latest changes from `upstream` (i.e. the main repository):
 
-   ```git fetch upstream develop```
+   ```git fetch upstream master```
 
-2. Check-out you copy of develop and merge the upstream changes:
+2. Check-out you copy of `master` and merge the upstream changes:
 
-    ```git checkout develop```
+    ```git checkout master```
     
-    ```git merge upstream/develop```
+    ```git merge upstream/master```
 
-    You now have an up-to-day copy of the `develop` branch.
+    You now have an up-to-day copy of the `master` branch.
 
 3. Create a new branch for your changes:
 
@@ -122,7 +122,7 @@ need to create a *Pull Request* in GitHub.
 3. Make sure that the following properties are set:
 
     - Base fork = `libremesh/lime-packages`
-    - Base = `develop`
+    - Base = `master`
     - Head fork = your fork of lime-packages
     - Compare = the branch you wish to merge
 
@@ -142,19 +142,19 @@ Sometimes GitHub will report that the Pull Request cannot be merged automaticall
 which usually means that there are merge conflicts.
 
 It is usually a good idea to resolve the conflicts on the branch you are working on,
-rather than doing so on develop.
+rather than doing so on `master`.
 
 In order to do so:
 
-1. Fetch the latest changes from the upstream `develop` branch
+1. Fetch the latest changes from the upstream `master` branch
 
-    ```git fetch upstream develop```
+    ```git fetch upstream master```
 
 2. Make sure that you are on your feature branch.
 
-3. Merge the upstream changes into develop.  You will see "conflict messages"
+3. Merge the upstream changes into master.  You will see "conflict messages"
 
-    ```git merge upstream/develop```
+    ```git merge upstream/master```
      
 4. Use a merge tool to resolve the conflicts.  If one is configured with Git,
     running `git mergetool` should bring it up.  Some GUI tools like 

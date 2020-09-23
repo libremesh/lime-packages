@@ -7,6 +7,7 @@ local fs = require("nixio.fs")
 local fbw_utils = require('firstbootwizard.utils')
 
 local uci = nil
+config.log = function () end
 
 local community_file = [[
 config lime 'system'
@@ -68,6 +69,20 @@ describe('FirstBootWizard tests #fbw', function()
         assert.is.equal(1, #configs)
         assert.is.equal('foo', configs[1]['config']['wifi']['ap_ssid'])
         assert.is.equal('lime-community__host__foonode', configs[1]['file'])
+    end)
+
+
+    it('test create_network() empty', function()
+        stub(utils, "set_password", function () return nil end)
+        stub(utils, "get_root_secret", function () return "mysecret" end)
+        stub(fbw, "end_config", function () end)
+        uci:set('lime-community', 'system', 'lime')
+
+        fbw.create_network("LibreMesh", "myhost", "mypassword")
+
+        assert.is.equal('SET_SECRET', uci:get("lime-community", 'system', 'root_password_policy'))
+        assert.is.equal('mysecret', uci:get("lime-community", 'system', 'root_password_secret'))
+        assert.stub(utils.set_password).was.called_with('root', "mypassword")
     end)
 
     before_each('', function()

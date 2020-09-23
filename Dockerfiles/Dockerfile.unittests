@@ -1,6 +1,6 @@
 FROM abaez/luarocks:lua5.1
 
-ARG OPENWRT_REPO=https://downloads.openwrt.org/releases/18.06.4/packages/x86_64
+ARG OPENWRT_REPO=https://downloads.openwrt.org/releases/18.06.8/packages/x86_64
 
 WORKDIR /root
 
@@ -11,7 +11,8 @@ RUN luarocks install luacov; \
     luarocks install mobdebug;
 
 COPY tools /root/tools
-RUN /root/tools/dlpkg $OPENWRT_REPO/base/ liblua /root && \
+RUN /root/tools/dlpkg $OPENWRT_REPO/base/ lua /root && \
+    /root/tools/dlpkg $OPENWRT_REPO/base/ liblua /root && \
     /root/tools/dlpkg $OPENWRT_REPO/base/ libuci /root && \
     /root/tools/dlpkg $OPENWRT_REPO/base/ libuci-lua /root && \
     /root/tools/dlpkg $OPENWRT_REPO/base/ libubox /root && \
@@ -19,7 +20,12 @@ RUN /root/tools/dlpkg $OPENWRT_REPO/base/ liblua /root && \
     /root/tools/dlpkg $OPENWRT_REPO/base/ libnl-tiny /root && \
     /root/tools/dlpkg $OPENWRT_REPO/luci/ luci-lib-nixio /root && \
     /root/tools/dlpkg $OPENWRT_REPO/luci/ luci-lib-ip /root && \
-    /root/tools/dlpkg $OPENWRT_REPO/luci/ luci-lib-jsonc /root
+    /root/tools/dlpkg $OPENWRT_REPO/luci/ luci-lib-jsonc /root && \
+    /root/tools/dlpkg $OPENWRT_REPO/luci/ liblucihttp /root && \
+    /root/tools/dlpkg $OPENWRT_REPO/luci/ liblucihttp-lua /root
 
 RUN for packet in /root/*.ipk; do tar xf $packet; tar xvf /root/data.tar.gz -C /; rm /root/data.tar.gz; done
-RUN mv /usr/lib/lua/* /usr/local/lib/lua/5.1/
+
+# Remove the luarocks Lua and replace it with the openwrt Lua becase there are some incompatibilities
+# for example with integer parsing with luci.jsonc. OpenWrt's Lua is configured with double and int32.
+RUN mv /usr/local/lib/lua/5.1/* /usr/lib/lua/ && rm /usr/local/bin/lua && ln -s /usr/bin/lua /usr/local/bin/lua

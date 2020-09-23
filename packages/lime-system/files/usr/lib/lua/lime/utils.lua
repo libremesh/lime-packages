@@ -7,11 +7,13 @@ local json = require("luci.jsonc")
 local fs = require("nixio.fs")
 
 utils.BOARD_JSON_PATH = "/etc/board.json"
+utils.SHADOW_FILENAME = "/etc/shadow"
+utils.KEEP_ON_UPGRADE_FILES_BASE_PATH = '/lib/upgrade/keep.d/'
 
 function utils.log(...)
 	if DISABLE_LOGGING ~= nil then return end
 	if os.getenv("LUA_DISABLE_LOGGING") ~= nil and os.getenv("LUA_ENABLE_LOGGING") == nil then return end
-	print(...)
+	print(string.format(...))
 end
 
 function utils.disable_logging()
@@ -47,7 +49,8 @@ end
 --! escape the magic characters: ( ) . % + - * ? [ ] ^ $
 --! useful to use with gsub / match when finding exactly a string
 function utils.literalize(str)
-    return str:gsub("[%(%)%.%%%+%-%*%?%[%]%^%$]", function(c) return "%" .. c end)
+    local ret, _ = str:gsub("[%(%)%.%%%+%-%*%?%[%]%^%$]", function(c) return "%" .. c end)
+    return ret
 end
 
 function utils.isModuleAvailable(name)
@@ -181,6 +184,16 @@ function utils.sanitize_hostname(hostname)
 	return hostname
 end
 
+--! validate that a hostname is also DNS valid
+function utils.is_valid_hostname(hostname)
+    if hostname and (#hostname < 64) and
+       hostname:match("^[a-zA-Z0-9][a-zA-Z0-9%-]*[a-zA-Z0-9]$")
+    then
+        return true
+    end
+    return false
+end
+
 function utils.file_exists(name)
 	local f=io.open(name,"r")
 	if f~=nil then io.close(f) return true else return false end
@@ -253,12 +266,164 @@ function utils.getBoardAsTable(board_path)
 	return json.parse(fs.readfile(board_path))
 end
 
+function utils.printJson(obj)
+    print(json.stringify(obj))
+end
+
+--! use rpcd_readline() in libexec/rpcd/ scripts to access the arguments that
+--! are passed through stdin. The use of this functions allows testing.
+function utils.rpcd_readline()
+    return io.read()
+end
+
 --! for testing only
 utils._uptime_line = nil
 
 function utils.uptime_s()
     local uptime_line = utils._uptime_line or io.open("/proc/uptime"):read("*l")
     return tonumber(string.match(uptime_line, "^%S+"))
+end
+
+--! Escape strings for safe shell usage.
+function utils.shell_quote(s)
+    --! Based on Python's shlex.quote()
+    return "'" .. string.gsub(s, "'", "'\"'\"'") .. "'"
+end
+
+--! Excutes a shell command, waits for completion and returns stdout.
+--! Warning! Use this function carefully as it could be exploted if used with
+--! untrusted input. Always use function utils.shell_quote() to escape untrusted
+--! input.
+function utils.unsafe_shell(command)
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+    return result
+end
+
+--! based on luci.sys.setpassword
+function utils.set_password(username, password)
+	local user = utils.shell_quote(username)
+	local pass = utils.shell_quote(password)
+	return os.execute(string.format("(echo %s; sleep 1; echo %s) | passwd %s >/dev/null 2>&1",
+									pass, pass, user))
+end
+
+function utils.get_root_secret()
+	local f = io.open(utils.SHADOW_FILENAME, "r")
+	if f ~= nil then
+		local root_line = f:read("*l") --! root user is always in the first line
+		local secret = root_line:match("root:(.-):")
+		return secret
+	end
+end
+
+function utils.set_root_secret(secret)
+	local f = io.open(utils.SHADOW_FILENAME, "r")
+	if f ~= nil then
+		--! perform a backup of the shadow
+		local f_bkp = io.open(utils.SHADOW_FILENAME .. "-", "w")
+		f_bkp:write(f:read("*a"))
+		f:seek("set")
+		f_bkp:close()
+
+		local root_line = f:read("*l") --! root user is always in the first line
+		local starts, ends = string.find(root_line, "root:.-:")
+		local content = "root:" .. secret .. root_line:sub(ends) .. "\n"
+		content = content .. f:read("*a")
+		f:close()
+		f = io.open(utils.SHADOW_FILENAME, "w")
+		f:write(content)
+		f:close()
+	end
+end
+
+function utils.set_shared_root_password(password)
+    local uci = config.get_uci_cursor()
+    utils.set_password('root', password) -- this takes 1 second, it may be replaced with nixio.crypt(password, '$1$vv44cu1H')
+    uci:set("lime-community", 'system', 'root_password_policy', 'SET_SECRET')
+    uci:set("lime-community", 'system', 'root_password_secret', utils.get_root_secret())
+end
+
+--! returns a random string. filter is an optional function to reduce the possible characters.
+--! by default the filter allows all the alphanumeric characters
+function utils.random_string(length, filter)
+    if filter == nil then
+        --! all alphanumeric characters
+        filter = function (c) return string.match(c, "%w") ~= nil end
+    end
+    local urandom = io.open("/dev/urandom", "rb")
+    local out = ""
+    while length > #out do
+        local c = urandom:read(1)
+        if filter(c) then
+            out = out .. c
+        end
+    end
+    return out
+end
+
+--! Return a list of files to keep when upgrading. Existence of the files is not guaranteed.
+function utils.keep_on_upgrade_files()
+    local file_lists = config.get("system", "keep_on_upgrade", "")
+    local files = {}
+    for _, list in pairs(utils.split(file_lists, " ")) do
+        --! convert non absolute paths to absolute
+        if not utils.stringStarts(list, "/") then
+            list =  utils.KEEP_ON_UPGRADE_FILES_BASE_PATH .. list
+        end
+        if utils.file_exists(list) then
+            for file_name in io.lines(list) do
+                --! exclude comments, blank lines, etc
+                if utils.stringStarts(file_name, "/") then
+                    table.insert(files, file_name)
+                end
+            end
+        end
+    end
+    return files
+end
+
+--! Run a command in a shell and daemonized directly in pid 1 (similar to diswon/nohup)
+--! If out_file optional arg is passed then stdout and stderr will go to that file.
+function utils.execute_daemonized(cmd, out_file, stdin)
+    if out_file == nil then
+        out_file = "/dev/null"
+    end
+    if not stdin then
+        stdin = "0<&-" -- closing standard input
+    else
+        stdin = "0<" .. stdin
+    end
+
+    return os.execute("(( " .. cmd .. " " .. stdin .. " &> " .. out_file .. " &) &)")
+end
+
+function utils.bitwise_xor(a, b)
+  local r = 0
+  for i = 0, 31 do
+    local x = a / 2 + b / 2
+    if x ~= math.floor(x) then
+      r = r + 2^i
+    end
+    a = math.floor(a / 2)
+    b = math.floor(b / 2)
+  end
+  return r
+end
+
+function utils.mac2ipv6linklocal(text)
+    function f(mac0, mac1, mac2, mac3, mac4, mac5, mac6)
+        local mac0 = string.format("%x", utils.bitwise_xor(tonumber(mac0, 16), 0x02))
+        --! going from and to string to remove leading zeroes and convert to lowercase
+        local gr1 = string.format("%x", tonumber(mac0 .. mac1, 16))
+        local gr2 = string.format("%x", tonumber(mac2 .. 'ff', 16))
+        local gr3 = string.format("%x", tonumber('fe' .. mac3, 16))
+        local gr4 = string.format("%x", tonumber(mac4 .. mac5, 16))
+        return 'fe80::' .. gr1 .. ":" .. gr2 .. ":" .. gr3 .. ":" .. gr4
+    end
+    local ret, _ = string.gsub(text, "(%x%x):(%x%x):(%x%x):(%x%x):(%x%x):(%x%x)", f)
+    return ret
 end
 
 return utils

@@ -2,7 +2,7 @@
 
 --! Minimalistic CRDT-like shared state structure suitable for mesh networks
 --!
---! Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
+--! Copyright (C) 2019-2020  Gioacchino Mazzurco <gio@altermundi.net>
 --!
 --! This program is free software: you can redistribute it and/or modify
 --! it under the terms of the GNU Affero General Public License version 3 as
@@ -17,7 +17,6 @@
 --! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local fs = require("nixio.fs")
-local http = require("luci.httpclient")
 local JSON = require("luci.jsonc")
 local nixio = require("nixio")
 local uci = require("uci")
@@ -156,6 +155,25 @@ local function SharedState(dataType, pLogger)
 		end
 	end
 
+	function sharedState.httpRequest(url, body)
+		local tmpfname = os.tmpname()
+
+		local tmpfd = io.open(tmpfname, "w")
+		tmpfd:write(body)
+		tmpfd:close()
+		tmpfd = nil
+
+		local cmd = "uclient-fetch -q -O- --timeout=3 "
+		cmd = cmd.."--post-file='"..tmpfname.."' '"..url.."' ; "
+		cmd = cmd.."rm -f '"..tmpfname.."'"
+		local fd = io.popen(cmd)
+
+		local value = fd:read("*a")
+		fd:close()
+
+		return value
+	end
+
 	function sharedState.sync(urls)
 		urls = urls or {}
 
@@ -178,33 +196,15 @@ local function SharedState(dataType, pLogger)
 		end
 
 		for _,url in ipairs(urls) do
-			local options = {}
-			options.sndtimeo = 3
-			options.rcvtimeo = 3
-			options.method = 'POST'
-			options.body = sharedState.toJsonString()
+			local body = sharedState.toJsonString()
 
-			-- Alias WK:2622 Workaround https://github.com/openwrt/luci/issues/2622
-			local startTP = os.time() -- WK:2622
-			local success, response = pcall(http.request_to_buffer, url, options)
-			local endTP = os.time() -- WK:2622
+			response = sharedState.httpRequest(url, body)
 
-			if success and type(response) == "string" and response:len() > 1  then
+			if type(response) == "string" and response:len() > 1  then
 				local parsedJson = JSON.parse(response)
 				if parsedJson then sharedState.merge(parsedJson) end
 			else
-				self_log( "debug", "httpclient interal error requesting "..url )
-
-				-- WK:2622
-				for tFpath in fs.glob("/tmp/lua_*") do
-					local mStat = fs.stat(tFpath)
-					if mStat and
-						mStat.atime >= startTP and mStat.atime <= endTP and
-						mStat.ctime >= startTP and mStat.ctime <= endTP and
-						mStat.mtime >= startTP and mStat.mtime <= endTP then
-						os.remove(tFpath)
-					end
-				end
+				self_log( "debug", "error requesting "..url )
 			end
 		end
 	end
