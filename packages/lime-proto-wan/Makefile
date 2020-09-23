@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LiMe
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libremesh.org
-  DEPENDS:=+lime-system +lua +libuci-lua +kmod-ipt-nat +!PACKAGE_firewall:iptables
+  DEPENDS:=+lime-system +lua +libuci-lua +kmod-ipt-nat +iptables
   PKGARCH:=all
 endef
 
