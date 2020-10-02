@@ -50,7 +50,7 @@ describe('ubus-lime-utils tests #ubuslimeutils', function()
         stub(utils, "unsafe_shell", function () return '' end)
         stub(utils, "uptime_s", function () return '123' end)
 
-        local response  = rpcd_call(ubus_lime_utils, {'call', 'get_node_status'}, '')
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'get_node_status'}, '{"hostname": "foo"}')
         assert.is.equal("ok", response.status)
         assert.is.equal(io.input("/proc/sys/kernel/hostname"):read("*line"), response.hostname)
         assert.are.same({}, response.ips)
