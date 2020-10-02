@@ -4,6 +4,7 @@ utils = {}
 
 local config = require("lime.config")
 local json = require("luci.jsonc")
+local ip = require("luci.ip")
 local fs = require("nixio.fs")
 local nixio = require("nixio")
 

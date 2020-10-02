@@ -117,6 +117,7 @@ function vouchera.deactivate(name)
     return voucher
 end
 
+--! updates the database with the new voucher information
 function vouchera.update_with(voucher)
     vouchera.vouchers[voucher.name] = voucher
     return store.add_voucher(config.db_path, voucher, voucher_init)
@@ -153,6 +154,16 @@ end
 
 function vouchera.should_be_pruned(voucher)
     return voucher.expiration_date >= (os.time() + vouchera.PRUNE_OLDER_THAN_S)
+end
+
+function vouchera.update_expiration_date(name, new_date)
+    local voucher = vouchera.vouchers[name]
+    if voucher then
+        voucher.expiration_date = new_date
+        voucher.mod_counter = voucher.mod_counter + 1
+        return store.add_voucher(config.db_path, voucher, voucher_init)
+    end
+    return voucher
 end
 
 vouchera.voucher = voucher_init
