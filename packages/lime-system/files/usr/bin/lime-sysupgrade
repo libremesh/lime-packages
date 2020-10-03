@@ -11,7 +11,7 @@ BACKUP_EXTRA_DIR="/tmp/lime-sysupgrade/preserve/"
 
 add_file() {
   for l in `cat $1 | sed -e s/#.*$// -e /^$/d`; do
-    [ -e "$l" ] && BACKUP_FILES="$BACKUP_FILES $l"
+    [ -e "$l" ] && BACKUP_FILES="$BACKUP_FILES $l" || true
   done
 }
 
