@@ -29,7 +29,7 @@ end
 function set_location(lat, lon)
    local uci = require "uci"                         
    local uci = uci.cursor() 
-   uci:tset('libremap', 'location', {latitude=lat, longitude=lon})
+   uci:set('libremap', 'location', {latitude=lat, longitude=lon})
    uci:save('libremap')
    uci:commit('libremap')
 end
