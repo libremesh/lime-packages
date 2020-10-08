@@ -4,4 +4,6 @@ LIME_DEPENDS:=+bmx6 +bmx6-json +bmx6-sms +bmx6-table +bmx6-uci-config \
 	+iptables +lime-system +lua +libuci-lua \
 	+kmod-ebtables-ipv6 +ebtables
 
+include ../../libremesh.mk
+
 # call BuildPackage - OpenWrt buildroot signature
