@@ -58,9 +58,9 @@ generate_status() {
     paste_cmd iwinfo
     paste_cmd wifi status
     paste_cmd swconfig dev switch0 show
-    paste_cmd iptables -vL -t filter
-    paste_cmd iptables -vL -t nat
-    paste_cmd iptables -vL -t mangle
+    paste_cmd iptables -vnL -t filter
+    paste_cmd iptables -vnL -t nat
+    paste_cmd iptables -vnL -t mangle
     paste_cmd ebtables -t filter -L
     paste_cmd ebtables -t nat -L
     paste_cmd ebtables -t broute -L
