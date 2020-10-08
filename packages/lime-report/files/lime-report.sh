@@ -61,9 +61,9 @@ generate_status() {
     paste_cmd iptables -vnL -t filter
     paste_cmd iptables -vnL -t nat
     paste_cmd iptables -vnL -t mangle
-    paste_cmd ebtables -t filter -L
-    paste_cmd ebtables -t nat -L
-    paste_cmd ebtables -t broute -L
+    paste_cmd ebtables -t filter -L --Lc
+    paste_cmd ebtables -t nat -L --Lc
+    paste_cmd ebtables -t broute -L --Lc
 }
 
 generate_all() {
