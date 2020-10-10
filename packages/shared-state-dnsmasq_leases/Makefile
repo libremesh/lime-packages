@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LiMe
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
-	DEPENDS:=@(!PACKAGE_dnsmasq-lease-share) +libuci-lua +lua \
+	DEPENDS:=+libuci-lua +lua \
 		+luci-lib-jsonc shared-state +shared-state-dnsmasq_hosts \
 		+luci-lib-nixio
 	PKGARCH:=all
