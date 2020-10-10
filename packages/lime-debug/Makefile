@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LiMe
 	MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
 	URL:=http://libremesh.org
-	DEPENDS:=+PACKAGE_lime-proto-batadv:batctl +bandwidth-test \
+	DEPENDS:=+bandwidth-test \
 		+busybox +ethtool +iwinfo +iw +mtr +ip +iputils-ping6 +iputils-ping \
 		+sprunge +safe-reboot +netperf +pv +tcpdump-mini +bwm-ng \
 		+lime-report
