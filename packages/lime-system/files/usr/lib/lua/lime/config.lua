@@ -41,23 +41,14 @@ function config.get_config_path()
 end
 
 function config.reset_node_config()
-	local path = config.uci:get_confdir() .. '/' .. config.UCI_NODE_NAME
-	local f = io.open(path, "w")
-	f:write('')
-	f:close()
-	config.sanitize(config.UCI_NODE_NAME)
+	config.initialize_config_file(config.UCI_NODE_NAME)
 end
 
---! Minimal /etc/config/lime santitizing
-function config.sanitize(config_name)
-	local config_name = config_name or config.UCI_AUTOGEN_NAME
+function config.initialize_config_file(config_name)
 	local lime_path = config.uci:get_confdir() .. '/' .. config_name
-	local cf = io.open(lime_path, "r")
-	if (cf == nil) then
-		cf = io.open(lime_path, "w")
-		cf:write("")
-	end
-	cf:close()
+	local f = io.open(lime_path, "w")
+	f:write('')
+	f:close()
 
 	local uci = config.get_uci_cursor()
 	for _,sectName in pairs({"system","network","wifi"}) do
@@ -198,8 +189,17 @@ function config.uci_commit_all()
 end
 
 function config.main()
-	config.sanitize()
-	config.sanitize(config.UCI_NODE_NAME)
+	config.initialize_config_file(config.UCI_AUTOGEN_NAME)
+	--! Populate the default template configs
+	for _, cfg_name in pairs({config.UCI_COMMUNITY_NAME, config.UCI_NODE_NAME}) do
+        local lime_path = config.uci:get_confdir() .. "/" .. cfg_name
+		local cf = io.open(lime_path)
+		if not cf then
+			os.execute(string.format('cp /usr/share/lime/configs/%s %s', cfg_name, lime_path))
+		else
+			cf:close()
+		end
+	end
 	config.uci_autogen()
 
 	local modules_name = { "hardware_detection", "wireless", "network", "firewall", "system",
