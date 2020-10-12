@@ -14,13 +14,12 @@ feeds_file="/etc/opkg/limefeeds.conf"
 
 [ "$LIME_CODENAME" == "development" ] && {
 	base_url="http://feed.libremesh.org/master";
-	key_name="a71b3c8285abd28b"
-	key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
 } || {
 	base_url="http://feed.libremesh.org/$LIME_RELEASE"
-	key_name="a71b3c8285abd28b"
-	key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
 }
+
+key_name="a71b3c8285abd28b"
+key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
 
 echo "Configuring official LibreMesh opkg feeds"
 echo "src/gz libremesh $base_url/libremesh" > "$feeds_file"
