@@ -1,7 +1,9 @@
 #!/bin/sh
 
-. /etc/os-release
-[ -f /etc/lime_release ] && . /etc/lime_release
+[ -f /etc/lime_release ] && . /etc/lime_release || {
+	echo "LibreMesh version not found in /etc/lime_release - skipping"
+	exit 0
+}
 
 feeds_file="/etc/opkg/limefeeds.conf"
 
@@ -10,28 +12,16 @@ feeds_file="/etc/opkg/limefeeds.conf"
   exit 0
 }
 
-ARCH="$OPENWRT_ARCH"
-[ -z "$ARCH" ] && { # compatibility with openwrt versions prior to 19.07
-    ARCH="$LEDE_ARCH"
-}
-
-
-[ -z "$ARCH" ] && {
-  echo "Release information not available, skipping opkg configuration"
-  exit 0
-}
-
 [ "$LIME_CODENAME" == "development" ] && {
-	base_url="http://snapshots.libremesh.org/packages/$ARCH";
-	key_name="7546f62c3d9f56b1"
-	key_content="RWR1RvYsPZ9WsTsmoVajHX9dyl2wL7grjcfFua1q8A99RWr2gF94lRdJ"
+	base_url="http://feed.libremesh.org/master";
 } || {
-	base_url="http://repo.libremesh.org/releases/$LIME_RELEASE/packages/$ARCH"
-	key_name="a71b3c8285abd28b"
-	key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
+	base_url="http://feed.libremesh.org/$LIME_RELEASE"
 }
+
+key_name="a71b3c8285abd28b"
+key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
 
 echo "Configuring official LibreMesh opkg feeds"
-echo "src/gz libremesh $base_url/libremesh" > /etc/opkg/limefeeds.conf
+echo "src/gz libremesh $base_url/libremesh" > "$feeds_file"
 echo "untrusted comment: signed by libremesh.org key $key_name" > "/etc/opkg/keys/$key_name"
 echo "$key_content" >> "/etc/opkg/keys/$key_name"
