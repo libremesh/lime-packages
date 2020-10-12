@@ -1,23 +1,14 @@
 #!/bin/sh
 
-. /etc/os-release
-[ -f /etc/lime_release ] && . /etc/lime_release
+[ -f /etc/lime_release ] && . /etc/lime_release || {
+	echo "LibreMesh version not found in /etc/lime_release - skipping"
+	exit 0
+}
 
 feeds_file="/etc/opkg/limefeeds.conf"
 
 [ -f "$feeds_file" ] && {
   echo "LibreMesh opkg feeds already defined - skipping"
-  exit 0
-}
-
-ARCH="$OPENWRT_ARCH"
-[ -z "$ARCH" ] && { # compatibility with openwrt versions prior to 19.07
-    ARCH="$LEDE_ARCH"
-}
-
-
-[ -z "$ARCH" ] && {
-  echo "Release information not available, skipping opkg configuration"
   exit 0
 }
 
@@ -32,6 +23,6 @@ ARCH="$OPENWRT_ARCH"
 }
 
 echo "Configuring official LibreMesh opkg feeds"
-echo "src/gz libremesh $base_url/libremesh" > /etc/opkg/limefeeds.conf
+echo "src/gz libremesh $base_url/libremesh" > "$feeds_file"
 echo "untrusted comment: signed by libremesh.org key $key_name" > "/etc/opkg/keys/$key_name"
 echo "$key_content" >> "/etc/opkg/keys/$key_name"
