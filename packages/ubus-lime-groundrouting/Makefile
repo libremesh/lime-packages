@@ -13,7 +13,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
   SUBMENU:=3. Applications
   TITLE:=Libremap ubus ground routing module
-  DEPENDS:= +lua +libubox-lua +libubus-lua +libuci
+  DEPENDS:= +lua +libubox-lua +libubus-lua +libuci +lime-system
   PKGARCH:=all
 endef
 
