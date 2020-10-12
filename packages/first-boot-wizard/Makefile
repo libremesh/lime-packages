@@ -13,6 +13,7 @@ define Package/$(PKG_NAME)
     MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
     URL:=http://libremesh.org
     PKGARCH:=all
+    DEPENDS:=+lime-system
 endef
 
 define Package/$(PKG_NAME)/description
