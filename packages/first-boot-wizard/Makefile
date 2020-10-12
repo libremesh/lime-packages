@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
     TITLE:=$(PKG_NAME)
-    CATEGORY:=LiMe
+    CATEGORY:=LibreMesh
     MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
     URL:=http://libremesh.org
     PKGARCH:=all

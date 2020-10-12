@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
   TITLE:=LiMe BGP proto support
-  CATEGORY:=LiMe
+  CATEGORY:=LibreMesh
   MAINTAINER:=Gioacchino Mazzurco <gio@diveni.re>
   URL:=http://libremesh.org
   DEPENDS:=+bird4 +bird6 +lime-system +lua

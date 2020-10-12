@@ -14,7 +14,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
 	TITLE:=LibreMesh status report utility
-	CATEGORY:=LiMe
+	CATEGORY:=LibreMesh
 	MAINTAINER:=Ilario Gelmetti <iochesonome@gmail.com>
 	URL:=https://libremesh.org
 	PKGARCH:=all

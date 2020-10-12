@@ -16,7 +16,7 @@ PKG_SOURCE_URL:=https://github.com/libremesh/lime-app/releases/download/$(PKG_VE
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-	CATEGORY:=LiMe
+	CATEGORY:=LibreMesh
 	TITLE:=LimeApp
 	MAINTAINER:=Marcos Gutierrez <gmarcos@altermundi.net>
 	URL:=http://github.com/libremesh/lime-app

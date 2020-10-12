@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
 	TITLE:=Persists shared-state in usb devices
-	CATEGORY:=LiMe
+	CATEGORY:=LibreMesh
 	MAINTAINER:=Marcos Gutierrez <gmacos@altermundi.net>
 	URL:=http://libremesh.org
 	DEPENDS:=+block-mount +kmod-usb-storage +kmod-fs-vfat\
