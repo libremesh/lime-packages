@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
 	TITLE:=LiMe OLSR proto support (IPv4)
-	CATEGORY:=LiMe
+	CATEGORY:=LibreMesh
 	MAINTAINER:=leonaard <leone@inventati.org>
 	URL:=http://libremesh.org
 	DEPENDS:=+lua +libuci-lua +lime-system +olsrd +olsrd-mod-jsoninfo +kmod-ipip

@@ -15,7 +15,7 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  CATEGORY:=LiMe
+  CATEGORY:=LibreMesh
   TITLE:=Internet download bandwidth measurement
   MAINTAINER:=Ilario Gelmetti <iochesonome@gmail.com>
   URL:=https://libremesh.org

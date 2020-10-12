@@ -12,7 +12,7 @@ PKG_VERSION=0.1
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  CATEGORY:=LiMe
+  CATEGORY:=LibreMesh
   Section:=net
   TITLE:= bmx7 auto Internet gateway bandwidth module
   MAINTAINER:=Pau Escrich <p4u@dabax.et>

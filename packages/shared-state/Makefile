@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
 	TITLE:=Very minimal state sharing betwen nodes
-	CATEGORY:=LiMe
+	CATEGORY:=LibreMesh
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
 	DEPENDS:=+libuci-lua +lua +luci-lib-jsonc +luci-lib-nixio +uclient-fetch +lime-system

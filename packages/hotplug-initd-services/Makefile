@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
 	TITLE:=Hotplug events of init.d services
-	CATEGORY:=LiMe
+	CATEGORY:=LibreMesh
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
 	DEPENDS:=+@BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT +libubox-lua +libubus-lua \

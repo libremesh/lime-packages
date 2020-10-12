@@ -15,7 +15,7 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  CATEGORY:=LiMe
+  CATEGORY:=LibreMesh
   Section:=net
   TITLE:= Watchping hooks to manage AP SSID if network problems
   MAINTAINER:=Pau Escrich <p4u@dabax.et>
