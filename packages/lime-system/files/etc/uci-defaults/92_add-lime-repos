@@ -22,6 +22,6 @@ key_name="a71b3c8285abd28b"
 key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
 
 echo "Configuring official LibreMesh opkg feeds"
-echo "src/gz libremesh $base_url/libremesh" > "$feeds_file"
+echo "src/gz libremesh $base_url" > "$feeds_file"
 echo "untrusted comment: signed by libremesh.org key $key_name" > "/etc/opkg/keys/$key_name"
 echo "$key_content" >> "/etc/opkg/keys/$key_name"
