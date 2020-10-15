@@ -13,15 +13,18 @@ feeds_file="/etc/opkg/limefeeds.conf"
 }
 
 [ "$LIME_CODENAME" == "development" ] && {
-	base_url="http://feed.libremesh.org/master";
+	packages_url="http://feed.libremesh.org/master";
 } || {
-	base_url="http://feed.libremesh.org/$LIME_RELEASE"
+	packages_url="http://feed.libremesh.org/$LIME_RELEASE"
 }
+
+profiles_url="http://feed.libremesh.org/profiles"
 
 key_name="a71b3c8285abd28b"
 key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
 
 echo "Configuring official LibreMesh opkg feeds"
-echo "src/gz libremesh $base_url" > "$feeds_file"
+echo "src/gz libremesh $packages_url" > "$feeds_file"
+echo "src/gz profiles $profiles_url" >> "$feeds_file"
 echo "untrusted comment: signed by libremesh.org key $key_name" > "/etc/opkg/keys/$key_name"
 echo "$key_content" >> "/etc/opkg/keys/$key_name"
