@@ -45,16 +45,8 @@ function config.reset_node_config()
 end
 
 function config.initialize_config_file(config_name)
-	local lime_path = config.uci:get_confdir() .. '/' .. config_name
-	local f = io.open(lime_path, "w")
-	f:write('')
-	f:close()
-
-	local uci = config.get_uci_cursor()
-	for _,sectName in pairs({"system","network","wifi"}) do
-		uci:set(config_name, sectName, "lime")
-	end
-	uci:commit(config_name)
+    local lime_path = config.uci:get_confdir() .. "/" .. config_name
+    os.execute(string.format('cp /usr/share/lime/configs/%s %s', config_name, lime_path))
 end
 
 function config.get(sectionname, option, fallback)
@@ -189,13 +181,13 @@ function config.uci_commit_all()
 end
 
 function config.main()
-	config.initialize_config_file(config.UCI_AUTOGEN_NAME)
-	--! Populate the default template configs
+	--! Populate the default template configs if lime-node and lime-community
+	--! are not found in /etc/config
 	for _, cfg_name in pairs({config.UCI_COMMUNITY_NAME, config.UCI_NODE_NAME}) do
         local lime_path = config.uci:get_confdir() .. "/" .. cfg_name
 		local cf = io.open(lime_path)
 		if not cf then
-			os.execute(string.format('cp /usr/share/lime/configs/%s %s', cfg_name, lime_path))
+			config.initialize_config_file(cfg_name)
 		else
 			cf:close()
 		end
