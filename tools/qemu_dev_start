@@ -166,7 +166,6 @@ OWN_LAN_IP="10.13.0.2/16"
 
 
 if [ ! -e "/sys/class/net/$BRIDGE_IFC" ]; then
-    echo 1
     ip link add name "$BRIDGE_IFC" type bridge
     ip link set "$BRIDGE_IFC" up
     ip addr add "$OWN_LAN_IP" dev "$BRIDGE_IFC"
@@ -215,7 +214,7 @@ fi
 
 # build the cdpio. Don't know how to do it without changing the directory
 cd /tmp/lime_rootfs
-find . -depth | cpio --quiet -o -H newc  > /tmp/lime_rootfs.cpio
+find . | cpio --quiet -o -H newc  > /tmp/lime_rootfs.cpio
 cd - > /dev/null
 
 MONITOR_PORT="4545${NODE_ID}"
