@@ -166,22 +166,26 @@ OWN_LAN_IP="10.13.0.2/16"
 
 
 if [ ! -e "/sys/class/net/$BRIDGE_IFC" ]; then
+    echo 1
     ip link add name "$BRIDGE_IFC" type bridge
     ip link set "$BRIDGE_IFC" up
     ip addr add "$OWN_LAN_IP" dev "$BRIDGE_IFC"
 fi
 
-# No IP for the tap LAN ifc
-ip tuntap add name "$LAN_IFC" mode tap
-ip link set "$LAN_IFC" up
-ip link set "$LAN_IFC" master "$BRIDGE_IFC"
-
+if [ ! -e "/sys/class/net/$LAN_IFC" ]; then
+    # No IP for the tap LAN ifc
+    ip tuntap add name "$LAN_IFC" mode tap
+    ip link set "$LAN_IFC" up
+    ip link set "$LAN_IFC" master "$BRIDGE_IFC"
+fi
 
 if [ -n "$_arg_enable_wan" ]; then
     # WAN ifc
-    ip tuntap add name "$WAN_IFC" mode tap
-    ip addr add 172.99.0.1/24 dev "$WAN_IFC"
-    ip link set "$WAN_IFC" up
+    if [ ! -e "/sys/class/net/$WAN_IFC" ]; then
+        ip tuntap add name "$WAN_IFC" mode tap
+        ip addr add 172.99.0.1/24 dev "$WAN_IFC"
+        ip link set "$WAN_IFC" up
+    fi
 
     # DHCP server for WAN ifc
     dnsmasq -F 172.99.0.100,172.99.0.100 --dhcp-option=3,172.99.0.1 -i "$WAN_IFC" --dhcp-authoritative --log-dhcp
