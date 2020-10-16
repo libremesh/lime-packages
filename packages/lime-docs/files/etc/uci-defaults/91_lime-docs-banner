@@ -1,0 +1,8 @@
+#!/bin/sh
+
+cat <<EOF >> /etc/banner
+ Find offline documentation in /docs or http://thisnode.info/docs/
+ ------------------------------------------------------
+EOF
+
+exit 0
