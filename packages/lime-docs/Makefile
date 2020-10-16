@@ -78,8 +78,8 @@ define Package/$(PKG_NAME)-it/install
 endef
 
 define Package/$(PKG_NAME)-minimal/install
-	$(INSTALL_DIR) $(1)/www/docs/
-	$(INSTALL_DATA) ./files/lime-example $(1)/www/docs/
+	$(INSTALL_DIR) $(1)/
+	$(CP) ./files/* $(1)/
 	@ln -s /www/docs $(1)/docs
 endef
 
