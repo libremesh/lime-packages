@@ -35,11 +35,6 @@ define Package/$(PKG_NAME)/description
 	Basic system files for LiMe node
 endef
 
-define Package/$(PKG_NAME)/conffiles
-	/etc/config/lime-node
-	/etc/config/lime-community
-endef
-
 define Build/Compile
 endef
 
