@@ -55,7 +55,7 @@ function utils.literalize(str)
 end
 
 function utils.isModuleAvailable(name)
-	if package.loaded[name] then 
+	if package.loaded[name] then
 		return true
 	else
 		for _, searcher in ipairs(package.searchers or package.loaders) do

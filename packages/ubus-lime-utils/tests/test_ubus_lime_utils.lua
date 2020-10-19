@@ -66,12 +66,6 @@ describe('ubus-lime-utils tests #ubuslimeutils', function()
         assert.is_false(response.is_upgrade_confirm_supported)
         assert.are.same(-1, response.safe_upgrade_confirm_remaining_s)
 
-        utils.write_file("/tmp/upgrade_info_cache", '{"safe_upgrade_confirm_remaining_s": 123}')
-        stub(utils, "unsafe_shell", function () return '101' end)
-        local response  = rpcd_call(ubus_lime_utils, {'call', 'get_upgrade_info'}, '')
-        assert.is.equal("ok", response.status)
-        assert.are.same(101, response.safe_upgrade_confirm_remaining_s)
-
         os.execute:revert()
         os.execute("rm -f /tmp/upgrade_info_cache")
     end)
