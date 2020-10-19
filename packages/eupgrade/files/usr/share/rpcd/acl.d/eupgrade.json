@@ -1,0 +1,16 @@
+{
+	"root": {
+		"description": "root access only",
+		"read": {
+			"ubus": {
+					"eupgrade": [ "*" ]
+			}
+		},
+		"write": {
+			"cgi-io": [ "upload" ],
+			"ubus": {
+					"eupgrade": [ "*" ],
+			}
+		}
+	}
+}

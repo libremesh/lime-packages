@@ -1,0 +1,18 @@
+#!/usr/bin/env lua
+
+local eupgrade = require 'eupgrade'
+
+
+if eupgrade.is_enabled() then
+    local latest_data = eupgrade.is_new_version_available()
+    if latest_data then
+        print("New version avaliable: " .. latest_data['version'] )
+    else
+        print("No upgrade available")
+        os.exit(2)
+    end
+else
+    print("eupgrades not enabled")
+end
+
+

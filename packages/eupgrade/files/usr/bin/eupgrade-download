@@ -1,0 +1,26 @@
+#!/usr/bin/env lua
+
+local eupgrade = require 'eupgrade'
+
+
+if eupgrade.is_enabled() then
+    local latest_data = eupgrade.is_new_version_available()
+    if latest_data then
+        local image = eupgrade.download_firmware(latest_data)
+        if image then
+            print(string.format("%s,%s", image['name'], image['type']))
+            os.exit(0)
+        else
+            print("Error downloading firmware")
+            os.exit(2)
+        end
+    else
+        print("No upgrade available")
+        os.exit(1)
+    end
+else
+    print("eupgrades not enabled")
+end
+
+
+
