@@ -432,6 +432,30 @@ function utils.mac2ipv6linklocal(text)
     return ret
 end
 
+--! do a HTTP GET returning the body or nil. If out_file is provided then the body is saved
+--! to this file and true is returned instead
+function utils.http_client_get(url, timeout_s, out_file)
+    local remove_file = false
+    if not out_file then
+        remove_file = true
+        out_file = os.tmpname()
+    end
+    local cmd = string.format("uclient-fetch -q -O %s --timeout=%d %s 2> /dev/null", out_file,
+                              timeout_s, url)
+    local exit_value = os.execute(cmd)
+    if exit_value == 0 then
+        if remove_file then
+            local data = utils.read_file(out_file)
+            os.execute("rm -f " .. out_file)
+            return data
+        else
+            return true
+        end
+    else
+        return nil
+    end
+end
+
 function utils.release_info()
     local result = {}
     local release_data = utils.read_file("/etc/openwrt_release")
