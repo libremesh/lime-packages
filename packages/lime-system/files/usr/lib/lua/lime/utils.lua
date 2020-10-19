@@ -432,4 +432,13 @@ function utils.mac2ipv6linklocal(text)
     return ret
 end
 
+function utils.release_info()
+    local result = {}
+    local release_data = utils.read_file("/etc/openwrt_release")
+    for key, value in release_data:gmatch("(.-)='(%C-)'\n") do
+        result[key] = value
+    end
+    return result
+end
+
 return utils
