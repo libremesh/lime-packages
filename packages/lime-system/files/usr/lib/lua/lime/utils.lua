@@ -175,6 +175,12 @@ function utils.expandVars(s, ...)
 	return s
 end
 
+--! return a string that can be a part of an url
+function utils.slugify(s)
+	s = s:gsub('[^-a-zA-Z0-9]', '-')
+	return s
+end
+
 function utils.sanitize_hostname(hostname)
 	hostname = hostname:gsub(' ', '-')
 	hostname = hostname:gsub('[^-a-zA-Z0-9]', '')
