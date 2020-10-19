@@ -257,6 +257,32 @@ DISTRIB_TAINTS='no-all busybox'
         utils.read_file:revert()
      end)
 
+    it('test open_with_lock', function()
+        local fd1 = utils.open_with_lock("/tmp/foo_bar_baz")
+        assert.is.not_nil(fd1)
+        local max_wait_s = 0
+        local fd2 = utils.open_with_lock("/tmp/foo_bar_baz", max_wait_s)
+        --same process share locks
+        assert.is.not_nil(fd2)
+     end)
+
+    it('test obj store', function()
+        local test_dir = test_utils.setup_test_dir()
+        local testfile = test_dir .. 'mydata'
+        assert.is.same({}, utils.read_obj_store(testfile))
+
+        assert.is.same({foo = 'bar'}, utils.write_obj_store_var(testfile, 'foo', 'bar'))
+        assert.is.same({foo = 'bar', f = {1, 11.5}}, utils.write_obj_store_var(testfile, 'f', {1, 11.5}))
+
+        assert.is.same({foo = 'bar', f = {1, 11.5}}, utils.read_obj_store(testfile))
+
+        assert.is.same({foo = 'baz', f = {1, 11.5}}, utils.write_obj_store_var(testfile, 'foo', 'baz'))
+
+        assert.is.not_nil(utils.write_obj_store(testfile, {foo = 'o'}))
+
+        assert.is.same({foo = 'o'}, utils.read_obj_store(testfile))
+
+     end)
 
     before_each('', function()
         uci = test_utils.setup_test_uci()
