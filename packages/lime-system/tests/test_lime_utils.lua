@@ -236,6 +236,28 @@ dnsmasq:*:18362:0:99999:7:::
                          utils.mac2ipv6linklocal('FOOa8:40:41:1c:84:d1BARa8:40:41:1c:84:d1'))
      end)
 
+    it('test release_info', function()
+        local info = [[DISTRIB_ID='LiMe'
+DISTRIB_RELEASE='master'
+DISTRIB_REVISION='ec81de9'
+DISTRIB_TARGET='ar71xx/generic'
+DISTRIB_ARCH='mips_24kc'
+DISTRIB_DESCRIPTION='LiMe master development (master rev. ec81de9 20190613_1242)'
+DISTRIB_TAINTS='no-all busybox'
+]]
+        stub(utils, "read_file", function (cmd) return info end)
+        local data = utils.release_info()
+        assert.is.equal('LiMe', data['DISTRIB_ID'])
+        assert.is.equal('master', data['DISTRIB_RELEASE'])
+        assert.is.equal('ec81de9', data['DISTRIB_REVISION'])
+        assert.is.equal('ar71xx/generic', data['DISTRIB_TARGET'])
+        assert.is.equal('mips_24kc', data['DISTRIB_ARCH'])
+        assert.is.equal('LiMe master development (master rev. ec81de9 20190613_1242)', data['DISTRIB_DESCRIPTION'])
+        assert.is.equal('no-all busybox', data['DISTRIB_TAINTS'])
+        utils.read_file:revert()
+     end)
+
+
     before_each('', function()
         uci = test_utils.setup_test_uci()
     end)
