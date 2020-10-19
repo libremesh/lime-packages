@@ -1,6 +1,7 @@
 local utils = require "lime.utils"
 local test_utils = require "tests.utils"
 local config = require 'lime.config'
+local upgrade = require 'lime.upgrade'
 
 local test_file_name = "packages/ubus-lime-utils/files/usr/libexec/rpcd/lime-utils-admin"
 local ubus_lime_utils = test_utils.load_lua_file_as_function(test_file_name)
@@ -71,28 +72,14 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
         assert.is_true(response.supported)
     end)
 
-    it('test firmware_verify inexistent file', function()
-        local response  = rpcd_call(ubus_lime_utils, {'call', 'firmware_verify'},
-                                    '{"fw_path": "/foo"}')
-        assert.is.equal("error", response.status)
-        assert.is.equal("Firmware file not found", response.message)
-    end)
-
-    it('test firmware_verify with confirm method', function()
-        stub(os, "execute", function() return 0 end)
-        stub(utils, "file_exists", function() return true end)
-        local response  = rpcd_call(ubus_lime_utils, {'call', 'firmware_verify'},
-                                    '{"fw_path": "/foo"}')
-        assert.is.equal("ok", response.status)
-    end)
-
     it('test firmware_upgrade without new metadata', function()
 
         stub(os, "execute", function() return 0 end)
         stub(utils, "file_exists", function() return true end)
         stub(utils, "read_file", function() return openwrt_release end)
+        upgrade.set_upgrade_status(upgrade.UPGRADE_STATUS_DEFAULT)
         local response  = rpcd_call(ubus_lime_utils, {'call', 'firmware_upgrade'},
-                                    '{"fw_path": "/foo"}')
+                                    '{"fw_path": "/foo.bin"}')
         assert.is.equal("ok", response.status)
         assert.is.equal("LiMe 96dcfa439d27570...", response.metadata.old_release_description)
         assert.is_false(response.metadata.config_preserved)
@@ -103,8 +90,9 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
         stub(os, "time", function() return 1500 end)
         stub(utils, "file_exists", function() return true end)
         stub(utils, "read_file", function() return openwrt_release end)
+        upgrade.set_upgrade_status(upgrade.UPGRADE_STATUS_DEFAULT)
         local response  = rpcd_call(ubus_lime_utils, {'call', 'firmware_upgrade'},
-                                   '{"fw_path": "/foo", "preserve_config": true, "metadata": {"foo": 1}}')
+                                   '{"fw_path": "/foo.bin", "preserve_config": true, "metadata": {"foo": 1}}')
         assert.is.equal("ok", response.status)
         assert.is.equal("LiMe 96dcfa439d27570...", response.metadata.old_release_description)
         assert.is_true(response.metadata.config_preserved)
@@ -114,7 +102,7 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
 
     it('test last_upgrade_metadata', function()
         stub(utils, "file_exists", function() return true end)
-        stub(utils, "read_file", function() return '{"foo": "bar"}' end)
+        stub(utils, "read_obj_store", function() return {foo = "bar"} end)
         local response  = rpcd_call(ubus_lime_utils, {'call', 'last_upgrade_metadata'}, '')
         assert.is.equal("ok", response.status)
         assert.is.equal("bar", response.metadata.foo)
