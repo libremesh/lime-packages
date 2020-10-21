@@ -80,7 +80,7 @@ function eup.is_new_version_available(cached_only)
             local sig_url = url .. ".sig"
             if not utils.http_client_get(sig_url, 10, eup.FIRMWARE_LATEST_JSON_SIGNATURE) then
                 message = "Can't download signature " .. sig_url
-                utils.log(messge)
+                utils.log(message)
             end
 
             if eup._check_signature(eup.FIRMWARE_LATEST_JSON, eup.FIRMWARE_LATEST_JSON_SIGNATURE) then
