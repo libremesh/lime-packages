@@ -124,7 +124,7 @@ function babeld.setup_interface(ifname, args)
 	--! It is quite common to have dummy radio device attached via ethernet so
 	--! disable wired optimization always as it would consider the link down at
 	--! first packet lost
-	uci:set("babeld", owrtInterfaceName, "wired", "false")
+	uci:set("babeld", owrtInterfaceName, "type", "wireless")
 
 	uci:save("babeld")
 end
