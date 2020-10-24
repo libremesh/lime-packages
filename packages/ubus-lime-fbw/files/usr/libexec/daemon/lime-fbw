@@ -44,7 +44,7 @@ local methods = {
                 elseif scan_file == "false" then scan_status = 2
                 end
                 local status = {
-                    lock = not fbw.is_configured(),
+                    lock = not fbw.is_configured() and not fbw.is_dismissed(),
                     scan = scan_status
                 }
                 conn:reply(req, status)
@@ -68,6 +68,12 @@ local methods = {
                     conn:reply(req, { status = 'error', msg = "Network and hostname are required" })
                 end
             end, { network = ubus.STRING, hostname = ubus.STRING, password = ubus.STRING }
+        },
+        dismiss = {
+            function (req, msg)
+                conn:reply(req, {status = 'done'})
+                fbw.dismiss()
+            end, {}
         }
     }
 }
