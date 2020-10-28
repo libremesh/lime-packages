@@ -49,13 +49,10 @@ describe('FirstBootWizard tests #fbw', function()
     end)
 
     it('test is_dismissed() / dismiss()', function()
-        stub(utils, "unsafe_shell", function () return nil end)
         assert.is.equal(false, fbw.is_dismissed())
         uci:set(config.UCI_NODE_NAME, 'system', 'lime')
         fbw.dismiss()
         assert.is.equal(true, fbw.is_dismissed())
-        assert.stub(utils.unsafe_shell).was.called_with('/usr/bin/lime-config')
-        config.uci_autogen()
         assert.is.equal(true, config.get_bool('system', 'firstbootwizard_dismissed', false))
     end)
 
