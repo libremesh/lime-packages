@@ -25,7 +25,6 @@ local fbw = {}
 
 
 fbw.WORKDIR = '/tmp/fbw/'
-fbw.IS_DISMISSED_FILE = fbw.WORKDIR .. 'is_dismissed'
 fbw.HOST_CONFIG_PREFIX = 'lime-community__host__'
 
 utils.execute('mkdir -p ' .. fbw.WORKDIR)
@@ -236,17 +235,14 @@ function fbw.mark_as_configured()
 end
 
 function fbw.is_dismissed()
-    local by_config = config.get_bool('system', 'firstbootwizard_dismissed', false)
-    local by_tmp_file = lutils.file_exists(fbw.IS_DISMISSED_FILE)
-    return by_config or by_tmp_file
+    return config.get_bool('system', 'firstbootwizard_dismissed', false)
 end
 
 function fbw.dismiss()
     local uci_cursor = config.get_uci_cursor()
-    lutils.write_file(fbw.IS_DISMISSED_FILE, "true")
     uci_cursor:set(config.UCI_NODE_NAME, 'system', 'firstbootwizard_dismissed', 'true')
     uci_cursor:commit(config.UCI_NODE_NAME)
-    lutils.unsafe_shell("/usr/bin/lime-config")
+    config.uci_autogen()
 end
 
 -- Get config from lime-default file
