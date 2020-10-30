@@ -18,6 +18,11 @@
             "ubus": {
                 "lime-fbw": ["status"]
             }
+        },
+        "write": {
+            "ubus": {
+                "lime-fbw": ["dismiss"]
+            }
         }
     }
 }
