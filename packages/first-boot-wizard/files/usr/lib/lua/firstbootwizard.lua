@@ -234,6 +234,17 @@ function fbw.mark_as_configured()
     uci_cursor:set(config.UCI_NODE_NAME, 'system', 'firstbootwizard_configured', 'true')
 end
 
+function fbw.is_dismissed()
+    return config.get_bool('system', 'firstbootwizard_dismissed', false)
+end
+
+function fbw.dismiss()
+    local uci_cursor = config.get_uci_cursor()
+    uci_cursor:set(config.UCI_NODE_NAME, 'system', 'firstbootwizard_dismissed', 'true')
+    uci_cursor:commit(config.UCI_NODE_NAME)
+    config.uci_autogen()
+end
+
 -- Get config from lime-default file
 local function getConfig(path)
     local uci_cursor = uci.cursor(fbw.WORKDIR)
