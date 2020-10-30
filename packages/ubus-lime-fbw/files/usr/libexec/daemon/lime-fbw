@@ -21,8 +21,8 @@ local methods = {
                 local scan_file = fbw.check_scan_file()
                 local status
                 if(scan_file == nil) or (msg.scan == true) then
-                    os.execute("rm /tmp/scanning")
-                    os.execute("(( /usr/bin/lua /bin/firstbootwizard 0<&- &>/dev/null &) &)")
+                    os.execute("rm -f /tmp/scanning")
+                    os.execute("/etc/init.d/firstbootwizard start")
                 end
                 if (scan_file == nil) or (scan_file == "true") or (msg.scan == true) then
                     status = 'scanning'
