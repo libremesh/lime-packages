@@ -161,7 +161,7 @@ function wireless.configure()
 			end
 
 			local uci = config.get_uci_cursor()
-			uci:set("wireless", radioName, "disabled", options["disabled"] or 0)
+			uci:set("wireless", radioName, "disabled", 0)
 			uci:set("wireless", radioName, "distance", distance)
 			uci:set("wireless", radioName, "noscan", 1)
 			uci:set("wireless", radioName, "channel", channel)
