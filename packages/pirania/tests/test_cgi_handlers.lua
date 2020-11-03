@@ -1,6 +1,5 @@
 local test_utils = require 'tests.utils'
 local config = require('voucher.config')
-config.db_path = '/tmp/pirania'
 local vouchera = require('voucher.vouchera')
 local handlers = require('voucher.cgi_handlers')
 local utils = require('voucher.utils')
@@ -20,6 +19,10 @@ function build_env(ip_address, querystring)
     end
     return get_env
 end
+
+config.db_path = '/tmp/pirania'
+config.prune_expired_for_days = 30
+
 
 describe('Vouchera tests #piraniahandlers', function()
     it('Test preactivation of a valid voucher', function()
