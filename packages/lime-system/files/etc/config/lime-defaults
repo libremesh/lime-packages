@@ -68,3 +68,6 @@ config lime wifi
 	option ieee80211s_mcast_rate_5ghz '6000'
 	option ieee80211s_mesh_fwding '0'
 	option ieee80211s_mesh_id 'LiMe'
+
+config generic_uci_config uhttpd_https
+	list uci_set 'uhttpd.main.redirect_https=0'
