@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo " Find offline documentation in /docs or http://thisnode.info/docs/"
+echo " ------------------------------------------------------"
+
