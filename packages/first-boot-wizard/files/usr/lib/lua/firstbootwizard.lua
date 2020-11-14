@@ -157,18 +157,17 @@ end
 function fbw.fetch_config(data)
     fbw.log('Fetch config from '.. json.stringify(data))
     local host = data.host
-
-    local hostname = utils.execute("wget http://["..data.host.."]/cgi-bin/hostname -qO - "):gsub("\n", "")
+    local hostname = utils.execute("wget --no-check-certificate http://["..data.host.."]/cgi-bin/hostname -qO - "):gsub("\n", "")
     fbw.log('Hostname found: '.. hostname)
     if (hostname == '') then hostname = host end
     local signal = data.signal
     local ssid = data.ssid
     local filename = fbw.WORKDIR .. fbw.HOST_CONFIG_PREFIX .. hostname
 
-    utils.execute("wget http://[" .. data.host .. "]/cgi-bin/lime/lime-community -O " .. filename)
+    utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/cgi-bin/lime/lime-community -O " .. filename)
     if not utils.file_exists(filename) then
         -- For backwards compatibility
-        utils.execute("wget http://[" .. data.host .. "]/lime-community -O " .. filename)
+        utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/lime-community -O " .. filename)
     end
 
     -- Remove lime-community files that are not yet configured.
