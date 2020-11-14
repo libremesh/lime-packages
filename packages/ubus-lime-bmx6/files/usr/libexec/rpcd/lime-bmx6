@@ -83,7 +83,7 @@ function wget(url, timeout)
 		local _, bin
 		for _, bin in ipairs(candidates) do
 			if nixio.fs.access(bin, "x") then
-				nixio.exec(bin, "-q", "-O", "-",url)
+				nixio.exec(bin, "--no-check-certificate", "-q", "-O", "-",url)
 			end
 		end
 		return
