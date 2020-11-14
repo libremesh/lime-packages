@@ -163,7 +163,7 @@ local function SharedState(dataType, pLogger)
 		tmpfd:close()
 		tmpfd = nil
 
-		local cmd = "uclient-fetch -q -O- --timeout=3 "
+		local cmd = "uclient-fetch --no-check-certificate -q -O- --timeout=3 "
 		cmd = cmd.."--post-file='"..tmpfname.."' '"..url.."' ; "
 		cmd = cmd.."rm -f '"..tmpfname.."'"
 		local fd = io.popen(cmd)
