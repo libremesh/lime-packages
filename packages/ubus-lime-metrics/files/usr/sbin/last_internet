@@ -14,7 +14,7 @@ if check-internet; then
         default_dev=`ip r | grep "default dev" | cut -d' ' -f3`;
         gw=`bmx6 -c show tunnels | grep $default_dev | grep inet4 | awk '{ print $10 }'`;
         for node in `mtr -6 -r -c 1 $gw.mesh  | grep "\.|" |  awk '{ print $2}' | cut -d'.' -f1`; do
-                nodename=$(wget http://$path/cgi-bin/hostname -qO -)
+                nodename=$(wget --no-check-certificate http://$path/cgi-bin/hostname -qO -)
                 path="$path,{\"ip\":\"$node\",\"hostname\":\"$nodename\"}"
         done
         result="[${path#?}]"
@@ -25,7 +25,7 @@ if check-internet; then
         for ip in `mtr -4 -r --no-dns -c1 8.8.8.8 | grep "\.|" |  awk '{ print $2}' | grep '^10\.'`; do
             name=$(nslookup $ip | grep name | cut -d '=' -f 2 | sed "s/ //" | cut -d '.' -f 1)
             if [[ "$name" = "" ]]; then
-                name=$(wget http://$ip/cgi-bin/hostname -qO -)
+                name=$(wget --no-check-certificate http://$ip/cgi-bin/hostname -qO -)
             fi
             path="$path,{\"ip\":\"$ip\",\"hostname\":\"$name\"}"
         done
