@@ -16,7 +16,7 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 # ARG_OPTIONAL_SINGLE([libremesh-workdir],[],[Optional path to a libremesh working directory to include it as a layer over the rootfs.])
-# ARG_OPTIONAL_SINGLE([node-id],[],[An ID number from 0 to 9. Use this when running multiple qemu nodes, each node must have a different ID.],[0])
+# ARG_OPTIONAL_SINGLE([node-id],[],[An ID number from 0 to 99. Use this when running multiple qemu nodes, each node must have a different ID.],[0])
 # ARG_OPTIONAL_SINGLE([enable-wan],[],[Provide the node with NATed access to the local netork. An ifc must be provided, eg wlan0. Needs dnsmasq installed.)])
 # ARG_OPTIONAL_BOOLEAN([verbose],[],[Turn on verbose mode],[])
 # ARG_POSITIONAL_SINGLE([rootfs],[Path to a x86-64-generic-rootfs.tar.gz],[])
@@ -62,7 +62,7 @@ print_help()
 	printf '\t%s\n' "<rootfs>: Path to a x86-64-generic-rootfs.tar.gz"
 	printf '\t%s\n' "<ramfs>: Path to a x86-64-ramfs.bzImage"
 	printf '\t%s\n' "--libremesh-workdir: Optional path to a libremesh working directory to include it as a layer over the rootfs. (no default)"
-	printf '\t%s\n' "--node-id: An ID number from 0 to 9. Use this when running multiple qemu nodes, each node must have a different ID. (default: '0')"
+	printf '\t%s\n' "--node-id: An ID number from 0 to 99. Use this when running multiple qemu nodes, each node must have a different ID. (default: '0')"
 	printf '\t%s\n' "--enable-wan: Provide the node with NATed access to the local netork. An ifc must be provided, eg wlan0. Needs dnsmasq installed. (no default)"
 	printf '\t%s\n' "--verbose, --no-verbose: Turn on verbose mode (off by default)"
 	printf '\t%s\n' "-h, --help: Prints help"
@@ -158,10 +158,11 @@ fi
 
 BRIDGE_IFC="lime_br0"
 NODE_ID="${_arg_node_id}"
-LAN_MAC="52:00:00:ab:cd:0${NODE_ID}"
-WAN_MAC="52:00:00:ab:cd:a${NODE_ID}"
-LAN_IFC="lime_tap${NODE_ID}0"
-WAN_IFC="lime_tap${NODE_ID}1"
+[ ${#NODE_ID} == 1 ] && NODE_ID=0${NODE_ID} # Pad with leading zero
+LAN_MAC="52:00:00:ab:c0:${NODE_ID}"
+WAN_MAC="52:00:00:ab:c1:${NODE_ID}"
+LAN_IFC="lime_tap${NODE_ID}_0"
+WAN_IFC="lime_tap${NODE_ID}_1"
 OWN_LAN_IP="10.13.0.2/16"
 
 
@@ -217,7 +218,7 @@ cd /tmp/lime_rootfs
 find . | cpio --quiet -o -H newc  > /tmp/lime_rootfs.cpio
 cd - > /dev/null
 
-MONITOR_PORT="4545${NODE_ID}"
+MONITOR_PORT="454${NODE_ID}"
 
 qemu-system-x86_64 \
 -m 128 \
