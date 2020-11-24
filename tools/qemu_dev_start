@@ -161,8 +161,10 @@ NODE_ID="${_arg_node_id}"
 [ ${#NODE_ID} == 1 ] && NODE_ID=0${NODE_ID} # Pad with leading zero
 LAN_MAC="52:00:00:ab:c0:${NODE_ID}"
 WAN_MAC="52:00:00:ab:c1:${NODE_ID}"
+ETH2_MAC="52:00:00:ab:c2:${NODE_ID}"
 LAN_IFC="lime_tap${NODE_ID}_0"
 WAN_IFC="lime_tap${NODE_ID}_1"
+ETH2_IFC="lime_tap${NODE_ID}_2"
 OWN_LAN_IP="10.13.0.2/16"
 
 
@@ -235,7 +237,9 @@ qemu-system-x86_64 \
 -netdev tap,id=hostnet0,ifname="${LAN_IFC}",script=no,downscript=no \
 -device e1000,netdev=hostnet0,id=net0,mac="${LAN_MAC}",bus=pci.0,addr=0x3 \
 -netdev tap,id=hostnet1,ifname="${WAN_IFC}",script=no,downscript=no \
--device e1000,netdev=hostnet1,id=net1,mac="${WAN_MAC}",bus=pci.0,addr=0x4
+-device e1000,netdev=hostnet1,id=net1,mac="${WAN_MAC}",bus=pci.0,addr=0x4 \
+-netdev tap,id=hostnet2,ifname="${ETH2_IFC}",script=no,downscript=no \
+-device e1000,netdev=hostnet2,id=net2,mac="${ETH2_MAC}",bus=pci.0,addr=0x5
 
 
 # cleanup
