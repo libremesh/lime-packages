@@ -193,6 +193,14 @@ $ sudo ./tools/qemu_dev_start  path/to/openwrt-x86-64-generic-rootfs.tar.gz path
 $ ./tools/qemu_dev_stop
 ```
 
+#### Run 11 nodes simultaneously
+
+```
+$ ./tools/qemu_cloud_start path/to/openwrt-x86-64-generic-rootfs.tar.gz path/to/openwrt-x86-64-ramfs.bzImage
+### use clusterssh to manage the nodes
+$ ./tools/qemu_cloud_stop
+```
+
 #### Update with local libremesh code
 
 If you want to update the qemu image with new LibreMesh files of a local repository you can use
