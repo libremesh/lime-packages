@@ -1,6 +1,7 @@
 local utils = require "lime.utils"
 local json = require "luci.jsonc"
 local libuci = require "uci"
+local fs = require("nixio.fs")
 
 local eup = {}
 
@@ -15,6 +16,9 @@ local uci = libuci.cursor()
 function eup.set_workdir(workdir)
     if not utils.file_exists(workdir) then
         os.execute('mkdir -p ' .. workdir)
+    end
+    if fs.stat(workdir, "type") ~= "dir" then
+        error("Can't configure workdir " .. workdir)
     end
     eup.WORKDIR = workdir
     eup.DOWNLOAD_INFO_CACHE_FILE = eup.WORKDIR .. '/download_status'
