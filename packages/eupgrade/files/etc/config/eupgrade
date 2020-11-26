@@ -1,0 +1,4 @@
+config eupgrade 'main'
+	option enabled '1'
+	option api_url 'http://10.13.156.241:8000/web_test/releases/api/' # TODO: provide a saner default
+
