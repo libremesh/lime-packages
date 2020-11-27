@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   SECTION:=ubus
   CATEGORY:=Ubus
-  MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
+  MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
   SUBMENU:=3. Applications
   TITLE:=Metrics ubus module
   DEPENDS:= +lua +libubox-lua +libubus-lua +luci-lib-json +netperf +check-internet +ubus-lime-utils
