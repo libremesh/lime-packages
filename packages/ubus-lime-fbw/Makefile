@@ -13,7 +13,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
   SUBMENU:=3. Applications
   TITLE:=Libremesh first boot wizard ubus module
-  DEPENDS:= +lua +libubox-lua +libubus-lua +libuci
+  DEPENDS:= +lua +libubox-lua +libubus-lua +libuci-lua +ubus-lime-utils
   PKGARCH:=all
 endef
 
