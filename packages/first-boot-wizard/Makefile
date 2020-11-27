@@ -12,6 +12,8 @@ define Package/$(PKG_NAME)
     CATEGORY:=LiMe
     MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
     URL:=http://libremesh.org
+    DEPENDS:= +lua +libubox-lua +libuci-lua +luci-lib-nixio +luci-lib-jsonc +libiwinfo-lua \
+              +ubus-lime-utils +lime-system
     PKGARCH:=all
 endef
 
