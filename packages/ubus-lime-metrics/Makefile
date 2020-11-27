@@ -14,7 +14,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
   SUBMENU:=3. Applications
   TITLE:=Metrics ubus module
-  DEPENDS:= +lua +libubox-lua +libubus-lua +luci-lib-json +netperf +check-internet
+  DEPENDS:= +lua +libubox-lua +libubus-lua +luci-lib-json +netperf +check-internet +ubus-lime-utils
   PKGARCH:=all
 endef
 
