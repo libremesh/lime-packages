@@ -1,18 +1,18 @@
 #!/usr/bin/env lua
 --[[
-  Copyright (C) 2013-2017 LibreMesh.org
+  Copyright (C) 2013-2020 LibreMesh.org
   This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
 
+  Copyright 2020 Santiago Piccinini <spiccinini@altermindi.net>
   Copyright 2017 Marcos Gutierrez <gmarcos@altermindi.net>
   Copyright 2017 Nicolas Echaniz <nicoechaniz@altermundi.net>
 ]]--
 
 local ubus = require "ubus"
 local json = require 'luci.jsonc'
-local config = require("lime.config")
 local limewireless = require 'lime.wireless'
 local utils = require 'lime.utils'
-local nixio = require 'nixio'
+local upgrade = require 'lime.upgrade'
 
 local conn = ubus.connect()
 if not conn then
@@ -163,36 +163,10 @@ local function get_config ()
   utils.printJson(result)
 end
 
-local function _safe_upgrade_confirm_remaining_s()
-    local remaining_s = tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining"))
-    if not remaining_s then
-        remaining_s = -1
-    end
-    return remaining_s
-end
-
-local function _is_upgrade_confirm_supported()
-    local exit_value = os.execute("safe-upgrade board-supported > /dev/null 2>&1")
-    return exit_value == 0
-end
-
-UPGRADE_INFO_CACHE_FILE = '/tmp/upgrade_info_cache'
-
 local function get_upgrade_info(msg)
-    local result = {}
-
-    if not utils.file_exists(UPGRADE_INFO_CACHE_FILE) then
-        result.safe_upgrade_confirm_remaining_s = _safe_upgrade_confirm_remaining_s()
-        result.is_upgrade_confirm_supported = _is_upgrade_confirm_supported()
-        utils.write_file(UPGRADE_INFO_CACHE_FILE, json.stringify(result))
-    else
-        result = json.parse(utils.read_file(UPGRADE_INFO_CACHE_FILE))
-        if result.safe_upgrade_confirm_remaining_s ~= -1 then
-            result.safe_upgrade_confirm_remaining_s = _safe_upgrade_confirm_remaining_s()
-        end
-        if not result then
-            return utils.printJson({status = "error"})
-        end
+    local result = upgrade.get_upgrade_info()
+    if not result then
+        return utils.printJson({status = "error"})
     end
     result.status = 'ok'
     return utils.printJson(result)
