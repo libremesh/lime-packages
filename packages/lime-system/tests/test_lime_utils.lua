@@ -87,6 +87,15 @@ describe('LiMe Utils tests #limeutils', function()
 		assert.is_false(utils.is_valid_hostname('f?o'))
 	end)
 
+	it('test slugify', function()
+		assert.is.equal('fooBAR123', utils.slugify('fooBAR123'))
+		assert.is.equal('foo-BAR--123', utils.slugify('foo-BAR--123'))
+		assert.is.equal('foo-bar-baz-', utils.slugify('foo bar baz '))
+		assert.is.equal('foo-bar-baz', utils.slugify('foo,bar-baz'))
+		assert.is.equal('FOO', utils.slugify('FOO'))
+		assert.is.equal('FOO-----------------------bar-----', utils.slugify("FOO~ñ@#$%&/()|[]*¡æł=?bar¡°'"))
+	end)
+
 	it('test unsafe_shell', function()
 		assert.is.equal("1\n", utils.unsafe_shell("echo 1"))
 	end)
@@ -225,6 +234,54 @@ dnsmasq:*:18362:0:99999:7:::
         assert.is.equal('fe80::aa40:41ff:fe1c:84d1', utils.mac2ipv6linklocal('a8:40:41:1c:84:d1'))
         assert.is.equal('FOOfe80::aa40:41ff:fe1c:84d1BARfe80::aa40:41ff:fe1c:84d1',
                          utils.mac2ipv6linklocal('FOOa8:40:41:1c:84:d1BARa8:40:41:1c:84:d1'))
+     end)
+
+    it('test release_info', function()
+        local info = [[DISTRIB_ID='LiMe'
+DISTRIB_RELEASE='master'
+DISTRIB_REVISION='ec81de9'
+DISTRIB_TARGET='ar71xx/generic'
+DISTRIB_ARCH='mips_24kc'
+DISTRIB_DESCRIPTION='LiMe master development (master rev. ec81de9 20190613_1242)'
+DISTRIB_TAINTS='no-all busybox'
+]]
+        stub(utils, "read_file", function (cmd) return info end)
+        local data = utils.release_info()
+        assert.is.equal('LiMe', data['DISTRIB_ID'])
+        assert.is.equal('master', data['DISTRIB_RELEASE'])
+        assert.is.equal('ec81de9', data['DISTRIB_REVISION'])
+        assert.is.equal('ar71xx/generic', data['DISTRIB_TARGET'])
+        assert.is.equal('mips_24kc', data['DISTRIB_ARCH'])
+        assert.is.equal('LiMe master development (master rev. ec81de9 20190613_1242)', data['DISTRIB_DESCRIPTION'])
+        assert.is.equal('no-all busybox', data['DISTRIB_TAINTS'])
+        utils.read_file:revert()
+     end)
+
+    it('test open_with_lock', function()
+        local fd1 = utils.open_with_lock("/tmp/foo_bar_baz")
+        assert.is.not_nil(fd1)
+        local max_wait_s = 0
+        local fd2 = utils.open_with_lock("/tmp/foo_bar_baz", max_wait_s)
+        --same process share locks
+        assert.is.not_nil(fd2)
+     end)
+
+    it('test obj store', function()
+        local test_dir = test_utils.setup_test_dir()
+        local testfile = test_dir .. 'mydata'
+        assert.is.same({}, utils.read_obj_store(testfile))
+
+        assert.is.same({foo = 'bar'}, utils.write_obj_store_var(testfile, 'foo', 'bar'))
+        assert.is.same({foo = 'bar', f = {1, 11.5}}, utils.write_obj_store_var(testfile, 'f', {1, 11.5}))
+
+        assert.is.same({foo = 'bar', f = {1, 11.5}}, utils.read_obj_store(testfile))
+
+        assert.is.same({foo = 'baz', f = {1, 11.5}}, utils.write_obj_store_var(testfile, 'foo', 'baz'))
+
+        assert.is.not_nil(utils.write_obj_store(testfile, {foo = 'o'}))
+
+        assert.is.same({foo = 'o'}, utils.read_obj_store(testfile))
+
      end)
 
     before_each('', function()

@@ -5,6 +5,7 @@ utils = {}
 local config = require("lime.config")
 local json = require("luci.jsonc")
 local fs = require("nixio.fs")
+local nixio = require("nixio")
 
 utils.BOARD_JSON_PATH = "/etc/board.json"
 utils.SHADOW_FILENAME = "/etc/shadow"
@@ -54,7 +55,7 @@ function utils.literalize(str)
 end
 
 function utils.isModuleAvailable(name)
-	if package.loaded[name] then 
+	if package.loaded[name] then
 		return true
 	else
 		for _, searcher in ipairs(package.searchers or package.loaders) do
@@ -172,6 +173,12 @@ function utils.expandVars(s, ...)
 		return was
 	end
 	repeat DoExpand(true); until not DoExpand(false)
+	return s
+end
+
+--! return a string that can be a part of an url
+function utils.slugify(s)
+	s = s:gsub('[^-a-zA-Z0-9]', '-')
 	return s
 end
 
@@ -424,6 +431,99 @@ function utils.mac2ipv6linklocal(text)
     end
     local ret, _ = string.gsub(text, "(%x%x):(%x%x):(%x%x):(%x%x):(%x%x):(%x%x)", f)
     return ret
+end
+
+--! do a HTTP GET returning the body or nil. If out_file is provided then the body is saved
+--! to this file and true is returned instead
+function utils.http_client_get(url, timeout_s, out_file)
+    local remove_file = false
+    if not out_file then
+        remove_file = true
+        out_file = os.tmpname()
+    end
+    local cmd = string.format("uclient-fetch -q -O %s --timeout=%d %s 2> /dev/null", out_file,
+                              timeout_s, url)
+    local exit_value = os.execute(cmd)
+    if exit_value == 0 then
+        if remove_file then
+            local data = utils.read_file(out_file)
+            os.execute("rm -f " .. out_file)
+            return data
+        else
+            return true
+        end
+    else
+        return nil
+    end
+end
+
+function utils.release_info()
+    local result = {}
+    local release_data = utils.read_file("/etc/openwrt_release")
+    for key, value in release_data:gmatch("(.-)='(%C-)'\n") do
+        result[key] = value
+    end
+    return result
+end
+
+function utils.open_with_lock(fname, max_wait_s)
+    max_wait_s = max_wait_s or 1
+    local locked = false
+
+    local fd = nixio.open(fname, nixio.open_flags("rdwr", "creat") )
+    if not fd then
+        return nil, "Can't create file"
+    end
+
+    for i=0,max_wait_s do
+        if not fd:lock("tlock") then
+            nixio.nanosleep(1)
+        else
+            locked = true
+            break
+        end
+    end
+
+    if not locked then
+        if fd then fd:close() end
+        return nil, "Failed acquiring lock"
+    end
+
+    return fd
+end
+
+--! Object store database. Uses json as on disk format. Uses posix file locks to prevent corruption,
+--! be aware that this mechanism does only works between processes and not beteen threads or same thread.
+function utils.read_obj_store(datafile)
+    local fd = utils.open_with_lock(datafile)
+    local store
+    if fd then
+        store = json.parse(nixio.fs.readfile(datafile)) or {}
+        fd:close()
+    end
+    return store
+end
+
+function utils.write_obj_store_var(datafile, name, data)
+    local fd = utils.open_with_lock(datafile)
+    local store
+    if fd then
+        store = json.parse(nixio.fs.readfile(datafile)) or {}
+        fd:seek(0)
+        store[name] = data
+        fd:write(json.stringify(store))
+        fd:close()
+    end
+    return store
+end
+
+function utils.write_obj_store(datafile, data)
+    local fd = utils.open_with_lock(datafile)
+    if fd then
+        fd:write(json.stringify(data))
+        fd:close()
+        return true
+    end
 end
 
 return utils
