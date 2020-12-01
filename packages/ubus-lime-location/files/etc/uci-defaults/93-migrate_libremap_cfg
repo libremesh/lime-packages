@@ -1,0 +1,3 @@
+#!/bin/sh
+
+migrate-libremap-cfg
