@@ -1,0 +1,24 @@
+{
+	"lime-app": {
+		"description": "lime-app public access",
+		"read": {
+			"ubus": {
+					"eupgrade": [ "is_new_version_available" ]
+			}
+		}
+	},
+	"root": {
+		"description": "root access only",
+		"read": {
+			"ubus": {
+					"eupgrade": [ "*" ]
+			}
+		},
+		"write": {
+			"cgi-io": [ "upload" ],
+			"ubus": {
+					"eupgrade": [ "*" ],
+			}
+		}
+	}
+}
