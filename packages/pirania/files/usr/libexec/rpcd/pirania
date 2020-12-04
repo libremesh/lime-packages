@@ -17,13 +17,20 @@ vouchera.init()
 
 local uci_cursor = uci.cursor()
 
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
 local function printJson (obj)
     print(json.stringify(obj))
 end
 
-local conn = ubus.connect()
-if not conn then
-    error("Failed to connect to ubus")
+local function unsafe_shell(command)
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+    return result
 end
 
 local function status(msg)
@@ -34,15 +41,15 @@ end
 local function enable(msg)
     uci_cursor:set("pirania", "base_config", "enabled", "1")
     uci_cursor:commit("pirania")
-    utils.shell("captive-portal start")
-    printJson({ success = true })
+    unsafe_shell("captive-portal start")
+    printJson({ success = "ok" })
 end
 
 local function disable(msg)
     uci_cursor:set("pirania", "base_config", "enabled", "0")
     uci_cursor:commit("pirania")
-    utils.shell("captive-portal stop")
-    printJson({ success = true }) 
+    unsafe_shell("captive-portal stop")
+    printJson({ success = "ok" })
 end
 
 local function show_active_vouchers(msg)
@@ -52,11 +59,11 @@ local function show_active_vouchers(msg)
             table.insert(active, voucher)
         end
     end
-    printJson({ success = true, vouchers = active })
+    printJson({ success = "ok", vouchers = active })
 end
 
 local function show_vouchers(msg)
-    printJson({ success = true, vouchers = vouchera.vouchers })
+    printJson({ success = "ok", vouchers = vouchera.vouchers })
 end
 
 -- expiration_date is in seconds from epoch
@@ -103,7 +110,7 @@ local function print_valid_macs(msg)
 end
 
 local function show_url(msg)
-    printJson({ status = 'ok', url = uci_cursor:get("pirania", "base_config", "portal_url"));
+    printJson({ status = 'ok', url = uci_cursor:get("pirania", "base_config", "portal_url") });
 end
 
 local function change_url(msg)
@@ -136,9 +143,9 @@ end
 
 if arg[1] == 'call' then
   local msg = io.read()
-	msg = json.parse(msg)
-	if   arg[2] == 'status'										then status(msg)
-	elseif   arg[2] == 'enable'								then enable(msg)
+  msg = json.parse(msg)
+  if   arg[2] == 'status'										then status(msg)
+  elseif   arg[2] == 'enable'								then enable(msg)
   elseif   arg[2] == 'disable'							then disable(msg)
   elseif   arg[2] == 'add_member_voucher'		then add_member_voucher(msg)
   elseif   arg[2] == 'add_visitor_voucher'	then add_visitor_voucher(msg)
@@ -151,6 +158,6 @@ if arg[1] == 'call' then
   elseif   arg[2] == 'renew_many_vouchers'	then renew_many_vouchers(msg)
   elseif   arg[2] == 'show_url'	            then show_url(msg)
   elseif   arg[2] == 'change_url'	        	then change_url(msg)
-  else                                      printJson({ error = "Method not found" })
+  else     printJson({ error = "Method not found" })
   end
 end
