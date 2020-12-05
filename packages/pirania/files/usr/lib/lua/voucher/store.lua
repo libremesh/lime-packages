@@ -70,19 +70,4 @@ function store.remove_voucher(db_path, voucher)
     return removed
 end
 
-function store.save_db(db_path, vouchers, voucher_init)
-    local changed = false
-    for name, voucher in pairs(vouchers) do
-        local result = store.add_voucher(db_path, voucher, voucher_init)
-        if result then
-            changed = true
-        end
-    end
-
-    if changed then
-        --! TODO: hooks("db_change")
-        utils.log("info", "voucher.store: db_change")
-    end
-end
-
 return store
