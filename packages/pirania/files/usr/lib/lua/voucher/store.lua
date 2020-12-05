@@ -2,6 +2,7 @@
 
 local fs = require("nixio.fs")
 local json = require("luci.jsonc")
+local hooks = require('voucher.hooks')
 local utils = require("voucher.utils")
 
 local store = {}
@@ -56,13 +57,17 @@ function store.add_voucher(db_path, voucher, voucher_init)
     f = io.open(fname, "w")
     f:write(json.stringify(voucher))
     f:close()
+    hooks("db_change")
     return true
 end
 
 function store.remove_voucher(db_path, voucher)
     local fname = db_path .. "/" .. voucher.name .. ".json"
-    local ret_code = os.execute("rm " .. fname)
-    return ret_code == 0
+    local removed = os.execute("rm " .. fname) == 0
+    if removed then
+        hooks("db_change")
+    end
+    return removed
 end
 
 function store.save_db(db_path, vouchers, voucher_init)
