@@ -6,7 +6,10 @@ config.db_path = '/tmp/pirania'
 config.prune_expired_for_days = '30'
 local vouchera = require('voucher.vouchera')
 local utils = require('voucher.utils')
+local hooks = require('voucher.hooks')
 
+-- fake hooks
+hooks.run = function(action) end
 
 function utils.log(...)
     print(...)

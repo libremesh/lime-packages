@@ -3,7 +3,10 @@
 local config = require('voucher.config')
 local fs = require("nixio.fs")
 
-local hooks = function(action)
+local hooks = {}
+
+
+function hooks.run(action)
     local hookPath = config.hooksDir..action..'/'
     local files = fs.dir(hookPath)
     if files then
@@ -16,7 +19,7 @@ end
 if debug.getinfo(2).name == nil then
     local arguments = { ... }
     if (arguments ~= nil and arguments[1] ~= nil) then
-        hooks(arguments[1])
+        hooks.run(arguments[1])
     end
 end
 

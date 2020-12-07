@@ -57,7 +57,7 @@ function store.add_voucher(db_path, voucher, voucher_init)
     f = io.open(fname, "w")
     f:write(json.stringify(voucher))
     f:close()
-    hooks("db_change")
+    hooks.run("db_change")
     return true
 end
 
@@ -65,7 +65,7 @@ function store.remove_voucher(db_path, voucher)
     local fname = db_path .. "/" .. voucher.name .. ".json"
     local removed = os.execute("rm " .. fname) == 0
     if removed then
-        hooks("db_change")
+        hooks.run("db_change")
     end
     return removed
 end
