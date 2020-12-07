@@ -3,11 +3,14 @@ local config = require('voucher.config')
 local vouchera = require('voucher.vouchera')
 local handlers = require('voucher.cgi_handlers')
 local utils = require('voucher.utils')
-
+local hooks = require('voucher.hooks')
 
 function utils.log(...)
     print(...)
 end
+
+-- fake hooks
+hooks.run = function(action) end
 
 function build_env(ip_address, querystring)
     local function get_env(key)
