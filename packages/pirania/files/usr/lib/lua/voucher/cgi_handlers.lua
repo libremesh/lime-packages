@@ -44,7 +44,7 @@ function handlers.preactivate_voucher()
             if vouchera.is_activable(code) then
                 url = url_info .. setParams
             else
-                url = url_fail
+                url = url_fail .. (prevUrl and '&prev=' .. prevUrl or '')
             end
         end
     end
@@ -69,7 +69,7 @@ function handlers.activate_voucher()
         return url_authenticated
     end
 
-    local url = url_fail
+    local url = url_fail .. (prevUrl and '&prev=' .. prevUrl or '')
 
     if code and client_data.mac then
         if vouchera.activate(code, client_data.mac) then
