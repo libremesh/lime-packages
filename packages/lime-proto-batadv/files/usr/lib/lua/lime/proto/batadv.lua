@@ -87,19 +87,19 @@ function batadv.setup_interface(ifname, args)
 		--! TODO: Use DSA to check if ethernet device is capable of bigger MTU
 		--! reducing it
 		mtu = network.MTU_ETH_WITH_VLAN
-		
-		--! Avoid dmesg flooding caused by BLA with messages like "br-lan:
-		--! received packet on bat0 with own address as source address".
-		--! Tweak MAC address for each of the interfaces used by Batman-adv
-		--! 00 + Locally administered unicast .. 2 bytes from interface name
-		--! .. 3 bytes from main interface
-		local id = utils.get_id(ifname)
-		local vMacaddr = network.primary_mac();
-		vMacaddr[1] = "02"
-		vMacaddr[2] = id[2]
-		vMacaddr[3] = id[3]
-		uci:set("network", owrtDeviceName, "macaddr", table.concat(vMacaddr, ":"))
 	end
+
+	--! Avoid dmesg flooding caused by BLA with messages like "br-lan:
+	--! received packet on bat0 with own address as source address".
+	--! Tweak MAC address for each of the interfaces used by Batman-adv
+	--! 00 + Locally administered unicast .. 2 bytes from interface name
+	--! .. 3 bytes from main interface
+	local id = utils.get_id(ifname)
+	local vMacaddr = network.primary_mac();
+	vMacaddr[1] = "02"
+	vMacaddr[2] = id[2]
+	vMacaddr[3] = id[3]
+	uci:set("network", owrtDeviceName, "macaddr", table.concat(vMacaddr, ":"))
 
 	uci:set("network", owrtDeviceName, "mtu", mtu)
 	uci:save("network")
