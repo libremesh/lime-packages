@@ -1,3 +1,5 @@
+# cotonete is temporarily hosted on https://github.com/nicopace/cotonete
+
 # cotonete [beta]
 
 cotonete is a daemon that monitors the deafness of radios and reacts instantly to it, working around the issue.

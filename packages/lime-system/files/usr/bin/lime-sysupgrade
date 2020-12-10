@@ -11,7 +11,7 @@ BACKUP_EXTRA_DIR="/tmp/lime-sysupgrade/preserve/"
 
 add_file() {
   for l in `cat $1 | sed -e s/#.*$// -e /^$/d`; do
-    [ -e "$l" ] && BACKUP_FILES="$BACKUP_FILES $l"
+    [ -e "$l" ] && BACKUP_FILES="$BACKUP_FILES $l" || true
   done
 }
 
@@ -54,6 +54,7 @@ echo "------------------"
 echo ""
 echo "The device model is $(cat /tmp/sysinfo/model)"
 echo "The md5sum of the new firmware is $(md5sum $FIRMWARE | awk '{print $1}')"
+command -v sha256sum &> /dev/null && echo "Its sha256sum is $(sha256sum $FIRMWARE | awk '{print $1}')" || true
 echo "Ready to perform the upgrade. Press [ENTER] to continue or CTRL+C to cancel"
 [ "$FORCE" == "1" ] || read
 echo ""
@@ -62,6 +63,6 @@ if safe-upgrade board-supported > /dev/null 2>&1; then
     [ -e "$BACKUP_ARCHIVE" ] && OPTIONS="--preserve-archive $BACKUP_ARCHIVE" || OPTIONS="-n"
     safe-upgrade upgrade $OPTIONS $FIRMWARE
 else
-    [ -e "$BACKUP_FILES" ] && OPTIONS="-f $BACKUP_ARCHIVE" || OPTIONS="-n"
+    [ -e "$BACKUP_ARCHIVE" ] && OPTIONS="-f $BACKUP_ARCHIVE" || OPTIONS="-n"
     sysupgrade $OPTIONS $FIRMWARE &
 fi

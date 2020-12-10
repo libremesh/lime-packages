@@ -83,12 +83,6 @@ function babeld.configure(args)
 
 	uci:save("babeld")
 
-
-	uci:set("libremap", "babeld", "plugin")
-	uci:set("libremap", "babeld", "enabled", "true")
-
-	uci:save("libremap")
-
 end
 
 function babeld.setup_interface(ifname, args)
@@ -124,7 +118,7 @@ function babeld.setup_interface(ifname, args)
 	--! It is quite common to have dummy radio device attached via ethernet so
 	--! disable wired optimization always as it would consider the link down at
 	--! first packet lost
-	uci:set("babeld", owrtInterfaceName, "wired", "false")
+	uci:set("babeld", owrtInterfaceName, "type", "wireless")
 
 	uci:save("babeld")
 end

@@ -42,7 +42,7 @@ end
 
 -- Remove old results
 function fbw.clean_tmp()
-    utils.execute('rm ' .. fbw.WORKDIR .. fbw.HOST_CONFIG_PREFIX .. '*')
+    utils.execute('rm -f ' .. fbw.WORKDIR .. fbw.HOST_CONFIG_PREFIX .. '*')
 end
 
 -- Save working copy of wireless
@@ -157,13 +157,19 @@ end
 function fbw.fetch_config(data)
     fbw.log('Fetch config from '.. json.stringify(data))
     local host = data.host
-    local hostname = utils.execute("/bin/wget http://["..data.host.."]/cgi-bin/hostname -qO - "):gsub("\n", "")
+
+    local hostname = utils.execute("wget --no-check-certificate http://["..data.host.."]/cgi-bin/hostname -qO - "):gsub("\n", "")
     fbw.log('Hostname found: '.. hostname)
     if (hostname == '') then hostname = host end
     local signal = data.signal
     local ssid = data.ssid
     local filename = fbw.WORKDIR .. fbw.HOST_CONFIG_PREFIX .. hostname
-    utils.execute("/bin/wget http://[" .. data.host .. "]/lime-community -O " .. filename)
+
+    utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/cgi-bin/lime/lime-community -O " .. filename)
+    if not utils.file_exists(filename) then
+        -- For backwards compatibility
+        utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/lime-community -O " .. filename)
+    end
 
     -- Remove lime-community files that are not yet configured.
     -- For this we asume that no ap_ssid options equals not configured.
@@ -232,6 +238,17 @@ end
 function fbw.mark_as_configured()
     local uci_cursor = config.get_uci_cursor()
     uci_cursor:set(config.UCI_NODE_NAME, 'system', 'firstbootwizard_configured', 'true')
+end
+
+function fbw.is_dismissed()
+    return config.get_bool('system', 'firstbootwizard_dismissed', false)
+end
+
+function fbw.dismiss()
+    local uci_cursor = config.get_uci_cursor()
+    uci_cursor:set(config.UCI_NODE_NAME, 'system', 'firstbootwizard_dismissed', 'true')
+    uci_cursor:commit(config.UCI_NODE_NAME)
+    config.uci_autogen()
 end
 
 -- Get config from lime-default file

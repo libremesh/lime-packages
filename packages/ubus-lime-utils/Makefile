@@ -10,10 +10,10 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   SECTION:=ubus
   CATEGORY:=Ubus
-  MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
+  MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
   SUBMENU:=3. Applications
   TITLE:=LIbremesh ubus utils module
-  DEPENDS:= +lua +libubox-lua +libubus-lua +libuci +cgi-io +rpcd-mod-file +lime-system
+  DEPENDS:= +lua +libubox-lua +libubus-lua +libuci-lua +lime-system +cgi-io +rpcd-mod-file
   PKGARCH:=all
 endef
 

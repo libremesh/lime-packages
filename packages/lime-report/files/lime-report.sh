@@ -37,7 +37,7 @@ generate_config() {
 }
 
 generate_status() {
-    paste_cmd dmesg | tail -c 10
+    paste_cmd "dmesg | tail -n 20"
     paste_cmd batctl if
     paste_cmd batctl o
     paste_cmd bmx6 -c show=status show=interfaces show=links show=originators show=tunnels
@@ -58,6 +58,12 @@ generate_status() {
     paste_cmd iwinfo
     paste_cmd wifi status
     paste_cmd swconfig dev switch0 show
+    paste_cmd iptables -vnL -t filter
+    paste_cmd iptables -vnL -t nat
+    paste_cmd iptables -vnL -t mangle
+    paste_cmd ebtables -t filter -L --Lc
+    paste_cmd ebtables -t nat -L --Lc
+    paste_cmd ebtables -t broute -L --Lc
 }
 
 generate_all() {

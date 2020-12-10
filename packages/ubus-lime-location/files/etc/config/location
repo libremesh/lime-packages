@@ -1,0 +1,5 @@
+config location 'settings'
+	#option community_latitude ''
+	#option community_longitude ''
+	#option node_latitude ''
+	#option node_longitude ''
