@@ -20,7 +20,7 @@ define Package/$(PKG_NAME)
   TITLE:= Watchping hooks to manage AP SSID if network problems
   MAINTAINER:=Pau Escrich <p4u@dabax.et>
   URL:=http://libremesh.org
-  DEPENDS:= +watchping
+  DEPENDS:= +watchping +lime-system
   PKGARCH:=all
 endef
 

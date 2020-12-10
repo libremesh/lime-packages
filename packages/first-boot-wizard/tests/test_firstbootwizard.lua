@@ -48,6 +48,14 @@ describe('FirstBootWizard tests #fbw', function()
 
     end)
 
+    it('test is_dismissed() / dismiss()', function()
+        assert.is.equal(false, fbw.is_dismissed())
+        uci:set(config.UCI_NODE_NAME, 'system', 'lime')
+        fbw.dismiss()
+        assert.is.equal(true, fbw.is_dismissed())
+        assert.is.equal(true, config.get_bool('system', 'firstbootwizard_dismissed', false))
+    end)
+
     it('test get_networks()', function()
         fbw.get_networks() -- TODO
     end)

@@ -9,6 +9,7 @@ DNSMASQ_BIN="/usr/sbin/dnsmasq"
 start_service() {
 	procd_open_instance
 	procd_set_param command $DNSMASQ_BIN \
+		--conf-file=/dev/null \
 		--keep-in-foreground \
 		--port=59053 \
 		--no-resolv \

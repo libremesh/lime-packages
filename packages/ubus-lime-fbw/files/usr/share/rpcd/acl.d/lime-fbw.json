@@ -1,5 +1,5 @@
 {
-    "lime-app": {
+    "root": {
         "description": "First Boot Wizard ubus interface",
         "read": {
             "ubus": {
@@ -9,6 +9,19 @@
         "write": {
             "ubus": {
                 "lime-fbw": ["*"]
+            }
+        }
+    },
+    "lime-app": {
+        "description": "First Boot Wizard unauthenticated ubus interface",
+        "read": {
+            "ubus": {
+                "lime-fbw": ["status"]
+            }
+        },
+        "write": {
+            "ubus": {
+                "lime-fbw": ["dismiss"]
             }
         }
     }

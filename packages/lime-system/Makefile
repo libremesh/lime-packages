@@ -35,11 +35,6 @@ define Package/$(PKG_NAME)/description
 	Basic system files for LiMe node
 endef
 
-define Package/$(PKG_NAME)/conffiles
-	/etc/config/lime-node
-	/etc/config/lime-community
-endef
-
 define Build/Compile
 endef
 
@@ -57,7 +52,7 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/lime-config/
 	$(LIME_VERSION_SED) \
 		$(1)/etc/lime_release \
-		$(1)/etc/uci-defaults/90_lime-banner
+		$(1)/etc/profile.d/10-lime-banner.sh
 endef
 
 define Package/$(PKG_NAME)/postinst

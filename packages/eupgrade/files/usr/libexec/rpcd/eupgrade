@@ -1,0 +1,73 @@
+#!/usr/bin/env lua
+--[[
+  Copyright (C) 2020 LibreMesh.org
+  This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
+
+  Copyright 2020 Santiago Piccinini <spiccinini@altermindi.net>
+]]--
+
+local ubus = require "ubus"
+local json = require 'luci.jsonc'
+local utils = require 'lime.utils'
+local eupgrade = require 'eupgrade'
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function is_new_version_available(msg)
+    local cached_only = true
+    local ret = {}
+    if eupgrade.is_enabled() then
+        local latest_data = eupgrade.is_new_version_available(cached_only)
+        if latest_data then
+            ret['version'] = latest_data.version
+            ret["release_info_url"] = latest_data['release-info-url']
+        end
+    end
+    ret.status = 'ok'
+    utils.printJson(ret)
+end
+
+local function start_download(msg)
+    local ret = {status = 'ok'}
+    local cached_only = true
+    local latest_data = eupgrade.is_new_version_available(cached_only)
+    if latest_data then
+        utils.execute_daemonized("eupgrade-download")
+    else
+        ret = {status = 'error', message = 'New version is not availabe'}
+    end
+    utils.printJson(ret)
+end
+
+local function download_status(msg)
+    local ret = {status = 'ok'}
+    local download_status = eupgrade.get_download_status()
+    ret.download_status = download_status
+    if download_status == eupgrade.STATUS_DOWNLOADED then
+        ret.fw_path, ret.fw_type = eupgrade.get_downloaded_info()
+    end
+    utils.printJson(ret)
+end
+
+local methods = {
+    is_new_version_available = { no_params = 0 },
+    start_download = { no_params = 0 },
+    download_status = { no_params = 0 },
+}
+
+if arg[1] == 'list' then
+    utils.printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = utils.rpcd_readline()
+    msg = json.parse(msg)
+    if      arg[2] == 'is_new_version_available' then is_new_version_available(msg)
+    elseif  arg[2] == 'start_download' then start_download(msg)
+    elseif  arg[2] == 'download_status' then download_status(msg)
+    else utils.printJson({ error = "Method not found" })
+    end
+end

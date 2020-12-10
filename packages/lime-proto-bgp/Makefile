@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LibreMesh
   MAINTAINER:=Gioacchino Mazzurco <gio@diveni.re>
   URL:=http://libremesh.org
-  DEPENDS:=+bird4 +bird6 +lime-system +lua
+  DEPENDS:=+bird1-ipv4 +bird1-ipv6 +lime-system +lua
   PKGARCH:=all
 endef
 

@@ -23,6 +23,7 @@ config lime system
 	option root_password_secret '$1$K0.R51EI$bkjIoF5feHcpqCuEOrymB.'	# This is the password hash as stored in /etc/shadow, it is only used when root_password_policy=SET_SECRET. You can generate the secret with 'openssl passwd -1' to be compatible with most openwrt firmwares, use a strong password with at least 10 numbers and letters, the longer the better!. For improved security use "openssl passwd -6" for SHA512 (or -5 for SHA256) but be aware that not all firmwares support this.
 	option deferable_reboot_uptime_s '97200'
 	option firstbootwizard_configured false
+	option firstbootwizard_dismissed false		# When true fbw banner will be hidden.
 
 #########################################################
 ### Network general option
@@ -100,6 +101,12 @@ config lime wifi
 	option ieee80211s_mesh_id 'LiMe'		# Mesh cloud identifier (close to SSID in concept). Used by the nodes to join and participate in the mesh network.
 #	option ieee80211s_encryption 'psk2/aes'		# in order to use encrypted mesh, the wpad-mini package have to be replaced with wpad-mesh-wolfssl package either manually or by the selected network-profile
 #	option ieee80211s_key 'SomePsk2AESKey'
+
+#########################################################
+### Configuration directed to other UCI files
+
+config generic_uci_config uhttpd_https
+	list uci_set 'uhttpd.main.redirect_https=0'	# disable automatic redirect from http to httpS web interface, decided in order to decrease the CPU usage by shared-state and ubus-lime-metrics
 
 
 #########################################################
