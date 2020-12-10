@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
 	TITLE:=libremesh debug utils
-	CATEGORY:=LiMe
+	CATEGORY:=LibreMesh
 	MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
 	URL:=http://libremesh.org
 	DEPENDS:=+bandwidth-test \

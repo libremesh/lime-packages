@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
 	TITLE:=Keep local date under NTP too far away skew
-	CATEGORY:=LiMe
+	CATEGORY:=LibreMesh
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
 	DEPENDS:=+@BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT +libuci-lua +lua \

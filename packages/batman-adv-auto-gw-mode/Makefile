@@ -15,7 +15,7 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  CATEGORY:=LiMe
+  CATEGORY:=LibreMesh
   TITLE:=Set batman-adv gw_mode by internet availability
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   URL:=http://libremesh.org

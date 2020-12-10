@@ -15,7 +15,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)/Default
   SECTION:=net
-  CATEGORY:=LiMe
+  CATEGORY:=LibreMesh
   MAINTAINER:=p4u <pau@dabax.net>
   URL:=http://libremesh.org
 endef

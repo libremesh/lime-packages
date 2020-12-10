@@ -18,7 +18,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
   TITLE:=Manage 802.1q VLANs for ground routing
-  CATEGORY:=LiMe
+  CATEGORY:=LibreMesh
   URL:=https://libremesh.org
   DEPENDS:=+lime-system +lua +libuci-lua
   PKGARCH:=all

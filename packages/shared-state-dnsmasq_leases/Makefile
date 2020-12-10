@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
 	TITLE:=dnsmasq leases module for shared-state
-	CATEGORY:=LiMe
+	CATEGORY:=LibreMesh
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
 	DEPENDS:=+libuci-lua +lua \
