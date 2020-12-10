@@ -20,7 +20,7 @@ define Package/$(PKG_NAME)
 	TITLE:=LimeApp
 	MAINTAINER:=Marcos Gutierrez <gmarcos@altermundi.net>
 	URL:=http://github.com/libremesh/lime-app
-	DEPENDS:=+uhttpd +uhttpd-mod-ubus \
+	DEPENDS:=+rpcd +uhttpd +uhttpd-mod-ubus +uhttpd-mod-lua \
 		+ubus-lime-location +ubus-lime-metrics +ubus-lime-utils \
 		+ubus-lime-openairview +ubus-lime-grondrouting
 	PKGARCH:=all
