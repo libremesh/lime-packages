@@ -102,6 +102,12 @@ config lime wifi
 #	option ieee80211s_encryption 'psk2/aes'		# in order to use encrypted mesh, the wpad-mini package have to be replaced with wpad-mesh-wolfssl package either manually or by the selected network-profile
 #	option ieee80211s_key 'SomePsk2AESKey'
 
+#########################################################
+### Configuration directed to other UCI files
+
+config generic_uci_config uhttpd_https
+	list uci_set 'uhttpd.main.redirect_https=0'	# disable automatic redirect from http to httpS web interface, decided in order to decrease the CPU usage by shared-state and ubus-lime-metrics
+
 
 #########################################################
 # The following interface specific options have to be included in /etc/config/lime-node, not in /etc/config/lime-community
