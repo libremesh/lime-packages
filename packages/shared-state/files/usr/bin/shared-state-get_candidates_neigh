@@ -3,7 +3,7 @@
 << COPYRIGHT
 
  LibreMesh
- Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
+ Copyright (C) 2019-2020  Gioacchino Mazzurco <gio@altermundi.net>
 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Affero General Public License as
@@ -42,6 +42,7 @@ for iface in $(ls /sys/class/net/) ; do
 
 	echo "${iface}" | grep -E "mesh|adhoc" &> /dev/null && continue
 
+#[Doc] ping6 from busybox doesn't support float intervals iputils-ping does
 	ping6 -i 0.1 -c 2 ff02::1%${iface} 2> /dev/null | \
 		awk '{if ($3 == "from") print substr($4, 1, length($4)-1)'"\"%${iface}\""'}'
 done | sort -u -r)"
@@ -71,12 +72,14 @@ for ownAddr in $(ip -6 address show | awk '{if ($1 == "inet6") print $2}' | awk 
 	candidateAddresses="$(echo "$candidateAddresses" | grep -v "^$ownAddr%.*$")"
 done
 
-# Deduplicate addresses visible from muliple interfaces
+#[Doc] Deduplicate addresses visible from muliple interfaces
 for cAddr in $(echo "$candidateAddresses"); do
 	cIp="$(echo "$cAddr" | awk -F% '{print $1}')"
 	cIface="$(echo "$cAddr" | awk -F% '{print $2}')"
 
-	candidateAddresses="$cAddr
+#[Doc] Use ${cIp}%${cIface} instead of $cAddr to avoid duplicate interface with
+#[Doc] newer iputils-ping
+	candidateAddresses="${cIp}%${cIface}
 $(echo "$candidateAddresses" | grep -v "$cIp")"
 
 done
