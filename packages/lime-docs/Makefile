@@ -21,7 +21,7 @@ PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  CATEGORY:=LiMe
+  CATEGORY:=LibreMesh
   TITLE:=LibreMesh English documentation
   DEPENDS:=+$(PKG_NAME)-minimal
   MAINTAINER:=Ilario Gelmetti <iochesonome@gmail.com>
@@ -31,7 +31,7 @@ define Package/$(PKG_NAME)
 endef
 
 define Package/$(PKG_NAME)-it
-  CATEGORY:=LiMe
+  CATEGORY:=LibreMesh
   TITLE:=LibreMesh Italian documentation
   DEPENDS:=+$(PKG_NAME)-minimal
   MAINTAINER:=Ilario Gelmetti <iochesonome@gmail.com>
@@ -41,7 +41,7 @@ define Package/$(PKG_NAME)-it
 endef
 
 define Package/$(PKG_NAME)-minimal
-  CATEGORY:=LiMe
+  CATEGORY:=LibreMesh
   TITLE:=LibreMesh minimal documentation
   MAINTAINER:=Ilario Gelmetti <iochesonome@gmail.com>
   URL:=https://libremesh.org/docs/

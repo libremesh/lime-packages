@@ -32,7 +32,7 @@ define Package/$(PKG_NAME)
   SECTION:=$(if $(LIME_SECTION),$(LIME_SECTION),lime)
   CATEGORY:=$(if $(LIME_CATEGORY),$(LIME_CATEGORY),LibreMesh)
   TITLE:=$(LIME_TITLE)
-  DEPENDS:=+lime-system $(LIME_DEPENDS)
+  DEPENDS:=$(LIME_DEPENDS)
   VERSION:=$(if $(PKG_VERSION),$(PKG_VERSION),$(PKG_SRC_VERSION))
   PKGARCH:=all
   URL:=https://github.com/libremesh/lime-packages/
