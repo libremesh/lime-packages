@@ -22,7 +22,9 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
 	URL:=http://libremesh.org
 	DEPENDS:=+bandwidth-test \
-		+busybox +ethtool +iwinfo +iw +mtr +ip +iputils-ping6 +iputils-ping \
+		+busybox +ethtool +iwinfo +iw +mtr +ip \
+		+LINUX_4_9:iputils-ping6 +LINUX_4_14:iputils-ping6 \
+		+iputils-ping \
 		+sprunge +safe-reboot +netperf +pv +tcpdump-mini +bwm-ng \
 		+lime-report
 	PKGARCH:=all
