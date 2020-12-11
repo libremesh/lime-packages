@@ -61,7 +61,7 @@ for key, shared_voucher in pairs(shared_db) do
     end
 end
 
--- If there is updated status from the shared-state trigger captive-portal to update the firwall
+-- If there is updated status from the shared-state trigger captive-portal to update the firewall
 if new_voucher_info then
     os.execute('captive-portal update')
 end
