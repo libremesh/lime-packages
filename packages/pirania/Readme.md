@@ -105,9 +105,9 @@ san-notebook	mysecret	00:11:22:33:44:55	Thu Jan  1 00:00:00 1970
 
 ### TODO
 
-* Allow removing/deleting vouchers
 * Update rpcd interface
-* Remove dead code
 * Expose the voucher creation with duration functionality
 * Add renew functionality
 * Have a "emergency" function to force pirania to show for everyone
+* Improveportal HTML/js actions
+* Fix redirect to the "original site", now goes to for example /cgi-bin/pirania/http%3A%2F%2Fprueba.com%2F
