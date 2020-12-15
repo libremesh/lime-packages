@@ -14,7 +14,7 @@ yet versatile, multi-radio mesh networks. Check the [Network Architecture][4] to
 see the basic ideas.
 
 We encourage each network community to create its firmware profile on
-[network-profiles][10] repository and build the images with locally.
+[network-profiles][10] repository and build the images locally.
 
 
 ## Supported hardware
