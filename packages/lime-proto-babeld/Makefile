@@ -1,7 +1,14 @@
-LIME_DEPENDS:=+babeld +lime-system
-LIME_MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
-LIME_TITLE:=LiMe babeld proto support
-
 include ../../libremesh.mk
 
-# call BuildPackage - OpenWrt buildroot signature
+define Package/$(PKG_NAME)
+  SECTION:=lime
+  CATEGORY:=LibreMesh
+  TITLE:=LiMe babeld proto support
+  DEPENDS:=+babeld +lime-system
+  MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
+  VERSION:=$(if $(PKG_VERSION),$(PKG_VERSION),$(PKG_SRC_VERSION))
+  PKGARCH:=all
+  URL:=https://github.com/libremesh/lime-packages/
+endef
+
+$(eval $(call BuildPackage,$(PKG_NAME)))
