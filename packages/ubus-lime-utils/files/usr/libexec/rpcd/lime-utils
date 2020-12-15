@@ -34,6 +34,21 @@ local function get_cloud_nodes(msg)
     return
 end
 
+local function get_hostname(msg)
+    mac = utils.shell_quote(msg.mac)
+    iface = utils.shell_quote(msg.iface)
+    local hostname = utils.get_hostname(msg.mac, msg.iface)
+    local result = {}
+    if hostname ~= nil then
+      result.status = "ok"
+      result.hostname = hostname
+    else
+      result.status = "error"
+      result.error = "Couldn't retrieve hostname"
+    end
+    utils.printJson(result)
+end
+
 local function get_station_traffic(params)
     local iface = params.iface
     local mac = params.station_mac
@@ -247,6 +262,7 @@ end
 
 local methods = {
     get_cloud_nodes = { no_params = 0 },
+    get_hostname = { mac = 'value', iface = 'value'},
     get_mesh_ifaces = { no_params = 0 },
     get_node_status = { no_params = 0 },
     get_notes = { no_params = 0},
@@ -265,6 +281,7 @@ if arg[1] == 'call' then
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
     if      arg[2] == 'get_cloud_nodes' then get_cloud_nodes(msg)
+    elseif  arg[2] == 'get_hostname' then get_hostname(msg)
     elseif  arg[2] == 'get_mesh_ifaces' then get_mesh_ifaces(msg)
     elseif  arg[2] == 'get_node_status' then get_node_status(msg)
     elseif  arg[2] == 'get_notes' then get_notes(msg)
