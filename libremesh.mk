@@ -1,9 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-LIME_NAME=$(notdir ${CURDIR})
-
-PKG_NAME?=$(LIME_NAME)
-PKG_MAINTAINER?=$(LIME_MAINTAINER)
+PKG_NAME?=$(notdir ${CURDIR})
 
 # from https://github.com/openwrt/luci/blob/master/luci.mk
 PKG_VERSION?=$(if $(DUMP),x,$(strip $(shell \
@@ -28,22 +25,6 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/$(PKG_NAME)
-  SECTION:=$(if $(LIME_SECTION),$(LIME_SECTION),lime)
-  CATEGORY:=$(if $(LIME_CATEGORY),$(LIME_CATEGORY),LibreMesh)
-  TITLE:=$(LIME_TITLE)
-  DEPENDS:=$(LIME_DEPENDS)
-  VERSION:=$(if $(PKG_VERSION),$(PKG_VERSION),$(PKG_SRC_VERSION))
-  PKGARCH:=all
-  URL:=https://github.com/libremesh/lime-packages/
-endef
-
-ifneq ($(LIME_DESCRIPTION),)
- define Package/$(PKG_NAME)/description
-   $(strip $(LIME_DESCRIPTION))
- endef
-endif
-
 define Build/Compile
 	@rm -rf ./build || true
 	@mkdir ./build
@@ -60,4 +41,3 @@ endef
 define Build/Configure
 endef
 
-$(eval $(call BuildPackage,$(PKG_NAME)))
