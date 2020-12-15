@@ -29,7 +29,7 @@ local function spectral_scan(msg)
         return
     end
 
-	local device = msg.device
+	local device = utils.shell_quote(msg.device)
 	local spectrum = msg.spectrum
 
 	local result = {
@@ -78,7 +78,7 @@ function sample_current_channel(path_ath9k)
     nixio.fs.writefile(path_ath9k .. "spectral_scan_ctl", "manual")
     nixio.fs.writefile(path_ath9k .. "spectral_scan_ctl", "trigger")
 	print("fft_eval " .. path_ath9k .. "spectral_scan0")
-    local samples = utils.unsafe_shell("fft_eval " .. path_ath9k .. "spectral_scan0")
+    local samples = utils.unsafe_shell(utils.shell_quote("fft_eval " .. path_ath9k .. "spectral_scan0"))
     nixio.fs.writefile(path_ath9k .. "spectral_scan_ctl", "disable")
 
     return samples
