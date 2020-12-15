@@ -457,6 +457,16 @@ function utils.http_client_get(url, timeout_s, out_file)
     end
 end
 
+function utils.get_hostname(mac, iface)
+	local hostname = utils.unsafe_shell("grep " ..mac.. " /etc/bat-hosts | head -n 1 | cut -d ' ' -f 2"):gsub("\n", "")
+	hostname = hostname:gsub("_" .. iface:gsub("%W", "_"), ""):gsub("_", "-")
+	if hostname == '' then
+		local ipv6ll = utils.mac2ipv6linklocal(mac) .. "%" .. iface
+		hostname = utils.http_client_get("http://[" .. ipv6ll .. "]/cgi-bin/hostname", 10):gsub("\n", "")
+	end
+	return hostname
+end
+
 function utils.release_info()
     local result = {}
     local release_data = utils.read_file("/etc/openwrt_release")
