@@ -1,0 +1,21 @@
+---
+#  USAGE:
+#  sudo ansible-playbook qemu_cloud_start.yml
+
+- name: start qemu nodes
+
+  hosts: all
+  connection: local
+  gather_facts: no
+  serial: 1
+
+  tasks:
+    - name: create bridges
+      linux_bridge:
+        state: present
+        bridge: "{{ item }}"
+      loop:
+       - "{{ eth0 }}"
+       - "{{ eth2 | default() }}"
+      when: item != ""
+        
