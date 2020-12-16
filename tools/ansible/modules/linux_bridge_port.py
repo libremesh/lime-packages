@@ -84,7 +84,7 @@ class LinuxPort (object) :
                 changed = True
             else :
                 changed = False
-        except Exception, e :
+        except Exception as e :
             self.module.fail_json (msg = str (e))
 
         self.module.exit_json (changed = changed)
@@ -107,7 +107,7 @@ class LinuxPort (object) :
                     self.addif ()
                     changed = True
 
-        except Exception, e :
+        except Exception as e :
             self.module.fail_json (msg = str (e))
 
         self.module.exit_json (changed = changed)
