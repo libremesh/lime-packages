@@ -18,3 +18,12 @@
        - "{{ eth0 }}"
        - "{{ eth2 | default() }}"
       when: item != ""
+
+    - name: delete taps
+      linux_tuntap:
+        state: absent
+        name: "{{ item }}"
+      loop:
+       - "lime_{{ cloud }}_{{ inventory_hostname_short }}_0"
+       - "lime_{{ cloud }}_{{ inventory_hostname_short }}_1"
+       - "lime_{{ cloud }}_{{ inventory_hostname_short }}_2"

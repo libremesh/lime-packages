@@ -18,4 +18,26 @@
        - "{{ eth0 }}"
        - "{{ eth2 | default() }}"
       when: item != ""
-        
+
+    - name: create taps
+      linux_tuntap:
+        state: present
+        name: "{{ item }}"
+        mode: tap
+      loop:
+       - "lm_{{ cloud }}_{{ inventory_hostname_short }}_0"
+       - "lm_{{ cloud }}_{{ inventory_hostname_short }}_1"
+       - "lm_{{ cloud }}_{{ inventory_hostname_short }}_2"
+
+    - name: add eth0 taps to bridges
+      linux_bridge_port:
+        state: present
+        bridge: "{{ eth0 }}"
+        port: "lm_{{ cloud }}_{{ inventory_hostname_short }}_0"
+
+    - name: add eth2 taps to bridges
+      linux_bridge_port:
+        state: present
+        bridge: "{{ eth2 | default() }}"
+        port: "lm_{{ cloud }}_{{ inventory_hostname_short }}_2"
+      when: eth2 | default() != ""
