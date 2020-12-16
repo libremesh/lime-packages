@@ -215,10 +215,8 @@ if [ "$_arg_libremesh_workdir" ]; then
     done
 fi
 
-# build the cdpio. Don't know how to do it without changing the directory
-cd /tmp/lime_rootfs_${NODE_ID}
-find . | cpio --quiet -o -H newc  > /tmp/lime_rootfs_${NODE_ID}.cpio
-cd - > /dev/null
+# build the cpio
+( cd /tmp/lime_rootfs_${NODE_ID} && find . | cpio --quiet -o -H newc  > /tmp/lime_rootfs_${NODE_ID}.cpio )
 
 MONITOR_PORT="454${NODE_ID}"
 
