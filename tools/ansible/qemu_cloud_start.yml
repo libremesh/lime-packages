@@ -85,6 +85,27 @@
     - name: run qemu
       shell: (../qemu_dev_start --node-id {{ node_id }} --eth0 {{ lm_ifname }}_0 --eth2 {{ lm_ifname }}_2 {{ rootfs }} {{ ramfs }} &)
 
+    - name: set_fact
+      set_fact:
+        linklocal: "fe80::5000:ff:feab:c0{{ node_id }}%lm_cloud{{cloud}}"
+
+- name: useful info for doing clusterssh
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  tasks:
+    - set_fact:
+        linklocals: "{{ linklocals | default([]) | union([hostvars[item].linklocal]) }}"
+      loop: "{{ groups['all'] }}"
+
     - name: info
-      debug:
-        msg: "now to enter {{ inventory_hostname }} you can do ssh fe80::5000:ff:feab:c0{{ node_id }}%lm_cloud{{cloud}}"
+      pause:
+        seconds: 5
+        prompt: |
+          ===================================
+          now to manage the cloud you can do:
+
+          clusterssh {{ linklocals | join(' ') }}
+
+          ===================================
