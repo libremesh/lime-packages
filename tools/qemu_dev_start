@@ -18,6 +18,8 @@
 # ARG_OPTIONAL_SINGLE([libremesh-workdir],[],[Optional path to a libremesh working directory to include it as a layer over the rootfs.])
 # ARG_OPTIONAL_SINGLE([node-id],[],[An ID number from 0 to 99. Use this when running multiple qemu nodes, each node must have a different ID.],[0])
 # ARG_OPTIONAL_SINGLE([enable-wan],[],[Provide the node with NATed access to the local netork. An ifc must be provided, eg wlan0. Needs dnsmasq installed.])
+# ARG_OPTIONAL_SINGLE([eth0],[],[Optionally specify ifname of tap to use (need to create it yourself)])
+# ARG_OPTIONAL_SINGLE([eth2],[],[Optionally specify ifname of tap to use (need to create it yourself)])
 # ARG_OPTIONAL_BOOLEAN([verbose],[],[Turn on verbose mode],[])
 # ARG_POSITIONAL_SINGLE([rootfs],[Path to a x86-64-generic-rootfs.tar.gz],[])
 # ARG_POSITIONAL_SINGLE([ramfs],[Path to a x86-64-ramfs.bzImage],[])
@@ -52,18 +54,22 @@ _positionals=()
 _arg_libremesh_workdir=
 _arg_node_id="0"
 _arg_enable_wan=
+_arg_eth0=
+_arg_eth2=
 _arg_verbose="off"
 
 
 print_help()
 {
 	printf '%s\n' "Helper to run libremesh in a qemu x86_64 for development purposes"
-	printf 'Usage: %s [--libremesh-workdir <arg>] [--node-id <arg>] [--enable-wan <arg>] [--(no-)verbose] [-h|--help] <rootfs> <ramfs>\n' "$0"
+	printf 'Usage: %s [--libremesh-workdir <arg>] [--node-id <arg>] [--enable-wan <arg>] [--eth0 <arg>] [--eth2 <arg>] [--(no-)verbose] [-h|--help] <rootfs> <ramfs>\n' "$0"
 	printf '\t%s\n' "<rootfs>: Path to a x86-64-generic-rootfs.tar.gz"
 	printf '\t%s\n' "<ramfs>: Path to a x86-64-ramfs.bzImage"
 	printf '\t%s\n' "--libremesh-workdir: Optional path to a libremesh working directory to include it as a layer over the rootfs. (no default)"
 	printf '\t%s\n' "--node-id: An ID number from 0 to 99. Use this when running multiple qemu nodes, each node must have a different ID. (default: '0')"
 	printf '\t%s\n' "--enable-wan: Provide the node with NATed access to the local netork. An ifc must be provided, eg wlan0. Needs dnsmasq installed. (no default)"
+	printf '\t%s\n' "--eth0: Optionally specify ifname of tap to use (need to create it yourself) (no default)"
+	printf '\t%s\n' "--eth2: Optionally specify ifname of tap to use (need to create it yourself) (no default)"
 	printf '\t%s\n' "--verbose, --no-verbose: Turn on verbose mode (off by default)"
 	printf '\t%s\n' "-h, --help: Prints help"
 }
@@ -99,6 +105,22 @@ parse_commandline()
 				;;
 			--enable-wan=*)
 				_arg_enable_wan="${_key##--enable-wan=}"
+				;;
+			--eth0)
+				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+				_arg_eth0="$2"
+				shift
+				;;
+			--eth0=*)
+				_arg_eth0="${_key##--eth0=}"
+				;;
+			--eth2)
+				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+				_arg_eth2="$2"
+				shift
+				;;
+			--eth2=*)
+				_arg_eth2="${_key##--eth2=}"
 				;;
 			--no-verbose|--verbose)
 				_arg_verbose="on"
@@ -167,18 +189,22 @@ WAN_IFC="lime_tap${NODE_ID}_1"
 ETH2_IFC="lime_tap${NODE_ID}_2"
 OWN_LAN_IP="10.13.0.2/16"
 
+[ -n "${_arg_eth0}" ] && LAN_IFC="${_arg_eth0}"
+[ -n "${_arg_eth2}" ] && ETH2_IFC="${_arg_eth2}"
 
-if [ ! -e "/sys/class/net/$BRIDGE_IFC" ]; then
-    ip link add name "$BRIDGE_IFC" type bridge
-    ip link set "$BRIDGE_IFC" up
-    ip addr add "$OWN_LAN_IP" dev "$BRIDGE_IFC"
-fi
+if [[ -z "$_arg_eth0" ]]; then
+    if [ ! -e "/sys/class/net/$BRIDGE_IFC" ]; then
+        ip link add name "$BRIDGE_IFC" type bridge
+        ip link set "$BRIDGE_IFC" up
+        ip addr add "$OWN_LAN_IP" dev "$BRIDGE_IFC"
+    fi
 
-if [ ! -e "/sys/class/net/$LAN_IFC" ]; then
-    # No IP for the tap LAN ifc
-    ip tuntap add name "$LAN_IFC" mode tap
-    ip link set "$LAN_IFC" up
-    ip link set "$LAN_IFC" master "$BRIDGE_IFC"
+    if [ ! -e "/sys/class/net/$LAN_IFC" ]; then
+        # No IP for the tap LAN ifc
+        ip tuntap add name "$LAN_IFC" mode tap
+        ip link set "$LAN_IFC" up
+        ip link set "$LAN_IFC" master "$BRIDGE_IFC"
+    fi
 fi
 
 if [ -n "$_arg_enable_wan" ]; then
@@ -241,7 +267,9 @@ qemu-system-x86_64 \
 
 
 # cleanup
-ip tuntap del name ${LAN_IFC} mode tap
+if [[ -z "$_arg_eth0" ]]; then
+    ip tuntap del name ${LAN_IFC} mode tap
+fi
 
 if [ -n "$_arg_enable_wan" ]; then
 
