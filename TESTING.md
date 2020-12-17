@@ -163,6 +163,7 @@ as expected:
 * ubus / rpcd
 * lime-app
 
+ICMPv4 does NOT work between qemu nodes, so ping (v4) will not work as expected. Everything else (including ICMPv6 i.e. ping6) does work as expected, however.
 
 ### How to start and stop the image
 
@@ -193,12 +194,14 @@ $ sudo ./tools/qemu_dev_start  path/to/openwrt-x86-64-generic-rootfs.tar.gz path
 $ ./tools/qemu_dev_stop
 ```
 
-#### Run 11 nodes simultaneously
+#### Run 12 nodes simultaneously, with arbitrary complex topology of clouds and links
 
 ```
-$ ./tools/qemu_cloud_start path/to/openwrt-x86-64-generic-rootfs.tar.gz path/to/openwrt-x86-64-ramfs.bzImage
+### apt install ansible, if you don't have it already
+$ cd tools/ansible/
+$ sudo ansible-playbook qemu_cloud_start.yml
 ### use clusterssh to manage the nodes
-$ ./tools/qemu_cloud_stop
+$ sudo ansible-playbook qemu_cloud_stop.yml
 ```
 
 #### Update with local libremesh code
