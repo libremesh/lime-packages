@@ -104,6 +104,7 @@ function anygw.configure(args)
 	uci:foreach("dhcp", "dnsmasq",
 		function(s)
 			uci:set("dhcp", s[".name"], "add_local_fqdn", "0")
+			uci:set("dhcp", s[".name"], "add_local_hostname", "0")
 		end
 	)
 
