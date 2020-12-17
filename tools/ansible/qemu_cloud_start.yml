@@ -77,6 +77,11 @@
         port: "{{ lm_ifname }}_2"
       when: eth2 | default() != ""
 
+    - name: deploy template
+      template:
+        dest: "/tmp/lime_node_{{ node_id }}"
+        src: lime-node
+
     - name: run qemu
       shell: (../qemu_dev_start --node-id {{ node_id }} --eth0 {{ lm_ifname }}_0 --eth2 {{ lm_ifname }}_2 {{ rootfs }} {{ ramfs }} &)
 
