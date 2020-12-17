@@ -2,3 +2,5 @@ build
 *~
 *.kate-swp
 luacov.stats.out
+tools/ansible/files/generic-rootfs.tar.gz
+tools/ansible/files/ramfs.bzImage
