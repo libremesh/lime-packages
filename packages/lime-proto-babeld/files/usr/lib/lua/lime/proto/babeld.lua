@@ -82,9 +82,9 @@ function babeld.configure(args)
 	uci:set("babeld", "localdeny", "action", "deny")
 
 	-- Avoid redistributing enything else
-	uci:set("babeld", "dany", "filter")
-	uci:set("babeld", "dany", "type", "redistribute")
-	uci:set("babeld", "dany", "action", "deny")
+	uci:set("babeld", "deny", "filter")
+	uci:set("babeld", "deny", "type", "redistribute")
+	uci:set("babeld", "deny", "action", "deny")
 
 	uci:save("babeld")
 
