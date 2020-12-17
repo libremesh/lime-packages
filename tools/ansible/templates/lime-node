@@ -9,6 +9,19 @@ config lime 'wifi'
 	option ap_ssid 'cloud{{cloud}}'
 	option apname_ssid 'cloud{{cloud}}/%H'
 
+config net 'eth0'
+	option linux_name 'eth0'
+	list protocols ieee80211s
+	list protocols lan
+	list protocols anygw
+	list protocols batadv:%N1
+	list protocols bmx6:13
+	list protocols olsr:14
+	list protocols olsr6:15
+	list protocols olsr2:16
+	list protocols babeld:17
+	list protocols bmx7:18
+
 config net 'eth2'
         option linux_name 'eth2'
 	# no 'lan' protocol to avoid being added to br-lan
