@@ -2,6 +2,29 @@
 #  USAGE:
 #  sudo ansible-playbook qemu_cloud_start.yml
 
+- name: download ramfs and rootfs if not found locally
+
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    rootfs_url: http://repo.libremesh.org/tmp/openwrt-18.06-x86-64-generic-rootfs.tar.gz
+    ramfs_url: http://repo.libremesh.org/tmp/openwrt-18.06-x86-64-ramfs.bzImage
+    rootfs: files/generic-rootfs.tar.gz
+    ramfs: files/ramfs.bzImage
+
+  tasks:
+    - name: download rootfs
+      get_url:
+        url: "{{ rootfs_url }}"
+        dest: "{{ rootfs }}"
+
+    - name: download ramfs
+      get_url:
+        url: "{{ ramfs_url }}"
+        dest: "{{ ramfs }}"
+
 - name: create bridges for qemu nodes
 
   hosts: all
