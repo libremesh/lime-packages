@@ -9,7 +9,15 @@
   gather_facts: no
   serial: 1
 
+  vars:
+    node_id: "{{ '%02d' | format(groups['all'].index(inventory_hostname)) }}"
+    lm_ifname: lm_{{ cloud }}_{{ inventory_hostname_short }}
+
   tasks:
+    - name: stop qemu
+      shell: ../qemu_dev_stop {{ node_id }}
+      failed_when: false
+
     - name: delete bridges
       linux_bridge:
         state: absent
@@ -24,6 +32,5 @@
         state: absent
         name: "{{ item }}"
       loop:
-       - "lime_{{ cloud }}_{{ inventory_hostname_short }}_0"
-       - "lime_{{ cloud }}_{{ inventory_hostname_short }}_1"
-       - "lime_{{ cloud }}_{{ inventory_hostname_short }}_2"
+       - "{{ lm_ifname }}_0"
+       - "{{ lm_ifname }}_2"

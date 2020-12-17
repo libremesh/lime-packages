@@ -2,7 +2,7 @@
 #  USAGE:
 #  sudo ansible-playbook qemu_cloud_start.yml
 
-- name: start qemu nodes
+- name: create bridges for qemu nodes
 
   hosts: all
   connection: local
@@ -19,25 +19,44 @@
        - "{{ eth2 | default() }}"
       when: item != ""
 
+- name: start qemu nodes
+
+  hosts: all
+  connection: local
+  gather_facts: no
+
+  vars:
+    node_id: "{{ '%02d' | format(groups['all'].index(inventory_hostname)) }}"
+    lm_ifname: lm_{{ cloud }}_{{ inventory_hostname_short }}
+    rootfs: files/generic-rootfs.tar.gz
+    ramfs: files/ramfs.bzImage
+
+  tasks:
     - name: create taps
       linux_tuntap:
         state: present
         name: "{{ item }}"
         mode: tap
       loop:
-       - "lm_{{ cloud }}_{{ inventory_hostname_short }}_0"
-       - "lm_{{ cloud }}_{{ inventory_hostname_short }}_1"
-       - "lm_{{ cloud }}_{{ inventory_hostname_short }}_2"
+       - "{{ lm_ifname }}_0"
+       - "{{ lm_ifname }}_2"
 
     - name: add eth0 taps to bridges
       linux_bridge_port:
         state: present
         bridge: "{{ eth0 }}"
-        port: "lm_{{ cloud }}_{{ inventory_hostname_short }}_0"
+        port: "{{ lm_ifname }}_0"
 
     - name: add eth2 taps to bridges
       linux_bridge_port:
         state: present
         bridge: "{{ eth2 | default() }}"
-        port: "lm_{{ cloud }}_{{ inventory_hostname_short }}_2"
+        port: "{{ lm_ifname }}_2"
       when: eth2 | default() != ""
+
+    - name: run qemu
+      shell: (../qemu_dev_start --node-id {{ node_id }} --eth0 {{ lm_ifname }}_0 --eth2 {{ lm_ifname }}_2 {{ rootfs }} {{ ramfs }} &)
+
+    - name: info
+      debug:
+        msg: "now to enter {{ inventory_hostname }} you can do ssh fe80::5000:ff:feab:c0{{ node_id }}%lm_cloud{{cloud}}"
