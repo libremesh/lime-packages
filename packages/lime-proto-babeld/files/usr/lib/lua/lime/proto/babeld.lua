@@ -43,6 +43,11 @@ function babeld.configure(args)
 	uci:set("babeld", "general", "general")
 	uci:set("babeld", "general", "local_port", "30003")
 
+	uci:set("babeld", "ula6", "filter")
+	uci:set("babeld", "ula6", "type", "redistribute")
+	uci:set("babeld", "ula6", "ip", "fc00::/7")
+	uci:set("babeld", "ula6", "action", "allow")
+
 	uci:set("babeld", "public6", "filter")
 	uci:set("babeld", "public6", "type", "redistribute")
 	uci:set("babeld", "public6", "ip", "2000::0/3")
