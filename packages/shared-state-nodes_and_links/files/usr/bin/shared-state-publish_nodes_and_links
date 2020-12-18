@@ -1,7 +1,7 @@
 #!/usr/bin/lua
 
 --! LibreMesh
---! Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
+--! Copyright (C) 2020  Gioacchino Mazzurco <gio@altermundi.net>
 --!
 --! This program is free software: you can redistribute it and/or modify
 --! it under the terms of the GNU Affero General Public License as
@@ -16,15 +16,11 @@
 --! You should have received a copy of the GNU Affero General Public License
 --! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-local fs = require("nixio.fs")
-local JSON = require("luci.jsonc")
+local dataHandle = io.popen(
+	"echo '{}' | /usr/libexec/rpcd/lime-location call nodes_and_links", "r" )
 
-local function shell(command)
-    -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
-    local handle = io.popen(command)
-    local result = handle:read("*a")
-    handle:close()
-    return result
-end
-io.popen("shared-state insert nodes_and_links", "w"):write(shell("/usr/libexec/rpcd/lime-location call nodes_and_links </dev/null"))
+local ssHandle = io.popen("shared-state insert nodes_and_links", "w")
+ssHandle:write(dataHandle:read("*a"))
 
+dataHandle:close()
+ssHandle:close()

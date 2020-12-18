@@ -15,17 +15,17 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-	TITLE:=nodes_and_links module for shared-state
-	CATEGORY:=LiMe
+	TITLE:=Nodes and links module for shared-state
+	CATEGORY:=LibreMesh
 	MAINTAINER:=Nicolas Pace <nico@libre.ws>
 	URL:=http://libremesh.org
-	DEPENDS:=+@BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT +lua +luci-lib-jsonc \
+	DEPENDS:=+@BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT +lua \
 		shared-state +ubus-lime-location
 	PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description
-	Syncronize nodes_and_links beween nodes.
+	Syncronize nodes and links beween nodes.
 endef
 
 define Build/Compile
