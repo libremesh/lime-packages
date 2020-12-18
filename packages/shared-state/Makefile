@@ -14,39 +14,20 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
 
-# Ugly hack to keep compatibility with Openwrt master and stable releases
-ping6_legacy=0
-ping6=iputils-ping
-ping6_symlink=PING_LEGACY_SYMLINKS
-
-# Detect OpenWrt 18.06
-ifdef LINUX_4_9
-ping6_legacy=1
-endif
-
-# Detect OpenWrt 18.06 and 19.07
-ifdef LINUX_4_14
-ping6_legacy=1
-endif
-
-ifeq ($(ping6_legacy),1)
-ping6=iputils-ping6
-ping6_symlink=PACKAGE_iputils-ping6
-endif
+include ../../ping6retrocompat.mk
 
 define Package/$(PKG_NAME)
 	TITLE:=Very minimal state sharing betwen nodes
-	CATEGORY:=LiMe
+	CATEGORY:=LibreMesh
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
-	DEPENDS:=+libuci-lua +lime-system \
-		+lua +luci-lib-jsonc +luci-lib-nixio +$(ping6) \
-		+uclient-fetch
+	DEPENDS:=+libuci-lua +lime-system +lua +luci-lib-jsonc +luci-lib-nixio \
+		+$(PING6_PACKAGE) +uclient-fetch
 	PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/config
-	select $(ping6_symlink)
+	select $(PING6_SYMLINK)
 endef
 
 define Package/$(PKG_NAME)/description
