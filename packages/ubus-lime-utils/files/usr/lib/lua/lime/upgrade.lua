@@ -20,7 +20,6 @@ pkg.LIME_SYSUPGRADE_BACKUP_EXTRA_DIR = "/tmp/lime-sysupgrade/preserve"
 pkg.UPGRADE_METADATA_FILE = "/etc/upgrade_metadata"
 
 function pkg.safe_upgrade_confirm_remaining_s()
-    print("safe_upgrade_confirm_remaining_s")
     local remaining_s = tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining"))
     if not remaining_s then
         remaining_s = -1
