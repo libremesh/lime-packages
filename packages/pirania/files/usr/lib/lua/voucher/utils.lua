@@ -98,4 +98,22 @@ function utils.urldecode(value)
     return nil
 end
 
+--! returns a random string. filter is an optional function to reduce the possible characters.
+--! by default the filter allows all the alphanumeric characters
+function utils.random_string(length, filter)
+    if filter == nil then
+        --! all alphanumeric characters
+        filter = function (c) return string.match(c, "%w") ~= nil end
+    end
+    local urandom = io.open("/dev/urandom", "rb")
+    local out = ""
+    while length > #out do
+        local c = urandom:read(1)
+        if filter(c) then
+            out = out .. c
+        end
+    end
+    return out
+end
+
 return utils

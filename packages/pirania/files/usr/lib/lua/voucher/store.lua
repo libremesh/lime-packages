@@ -30,10 +30,10 @@ function store.load_db(db_path, voucher_init)
             end
 
             if voucher ~= nil then
-                if vouchers[voucher.name] ~= nil then
-                    utils.log('warning', "vouchers: multiple vouchers with the same name " .. voucher.name)
+                if vouchers[voucher.id] ~= nil then
+                    utils.log('warning', "vouchers: multiple vouchers with the same id " .. voucher.id)
                 end
-                vouchers[voucher.name] = voucher
+                vouchers[voucher.id] = voucher
             else
                 utils.log('warning', "vouchers: Error loading voucher file " .. fname .. ", " .. err)
             end
@@ -43,14 +43,14 @@ function store.load_db(db_path, voucher_init)
 end
 
 function store.add_voucher(db_path, voucher, voucher_init)
-    local fname = db_path .. "/" .. voucher.name .. ".json"
+    local fname = db_path .. "/" .. voucher.id .. ".json"
     --! check if it already exists and if it is equal do not rewrite it
     local f = io.open(fname, "r")
     if f ~= nil then
         local json_obj = json.parse(f:read("*all"))
         f:close()
         local local_voucher = voucher_init(json_obj)
-        if local_voucher == voucher then 
+        if local_voucher == voucher then
             return false
         end
     end
@@ -62,7 +62,12 @@ function store.add_voucher(db_path, voucher, voucher_init)
 end
 
 function store.remove_voucher(db_path, voucher)
-    local fname = db_path .. "/" .. voucher.name .. ".json"
+    local fname = db_path .. "/" .. voucher.id .. ".json"
+    local removed_db = io.open(db_path .. "/removed.txt", "a")
+    if removed_db then
+        removed_db:write(voucher.id .. ",")
+        removed_db:close()
+    end
     local removed = os.execute("rm " .. fname) == 0
     if removed then
         hooks.run("db_change")
