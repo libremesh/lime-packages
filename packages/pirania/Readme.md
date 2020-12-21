@@ -177,3 +177,4 @@ san-notebook	mysecret	00:11:22:33:44:55	Thu Jan  1 00:00:00 1970
 * Have a "emergency" function to force pirania to show for everyone
 * Improveportal HTML/js actions
 * Fix redirect to the "original site", now goes to for example /cgi-bin/pirania/http%3A%2F%2Fprueba.com%2F
+* Do not re-add removed vouchers from the shared-state db (see removed.txt).
