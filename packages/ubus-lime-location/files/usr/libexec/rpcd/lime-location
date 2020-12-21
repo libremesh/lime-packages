@@ -16,6 +16,7 @@ local config = require("lime.config")
 local wireless = require "lime.wireless"
 local network = require 'lime.network'
 local utils = require 'lime.utils'
+local location = require 'lime.location'
 
 
 local conn = ubus.connect()
@@ -23,26 +24,17 @@ if not conn then
     error("Failed to connect to ubus")
 end
 
-local function valid_coordinate(value)
-    return type(tonumber(value)) == "number"
-end
-
 local function _get_location(msg)
     local result = {location = {}, default = false}
-    local uci = config.get_uci_cursor()
 
-    local lat = uci:get("location", "settings", "node_latitude")
-    local long = uci:get("location", "settings", "node_longitude")
-
-    if valid_coordinate(lat) and valid_coordinate(long) then
-        result.location.lat = lat
-        result.location.lon = long
-    else
-        result.location.lat = uci:get("location", "settings", "community_latitude") or "FIXME"
-        result.location.lon = uci:get("location", "settings", "community_longitude") or "FIXME"
+    local coords = location.get_node()
+    if not coords then
         result.default = true
+        coords = location.get_community() or {lat="FIXME", long="FIXME"}
     end
 
+    result.location.lat = coords.lat
+    result.location.lon = coords.long
     result.status = "ok"
     return result
 end
@@ -52,37 +44,15 @@ local function get_location(msg)
 end
 
 local function set_location(msg)
-    local uci = config.get_uci_cursor()
-    uci:set("location", "settings", "node_latitude", msg.lat)
-    uci:set("location", "settings", "node_longitude", msg.lon)
-    uci:commit("location")
-
-    io.popen("shared-state insert nodes_and_links", "w"):write(json.stringify(_nodes_and_links()))
+    location.set(msg.lat, msg.lon)
     utils.printJson({ lat = msg.lat, lon = msg.lon, status = 'ok' });
 end
 
-function _nodes_and_links()
-  local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
-  local macs = network.get_own_macs("wlan*")
-
-  local coordinates = _get_location().location
-  local iface, currneigh, _, n
-
-  local interfaces = wireless.mesh_ifaces()
-  local links = {}
-  for _, iface in pairs(interfaces) do
-    currneigh = iwinfo.nl80211.assoclist(iface)
-    for mac, station in pairs(currneigh) do
-        table.insert(links, string.lower(mac))
-    end
-  end
-  result = {}
-  result[hostname] = {hostname=hostname, macs=macs, coordinates=coordinates, links=links}
-  return result
-end
-
 local function nodes_and_links()
-  utils.printJson(_nodes_and_links())
+  local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
+  local result = {}
+  result[hostname] = location.nodes_and_links()
+  utils.printJson(result)
 end
 
 function all_nodes_and_links(msg)

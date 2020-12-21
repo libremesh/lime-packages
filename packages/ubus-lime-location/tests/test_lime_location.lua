@@ -2,6 +2,7 @@ local utils = require "lime.utils"
 local test_utils = require "tests.utils"
 local config = require 'lime.config'
 local network = require 'lime.network'
+local location = require 'lime.location'
 local iwinfo = require('iwinfo')
 
 local test_file_name = "packages/ubus-lime-location/files/usr/libexec/rpcd/lime-location"
@@ -96,6 +97,47 @@ describe('ubus-lime-utils tests #ubuslimelocation', function()
         assert.are.same(own_macs, response[hostname].macs)
         assert.are.same({lat='23.123', lon='-45'}, response[hostname].coordinates)
         assert.are.same({'aa:bb:cc:dd:ee:ff'}, response[hostname].links)
+    end)
+
+    before_each('', function()
+        uci = test_utils.setup_test_uci()
+    end)
+
+    after_each('', function()
+        test_utils.teardown_test_uci(uci)
+    end)
+end)
+
+
+describe('ubus-lime-utils tests #liblocation', function()
+    it('test get with no config', function()
+        uci:set("location", "settings", "location")
+        assert.is_nil(location.get_node())
+    end)
+
+    it('test get with no node config', function()
+        uci:set("location", "settings", "location")
+        lat = uci:set("location", "settings", "community_latitude", "23.123")
+        lon = uci:set("location", "settings", "community_longitude", "-45")
+        assert.is_nil(location.get_node())
+    end)
+
+    it('test get with node config', function()
+        uci:set("location", "settings", "location")
+        local latitude = "15.123"
+        local longitude = "-5"
+        lat = uci:set("location", "settings", "node_latitude", latitude)
+        lon = uci:set("location", "settings", "node_longitude", longitude)
+        lat = uci:set("location", "settings", "community_latitude", "23.123")
+        lon = uci:set("location", "settings", "community_longitude", "-45")
+        assert.are.same({lat=latitude, long=longitude}, location.get_node())
+    end)
+
+    it('test nodes_and_links no wireless', function()
+        local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
+        local result = location.nodes_and_links()
+        assert.are.same({}, result.links)
+        assert.are.same({lat="FIXME", lon="FIXME"}, result.coordinates)
     end)
 
     before_each('', function()
