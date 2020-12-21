@@ -18,3 +18,5 @@ jobs:
 
       - name: run tests
         run: ./run_tests
+      - name: coverage
+        run: bash <(curl -s https://codecov.io/bash)
