@@ -2,8 +2,11 @@
 
 local store = require('voucher.store')
 local config = require('voucher.config')
+local utils = require('voucher.utils')
 
 local vouchera = {}
+
+local ID_SIZE = 6
 
 --! Simplify the comparison of vouchers using a metatable for the == operator
 local voucher_metatable = {
@@ -12,9 +15,19 @@ local voucher_metatable = {
     end
 }
 
---! obj attrs name, code, mac, expiration_date, duration_m, mod_counter
+--! obj attrs id, name, code, mac, expiration_date, duration_m, mod_counter
 function voucher_init(obj)
     local voucher = {}
+
+    if not obj.id then
+        obj.id = utils.random_string(ID_SIZE)
+    end
+
+    voucher.id = obj.id
+    if type(obj.id) ~= "string" then
+        return nil, "id must be a string"
+    end
+
     voucher.name = obj.name
 
     if type(obj.code) ~= "string" then
@@ -40,7 +53,7 @@ function voucher_init(obj)
     --! tostring must reflect all the state of a voucher (so vouchers can be compared reliably using tostring)
     voucher.tostring = function()
         local v = voucher
-        return(string.format('%s\t%s\t%s\t%s\t%s\t%s', v.name, v.code, v.mac or 'xx:xx:xx:xx:xx:xx',
+        return(string.format('%s\t%s\t%s\t%s\t%s\t%s\t%s', v.id, v.name, v.code, v.mac or 'xx:xx:xx:xx:xx:xx',
                              os.date("%c", v.expiration_date) or '', tostring(v.duration_m), v.mod_counter))
     end
 
@@ -60,28 +73,28 @@ function vouchera.init(cfg)
     --! Automatic voucher pruning
     for _, voucher in pairs(vouchera.vouchers) do
         if vouchera.should_be_pruned(voucher) then
-            vouchera.remove(voucher.name)
+            vouchera.remove_locally(voucher.id)
         end
     end
 end
 
 function vouchera.add(obj)
     local voucher = voucher_init(obj)
-    if vouchera.vouchers[obj.name] ~= nil then
-        return nil, "voucher with same name already exists"
+    if vouchera.vouchers[obj.id] ~= nil then
+        return nil, "voucher with same id already exists"
     end
     if voucher and store.add_voucher(config.db_path, voucher, voucher_init) then
-        vouchera.vouchers[obj.name] = voucher
+        vouchera.vouchers[obj.id] = voucher
         return voucher
     end
     return nil, "can't create voucher"
 end
 
---! Remove a voucher from the local db
-function vouchera.remove(name)
-    if vouchera.vouchers[name] ~= nil then
-        if store.remove_voucher(config.db_path, vouchera.vouchers[name]) then
-            vouchera.vouchers[name] = nil
+--! Remove a voucher from the local db. This won't trigger a remove in the shared db.
+function vouchera.remove_locally(id)
+    if vouchera.vouchers[id] ~= nil then
+        if store.remove_voucher(config.db_path, vouchera.vouchers[id]) then
+            vouchera.vouchers[id] = nil
             return true
         else
             return nil, "can't remove voucher"
@@ -90,6 +103,22 @@ function vouchera.remove(name)
     return nil, "can't find voucher to remove"
 end
 
+--! Remove a voucher from the shared db.
+--! Deactivates the voucher, sets the expiration_date to the current time and increment the mod_counter.
+--! This will eventualy prune the voucher in all the dbs after PRUNE_OLDER_THAN_S seconds.
+--! It is important to maintain the "removed" (deactivated) voucher in the shared db for some time
+--! so that all nodes (even nodes that are offline when this is executed) have time to update locally
+--! and eventualy prune the voucher.
+function vouchera.remove_globally(name)
+    local voucher = vouchera.vouchers[name]
+    if voucher then
+        voucher.expiration_date = os.time()
+        voucher.mac = nil
+        voucher.mod_counter = voucher.mod_counter + 1
+        return store.add_voucher(config.db_path, voucher, voucher_init)
+    end
+    return voucher
+end
 
 --! Activate a voucher returning true or false depending on the status of the operation.
 function vouchera.activate(code, mac)
@@ -106,11 +135,10 @@ function vouchera.activate(code, mac)
     return voucher
 end
 
-function vouchera.deactivate(name)
-    local voucher = vouchera.vouchers[name]
+function vouchera.deactivate(id)
+    local voucher = vouchera.vouchers[id]
     if voucher then
-        voucher.mac = mac
-        voucher.expiration_date = 0
+        voucher.mac = nil
         voucher.mod_counter = voucher.mod_counter + 1
         return store.add_voucher(config.db_path, voucher, voucher_init)
     end
@@ -119,7 +147,7 @@ end
 
 --! updates the database with the new voucher information
 function vouchera.update_with(voucher)
-    vouchera.vouchers[voucher.name] = voucher
+    vouchera.vouchers[voucher.id] = voucher
     return store.add_voucher(config.db_path, voucher, voucher_init)
 end
 
@@ -156,8 +184,8 @@ function vouchera.should_be_pruned(voucher)
     return voucher.expiration_date >= (os.time() + vouchera.PRUNE_OLDER_THAN_S)
 end
 
-function vouchera.update_expiration_date(name, new_date)
-    local voucher = vouchera.vouchers[name]
+function vouchera.update_expiration_date(id, new_date)
+    local voucher = vouchera.vouchers[id]
     if voucher then
         voucher.expiration_date = new_date
         voucher.mod_counter = voucher.mod_counter + 1
