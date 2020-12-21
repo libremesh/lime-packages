@@ -127,7 +127,7 @@ function vouchera.activate(code, mac)
         voucher.mac = mac
         --! If the voucher has a duration then create the expiration_date from it
         if voucher.duration_m then
-           voucher.expiration_date = os.time() + duration_m * 60
+           voucher.expiration_date = os.time() + voucher.duration_m * 60
         end
         voucher.mod_counter = voucher.mod_counter + 1
         store.add_voucher(config.db_path, voucher, voucher_init)
@@ -181,7 +181,8 @@ function vouchera.is_active(voucher)
 end
 
 function vouchera.should_be_pruned(voucher)
-    return voucher.expiration_date >= (os.time() + vouchera.PRUNE_OLDER_THAN_S)
+    return type(voucher.expiration_date) == "number" and (
+           voucher.expiration_date <= (os.time() - vouchera.PRUNE_OLDER_THAN_S))
 end
 
 function vouchera.update_expiration_date(id, new_date)
