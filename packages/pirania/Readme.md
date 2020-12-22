@@ -87,27 +87,26 @@ $ voucher show
 $ voucher add san-notebook mysecret $((`date +%s` + 1000))
 ok
 $ voucher show
-san-notebook	mysecret	xx:xx:xx:xx:xx:xx	Tue Aug  4 02:45:01 2020
+Qzt3WF	san-notebook	mysecret	xx:xx:xx:xx:xx:xx	Tue Dec 22 20:13:42 2020	nil	1
 $ voucher show_active
 $ voucher activate mysecret 00:11:22:33:44:55
+Voucher activated!
 $ voucher show
-san-notebook	mysecret	00:11:22:33:44:55	Tue Aug  4 02:45:01 2020
+Qzt3WF	san-notebook	mysecret	00:11:22:33:44:55	Tue Dec 22 20:13:42 2020	nil	2
 
 $ voucher show_active
-san-notebook	mysecret	00:11:22:33:44:55	Tue Aug  4 02:45:01 2020
+Qzt3WF	san-notebook	mysecret	00:11:22:33:44:55	Tue Dec 22 20:13:42 2020	nil	2
 
-$ vouchervoucher deactivate san-notebook
+$ voucher deactivate Qzt3WF
 ok
-$ vouchervoucher show_active
-$ vouchervoucher show
-san-notebook	mysecret	00:11:22:33:44:55	Thu Jan  1 00:00:00 1970
+$ voucher show_active
+$ voucher show
+Qzt3WF	san-notebook	mysecret	xx:xx:xx:xx:xx:xx	Tue Dec 22 20:13:42 2020	nil	3
 ```
 
 ### TODO
 
-* Update rpcd interface
 * Expose the voucher creation with duration functionality
-* Add renew functionality
 * Have a "emergency" function to force pirania to show for everyone
 * Improveportal HTML/js actions
 * Fix redirect to the "original site", now goes to for example /cgi-bin/pirania/http%3A%2F%2Fprueba.com%2F
