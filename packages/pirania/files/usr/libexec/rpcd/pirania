@@ -72,11 +72,17 @@ local function extend_voucher_date(msg)
     printJson({ success = voucher and 'ok' or 'error' })
 end
 
--- TODO (as removing a voucher from the local db won't remove it from the shared db)
 local function remove_voucher(msg)
+    local voucher = vouchera.remove_globally(msg.id)
+    printJson({ success = voucher and 'ok' or 'error' })
 end
 
-local function renew_many_vouchers(msg)
+local function renew_voucher(msg)
+    local new_expiration_date = tonumber(msg.date)
+    if new_expiration_date  then
+        local voucher = voucher.update_expiration_date(msg.id, new_expiration_date)
+        printJson({ success = voucher and 'ok' or 'error' })
+    end
 end
 
 local function add_vouchers(msg)
@@ -130,9 +136,8 @@ local methods = {
   print_valid_macs = { no_params = 0 },
   show_vouchers = { no_params = 0 },
   show_active_vouchers = { no_params = 0 },
-  remove_voucher = { voucher = 'value' },
-  renew_voucher = { voucher = 'value', date = 0 },
-  renew_many_vouchers = {  date = 0, vouchers = 'value' },
+  remove_voucher = { id = 'value' },
+  renew_voucher = { id = 'value', date = 0 },
   show_url = { no_params = 0 },
   change_url = { url = 'value' },
 }
@@ -147,17 +152,15 @@ if arg[1] == 'call' then
   if   arg[2] == 'status'										then status(msg)
   elseif   arg[2] == 'enable'								then enable(msg)
   elseif   arg[2] == 'disable'							then disable(msg)
-  elseif   arg[2] == 'add_member_voucher'		then add_member_voucher(msg)
-  elseif   arg[2] == 'add_visitor_voucher'	then add_visitor_voucher(msg)
-  elseif   arg[2] == 'auth_voucher'	      	then auth_voucher(msg)
   elseif   arg[2] == 'print_valid_macs'	  	then print_valid_macs(msg)
   elseif   arg[2] == 'list_vouchers'	    	then list_vouchers(msg)
   elseif   arg[2] == 'show_active_vouchers'	then show_active_vouchers(msg)
   elseif   arg[2] == 'remove_voucher'	    	then remove_voucher(msg)
   elseif   arg[2] == 'renew_voucher'	    	then renew_voucher(msg)
-  elseif   arg[2] == 'renew_many_vouchers'	then renew_many_vouchers(msg)
+  elseif   arg[2] == 'activate_voucher'	    	then activate_voucher(msg)
   elseif   arg[2] == 'show_url'	            then show_url(msg)
   elseif   arg[2] == 'change_url'	        	then change_url(msg)
+
   else     printJson({ error = "Method not found" })
   end
 end
