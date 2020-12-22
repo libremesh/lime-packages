@@ -40,11 +40,11 @@ end
 
 local new_voucher_info = false
 for key, shared_voucher in pairs(shared_db) do
-    local local_voucher = vouchera.vouchers[shared_voucher.name]
+    local local_voucher = vouchera.vouchers[shared_voucher.id]
     if local_voucher and local_voucher ~= shared_voucher then
         if shared_voucher.mod_counter > local_voucher.mod_counter then
             --! new information, local voucher needs to be updated
-            utils.log("debug", "generate_vouchers - updating voucher " .. local_voucher.name)
+            utils.log("debug", "generate_vouchers - updating voucher " .. local_voucher.id)
             vouchera.update_with(shared_voucher)
             new_voucher_info = true
         elseif shared_voucher.mod_counter == local_voucher then
@@ -54,7 +54,7 @@ for key, shared_voucher in pairs(shared_db) do
         end
     elseif local_voucher == nil then
         if not vouchera.should_be_pruned(shared_voucher) then
-            utils.log("debug", "generate_vouchers - adding new voucher " .. shared_voucher.name)
+            utils.log("debug", "generate_vouchers - adding new voucher " .. shared_voucher.id)
             vouchera.update_with(shared_voucher)
             new_voucher_info = true
         end

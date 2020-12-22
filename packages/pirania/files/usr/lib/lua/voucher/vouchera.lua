@@ -109,8 +109,8 @@ end
 --! It is important to maintain the "removed" (deactivated) voucher in the shared db for some time
 --! so that all nodes (even nodes that are offline when this is executed) have time to update locally
 --! and eventualy prune the voucher.
-function vouchera.remove_globally(name)
-    local voucher = vouchera.vouchers[name]
+function vouchera.remove_globally(id)
+    local voucher = vouchera.vouchers[id]
     if voucher then
         voucher.expiration_date = os.time()
         voucher.mac = nil
