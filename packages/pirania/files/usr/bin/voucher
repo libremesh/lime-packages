@@ -15,26 +15,22 @@ captive_portal = {}
 vouchera.init()
 
 captive_portal.activate = function(code, mac)
-    local mac = mac or ''
-    local code = code or ''
     local res = vouchera.activate(code, mac)
     if res then
-        return 'Voucher activated!'
+        print('Voucher activated!')
+        return true
     else
-        return "Invalid voucher code '" .. code .. "' or invalid MAC '" .. mac .. "'"
+        return nil, "Invalid voucher code '" .. code .. "' or invalid MAC '" .. mac .. "'"
     end
 end
 
---[[
---Checks if the mac of the given context is allowed to browse.
---]]
+-- Checks if the mac of the given context is allowed to browse.
 captive_portal.is_mac_authorized = function(mac)
-    if vouchera.is_mac_authorized(mac or '') then
+    if vouchera.is_mac_authorized(mac) then
         print('true')
-        sys.exit(0)
+        return true
     else
-        print('false')
-        sys.exit(1)
+        return nil, 'false'
     end
 end
 
@@ -44,6 +40,7 @@ captive_portal.show_active = function()
             print(voucher.tostring())
         end
     end
+    return true
 end
 
 -- List all vouchers
@@ -51,25 +48,19 @@ captive_portal.show = function()
     for _, voucher in pairs(vouchera.vouchers) do
         print(voucher.tostring())
     end
+    return true
 end
 
 -- Renew voucher
---captive_portal.renew_voucher = function(context)
---    local db = dba.load(config.db)
---    local voucherSecret = context[1]
---    local renewDate = context[2]
---    json.stringify(logic.update_voucher_date(voucherSecret, renewDate))
---    dba.save(config.db, db)
---end
-
-captive_portal.deactivate = function(name)
-    if vouchera.deactivate(name) then
-        print('ok')
-        os.exit(0)
-    else
-        print("error")
-        os.exit(1)
+captive_portal.renew_voucher = function(id, new_expiration_date)
+    new_expiration_date = tonumber(new_expiration_date)
+    if new_expiration_date  then
+        return vouchera.update_expiration_date(id, new_expiration_date)
     end
+end
+
+captive_portal.deactivate = function(id)
+    return vouchera.deactivate(id)
 end
 
 captive_portal.add = function(name, code, expiration_date)
@@ -90,6 +81,7 @@ captive_portal.show_authorized_macs = function()
             print(voucher.mac)
         end
     end
+    return true
 end
 
 -- if is main
@@ -99,7 +91,11 @@ if debug.getinfo(2).name == nil then
     local context = arguments
     local f = captive_portal[action]
     if f ~= nil then
-        f(unpack(context))
+        res, msg = f(unpack(context))
+        if not res then
+            print(msg or 'error')
+            os.exit(1)
+        end
     else
         print("invalid command: " .. tostring(action))
     end
