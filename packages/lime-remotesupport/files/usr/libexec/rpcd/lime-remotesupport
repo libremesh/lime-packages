@@ -31,6 +31,7 @@ end
 
 local function open_session(msg)
     utils.unsafe_shell("tmate -S /tmp/tmate.sock new-session -d")
+    utils.unsafe_shell("tmate -S /tmp/tmate.sock wait tmate-ready")
     utils.printJson({ result = 0 })
     return
 end
