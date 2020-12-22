@@ -1,0 +1,15 @@
+{
+	"root": {
+		"description": "Pirania administration access",
+		"write": {
+			"ubus": {
+				"lime-remotesupport": ["*"]
+			}
+		},
+		"read": {
+			"ubus": {
+				"lime-remotesupport": ["*"]
+			}
+		}
+	}
+}

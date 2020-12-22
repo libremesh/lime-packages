@@ -1,0 +1,59 @@
+#!/usr/bin/env lua
+--[[
+  Copyright (C) 2013-2020 LibreMesh.org
+  This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
+
+]]--
+
+-- TODO estaría bueno ver si hay gente conectada a la sesion, lo podemos sacar de tmate show-messages, aunque hay un bug que reporté al respecto: https://github.com/tmate-io/tmate/issues/227
+
+local ubus = require "ubus"
+local json = require 'luci.jsonc'
+local utils = require 'lime.utils'
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function get_session(msg)
+    -- There will be a session only if there is a /tmp/tmate.sock
+    -- TODO it should return null when no session exists
+    local rw_ssh = utils.unsafe_shell("tmate -S /tmp/tmate.sock display -p ''#{tmate_ssh}")
+    local ro_ssh = utils.unsafe_shell("tmate -S /tmp/tmate.sock display -p ''#{tmate_ssh_ro}")
+    utils.printJson({ rw_ssh = rw_ssh, ro_ssh = ro_ssh })
+    return
+end
+
+local function open_session(msg)
+    utils.unsafe_shell("tmate -S /tmp/tmate.sock new-session -d")
+    utils.printJson({ result = 0 })
+    return
+end
+
+local function close_session(params)
+    utils.unsafe_shell("tmate -S /tmp/tmate.sock kill-session -t 0")
+    utils.printJson({ result = 0 })
+    return
+end
+
+local methods = {
+    get_session = { no_params = 0 },
+    open_session = { no_params = 0 },
+    close_session = { no_params = 0 },
+}
+
+if arg[1] == 'list' then
+    utils.printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = utils.rpcd_readline()
+    msg = json.parse(msg)
+    if      arg[2] == 'get_session' then get_session(msg)
+    elseif  arg[2] == 'open_session' then open_session(msg)
+    elseif  arg[2] == 'close_session' then close_session(msg)
+    else utils.printJson({ error = "Method not found" })
+    end
+end
+
