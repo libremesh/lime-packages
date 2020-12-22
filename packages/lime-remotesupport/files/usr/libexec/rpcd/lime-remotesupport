@@ -21,7 +21,11 @@ local function get_session(msg)
     -- TODO it should return null when no session exists
     local rw_ssh = utils.unsafe_shell("tmate -S /tmp/tmate.sock display -p ''#{tmate_ssh}")
     local ro_ssh = utils.unsafe_shell("tmate -S /tmp/tmate.sock display -p ''#{tmate_ssh_ro}")
-    utils.printJson({ rw_ssh = rw_ssh, ro_ssh = ro_ssh })
+    if rw_ssh == ""  then
+        utils.printJson(nil)
+    else
+        utils.printJson({ rw_ssh = rw_ssh, ro_ssh = ro_ssh })
+    end
     return
 end
 
