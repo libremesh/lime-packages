@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2019 Gioacchino Mazzurco <gio@altermundi.net>
+# Copyright (C) 2019-2020 Gioacchino Mazzurco <gio@altermundi.net>
 #
 # This is free software, licensed under the GNU Affero General Public License v3.
 #
@@ -14,17 +14,24 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
 
+include ../../ping6retrocompat.mk
+
 define Package/$(PKG_NAME)
 	TITLE:=Very minimal state sharing betwen nodes
 	CATEGORY:=LibreMesh
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
-	DEPENDS:=+libuci-lua +lua +luci-lib-jsonc +luci-lib-nixio +uclient-fetch +lime-system
+	DEPENDS:=+libuci-lua +lime-system +lua +luci-lib-jsonc +luci-lib-nixio \
+		+$(PING6_PACKAGE) +uclient-fetch
 	PKGARCH:=all
 endef
 
+define Package/$(PKG_NAME)/config
+	select $(PING6_SYMLINK)
+endef
+
 define Package/$(PKG_NAME)/description
-	LiMe utilities to avoid alfred pitfalls
+	LiMe style minimal unsecured CRDT to share light state between nodes
 endef
 
 define Build/Compile
