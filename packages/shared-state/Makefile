@@ -18,7 +18,7 @@ include ../../ping6retrocompat.mk
 
 define Package/$(PKG_NAME)
 	TITLE:=Very minimal state sharing betwen nodes
-	CATEGORY:=LibreMesh
+	CATEGORY:=LiMe
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
 	DEPENDS:=+libuci-lua +lime-system +lua +luci-lib-jsonc +luci-lib-nixio \

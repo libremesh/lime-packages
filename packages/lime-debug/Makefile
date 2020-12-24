@@ -20,7 +20,7 @@ include ../../ping6retrocompat.mk
 
 define Package/$(PKG_NAME)
 	TITLE:=libremesh debug utils
-	CATEGORY:=LibreMesh
+	CATEGORY:=LiMe
 	MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
 	URL:=http://libremesh.org
 	DEPENDS:=+bandwidth-test \
