@@ -64,6 +64,6 @@ jobs:
             all_branches: true
             condition: $TRAVIS_BRANCH != master
 
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
+#after_success:
+#  - bash <(curl -s https://codecov.io/bash)
 
