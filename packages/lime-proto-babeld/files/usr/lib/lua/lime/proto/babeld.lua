@@ -43,6 +43,11 @@ function babeld.configure(args)
 	uci:set("babeld", "general", "general")
 	uci:set("babeld", "general", "local_port", "30003")
 
+	uci:set("babeld", "ula6", "filter")
+	uci:set("babeld", "ula6", "type", "redistribute")
+	uci:set("babeld", "ula6", "ip", "fc00::/7")
+	uci:set("babeld", "ula6", "action", "allow")
+
 	uci:set("babeld", "public6", "filter")
 	uci:set("babeld", "public6", "type", "redistribute")
 	uci:set("babeld", "public6", "ip", "2000::0/3")
@@ -77,9 +82,9 @@ function babeld.configure(args)
 	uci:set("babeld", "localdeny", "action", "deny")
 
 	-- Avoid redistributing enything else
-	uci:set("babeld", "dany", "filter")
-	uci:set("babeld", "dany", "type", "redistribute")
-	uci:set("babeld", "dany", "action", "deny")
+	uci:set("babeld", "denyany", "filter")
+	uci:set("babeld", "denyany", "type", "redistribute")
+	uci:set("babeld", "denyany", "action", "deny")
 
 	uci:save("babeld")
 
