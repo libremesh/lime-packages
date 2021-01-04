@@ -9,6 +9,7 @@ local nixio = require("nixio")
 
 utils.BOARD_JSON_PATH = "/etc/board.json"
 utils.SHADOW_FILENAME = "/etc/shadow"
+utils.BATHOSTS_FILENAME = "/etc/bat-hosts"
 utils.KEEP_ON_UPGRADE_FILES_BASE_PATH = '/lib/upgrade/keep.d/'
 
 function utils.log(...)
@@ -457,14 +458,28 @@ function utils.http_client_get(url, timeout_s, out_file)
     end
 end
 
-function utils.get_hostname(mac, iface)
-	local hostname = utils.unsafe_shell("grep " ..mac.. " /etc/bat-hosts | head -n 1 | cut -d ' ' -f 2"):gsub("\n", "")
-	hostname = hostname:gsub("_" .. iface:gsub("%W", "_"), ""):gsub("_", "-")
-	if hostname == '' then
-		local ipv6ll = utils.mac2ipv6linklocal(mac) .. "%" .. iface
+function utils.get_bathost(mac, outgoing_iface)
+	-- local hostname = utils.unsafe_shell("grep " .. mac .. utils.BATHOSTS_FILENAME .. "| head -n 1 | cut -d ' ' -f 2"):gsub("\n", "")
+	-- hostname = hostname:gsub("_" .. iface:gsub("%W", "_") .. ".*", ""):gsub("_", "-")
+	mac = mac:lower()
+	local hostname = nil
+	local iface = nil
+	local bathosts = io.open(utils.BATHOSTS_FILENAME)
+	if bathosts ~= nil then
+		local line = bathosts:read("*l")
+		while line and hostname == nil do
+			if line:find("^" .. mac) then
+				hostname = line:match(mac .. "(.*)_wlan"):gsub("_", "-"):gsub("%s+", "")
+				iface = line:match("wlan.*"):gsub("_", "-"):gsub("%s+", "")
+			end
+			line = bathosts:read("*l")
+		end
+	end
+	if hostname == nil then
+		local ipv6ll = utils.mac2ipv6linklocal(mac) .. "%" .. outgoing_iface
 		hostname = utils.http_client_get("http://[" .. ipv6ll .. "]/cgi-bin/hostname", 10):gsub("\n", "")
 	end
-	return hostname
+	return {hostname = hostname, iface = iface}
 end
 
 function utils.release_info()
