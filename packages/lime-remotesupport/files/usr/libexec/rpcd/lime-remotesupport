@@ -11,34 +11,42 @@ local ubus = require "ubus"
 local json = require 'luci.jsonc'
 local utils = require 'lime.utils'
 
+local TMATE_SOCK = "/tmp/tmate.sock"
+
 local conn = ubus.connect()
 if not conn then
     error("Failed to connect to ubus")
 end
 
+function unix_socket_listening(name)
+   return "" ~= utils.unsafe_shell("netstat -xl | grep "..TMATE_SOCK.." 2>/dev/null")
+end
+
 local function get_session(msg)
-    -- There will be a session only if there is a /tmp/tmate.sock
-    -- TODO it should return null when no session exists
-    local rw_ssh = utils.unsafe_shell("tmate -S /tmp/tmate.sock display -p ''#{tmate_ssh}")
-    local ro_ssh = utils.unsafe_shell("tmate -S /tmp/tmate.sock display -p ''#{tmate_ssh_ro}")
-    if rw_ssh == ""  then
-        utils.printJson(nil)
+    if unix_socket_listening(TMATE_SOCK) then
+        local rw_ssh = utils.unsafe_shell("tmate -S "..TMATE_SOCK.." display -p ''#{tmate_ssh}|head -c -1")
+        local ro_ssh = utils.unsafe_shell("tmate -S "..TMATE_SOCK.." display -p ''#{tmate_ssh_ro}|head -c -1")
+        local clients = utils.unsafe_shell("tmate -S "..TMATE_SOCK.." display -p ''#{tmate_num_clients}|head -c -1")
+
+        utils.printJson({status = "ok", session = { rw_ssh = rw_ssh, ro_ssh = ro_ssh, clients = clients}})
     else
-        utils.printJson({ rw_ssh = rw_ssh, ro_ssh = ro_ssh })
+        utils.printJson({status = "error", msg = "no session"})
     end
     return
 end
 
 local function open_session(msg)
-    utils.unsafe_shell("tmate -S /tmp/tmate.sock new-session -d")
-    utils.unsafe_shell("tmate -S /tmp/tmate.sock wait tmate-ready")
-    utils.printJson({ result = 0 })
+    utils.unsafe_shell("tmate -S "..TMATE_SOCK.." new-session -d")
+    utils.unsafe_shell("tmate -S "..TMATE_SOCK.." wait tmate-ready")
+    utils.printJson({status = "ok"})
     return
 end
 
 local function close_session(params)
-    utils.unsafe_shell("tmate -S /tmp/tmate.sock kill-session -t 0")
-    utils.printJson({ result = 0 })
+    if unix_socket_listening(TMATE_SOCK) then
+        utils.unsafe_shell("tmate -S "..TMATE_SOCK.." kill-session -t 0")
+    end
+    utils.printJson({ status = "ok" })
     return
 end
 
