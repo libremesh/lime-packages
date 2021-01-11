@@ -5,8 +5,6 @@
 
 ]]--
 
--- TODO estaría bueno ver si hay gente conectada a la sesion, lo podemos sacar de tmate show-messages, aunque hay un bug que reporté al respecto: https://github.com/tmate-io/tmate/issues/227
-
 local ubus = require "ubus"
 local json = require 'luci.jsonc'
 local utils = require 'lime.utils'
