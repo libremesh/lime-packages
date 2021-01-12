@@ -6,8 +6,6 @@
 
 include ../../libremesh.mk
 
-PKG_NAME:=eupgrade
-
 define Package/$(PKG_NAME)
   SECTION:=utils
   CATEGORY:=Utilities
