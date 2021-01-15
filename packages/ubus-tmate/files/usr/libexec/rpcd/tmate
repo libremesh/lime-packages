@@ -1,0 +1,65 @@
+#!/usr/bin/env lua
+--[[ Copyright (C) 2013-2020 LibreMesh.org
+  This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
+
+]]--
+
+local ubus = require "ubus"
+local json = require 'luci.jsonc'
+local utils = require 'lime.utils'
+local tmate = require 'tmate'
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function get_session(msg)
+    session = "no session"
+
+    if tmate.session_running() then
+        local rw_ssh = tmate.get_rw_session()
+        local ro_ssh = tmate.get_ro_session()
+        local clients = tmate.get_connected_clients()
+
+        session = { rw_ssh = rw_ssh, ro_ssh = ro_ssh, clients = clients }
+    end
+
+    utils.printJson({ status = "ok", session = session })
+end
+
+local function open_session(msg)
+    tmate.open_session()
+    tmate.wait_session_ready()
+
+    utils.printJson({status = "ok"})
+end
+
+local function close_session(params)
+    if tmate.session_running() then
+       tmate.close_session()
+    end
+
+    utils.printJson({ status = "ok" })
+end
+
+local methods = {
+    get_session = { no_params = 0 },
+    open_session = { no_params = 0 },
+    close_session = { no_params = 0 },
+}
+
+if arg[1] == 'list' then
+    utils.printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = utils.rpcd_readline()
+    msg = json.parse(msg)
+    if      arg[2] == 'get_session' then get_session(msg)
+    elseif  arg[2] == 'open_session' then open_session(msg)
+    elseif  arg[2] == 'close_session' then close_session(msg)
+    else utils.printJson({ error = "Method not found" })
+    end
+end
+
