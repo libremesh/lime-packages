@@ -458,9 +458,25 @@ function utils.http_client_get(url, timeout_s, out_file)
     end
 end
 
+function utils.bathost_deserialize(line)
+    local hostname_plus_iface = utils.split(line, " ")[2]
+    local partial_hostname = hostname_plus_iface
+    local iface
+    for _, ifname in ipairs(utils.get_ifnames()) do
+        local serialized_ifname = string.gsub(ifname, "%W", "_")
+        serialized_ifname = utils.literalize(serialized_ifname)
+        local replaced_hostname = hostname_plus_iface:gsub("_"..serialized_ifname, "")
+        -- hostname don't have underscores see utils.is_valid_hostname
+        replaced_hostname = replaced_hostname:gsub("_", "-")
+        if #replaced_hostname < #partial_hostname then
+            partial_hostname = replaced_hostname
+            iface = ifname
+        end
+    end
+    return partial_hostname, iface
+end
+
 function utils.get_bathost(mac, outgoing_iface)
-	-- local hostname = utils.unsafe_shell("grep " .. mac .. utils.BATHOSTS_FILENAME .. "| head -n 1 | cut -d ' ' -f 2"):gsub("\n", "")
-	-- hostname = hostname:gsub("_" .. iface:gsub("%W", "_") .. ".*", ""):gsub("_", "-")
 	mac = mac:lower()
 	local hostname = nil
 	local iface = nil
@@ -469,16 +485,20 @@ function utils.get_bathost(mac, outgoing_iface)
 		local line = bathosts:read("*l")
 		while line and hostname == nil do
 			if line:find("^" .. mac) then
-				hostname = line:match(mac .. "(.*)_wlan"):gsub("_", "-"):gsub("%s+", "")
-				iface = line:match("wlan.*"):gsub("_", "-"):gsub("%s+", "")
+				hostname, iface = utils.bathost_deserialize(line)
 			end
 			line = bathosts:read("*l")
 		end
 	end
-	if hostname == nil then
-		local ipv6ll = utils.mac2ipv6linklocal(mac) .. "%" .. outgoing_iface
-		hostname = utils.http_client_get("http://[" .. ipv6ll .. "]/cgi-bin/hostname", 10):gsub("\n", "")
+	if hostname == nil and outgoing_iface then
+		iface = outgoing_iface
+		local ipv6ll = utils.mac2ipv6linklocal(mac) .. "%" .. iface
+		hostname = utils.http_client_get("http://[" .. ipv6ll .. "]/cgi-bin/hostname", 10)
 	end
+	if not hostname then
+		return
+	end
+	hostname = hostname:gsub("\n", "")
 	return {hostname = hostname, iface = iface}
 end
 
@@ -549,6 +569,14 @@ function utils.write_obj_store(datafile, data)
         fd:close()
         return true
     end
+end
+
+function utils.get_ifnames()
+    local ifnames = {}
+    for ifname in fs.dir("/sys/class/net/") do
+        table.insert(ifnames, ifname)
+    end
+    return ifnames
 end
 
 return utils
