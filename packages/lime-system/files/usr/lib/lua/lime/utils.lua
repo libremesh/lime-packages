@@ -490,9 +490,9 @@ function utils.get_bathost(mac, outgoing_iface)
 			line = bathosts:read("*l")
 		end
 	end
-	local valid_out_iface = outgoing_iface and utils.get_ifnames().has_value(outgoing_iface)
-	if hostname == nil and valid_out_iface then
-		local ipv6ll = utils.mac2ipv6linklocal(mac) .. "%" .. outgoing_iface
+	if hostname == nil and outgoing_iface then
+		iface = outgoing_iface
+		local ipv6ll = utils.mac2ipv6linklocal(mac) .. "%" .. iface
 		hostname = utils.http_client_get("http://[" .. ipv6ll .. "]/cgi-bin/hostname", 10)
 	end
 	if not hostname then
@@ -577,15 +577,6 @@ function utils.get_ifnames()
         table.insert(ifnames, ifname)
     end
     return ifnames
-end
-
-function utils.is_valid_mac(string)
-    local string = string:match("%w%w:%w%w:%w%w:%w%w:%w%w:%w%w")
-    if string then
-       return true
-    else
-       return false
-    end
 end
 
 return utils

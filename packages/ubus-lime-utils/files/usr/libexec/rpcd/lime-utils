@@ -35,9 +35,8 @@ local function get_cloud_nodes(msg)
 end
 
 local function get_bathost(msg)
-    if not utils.is_valid_mac(msg.mac) then
-      utils.printJson({status = "error", message = "invalid mac"})
-      return
+    mac = utils.shell_quote(msg.mac)
+    iface = utils.shell_quote(msg.outgoing_iface)
     local bathost = utils.get_bathost(msg.mac, msg.outgoing_iface)
     local result = {}
     if bathost.hostname ~= nil then
@@ -45,7 +44,7 @@ local function get_bathost(msg)
       result.bathost = bathost
     else
       result.status = "error"
-      result.message = "Couldn't retrieve hostname"
+      result.error = "Couldn't retrieve hostname"
     end
     utils.printJson(result)
 end
