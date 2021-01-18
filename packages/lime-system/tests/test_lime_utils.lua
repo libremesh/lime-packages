@@ -294,15 +294,21 @@ d6:67:58:8e:cd:92 LiMe_abcd02_wlan0_adhoc_29
 12:00:00:00:00:00 LiMe_abcd03_wlan1_adhoc
 ]]
         utils.write_file(TEST_BATHOST_FILENAME, bathosts_content)
+        local ifaces = {'wlan1-mesh', 'wlan2-mesh', 'wlan2-mesh_17', 'wlan0-adhoc_29', 'wlan1-adhoc'}
+        stub(utils, "get_ifnames", function () return ifaces  end)
         assert.is.same({hostname='LiMe-abcd00', iface='wlan1-mesh'}, utils.get_bathost('02:95:39:ab:cd:00'))
-        assert.is.same({hostname='LiMe-abcd01', iface='wlan2-mesh-17'}, utils.get_bathost('52:00:00:ab:cd:a0'))
-        assert.is.same({hostname='LiMe-abcd02', iface='wlan0-adhoc-29'}, utils.get_bathost('d6:67:58:8e:cd:92'))
+        assert.is.same({hostname='LiMe-abcd01', iface='wlan2-mesh_17'}, utils.get_bathost('52:00:00:ab:cd:a0'))
+        assert.is.same({hostname='LiMe-abcd02', iface='wlan0-adhoc_29'}, utils.get_bathost('d6:67:58:8e:cd:92'))
         assert.is.same({hostname='LiMe-abcd03', iface='wlan1-adhoc'}, utils.get_bathost('12:00:00:00:00:00'))
         stub(utils, "http_client_get", function (url, timeout) return 'Lime-abcd04' end)
         local bathost = utils.get_bathost('52:00:00:ab:cd:00', 'wlan1-mesh')
         local ipv6ll = utils.mac2ipv6linklocal('52:00:00:ab:cd:00') .. '%wlan1-mesh'
         assert.stub(utils.http_client_get).was.called_with('http://[' .. ipv6ll .. ']/cgi-bin/hostname', 10)
-        assert.is.same({hostname = 'Lime-abcd04', iface = nil}, bathost)
+        assert.is.same({hostname='Lime-abcd04', iface='wlan1-mesh'}, bathost)
+
+        stub(utils, "http_client_get", function (url, timeout) return nil end)
+        assert.is_nil(utils.get_bathost('00:aa:bb:cc:dd:00', 'wlan1'))
+        assert.is_nil(utils.get_bathost('00:aa:bb:cc:dd:00'))
     end)
 
     before_each('', function()
