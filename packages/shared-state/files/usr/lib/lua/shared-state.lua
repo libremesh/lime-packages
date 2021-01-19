@@ -59,8 +59,8 @@ local function SharedState(dataType, pLogger)
 
     sharedState.setDataDir("/var/shared-state/data/")
 
-	--! Returns true it at least one entry expired, false otherwise
-	function sharedState.bleach()
+	--! Returns true if at least one entry expired, false otherwise
+	function sharedState._bleach()
 		local substancialChange = false
 		for k,v in pairs(self_storage) do
 			if(v.bleachTTL < 2) then
@@ -74,7 +74,17 @@ local function SharedState(dataType, pLogger)
 		return substancialChange
 	end
 
-	function sharedState.insert(key, data, bleachTTL)
+	function sharedState.bleach()
+		sharedState.lock()
+		sharedState.load()
+		local shouldNotify = sharedState._bleach()
+		sharedState.save()
+		sharedState.unlock()
+		--! Avoid hooks being called if data hasn't substantially changed
+		if(shouldNotify) then sharedState.notifyHooks() end
+	end
+
+	function sharedState._insert(key, data, bleachTTL)
 		bleachTTL = bleachTTL or 30
 		self_storage[key] = {
 			bleachTTL=bleachTTL,
@@ -82,6 +92,15 @@ local function SharedState(dataType, pLogger)
 			data=data
 		}
 		self_changed = true
+	end
+
+	function sharedState.insert(data)
+		sharedState.lock()
+		sharedState.load()
+		for key, lv in pairs(data) do sharedState._insert(key, lv) end
+		sharedState.save()
+		sharedState.unlock()
+		sharedState.notifyHooks()
 	end
 
 	function sharedState.load()
@@ -112,7 +131,7 @@ local function SharedState(dataType, pLogger)
 		end
 	end
 
-	function sharedState.merge(stateSlice, notifyInsert)
+	function sharedState._merge(stateSlice, notifyInsert)
 		local stateSlice = stateSlice or {}
 		if(notifyInsert == nil) then notifyInsert = true end
 
@@ -135,6 +154,15 @@ local function SharedState(dataType, pLogger)
 		end
 	end
 
+	function sharedState.merge(stateSlice, notifyInsert)
+		sharedState.lock()
+		sharedState.load()
+		sharedState._merge(stateSlice, notifyInsert)
+		sharedState.save()
+		sharedState.unlock()
+		sharedState.notifyHooks()
+	end
+
 	function sharedState.notifyHooks()
 		if self_changed then
 			local jsonString = sharedState.toJsonString()
@@ -147,9 +175,18 @@ local function SharedState(dataType, pLogger)
 		end
 	end
 
-	function sharedState.remove(key)
+	function sharedState._remove(key)
 		if(self_storage[key] ~= nil and self_storage[key].data ~= nil)
 		then sharedState.insert(key, nil) end
+	end
+
+	function sharedState.remove(keys)
+		sharedState.lock()
+		sharedState.load()
+		for _,key in ipairs(keys) do sharedState._remove(key) end
+		sharedState.save()
+		sharedState.unlock()
+		sharedState.notifyHooks()
 	end
 
 	function sharedState.save()
@@ -180,7 +217,7 @@ local function SharedState(dataType, pLogger)
 		return value
 	end
 
-	function sharedState.sync(urls)
+	function sharedState._sync(urls)
 		urls = urls or {}
 
 		if #urls < 1 then
@@ -204,7 +241,7 @@ local function SharedState(dataType, pLogger)
 		for _,url in ipairs(urls) do
 			local body = sharedState.toJsonString()
 
-			response = sharedState.httpRequest(url, body)
+			local response = sharedState.httpRequest(url, body)
 
 			if type(response) == "string" and response:len() > 1  then
 				local parsedJson = JSON.parse(response)
@@ -215,8 +252,27 @@ local function SharedState(dataType, pLogger)
 		end
 	end
 
+	function sharedState.sync(urls)
+		sharedState.lock()
+		sharedState.load()
+		sharedState.unlock()
+		sharedState._sync(urls)
+		sharedState.lock()
+		sharedState.load() -- Take in account changes happened during sync
+		sharedState.save()
+		sharedState.unlock()
+		sharedState.notifyHooks()
+	end
+
 	function sharedState.toJsonString()
 		return JSON.stringify(self_storage)
+	end
+
+	function sharedState.get()
+		sharedState.lock()
+		sharedState.load()
+		sharedState.unlock()
+		return self_storage
 	end
 
 	function sharedState.unlock()

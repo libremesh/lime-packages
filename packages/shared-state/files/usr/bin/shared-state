@@ -28,70 +28,39 @@ require("nixio.util")
 if arg[1] == "bleach" then
 	nixio.openlog("shared-state")
 	local sharedState = SharedState(arg[2], nixio.syslog)
-	sharedState.lock()
-	sharedState.load()
-	local shouldNotify = sharedState.bleach()
-	sharedState.save()
-	sharedState.unlock()
-	--! Avoid hooks being called if data hasn't substantially changed
-	if(shouldNotify) then sharedState.notifyHooks() end
+	sharedState.bleach()
 	nixio.closelog()
 elseif arg[1] == "insert" then
 	local inputTable = JSON.parse(io.stdin:read("*all")) or {}
 	nixio.openlog("shared-state")
 	local sharedState = SharedState(arg[2], nixio.syslog)
-	sharedState.lock()
-	sharedState.load()
-	for key, lv in pairs(inputTable) do sharedState.insert(key, lv) end
-	sharedState.save()
-	sharedState.unlock()
-	sharedState.notifyHooks()
+	sharedState.insert(inputTable)
 	nixio.closelog()
 elseif arg[1] == "get" then
 	nixio.openlog("shared-state")
 	local sharedState = SharedState(arg[2], nixio.syslog)
-	sharedState.lock()
-	sharedState.load()
-	sharedState.unlock()
-	print(sharedState.toJsonString())
+	local resultTable = sharedState.get()
+	print(JSON.stringify(resultTable))
 elseif arg[1] == "sync" then
 	local urls = {}
 	if arg[3] ~= nil then for i=3,#arg do table.insert(urls, arg[i]) end end
 	nixio.openlog("shared-state")
 	local sharedState = SharedState(arg[2], nixio.syslog)
-	sharedState.lock()
-	sharedState.load()
-	sharedState.unlock()
 	sharedState.sync(urls)
-	sharedState.lock()
-	sharedState.load() -- Take in account changes happened during sync
-	sharedState.save()
-	sharedState.unlock()
-	sharedState.notifyHooks()
 	nixio.closelog()
 elseif arg[1] == "reqsync" then
 	local inputJson = JSON.parse(io.stdin:read("*all"))
 	nixio.openlog("shared-state")
 	local sharedState = SharedState(arg[2], nixio.syslog)
-	sharedState.lock()
-	sharedState.load()
 	sharedState.merge(inputJson)
-	sharedState.save()
-	sharedState.unlock()
 	print(sharedState.toJsonString())
-	sharedState.notifyHooks()
 	nixio.closelog()
 elseif arg[1] == "remove" then
 	local inputTable = JSON.parse(io.stdin:read("*all"))
 	if inputTable ~= nil then
 		nixio.openlog("shared-state")
 		local sharedState = SharedState(arg[2], nixio.syslog)
-		sharedState.lock()
-		sharedState.load()
-		for _,key in ipairs(inputTable) do sharedState.remove(key) end
-		sharedState.save()
-		sharedState.unlock()
-		sharedState.notifyHooks()
+		sharedState.remove(inputTable)
 		nixio.closelog()
 	end
 else
