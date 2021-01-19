@@ -104,7 +104,7 @@ local function SharedState(dataType, pLogger)
 	end
 
 	function sharedState.load()
-		sharedState.merge(JSON.parse(self_storageFD:readall()), false)
+		sharedState._merge(JSON.parse(self_storageFD:readall()), false)
 	end
 
 	function sharedState.lock(maxwait)
