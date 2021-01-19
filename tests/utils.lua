@@ -84,6 +84,7 @@ function utils.teardown_test_dir()
 		local out = io.popen("rm -rf " .. utils._tmpdir)
 		out:read('*all') -- this allows waiting for popen completion
 		out:close()
+		utils._tmpdir = nil
 	end
 end
 
