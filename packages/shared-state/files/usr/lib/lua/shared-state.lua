@@ -48,7 +48,7 @@ local function SharedState(dataType, pLogger)
 
 	local self_log = function (level, message)
 	end
-	if type(logger) == "function" then self_log = logger end
+	if type(pLogger) == "function" then self_log = pLogger end
 
 	local sharedState = {}
 
