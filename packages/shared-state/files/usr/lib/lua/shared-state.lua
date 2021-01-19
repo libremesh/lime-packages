@@ -32,15 +32,14 @@ local function SharedState(dataType, pLogger)
 	--!   data is the value of the entry
 	local self_storage = {}
 
-
 	--! File descriptor of the persistent file storage
 	local self_storageFD = nil
 
 	--! true if self_storage has changed after loading
 	local self_changed = false
 
-	local self_dataDir = "/var/shared-state/data/"
-	local self_dataFile = "/var/shared-state/data/"..dataType..".json"
+	local self_dataDir
+	local self_dataFile
 	local self_hooksDir = "/etc/shared-state/hooks/"..dataType.."/"
 
 	--! true when persistent storage file is locked by this instance
@@ -52,6 +51,13 @@ local function SharedState(dataType, pLogger)
 	if type(logger) == "function" then self_log = logger end
 
 	local sharedState = {}
+
+    function sharedState.setDataDir(dir)
+        self_dataDir = dir
+        self_dataFile = dir..dataType..".json"
+    end
+
+    sharedState.setDataDir("/var/shared-state/data/")
 
 	--! Returns true it at least one entry expired, false otherwise
 	function sharedState.bleach()
