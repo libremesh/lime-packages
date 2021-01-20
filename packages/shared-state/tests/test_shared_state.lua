@@ -1,14 +1,14 @@
 local utils = require 'lime.utils'
 local test_utils = require 'tests.utils'
-local SharedState = require 'shared-state'
+local shared_state = require 'shared-state'
 
 local test_dir
 
 describe('LiMe Utils tests #sharedstate', function()
     it('test load a new and empty db', function()
-        local sharedState = SharedState('foo')
-        sharedState.setDataDir(test_dir)
-        local data = sharedState.get()
+        shared_state.DATA_DIR = test_dir
+        local sharedState = shared_state.SharedState:new('foo')
+        local data = sharedState:get()
         assert.are.same({}, data)
     end)
 

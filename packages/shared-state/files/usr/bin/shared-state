@@ -22,45 +22,45 @@ if type(arg[2]) ~= "string" or arg[2]:len() < 1 then
 end
 
 local JSON = require("luci.jsonc")
-local SharedState = require("shared-state")
+local shared_state = require("shared-state")
 require("nixio.util")
 
 if arg[1] == "bleach" then
 	nixio.openlog("shared-state")
-	local sharedState = SharedState(arg[2], nixio.syslog)
-	sharedState.bleach()
+	local sharedState = shared_state.SharedState:new(arg[2], nixio.syslog)
+	sharedState:bleach()
 	nixio.closelog()
 elseif arg[1] == "insert" then
 	local inputTable = JSON.parse(io.stdin:read("*all")) or {}
 	nixio.openlog("shared-state")
-	local sharedState = SharedState(arg[2], nixio.syslog)
-	sharedState.insert(inputTable)
+	local sharedState = shared_state.SharedState:new(arg[2], nixio.syslog)
+	sharedState:insert(inputTable)
 	nixio.closelog()
 elseif arg[1] == "get" then
 	nixio.openlog("shared-state")
-	local sharedState = SharedState(arg[2], nixio.syslog)
-	local resultTable = sharedState.get()
+	local sharedState = shared_state.SharedState:new(arg[2], nixio.syslog)
+	local resultTable = sharedState:get()
 	print(JSON.stringify(resultTable))
 elseif arg[1] == "sync" then
 	local urls = {}
 	if arg[3] ~= nil then for i=3,#arg do table.insert(urls, arg[i]) end end
 	nixio.openlog("shared-state")
-	local sharedState = SharedState(arg[2], nixio.syslog)
-	sharedState.sync(urls)
+	local sharedState = shared_state.SharedState:new(arg[2], nixio.syslog)
+	sharedState:sync(urls)
 	nixio.closelog()
 elseif arg[1] == "reqsync" then
 	local inputJson = JSON.parse(io.stdin:read("*all"))
 	nixio.openlog("shared-state")
-	local sharedState = SharedState(arg[2], nixio.syslog)
-	sharedState.merge(inputJson)
+	local sharedState = shared_state.SharedState:new(arg[2], nixio.syslog)
+	sharedState:merge(inputJson)
 	print(sharedState.toJsonString())
 	nixio.closelog()
 elseif arg[1] == "remove" then
 	local inputTable = JSON.parse(io.stdin:read("*all"))
 	if inputTable ~= nil then
 		nixio.openlog("shared-state")
-		local sharedState = SharedState(arg[2], nixio.syslog)
-		sharedState.remove(inputTable)
+		local sharedState = shared_state.SharedState:new(arg[2], nixio.syslog)
+		sharedState:remove(inputTable)
 		nixio.closelog()
 	end
 else
