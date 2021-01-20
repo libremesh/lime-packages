@@ -6,6 +6,7 @@ local config = require("lime.config")
 local json = require("luci.jsonc")
 local fs = require("nixio.fs")
 local nixio = require("nixio")
+local shared_state = require("shared-state")
 
 utils.BOARD_JSON_PATH = "/etc/board.json"
 utils.SHADOW_FILENAME = "/etc/shadow"
@@ -458,8 +459,7 @@ function utils.http_client_get(url, timeout_s, out_file)
     end
 end
 
-function utils.bathost_deserialize(line)
-    local hostname_plus_iface = utils.split(line, " ")[2]
+function utils.bathost_deserialize(hostname_plus_iface)
     local partial_hostname = hostname_plus_iface
     local iface
     for _, ifname in ipairs(utils.get_ifnames()) do
@@ -477,29 +477,20 @@ function utils.bathost_deserialize(line)
 end
 
 function utils.get_bathost(mac, outgoing_iface)
-	mac = mac:lower()
-	local hostname = nil
-	local iface = nil
-	local bathosts = io.open(utils.BATHOSTS_FILENAME)
-	if bathosts ~= nil then
-		local line = bathosts:read("*l")
-		while line and hostname == nil do
-			if line:find("^" .. mac) then
-				hostname, iface = utils.bathost_deserialize(line)
-			end
-			line = bathosts:read("*l")
-		end
+	local sharedState = shared_state.SharedState:new('bat-hosts')
+	local bathosts = sharedState:get()
+	local bathost = bathosts[mac:lower()]
+	if bathost == nil and outgoing_iface then
+		local ipv6ll = utils.mac2ipv6linklocal(mac) .. "%" .. outgoing_iface
+		sharedState:sync({ ipv6ll })
+		bathosts = sharedState:get()
+		bathost = bathosts[mac:lower()]
 	end
-	if hostname == nil and outgoing_iface then
-		iface = outgoing_iface
-		local ipv6ll = utils.mac2ipv6linklocal(mac) .. "%" .. iface
-		hostname = utils.http_client_get("http://[" .. ipv6ll .. "]/cgi-bin/hostname", 10)
-	end
-	if not hostname then
+	if bathost == nil then
 		return
 	end
-	hostname = hostname:gsub("\n", "")
-	return {hostname = hostname, iface = iface}
+	local hostname, iface = utils.bathost_deserialize(bathost.data)
+	return { hostname = hostname, iface = iface }
 end
 
 function utils.release_info()
@@ -577,6 +568,15 @@ function utils.get_ifnames()
         table.insert(ifnames, ifname)
     end
     return ifnames
+end
+
+function utils.is_valid_mac(string)
+    local string = string:match("%w%w:%w%w:%w%w:%w%w:%w%w:%w%w")
+    if string then
+       return true
+    else
+       return false
+    end
 end
 
 return utils

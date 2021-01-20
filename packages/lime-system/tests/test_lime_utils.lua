@@ -1,6 +1,6 @@
 local utils = require 'lime.utils'
 local test_utils = require 'tests.utils'
-
+local shared_state = require 'shared-state'
 local uci = nil
 
 describe('LiMe Utils tests #limeutils', function()
@@ -285,28 +285,28 @@ DISTRIB_TAINTS='no-all busybox'
      end)
 
      it('test get_bathost', function()
-        local TEST_BATHOST_FILENAME = '/tmp/bat-hosts'
-        utils.BATHOSTS_FILENAME = TEST_BATHOST_FILENAME
-        local bathosts_content = [[
-02:95:39:ab:cd:00 LiMe_abcd00_wlan1_mesh
-52:00:00:ab:cd:a0 LiMe_abcd01_wlan2_mesh_17
-d6:67:58:8e:cd:92 LiMe_abcd02_wlan0_adhoc_29
-12:00:00:00:00:00 LiMe_abcd03_wlan1_adhoc
-]]
-        utils.write_file(TEST_BATHOST_FILENAME, bathosts_content)
+        shared_state.DATA_DIR = test_utils.setup_test_dir()
+        local sharedState = shared_state.SharedState:new('bat-hosts')
+        sharedState:insert({
+            ["02:95:39:ab:cd:00"] = "LiMe_abcd00_wlan1_mesh",
+            ["52:00:00:ab:cd:a0"] = "LiMe_abcd01_wlan2_mesh_17",
+            ["d6:67:58:8e:cd:92"] = "LiMe_abcd02_wlan0_adhoc_29",
+            ["12:00:00:00:00:00"] = "LiMe_abcd03_wlan1_adhoc"
+        })
         local ifaces = {'wlan1-mesh', 'wlan2-mesh', 'wlan2-mesh_17', 'wlan0-adhoc_29', 'wlan1-adhoc'}
-        stub(utils, "get_ifnames", function () return ifaces  end)
+        stub(utils, "get_ifnames", function () return ifaces end)
         assert.is.same({hostname='LiMe-abcd00', iface='wlan1-mesh'}, utils.get_bathost('02:95:39:ab:cd:00'))
         assert.is.same({hostname='LiMe-abcd01', iface='wlan2-mesh_17'}, utils.get_bathost('52:00:00:ab:cd:a0'))
         assert.is.same({hostname='LiMe-abcd02', iface='wlan0-adhoc_29'}, utils.get_bathost('d6:67:58:8e:cd:92'))
         assert.is.same({hostname='LiMe-abcd03', iface='wlan1-adhoc'}, utils.get_bathost('12:00:00:00:00:00'))
-        stub(utils, "http_client_get", function (url, timeout) return 'Lime-abcd04' end)
-        local bathost = utils.get_bathost('52:00:00:ab:cd:00', 'wlan1-mesh')
         local ipv6ll = utils.mac2ipv6linklocal('52:00:00:ab:cd:00') .. '%wlan1-mesh'
-        assert.stub(utils.http_client_get).was.called_with('http://[' .. ipv6ll .. ']/cgi-bin/hostname', 10)
+        local function syncMock (self, urls)
+            self:insert({['52:00:00:ab:cd:00'] = "Lime_abcd04_wlan1_mesh"})
+        end
+        stub(shared_state.SharedState, "sync", syncMock)
+        local bathost = utils.get_bathost('52:00:00:ab:cd:00', 'wlan1-mesh')
+        assert.stub(shared_state.SharedState.sync).was.called_with(sharedState, { ipv6ll })
         assert.is.same({hostname='Lime-abcd04', iface='wlan1-mesh'}, bathost)
-
-        stub(utils, "http_client_get", function (url, timeout) return nil end)
         assert.is_nil(utils.get_bathost('00:aa:bb:cc:dd:00', 'wlan1'))
         assert.is_nil(utils.get_bathost('00:aa:bb:cc:dd:00'))
     end)
