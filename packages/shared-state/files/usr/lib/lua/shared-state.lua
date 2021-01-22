@@ -172,7 +172,7 @@ end
 
 function SharedState:_remove(key)
 	if(self.storage[key] ~= nil and self.storage[key].data ~= nil)
-	then self:insert(key, nil) end
+	then self:_insert(key, nil) end
 end
 
 function SharedState:remove(keys)
@@ -240,7 +240,7 @@ function SharedState:_sync(urls)
 
 		if type(response) == "string" and response:len() > 1  then
 			local parsedJson = JSON.parse(response)
-			if parsedJson then self:merge(parsedJson) end
+			if parsedJson then self:_merge(parsedJson) end
 		else
 			self.log( "debug", "error requesting "..url )
 		end
