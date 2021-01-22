@@ -14,6 +14,7 @@ describe('LiMe Utils tests #sharedstate', function()
 
     before_each('', function()
         test_dir = test_utils.setup_test_dir()
+        shared_state.DATA_DIR = test_dir
     end)
 
     after_each('', function()
@@ -21,7 +22,6 @@ describe('LiMe Utils tests #sharedstate', function()
     end)
 
     it('test insert new data to empty db', function()
-        shared_state.DATA_DIR = test_dir
         local sharedState = shared_state.SharedState:new('foo')
         sharedState:insert({ bar = 'foo', baz = 'qux' })
         local db = sharedState:get()
@@ -30,7 +30,6 @@ describe('LiMe Utils tests #sharedstate', function()
     end)
 
     it('test two instances with different dataTypes are independent', function ()
-        shared_state.DATA_DIR = test_dir
         local a = shared_state.SharedState:new('A')
         a:insert({ bar = 'foo' })
         local b = shared_state.SharedState:new('B')
@@ -44,7 +43,6 @@ describe('LiMe Utils tests #sharedstate', function()
     end)
 
     it('test two instances with the same dataType have the same data', function ()
-        shared_state.DATA_DIR = test_dir
         local a = shared_state.SharedState:new('foo')
         a:insert({ bar = 'foo' })
         local b = shared_state.SharedState:new('foo')
@@ -58,7 +56,6 @@ describe('LiMe Utils tests #sharedstate', function()
     end)
 
     it('test data is removed if bleachTTL reaches 0', function ()
-        shared_state.DATA_DIR = test_dir
         local sharedState = shared_state.SharedState:new('foo')
         sharedState:insert({ bar = 'foo' }, 1)
         assert.is.equal('foo', sharedState:get().bar.data)
@@ -67,7 +64,6 @@ describe('LiMe Utils tests #sharedstate', function()
     end)
 
     it('test merge data from remote db with bigger ttl', function()
-        shared_state.DATA_DIR = test_dir
         local sharedStateA = shared_state.SharedState:new('A')
         local sharedStateB = shared_state.SharedState:new('B')
         sharedStateA:insert({ bar = 'foo', baz = 'qux', zig = 'zag'})
