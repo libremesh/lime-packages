@@ -53,7 +53,7 @@ elseif arg[1] == "reqsync" then
 	nixio.openlog("shared-state")
 	local sharedState = shared_state.SharedState:new(arg[2], nixio.syslog)
 	sharedState:merge(inputJson)
-	print(sharedState.toJsonString())
+	print(sharedState:toJsonString())
 	nixio.closelog()
 elseif arg[1] == "remove" then
 	local inputTable = JSON.parse(io.stdin:read("*all"))
