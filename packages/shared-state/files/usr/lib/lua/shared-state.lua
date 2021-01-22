@@ -23,6 +23,7 @@ local uci = require("uci")
 
 local shared_state = {}
 shared_state.DATA_DIR = '/var/shared-state/data/'
+shared_state.ERROR_LOCK_FAILED = 165
 
 local SharedState = {}
 
@@ -120,9 +121,8 @@ function SharedState:lock(maxwait)
 	end
 
 	if not self.locked then
-		self.log( "err",
-				  arg[0], arg[1], arg[2], "Failed acquiring lock on data!" )
-		os.exit(-165)
+		self.log( "err", self.dataFile, "Failed acquiring lock on data!" )
+		os.exit(shared_state.ERROR_LOCK_FAILED)
 	end
 end
 
