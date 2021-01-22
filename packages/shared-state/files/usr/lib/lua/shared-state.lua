@@ -24,37 +24,32 @@ local uci = require("uci")
 local shared_state = {}
 shared_state.DATA_DIR = '/var/shared-state/data/'
 
-local SharedState = {
-	dataType=nil,
-	log=nil,
-
-	--! Map<Key, {bleachTTL, author, data}>
-	--!   bleachTTL is the count of how much bleaching should occur before the
-	--!     entry expires
-	--!   author is the name of the host who generated that entry
-	--!   data is the value of the entry
-	storage={},
-	--! true if self_storage has changed after loading
-	changed=false,
-	-- File descriptor of the persistent file storage
-	storageFD=nil,
-	--! true when persistent storage file is locked by this instance
-	locked=false,
-	dataFile=nil,
-	hooksDir=nil,
-}
+local SharedState = {}
 
 function SharedState:new(dataType, logger)
 	--! Name of the CRDT is mandatory
 	if type(dataType) ~= "string" or dataType:len() < 1 then
 		return
 	end
-	local ss = { dataType = dataType }
-	if type(logger) == "function" then
-		ss.log = logger
-	end
-	ss.dataFile = shared_state.DATA_DIR..ss.dataType..".json"
-	ss.hooksDir = "/etc/shared-state/hooks/"..ss.dataType.."/"
+	local logger = (type(logger) == "function") and logger or function() end
+	local ss = {
+		dataType = dataType,
+		log = logger,
+		--! Map<Key, {bleachTTL, author, data}>
+		--!   bleachTTL is the count of how much bleaching should occur before the
+		--!     entry expires
+		--!   author is the name of the host who generated that entry
+		--!   data is the value of the entry
+		storage={},
+		--! true if self_storage has changed after loading
+		changed=false,
+		-- File descriptor of the persistent file storage
+		storageFD=nil,
+		--! true when persistent storage file is locked by this instance
+		locked=false,
+		dataFile = shared_state.DATA_DIR..dataType..".json",
+		hooksDir = "/etc/shared-state/hooks/"..dataType.."/"
+	}
 	setmetatable(ss, self)
 	self.__index = SharedState
 	return ss
@@ -94,10 +89,10 @@ function SharedState:_insert(key, data, bleachTTL)
 	self.changed = true
 end
 
-function SharedState:insert(data)
+function SharedState:insert(data, bleachTTL)
 	self:lock()
 	self:load()
-	for key, lv in pairs(data) do self:_insert(key, lv) end
+	for key, lv in pairs(data) do self:_insert(key, lv, bleachTTL) end
 	self:save()
 	self:unlock()
 	self:notifyHooks()
