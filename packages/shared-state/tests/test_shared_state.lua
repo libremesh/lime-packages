@@ -29,6 +29,14 @@ describe('LiMe Utils tests #sharedstate', function()
         assert.is.equal('qux', db.baz.data)
     end)
 
+    it('test remove data', function()
+        local sharedState = shared_state.SharedState:new('foo')
+        sharedState:insert({ bar = 'foo' })
+        sharedState:remove({'bar'})
+        local db = sharedState:get()
+        assert.is_nil(db.bar.data)
+    end)
+
     it('test two instances with different dataTypes are independent', function ()
         local a = shared_state.SharedState:new('A')
         a:insert({ bar = 'foo' })
@@ -78,4 +86,33 @@ describe('LiMe Utils tests #sharedstate', function()
         assert.is.equal(dbA.baz.data, 'new_qux')
         assert.is.equal(dbA.zig.data, 'zag')
     end)
+
+    it('test same process locks dont lock but  #locks', function()
+        shared_state.DATA_DIR = test_dir
+        local sharedStateA = shared_state.SharedState:new('foo')
+        assert.is_false(sharedStateA.locked)
+        sharedStateA:lock()
+        assert.is_true(sharedStateA.locked)
+        -- locks in the same process don't lock
+        local sharedStateB = shared_state.SharedState:new('foo')
+        sharedStateB:lock()
+        assert.is_true(sharedStateB.locked)
+
+        -- but for other process it does lock
+        script = [[#!/usr/bin/lua
+        shared_state = require('shared-state')
+        shared_state.DATA_DIR = ']] .. test_dir .. [['
+        ss = shared_state.SharedState:new('foo')
+        maxwait_s = 0
+        ss:lock(maxwait_s)
+        ]]
+        local f = io.open(test_dir .. "script.lua", "w")
+        f:write(script)
+        f:close()
+
+        local exit_code = utils.unsafe_shell("lua "..test_dir .. "script.lua; echo -n $?")
+        assert.equal(shared_state.ERROR_LOCK_FAILED, tonumber(exit_code))
+
+    end)
+
 end)
