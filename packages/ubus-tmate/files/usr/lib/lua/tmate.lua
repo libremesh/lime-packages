@@ -4,6 +4,8 @@
 
 ]]--
 
+local utils = require 'lime.utils'
+
 
 local TMATE_SOCK = "/tmp/tmate.sock"
 local TMATE_CONFIG = "/etc/tmate/tmate.conf"
