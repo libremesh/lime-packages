@@ -1,0 +1,15 @@
+{
+	"root": {
+		"description": "tmate console access",
+		"write": {
+			"ubus": {
+				"tmate": ["*"]
+			}
+		},
+		"read": {
+			"ubus": {
+				"tmate": ["*"]
+			}
+		}
+	}
+}
