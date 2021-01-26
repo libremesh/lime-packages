@@ -1,7 +1,6 @@
 local utils = require 'lime.utils'
 local test_utils = require 'tests.utils'
 local shared_state = require 'shared-state'
-local match = require 'luassert.match'
 local uci = nil
 
 describe('LiMe Utils tests #limeutils', function()
@@ -302,16 +301,16 @@ DISTRIB_TAINTS='no-all busybox'
         assert.is.same({hostname='LiMe-abcd03', iface='wlan1-adhoc'}, utils.get_bathost('12:00:00:00:00:00'))
         local ipv6ll = utils.mac2ipv6linklocal('52:00:00:ab:cd:00') .. '%wlan1-mesh'
         local dataTypeOfSync = nil
-	local urlsOfSync = nil
-	local function syncMock (self, urls)
-		dataTypeOfSync = self.dataType
-		urlsOfSync = urls
-                self:insert({['52:00:00:ab:cd:00'] = "Lime_abcd04_wlan1_mesh"})
+        local urlsOfSync = nil
+        local function syncMock (self, urls)
+            dataTypeOfSync = self.dataType
+            urlsOfSync = urls
+            self:insert({['52:00:00:ab:cd:00'] = "Lime_abcd04_wlan1_mesh"})
         end
         stub(shared_state.SharedState, "sync", syncMock)
         local bathost = utils.get_bathost('52:00:00:ab:cd:00', 'wlan1-mesh')
-	assert.is.same(urlsOfSync, { ipv6ll })
-	assert.is.equal(dataTypeOfSync, 'bat-hosts')
+        assert.is.same(urlsOfSync, { ipv6ll })
+        assert.is.equal(dataTypeOfSync, 'bat-hosts')
         assert.is.same({hostname='Lime-abcd04', iface='wlan1-mesh'}, bathost)
         assert.is_nil(utils.get_bathost('00:aa:bb:cc:dd:00', 'wlan1'))
         assert.is_nil(utils.get_bathost('00:aa:bb:cc:dd:00'))
