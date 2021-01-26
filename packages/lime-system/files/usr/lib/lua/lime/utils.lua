@@ -10,7 +10,6 @@ local shared_state = require("shared-state")
 
 utils.BOARD_JSON_PATH = "/etc/board.json"
 utils.SHADOW_FILENAME = "/etc/shadow"
-utils.BATHOSTS_FILENAME = "/etc/bat-hosts"
 utils.KEEP_ON_UPGRADE_FILES_BASE_PATH = '/lib/upgrade/keep.d/'
 
 function utils.log(...)
