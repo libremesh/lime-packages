@@ -18,7 +18,7 @@
 
 if type(arg[2]) ~= "string" or arg[2]:len() < 1 then
 	print (arg[0], "needs CRDT name to be specified as second argument")
-	return -22
+	os.exit(-22)
 end
 
 local JSON = require("luci.jsonc")
@@ -65,5 +65,5 @@ elseif arg[1] == "remove" then
 	end
 else
 	print(arg[0], "needs an operation name to be specified as first argument")
-	return -22
+	os.exit(-22)
 end
