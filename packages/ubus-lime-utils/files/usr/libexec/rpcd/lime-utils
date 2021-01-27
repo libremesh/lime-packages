@@ -75,7 +75,8 @@ local function get_node_status(msg)
     local ifaces = limewireless.mesh_ifaces()
     local stations = {}
     for _, iface  in ipairs(ifaces) do
-        iface_stations = iwinfo[iwinfo.type(iface)].assoclist(iface)
+        iface_type = iwinfo.type(iface)
+        iface_stations = iface_type and iwinfo[iface_type].assoclist(iface)
         if iface_stations then
             for mac, station in pairs(iface_stations) do
                 station['iface'] = iface
