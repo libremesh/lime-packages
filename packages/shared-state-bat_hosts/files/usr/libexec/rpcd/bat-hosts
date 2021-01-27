@@ -9,6 +9,7 @@
 local ubus = require "ubus"
 local json = require 'luci.jsonc'
 local utils = require 'lime.utils'
+local bat_hosts = require 'bat-hosts'
 
 local conn = ubus.connect()
 if not conn then
@@ -16,11 +17,11 @@ if not conn then
 end
 
 local function get_bathost(msg)
-    if not utils.is_valid_mac(msg.mac) then
+    if not msg.mac or not utils.is_valid_mac(msg.mac) then
       utils.printJson({ status = "error", message = "invalid mac" })
       return
     end
-    local bathost = utils.get_bathost(msg.mac, msg.outgoing_iface)
+    local bathost = bat_hosts.get_bathost(msg.mac, msg.outgoing_iface)
     local result = {}
     if bathost.hostname ~= nil then
       result.status = "ok"
@@ -41,7 +42,7 @@ if arg[1] == 'list' then
 end
 
 if arg[1] == 'call' then
-    local msg = utils.rpcd_readline()
+    local msg = utils.rpcd_readline() or '{}'
     msg = json.parse(msg)
     if  arg[2] == 'get_bathost' then get_bathost(msg)
     else utils.printJson({ error = "Method not found" })
