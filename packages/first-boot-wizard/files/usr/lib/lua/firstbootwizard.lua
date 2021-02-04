@@ -278,13 +278,16 @@ function fbw.read_configs()
 end
 
 -- Apply configuration for a new network ( used in ubus daemon)
-function fbw.create_network(ssid, hostname, password)
+function fbw.create_network(ssid, hostname, password, country)
     fbw.log('apply_file_config(ssid=' .. ssid .. ', hostname=' .. hostname .. ')')
     local uci_cursor = config.get_uci_cursor()
 
     -- Save changes in lime-community
     if password ~= nil and password ~= '' then
         lutils.set_shared_root_password(password)
+    end
+    if country then
+        uci_cursor:set("lime-community", 'wifi', 'country', country)
     end
     uci_cursor:set("lime-community", 'wifi', 'ap_ssid', ssid)
     uci_cursor:set("lime-community", 'wifi', 'apname_ssid', ssid..'/%H')
