@@ -1,9 +1,7 @@
-#!/usr/bin/lua
-
-bat_hosts = {}
-
 local shared_state = require("shared-state")
 local utils = require("lime.utils")
+
+local bat_hosts = {}
 
 function bat_hosts.bathost_deserialize(hostname_plus_iface)
     local partial_hostname = hostname_plus_iface
