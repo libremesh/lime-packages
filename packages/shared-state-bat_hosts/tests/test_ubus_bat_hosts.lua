@@ -14,8 +14,20 @@ describe('ubus-bat-hosts tests #ubusbathosts', function()
         local response  = rpcd_call(ubus_bat_hosts, {'call', 'get_bathost'}, '{}')
         assert.is.equal("error", response.status)
         assert.is.equal("invalid mac", response.message)
-        local response  = rpcd_call(ubus_bat_hosts, 
+        local response  = rpcd_call(ubus_bat_hosts,
             {'call', 'get_bathost'}, '{"mac":"02:95:39:ab:cd:00"}')
+        assert.is.equal("ok", response.status)
+        assert.is.same({ hostname = 'lime', iface = 'wlan1-mesh' }, response.bathost)
+
+
+        stub(utils, "get_ifnames", function() return {'wlan1-mesh'} end)
+        local response  = rpcd_call(ubus_bat_hosts,
+            {'call', 'get_bathost'}, '{"mac":"02:95:39:ab:cd:00", "outgoing_iface":"foo"}')
+        assert.is.equal("error", response.status)
+        assert.is.equal("invalid outgoing interface", response.message)
+
+        local response  = rpcd_call(ubus_bat_hosts,
+            {'call', 'get_bathost'}, '{"mac":"02:95:39:ab:cd:00", "outgoing_iface":"wlan1-mesh"}')
         assert.is.equal("ok", response.status)
         assert.is.same({ hostname = 'lime', iface = 'wlan1-mesh' }, response.bathost)
     end)

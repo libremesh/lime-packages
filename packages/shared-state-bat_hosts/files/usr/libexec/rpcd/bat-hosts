@@ -21,6 +21,11 @@ local function get_bathost(msg)
       utils.printJson({ status = "error", message = "invalid mac" })
       return
     end
+
+    if msg.outgoing_iface and not utils.has_value(utils.get_ifnames(), msg.outgoing_iface) then
+      utils.printJson({ status = "error", message = "invalid outgoing interface" })
+      return
+    end
     local bathost = bat_hosts.get_bathost(msg.mac, msg.outgoing_iface)
     local result = {}
     if bathost.hostname ~= nil then
