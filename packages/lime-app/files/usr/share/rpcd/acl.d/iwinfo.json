@@ -1,0 +1,14 @@
+{
+	"lime-app": {
+		"read": {
+			"ubus": {
+					"iwinfo": [ "assoclist" ]
+			}
+		},
+		"write": {
+			"ubus": {
+					"iwinfo": [ "assoclist" ]
+			}
+		}
+	}
+}

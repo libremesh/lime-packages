@@ -1,6 +1,5 @@
 local utils = require 'lime.utils'
 local test_utils = require 'tests.utils'
-
 local uci = nil
 
 describe('LiMe Utils tests #limeutils', function()

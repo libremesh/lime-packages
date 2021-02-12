@@ -526,4 +526,21 @@ function utils.write_obj_store(datafile, data)
     end
 end
 
+function utils.get_ifnames()
+    local ifnames = {}
+    for ifname in fs.dir("/sys/class/net/") do
+        table.insert(ifnames, ifname)
+    end
+    return ifnames
+end
+
+function utils.is_valid_mac(string)
+    local string = string:match("%w%w:%w%w:%w%w:%w%w:%w%w:%w%w")
+    if string then
+       return true
+    else
+       return false
+    end
+end
+
 return utils
