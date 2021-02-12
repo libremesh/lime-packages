@@ -11,6 +11,7 @@
 local ubus = require "ubus"
 local json = require 'luci.jsonc'
 local limewireless = require 'lime.wireless'
+local iwinfo = require 'iwinfo'
 local utils = require 'lime.utils'
 local upgrade = require 'lime.upgrade'
 
@@ -49,6 +50,12 @@ local function get_station_traffic(params)
     return result
 end
 
+local function get_mesh_ifaces(msg)
+    local result = {}
+    result.ifaces = limewireless.mesh_ifaces()
+    utils.printJson(result)
+end
+
 local function get_node_status(msg)
     local result = {}
     result.hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
@@ -68,10 +75,12 @@ local function get_node_status(msg)
     local ifaces = limewireless.mesh_ifaces()
     local stations = {}
     for _, iface  in ipairs(ifaces) do
-        iface_stations = conn:call("lime-openairview", "get_stations", {device = iface}).stations
+        iface_type = iwinfo.type(iface)
+        iface_stations = iface_type and iwinfo[iface_type].assoclist(iface)
         if iface_stations then
-            for _, station in pairs(iface_stations) do
+            for mac, station in pairs(iface_stations) do
                 station['iface'] = iface
+                station.station_mac = mac
                 table.insert(stations, station)
             end
         end
@@ -241,6 +250,7 @@ end
 
 local methods = {
     get_cloud_nodes = { no_params = 0 },
+    get_mesh_ifaces = { no_params = 0 },
     get_node_status = { no_params = 0 },
     get_notes = { no_params = 0},
     set_notes = { text = 'value' },
@@ -258,6 +268,7 @@ if arg[1] == 'call' then
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
     if      arg[2] == 'get_cloud_nodes' then get_cloud_nodes(msg)
+    elseif  arg[2] == 'get_mesh_ifaces' then get_mesh_ifaces(msg)
     elseif  arg[2] == 'get_node_status' then get_node_status(msg)
     elseif  arg[2] == 'get_notes' then get_notes(msg)
     elseif  arg[2] == 'set_notes' then set_notes(msg)

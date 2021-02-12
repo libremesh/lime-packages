@@ -6,11 +6,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lime-app
-PKG_VERSION:=v0.2.10
+PKG_VERSION:=v0.2.15
 PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_HASH:=0d1de42ecbe43a959dc912878ae1545cc8b355565d31775e10891fde84a8cf91
+PKG_HASH:=a7dff34069bee261c718b69417da32d3d569c5d277799d73436e3c9306c01fa3
 PKG_SOURCE_URL:=https://github.com/libremesh/lime-app/releases/download/$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
@@ -18,11 +18,11 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
 	CATEGORY:=LibreMesh
 	TITLE:=LimeApp
-	MAINTAINER:=Marcos Gutierrez <gmarcos@altermundi.net>
+	MAINTAINER:=German Ferrero <germanferrero@altermundi.net>
 	URL:=http://github.com/libremesh/lime-app
 	DEPENDS:=+rpcd +uhttpd +uhttpd-mod-ubus +uhttpd-mod-lua \
 		+ubus-lime-location +ubus-lime-metrics +ubus-lime-utils \
-		+ubus-lime-openairview +ubus-lime-grondrouting
+		+rpcd-mod-iwinfo +ubus-lime-grondrouting
 	PKGARCH:=all
 endef
 
