@@ -1,0 +1,37 @@
+#!/usr/bin/lua
+--! Copyright (C) 2021 Santiago Piccinini <spiccinini@altermundi.net>
+--!
+--! This is free software, licensed under the GNU Affero General Public License v3.
+
+local ubus = require "ubus"
+local utils = require "lime.utils"
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local wan6_status = conn:call("network.interface.wan6", "status", {})
+local wan_ifc = wan6_status.device
+
+--! change the default route from the nonworking metric value to the working metric value
+local nonworking_route = utils.unsafe_shell("ip -6 route show default metric 84831 | grep " .. wan_ifc):gsub("\n","")
+if nonworking_route ~= '' then
+    os.execute("ip -6 r add " .. nonworking_route .. " metric 512")
+    os.execute("ip -6 r del " .. nonworking_route .. " metric 84831")
+end
+
+local default_route = utils.unsafe_shell("ip -6 route show default | grep " .. wan_ifc):gsub("\n","")
+
+if default_route ~= '' then
+    --! install a route with proto value 7 that will be redistributed by babeld
+    default_route = default_route:gsub("proto %w*", "proto 7")
+    local _, _, metric = string.find(default_route, "metric (%d+)")
+    if metric then
+        metric = tonumber(metric) + 100
+        default_route = default_route:gsub("metric (%d+)", "metric " .. tostring(metric))
+    end
+
+    os.execute("ip -6 r add " .. default_route)
+end
+
