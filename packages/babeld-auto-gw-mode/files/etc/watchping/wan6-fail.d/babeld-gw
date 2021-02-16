@@ -1,0 +1,39 @@
+#!/usr/bin/lua
+--! Copyright (C) 2021 Santiago Piccinini <spiccinini@altermundi.net>
+--!
+--! This is free software, licensed under the GNU Affero General Public License v3.
+
+local ubus = require "ubus"
+local utils = require "lime.utils"
+
+local NONWORKING_ROUTE_METRIC = 84831
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local wan6_status = conn:call("network.interface.wan6", "status", {})
+local wan_ifc = wan6_status.device
+
+--! Do our best to select only the "original" default route installed. Using grep because
+--! using the dev argument removes the dev part of the ip route output.
+local route = utils.unsafe_shell("ip -6 route show default | grep -v 'proto 7' | grep " .. wan_ifc):gsub("\n","")
+
+--! replace the default route with one that has metric NONWORKING_ROUTE_METRIC
+if route ~= '' then
+    local _, _, metric = string.find(route, "metric (%d+)")
+    local new_route = ''
+    if metric then
+        metric = tonumber(metric) + 100
+        new_route = route:gsub("metric (%d+)", "metric " .. tostring(NONWORKING_ROUTE_METRIC))
+    else
+        new_route = route .. " metric " .. tostring(NONWORKING_ROUTE_METRIC)
+    end
+    os.execute("ip -6 r add " .. new_route)
+    os.execute("ip -6 r del " .. route)
+end
+
+--! remove the babel redistributable route
+local route = utils.unsafe_shell("ip -6 route show default | grep 'proto 7' | grep " .. wan_ifc):gsub("\n","")
+os.execute("ip -6 r del " .. route)
