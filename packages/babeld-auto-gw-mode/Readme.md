@@ -3,7 +3,7 @@
 By default babeld will redistribute all the routes installed even if they "don't work". For example
 when the internet provider use DHCP and the service is not working but interface is up, the route is
 installed but not working and babeld will anounce the non working route to the network and also
-this route will be used by this node to route the packets so also all its clients won't have inernet.
+this route will be used by this node to route the packets so also all its clients won't have internet.
 
 This package provides a solution using watchping hooks that:
 * on wan OK
