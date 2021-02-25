@@ -1,0 +1,30 @@
+#!/usr/bin/lua
+--! Copyright (C) 2021 Santiago Piccinini <spiccinini@altermundi.net>
+--!
+--! This is free software, licensed under the GNU Affero General Public License v3.
+
+local ubus = require "ubus"
+local utils = require "lime.utils"
+
+local NONWORKING_ROUTE_METRIC = 84831
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local wan4_status = conn:call("network.interface.wan", "status", {})
+local wan_ifc = wan4_status.device
+
+--! Do our best to select only the "original" default route installed. Using grep because
+--! using the dev argument removes the dev part of the ip route output.
+local route = utils.unsafe_shell("ip route show default metric 0 | grep " .. wan_ifc):gsub("\n","")
+
+--! replace the default route with one that has metric NONWORKING_ROUTE_METRIC
+if route ~= '' then
+    os.execute("ip r add " .. route .. " metric " .. tonumber(NONWORKING_ROUTE_METRIC))
+    os.execute("ip r del " .. route)
+end
+
+--! remove the babel redistributable route
+os.execute("ip r del default proto 7")
