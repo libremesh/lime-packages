@@ -1,0 +1,7 @@
+#!/bin/sh
+
+echo 'Content-Type: application/x-tar'
+echo 'Content-Disposition: attachment; filename="lime-community-assets.tar.gz"'
+echo
+
+tar czf - -C /etc/lime-assets/ community/ 2>/dev/null
