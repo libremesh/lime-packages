@@ -22,15 +22,18 @@ local uci = require "uci"
 
 local fbw = {}
 
-
-
 fbw.WORKDIR = '/tmp/fbw/'
-fbw.HOST_CONFIG_PREFIX = 'lime-community__host__'
+fbw.COMMUNITY_HOST_CONFIG_PREFIX = 'lime-community__host__'
+fbw.COMMUNITY_ASSETS_TMPL = 'lime-community_assets__host__%s.tar.gz'
 
 utils.execute('mkdir -p ' .. fbw.WORKDIR)
 
 function fbw.log(text)
     nixio.syslog('info', '[FBW] ' .. text)
+end
+
+local function lime_community_assets_name(hostname)
+    return fbw.WORKDIR .. string.format(fbw.COMMUNITY_ASSETS_TMPL, hostname)
 end
 
 -- Write lock file at begin
@@ -42,7 +45,7 @@ end
 
 -- Remove old results
 function fbw.clean_tmp()
-    utils.execute('rm -f ' .. fbw.WORKDIR .. fbw.HOST_CONFIG_PREFIX .. '*')
+    utils.execute('rm -f ' .. fbw.WORKDIR .. '*')
 end
 
 -- Save working copy of wireless
@@ -161,27 +164,32 @@ function fbw.fetch_config(data)
     local hostname = utils.execute("wget --no-check-certificate http://["..data.host.."]/cgi-bin/hostname -qO - "):gsub("\n", "")
     fbw.log('Hostname found: '.. hostname)
     if (hostname == '') then hostname = host end
-    local signal = data.signal
-    local ssid = data.ssid
-    local filename = fbw.WORKDIR .. fbw.HOST_CONFIG_PREFIX .. hostname
 
-    utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/cgi-bin/lime/lime-community -O " .. filename)
-    if not utils.file_exists(filename) then
+    local lime_community_fname = fbw.WORKDIR .. fbw.COMMUNITY_HOST_CONFIG_PREFIX .. hostname
+
+    utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/cgi-bin/lime/lime-community -O " .. lime_community_fname)
+    if not utils.file_exists(lime_community_fname) then
         -- For backwards compatibility
-        utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/lime-community -O " .. filename)
+        utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/lime-community -O " .. lime_community_fname)
     end
 
     -- Remove lime-community files that are not yet configured.
     -- For this we asume that no ap_ssid options equals not configured.
-    if utils.file_exists(filename) then
-        local f = io.open(filename)
+    if utils.file_exists(lime_community_fname) then
+        local f = io.open(lime_community_fname)
         local content = f:read("*a")
         f:close()
         if not content:match("ap_ssid") then
-            utils.execute("rm " .. filename)
+            utils.execute("rm " .. lime_community_fname)
         end
     end
-    return { host = host, filename = filename, success = utils.file_exists(filename) }
+
+    if utils.file_exists(lime_community_fname) then
+        local fname = lime_community_assets_name(hostname)
+        utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/cgi-bin/lime/lime-community-assets -O " .. fname)
+    end
+
+    return { host = host, filename = lime_community_fname, success = utils.file_exists(lime_community_fname) }
 end
 
 -- Restore previus wireless configuration
@@ -210,6 +218,14 @@ function fbw.apply_file_config(file, hostname)
     -- Clean previus lime configuration and replace lime-community
     config.reset_node_config()
     utils.execute("cp " .. filePath .. " /etc/config/" .. config.UCI_COMMUNITY_NAME)
+
+    -- Setup the shared lime-assets
+    local remote_hostname = string.sub(file, #fbw.COMMUNITY_HOST_CONFIG_PREFIX + 1)
+    local lime_community_assets_fname = lime_community_assets_name(remote_hostname)
+    if utils.file_exists(lime_community_assets_fname) then
+        utils.execute(string.format("tar xfz %s -C /etc/lime-assets/", lime_community_assets_fname))
+    end
+
     -- Run lime-config as first boot and  setup new hostname
     uci_cursor:set(config.UCI_NODE_NAME, "system", "hostname", hostname)
     fbw.end_config()
@@ -266,7 +282,7 @@ function fbw.read_configs()
     local tempFiles = fs.dir(fbw.WORKDIR)
     local result = {}
     for file in tempFiles do
-        if (file ~= nil and file:match("^" .. lutils.literalize(fbw.HOST_CONFIG_PREFIX))) then
+        if (file ~= nil and file:match("^" .. lutils.literalize(fbw.COMMUNITY_HOST_CONFIG_PREFIX))) then
             local config = getConfig(file)
             table.insert(result, {
                 config = config,
