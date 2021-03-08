@@ -18,5 +18,7 @@
 local JSON = require("luci.jsonc")
 local location = require("lime.location")
 
-io.popen("shared-state insert nodes_and_links", "w"):write(JSON.stringify(location.nodes_and_links()))
+local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
+local result = { [hostname] = location.nodes_and_links() }
+io.popen("shared-state insert nodes_and_links", "w"):write(JSON.stringify(result))
 
