@@ -134,7 +134,6 @@ describe('ubus-lime-utils tests #liblocation', function()
     end)
 
     it('test nodes_and_links no wireless', function()
-        local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
         local result = location.nodes_and_links()
         assert.are.same({}, result.links)
         assert.are.same({lat="FIXME", lon="FIXME"}, result.coordinates)
