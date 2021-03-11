@@ -82,7 +82,7 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
                                     '{"fw_path": "/foo.bin"}')
         assert.is.equal("ok", response.status)
         assert.is.equal("LiMe 96dcfa439d27570...", response.metadata.old_release_description)
-        assert.is_false(response.metadata.config_preserved)
+        assert.is_true(response.metadata.config_preserved)
     end)
 
     it('test firmware_upgrade with metadata', function()
