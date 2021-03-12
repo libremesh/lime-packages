@@ -102,6 +102,9 @@ function pkg.firmware_upgrade(fw_path, preserve_config, metadata, fw_type)
     end
 
     local backup = ""
+    if preserve_config == nil then
+        preserve_config = true
+    end
     if not preserve_config then
         backup = "DO_NOT_BACKUP=1"
     end
