@@ -42,14 +42,16 @@ function SharedStateBase:lock(maxwait)
 	fs.mkdirr(shared_state.DATA_DIR)
 	self.storageFD = nixio.open(
 		self.dataFile, nixio.open_flags("rdwr", "creat") )
-		for i=1,maxwait do
-			if not self.storageFD:lock("tlock") then
-				nixio.nanosleep(1)
-			else
-				self.locked = true
-				break
-			end
+
+	for i=1,maxwait do
+		if not self.storageFD:lock("tlock") then
+			nixio.nanosleep(1)
+		else
+			self.locked = true
+			break
 		end
+	end
+
 	if not self.locked then
 		self.log( "err", self.dataFile, "Failed acquiring lock on data!" )
 		os.exit(shared_state.ERROR_LOCK_FAILED)
