@@ -124,7 +124,7 @@ function SharedStateBase:_sync(urls)
 		for line in io.lines() do
 			table.insert(
 				urls,
-				"http://["..line.."]/cgi-bin/shared-state/"..self.dataType )
+				self:getSyncUrl(line, self.dataType))
 		end
 	end
 
@@ -281,6 +281,10 @@ function SharedState:remove(keys)
 	self:notifyHooks()
 end
 
+function SharedState:getSyncUrl(host)
+	return "http://["..host.."]/cgi-bin/shared-state/"..self.dataType
+end
+
 
 local SharedStatePersistent = {}
 setmetatable(SharedStatePersistent, {__index = SharedStateBase})
@@ -325,6 +329,10 @@ function SharedStatePersistent:_insert(key, data)
 		}
 		self.changed = true
 	end	
+end
+
+function SharedStatePersistent:getSyncUrl(host)
+	return "http://["..host.."]/cgi-bin/shared-state-persistent/"..self.dataType
 end
 
 shared_state.SharedState = SharedState
