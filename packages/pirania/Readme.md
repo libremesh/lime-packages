@@ -28,6 +28,18 @@ This software assumes that will be running on a OpenWRT/LEDE distribution (becau
 
 `epoc` is expressed in [Unix Timestamp](https://en.wikipedia.org/wiki/Unix_time) format. You can use a tool like [unixtimestamp.com](https://www.unixtimestamp.com/) to get a date in the correct format.
 
+### `captive_portal status`
+
+Prints the status of pirania: enabled or disabled.
+
+### `captive_portal start`
+
+Starts pirania. If you want pirania to automatically turn on use: `uci set pirania.base_config.enabled=1 && uci commit`
+
+### `captive_portal stop`
+
+Stops pirania. If you want pirania to stop automatically turning on use: `uci set pirania.base_config.enabled=0 && uci commit`
+
 ### `voucher list_vouchers`
 
 Returns a json list of all vouchers in pirania database.
