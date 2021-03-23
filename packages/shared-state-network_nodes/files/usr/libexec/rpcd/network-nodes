@@ -1,0 +1,51 @@
+#!/usr/bin/env lua
+--[[
+  Copyright (C) 2013-2020 LibreMesh.org
+  This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
+
+  Copyright 2021 German Ferrero <germanferrero@altermundi.net>
+]]--
+
+local ubus = require "ubus"
+local json = require 'luci.jsonc'
+local utils = require 'lime.utils'
+local network_nodes = require 'network-nodes'
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function get_nodes(msg)
+    local nodes = network_nodes.get_nodes()
+    utils.printJson({ status = "ok", nodes = nodes })
+end
+
+local function mark_nodes_as_gone(msg)
+    if not msg.hostnames then
+      utils.printJson({ status = "error", message = "missing attribute hostnames" })
+      return
+    end
+
+    network_nodes.mark_nodes_as_gone(msg.hostnames)
+    utils.printJson({ status = "ok" })
+end
+
+
+local methods = {
+    get_nodes = { no_params = 0},
+    mark_nodes_as_gone = { hostnames = 'value' }
+}
+
+if arg[1] == 'list' then
+    utils.printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = utils.rpcd_readline() or '{}'
+    msg = json.parse(msg)
+    if      arg[2] == 'get_nodes' then get_nodes(msg)
+    elseif  arg[2] == 'mark_nodes_as_gone' then mark_nodes_as_gone(msg)
+    else utils.printJson({ error = "Method not found" })
+    end
+end

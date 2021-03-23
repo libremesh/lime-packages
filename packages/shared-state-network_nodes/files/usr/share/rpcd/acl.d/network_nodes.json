@@ -1,0 +1,18 @@
+{
+    "lime-app": {
+        "description": "lime-app public access",
+        "read": {
+            "ubus": {
+                    "network-nodes": [ "get_nodes" ]
+            }
+        }
+    },
+    "root": {
+        "description": "root privileged access",
+        "write": {
+            "ubus": {
+                    "network-nodes": [ "mark_nodes_as_gone" ]
+            }
+        }
+    }
+}
