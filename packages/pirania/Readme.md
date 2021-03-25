@@ -24,6 +24,72 @@ This software assumes that will be running on a OpenWRT/LEDE distribution (becau
   * opkg install pirania
   * opkg install pirania-app
 
+## Command line
+
+`epoc` is expressed in [Unix Timestamp](https://en.wikipedia.org/wiki/Unix_time) format. You can use a tool like [unixtimestamp.com](https://www.unixtimestamp.com/) to get a date in the correct format.
+
+### `captive_portal status`
+
+Prints the status of pirania: enabled or disabled.
+
+### `captive_portal start`
+
+Starts pirania. If you want pirania to automatically turn on use: `uci set pirania.base_config.enabled=1 && uci commit`
+
+### `captive_portal stop`
+
+Stops pirania. If you want pirania to stop automatically turning on use: `uci set pirania.base_config.enabled=0 && uci commit`
+
+### `voucher list_vouchers`
+
+Returns a json list of all vouchers in pirania database.
+
+### `voucher print_valid_macs`
+
+Lists the mac addresses of all devices using a non-expired voucher
+
+### `voucher add_voucher`
+
+Adds a single voucher to pirania database.
+
+Params:
+- `key`: a name used to identify the voucher
+- `voucher`: voucher secret
+- `epoc`: date (unix time) that the voucher will expire
+- `upload`: upload limit for this voucher 0 to 10
+- `download`: download limit for this voucher 0 to 10
+- `amountofmacsallowed`: amount of devices that can use this voucher
+
+Ex.: `voucher add_voucher my-voucher-name voucher-secret 1619126965 10 10 1`
+
+#### `voucher auth_voucher`
+
+Authenticates a mac address with a voucher.
+
+Params:
+- `mac`: a device's mac address
+- `voucher`: secret for a voucher
+
+Ex.: `voucher auth_voucher voucher-secret d0:82:7a:49:e2:37`
+
+### `voucher remove_voucher`
+
+Invalidates a voucher by changing it's expire date to 0.
+
+Params:
+- `voucher`: voucher secret
+
+Ex.: `voucher remove_voucher voucher-secret`
+
+### `voucher voucher_status`
+
+Shows the voucher status for a specific mac address.
+
+Params:
+- `mac`: a device's mac address
+
+Ex.: `voucher voucher_status d0:82:7a:49:e2:37`
+
 # How it works
 
 It uses iptables rules to filter inbound connections outside the mesh network.
