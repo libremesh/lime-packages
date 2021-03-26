@@ -17,6 +17,7 @@
 --! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
+local JSON = require("luci.jsonc")
 
 local networkNodesTable = {
     [hostname] = {true}

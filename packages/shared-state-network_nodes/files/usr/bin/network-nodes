@@ -1,0 +1,5 @@
+#!/usr/bin/lua
+
+local network_nodes = require('network-nodes')
+
+io.stdout:write(network_nodes.as_csv())
