@@ -24,7 +24,7 @@ local utils = require("lime.utils")
 
 local shared_state = {}
 shared_state.DATA_DIR = '/var/shared-state/data/'
-shared_state.PERSISTENT_DATA_DIR = '/var/shared-state/persistent-data/'
+shared_state.PERSISTENT_DATA_DIR = '/etc/shared-state/persistent-data/'
 shared_state.ERROR_LOCK_FAILED = 165
 shared_state.CANDIDATE_NEIGHBORS_BIN = '/usr/bin/shared-state-get_candidates_neigh'
 
@@ -39,7 +39,6 @@ end
 function SharedStateBase:lock(maxwait)
 	if self.locked then return end
 	maxwait = maxwait or 10
-
 	fs.mkdirr(fs.dirname(self.dataFile))
 	self.storageFD = nixio.open(
 		self.dataFile, nixio.open_flags("rdwr", "creat") )
@@ -287,17 +286,17 @@ function SharedState:getSyncUrl(host)
 end
 
 
-local SharedStatePersistent = {}
-setmetatable(SharedStatePersistent, {__index = SharedStateBase})
+local SharedStateMultiWriter = {}
+setmetatable(SharedStateMultiWriter, {__index = SharedStateBase})
 
-function SharedStatePersistent:new(dataType, logger)
+function SharedStateMultiWriter:new(dataType, logger)
 	local dataFile = shared_state.PERSISTENT_DATA_DIR..dataType..".json"
 	local newInstance = createSharedStateBase(dataType, logger, dataFile)
-	setmetatable(newInstance, {__index = SharedStatePersistent})
+	setmetatable(newInstance, {__index = SharedStateMultiWriter})
 	return newInstance
 end
 
-function SharedStatePersistent:_merge(stateSlice)
+function SharedStateMultiWriter:_merge(stateSlice)
 	-- Make merge based on timestamp
 	local stateSlice = stateSlice or {}
 	for key,rv in pairs(stateSlice) do
@@ -311,7 +310,7 @@ function SharedStatePersistent:_merge(stateSlice)
 	end
 end
 
-function SharedStatePersistent:insert(data)
+function SharedStateMultiWriter:insert(data)
 	self:lock()
 	self:load()
 	for key, lv in pairs(data) do self:_insert(key, lv) end
@@ -320,7 +319,7 @@ function SharedStatePersistent:insert(data)
 	self:notifyHooks()
 end
 
-function SharedStatePersistent:_insert(key, data)
+function SharedStateMultiWriter:_insert(key, data)
 	local lv = self.storage[key]
 	if (lv == nil or not utils.deepcompare(lv.data, data)) then
 		self.storage[key] = {
@@ -329,13 +328,13 @@ function SharedStatePersistent:_insert(key, data)
 			data=data
 		}
 		self.changed = true
-	end	
+	end
 end
 
-function SharedStatePersistent:getSyncUrl(host)
-	return "http://["..host.."]/cgi-bin/shared-state-persistent/"..self.dataType
+function SharedStateMultiWriter:getSyncUrl(host)
+	return "http://["..host.."]/cgi-bin/shared-state-multiwriter/"..self.dataType
 end
 
 shared_state.SharedState = SharedState
-shared_state.SharedStatePersistent = SharedStatePersistent
+shared_state.SharedStateMultiWriter = SharedStateMultiWriter
 return shared_state
