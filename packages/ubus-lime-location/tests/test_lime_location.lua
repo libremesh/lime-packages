@@ -91,7 +91,7 @@ describe('ubus-lime-utils tests #ubuslimelocation', function()
 
         stub(network, "get_own_macs", function () return own_macs end)
         local response  = rpcd_call(ubus_lime_loc, {'call', 'nodes_and_links'}, '')
-        local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
+        local hostname = utils.hostname()
         assert.is.equal(hostname, response[hostname].hostname)
 
         assert.are.same(own_macs, response[hostname].macs)

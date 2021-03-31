@@ -182,6 +182,10 @@ function utils.slugify(s)
 	return s
 end
 
+function utils.hostname()
+    return io.input("/proc/sys/kernel/hostname"):read("*line")
+end
+
 function utils.sanitize_hostname(hostname)
 	hostname = hostname:gsub(' ', '-')
 	hostname = hostname:gsub('[^-a-zA-Z0-9]', '')
