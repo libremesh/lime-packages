@@ -26,4 +26,4 @@ echo
 PATH_INFO="${PATH_INFO#/}"
 echo "$PATH_INFO" | grep -q '^[a-zA-Z0-9_-]*$' || exit 22
 
-cat - | shared-state-persistent reqsync "$PATH_INFO"
+cat - | shared-state-multiwriter reqsync "$PATH_INFO"

@@ -32,7 +32,7 @@ if os.getenv("DEBUG") then
 end
 nixio.setlogmask(logmask)
 
-local sharedState = shared_state.SharedStatePersistent:new(arg[2], nixio.syslog)
+local sharedState = shared_state.SharedStateMultiWriter:new(arg[2], nixio.syslog)
 
 if arg[1] == "insert" then
 	local inputTable = JSON.parse(io.stdin:read("*all")) or {}
