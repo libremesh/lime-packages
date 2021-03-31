@@ -16,11 +16,6 @@
 --! You should have received a copy of the GNU Affero General Public License
 --! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
-local JSON = require("luci.jsonc")
+local network_nodes = require('network-nodes')
 
-local networkNodesTable = {
-    [hostname] = {true}
-}
-
-io.popen("shared-state-persistent insert network_nodes", "w"):write(JSON.stringify(networkNodesTable))
+network_nodes.publish()
