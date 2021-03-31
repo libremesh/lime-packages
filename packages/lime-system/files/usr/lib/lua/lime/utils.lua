@@ -277,6 +277,10 @@ function utils.getBoardAsTable(board_path)
 	return json.parse(fs.readfile(board_path))
 end
 
+function utils.current_board()
+    return utils.read_file("/tmp/sysinfo/board_name"):gsub("\n","")
+end
+
 function utils.printJson(obj)
     print(json.stringify(obj))
 end
