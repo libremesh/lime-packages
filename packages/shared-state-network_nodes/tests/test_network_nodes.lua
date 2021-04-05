@@ -3,24 +3,34 @@ local test_utils = require('tests.utils')
 local shared_state = require('shared-state')
 local network_nodes = require('network-nodes')
 
+local uci = nil
+
 describe('Tests network_nodes #network_nodes', function ()
     before_each('', function()
         test_dir = test_utils.setup_test_dir()
         shared_state.PERSISTENT_DATA_DIR = test_dir
         shared_state.DATA_DIR = test_dir
+        uci = test_utils.setup_test_uci()
     end)
 
     after_each('', function()
         test_utils.teardown_test_dir()
+        test_utils.teardown_test_uci(uci)
     end)
 
     it('test node creation and serialization', function()
         stub(utils, "release_info", function () return {DISTRIB_RELEASE='2021.1'} end)
         stub(utils, "current_board", function () return 'devboard' end)
+        uci:set('network', 'lan', 'interface')
+        uci:set('network', 'lan', 'ipaddr', '10.5.0.5')
+        uci:set('network', 'lan', 'ip6addr', 'fd0d:fe46:8ce8::ab:cd00/64')
+        uci:commit('network')
         local node = network_nodes.create_node()
         assert.are.equal('devboard', node.board)
         assert.are.equal('2021.1', node.fw_version)
         assert.are.equal('recently_connected', node.status)
+        assert.are.equal('10.5.0.5', node.ipv4)
+        assert.are.equal('fd0d:fe46:8ce8::ab:cd00', node.ipv6)
 
         local node = network_nodes.node("node1", true, "2021.1", "librerouter-v1")
         assert.are.same(node, network_nodes.deserialize_from_network_nodes(network_nodes.serialize_for_network_nodes(node)))
@@ -28,9 +38,16 @@ describe('Tests network_nodes #network_nodes', function ()
     end)
 
     it('test get_nodes return expected format #get_nodes', function()
-        local node1 = network_nodes.node("node1", true, "2021.1", "librerouter-v1")
-        local node2 = network_nodes.node("node2", true, "2020.3", "librerouter-v1")
-        local node3 = network_nodes.node("node3", true, "2020.1", "tplink-wdr3600")
+        uci:set('network', 'lan', 'interface')
+        uci:set('network', 'lan', 'ipaddr', '10.5.0.5')
+        uci:set('network', 'lan', 'ip6addr', 'fd0d:fe46:8ce8::ab:cd00/64')
+        uci:commit('network')
+        local node1 = network_nodes.node("node1", true, "2021.1", "librerouter-v1", "10.24.3.97",
+                                         "fd0d:fe46:8ce8::ab:cd00")
+        local node2 = network_nodes.node("node2", true, "2020.3", "librerouter-v1", "10.24.3.98",
+                                         "fd0d:fe46:8ce8::ab:cd01")
+        local node3 = network_nodes.node("node3", true, "2020.1", "tplink-wdr3600", "10.24.3.98",
+                                         "fd0d:fe46:8ce8::ab:cd02")
         local network_nodes_db = shared_state.SharedStateMultiWriter:new('network_nodes')
         local data = {
             ["node1"] = network_nodes.serialize_for_network_nodes(node1),
@@ -50,7 +67,7 @@ describe('Tests network_nodes #network_nodes', function ()
         assert.is.equal("disconnected", nodes["node2"].status)
         assert.is.equal("librerouter-v1", nodes["node2"].board)
 
-        local csv = network_nodes.as_csv()
+        local csv = network_nodes.as_human_readable_table() -- ok just some excercise...
     end)
 
     it('test mark_nodes_as_gone marks nodes as gone', function ()
