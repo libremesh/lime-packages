@@ -2,4 +2,4 @@
 
 local network_nodes = require('network-nodes')
 
-io.stdout:write(network_nodes.as_csv())
+io.stdout:write(network_nodes.as_human_readable_table())
