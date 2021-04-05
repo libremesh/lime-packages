@@ -40,37 +40,45 @@ Starts pirania. If you want pirania to automatically turn on use: `uci set piran
 
 Stops pirania. If you want pirania to stop automatically turning on use: `uci set pirania.base_config.enabled=0 && uci commit`
 
-### `voucher list_vouchers`
+#### `voucher show`
 
-Returns a json list of all vouchers in pirania database.
+Lists all the vouchers.
 
-### `voucher print_valid_macs`
+### `voucher show_active`
 
-Lists the mac addresses of all devices using a non-expired voucher
+List all the vouchers that are currently active.
 
-### `voucher add_voucher`
+### `voucher add`
 
-Adds a single voucher to pirania database.
-
-Params:
-- `key`: a name used to identify the voucher
-- `voucher`: voucher secret
-- `epoc`: date (unix time) that the voucher will expire
-- `upload`: upload limit for this voucher 0 to 10
-- `download`: download limit for this voucher 0 to 10
-- `amountofmacsallowed`: amount of devices that can use this voucher
-
-Ex.: `voucher add_voucher my-voucher-name voucher-secret 1619126965 10 10 1`
-
-#### `voucher auth_voucher`
-
-Authenticates a mac address with a voucher.
+Create a new voucher. This voucher will start deactivated and not bonded to any device.
 
 Params:
-- `mac`: a device's mac address
-- `voucher`: secret for a voucher
+- `name`: a name used to identify the voucher
+- `secret-code`: the voucher secret (password)
+- `expiration-date`: date (unix time) that the voucher will expire
 
-Ex.: `voucher auth_voucher voucher-secret d0:82:7a:49:e2:37`
+Ex.: `voucher add my-voucher-name voucher-secret 1619126965`
+
+### `voucher activate`
+
+Activates a voucher, asigning a mac address. After the activation, the device with this MAC
+address will have internet access.
+
+Params:
+- `secret-code`: the password of the voucher.
+- `mac`: the MAC address of the device that will have access.
+
+Ex: `voucher activate mysecret 00:11:22:33:44:55`
+
+### `voucher deactivate`
+
+Deactivate a voucher of the specified `ID`.
+
+Params:
+- `ID`: a string used to identify the voucher.
+
+Ex: `voucher deactivate Qzt3WF`
+
 
 ### `voucher remove_voucher`
 
@@ -81,14 +89,26 @@ Params:
 
 Ex.: `voucher remove_voucher voucher-secret`
 
-### `voucher voucher_status`
+### `voucher is_mac_authorized`
 
-Shows the voucher status for a specific mac address.
+Check if a specific mac address is authorized.
 
 Params:
 - `mac`: a device's mac address
 
-Ex.: `voucher voucher_status d0:82:7a:49:e2:37`
+Ex.: `voucher is_mac_authorized d0:82:7a:49:e2:37`
+
+
+### `voucher renew_voucher`
+
+Check if a specific mac address is authorized.
+
+Params:
+- `id`: the voucher ID.
+- `expiration-date`: the new date (unix time) that the voucher will expire
+
+Ex.: `voucher renew_voucher Qzt3WF 1619126965`
+
 
 # How it works
 
@@ -146,7 +166,7 @@ So the flow is:
 * change_url(url) -> change config `pirania.base_config.portal_url`
 * ...
 
-### CLI
+### CLI usage example
 
 ```
 $ voucher show
