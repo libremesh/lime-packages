@@ -1,0 +1,3 @@
+config prometheus-node-push-to-influxdb 'main'
+	option server_address 'localhost'
+	option server_port '8186'
