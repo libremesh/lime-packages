@@ -75,7 +75,7 @@ function timed_scrape(collector)
     success = 0
     print(err)
   end
-  return (socket.gettime() - start_time), success
+  return (socket.gettime() - start_time), success, err
 end
 
 function run_all_collectors(collectors)
@@ -83,10 +83,11 @@ function run_all_collectors(collectors)
   local metric_success = metric("node_scrape_collector_success", "gauge")
   for _,cname in pairs(collectors) do
     if col_mods[cname] ~= nil then
-      local duration, success = timed_scrape(col_mods[cname])
+      local duration, success, err = timed_scrape(col_mods[cname])
       local labels = {collector=cname}
       metric_duration(labels, duration)
       metric_success(labels, success)
+      if err and string.match(err, "interrupted!") then os.exit() end
     end
   end
 end
