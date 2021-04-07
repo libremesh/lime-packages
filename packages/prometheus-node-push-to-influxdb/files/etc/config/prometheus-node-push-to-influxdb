@@ -1,3 +1,5 @@
 config prometheus-node-push-to-influxdb 'main'
-	option server_address 'localhost'
-	option server_port '8186'
+	option enabled '0' # disabled by default, you need to set server_address first
+	option server_address 'victoriametrics.server'
+	option server_port '8189' # need to run the VictoriaMetrics server with -influxListenAddr :8189
+	option interval '30'
