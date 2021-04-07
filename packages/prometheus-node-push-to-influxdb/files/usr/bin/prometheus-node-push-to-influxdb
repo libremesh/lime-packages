@@ -92,18 +92,23 @@ function run_all_collectors(collectors)
   end
 end
 
--- Web server-specific functions
+function push_loop()
+  local tcp, status, err
 
-function http_ok_header()
-  output("HTTP/1.0 200 OK\r\nServer: lua-metrics\r\nContent-Type: text/plain; version=0.0.4\r\n\r")
-end
-
-function http_not_found()
-  output("HTTP/1.0 404 Not Found\r\nServer: lua-metrics\r\nContent-Type: text/plain\r\n\r\nERROR: File Not Found.")
-end
-
-function serve(request)
-  return true
+  while 1 do
+    if not status then
+      if tcp then tcp:close() end
+      tcp = assert(socket.tcp())
+      tcp:settimeout(10) -- seconds
+      status, err = tcp:connect(server_address, server_port)
+    end
+    if status then
+      output = function (str) status, err = tcp:send(str.."\n") end
+      run_all_collectors(col_names)
+    end
+    socket.sleep(1)
+  end
+  tcp:close()
 end
 
 -- Main program
@@ -128,17 +133,7 @@ end
 ls_fd:close()
 
 if server_address and server_port then
-  local tcp = assert(socket.tcp())
-  tcp:settimeout(10) -- seconds
-  
-  while 1 do
-    if tcp:connect(server_address, server_port) then
-      output = function (str) tcp:send(str.."\n") end
-      run_all_collectors(col_names)
-    end
-    tcp:close()
-    socket.sleep(10) -- seconds
-  end
+  push_loop()
 else
   output = print
   run_all_collectors(col_names)
