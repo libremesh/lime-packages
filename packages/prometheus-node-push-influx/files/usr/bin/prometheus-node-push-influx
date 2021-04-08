@@ -12,9 +12,9 @@ socket = require("socket")
 
 local ubus = require "ubus"
 local u = ubus.connect()
-local domainname = u:call("uci", "get", {config = "dhcp", section = "@dnsmasq[0]", option = "domain"}).value
-local hostname = u:call("uci", "get", {config = "system", section = "@system[0]", option = "hostname"}).value
-local macaddr = u:call("network.device", "status", {name = "br-lan"}).macaddr
+local domain = u:call("uci", "get", {config = "dhcp", section = "@dnsmasq[0]", option = "domain"}).value
+local host = u:call("system", "board", {}).hostname
+local hostmac = u:call("network.device", "status", {name = "br-lan"}).macaddr
 u = nil
 ubus = nil
 
@@ -43,9 +43,9 @@ end
 
 function print_metric(metric, labels, value)
   local label_string = ""
-  label_string = label_string .. 'hostname' .. '=' .. hostname .. ','
-  label_string = label_string .. 'domainname' .. '=' .. domainname .. ','
-  label_string = label_string .. 'hwaddr' .. '=' .. macaddr .. ','
+  label_string = label_string .. 'domain' .. '=' .. domain .. ','
+  label_string = label_string .. 'host' .. '=' .. host .. ','
+  label_string = label_string .. 'hostmac' .. '=' .. hostmac .. ','
   if labels then
     for label,value in pairs(labels) do
       label_string =  label_string .. string.gsub(label, "[ ,=]", "\\%0") .. '=' .. string.gsub(value, "[ ,=]", "\\%0") .. ','
