@@ -3,14 +3,14 @@
 START=99
 
 USE_PROCD=1
-NAME=prometheus-node-push-to-influxdb
-PROG=/usr/bin/prometheus-node-push-to-influxdb
+NAME=prometheus-node-push-influx
+PROG=/usr/bin/prometheus-node-push-influx
 
 start_service() {
-	enabled=$(uci get prometheus-node-push-to-influxdb.main.enabled)
-	server=$(uci get prometheus-node-push-to-influxdb.main.server_address)
-	port=$(uci get prometheus-node-push-to-influxdb.main.server_port)
-	interval=$(uci get prometheus-node-push-to-influxdb.main.interval)
+	enabled=$(uci get prometheus-node-push-influx.main.enabled)
+	server=$(uci get prometheus-node-push-influx.main.server_address)
+	port=$(uci get prometheus-node-push-influx.main.server_port)
+	interval=$(uci get prometheus-node-push-influx.main.interval)
 
 	if [ "$enabled" -eq 1 ] && [ -n "$server" ] && [ -n "$port" ] ; then
 		procd_open_instance
