@@ -6,36 +6,55 @@ USE_PROCD=1
 NAME=prometheus-node-push-influx
 PROG=/usr/bin/prometheus-node-push-influx
 
+instance_start() {
+	local cfg="$1"
+	local disabled
+
+	config_get_bool disabled "$cfg" disabled 0
+	[ "$disabled" -gt 0 ] && echo "instance $cfg disabled, check uci config" && return 0
+
+	config_get server "$cfg" server_address
+	config_get port "$cfg" server_port
+	config_get interval "$cfg" interval
+
+	procd_open_instance "$cfg"
+	procd_set_param command "$PROG" \
+		--server "$server" \
+		--port "$port" \
+		--interval "$interval"
+
+	# respawn automatically if something died, be careful if you have an alternative process supervisor
+	# if process dies sooner than respawn_threshold, it is considered crashed and after 5 retries the service is stopped
+	procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
+
+	procd_set_param stderr 1 # forward stderr of the command to logd
+	procd_close_instance
+
+
+}
+
 start_service() {
-	enabled=$(uci get prometheus-node-push-influx.main.enabled)
-	server=$(uci get prometheus-node-push-influx.main.server_address)
-	port=$(uci get prometheus-node-push-influx.main.server_port)
-	interval=$(uci get prometheus-node-push-influx.main.interval)
+	local instance="$1"
+	local instance_found=0
 
-	if [ "$enabled" -eq 1 ] && [ -n "$server" ] && [ -n "$port" ] ; then
-		procd_open_instance
+	. /lib/functions/network.sh
 
-		procd_set_param command "$PROG" \
-			--server "$server" \
-			--port "$port" \
-			--interval "$interval" \
+	config_cb() {
+		local type="$1"
+		local name="$2"
+		if [ "$type" = "prometheus-node-push-influx" ]; then
+			if [ -n "$instance" -a "$instance" = "$name" ]; then
+				instance_found=1
+			fi
+		fi
+	}
 
-		# respawn automatically if something died, be careful if you have an alternative process supervisor
-		# if process dies sooner than respawn_threshold, it is considered crashed and after 5 retries the service is stopped
-		procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
+	config_load prometheus-node-push-influx
 
-		procd_set_param stderr 1 # forward stderr of the command to logd
-
-		procd_close_instance
+	if [ -n "$instance" ]; then
+		[ "$instance_found" -gt 0 ] || return
+		instance_start "$instance"
 	else
-		echo "service disabled, check uci config"
+		config_foreach instance_start prometheus-node-push-influx
 	fi
-}
-
-stop() {
-	service_stop $PROG
-}
-
-reload() {
-	service_reload $PROG
 }
