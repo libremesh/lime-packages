@@ -99,7 +99,6 @@ function push_loop()
   while 1 do
     local lastrun_time = socket.gettime()
     local drift = (lastrun_time - start_time) % interval
-    if not status then
       if tcp then tcp:close() end
       tcp = assert(socket.tcp6())
       tcp:settimeout(10) -- seconds
@@ -109,11 +108,11 @@ function push_loop()
         tcp:settimeout(10) -- seconds
         status, err = tcp:connect(server_address, server_port)
       end
-    end
 
     if status then
       output = function (str) status, err = tcp:send(str.."\n") end
       run_all_collectors(col_names)
+      tcp:close()
     end
 
     repeat
