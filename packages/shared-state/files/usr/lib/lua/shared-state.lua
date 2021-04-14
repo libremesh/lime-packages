@@ -26,6 +26,7 @@ local shared_state = {}
 shared_state.DATA_DIR = '/var/shared-state/data/'
 shared_state.PERSISTENT_DATA_DIR = '/var/shared-state/persistent-data/'
 shared_state.ERROR_LOCK_FAILED = 165
+shared_state.CANDIDATE_NEIGHBORS_BIN = '/usr/bin/shared-state-get_candidates_neigh'
 
 local SharedStateBase = {}
 
@@ -39,7 +40,7 @@ function SharedStateBase:lock(maxwait)
 	if self.locked then return end
 	maxwait = maxwait or 10
 
-	fs.mkdirr(shared_state.DATA_DIR)
+	fs.mkdirr(fs.dirname(self.dataFile))
 	self.storageFD = nixio.open(
 		self.dataFile, nixio.open_flags("rdwr", "creat") )
 
@@ -120,7 +121,7 @@ function SharedStateBase:_sync(urls)
 				line.."/"..self.dataType )
 		end
 
-		io.input(io.popen(arg[0].."-get_candidates_neigh"))
+		io.input(io.popen(shared_state.CANDIDATE_NEIGHBORS_BIN))
 		for line in io.lines() do
 			table.insert(
 				urls,
