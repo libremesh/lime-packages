@@ -111,8 +111,16 @@ function push_loop()
     end
 
     if status then
-      output = function (str) status, err = tcp:send(str.."\n") end
+      local collectors_output = ""
+      output = function (str) collectors_output = collectors_output..str.."\n" end
       run_all_collectors(col_names)
+      tcp:send("POST /write HTTP/1.1\n")
+      tcp:send("User-Agent: prometheus-node-push-influx\n")
+      tcp:send("Host: "..server_address..":"..server_port.."\n")
+      tcp:send("Content-Type: application/x-www-form-urlencoded\n")
+      tcp:send("Content-Length: "..string.len(collectors_output).."\n")
+      tcp:send("\n")
+      tcp:send(collectors_output)
       tcp:close()
     end
 
