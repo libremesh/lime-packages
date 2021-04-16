@@ -7,6 +7,9 @@ local function scrape()
   local metric_wifi_station_signal_iwavg = metric("wifi_station_signal_iwavg","gauge")
   local metric_wifi_station_signal_iwchain0 = metric("wifi_station_signal_iwchain0", "gauge")
   local metric_wifi_station_signal_iwchain1 = metric ("wifi_station_signal_iwchain1", "gauge")
+  local metric_wifi_stations_retries = metric("tx_retries", "counter")
+  local metric_wifi_stations_failed = metric("tx_failed", "counter")
+
 
   local u = ubus.connect()
   local status = u:call("network.wireless", "status", {})
@@ -38,6 +41,18 @@ local function scrape()
             else
               metric_wifi_station_signal_iwavg(labels, "-"..mix)
             end
+            if l and l:match("tx retries:%s+(%d+)") then
+              local tx_retries = l:match("tx retries:%s+(%d+)")
+                if tx_retries then
+                  metric_wifi_stations_retries(labels, tx_retries)
+                end
+              end
+             if l and l:match("tx failed:%s+(%d+)") then
+              local tx_failed = l:match("tx failed:%s+(%d+)")
+                if tx_failed then
+                  metric_wifi_stations_failed(labels, tx_failed)
+                end
+              end
           end
          until not l
         iwstation:close()
