@@ -27,37 +27,37 @@ local function scrape()
             mac = mac,
           }
 
-        local iwstation = io.popen("iw "..ifname.." station get "..mac, "r")
-        if iwstation then
-         local l
-         repeat
-           l = iwstation:read("*l")
-           if l and l:match("signal avg:[^%d]+(%d+)[^%d]+(%d+)[^%d]+(%d+)") then
-             local mix, chain0, chain1 = l:match("signal avg:[^%d]+(%d+)[^%d]+(%d+)[^%d]+(%d+)")
-             if chain0 and chain1 then
-               metric_wifi_station_signal_iwavg(labels, "-"..mix)
-               metric_wifi_station_signal_iwchain0(labels, "-"..chain0)
-               metric_wifi_station_signal_iwchain1(labels, "-"..chain1)
-            else
-              metric_wifi_station_signal_iwavg(labels, "-"..mix)
-            end
-            if l and l:match("tx retries:%s+(%d+)") then
-              local tx_retries = l:match("tx retries:%s+(%d+)")
-                if tx_retries then
-                  metric_wifi_station_transmit_retries(labels, tx_retries)
+          local iwstation = io.popen("iw "..ifname.." station get "..mac, "r")
+          if iwstation then
+            local l
+            repeat
+              l = iwstation:read("*l")
+              if l and l:match("signal avg:[^%d]+(%d+)[^%d]+(%d+)[^%d]+(%d+)") then
+                local mix, chain0, chain1 = l:match("signal avg:[^%d]+(%d+)[^%d]+(%d+)[^%d]+(%d+)")
+                if chain0 and chain1 then
+                  metric_wifi_station_signal_iwavg(labels, "-"..mix)
+                  metric_wifi_station_signal_iwchain0(labels, "-"..chain0)
+                  metric_wifi_station_signal_iwchain1(labels, "-"..chain1)
+                else
+                  metric_wifi_station_signal_iwavg(labels, "-"..mix)
+                end
+                if l and l:match("tx retries:%s+(%d+)") then
+                  local tx_retries = l:match("tx retries:%s+(%d+)")
+                  if tx_retries then
+                    metric_wifi_station_transmit_retries(labels, tx_retries)
+                  end
+                end
+                if l and l:match("tx failed:%s+(%d+)") then
+                  local tx_failed = l:match("tx failed:%s+(%d+)")
+                  if tx_failed then
+                    metric_wifi_station_transmit_failed(labels, tx_failed)
+                  end
                 end
               end
-             if l and l:match("tx failed:%s+(%d+)") then
-              local tx_failed = l:match("tx failed:%s+(%d+)")
-                if tx_failed then
-                  metric_wifi_station_transmit_failed(labels, tx_failed)
-                end
-              end
+            until not l
+            iwstation:close()
           end
-         until not l
-        iwstation:close()
         end
-       end
       end
     end
   end
