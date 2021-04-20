@@ -1,0 +1,8 @@
+#!/bin/sh
+
+uci set prometheus-node-push-influx.altermundi=prometheus-node-push-influx
+uci set prometheus-node-push-influx.altermundi.server_address='grafana.altermundi.net'
+uci set prometheus-node-push-influx.altermundi.server_port='8428'
+uci set prometheus-node-push-influx.altermundi.interval='30'
+uci set prometheus-node-push-influx.altermundi.disabled=
+uci commit prometheus-node-push-influx
