@@ -18,6 +18,10 @@ local hostmac = u:call("network.device", "status", {name = "br-lan"}).macaddr
 u = nil
 ubus = nil
 
+function debug(...)
+  print(socket.gettime(), unpack(arg))
+end
+
 -- Parsing
 
 function space_split(s)
@@ -87,6 +91,7 @@ function run_all_collectors(collectors)
       local labels = {collector=cname}
       metric_duration(labels, duration)
       metric_success(labels, success)
+      debug('collector', cname, duration)
       if err and string.match(err, "interrupted!") then os.exit() end
     end
   end
@@ -103,24 +108,31 @@ function push_loop()
     if tcp then tcp:close() end
     tcp = assert(socket.tcp6())
     tcp:settimeout(10) -- seconds
+    debug("### try connecting to "..server_address.." over IPv6")
     status, err = tcp:connect(server_address, server_port)
     if not status then -- retry falling back to ipv4
+      debug("tcp status:", status, "err:", err)
+      debug("# retry connecting to "..server_address.." over IPv4")
       tcp = assert(socket.tcp())
       tcp:settimeout(10) -- seconds
       status, err = tcp:connect(server_address, server_port)
     end
+    debug("tcp status:", status, "err:", err)
 
     if status then
       local collectors_output = ""
       output = function (str) collectors_output = collectors_output..str.."\n" end
+      debug("run_all_collectors...")
       run_all_collectors(col_names)
+      debug("run_all_collectors done")
       tcp:send("POST /write HTTP/1.1\n")
       tcp:send("User-Agent: prometheus-node-push-influx\n")
       tcp:send("Host: "..server_address..":"..server_port.."\n")
       tcp:send("Content-Type: application/x-www-form-urlencoded\n")
       tcp:send("Content-Length: "..string.len(collectors_output).."\n")
       tcp:send("\n")
-      tcp:send(collectors_output)
+      status, err, last_byte = tcp:send(collectors_output)
+      debug('### sent: ', status, err, last_byte)
       tcp:close()
     end
 
