@@ -1,4 +1,0 @@
-#!/bin/bash
-for id in `seq 0 10` ; do
-  ./tools/qemu_dev_stop $id
-done
