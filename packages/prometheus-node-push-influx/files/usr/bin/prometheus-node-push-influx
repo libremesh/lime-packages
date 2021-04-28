@@ -120,18 +120,20 @@ function push_loop()
     debug("tcp status:", status, "err:", err)
 
     if status then
-      local collectors_output = ""
-      output = function (str) collectors_output = collectors_output..str.."\n" end
-      debug("run_all_collectors...")
-      run_all_collectors(col_names)
-      debug("run_all_collectors done")
       tcp:send("POST /write HTTP/1.1\n")
       tcp:send("User-Agent: prometheus-node-push-influx\n")
       tcp:send("Host: "..server_address..":"..server_port.."\n")
       tcp:send("Content-Type: application/x-www-form-urlencoded\n")
-      tcp:send("Content-Length: "..string.len(collectors_output).."\n")
+      tcp:send("Transfer-Encoding: chunked\n")
       tcp:send("\n")
+      local collectors_output = ""
+      output = function (str) collectors_output = collectors_output..str.."\n" end
+      debug("run_all_collectors...")
+      run_all_collectors(col_names)
+      debug("run_all_collectors done: "..string.len(collectors_output).." bytes to send")
+      tcp:send(string.len(collectors_output).."\n")
       status, err, last_byte = tcp:send(collectors_output)
+      tcp:send("0\n\n")
       debug('### sent: ', status, err, last_byte)
       tcp:close()
     end
