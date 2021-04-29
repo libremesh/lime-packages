@@ -163,6 +163,7 @@ as expected:
 * ubus / rpcd
 * lime-app
 
+ICMPv4 does NOT work between qemu nodes, so ping (v4) will not work as expected. Everything else (including ICMPv6 i.e. ping6) does work as expected, however.
 
 ### How to start and stop the image
 
@@ -177,7 +178,7 @@ Install the package `qemu-system-x86_64` if you don't have already installed.
 
 ### Build a mesh network
 
-Up to 10 qemu nodes can be setup. Use the `--node-id N`. All the node's LAN interfaces are
+Up to 100 qemu nodes can be setup. Use the `--node-id N`. All the node's LAN interfaces are
 bridged together. You can use `--enable-wan` in only one of the nodes to share your internet connection
 to the network.
 
@@ -191,6 +192,16 @@ $ sudo ./tools/qemu_dev_start  path/to/openwrt-x86-64-generic-rootfs.tar.gz path
 
 ```
 $ ./tools/qemu_dev_stop
+```
+
+#### Run 12 nodes simultaneously, with arbitrary complex topology of clouds and links
+
+```
+### apt install ansible, if you don't have it already
+$ cd tools/ansible/
+$ sudo ansible-playbook qemu_cloud_start.yml
+### use clusterssh to manage the nodes
+$ sudo ansible-playbook qemu_cloud_stop.yml
 ```
 
 #### Update with local libremesh code
