@@ -16,8 +16,10 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 # ARG_OPTIONAL_SINGLE([libremesh-workdir],[],[Optional path to a libremesh working directory to include it as a layer over the rootfs.])
-# ARG_OPTIONAL_SINGLE([node-id],[],[An ID number from 0 to 9. Use this when running multiple qemu nodes, each node must have a different ID.],[0])
-# ARG_OPTIONAL_SINGLE([enable-wan],[],[Provide the node with NATed access to the local netork. An ifc must be provided, eg wlan0. Needs dnsmasq installed.)])
+# ARG_OPTIONAL_SINGLE([node-id],[],[An ID number from 0 to 99. Use this when running multiple qemu nodes, each node must have a different ID.],[0])
+# ARG_OPTIONAL_SINGLE([enable-wan],[],[Provide the node with NATed access to the local netork. An ifc must be provided, eg wlan0. Needs dnsmasq installed.])
+# ARG_OPTIONAL_SINGLE([eth0],[],[Optionally specify ifname of tap to use (need to create it yourself)])
+# ARG_OPTIONAL_SINGLE([eth2],[],[Optionally specify ifname of tap to use (need to create it yourself)])
 # ARG_OPTIONAL_BOOLEAN([verbose],[],[Turn on verbose mode],[])
 # ARG_POSITIONAL_SINGLE([rootfs],[Path to a x86-64-generic-rootfs.tar.gz],[])
 # ARG_POSITIONAL_SINGLE([ramfs],[Path to a x86-64-ramfs.bzImage],[])
@@ -52,18 +54,22 @@ _positionals=()
 _arg_libremesh_workdir=
 _arg_node_id="0"
 _arg_enable_wan=
+_arg_eth0=
+_arg_eth2=
 _arg_verbose="off"
 
 
 print_help()
 {
 	printf '%s\n' "Helper to run libremesh in a qemu x86_64 for development purposes"
-	printf 'Usage: %s [--libremesh-workdir <arg>] [--node-id <arg>] [--enable-wan <arg>] [--(no-)verbose] [-h|--help] <rootfs> <ramfs>\n' "$0"
+	printf 'Usage: %s [--libremesh-workdir <arg>] [--node-id <arg>] [--enable-wan <arg>] [--eth0 <arg>] [--eth2 <arg>] [--(no-)verbose] [-h|--help] <rootfs> <ramfs>\n' "$0"
 	printf '\t%s\n' "<rootfs>: Path to a x86-64-generic-rootfs.tar.gz"
 	printf '\t%s\n' "<ramfs>: Path to a x86-64-ramfs.bzImage"
 	printf '\t%s\n' "--libremesh-workdir: Optional path to a libremesh working directory to include it as a layer over the rootfs. (no default)"
-	printf '\t%s\n' "--node-id: An ID number from 0 to 9. Use this when running multiple qemu nodes, each node must have a different ID. (default: '0')"
+	printf '\t%s\n' "--node-id: An ID number from 0 to 99. Use this when running multiple qemu nodes, each node must have a different ID. (default: '0')"
 	printf '\t%s\n' "--enable-wan: Provide the node with NATed access to the local netork. An ifc must be provided, eg wlan0. Needs dnsmasq installed. (no default)"
+	printf '\t%s\n' "--eth0: Optionally specify ifname of tap to use (need to create it yourself) (no default)"
+	printf '\t%s\n' "--eth2: Optionally specify ifname of tap to use (need to create it yourself) (no default)"
 	printf '\t%s\n' "--verbose, --no-verbose: Turn on verbose mode (off by default)"
 	printf '\t%s\n' "-h, --help: Prints help"
 }
@@ -99,6 +105,22 @@ parse_commandline()
 				;;
 			--enable-wan=*)
 				_arg_enable_wan="${_key##--enable-wan=}"
+				;;
+			--eth0)
+				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+				_arg_eth0="$2"
+				shift
+				;;
+			--eth0=*)
+				_arg_eth0="${_key##--eth0=}"
+				;;
+			--eth2)
+				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+				_arg_eth2="$2"
+				shift
+				;;
+			--eth2=*)
+				_arg_eth2="${_key##--eth2=}"
 				;;
 			--no-verbose|--verbose)
 				_arg_verbose="on"
@@ -158,24 +180,31 @@ fi
 
 BRIDGE_IFC="lime_br0"
 NODE_ID="${_arg_node_id}"
-LAN_MAC="52:00:00:ab:cd:0${NODE_ID}"
-WAN_MAC="52:00:00:ab:cd:a${NODE_ID}"
-LAN_IFC="lime_tap${NODE_ID}0"
-WAN_IFC="lime_tap${NODE_ID}1"
+[ ${#NODE_ID} == 1 ] && NODE_ID=0${NODE_ID} # Pad with leading zero
+LAN_MAC="52:00:00:ab:c0:${NODE_ID}"
+WAN_MAC="52:00:00:ab:c1:${NODE_ID}"
+ETH2_MAC="52:00:00:ab:c2:${NODE_ID}"
+LAN_IFC="lime_tap${NODE_ID}_0"
+WAN_IFC="lime_tap${NODE_ID}_1"
+ETH2_IFC="lime_tap${NODE_ID}_2"
 OWN_LAN_IP="10.13.0.2/16"
 
+[ -n "${_arg_eth0}" ] && LAN_IFC="${_arg_eth0}"
+[ -n "${_arg_eth2}" ] && ETH2_IFC="${_arg_eth2}"
 
-if [ ! -e "/sys/class/net/$BRIDGE_IFC" ]; then
-    ip link add name "$BRIDGE_IFC" type bridge
-    ip link set "$BRIDGE_IFC" up
-    ip addr add "$OWN_LAN_IP" dev "$BRIDGE_IFC"
-fi
+if [[ -z "$_arg_eth0" ]]; then
+    if [ ! -e "/sys/class/net/$BRIDGE_IFC" ]; then
+        ip link add name "$BRIDGE_IFC" type bridge
+        ip link set "$BRIDGE_IFC" up
+        ip addr add "$OWN_LAN_IP" dev "$BRIDGE_IFC"
+    fi
 
-if [ ! -e "/sys/class/net/$LAN_IFC" ]; then
-    # No IP for the tap LAN ifc
-    ip tuntap add name "$LAN_IFC" mode tap
-    ip link set "$LAN_IFC" up
-    ip link set "$LAN_IFC" master "$BRIDGE_IFC"
+    if [ ! -e "/sys/class/net/$LAN_IFC" ]; then
+        # No IP for the tap LAN ifc
+        ip tuntap add name "$LAN_IFC" mode tap
+        ip link set "$LAN_IFC" up
+        ip link set "$LAN_IFC" master "$BRIDGE_IFC"
+    fi
 fi
 
 if [ -n "$_arg_enable_wan" ]; then
@@ -198,7 +227,7 @@ fi
 
 # Convert the rootfs.tar.gz into a cpio file
 # We are using cpio rootfs so we can change the files before booting
-temp_dir=/tmp/lime_rootfs
+temp_dir=/tmp/lime_rootfs_${NODE_ID}
 rm -rf $temp_dir
 mkdir -p $temp_dir
 tar xf "${_arg_rootfs}" -C $temp_dir
@@ -212,12 +241,13 @@ if [ "$_arg_libremesh_workdir" ]; then
     done
 fi
 
-# build the cdpio. Don't know how to do it without changing the directory
-cd /tmp/lime_rootfs
-find . | cpio --quiet -o -H newc  > /tmp/lime_rootfs.cpio
-cd - > /dev/null
+# quick hack used by qemu_cloud_start.yml ansible playbook
+[ -e /tmp/lime_node_${NODE_ID} ] && mv /tmp/lime_node_${NODE_ID} ${temp_dir}/etc/config/lime-node
 
-MONITOR_PORT="4545${NODE_ID}"
+# build the cpio
+( cd /tmp/lime_rootfs_${NODE_ID} && find . | cpio --quiet -o -H newc  > /tmp/lime_rootfs_${NODE_ID}.cpio )
+
+MONITOR_PORT="454${NODE_ID}"
 
 qemu-system-x86_64 \
 -m 128 \
@@ -228,17 +258,21 @@ qemu-system-x86_64 \
 -nodefaults \
 -no-reboot \
 -kernel "${_arg_ramfs}" \
--initrd /tmp/lime_rootfs.cpio \
+-initrd /tmp/lime_rootfs_${NODE_ID}.cpio \
 -serial mon:stdio \
 -monitor "telnet::${MONITOR_PORT},server,nowait" \
 -netdev tap,id=hostnet0,ifname="${LAN_IFC}",script=no,downscript=no \
 -device e1000,netdev=hostnet0,id=net0,mac="${LAN_MAC}",bus=pci.0,addr=0x3 \
 -netdev tap,id=hostnet1,ifname="${WAN_IFC}",script=no,downscript=no \
--device e1000,netdev=hostnet1,id=net1,mac="${WAN_MAC}",bus=pci.0,addr=0x4
+-device e1000,netdev=hostnet1,id=net1,mac="${WAN_MAC}",bus=pci.0,addr=0x4 \
+-netdev tap,id=hostnet2,ifname="${ETH2_IFC}",script=no,downscript=no \
+-device e1000,netdev=hostnet2,id=net2,mac="${ETH2_MAC}",bus=pci.0,addr=0x5
 
 
 # cleanup
-ip tuntap del name ${LAN_IFC} mode tap
+if [[ -z "$_arg_eth0" ]]; then
+    ip tuntap del name ${LAN_IFC} mode tap
+fi
 
 if [ -n "$_arg_enable_wan" ]; then
 
