@@ -9,6 +9,10 @@
 		},
 		"write": {
 			"cgi-io": [ "upload" ],
+			"file": {
+				"/tmp/firmware.bin": [ "write" ],
+				"/tmp/upgrade.sh": [ "write" ]
+			},
 			"ubus": {
 					"lime-utils-admin": [ "*" ],
 					"system": [ "*" ]
