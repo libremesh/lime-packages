@@ -64,6 +64,7 @@ generate_status() {
     paste_cmd ebtables -t filter -L --Lc
     paste_cmd ebtables -t nat -L --Lc
     paste_cmd ebtables -t broute -L --Lc
+    paste_cmd opkg list-installed
 }
 
 generate_all() {
