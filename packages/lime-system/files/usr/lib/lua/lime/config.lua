@@ -32,6 +32,7 @@ config.uci = config.get_uci_cursor()
 
 config.UCI_AUTOGEN_NAME = 'lime-autogen'
 config.UCI_NODE_NAME = 'lime-node'
+config.UCI_MAC_NAME = 'lime-000000000000'
 config.UCI_COMMUNITY_NAME = 'lime-community'
 config.UCI_DEFAULTS_NAME = 'lime-defaults'
 config.UCI_CONFIG_NAME = config.UCI_AUTOGEN_NAME
@@ -163,7 +164,7 @@ function config.uci_autogen()
 	local uci = config.get_uci_cursor()
 	uci:load(config.UCI_AUTOGEN_NAME)
 
-	for _, cfg_name in pairs({config.UCI_DEFAULTS_NAME, config.UCI_COMMUNITY_NAME, config.UCI_NODE_NAME}) do
+	for _, cfg_name in pairs({config.UCI_DEFAULTS_NAME, config.UCI_COMMUNITY_NAME, config.UCI_MAC_NAME, config.UCI_NODE_NAME}) do
 		local cfg = io.open(config.uci:get_confdir() .. '/' .. cfg_name)
 		if cfg ~= nil then
 			config.uci_merge_files(cfg_name, config.UCI_AUTOGEN_NAME, config.UCI_AUTOGEN_NAME)
@@ -181,9 +182,14 @@ function config.uci_commit_all()
 end
 
 function config.main()
+	--! Get mac address and set mac-based configuration file name
+	local network = require("lime.network")
+	config.UCI_MAC_NAME = "lime-" .. table.concat(network.primary_mac(),"")
+	print("Mac-config: " .. config.UCI_MAC_NAME)
+
 	--! Populate the default template configs if lime-node and lime-community
 	--! are not found in /etc/config
-	for _, cfg_name in pairs({config.UCI_COMMUNITY_NAME, config.UCI_NODE_NAME}) do
+	for _, cfg_name in pairs({config.UCI_COMMUNITY_NAME, config.UCI_MAC_NAME, config.UCI_NODE_NAME}) do
         local lime_path = config.uci:get_confdir() .. "/" .. cfg_name
 		local cf = io.open(lime_path)
 		if not cf then
