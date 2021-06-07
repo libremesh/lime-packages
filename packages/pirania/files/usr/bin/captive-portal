@@ -50,12 +50,10 @@ set_iptables () {
 		if [ "$ipvX" = "ipv4" ] ; then
 			iptables=iptables
 			family=inet
-			ipaddr=ipaddr
 			anygw=$(uci get network.lm_net_br_lan_anygw_if.ipaddr)
 		else
 			iptables=ip6tables
 			family=inet6
-			ipaddr=ip6addr
 			anygw=[$(uci get network.lan.ip6addr | cut -d/ -f1)]
 		fi
 
