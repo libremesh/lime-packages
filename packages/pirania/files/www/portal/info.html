@@ -19,7 +19,7 @@
     <div id="content-media"></div>
     <div id="content-rules"></div>
     <div id="form-container">
-          <a id="link" href="/portal"><input type="submit" value="Portal"></a>
+          <a id="link" href="/portal/auth.html"><input type="submit" value="Portal"></a>
           <br>
       </div>
   </main>
@@ -47,9 +47,9 @@
         var elem = document.createElement('input')
         form.appendChild(elem)
         elem.setAttribute('type', 'hidden')
-        elem.setAttribute('id', key)
+        elem.setAttribute('id', decodeURIComponent(key))
         elem.setAttribute('name', key)
-        elem.value = value
+        elem.value = decodeURIComponent(value)
       }
       var variousParams = paramsArray.split('&')
       if (paramsArray) {
