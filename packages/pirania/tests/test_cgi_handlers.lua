@@ -41,6 +41,17 @@ describe('Vouchera tests #piraniahandlers', function()
         os.getenv:revert()
     end)
 
+    it('Test preactivation of a validable voucher with prev url', function()
+        local original_url = 'http://original.url/baz?a=1&b=2'
+        stub(os, "getenv",  build_env('10.1.1.1', 'asdasdasd?voucher=secret_code&prev=' .. utils.urlencode(original_url)))
+        vouchera.init()
+        local voucher = vouchera.add({name='myvoucher', code='secret_code', expiration_date=os.time()+1000})
+        local url = handlers.preactivate_voucher()
+        -- redirecting to info as there is it is a validable code
+        assert.is.equal('/info?voucher=secret_code&prev='..original_url, url)
+        os.getenv:revert()
+    end)
+
     it('Test preactivation of an ivalid voucher', function()
         stub(os, "getenv",  build_env('10.1.1.1', 'asdasdasd?voucher=secret_code'))
         local url = handlers.preactivate_voucher()
@@ -80,6 +91,28 @@ describe('Vouchera tests #piraniahandlers', function()
 
         os.getenv:revert()
         utils.getIpv4AndMac:revert()
+    end)
+
+    it('Test preactivation of invalid voucher with previous url', function()
+        local original_url = 'http://original.url/baz?a=1&b=2'
+
+        stub(os, "getenv",  build_env('10.1.1.1', "asdasdasd?voucher=secret_code&prev="..utils.urlencode(original_url)))
+
+        local url = handlers.preactivate_voucher()
+        assert.is.equal("/fail?prev="..original_url, url)
+
+        os.getenv:revert()
+    end)
+
+    it('Test activation of invalid voucher with previous url', function()
+        local original_url = 'http://original.url/baz?a=1&b=2'
+
+        stub(os, "getenv",  build_env('10.1.1.1', "asdasdasd?voucher=secret_code&prev="..utils.urlencode(original_url)))
+
+        local url = handlers.activate_voucher()
+        assert.is.equal("/fail?prev="..original_url, url)
+
+        os.getenv:revert()
     end)
 
     it('Test activation with an already authorized client', function()

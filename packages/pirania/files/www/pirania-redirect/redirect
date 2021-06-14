@@ -8,10 +8,10 @@ local uci_cursor = uci.cursor()
 function handle_request (env)
   local method = 'http://'
   local origin_url = utils.urlencode(method .. env.HTTP_HOST .. env.REQUEST_URI)
-  local own_ipv4 = uci_cursor:get("network", "lan", "ipaddr")
+  local portal_domain = uci_cursor:get("pirania", "base_config", "portal_domain")
   local auth_url = uci_cursor:get("pirania", "base_config", "url_auth")
 
-  local redirect_url = method .. own_ipv4 .. auth_url .. "?prev=" .. origin_url
+  local redirect_url = method .. portal_domain .. auth_url .. "?prev=" .. origin_url
 
   uhttpd.send("Status: 302 \r\n")
   uhttpd.send("Location: " .. redirect_url .. "\r\n")
