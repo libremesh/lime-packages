@@ -36,7 +36,7 @@ function network_nodes.create_node()
     local ipv6 = uci:get("network", "lan", "ip6addr")
     if ipv6 then ipv6 = ipv6:gsub("/.*$", "") end -- remove the netmask info
     local node = network_nodes.node(hostname, member, fw_version, board, ipv4, ipv6)
-    node.status = "recently_connected"
+    node.status = "recently_reachable"
 
     return node
 end
@@ -72,9 +72,9 @@ function network_nodes.get_nodes()
     -- augment the node information from the network_nodes and the 'nodes_and_links' dbs
     for hostname, node in pairs(network_nodes._nodes_from_db(network_nodes_db)) do
         if node_and_links_db:get()[hostname] then
-            node.status = "recently_connected"
+            node.status = "recently_reachable"
         elseif node.member then
-            node.status = "disconnected"
+            node.status = "unreachable"
         else
             node.status = "gone"
         end
