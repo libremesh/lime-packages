@@ -301,14 +301,16 @@ function SharedStateMultiWriter:new(dataType, logger)
 	return newInstance
 end
 
+
 function SharedStateMultiWriter:_merge(stateSlice)
-	-- Make merge based on timestamp
+	--! Make merge based on an incremental counter (changes) and a random number (fortune)
 	local stateSlice = stateSlice or {}
 	for key,rv in pairs(stateSlice) do
 		local lv = self.storage[key]
-		if ( lv == nil or lv.lastModified < rv.lastModified ) then
+		if ( lv == nil or lv.changes < rv.changes or
+			 ( lv.changes == rv.changes and lv.fortune < rv.fortune )) then
 			self.log( "debug", "Updating entry for: "..key.." older: "..
-					  (lv and lv.lastModified or 'no entry') .." newer: "..rv.lastModified )
+					  (lv and lv.changes or 'no entry') .." newer: "..rv.changes )
 			self.storage[key] = rv
 			self.changed = true
 		end
@@ -324,11 +326,18 @@ function SharedStateMultiWriter:insert(data)
 	self:notifyHooks()
 end
 
+function shared_state._getFortune()
+	return math.random(1, 100000)
+end
+
 function SharedStateMultiWriter:_insert(key, data)
 	local lv = self.storage[key]
 	if (lv == nil or not utils.deepcompare(lv.data, data)) then
+		local changes = lv and lv.changes + 1 or 0
 		self.storage[key] = {
 			lastModified=os.time(),
+			changes=changes,
+			fortune=shared_state._getFortune(),
 			author=io.input("/proc/sys/kernel/hostname"):read("*line"),
 			data=data
 		}
