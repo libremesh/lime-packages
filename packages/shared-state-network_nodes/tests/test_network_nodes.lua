@@ -28,7 +28,7 @@ describe('Tests network_nodes #network_nodes', function ()
         local node = network_nodes.create_node()
         assert.are.equal('devboard', node.board)
         assert.are.equal('2021.1', node.fw_version)
-        assert.are.equal('recently_connected', node.status)
+        assert.are.equal('recently_reachable', node.status)
         assert.are.equal('10.5.0.5', node.ipv4)
         assert.are.equal('fd0d:fe46:8ce8::ab:cd00', node.ipv6)
 
@@ -63,8 +63,8 @@ describe('Tests network_nodes #network_nodes', function ()
         assert.are.same({node1=node1, node2=node2, node3=node3}, network_nodes._nodes_from_db(network_nodes_db))
 
         local nodes = network_nodes.get_nodes()
-        assert.is.equal("recently_connected", nodes["node1"].status)
-        assert.is.equal("disconnected", nodes["node2"].status)
+        assert.is.equal("recently_reachable", nodes["node1"].status)
+        assert.is.equal("unreachable", nodes["node2"].status)
         assert.is.equal("librerouter-v1", nodes["node2"].board)
 
         local csv = network_nodes.as_human_readable_table() -- ok just some excercise...
@@ -89,7 +89,7 @@ describe('Tests network_nodes #network_nodes', function ()
         local nodes = network_nodes.get_nodes()
         assert.is.equal("gone", nodes["node1"].status)
         assert.is.equal("gone", nodes["node2"].status)
-        assert.is.equal("disconnected", nodes["node3"].status)
+        assert.is.equal("unreachable", nodes["node3"].status)
         assert.is.equal("2020.1", nodes["node3"].fw_version)
     end)
 
