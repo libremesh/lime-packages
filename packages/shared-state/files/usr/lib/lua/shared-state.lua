@@ -30,9 +30,14 @@ shared_state.CANDIDATE_NEIGHBORS_BIN = '/usr/bin/shared-state-get_candidates_nei
 
 local SharedStateBase = {}
 
-function SharedStateBase:load()
-	for key, value in pairs(JSON.parse(self.storageFD:readall()) or {}) do
-		self.storage[key] = value
+function SharedStateBase:load(mergeWithCurrentState)
+	local onDiskData = JSON.parse(self.storageFD:readall()) or {}
+	if mergeWithCurrentState then
+		self:_merge(onDiskData)
+	else
+		for key, value in pairs(onDiskData) do
+			self.storage[key] = value
+		end
 	end
 end
 
@@ -148,7 +153,7 @@ function SharedStateBase:sync(urls)
 	self:unlock()
 	self:_sync(urls)
 	self:lock()
-	self:load() -- Take in account changes happened during sync
+	self:load(true) -- Take in account changes happened during sync
 	self:save()
 	self:unlock()
 	self:notifyHooks()
