@@ -544,6 +544,7 @@ function utils.is_valid_mac(string)
 end
 
 function utils.deepcompare(t1,t2)
+    if t1 == t2 then return true end
     local ty1 = type(t1)
     local ty2 = type(t2)
     if ty1 ~= ty2 then return false end
