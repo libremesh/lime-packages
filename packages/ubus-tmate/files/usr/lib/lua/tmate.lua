@@ -39,6 +39,7 @@ end
 
 function tmate.open_session()
   tmate.cmd_as_str("new-session -d")
+  tmate.cmd_as_str("send-keys C-c")
 end
 
 function tmate.wait_session_ready()
