@@ -1,2 +1,2 @@
 #!/bin/sh
-shared-state sync pirania
+shared-state sync pirania-vouchers

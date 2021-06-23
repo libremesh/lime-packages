@@ -1,3 +1,3 @@
 #!/bin/sh
 /etc/shared-state/publishers/shared-state-publish_vouchers
-shared-state sync pirania
+shared-state sync pirania-vouchers

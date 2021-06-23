@@ -41,4 +41,4 @@ for _, voucher in pairs(vouchera.vouchers) do
     result[hash] = voucher
 end
 
-io.popen("shared-state insert pirania", "w"):write(json.stringify(result))
+io.popen("shared-state insert pirania-vouchers", "w"):write(json.stringify(result))
