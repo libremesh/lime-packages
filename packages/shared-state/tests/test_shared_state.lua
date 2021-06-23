@@ -129,7 +129,6 @@ describe('Shared State MultiWriter tests #sharedstatemultiwriter', function()
 
     it('test insert new data', function()
         local ss = shared_state.SharedStateMultiWriter:new('foo')
-        local sharedStateB = shared_state.SharedStateMultiWriter:new('B')
         stub(shared_state, "_getFortune", function () return 100 end)
         ss:insert({ bar = '123'})
         local db = ss:get()
