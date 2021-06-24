@@ -1,0 +1,57 @@
+#!/usr/bin/lua
+--! Minimalistic CRDT-like shared state structure suitable for mesh networks
+--! which handles conflicts in the same entry using last modified timestamp.
+--!
+--! Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
+--!
+--! This program is free software: you can redistribute it and/or modify
+--! it under the terms of the GNU Affero General Public License version 3 as
+--! published by the Free Software Foundation.
+--!
+--! This program is distributed in the hope that it will be useful,
+--! but WITHOUT ANY WARRANTY; without even the implied warranty of
+--! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--! GNU Affero General Public License for more details.
+--!
+--! You should have received a copy of the GNU Affero General Public License
+--! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+if type(arg[2]) ~= "string" or arg[2]:len() < 1 then
+	print (arg[0], "needs CRDT name to be specified as second argument")
+	os.exit(-22)
+end
+
+local JSON = require("luci.jsonc")
+local shared_state = require("shared-state")
+require("nixio.util")
+
+nixio.openlog("shared-state")
+local logmask = "info"
+if os.getenv("DEBUG") then
+	logmask = "debug"
+end
+nixio.setlogmask(logmask)
+
+local sharedState = shared_state.SharedStateMultiWriter:new(arg[2], nixio.syslog)
+
+if arg[1] == "insert" then
+	local inputTable = JSON.parse(io.stdin:read("*all")) or {}
+	sharedState:insert(inputTable)
+elseif arg[1] == "get" then
+	local resultTable = sharedState:get()
+	print(JSON.stringify(resultTable))
+elseif arg[1] == "sync" then
+	local urls = {}
+	if arg[3] ~= nil then for i=3,#arg do table.insert(urls, arg[i]) end end
+	sharedState:sync(urls)
+elseif arg[1] == "reqsync" then
+	local inputJson = JSON.parse(io.stdin:read("*all"))
+	sharedState:merge(inputJson)
+	print(sharedState:toJsonString())
+else
+	print(arg[0], "needs an operation name to be specified as first argument")
+	nixio.closelog()
+	os.exit(-22)
+end
+
+nixio.closelog()
