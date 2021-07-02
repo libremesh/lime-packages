@@ -6,3 +6,8 @@ uci set prometheus-node-push-influx.miniserver.server_port='8428'
 uci set prometheus-node-push-influx.miniserver.interval='30'
 uci set prometheus-node-push-influx.miniserver.disabled=
 uci commit prometheus-node-push-influx
+
+uci set system.@system[0].log_host='miniserver'  # this hostname will be periodically looked up and log_ip filled in, by log_host_lookupd
+uci set system.@system[0].log_port='514'
+uci set system.@system[0].log_proto='tcp'
+uci commit system
