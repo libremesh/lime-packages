@@ -101,7 +101,7 @@ Ex.: `voucher is_mac_authorized d0:82:7a:49:e2:37`
 
 ### `voucher renew_voucher`
 
-Check if a specific mac address is authorized.
+Change the expiration date of a voucher.
 
 Params:
 - `id`: the voucher ID.
