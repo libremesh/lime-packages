@@ -30,7 +30,8 @@ captive_portal.is_mac_authorized = function(mac)
         print('true')
         return true
     else
-        return nil, 'false'
+        print('false')
+        os.exit(1)
     end
 end
 
