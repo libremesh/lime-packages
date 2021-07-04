@@ -133,6 +133,40 @@ files/
     /etc/shared-state/hooks/pirania/generate_vouchers bring updated or new vouchers from the shared-state database into the local voucher db
 ```
 
+## CLI usage example
+
+```
+$ voucher show
+$ voucher add san-notebook mysecret $((`date +%s` + 1000))
+ok
+$ voucher show
+Qzt3WF	san-notebook	mysecret	xx:xx:xx:xx:xx:xx	Tue Dec 22 20:13:42 2020	nil	1
+$ voucher show_active
+$ voucher activate mysecret 00:11:22:33:44:55
+Voucher activated!
+$ voucher show
+Qzt3WF	san-notebook	mysecret	00:11:22:33:44:55	Tue Dec 22 20:13:42 2020	nil	2
+
+$ voucher show_active
+Qzt3WF	san-notebook	mysecret	00:11:22:33:44:55	Tue Dec 22 20:13:42 2020	nil	2
+
+$ voucher deactivate Qzt3WF
+ok
+$ voucher show_active
+$ voucher show
+Qzt3WF	san-notebook	mysecret	xx:xx:xx:xx:xx:xx	Tue Dec 22 20:13:42 2020	nil	3
+```
+
+## ubus API
+
+* enable() -> calls to `captive-portal start` and enables it in the config
+* disable() -> calls to `captive-portal stop` and disables it in the config
+* show_url() -> return config `pirania.base_config.portal_url`
+* change_url(url) -> change config `pirania.base_config.portal_url`
+* ...
+
+## Under the hood
+
 ### Trafic capture
 `/usr/bin/captive-portal` sets up iptables rules to capture traffic.
 It creates a set of rules that apply to 3 allowed "ipsets":
@@ -157,43 +191,3 @@ So the flow is:
 * The preactivate_voucher script does two different depending on javascript support:
     * If nojs=true then the voucher is activated with the client MAC (taken from the ARP table with its IP) and the voucher code. If the activation succeeds it redirects to `url_authenticated`.
     * If nojs=false there is a check if the voucher code would be valid (there is an unused and valid voucher with that code). If the voucher would be valid then a redirect to the portal INFO page(`pirania.base_config.url_info`) is performed with the voucher code as param url. The portal info shows the updated information of the community and there is a time that you have to wait to be able to continue (This is done with JS). When the timer reaches 0 you can click in continue. This redirects now to `http://thisnode.info/cgi-bin/pirania/activate_voucher?voucher=secretcode`. The `activate_voucher` script does the voucher activation. then it redirects to `url_authenticated`. If the code fails it will redirect to `http://thisnode.info/cgi-bin/portal/fail.html` that is identical to auth.html but with an error message.
-
-### ubus API
-
-* enable() -> calls to `captive-portal start` and enables it in the config
-* disable() -> calls to `captive-portal stop` and disables it in the config
-* show_url() -> return config `pirania.base_config.portal_url`
-* change_url(url) -> change config `pirania.base_config.portal_url`
-* ...
-
-### CLI usage example
-
-```
-$ voucher show
-$ voucher add san-notebook mysecret $((`date +%s` + 1000))
-ok
-$ voucher show
-Qzt3WF	san-notebook	mysecret	xx:xx:xx:xx:xx:xx	Tue Dec 22 20:13:42 2020	nil	1
-$ voucher show_active
-$ voucher activate mysecret 00:11:22:33:44:55
-Voucher activated!
-$ voucher show
-Qzt3WF	san-notebook	mysecret	00:11:22:33:44:55	Tue Dec 22 20:13:42 2020	nil	2
-
-$ voucher show_active
-Qzt3WF	san-notebook	mysecret	00:11:22:33:44:55	Tue Dec 22 20:13:42 2020	nil	2
-
-$ voucher deactivate Qzt3WF
-ok
-$ voucher show_active
-$ voucher show
-Qzt3WF	san-notebook	mysecret	xx:xx:xx:xx:xx:xx	Tue Dec 22 20:13:42 2020	nil	3
-```
-
-### TODO
-
-* Expose the voucher creation with duration functionality
-* Have a "emergency" function to force pirania to show for everyone
-* Improveportal HTML/js actions
-* Fix redirect to the "original site", now goes to for example /cgi-bin/pirania/http%3A%2F%2Fprueba.com%2F
-* Do not re-add removed vouchers from the shared-state db (see removed.txt).
