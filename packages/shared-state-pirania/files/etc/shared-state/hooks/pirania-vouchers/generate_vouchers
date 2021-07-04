@@ -1,0 +1,67 @@
+#!/usr/bin/lua
+
+--! LibreMesh
+--! Copyright (C) 2019  Marcos Gutierrez <gmarcos@altermundi.net>
+--! Copyright (C) 2019  Luandro <luandro@gmail.com>
+--! Copyright (C) 2020  Santiago Piccinini <spiccinini@altermundi.net>
+--!
+--! This program is free software: you can redistribute it and/or modify
+--! it under the terms of the GNU Affero General Public License as
+--! published by the Free Software Foundation, either version 3 of the
+--! License, or (at your option) any later version.
+--!
+--! This program is distributed in the hope that it will be useful,
+--! but WITHOUT ANY WARRANTY; without even the implied warranty of
+--! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--! GNU Affero General Public License for more details.
+--!
+--! You should have received a copy of the GNU Affero General Public License
+--! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+local json = require("luci.jsonc")
+local uci = require("uci")
+local uci_conf = uci.cursor()
+local vouchera = require("voucher.vouchera")
+local utils = require("voucher.utils")
+
+--! This script loads the new shared-state information of the vouchers into the local database.
+
+vouchera.init()
+
+--! load the shared-state database
+local shared_db = {}
+local input_table = json.parse(io.stdin:read("*all"))
+for key, value in pairs(input_table) do
+    local voucher = vouchera.voucher(value.data)
+    if voucher then
+        shared_db[key] = voucher
+    end
+end
+
+local new_voucher_info = false
+for key, shared_voucher in pairs(shared_db) do
+    local local_voucher = vouchera.vouchers[shared_voucher.id]
+    if local_voucher and local_voucher ~= shared_voucher then
+        if shared_voucher.mod_counter > local_voucher.mod_counter then
+            --! new information, local voucher needs to be updated
+            utils.log("debug", "generate_vouchers - updating voucher " .. local_voucher.id)
+            vouchera.update_with(shared_voucher)
+            new_voucher_info = true
+        elseif shared_voucher.mod_counter == local_voucher then
+            utils.log("warning", "generate_vouchers - vouchers differ but have the same mod_counter!")
+        else
+            utils.log("debug", "generate_vouchers - disregard shared-state voucher as we have newer data")
+        end
+    elseif local_voucher == nil then
+        if not vouchera.should_be_pruned(shared_voucher) then
+            utils.log("debug", "generate_vouchers - adding new voucher " .. shared_voucher.id)
+            vouchera.update_with(shared_voucher)
+            new_voucher_info = true
+        end
+    end
+end
+
+-- If there is updated status from the shared-state trigger captive-portal to update the firewall
+if new_voucher_info then
+    os.execute('captive-portal update')
+end
