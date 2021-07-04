@@ -19,15 +19,15 @@
       <img id="content-logo" class="hidden" src="" alt="logo" />
     </a>
       <h1 id="content-title"></h1>
-      <p id="content-rules"></p>
-      <h1 style="padding-top: 5vh;">✅</h1>
-      <h3 class="int-authenticated">Authenticated!</h3>
+      <p id="content-welcome"></p>
+      <p id="content-body"></p>
       <div class="voucher">
-          <form method="get" action="/cgi-bin/pirania/handle_voucher">
-            <div id="station-list"></div>
-            <input type="text" id="voucher" name="voucher" class="hidden">
+          <form method="get" action="/cgi-bin/pirania/preactivate_voucher">
+            <label class="int-selectVoucher"></label>
+            <div class="hidden" id="station-list"></div>
+            <input type="text" id="voucher" name="voucher">
             <input type="hidden" id="nojs" name="nojs" value="true">
-            <br><input type="submit" id="voucherInput-submit" class="int-continue hidden">
+            <br><input type="submit" id="voucherInput-submit" class="int-continue">
           </form>
           <br>
           <a id="link" href="/portal/info.html"><input class="int-info" type="submit"></a>

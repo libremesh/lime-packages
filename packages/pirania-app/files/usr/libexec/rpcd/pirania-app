@@ -9,7 +9,7 @@ You may obtain a copy of the License at
 
 require "ubus"
 local json = require 'luci.jsonc'
-local utils = require('voucher.utils')
+local utils = require 'lime.utils'
 
 local function printJson (obj)
     print(json.stringify(obj))
@@ -29,7 +29,7 @@ end
 
 local function read_governance(msg)
     local path = '/etc/pirania/governance.json'
-    printJson(utils.readJsonFile(path))
+    printJson(utils.read_obj_store(path))
 end
 
 local function write_governance(msg)
@@ -51,7 +51,7 @@ local function write_governance(msg)
         speed = msg.providerSpeed,
         payday = msg.providerPayday
     }
-    printJson(utils.writeJsonFile(path, content))
+    printJson(utils.write_obj_store(path, content))
 end
 
 local function get_clients(msg)
@@ -70,12 +70,12 @@ end
 
 local function read_content(msg)
     local path = '/etc/pirania/content.json'
-    printJson(utils.readJsonFile(path))
+    printJson(utils.read_obj_store(path))
 end
 
 local function write_content(msg)
     local path = '/etc/pirania/content.json'
-    printJson(utils.writeJsonFile(path, msg))
+    printJson(utils.write_obj_store(path, msg))
 end
 
 local methods = {

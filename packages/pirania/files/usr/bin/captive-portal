@@ -32,7 +32,7 @@ clean_tables () {
 clean_sets () {
 	ipset flush pirania-auth-macs
 	for ipvX in ipv4 ipv6 ; do
-		ipset flush pirania-whitelist-$ipvX
+		ipset flush pirania-allowlist-$ipvX
 	done
 }
 
@@ -41,64 +41,82 @@ set_iptables () {
 
 	append_ipt_rules=$(uci get pirania.base_config.append_ipt_rules 2> /dev/null)
 	if [ "$append_ipt_rules" = "1" ] ; then
-	    AorI="A"
+		AorI="A"
 	else
-	    AorI="I"
+		AorI="I"
 	fi
 
 	for ipvX in ipv4 ipv6 ; do
 		if [ "$ipvX" = "ipv4" ] ; then
 			iptables=iptables
 			family=inet
-			ipaddr=ipaddr
 			anygw=$(uci get network.lm_net_br_lan_anygw_if.ipaddr)
 		else
 			iptables=ip6tables
 			family=inet6
-			ipaddr=ip6addr
 			anygw=[$(uci get network.lan.ip6addr | cut -d/ -f1)]
 		fi
 
-		### Buildup
+		### Buildup: create a pirania chain in each table
 		for table in mangle nat filter; do
 			$iptables -t $table -N pirania
 		done
 
-		$iptables -t nat -$AorI PREROUTING -j pirania
-		$iptables -t filter -$AorI FORWARD -j pirania
+		# send the packets that we want to filter to the pirania chains
+		# 'nat' table is consulted when a packet that creates a new connection is encountered and with PREROUTING, as soon as they come in.
+		$iptables -t nat -$AorI PREROUTING --jump pirania
+		# 'filter' table is the default table, FORWARD for packets being routed through the box
+		$iptables -t filter -$AorI FORWARD --jump pirania
 
+		# we are going to modify only the packets specified in 'catch_interfaces', so sending them to the pirania chain
 		for interface in $(uci get pirania.base_config.catch_interfaces); do
 			$iptables -t mangle -$AorI PREROUTING -i $interface -j pirania
 		done
 
-		$iptables -t nat -A pirania -p udp  -m set ! --match-set pirania-whitelist-$ipvX src -m set ! --match-set pirania-auth-macs src --dport 53 -j DNAT --to-destination $anygw:59053
+		# send DNS requests, that are not from valid ips or macs, to our own captive portal DNS at 59053
+		$iptables -t nat -A pirania -p udp  -m set ! --match-set pirania-allowlist-$ipvX src -m set ! --match-set pirania-auth-macs src --dport 53 -j DNAT --to-destination $anygw:59053
 
+		# stop processing the chain for authorized macs and allowed ips (so they are accepted)
 		$iptables -t mangle -A pirania -m set --match-set pirania-auth-macs src -j RETURN
-		$iptables -t mangle -A pirania -m set --match-set pirania-whitelist-$ipvX dst -j RETURN
-		$iptables -t mangle -A pirania -j MARK --set-mark 0x66/0xff  # everything not auth nor whitelisted will be marked for REJECT
+		$iptables -t mangle -A pirania -m set --match-set pirania-allowlist-$ipvX dst -j RETURN
+
+		# mark packages to be redirected (puerto 80) and to be rejected (the resto)
+		$iptables -t mangle -A pirania -j MARK --set-mark 0x66/0xff  # everything not auth nor in allowlist will be marked for REJECT
 		$iptables -t mangle -A pirania -p tcp -m tcp --dport 80 -j MARK --set-mark 0x80/0xff  # unless is dport 80, re-set mark for REDIRECT
 
+		# redirect packets marked with 0x80/0xff redirect redirect to 59080
+		# reject packets marked with 0x66/0xff (drop the packet and send an error to the client)
 		$iptables -t nat    -A pirania -p tcp -m tcp -m mark --mark 0x80/0xff -j REDIRECT --to-ports 59080
 		$iptables -t filter -A pirania -p tcp -m mark --mark 0x66/0xff -j REJECT --reject-with tcp-reset
 		$iptables -t filter -A pirania -m mark --mark 0x66/0xff -j REJECT
 	done
 }
 
-set_ipsets () {
+update_ipsets () {
+	# using temporary ipset sets and swaping them so the update
+	# implies minimal disturb to the network and a previous clean-up
+	# is not needed
 	ipset -exist create pirania-auth-macs hash:mac timeout 0
-	for mac in $(voucher print_valid_macs) ; do
-		ipset -exist add pirania-auth-macs $mac
+	ipset -exist create pirania-auth-macs-tmp hash:mac timeout 0
+	for mac in $(voucher show_authorized_macs) ; do
+		ipset -exist add pirania-auth-macs-tmp $mac
 	done
+	ipset swap pirania-auth-macs-tmp pirania-auth-macs
+	ipset destroy pirania-auth-macs-tmp
+
 	for ipvX in ipv4 ipv6 ; do
 		if [ "$ipvX" = "ipv4" ] ; then
 			family=inet
 		else
 			family=inet6
 		fi
-		ipset -exist create pirania-whitelist-$ipvX hash:net family $family
-		for item in $(uci get pirania.base_config.whitelist_$ipvX); do
-			ipset -exist add pirania-whitelist-$ipvX $item
+		ipset -exist create pirania-allowlist-${ipvX} hash:net family $family
+		ipset -exist create pirania-allowlist-${ipvX}-tmp hash:net family $family
+		for item in $(uci get pirania.base_config.allowlist_$ipvX); do
+			ipset -exist add pirania-allowlist-${ipvX}-tmp $item
 		done
+		ipset swap pirania-allowlist-${ipvX}-tmp pirania-allowlist-${ipvX}
+		ipset destroy pirania-allowlist-${ipvX}-tmp
 	done
 }
 
@@ -108,13 +126,11 @@ enabled=$(uci get pirania.base_config.enabled)
 if  [ "$1" = "start" ]; then
 	echo "Running captive-portal"
 	clean_tables
-	clean_sets
-	set_ipsets
+	update_ipsets
 	set_iptables
 	exit
 elif [ "$1" = "update" ] ; then
-	clean_sets
-	set_ipsets
+	update_ipsets
 	exit
 elif [ "$1" = "clean" ] || [ "$1" = "stop" ] ; then
 	clean_tables
@@ -122,8 +138,7 @@ elif [ "$1" = "clean" ] || [ "$1" = "stop" ] ; then
 	exit
 elif [ "$enabled" = "1" ]; then
 	clean_tables
-	clean_sets
-	set_ipsets
+	update_ipsets
 	set_iptables
 	exit
 else
