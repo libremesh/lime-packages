@@ -64,8 +64,9 @@ captive_portal.deactivate = function(id)
     return vouchera.deactivate(id)
 end
 
-captive_portal.add = function(name, code, expiration_date)
-    local v = {name=name, code=code, expiration_date=tonumber(expiration_date)}
+captive_portal.add = function(name, code, expiration_date, duration_m)
+    local v = {name=name, code=code, expiration_date=tonumber(expiration_date),
+               duration=tonumber(duration_m)}
     res, msg = vouchera.add(v)
     if res ~= nil then
         print('ok')
