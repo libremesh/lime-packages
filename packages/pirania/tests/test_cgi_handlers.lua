@@ -3,14 +3,12 @@ local config = require('voucher.config')
 local vouchera = require('voucher.vouchera')
 local handlers = require('voucher.cgi_handlers')
 local utils = require('voucher.utils')
-local hooks = require('voucher.hooks')
+require('packages/pirania/tests/pirania_test_utils').fake_for_tests()
 
 function utils.log(...)
     print(...)
 end
 
--- fake hooks
-hooks.run = function(action) end
 
 function build_env(ip_address, querystring)
     local function get_env(key)
@@ -22,9 +20,6 @@ function build_env(ip_address, querystring)
     end
     return get_env
 end
-
-config.db_path = '/tmp/pirania'
-config.prune_expired_for_days = 30
 
 
 describe('Vouchera tests #piraniahandlers', function()
@@ -130,7 +125,7 @@ describe('Vouchera tests #piraniahandlers', function()
     end)
 
     after_each('', function()
-        local p = io.popen("rm -rf " .. config.db_path)
+        local p = io.popen("rm -rf /tmp/pirania_vouchers")
         p:read('*all')
         p:close()
     end)

@@ -2,14 +2,10 @@ local test_utils = require 'tests.utils'
 local fs = require("nixio.fs")
 
 local config = require('voucher.config')
-config.db_path = '/tmp/pirania_vouchers'
-config.prune_expired_for_days = '30'
+require('packages/pirania/tests/pirania_test_utils').fake_for_tests()
 local vouchera = require('voucher.vouchera')
 local utils = require('voucher.utils')
-local hooks = require('voucher.hooks')
 
--- fake hooks
-hooks.run = function(action) end
 
 function utils.log(...)
     print(...)
@@ -25,7 +21,7 @@ describe('Vouchera tests #vouchera', function()
     end)
 
     it('vouchera init with broken database does not crash', function()
-        os.execute("mkdir /tmp/pirania; echo '{asdasd,,,asd.' > /tmp/pirania/broken.json")
+        os.execute("mkdir /tmp/pirania_vouchers; echo '{asdasd,,,asd.' > /tmp/pirania_vouchers/broken.json")
         vouchera.init()
         assert.is.equal(0, #vouchera.vouchers)
     end)
@@ -201,7 +197,7 @@ describe('Vouchera tests #vouchera', function()
 
     after_each('', function()
         snapshot:revert()
-        local p = io.popen("rm -rf " .. config.db_path)
+        local p = io.popen("rm -rf /tmp/pirania_vouchers")
         p:read('*all')
         p:close()
     end)
