@@ -25,15 +25,15 @@ describe('Tests network_nodes #network_nodes', function ()
         uci:set('network', 'lan', 'ipaddr', '10.5.0.5')
         uci:set('network', 'lan', 'ip6addr', 'fd0d:fe46:8ce8::ab:cd00/64')
         uci:commit('network')
-        local node = network_nodes.create_node()
+        local node = network_nodes._create_node()
         assert.are.equal('devboard', node.board)
         assert.are.equal('2021.1', node.fw_version)
         assert.are.equal('recently_reachable', node.status)
         assert.are.equal('10.5.0.5', node.ipv4)
         assert.are.equal('fd0d:fe46:8ce8::ab:cd00', node.ipv6)
 
-        local node = network_nodes.node("node1", true, "2021.1", "librerouter-v1")
-        assert.are.same(node, network_nodes.deserialize_from_network_nodes(network_nodes.serialize_for_network_nodes(node)))
+        local node = network_nodes._node("node1", true, "2021.1", "librerouter-v1")
+        assert.are.same(node, network_nodes._deserialize_from_network_nodes(network_nodes._serialize_for_network_nodes(node)))
 
     end)
 
@@ -42,17 +42,17 @@ describe('Tests network_nodes #network_nodes', function ()
         uci:set('network', 'lan', 'ipaddr', '10.5.0.5')
         uci:set('network', 'lan', 'ip6addr', 'fd0d:fe46:8ce8::ab:cd00/64')
         uci:commit('network')
-        local node1 = network_nodes.node("node1", true, "2021.1", "librerouter-v1", "10.24.3.97",
+        local node1 = network_nodes._node("node1", true, "2021.1", "librerouter-v1", "10.24.3.97",
                                          "fd0d:fe46:8ce8::ab:cd00")
-        local node2 = network_nodes.node("node2", true, "2020.3", "librerouter-v1", "10.24.3.98",
+        local node2 = network_nodes._node("node2", true, "2020.3", "librerouter-v1", "10.24.3.98",
                                          "fd0d:fe46:8ce8::ab:cd01")
-        local node3 = network_nodes.node("node3", true, "2020.1", "tplink-wdr3600", "10.24.3.98",
+        local node3 = network_nodes._node("node3", true, "2020.1", "tplink-wdr3600", "10.24.3.98",
                                          "fd0d:fe46:8ce8::ab:cd02")
         local network_nodes_db = shared_state.SharedStateMultiWriter:new('network_nodes')
         local data = {
-            ["node1"] = network_nodes.serialize_for_network_nodes(node1),
-            ["node2"] = network_nodes.serialize_for_network_nodes(node2),
-            ["node3"] = network_nodes.serialize_for_network_nodes(node3),
+            ["node1"] = network_nodes._serialize_for_network_nodes(node1),
+            ["node2"] = network_nodes._serialize_for_network_nodes(node2),
+            ["node3"] = network_nodes._serialize_for_network_nodes(node3),
         }
         network_nodes_db:insert(data)
 
@@ -71,14 +71,14 @@ describe('Tests network_nodes #network_nodes', function ()
     end)
 
     it('test mark_nodes_as_gone marks nodes as gone', function ()
-        local node1 = network_nodes.node("node1", true, "2021.1", "librerouter-v1")
-        local node2 = network_nodes.node("node2", true, "2020.3", "librerouter-v1")
-        local node3 = network_nodes.node("node3", true, "2020.1", "tplink-wdr3600")
+        local node1 = network_nodes._node("node1", true, "2021.1", "librerouter-v1")
+        local node2 = network_nodes._node("node2", true, "2020.3", "librerouter-v1")
+        local node3 = network_nodes._node("node3", true, "2020.1", "tplink-wdr3600")
         local network_nodes_db = shared_state.SharedStateMultiWriter:new('network_nodes')
         local data = {
-            ["node1"] = network_nodes.serialize_for_network_nodes(node1),
-            ["node2"] = network_nodes.serialize_for_network_nodes(node2),
-            ["node3"] = network_nodes.serialize_for_network_nodes(node3),
+            ["node1"] = network_nodes._serialize_for_network_nodes(node1),
+            ["node2"] = network_nodes._serialize_for_network_nodes(node2),
+            ["node3"] = network_nodes._serialize_for_network_nodes(node3),
         }
         network_nodes_db:insert(data)
 
