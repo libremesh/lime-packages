@@ -58,7 +58,7 @@ end
 
 local function get_node_status(msg)
     local result = {}
-    result.hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
+    result.hostname = utils.hostname()
     result.ips = {}
     local ips = utils.unsafe_shell("ip a s br-lan | grep inet | awk '{ print $1, $2 }'")
     for line in ips:gmatch("[^\n]+") do

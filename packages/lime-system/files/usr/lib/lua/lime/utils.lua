@@ -182,6 +182,10 @@ function utils.slugify(s)
 	return s
 end
 
+function utils.hostname()
+    return io.input("/proc/sys/kernel/hostname"):read("*line")
+end
+
 function utils.sanitize_hostname(hostname)
 	hostname = hostname:gsub(' ', '-')
 	hostname = hostname:gsub('[^-a-zA-Z0-9]', '')
@@ -271,6 +275,10 @@ function utils.getBoardAsTable(board_path)
 		board_path = utils.BOARD_JSON_PATH
 	end
 	return json.parse(fs.readfile(board_path))
+end
+
+function utils.current_board()
+    return utils.read_file("/tmp/sysinfo/board_name"):gsub("\n","")
 end
 
 function utils.printJson(obj)

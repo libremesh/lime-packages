@@ -49,7 +49,7 @@ local function set_location(msg)
 end
 
 local function nodes_and_links()
-  local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
+  local hostname = utils.hostname()
   local result = {}
   result[hostname] = location.nodes_and_links()
   utils.printJson(result)
