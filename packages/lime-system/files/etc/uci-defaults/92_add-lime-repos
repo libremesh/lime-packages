@@ -15,7 +15,7 @@ feeds_file="/etc/opkg/limefeeds.conf"
 [ "$LIME_CODENAME" == "development" ] && {
 	packages_url="http://feed.libremesh.org/master";
 } || {
-	packages_url="http://feed.libremesh.org/$LIME_RELEASE"
+	packages_url="http://feed.libremesh.org/v$LIME_RELEASE"
 }
 
 profiles_url="http://feed.libremesh.org/profiles"
