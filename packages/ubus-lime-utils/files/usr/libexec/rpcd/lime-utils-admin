@@ -11,6 +11,7 @@ local json = require 'luci.jsonc'
 local utils = require 'lime.utils'
 local config = require 'lime.config'
 local upgrade = require 'lime.upgrade'
+local iwinfo = require "iwinfo"
 
 local conn = ubus.connect()
 if not conn then
@@ -83,6 +84,57 @@ local function firmware_confirm()
     return utils.printJson({status = status, exit_code = exit_code})
 end
 
+--! Creates a client connection to a wifi hotspot
+local function hotspot_wwan_enable(radio, ssid, password, encryption)
+    local uci = config.get_uci_cursor()
+    local encryption = encryption or 'psk2'
+    local ssid = ssid or 'internet'
+    local password = password or 'internet'
+    local radio = radio or 'radio0'
+    local iface_section_name = radio .. '_client_wwan'
+    local network_name = 'client_wwan'
+    uci:set('wireless', radio, 'disabled', '0')
+    uci:set('wireless', iface_section_name, 'wifi-iface')
+    uci:set('wireless', iface_section_name, 'device', radio)
+    uci:set('wireless', iface_section_name, 'network', network_name)
+    uci:set('wireless', iface_section_name, 'mode', 'sta')
+    uci:set('wireless', iface_section_name, 'ifname', 'client-wwan')
+    uci:set('wireless', iface_section_name, 'encryption', encryption)
+    uci:set('wireless', iface_section_name, 'ssid', ssid)
+    uci:set('wireless', iface_section_name, 'key', password)
+    uci:commit('wireless')
+
+    uci:set('network', network_name, 'interface')
+    uci:set('network', network_name, 'proto', 'dhcp')
+    uci:commit('network')
+    utils.unsafe_shell("wifi reload")
+
+    return utils.printJson({status = 'ok'})
+end
+
+local function hotspot_wwan_disable(radio)
+    local uci = config.get_uci_cursor()
+    local radio = radio or 'radio0'
+    local iface_section_name = radio .. '_client_wwan'
+
+    uci:delete('wireless', iface_section_name)
+    uci:commit('wireless')
+    utils.unsafe_shell("wifi reload")
+    return utils.printJson({status = 'ok'})
+end
+
+local function hotspot_wwan_is_connected()
+    local uci = config.get_uci_cursor()
+    local connected = false
+    local signal
+
+    for mac, station in pairs(iwinfo.nl80211.assoclist('client-wwan')) do
+        connected = true
+        signal = station['signal']
+    end
+    return utils.printJson({status = 'ok', connected = connected, signal = signal})
+end
+
 
 local methods = {
     set_root_password = { password = 'value'},
@@ -90,7 +142,10 @@ local methods = {
     is_upgrade_confirm_supported = { no_params = 0 },
     firmware_upgrade = { fw_path = 'value', preserve_config = 'value', metadata = 'value', fw_type = 'value'},
     last_upgrade_metadata = { no_params = 0 },
-    firmware_confirm = { no_params = 0 }
+    firmware_confirm = { no_params = 0 },
+    hotspot_wwan_enable = { ssid = 'value', password = 'value', radio = 'value'},
+    hotspot_wwan_disable = { radio = 'value' },
+    hotspot_wwan_is_connected = { no_params = 0 }
 }
 
 if arg[1] == 'list' then
@@ -106,6 +161,9 @@ if arg[1] == 'call' then
     elseif  arg[2] == 'firmware_upgrade' then firmware_upgrade(msg)
     elseif  arg[2] == 'last_upgrade_metadata' then last_upgrade_metadata(msg)
     elseif  arg[2] == 'firmware_confirm' then firmware_confirm(msg)
+    elseif  arg[2] == 'hotspot_wwan_enable' then hotspot_wwan_enable(msg)
+    elseif  arg[2] == 'hotspot_wwan_disable' then hotspot_wwan_disable(msg)
+    elseif  arg[2] == 'hotspot_wwan_is_connected' then hotspot_wwan_is_connected(msg)
     else utils.printJson({ error = "Method not found" })
     end
 end
