@@ -248,6 +248,7 @@ local function safe_reboot(msg)
   return utils.printJson(result)
 end
 
+
 local methods = {
     get_cloud_nodes = { no_params = 0 },
     get_mesh_ifaces = { no_params = 0 },
@@ -257,7 +258,7 @@ local methods = {
     get_community_settings = { no_params = 0},
     get_config = { no_params = 0 },
     get_upgrade_info = { no_params = 0 },
-    safe_reboot = { action = 'value', value = 'value' }
+    safe_reboot = { action = 'value', value = 'value' },
 }
 
 if arg[1] == 'list' then

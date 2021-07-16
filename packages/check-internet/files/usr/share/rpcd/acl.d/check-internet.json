@@ -1,0 +1,15 @@
+{
+    "check-internet": {
+        "description": "public access",
+        "read": {
+            "ubus": {
+                    "check-internet": [ "*" ],
+            }
+        },
+        "write": {
+            "ubus": {
+                    "check-internet": [ "*" ],
+            }
+        }
+    }
+}
