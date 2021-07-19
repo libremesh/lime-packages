@@ -8,6 +8,12 @@
 
 socket = require("socket")
 
+-- load LiMe config ap_ssid only if it exists. don't fail otherwise
+local status, lime_config = pcall(require, 'lime.config')
+if status then
+  ap_ssid = lime_config.get("wifi", "ap_ssid")
+end
+
 -- common labels
 
 local ubus = require "ubus"
@@ -47,6 +53,9 @@ end
 
 function print_metric(metric, labels, value)
   local label_string = ""
+  if ap_ssid then
+    label_string = label_string .. 'ap_ssid' .. '=' .. ap_ssid .. ','
+  end
   label_string = label_string .. 'domain' .. '=' .. domain .. ','
   label_string = label_string .. 'host' .. '=' .. host .. ','
   label_string = label_string .. 'hostmac' .. '=' .. hostmac .. ','
