@@ -25,6 +25,7 @@ define Package/$(PKG_NAME)
             +prometheus-node-exporter-lua-openwrt \
             +prometheus-node-exporter-lua-wifi_stations \
             +prometheus-node-exporter-lua-wifi_stations_extra \
+            +prometheus-node-exporter-lua-wifi_survey \
 
 endef
 
