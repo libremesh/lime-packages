@@ -85,12 +85,12 @@ local function firmware_confirm()
 end
 
 --! Creates a client connection to a wifi hotspot
-local function hotspot_wwan_enable(radio, ssid, password, encryption)
+local function hotspot_wwan_enable(msg)
     local uci = config.get_uci_cursor()
-    local encryption = encryption or 'psk2'
-    local ssid = ssid or 'internet'
-    local password = password or 'internet'
-    local radio = radio or 'radio0'
+    local encryption = msg.encryption or 'psk2'
+    local ssid = msg.ssid or 'internet'
+    local password = msg.password or 'internet'
+    local radio = msg.radio or 'radio0'
     local iface_section_name = radio .. '_client_wwan'
     local network_name = 'client_wwan'
     uci:set('wireless', radio, 'disabled', '0')
@@ -112,13 +112,17 @@ local function hotspot_wwan_enable(radio, ssid, password, encryption)
     return utils.printJson({status = 'ok'})
 end
 
-local function hotspot_wwan_disable(radio)
+local function hotspot_wwan_disable(msg)
     local uci = config.get_uci_cursor()
-    local radio = radio or 'radio0'
+    local radio = msg.radio or 'radio0'
     local iface_section_name = radio .. '_client_wwan'
 
     uci:delete('wireless', iface_section_name)
     uci:commit('wireless')
+
+    uci:delete('network', 'client_wwan')
+    uci:commit('network')
+
     utils.unsafe_shell("wifi reload")
     return utils.printJson({status = 'ok'})
 end
@@ -143,7 +147,7 @@ local methods = {
     firmware_upgrade = { fw_path = 'value', preserve_config = 'value', metadata = 'value', fw_type = 'value'},
     last_upgrade_metadata = { no_params = 0 },
     firmware_confirm = { no_params = 0 },
-    hotspot_wwan_enable = { ssid = 'value', password = 'value', radio = 'value'},
+    hotspot_wwan_enable = { radio = 'value', ssid = 'value', password = 'value', encryption = 'value'},
     hotspot_wwan_disable = { radio = 'value' },
     hotspot_wwan_is_connected = { no_params = 0 }
 }
