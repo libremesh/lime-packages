@@ -51,7 +51,7 @@ local function scrape()
             repeat
               l = iwstation:read("*l")
 
-              regexp = "signal avg:[^-%d]*(-?%d*)[^-%d]*(-?%d*)[^-%d]*(-?%d*)[^-%d]*(-?%d*)"
+              regexp = "^%s*signal avg:[^-%d]*(-?%d*)[^-%d]*(-?%d*)[^-%d]*(-?%d*)[^-%d]*(-?%d*)"
               if l and l:match(regexp) then
                 local avg, chain0, chain1, chain2 = l:match(regexp)
                 if avg ~= "" and avg ~= 0 then
@@ -68,7 +68,7 @@ local function scrape()
                 end
               end
 
-              regexp = "tx retries:%s+(%d+)"
+              regexp = "^%s*tx retries:%s+(%d+)"
               if l and l:match(regexp) then
                 local tx_retries = l:match(regexp)
                 if tx_retries then
@@ -76,7 +76,7 @@ local function scrape()
                 end
               end
 
-              regexp = "tx failed:%s+(%d+)"
+              regexp = "^%s*tx failed:%s+(%d+)"
               if l and l:match(regexp) then
                 local tx_failed = l:match(regexp)
                 if tx_failed then
