@@ -1,6 +1,21 @@
 local ubus = require "ubus"
 local iwinfo = require "iwinfo"
 
+local function mac2name_init()
+  local mac2name = {}
+  filename = "/etc/bat-hosts"
+  for line in io.lines(filename) do
+    local mac, name = line:match("(..:..:..:..:..:..)%s+([^%s]+)")
+    if mac then mac2name[mac:lower()] = name end
+  end
+  filename = "/tmp/dhcp.leases"
+  for line in io.lines(filename) do
+    local mac, ip, name = line:match("(..:..:..:..:..:..)%s+([^%s]+)%s+([^%s]+)")
+    if mac then mac2name[mac:lower()] = name end
+  end
+  return mac2name
+end
+
 local function scrape()
 
 -- Agregamos signal en promedio para obtener solo la métrica de signal avg y agregamos medición para cada antena.
@@ -11,6 +26,7 @@ local function scrape()
   local metric_wifi_station_transmit_retries = metric("wifi_station_transmit_retries", "counter")
   local metric_wifi_station_transmit_failed = metric("wifi_station_transmit_failed", "counter")
 
+  local mac2name = mac2name_init()
 
   local u = ubus.connect()
   local status = u:call("network.wireless", "status", {})
@@ -26,6 +42,7 @@ local function scrape()
           local labels = {
             ifname = ifname,
             mac = mac,
+            name = mac2name[mac:lower()],
           }
 
           local iwstation = io.popen("iw "..ifname.." station get "..mac, "r")
