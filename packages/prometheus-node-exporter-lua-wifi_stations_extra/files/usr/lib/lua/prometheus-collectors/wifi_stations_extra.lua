@@ -37,16 +37,16 @@ local function scrape()
               regexp = "signal avg:[^-%d]*(-?%d*)[^-%d]*(-?%d*)[^-%d]*(-?%d*)[^-%d]*(-?%d*)"
               if l and l:match(regexp) then
                 local avg, chain0, chain1, chain2 = l:match(regexp)
-                if avg ~= "" then
+                if avg ~= "" and avg ~= 0 then
                   metric_wifi_station_signal_iwavg(labels, avg)
                 end
-                if chain0 ~= "" then
+                if chain0 ~= "" and chain0 ~= 0 then
                   metric_wifi_station_signal_iwchain0(labels, chain0)
                 end
-                if chain1 ~= "" then
+                if chain1 ~= "" and chain1 ~= 0 then
                   metric_wifi_station_signal_iwchain1(labels, chain1)
                 end
-                if chain2 ~= "" then
+                if chain2 ~= "" and chain2 ~= 0 then
                   metric_wifi_station_signal_iwchain2(labels, chain2)
                 end
               end
