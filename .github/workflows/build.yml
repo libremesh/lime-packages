@@ -26,7 +26,7 @@ jobs:
 
       - name: Set package destination
         run: |
-          export TAG=$(echo "${{ github.ref }}" | cut -d '/' -f 3-)
+          export TAG=$(echo "${{ github.ref }}" | cut -d '/' -f 3- | tail -c +2)
           echo "$TAG"
           echo "DEST_DIR=$TAG" >> $GITHUB_ENV
 
