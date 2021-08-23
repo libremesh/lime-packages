@@ -1,17 +1,18 @@
 #!/usr/bin/env lua
 --[[
 Copyright 2018 Marcos Gutierrez <gmarcos87@gmail.com>
+Copyright 2021 Santiago Piccinini <spiccinini@altermundi.net>
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
     http://www.apache.org/licenses/LICENSE-3.0
 ]]--
 
-require "ubus"
+local ubus = require "ubus"
 local json = require 'luci.jsonc'
 local uci = require 'uci'
 local vouchera = require('voucher.vouchera')
-local utils = require('voucher.utils')
+local utils = require('lime.utils')
 
 vouchera.init()
 
@@ -22,34 +23,23 @@ if not conn then
     error("Failed to connect to ubus")
 end
 
-local function printJson (obj)
-    print(json.stringify(obj))
-end
-
-local function unsafe_shell(command)
-    local handle = io.popen(command)
-    local result = handle:read("*a")
-    handle:close()
-    return result
-end
-
 local function status(msg)
     local output = logic.iptables_status()
-    printJson(output)
+    utils.printJson(output)
 end
 
 local function enable(msg)
     uci_cursor:set("pirania", "base_config", "enabled", "1")
     uci_cursor:commit("pirania")
-    unsafe_shell("captive-portal start")
-    printJson({ success = "ok" })
+    utils.unsafe_shell("captive-portal start")
+    utils.printJson({ success = "ok" })
 end
 
 local function disable(msg)
     uci_cursor:set("pirania", "base_config", "enabled", "0")
     uci_cursor:commit("pirania")
-    unsafe_shell("captive-portal stop")
-    printJson({ success = "ok" })
+    utils.unsafe_shell("captive-portal stop")
+    utils.printJson({ success = "ok" })
 end
 
 local function show_active_vouchers(msg)
@@ -59,49 +49,49 @@ local function show_active_vouchers(msg)
             table.insert(active, voucher)
         end
     end
-    printJson({ success = "ok", vouchers = active })
+    utils.printJson({ success = "ok", vouchers = active })
 end
 
 local function show_vouchers(msg)
-    printJson({ success = "ok", vouchers = vouchera.vouchers })
+    utils.printJson({ success = "ok", vouchers = vouchera.vouchers })
 end
 
 -- expiration_date is in seconds from epoch
 local function extend_voucher_date(msg)
     local voucher = vouchera.update_expiration_date(msg.voucher_name, msg.expiration_date)
-    printJson({ success = voucher and 'ok' or 'error' })
+    utils.printJson({ success = voucher and 'ok' or 'error' })
 end
 
 local function remove_voucher(msg)
     local voucher = vouchera.remove_globally(msg.id)
-    printJson({ success = voucher and 'ok' or 'error' })
+    utils.printJson({ success = voucher and 'ok' or 'error' })
 end
 
 local function renew_voucher(msg)
     local new_expiration_date = tonumber(msg.date)
     if new_expiration_date  then
         local voucher = voucher.update_expiration_date(msg.id, new_expiration_date)
-        printJson({ success = voucher and 'ok' or 'error' })
+        utils.printJson({ success = voucher and 'ok' or 'error' })
     end
 end
 
 local function add_vouchers(msg)
     local vouchers = {}
-    for _, vouch_data in pairs (msg.vouchers_data) do
-        local v = {name=vouch_data.name, code=vouch_data.code, expiration_date=vouch_data.expiration_date}
+    for _, data in pairs(msg.vouchers) do
+        local v = {name=data.name, code=data.code, expiration_date=data.expiration_date,
+                   duration_m=data.duration_m}
         local voucher, msg = vouchera.add(v)
         if voucher == nil then
-            printJson({ status = 'error', message = msg})
-            return
+            return utils.printJson({ status = 'error', message = msg})
         end
         table.insert(vouchers, voucher)
     end
-    printJson({ status = 'ok', vouchers = vouchers})
+    return utils.printJson({ status = 'ok', vouchers = vouchers})
 end
 
 local function activate_voucher(msg)
     local voucher = vouchera.activate(msg.code, msg.mac)
-    printJson({ success = voucher and 'ok' or 'error' })
+    utils.printJson({ success = voucher and 'ok' or 'error' })
 end
 
 local function print_valid_macs(msg)
@@ -112,18 +102,18 @@ local function print_valid_macs(msg)
             table.insert(result.macs, voucher.mac)
         end
     end
-    printJson(result);
+    utils.printJson(result);
 end
 
 local function show_url(msg)
-    printJson({ status = 'ok', url = uci_cursor:get("pirania", "base_config", "portal_url") });
+    utils.printJson({ status = 'ok', url = uci_cursor:get("pirania", "base_config", "portal_url") });
 end
 
 local function change_url(msg)
     local url = msg.url
     uci_cursor:set("pirania", "base_config", "portal_url", url)
     uci_cursor:commit("pirania")
-    printJson({status = 'ok', url = url});
+    utils.printJson({status = 'ok', url = url});
 end
 
 
@@ -143,11 +133,11 @@ local methods = {
 }
 
 if arg[1] == 'list' then
-    printJson(methods)
+    utils.printJson(methods)
 end
 
 if arg[1] == 'call' then
-  local msg = io.read()
+  local msg = utils.rpcd_readline()
   msg = json.parse(msg)
   if   arg[2] == 'status'										then status(msg)
   elseif   arg[2] == 'enable'								then enable(msg)
@@ -155,12 +145,13 @@ if arg[1] == 'call' then
   elseif   arg[2] == 'print_valid_macs'	  	then print_valid_macs(msg)
   elseif   arg[2] == 'list_vouchers'	    	then list_vouchers(msg)
   elseif   arg[2] == 'show_active_vouchers'	then show_active_vouchers(msg)
+  elseif   arg[2] == 'add_vouchers'	        then add_vouchers(msg)
   elseif   arg[2] == 'remove_voucher'	    	then remove_voucher(msg)
   elseif   arg[2] == 'renew_voucher'	    	then renew_voucher(msg)
   elseif   arg[2] == 'activate_voucher'	    	then activate_voucher(msg)
   elseif   arg[2] == 'show_url'	            then show_url(msg)
   elseif   arg[2] == 'change_url'	        	then change_url(msg)
 
-  else     printJson({ error = "Method not found" })
+  else     utils.printJson({ error = "Method not found" })
   end
 end
