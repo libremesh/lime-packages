@@ -11,7 +11,7 @@ local json = require 'luci.jsonc'
 local utils = require 'lime.utils'
 local config = require 'lime.config'
 local upgrade = require 'lime.upgrade'
-local iwinfo = require "iwinfo"
+local hotspot_wwan = require "lime.hotspot_wwan"
 
 local conn = ubus.connect()
 if not conn then
@@ -86,67 +86,39 @@ end
 
 --! Creates a client connection to a wifi hotspot
 local function hotspot_wwan_enable(msg)
-    local uci = config.get_uci_cursor()
-    local encryption = msg.encryption or 'psk2'
-    local ssid = msg.ssid or 'internet'
-    local password = msg.password or 'internet'
-    local radio = msg.radio or 'radio0'
-    local iface_section_name = radio .. '_client_wwan'
-    local network_name = 'client_wwan'
-    uci:set('wireless', radio, 'disabled', '0')
-    uci:set('wireless', iface_section_name, 'wifi-iface')
-    uci:set('wireless', iface_section_name, 'device', radio)
-    uci:set('wireless', iface_section_name, 'network', network_name)
-    uci:set('wireless', iface_section_name, 'mode', 'sta')
-    uci:set('wireless', iface_section_name, 'ifname', 'client-wwan')
-    uci:set('wireless', iface_section_name, 'encryption', encryption)
-    uci:set('wireless', iface_section_name, 'ssid', ssid)
-    uci:set('wireless', iface_section_name, 'key', password)
-    uci:commit('wireless')
-
-    uci:set('network', network_name, 'interface')
-    uci:set('network', network_name, 'proto', 'dhcp')
-    uci:commit('network')
-    utils.unsafe_shell("wifi reload")
-
-    return utils.printJson({status = 'ok'})
+    local msg = msg or {}
+    local status, errmsg = hotspot_wwan.enable(msg.ssid, msg.password, msg.encryption, msg.radio)
+    if status then
+        return utils.printJson({status = 'ok'})
+    else
+        return utils.printJson({status = 'error', message = errmsg})
+    end
 end
 
+--TODO:
+--* usar lime-config en vez de directamente los archivos de openwrt
+--* que no sobreviva reboots
+
 local function hotspot_wwan_disable(msg)
-    local uci = config.get_uci_cursor()
-    local radio = msg.radio or 'radio0'
-    local iface_section_name = radio .. '_client_wwan'
-
-    uci:delete('wireless', iface_section_name)
-    uci:commit('wireless')
-
-    uci:delete('network', 'client_wwan')
-    uci:commit('network')
-
-    utils.unsafe_shell("wifi reload")
-    return utils.printJson({status = 'ok'})
+    local msg = msg or {}
+    local status, errmsg = hotspot_wwan.disable(msg.radio)
+    if status then
+        return utils.printJson({status = 'ok'})
+    else
+        return utils.printJson({status = 'error', message = errmsg})
+    end
 end
 
 local function hotspot_wwan_get_status(msg)
     local msg = msg or {}
-    local uci = config.get_uci_cursor()
-    local radio = msg.radio or 'radio0'
-    local connected = false
-    local signal
-
-
-    local iface_section_name = radio .. '_client_wwan'
-    local enabled = false
-    if uci:get('wireless', iface_section_name) then
-        enabled = true
+    local status, errmsg = hotspot_wwan.status(msg.radio)
+    if status then
+        return utils.printJson({status = 'ok', enabled = status.enabled,
+                                connected = status.connected,
+                                signal = status.signal})
+    else
+        return utils.printJson({status = 'error', message = errmsg})
     end
-
-    for mac, station in pairs(iwinfo.nl80211.assoclist('client-wwan')) do
-        connected = true
-        signal = station['signal']
-    end
-
-    return utils.printJson({status = 'ok', connected = connected, signal = signal, enabled = enabled})
 end
 
 

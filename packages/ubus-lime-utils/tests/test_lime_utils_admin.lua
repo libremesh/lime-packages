@@ -3,6 +3,7 @@ local test_utils = require "tests.utils"
 local config = require 'lime.config'
 local upgrade = require 'lime.upgrade'
 local iwinfo = require 'iwinfo'
+local hotspot_wwan = require 'lime.hotspot_wwan'
 
 local test_file_name = "packages/ubus-lime-utils/files/usr/libexec/rpcd/lime-utils-admin"
 local ubus_lime_utils = test_utils.load_lua_file_as_function(test_file_name)
@@ -122,52 +123,45 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
     end)
 
     it('test hotspot_wwan_enable default args', function()
-        stub(utils, "unsafe_shell", function () return '' end)
+        stub(hotspot_wwan, "_apply_change", function () return true end)
+        stub(hotspot_wwan, "enable", function () return true end)
         local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_enable'}, '{}')
         assert.is.equal("ok", response.status)
-        assert.is.equal("radio0", uci:get('wireless', 'radio0_client_wwan', 'device'))
-        assert.is.equal("internet", uci:get('wireless', 'radio0_client_wwan', 'key'))
-        assert.is.equal("internet", uci:get('wireless', 'radio0_client_wwan', 'ssid'))
-        assert.is.equal("dhcp", uci:get('network', 'client_wwan', 'proto'))
-
-        local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_disable'}, '{}')
-        assert.is.equal("ok", response.status)
-        assert.is_nil(uci:get('wireless', 'radio0_client_wwan', 'device'))
-        assert.is_nil(uci:get('network', 'client_wwan', 'proto'))
+        assert.stub(hotspot_wwan.enable).was.called()
     end)
 
-    it('test hotspot_wwan_enable with args', function()
-        stub(utils, "unsafe_shell", function () return '' end)
+    it('test hotspot_wwan_enable no obj as arg', function()
+        stub(hotspot_wwan, "_apply_change", function () return true end)
+        stub(hotspot_wwan, "enable", function () return true end)
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_enable'}, '')
+        assert.is.equal("ok", response.status)
+        assert.stub(hotspot_wwan.enable).was.called()
+    end)
+
+    it('test hotspot_wwan_enable with args #fooo', function()
+        stub(hotspot_wwan, "_apply_change", function () return true end)
+        stub(hotspot_wwan, "enable", function () return true end)
         local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_enable'}, '{"radio":"radio1", "password": "mypass"}')
-        assert.is.equal("ok", response.status)
-        assert.is.equal("radio1", uci:get('wireless', 'radio1_client_wwan', 'device'))
-        assert.is.equal("mypass", uci:get('wireless', 'radio1_client_wwan', 'key'))
-        assert.is.equal("internet", uci:get('wireless', 'radio1_client_wwan', 'ssid'))
+        assert.stub(hotspot_wwan.enable).was.called_with(nil, 'mypass', nil, 'radio1')
 
-        local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_get_status'}, '{"radio":"radio1"}')
-        assert.is_true(response.enabled)
-
-        local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_disable'}, '{"radio": "radio1"}')
-        assert.is.equal("ok", response.status)
-        assert.is_nil(uci:get('wireless', 'radio1_client_wwan', 'device'))
-        assert.is_nil(uci:get('network', 'client_wwan', 'proto'))
-
-        local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_get_status'}, '{"radio":"radio1"')
-        assert.is_false(response.enabled)
-
+        stub(hotspot_wwan, "disable", function () return true end)
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_disable'}, '{"radio":"radio1"}')
+        assert.stub(hotspot_wwan.disable).was.called_with('radio1')
     end)
 
-    it('test hotspot_wwan_get_status when not connected', function()
+    it('test hotspot_wwan_get_status', function()
+        stub(hotspot_wwan, "status", function () return {connected = false} end)
         local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_get_status'}, '')
         assert.is.equal("ok", response.status)
         assert.is_false(response.connected)
+        assert.stub(hotspot_wwan.status).was.called()
+
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_get_status'}, '{"radio":"radio1"}')
+        assert.stub(hotspot_wwan.status).was.called_with('radio1')
     end)
 
     it('test hotspot_wwan_is_connected when connected', function()
-        local sta = iwinfo.fake.gen_assoc_station("HT20", "HT40", -66, 50, 10000, 300, 120)
-        local assoclist = {['AA:BB:CC:DD:EE:FF'] = sta}
-        iwinfo.fake.set_assoclist('client-wwan', assoclist)
-
+        stub(hotspot_wwan, "status", function () return {connected = true, signal = -66} end)
         local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_get_status'}, '')
         assert.is.equal("ok", response.status)
         assert.is_true(response.connected)
