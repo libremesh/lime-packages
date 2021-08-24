@@ -95,9 +95,6 @@ local function hotspot_wwan_enable(msg)
     end
 end
 
---TODO:
---* usar lime-config en vez de directamente los archivos de openwrt
---* que no sobreviva reboots
 
 local function hotspot_wwan_disable(msg)
     local msg = msg or {}
