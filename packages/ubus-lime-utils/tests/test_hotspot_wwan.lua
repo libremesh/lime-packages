@@ -16,34 +16,40 @@ describe('hotspot_wwan tests #hotspot_wwan', function()
         assert.is_false(status.enabled)
 
         hotspot_wwan.enable()
-        assert.is.equal("radio0", uci:get('wireless', 'radio0_client_wwan', 'device'))
-        assert.is.equal("internet", uci:get('wireless', 'radio0_client_wwan', 'key'))
-        assert.is.equal("internet", uci:get('wireless', 'radio0_client_wwan', 'ssid'))
-        assert.is.equal("dhcp", uci:get('network', 'client_wwan', 'proto'))
+        uci:load('wireless')
+        local expected = {
+            'wireless.radio0.disabled=0',
+            'wireless.lm_client_wwan_radio0=wifi-iface',
+            'wireless.lm_client_wwan_radio0.device=radio0',
+            'wireless.lm_client_wwan_radio0.network=lm_client_wwan_radio0',
+            'wireless.lm_client_wwan_radio0.mode=sta',
+            'wireless.lm_client_wwan_radio0.ifname=client-wwan-0',
+            'wireless.lm_client_wwan_radio0.ssid=internet',
+            'wireless.lm_client_wwan_radio0.encryption=psk2',
+            'wireless.lm_client_wwan_radio0.key=internet',
+            'network.lm_client_wwan_radio0=interface',
+            'network.lm_client_wwan_radio0.proto=dhcp',
+        }
+        assert.is.equal("generic_uci_config", uci:get(config.UCI_NODE_NAME, 'hotspot_wwan_radio0'))
+        assert.are.same(expected, uci:get(config.UCI_NODE_NAME, 'hotspot_wwan_radio0', 'uci_set'))
 
         hotspot_wwan.disable()
-        assert.is_nil(uci:get('wireless', 'radio0_client_wwan', 'device'))
-        assert.is_nil(uci:get('network', 'client_wwan', 'proto'))
+        assert.is_nil(uci:get(config.UCI_NODE_NAME, 'hotspot_wwan_radio0'))
     end)
 
-    it('test hotspot_wwan_enable with args #fooo', function()
+    it('test hotspot_wwan_enable with args', function()
         local status
         local retval = hotspot_wwan.enable(nil, 'mypass', nil, 'radio1')
         assert.is_true(retval)
-        assert.is.equal("radio1", uci:get('wireless', 'radio1_client_wwan', 'device'))
-        assert.is.equal("mypass", uci:get('wireless', 'radio1_client_wwan', 'key'))
-        assert.is.equal("internet", uci:get('wireless', 'radio1_client_wwan', 'ssid'))
-        
-        
+        assert.is.equal("generic_uci_config", uci:get(config.UCI_NODE_NAME, 'hotspot_wwan_radio1'))
+
         status = hotspot_wwan.status('radio1')
         assert.is_true(status.enabled)
 
-        retval = hotspot_wwan.disable('radio1')        
+        retval = hotspot_wwan.disable('radio1')
         assert.is_true(retval)
-        assert.is_nil(uci:get('wireless', 'radio1_client_wwan', 'device'))
-        assert.is_nil(uci:get('network', 'client_wwan', 'proto'))
-        
-        hotspot_wwan.disable('radio1') 
+        assert.is_nil(uci:get(config.UCI_NODE_NAME, 'hotspot_wwan_radio1'))
+
         status = hotspot_wwan.status('radio1')
         assert.is_false(status.enabled)
 
@@ -57,7 +63,7 @@ describe('hotspot_wwan tests #hotspot_wwan', function()
     it('test hotspot_wwan_is_connected when connected', function()
         local sta = iwinfo.fake.gen_assoc_station("HT20", "HT40", -66, 50, 10000, 300, 120)
         local assoclist = {['AA:BB:CC:DD:EE:FF'] = sta}
-        iwinfo.fake.set_assoclist('client-wwan', assoclist)
+        iwinfo.fake.set_assoclist(hotspot_wwan.iface_name('radio1'), assoclist)
 
         local status = hotspot_wwan.status('radio1')
         assert.is_true(status.connected)

@@ -16,15 +16,28 @@ pkg.DEFAULT_ENCRYPTION = 'psk2'
 pkg.DEFAULT_SSID = 'internet'
 pkg.DEFAULT_PASSWORD = 'internet'
 pkg.DEFAULT_RADIO = 'radio0'
-pkg.NETWORK_NAME = 'client_wwan'
-pkg.IFNAME = 'client-wwan'
 
-function pkg.iface_section_name(radio_name)
-    return radio_name .. '_client_wwan'
+function pkg.generic_section_name(radio_name)
+    return 'hotspot_wwan_' .. radio_name
 end
 
+function pkg.iface_section_name(radio_name)
+    return 'lm_client_wwan_' .. radio_name
+end
+
+function pkg.iface_name(radio_name)
+    return 'client-wwan-' .. string.sub(radio_name, -1)
+end
+
+local gen_cfg = require 'lime.generic_config'
+
 function pkg._apply_change()
-    utils.unsafe_shell("wifi reload")
+    --config.uci_autogen()
+    --gen_cfg.do_generic_uci_configs()
+    --local uci = config.get_uci_cursor()
+    --uci:commit("wireless")
+    --uci:load("wireless")
+    utils.unsafe_shell("lime-config && wifi reload")
 end
 
 --! Create a client connection to a wifi hotspot
@@ -36,21 +49,22 @@ function pkg.enable(ssid, password, encryption, radio)
     local radio = radio or pkg.DEFAULT_RADIO
     local iface_section_name = pkg.iface_section_name(radio)
 
-    uci:set('wireless', radio, 'disabled', '0')
-    uci:set('wireless', iface_section_name, 'wifi-iface')
-    uci:set('wireless', iface_section_name, 'device', radio)
-    uci:set('wireless', iface_section_name, 'network', pkg.NETWORK_NAME)
-    uci:set('wireless', iface_section_name, 'mode', 'sta')
-    uci:set('wireless', iface_section_name, 'ifname', pkg.IFNAME)
-    uci:set('wireless', iface_section_name, 'encryption', encryption)
-    uci:set('wireless', iface_section_name, 'ssid', ssid)
-    uci:set('wireless', iface_section_name, 'key', password)
-    uci:commit('wireless')
-
-    uci:set('network', pkg.NETWORK_NAME, 'interface')
-    uci:set('network', pkg.NETWORK_NAME, 'proto', 'dhcp')
-    uci:commit('network')
-
+    uci:set(config.UCI_NODE_NAME, pkg.generic_section_name(radio), "generic_uci_config")
+    uci:set(config.UCI_NODE_NAME, pkg.generic_section_name(radio), "uci_set", {
+        "wireless." .. radio .. ".disabled=0",
+        "wireless." .. iface_section_name .. "=wifi-iface",
+        "wireless." .. iface_section_name .. ".device=" .. radio,
+        "wireless." .. iface_section_name .. ".network=" .. iface_section_name,
+        "wireless." .. iface_section_name .. ".mode=sta",
+        "wireless." .. iface_section_name .. ".ifname=" .. pkg.iface_name(radio),
+        "wireless." .. iface_section_name .. ".ssid=" .. ssid,
+        "wireless." .. iface_section_name .. ".encryption=" .. encryption,
+        "wireless." .. iface_section_name .. ".key=" .. password,
+        "network." .. iface_section_name .. "=interface",
+        "network." .. iface_section_name .. ".proto=dhcp",
+        }
+    )
+    uci:commit(config.UCI_NODE_NAME)
     pkg._apply_change()
     return true
 end
@@ -59,11 +73,8 @@ function pkg.disable(radio)
     local uci = config.get_uci_cursor()
     local radio = radio or pkg.DEFAULT_RADIO
 
-    uci:delete('wireless', pkg.iface_section_name(radio))
-    uci:commit('wireless')
-
-    uci:delete('network', pkg.NETWORK_NAME)
-    uci:commit('network')
+    uci:delete(config.UCI_NODE_NAME, pkg.generic_section_name(radio))
+    uci:commit(config.UCI_NODE_NAME)
 
     pkg._apply_change()
     return true
@@ -77,11 +88,11 @@ function pkg.status(radio)
 
     local enabled = false
 
-    if uci:get('wireless', pkg.iface_section_name(radio)) then
+    if uci:get(config.UCI_NODE_NAME, pkg.generic_section_name(radio)) then
         enabled = true
     end
 
-    for mac, station in pairs(iwinfo.nl80211.assoclist(pkg.IFNAME)) do
+    for mac, station in pairs(iwinfo.nl80211.assoclist(pkg.iface_name(radio))) do
         connected = true
         signal = station['signal']
     end
