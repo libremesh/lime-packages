@@ -120,29 +120,37 @@ function vouchera.remove_globally(id)
     return voucher
 end
 
+local function modify_voucher_with_func(id, func)
+    local voucher = vouchera.vouchers[id]
+    if voucher then
+        func(voucher)
+        voucher.mod_counter = voucher.mod_counter + 1
+        return store.add_voucher(config.db_path, voucher, voucher_init)
+    end
+    return voucher
+end
+
 --! Activate a voucher returning true or false depending on the status of the operation.
 function vouchera.activate(code, mac)
     local voucher = vouchera.is_activable(code)
     if voucher then
-        voucher.mac = mac
-        --! If the voucher has a duration then create the expiration_date from it
-        if voucher.duration_m then
-           voucher.expiration_date = os.time() + voucher.duration_m * 60
+        function _update(v)
+            v.mac = mac
+            --! If the voucher has a duration then create the expiration_date from it
+            if v.duration_m then
+               v.expiration_date = os.time() + v.duration_m * 60
+            end
         end
-        voucher.mod_counter = voucher.mod_counter + 1
-        store.add_voucher(config.db_path, voucher, voucher_init)
+        modify_voucher_with_func(voucher.id, _update)
     end
     return voucher
 end
 
 function vouchera.deactivate(id)
-    local voucher = vouchera.vouchers[id]
-    if voucher then
-        voucher.mac = nil
-        voucher.mod_counter = voucher.mod_counter + 1
-        return store.add_voucher(config.db_path, voucher, voucher_init)
+    local function _update(v)
+        v.mac = nil
     end
-    return voucher
+    return modify_voucher_with_func(id, _update)
 end
 
 --! updates the database with the new voucher information
@@ -186,13 +194,10 @@ function vouchera.should_be_pruned(voucher)
 end
 
 function vouchera.update_expiration_date(id, new_date)
-    local voucher = vouchera.vouchers[id]
-    if voucher then
-        voucher.expiration_date = new_date
-        voucher.mod_counter = voucher.mod_counter + 1
-        return store.add_voucher(config.db_path, voucher, voucher_init)
+    local function _update(v)
+        v.expiration_date = new_date
     end
-    return voucher
+    return modify_voucher_with_func(id, _update)
 end
 
 vouchera.voucher = voucher_init
