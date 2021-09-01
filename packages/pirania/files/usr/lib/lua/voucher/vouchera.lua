@@ -200,6 +200,13 @@ function vouchera.update_expiration_date(id, new_date)
     return modify_voucher_with_func(id, _update)
 end
 
+function vouchera.rename(id, new_name)
+    local function _update(v)
+        v.name = new_name
+    end
+    return modify_voucher_with_func(id, _update)
+end
+
 vouchera.voucher = voucher_init
 
 return vouchera
