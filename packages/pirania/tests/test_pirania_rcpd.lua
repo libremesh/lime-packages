@@ -19,12 +19,24 @@ describe('pirania rpcd tests #piraniarpcd', function()
         assert.is.equal(0, response.status.no_params)
     end)
 
-    it('test add one voucher', function()
-        local json_data = json.stringify({vouchers={{name='foo', code='paswd', duration_m=100}}})
+    it('test add three vouchers', function()
+        --{name:string, duration_m: number, activation_deadline: timestamp, permanent: boolean, qty: number}
+        local json_data = json.stringify({name='foo', duration_m=100, activation_deadline=nil, permanent = false, qty=3})
         local response  = rpcd_call(pirania, {'call', 'add_vouchers'}, json_data)
         assert.is.equal("ok", response.status)
-        assert.is.equal(1, #response.vouchers)
-        assert.is.equal("foo", response.vouchers[1]['name'])
+        assert.is.equal(3, #response.vouchers)
+
+        vouchera.init()
+        assert.is.equal(response.vouchers[1].code, vouchera.vouchers[response.vouchers[1].id].code)
+    end)
+
+    it('test rename voucher', function()
+        local json_data = json.stringify({name='foo', duration_m=100, activation_deadline=nil, permanent = false, qty=1})
+        local response = rpcd_call(pirania, {'call', 'add_vouchers'}, json_data)
+        local id = response.vouchers[1]['id']
+
+        local response  = rpcd_call(pirania, {'call', 'rename'}, json.stringify({id=id, name='bar'}))
+        assert.is.equal("ok", response.status)
     end)
 
     before_each('', function()
