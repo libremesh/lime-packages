@@ -41,13 +41,12 @@ function voucher_init(obj)
     end
     voucher.mac = obj.mac
 
-    if obj.expiration_date == nil and obj.duration_m == nil then
+    if obj.duration_m == nil then
         return nil
-    elseif obj.expiration_date ~= nil then
-        voucher.expiration_date = obj.expiration_date
-    elseif obj.duration_m ~= nil then
+    else
         voucher.duration_m = obj.duration_m
     end
+    voucher.expiration_date = obj.expiration_date
 
     voucher.mod_counter = obj.mod_counter or 1
 
@@ -211,13 +210,6 @@ end
 function vouchera.should_be_pruned(voucher)
     return type(voucher.expiration_date) == "number" and (
            voucher.expiration_date <= (os.time() - vouchera.PRUNE_OLDER_THAN_S))
-end
-
-function vouchera.update_expiration_date(id, new_date)
-    local function _update(v)
-        v.expiration_date = new_date
-    end
-    return modify_voucher_with_func(id, _update)
 end
 
 function vouchera.rename(id, new_name)
