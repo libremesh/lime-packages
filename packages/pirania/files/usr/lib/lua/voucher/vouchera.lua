@@ -6,7 +6,8 @@ local utils = require('voucher.utils')
 
 local vouchera = {}
 
-local ID_SIZE = 6
+vouchera.ID_SIZE = 6
+vouchera.CODE_SIZE = 6
 
 --! Simplify the comparison of vouchers using a metatable for the == operator
 local voucher_metatable = {
@@ -20,7 +21,7 @@ function voucher_init(obj)
     local voucher = {}
 
     if not obj.id then
-        obj.id = utils.random_string(ID_SIZE)
+        obj.id = utils.random_string(vouchera.ID_SIZE)
     end
 
     voucher.id = obj.id
@@ -88,6 +89,25 @@ function vouchera.add(obj)
         return voucher
     end
     return nil, "can't create voucher"
+end
+
+function vouchera.create_vouchers(basename, qty, duration_m, activation_deadline, permanent)
+    local vouchers = {}
+    for n=1, qty do
+        local name
+        if qty == 1 then
+            name = basename
+        else
+            name = basename .. "-" .. tostring(n)
+        end
+        local v = {name=name, code=vouchera.gen_code(), duration_m=duration_m}
+        local voucher, msg = vouchera.add(v)
+        if voucher == nil then
+            return nil, "Can't create voucher"
+        end
+        table.insert(vouchers, n, {id=voucher.id, code=voucher.code})
+    end
+    return vouchers
 end
 
 --! Remove a voucher from the local db. This won't trigger a remove in the shared db.
@@ -205,6 +225,10 @@ function vouchera.rename(id, new_name)
         v.name = new_name
     end
     return modify_voucher_with_func(id, _update)
+end
+
+function vouchera.gen_code()
+    return utils.random_string(vouchera.CODE_SIZE, function (c) return c:match('%u') ~= nil end)
 end
 
 vouchera.voucher = voucher_init
