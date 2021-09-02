@@ -199,6 +199,25 @@ describe('Vouchera tests #vouchera', function()
         assert.is.equal(new_expiration_date, voucher.expiration_date)
     end)
 
+    it('test add_vouchers', function()
+        vouchera.init()
+        local base_name = 'foo'
+        local qty = 1
+        local duration_m = 100
+        local created_vouchers = vouchera.create_vouchers(base_name, qty, duration_m)
+        assert.is.equal(#created_vouchers, qty)
+        local v = vouchera.vouchers[created_vouchers[1].id]
+        assert.is.not_nil(v)
+        assert.is.equal(duration_m, v.duration_m)
+        assert.is.equal('foo', v.name)
+
+        local qty = 5
+        local duration_m = 100
+        local created_vouchers = vouchera.create_vouchers(base_name, qty, duration_m)
+        assert.is.equal(#created_vouchers, qty)
+        local v = vouchera.vouchers[created_vouchers[1].id]
+        assert.is.equal('foo-1', v.name)
+    end)
 
     before_each('', function()
         snapshot = assert:snapshot()
