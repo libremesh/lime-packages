@@ -28,7 +28,7 @@ describe('Vouchera tests #piraniahandlers', function()
         local url = handlers.preactivate_voucher()
         assert.is.equal('/fail', url)
         vouchera.init()
-        local voucher = vouchera.add({name='myvoucher', code='secret_code', expiration_date=os.time()+1000})
+        local voucher = vouchera.add({name='myvoucher', code='secret_code', duration_m=15})
 
         local url = handlers.preactivate_voucher()
         -- redirecting to info as there is it is a validable code
@@ -40,7 +40,7 @@ describe('Vouchera tests #piraniahandlers', function()
         local original_url = 'http://original.url/baz?a=1&b=2'
         stub(os, "getenv",  build_env('10.1.1.1', 'asdasdasd?voucher=secret_code&prev=' .. utils.urlencode(original_url)))
         vouchera.init()
-        local voucher = vouchera.add({name='myvoucher', code='secret_code', expiration_date=os.time()+1000})
+        local voucher = vouchera.add({name='myvoucher', code='secret_code', duration_m=15})
         local url = handlers.preactivate_voucher()
         -- redirecting to info as there is it is a validable code
         assert.is.equal('/info?voucher=secret_code&prev='..original_url, url)
@@ -63,7 +63,7 @@ describe('Vouchera tests #piraniahandlers', function()
         stub(os, "getenv",  build_env('10.1.1.1', 'asdasdasd?voucher=secret_code'))
         stub(utils, "getIpv4AndMac", function () return {mac='AA:BB:CC:DD:EE:FF', ip='10.1.1.1'} end)
         vouchera.init()
-        local voucher = vouchera.add({name='myvoucher', code='secret_code', expiration_date=os.time()+1000})
+        local voucher = vouchera.add({name='myvoucher', code='secret_code', duration_m=15})
 
         vouchera.activate('secret_code', 'AA:BB:CC:DD:EE:FF')
 
@@ -79,7 +79,7 @@ describe('Vouchera tests #piraniahandlers', function()
         stub(os, "getenv",  build_env('10.1.1.1', "asdasdasd?voucher=secret_code&prev="..utils.urlencode(original_url)))
         stub(utils, "getIpv4AndMac", function () return {mac='AA:BB:CC:DD:EE:FF', ip='10.1.1.1'} end)
         vouchera.init()
-        local voucher = vouchera.add({name='myvoucher', code='secret_code', expiration_date=os.time()+1000})
+        local voucher = vouchera.add({name='myvoucher', code='secret_code', duration_m=15})
 
         local url = handlers.activate_voucher()
         assert.is.equal(original_url, url)
@@ -114,7 +114,7 @@ describe('Vouchera tests #piraniahandlers', function()
         stub(os, "getenv",  build_env('10.1.1.1', 'asdasdasd?voucher=secret_code'))
         stub(utils, "getIpv4AndMac", function () return {mac='AA:BB:CC:DD:EE:FF', ip='10.1.1.1'} end)
         vouchera.init()
-        local voucher = vouchera.add({name='myvoucher', code='secret_code', expiration_date=os.time()+1000})
+        local voucher = vouchera.add({name='myvoucher', code='secret_code', duration_m=15})
 
         vouchera.activate('secret_code', 'AA:BB:CC:DD:EE:FF')
 
