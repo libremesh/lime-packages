@@ -16,7 +16,7 @@ local voucher_metatable = {
     end
 }
 
---! obj attrs id, name, code, mac, expiration_date, duration_m, mod_counter
+--! obj attrs id, name, code, mac, duration_m, expiration_date, mod_counter, creation_date
 function voucher_init(obj)
     local voucher = {}
 
@@ -47,6 +47,8 @@ function voucher_init(obj)
         voucher.duration_m = obj.duration_m
     end
     voucher.expiration_date = obj.expiration_date
+
+    voucher.creation_date = obj.creation_date or os.time()
 
     voucher.mod_counter = obj.mod_counter or 1
 
