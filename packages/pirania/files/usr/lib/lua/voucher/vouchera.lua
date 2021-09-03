@@ -41,11 +41,8 @@ function voucher_init(obj)
     end
     voucher.mac = obj.mac
 
-    if obj.duration_m == nil then
-        return nil
-    else
-        voucher.duration_m = obj.duration_m
-    end
+    voucher.duration_m = obj.duration_m -- use nil to create a permanent voucher
+
     voucher.expiration_date = obj.expiration_date
 
     voucher.creation_date = obj.creation_date or os.time()
@@ -55,8 +52,10 @@ function voucher_init(obj)
     --! tostring must reflect all the state of a voucher (so vouchers can be compared reliably using tostring)
     voucher.tostring = function()
         local v = voucher
-        return(string.format('%s\t%s\t%s\t%s\t%s\t%s\t%s', v.id, v.name, v.code, v.mac or 'xx:xx:xx:xx:xx:xx',
-                             os.date("%c", v.expiration_date) or '', tostring(v.duration_m), v.mod_counter))
+        local expiration = os.date("%c", v.expiration_date) or ''
+        local creation = os.date("%c", v.creation_date)
+        return(string.format('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s', v.id, v.name, creation, v.code, v.mac or 'xx:xx:xx:xx:xx:xx',
+                             expiration, tostring(v.duration_m), v.mod_counter))
     end
 
     setmetatable(voucher, voucher_metatable)
@@ -206,7 +205,14 @@ function vouchera.is_activable(code)
 end
 
 function vouchera.is_active(voucher)
-    return voucher.mac ~= nil and voucher.expiration_date > os.time()
+    if voucher.mac == nil then
+        return false
+    else
+        if voucher.expiration_date and voucher.expiration_date < os.time() then
+            return false
+        end
+    end
+    return true
 end
 
 function vouchera.should_be_pruned(voucher)

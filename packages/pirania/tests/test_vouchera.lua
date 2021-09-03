@@ -28,7 +28,7 @@ describe('Vouchera tests #vouchera', function()
 
     it('init and compare vouchers', function()
         vouchera.init()
-        local v = {name='myvoucher', code='secret_code', duration_m=100}
+        local v = {name='myvoucher', code='secret_code'}
         local voucher_a = vouchera.voucher(v)
         local voucher_b = vouchera.voucher(v)
         v.name = 'othername'
@@ -37,8 +37,8 @@ describe('Vouchera tests #vouchera', function()
         local voucher_d = vouchera.voucher(v)
         v.code = 'myvoucher'
         local voucher_e = vouchera.voucher(v)
-        local voucher_f = vouchera.voucher({name='myvoucher', code='secret_code', duration_m=100, mod_counter=2})
-        local voucher_g = vouchera.voucher({name='myvoucher', code='secret_code', duration_m=100, mod_counter=3})
+        local voucher_f = vouchera.voucher({name='myvoucher', code='secret_code', mod_counter=2})
+        local voucher_g = vouchera.voucher({name='myvoucher', code='secret_code', mod_counter=3})
 
         assert.is.equal(voucher_a, voucher_b)
         assert.is.not_equal(voucher_a, voucher_c)
@@ -56,7 +56,7 @@ describe('Vouchera tests #vouchera', function()
 
     it('Rename vouchers', function()
         vouchera.init()
-        local voucher = vouchera.add({name='myvoucher', code='secret_code', duration_m=100})
+        local voucher = vouchera.add({name='myvoucher', code='secret_code'})
         assert.is.equal(1, voucher.mod_counter)
         vouchera.rename(voucher.id, 'newname')
         assert.is.equal('newname', voucher.name)
@@ -65,12 +65,11 @@ describe('Vouchera tests #vouchera', function()
 
     it('vouchera create and reload database', function()
         vouchera.init()
-        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=100})
+        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code'})
         assert.is.equal('myvoucher', voucher.id)
         assert.is.equal('foo', voucher.name)
         assert.is.equal('secret_code', voucher.code)
         assert.is_nil(voucher.mac)
-        assert.is.equal(100, voucher.duration_m)
 
         v1 = vouchera.vouchers['myvoucher']
         vouchera.init()
@@ -80,7 +79,6 @@ describe('Vouchera tests #vouchera', function()
     end)
 
     it('activate vouchers', function()
-
         vouchera.init()
 
         assert.is_false(vouchera.is_mac_authorized("aa:bb:cc:dd:ee:ff"))
@@ -89,16 +87,19 @@ describe('Vouchera tests #vouchera', function()
         local voucher = vouchera.add({name='myvoucher', code='secret_code', duration_m=100})
         assert.is.equal(1, voucher.mod_counter)
         assert.is.not_false(vouchera.is_activable('secret_code'))
+        assert.is_false(vouchera.is_active(voucher))
         assert.is.not_false(vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff"))
 
         assert.is.equal(2, voucher.mod_counter)
         assert.is_false(vouchera.is_activable('secret_code'))
+        assert.is_true(vouchera.is_active(voucher))
         assert.is_true(vouchera.is_mac_authorized("aa:bb:cc:dd:ee:ff"))
         local current_time = os.time()
 
         --! let's pretend that the expiration date is in the past now
         stub(os, "time", function () return current_time_s + (101*60) end)
         assert.is_false(vouchera.is_mac_authorized("aa:bb:cc:dd:ee:ff"))
+        assert.is_false(vouchera.is_active(voucher))
     end)
 
     it('vouchera create with duration and activate', function()
@@ -116,7 +117,7 @@ describe('Vouchera tests #vouchera', function()
     it('deactivate vouchers', function()
         vouchera.init()
 
-        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=100})
+        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code'})
         assert.is.equal(1, voucher.mod_counter)
 
         local voucher = vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff")
@@ -134,7 +135,7 @@ describe('Vouchera tests #vouchera', function()
     it('add and remove vouchers', function()
         vouchera.init()
 
-        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=100})
+        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code'})
         assert.is_true(vouchera.remove_locally('myvoucher'))
         assert.is_nil(vouchera.vouchers['myvoucher'])
         vouchera.init()
@@ -145,7 +146,7 @@ describe('Vouchera tests #vouchera', function()
     it('add and remove globally vouchers', function()
         vouchera.init()
 
-        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=100})
+        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code'})
         assert.is_false(vouchera.should_be_pruned(voucher))
         assert.is_true(vouchera.remove_globally('myvoucher'))
         assert.is.equal(os.time(), vouchera.vouchers['myvoucher'].expiration_date)
