@@ -26,7 +26,7 @@ describe('pirania rpcd tests #piraniarpcd', function()
         assert.is.equal(3, #response.vouchers)
 
         vouchera.init()
-        assert.is.equal(response.vouchers[1].code, vouchera.vouchers[response.vouchers[1].id].code)
+        assert.is.equal(response.vouchers[1].code, vouchera.get_by_id(response.vouchers[1].id).code)
     end)
 
     it('test rename voucher', function()
