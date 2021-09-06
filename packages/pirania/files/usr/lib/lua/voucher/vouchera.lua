@@ -91,6 +91,10 @@ function vouchera.add(obj)
     return nil, "can't create voucher"
 end
 
+function vouchera.get_by_id(id)
+    return vouchera.vouchers[id]
+end
+
 function vouchera.create_vouchers(basename, qty, duration_m, activation_deadline, permanent)
     local vouchers = {}
     for n=1, qty do

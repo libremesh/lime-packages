@@ -71,9 +71,9 @@ describe('Vouchera tests #vouchera', function()
         assert.is.equal('secret_code', voucher.code)
         assert.is_nil(voucher.mac)
 
-        v1 = vouchera.vouchers['myvoucher']
+        v1 = vouchera.get_by_id('myvoucher')
         vouchera.init()
-        v2 = vouchera.vouchers['myvoucher']
+        v2 = vouchera.get_by_id('myvoucher')
         assert.is.equal(v1, v2)
         assert.is.not_nil(v1)
     end)
@@ -137,9 +137,9 @@ describe('Vouchera tests #vouchera', function()
 
         local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code'})
         assert.is_true(vouchera.remove_locally('myvoucher'))
-        assert.is_nil(vouchera.vouchers['myvoucher'])
+        assert.is_nil(vouchera.get_by_id('myvoucher'))
         vouchera.init()
-        assert.is_nil(vouchera.vouchers['myvoucher'])
+        assert.is_nil(vouchera.get_by_id('myvoucher'))
         assert.is_nil(vouchera.remove_locally('myvoucher'))
     end)
 
@@ -149,7 +149,7 @@ describe('Vouchera tests #vouchera', function()
         local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code'})
         assert.is_false(vouchera.should_be_pruned(voucher))
         assert.is_true(vouchera.remove_globally('myvoucher'))
-        assert.is.equal(os.time(), vouchera.vouchers['myvoucher'].expiration_date)
+        assert.is.equal(os.time(), vouchera.get_by_id('myvoucher').expiration_date)
     end)
 
     it('test automatic pruning of old voucher', function()
@@ -158,12 +158,12 @@ describe('Vouchera tests #vouchera', function()
         local v = vouchera.voucher({id='myvoucher', name='foo', code='secret_code', duration_m=100})
         local voucher = vouchera.add(v)
         vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff")
-        assert.is_not_nil(vouchera.vouchers['myvoucher'])
+        assert.is_not_nil(vouchera.get_by_id('myvoucher'))
 
         -- voucher is pruned when vouchera is initialized
         stub(os, "time", function () return current_time_s+(31*60*60*24) end)
         vouchera.init()
-        assert.is_nil(vouchera.vouchers['myvoucher'])
+        assert.is_nil(vouchera.get_by_id('myvoucher'))
     end)
 
     it('test automatic pruning is not removing a not too old voucher', function()
@@ -175,12 +175,12 @@ describe('Vouchera tests #vouchera', function()
 
         local voucher = vouchera.add(v)
 
-        assert.is_not_nil(vouchera.vouchers['myvoucher'])
+        assert.is_not_nil(vouchera.get_by_id('myvoucher'))
 
         -- voucher is not pruned when vouchera is initialized
         stub(os, "time", function () return current_time_s+(31*60*60*24) end)
         vouchera.init()
-        assert.is_not_nil(vouchera.vouchers['myvoucher'])
+        assert.is_not_nil(vouchera.get_by_id('myvoucher'))
     end)
 
     it('test add_vouchers', function()
@@ -190,7 +190,7 @@ describe('Vouchera tests #vouchera', function()
         local duration_m = 100
         local created_vouchers = vouchera.create_vouchers(base_name, qty, duration_m)
         assert.is.equal(#created_vouchers, qty)
-        local v = vouchera.vouchers[created_vouchers[1].id]
+        local v = vouchera.get_by_id(created_vouchers[1].id)
         assert.is.not_nil(v)
         assert.is.equal(duration_m, v.duration_m)
         assert.is.equal('foo', v.name)
