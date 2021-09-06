@@ -20,8 +20,7 @@ describe('pirania rpcd tests #piraniarpcd', function()
     end)
 
     it('test add three vouchers', function()
-        --{name:string, duration_m: number, activation_deadline: timestamp, permanent: boolean, qty: number}
-        local json_data = json.stringify({name='foo', duration_m=100, activation_deadline=nil, permanent = false, qty=3})
+        local json_data = json.stringify({name='foo', duration_m=100, activation_deadline=nil, qty=3})
         local response  = rpcd_call(pirania, {'call', 'add_vouchers'}, json_data)
         assert.is.equal("ok", response.status)
         assert.is.equal(3, #response.vouchers)
@@ -35,8 +34,10 @@ describe('pirania rpcd tests #piraniarpcd', function()
         local response = rpcd_call(pirania, {'call', 'add_vouchers'}, json_data)
         local id = response.vouchers[1]['id']
 
+        spy.on(vouchera, "rename")
         local response  = rpcd_call(pirania, {'call', 'rename'}, json.stringify({id=id, name='bar'}))
         assert.is.equal("ok", response.status)
+        assert.stub.spy(vouchera.rename).was.called_with(id, 'bar')
     end)
 
     before_each('', function()
