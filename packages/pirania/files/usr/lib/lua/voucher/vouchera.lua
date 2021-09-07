@@ -39,13 +39,19 @@ function voucher_init(obj)
     if type(obj.mac) == "string" and #obj.mac ~= 17 then
         return nil, "invalid mac"
     end
+
     voucher.mac = obj.mac
 
     voucher.duration_m = obj.duration_m -- use nil to create a permanent voucher
 
-    voucher.expiration_date = obj.expiration_date
+    if not obj.creation_date then
+        return nil, "creation_date can't be nil"
+    end
+    voucher.creation_date = obj.creation_date
 
-    voucher.creation_date = obj.creation_date or os.time()
+    voucher.activation_date = obj.activation_date
+
+    voucher.expiration_date = obj.expiration_date
 
     voucher.mod_counter = obj.mod_counter or 1
 
@@ -80,7 +86,10 @@ function vouchera.init(cfg)
 end
 
 function vouchera.add(obj)
-    local voucher = voucher_init(obj)
+    if not obj.creation_date then
+        obj.creation_date = os.time()
+    end
+    local voucher, errmsg = voucher_init(obj)
     if vouchera.vouchers[obj.id] ~= nil then
         return nil, "voucher with same id already exists"
     end
@@ -88,7 +97,7 @@ function vouchera.add(obj)
         vouchera.vouchers[obj.id] = voucher
         return voucher
     end
-    return nil, "can't create voucher"
+    return nil, "can't create voucher: " .. tostring(errmsg)
 end
 
 function vouchera.get_by_id(id)

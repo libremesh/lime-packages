@@ -12,6 +12,8 @@ local pirania = test_utils.load_lua_file_as_function(test_file_name)
 
 local rpcd_call = test_utils.rpcd_call
 
+local current_time_s = 1008513158
+
 describe('pirania rpcd tests #piraniarpcd', function()
     local snapshot -- to revert luassert stubs and spies
     it('test list methods', function()
