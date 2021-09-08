@@ -57,8 +57,12 @@ function voucher_init(obj)
     voucher.tostring = function()
         local v = voucher
         local creation = os.date("%c", v.creation_date)
-        return(string.format('%s\t%s\t%s\t%s\t%s\t%s\t%s', v.id, v.name, v.code, v.mac or 'xx:xx:xx:xx:xx:xx',
-                             creation, tostring(v.duration_m), v.mod_counter))
+        local expiration = '           -            '
+        if v.expiration_date() then
+            expiration = os.date("%c", v.expiration_date())
+        end
+        return(string.format('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s', v.id, v.name, v.code, v.mac or 'xx:xx:xx:xx:xx:xx',
+                             creation, v.duration_m or 'perm', expiration, v.mod_counter))
     end
 
     voucher.expiration_date = function()

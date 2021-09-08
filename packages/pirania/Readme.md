@@ -40,11 +40,11 @@ Starts pirania. If you want pirania to automatically turn on use: `uci set piran
 
 Stops pirania. If you want pirania to stop automatically turning on use: `uci set pirania.base_config.enabled=0 && uci commit`
 
-#### `voucher show`
+#### `voucher list`
 
 Lists all the vouchers.
 
-### `voucher show_active`
+### `voucher list_active`
 
 List all the vouchers that are currently active.
 
@@ -54,10 +54,11 @@ Create a new voucher. This voucher will start deactivated and not bonded to any 
 
 Params:
 - `name`: a name used to identify the voucher
-- `secret-code`: the voucher secret (password)
-- `expiration-date`: date (unix time) that the voucher will expire
+- `duration-m`: duration of the voucher in minutes. If no value is provided a permanent voucher will be created.
+The duration takes affect when the voucher is activated.
 
-Ex.: `voucher add my-voucher-name voucher-secret 1619126965`
+To create a 60 minutes voucher
+Ex.: `voucher add my-voucher-name 60`
 
 ### `voucher activate`
 
@@ -123,7 +124,7 @@ files/
     /etc/init.d/pirania-uhttpd starts a uhttpd on port 59080 that replies any request with a redirect towards a preset URL
 
     /usr/lib/lua/voucher/ contains lua libraries used by /usr/bin/voucher
-    /usr/bin/voucher is a CLI to manage the db (has functions show, show_active, show_authorized_macs, add, activate, deactivate and is_mac_authorized)
+    /usr/bin/voucher is a CLI to manage the db (has functions list, list_active, show_authorized_macs, add, activate, deactivate and is_mac_authorized)
     /usr/bin/captive-portal sets up iptables rules to capture traffic
 
     /usr/libexec/rpcd/pirania ubus pirania API (this is used by the web frontend)
@@ -136,25 +137,25 @@ files/
 ## CLI usage example
 
 ```
-$ voucher show
-$ voucher add san-notebook mysecret $((`date +%s` + 1000))
-ok
-$ voucher show
-Qzt3WF	san-notebook	mysecret	xx:xx:xx:xx:xx:xx	Tue Dec 22 20:13:42 2020	nil	1
-$ voucher show_active
-$ voucher activate mysecret 00:11:22:33:44:55
+$ voucher list
+$ voucher add san-notebook 60
+Q3TJZS	san-notebook	ZRJUXN	xx:xx:xx:xx:xx:xx	Wed Sep  8 23:47:40 2021	60	           -            	1
+$ voucher list
+Q3TJZS	san-notebook	ZRJUXN	xx:xx:xx:xx:xx:xx	Wed Sep  8 23:47:40 2021	60	           -            	1
+$ voucher list_active
+$ voucher activate ZRJUXN 00:11:22:33:44:55
 Voucher activated!
-$ voucher show
-Qzt3WF	san-notebook	mysecret	00:11:22:33:44:55	Tue Dec 22 20:13:42 2020	nil	2
+$ voucher list
+Q3TJZS	san-notebook	ZRJUXN	00:11:22:33:44:55	Wed Sep  8 23:47:40 2021	60	Thu Sep  9 00:48:33 2021	2
 
-$ voucher show_active
-Qzt3WF	san-notebook	mysecret	00:11:22:33:44:55	Tue Dec 22 20:13:42 2020	nil	2
+$ voucher list_active
+Q3TJZS	san-notebook	ZRJUXN	00:11:22:33:44:55	Wed Sep  8 23:47:40 2021	60	Thu Sep  9 00:48:33 2021	2
 
-$ voucher deactivate Qzt3WF
+$ voucher deactivate Q3TJZS
 ok
-$ voucher show_active
-$ voucher show
-Qzt3WF	san-notebook	mysecret	xx:xx:xx:xx:xx:xx	Tue Dec 22 20:13:42 2020	nil	3
+$ voucher list_active
+$ voucher list
+Q3TJZS	san-notebook	ZRJUXN	xx:xx:xx:xx:xx:xx	Wed Sep  8 23:47:40 2021	60	           -            	3
 ```
 
 ## ubus API
