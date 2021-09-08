@@ -245,6 +245,27 @@ function vouchera.gen_code()
     return utils.random_string(vouchera.CODE_SIZE, function (c) return c:match('%u') ~= nil end)
 end
 
+function vouchera.list()
+    local vouchers = {}
+    for k, v in pairs(vouchera.vouchers) do
+        table.insert(vouchers, {
+            id=v.id,
+            name=v.name,
+            code=v.code,
+            mac=v.mac,
+            duration_m=v.duration_m,
+            creation_date=v.creation_date,
+            activation_date=v.activation_date,
+            expiration_date=v.expiration_date(),
+            is_active=vouchera.is_active(v),
+            permanent=not v.duration_m,
+            -- author_node / metadata
+            -- activation_deadline
+            })
+    end
+    return vouchers
+end
+
 vouchera.voucher = voucher_init
 
 return vouchera

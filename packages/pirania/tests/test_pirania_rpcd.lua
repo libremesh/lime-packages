@@ -42,6 +42,17 @@ describe('pirania rpcd tests #piraniarpcd', function()
         assert.stub.spy(vouchera.rename).was.called_with(id, 'bar')
     end)
 
+    it('test list vouchers', function()
+        local json_data = json.stringify({name='foo', duration_m=100, activation_deadline=nil, permanent = false, qty=5})
+        local response = rpcd_call(pirania, {'call', 'add_vouchers'}, json_data)
+
+        spy.on(vouchera, "list")
+        local response  = rpcd_call(pirania, {'call', 'list_vouchers'}, '{}')
+        assert.is.equal("ok", response.status)
+        assert.is.equal(5, #response.vouchers)
+        assert.stub.spy(vouchera.list).was.called()
+    end)
+
     before_each('', function()
         snapshot = assert:snapshot()
         stub(os, "time", function () return current_time_s end)
