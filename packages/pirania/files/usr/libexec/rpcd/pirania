@@ -56,8 +56,8 @@ end
 
 
 local function add_vouchers(msg)
-    local vouchers, errmsg = vouchera.create_vouchers(msg.name, msg.qty, msg.duration_m,
-                                                      msg.activation_deadline, msg.permanent)
+    local vouchers, errmsg = vouchera.create(msg.name, msg.qty, msg.duration_m,
+                                             msg.activation_deadline, msg.permanent)
     if vouchers then
         return utils.printJson({ status = 'ok', vouchers = vouchers})
     else
