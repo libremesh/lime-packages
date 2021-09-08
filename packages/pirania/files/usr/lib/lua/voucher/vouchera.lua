@@ -16,7 +16,7 @@ local voucher_metatable = {
     end
 }
 
---! obj attrs id, name, code, mac, duration_m, expiration_date, mod_counter, creation_date
+--! obj attrs id, name, code, mac, duration_m, mod_counter, creation_date, activation_date
 function voucher_init(obj)
     local voucher = {}
 
@@ -51,23 +51,27 @@ function voucher_init(obj)
 
     voucher.activation_date = obj.activation_date
 
-    voucher.expiration_date = obj.expiration_date
-
     voucher.mod_counter = obj.mod_counter or 1
 
     --! tostring must reflect all the state of a voucher (so vouchers can be compared reliably using tostring)
     voucher.tostring = function()
         local v = voucher
-        local expiration = os.date("%c", v.expiration_date) or ''
         local creation = os.date("%c", v.creation_date)
-        return(string.format('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s', v.id, v.name, creation, v.code, v.mac or 'xx:xx:xx:xx:xx:xx',
-                             expiration, tostring(v.duration_m), v.mod_counter))
+        return(string.format('%s\t%s\t%s\t%s\t%s\t%s\t%s', v.id, v.name, v.code, v.mac or 'xx:xx:xx:xx:xx:xx',
+                             creation, tostring(v.duration_m), v.mod_counter))
+    end
+
+    voucher.expiration_date = function()
+        local ret = nil
+        if voucher.duration_m and voucher.mac and voucher.activation_date then
+            ret = voucher.activation_date + voucher.duration_m * 60
+        end
+        return ret
     end
 
     setmetatable(voucher, voucher_metatable)
     return voucher
 end
-
 
 function vouchera.init(cfg)
     if cfg ~= nil then
@@ -104,7 +108,7 @@ function vouchera.get_by_id(id)
     return vouchera.vouchers[id]
 end
 
-function vouchera.create_vouchers(basename, qty, duration_m, activation_deadline, permanent)
+function vouchera.create_vouchers(basename, qty, duration_m, activation_deadline)
     local vouchers = {}
     for n=1, qty do
         local name
@@ -137,7 +141,7 @@ function vouchera.remove_locally(id)
 end
 
 --! Remove a voucher from the shared db.
---! Deactivates the voucher, sets the expiration_date to the current time and increment the mod_counter.
+--! Deactivates the voucher, sets the duration_m to 0 and increments the mod_counter.
 --! This will eventualy prune the voucher in all the dbs after PRUNE_OLDER_THAN_S seconds.
 --! It is important to maintain the "removed" (deactivated) voucher in the shared db for some time
 --! so that all nodes (even nodes that are offline when this is executed) have time to update locally
@@ -145,8 +149,8 @@ end
 function vouchera.remove_globally(id)
     local voucher = vouchera.vouchers[id]
     if voucher then
-        voucher.expiration_date = os.time()
         voucher.mac = nil
+        voucher.duration_m = 0
         voucher.mod_counter = voucher.mod_counter + 1
         return store.add_voucher(config.db_path, voucher, voucher_init)
     end
@@ -169,10 +173,7 @@ function vouchera.activate(code, mac)
     if voucher then
         function _update(v)
             v.mac = mac
-            --! If the voucher has a duration then create the expiration_date from it
-            if v.duration_m then
-               v.expiration_date = os.time() + v.duration_m * 60
-            end
+            v.activation_date = os.time()
         end
         modify_voucher_with_func(voucher.id, _update)
     end
@@ -208,7 +209,7 @@ end
 function vouchera.is_activable(code)
     for k, v in pairs(vouchera.vouchers) do
         if v.code == code and v.mac == nil then
-            if v.expiration_date ~= nil and v.expiration_date > os.time() then
+            if v.expiration_date() ~= nil and v.expiration_date() > os.time() then
                 return v
             end
             return v
@@ -221,7 +222,7 @@ function vouchera.is_active(voucher)
     if voucher.mac == nil then
         return false
     else
-        if voucher.expiration_date and voucher.expiration_date < os.time() then
+        if voucher.expiration_date() and voucher.expiration_date() < os.time() then
             return false
         end
     end
@@ -229,8 +230,8 @@ function vouchera.is_active(voucher)
 end
 
 function vouchera.should_be_pruned(voucher)
-    return type(voucher.expiration_date) == "number" and (
-           voucher.expiration_date <= (os.time() - vouchera.PRUNE_OLDER_THAN_S))
+    return type(voucher.expiration_date()) == "number" and (
+           voucher.expiration_date() <= (os.time() - vouchera.PRUNE_OLDER_THAN_S))
 end
 
 function vouchera.rename(id, new_name)
