@@ -71,6 +71,12 @@ local function rename(msg)
 end
 
 
+local function list_vouchers(msg)
+    local vouchers = vouchera.list()
+    return utils.printJson({ status = vouchers and 'ok' or 'error', vouchers = vouchers })
+end
+
+
 local methods = {
   status = { no_params = 0 },
   enable = { no_params = 0 },

@@ -212,6 +212,21 @@ describe('Vouchera tests #vouchera', function()
         assert.is.equal('foo-5', v5.name)
     end)
 
+    it('test list_vouchers', function()
+        vouchera.init()
+        local base_name = 'foo'
+        local qty = 5
+        local duration_m = 100
+        local created_vouchers = vouchera.create(base_name, qty, duration_m)
+
+        local listed = vouchera.list()
+        assert.is.equal(qty, #listed)
+        assert.is.equal(100, listed[1].duration_m)
+        assert.is.equal(100, listed[5].duration_m)
+        assert.is_false(listed[1].permanent)
+        assert.is_false(listed[1].is_active)
+    end)
+
     before_each('', function()
         snapshot = assert:snapshot()
         stub(os, "time", function () return current_time_s end)
