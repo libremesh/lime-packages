@@ -35,7 +35,7 @@ captive_portal.is_mac_authorized = function(mac)
     end
 end
 
-captive_portal.show_active = function()
+captive_portal.list_active = function()
     for _, voucher in pairs(vouchera.vouchers) do
         if vouchera.is_active(voucher) then
             print(voucher.tostring())
@@ -45,7 +45,7 @@ captive_portal.show_active = function()
 end
 
 -- List all vouchers
-captive_portal.show = function()
+captive_portal.list = function()
     for _, voucher in pairs(vouchera.vouchers) do
         print(voucher.tostring())
     end
@@ -60,9 +60,10 @@ captive_portal.add = function(name, duration_m)
     if type(duration_m) == "string" then
         duration_m = tonumber(duration_m)
     end
-    local v = {name=name, code=code, duration_m=duration_m}
-    res, msg = vouchera.add(v)
+    local qty = 1
+    res, msg = vouchera.create(name, qty, duration_m)
     if res ~= nil then
+        local voucher = vouchera.get_by_id(res[1].id)
         print(voucher.tostring())
         os.exit(0)
     else
