@@ -71,6 +71,7 @@ describe('Vouchera tests #vouchera', function()
         assert.is.equal('foo', voucher.name)
         assert.is.equal('secret_code', voucher.code)
         assert.is_nil(voucher.mac)
+        assert.is.equal(current_time_s, voucher.creation_date)
 
         v1 = vouchera.get_by_id('myvoucher')
         vouchera.init()
@@ -92,6 +93,7 @@ describe('Vouchera tests #vouchera', function()
         assert.is.not_false(vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff"))
 
         assert.is.equal(2, voucher.mod_counter)
+        assert.is.equal(current_time_s, voucher.activation_date)
         assert.is_false(vouchera.is_activable('secret_code'))
         assert.is_true(vouchera.is_active(voucher))
         assert.is_true(vouchera.is_mac_authorized("aa:bb:cc:dd:ee:ff"))
@@ -108,10 +110,9 @@ describe('Vouchera tests #vouchera', function()
         local expiration_date = os.time() + minutes * 60
 
         local voucher = vouchera.add({name='myvoucher', code='secret_code', duration_m=minutes})
-
-        assert.is_nil(voucher.expiration_date)
+        assert.is_nil(voucher.expiration_date())
         local voucher = vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff")
-        assert.is.equal(expiration_date, voucher.expiration_date)
+        assert.is.equal(expiration_date, voucher.expiration_date())
     end)
 
     it('deactivate vouchers', function()
@@ -146,10 +147,11 @@ describe('Vouchera tests #vouchera', function()
     it('add and remove globally vouchers', function()
         vouchera.init()
 
-        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code'})
+        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=100})
         assert.is_false(vouchera.should_be_pruned(voucher))
         assert.is_true(vouchera.remove_globally('myvoucher'))
-        assert.is.equal(os.time(), vouchera.get_by_id('myvoucher').expiration_date)
+        assert.is_false(vouchera.should_be_pruned(voucher))
+        assert.is.equal(0, vouchera.get_by_id('myvoucher').duration_m)
     end)
 
     it('test automatic pruning of old voucher', function()

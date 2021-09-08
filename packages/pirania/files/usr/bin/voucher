@@ -52,24 +52,18 @@ captive_portal.show = function()
     return true
 end
 
--- Renew voucher
-captive_portal.renew_voucher = function(id, new_expiration_date)
-    new_expiration_date = tonumber(new_expiration_date)
-    if new_expiration_date  then
-        return vouchera.update_expiration_date(id, new_expiration_date)
-    end
-end
-
 captive_portal.deactivate = function(id)
     return vouchera.deactivate(id)
 end
 
-captive_portal.add = function(name, code, expiration_date, duration_m)
-    local v = {name=name, code=code, expiration_date=tonumber(expiration_date),
-               duration=tonumber(duration_m)}
+captive_portal.add = function(name, duration_m)
+    if type(duration_m) == "string" then
+        duration_m = tonumber(duration_m)
+    end
+    local v = {name=name, code=code, duration_m=duration_m}
     res, msg = vouchera.add(v)
     if res ~= nil then
-        print('ok')
+        print(voucher.tostring())
         os.exit(0)
     else
         print(msg)
