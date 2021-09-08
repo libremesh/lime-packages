@@ -186,12 +186,12 @@ describe('Vouchera tests #vouchera', function()
         assert.is_not_nil(vouchera.get_by_id('myvoucher'))
     end)
 
-    it('test create_vouchers', function()
+    it('test create', function()
         vouchera.init()
         local base_name = 'foo'
         local qty = 1
         local duration_m = 100
-        local created_vouchers = vouchera.create_vouchers(base_name, qty, duration_m)
+        local created_vouchers = vouchera.create(base_name, qty, duration_m)
         assert.is.equal(#created_vouchers, qty)
         local v = vouchera.get_by_id(created_vouchers[1].id)
         assert.is.not_nil(v)
@@ -200,7 +200,7 @@ describe('Vouchera tests #vouchera', function()
 
         local qty = 5
         local duration_m = 100
-        local created_vouchers = vouchera.create_vouchers(base_name, qty, duration_m)
+        local created_vouchers = vouchera.create(base_name, qty, duration_m)
         assert.is.equal(#created_vouchers, qty)
 
         local v1 = vouchera.get_by_id(created_vouchers[1].id)

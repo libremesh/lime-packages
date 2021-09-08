@@ -108,7 +108,7 @@ function vouchera.get_by_id(id)
     return vouchera.vouchers[id]
 end
 
-function vouchera.create_vouchers(basename, qty, duration_m, activation_deadline)
+function vouchera.create(basename, qty, duration_m, activation_deadline)
     local vouchers = {}
     for n=1, qty do
         local name
