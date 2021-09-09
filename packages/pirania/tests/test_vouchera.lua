@@ -133,6 +133,21 @@ describe('Vouchera tests #vouchera', function()
         assert.is_false(vouchera.is_mac_authorized("aa:bb:cc:dd:ee:ff"))
     end)
 
+    it('test activation deadline', function()
+        vouchera.init()
+        deadline = current_time_s + 10
+        local voucher = vouchera.add({name='myvoucher', code='secret_code', duration_m=100,
+                                     activation_deadline=deadline})
+
+        assert.is.not_false(vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff"))
+
+        local voucher = vouchera.add({name='myvoucher2', code='secret_code2', duration_m=100,
+                                     activation_deadline=deadline})
+        stub(os, "time", function () return deadline + 1 end)
+        assert.is_false(vouchera.activate('secret_code2', "aa:bb:cc:dd:ee:ff"))
+
+    end)
+
     it('add and remove vouchers', function()
         vouchera.init()
 
@@ -200,11 +215,13 @@ describe('Vouchera tests #vouchera', function()
 
         local qty = 5
         local duration_m = 100
-        local created_vouchers = vouchera.create(base_name, qty, duration_m)
+        local deadline = current_time_s + 10
+        local created_vouchers = vouchera.create(base_name, qty, duration_m, deadline)
         assert.is.equal(#created_vouchers, qty)
 
         local v1 = vouchera.get_by_id(created_vouchers[1].id)
         assert.is.equal('foo-1', v1.name)
+        assert.is.equal(deadline, v1.activation_deadline)
         assert.is.equal('string', type(created_vouchers[1].code))
         assert.is.not_equal(created_vouchers[1].code, created_vouchers[2].code)
 

@@ -43,7 +43,7 @@ describe('pirania rpcd tests #piraniarpcd', function()
     end)
 
     it('test list vouchers', function()
-        local json_data = json.stringify({name='foo', duration_m=100, activation_deadline=nil, permanent = false, qty=5})
+        local json_data = json.stringify({name='foo', duration_m=100, activation_deadline=os.time()+10, permanent = false, qty=5})
         local response = rpcd_call(pirania, {'call', 'add_vouchers'}, json_data)
 
         spy.on(vouchera, "list")
