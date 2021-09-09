@@ -229,7 +229,7 @@ describe('Vouchera tests #vouchera', function()
         assert.is.equal('foo-5', v5.name)
     end)
 
-    it('test list_vouchers', function()
+    it('test list vouchers', function()
         vouchera.init()
         local base_name = 'foo'
         local qty = 5
