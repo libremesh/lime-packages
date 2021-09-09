@@ -29,7 +29,7 @@ Utiliza las reglas de iptables para filtrar el tráfico hacia fuera de la red me
 
 ## Vista general de la jerarquía y funciones de los archivos
 
-La siguiente lista tiene como objetivo explicar qué funcionalidad de Pirania está en qué archivo, para poder estudiarla, entenderla y modificar Pirania.
+La siguiente lista tiene como objetivo explicar qué funcionalidad de Pirania está en qué archivo, para poder estudiarla, entenderla y modificarla.
 
 
 
@@ -55,20 +55,20 @@ La siguiente lista tiene como objetivo explicar qué funcionalidad de Pirania es
 ### Captura de tráfico
 
 `/usr/bin/captive-portal` configura las reglas de iptables para captura de tráfico.
-Crea un grupo de reglas que se aplican a tres "ipsets" habilitados:
+Crea un grupo de reglas que se aplican a tres grupos de direcciones IPs (usando el módulo ipset de iptables) habilitados:
 * `pirania-auth-macs`: la lista de mac autorizadas. comienza vacía.
 * `pirania-allowlist-ipv4`: contiene los miembros de clientes permitidos `allowlist` en el archivo de configuración (`10.0.0.0/8`, `192.168.0.0/16`, `172.16.0.0/12``172.16.0.0/12`)
 * `pirania-allowlist-ipv6`: lo mismo que la lista anterior pero para ipv6
 
 Reglas:
 * los paquetes DNS que no vienen desde el conjunto de ipsets permitidos se redirigen hacia el portal cautivo DNS en el puerto 59053
-* los paquetes HTTP que no vienen desde el conjunto de ipsets permitidos se redirigen hacia el portal cautivo HTPP en el puerto 59053
+* los paquetes HTTP que no vienen desde el conjunto de ipsets permitidos se redirigen hacia el portal cautivo HTTP en el puerto 59053
 * los paquetes que entran dentro de los tres conjuntos ipsets son permitidos
 * el resto de paquetes son rechazados (se descarta el paquete y da una respuesta de error al cliente)
 
 ### Flujo HTTP
 
-`/etc/init.d/pirania-uhttpd` arranca un servidor HTTP (uhttpd) en el puerto 59080 que responde cualquier solicitud redireccionando a una URL predefinida (`pirania.base_config.portal_url`). Esto lo hace el siguiente scrip lua `/www/pirania-redirect/redirect`. Como `pirania.base_config.portal_url` está en la `allowlist` (http://minodo.info/portal/ por defecto) entonces el servidor HTTP "normal" que escucha en el puerto 80 responderá luego del redireccionamiento.
+`/etc/init.d/pirania-uhttpd` arranca un servidor HTTP (uhttpd) en el puerto 59080 que responde cualquier solicitud redireccionando a una URL predefinida (`pirania.base_config.portal_url`). Esto lo hace el siguiente script lua `/www/pirania-redirect/redirect`. Como `pirania.base_config.portal_url` está en la `allowlist` (http://minodo.info/portal/ por defecto) entonces el servidor HTTP "normal" que escucha en el puerto 80 responderá luego del redireccionamiento.
 
 Así, el flujo es:
 * navegas hacia una ip no permitida, por ejemplo: `http://orignal.org/baz/?foo=bar`
@@ -91,17 +91,20 @@ Así, el flujo es:
 
 #### Mostrar todos los pines
 
-`voucher show` 
+`voucher list` 
 
 #### Crear un pin
 
-`voucher add NOMBRE CLAVE FECHA-VENCIMIENTO`
+`voucher add NOMBRE DURACION-MINUTOS FECHA-LIMITE-ACTIVACION`
+
 
 #### Mostrar pines activos
 
+`voucher list_active`
 
 #### Activar un pin
 
+`voucher activate CONTRASEÑA MAC`
 
 #### Desactivar un pin
 
@@ -109,30 +112,27 @@ Así, el flujo es:
 
 ### Sesión de ejemplo de una sesión donde se utiliza
 
+Aclaración: normalmente el paso de activación se realiza desde el navegador web por la persona
+que utiliza el pin y no desde la terminal como se muestra a continuación.
 
 ```
-$ voucher show
-$ voucher add san-notebook mysecret $((`date +%s` + 1000))
-ok
-$ voucher show
-Qzt3WF	san-notebook	mysecret	xx:xx:xx:xx:xx:xx	Tue Dec 22 20:13:42 2020	nil	1
-$ voucher show_active
-$ voucher activate mysecret 00:11:22:33:44:55
+$ voucher list
+$ voucher add san-notebook 60
+Q3TJZS	san-notebook	ZRJUXN	xx:xx:xx:xx:xx:xx	Wed Sep  8 23:47:40 2021	60	           -            	1
+$ voucher list
+Q3TJZS	san-notebook	ZRJUXN	xx:xx:xx:xx:xx:xx	Wed Sep  8 23:47:40 2021	60	           -            	1
+$ voucher list_active
+$ voucher activate ZRJUXN 00:11:22:33:44:55
 Voucher activated!
-$ voucher show
-Qzt3WF	san-notebook	mysecret	00:11:22:33:44:55	Tue Dec 22 20:13:42 2020	nil	2
+$ voucher list
+Q3TJZS	san-notebook	ZRJUXN	00:11:22:33:44:55	Wed Sep  8 23:47:40 2021	60	Thu Sep  9 00:48:33 2021	2
 
-$ voucher show_active
-Qzt3WF	san-notebook	mysecret	00:11:22:33:44:55	Tue Dec 22 20:13:42 2020	nil	2
+$ voucher list_active
+Q3TJZS	san-notebook	ZRJUXN	00:11:22:33:44:55	Wed Sep  8 23:47:40 2021	60	Thu Sep  9 00:48:33 2021	2
 
-$ voucher deactivate Qzt3WF
+$ voucher deactivate Q3TJZS
 ok
-$ voucher show_active
-$ voucher show
-Qzt3WF	san-notebook	mysecret	xx:xx:xx:xx:xx:xx	Tue Dec 22 20:13:42 2020	nil	3
+$ voucher list_active
+$ voucher list
+Q3TJZS	san-notebook	ZRJUXN	xx:xx:xx:xx:xx:xx	Wed Sep  8 23:47:40 2021	60	           -            	3
 ```
-
-### Por hacer...
-
-* Exponer la creación del pin con la funcionalidad de duración (con respecto al momento de activación).
-* Tener una funcionalidad especial para usarse en casos de emergencia, según las necesidades identificadas por la comunidad.
