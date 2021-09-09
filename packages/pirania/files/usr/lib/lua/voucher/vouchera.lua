@@ -51,6 +51,8 @@ function voucher_init(obj)
 
     voucher.activation_date = obj.activation_date
 
+    voucher.activation_deadline = obj.activation_deadline
+
     voucher.mod_counter = obj.mod_counter or 1
 
     --! tostring must reflect all the state of a voucher (so vouchers can be compared reliably using tostring)
@@ -121,7 +123,8 @@ function vouchera.create(basename, qty, duration_m, activation_deadline)
         else
             name = basename .. "-" .. tostring(n)
         end
-        local v = {name=name, code=vouchera.gen_code(), duration_m=duration_m}
+        local v = {name=name, code=vouchera.gen_code(), duration_m=duration_m,
+                   activation_deadline=activation_deadline}
         local voucher, msg = vouchera.add(v)
         if voucher == nil then
             return nil, "Can't create voucher"
@@ -211,10 +214,12 @@ end
 
 --! Check if a code would be good to be activated but without activating it right away.
 function vouchera.is_activable(code)
+    local curr_time = os.time()
     for k, v in pairs(vouchera.vouchers) do
         if v.code == code and v.mac == nil then
-            if v.expiration_date() ~= nil and v.expiration_date() > os.time() then
-                return v
+            if (v.expiration_date() ~= nil and v.expiration_date() < curr_time) or
+               (v.activation_deadline ~= nil and v.activation_deadline < curr_time) then
+                return false
             end
             return v
         end
@@ -263,8 +268,7 @@ function vouchera.list()
             expiration_date=v.expiration_date(),
             is_active=vouchera.is_active(v),
             permanent=not v.duration_m,
-            -- author_node / metadata
-            -- activation_deadline
+            activation_deadline=v.activation_deadline,
             })
     end
     return vouchers

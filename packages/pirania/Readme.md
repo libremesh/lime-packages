@@ -56,6 +56,7 @@ Params:
 - `name`: a name used to identify the voucher
 - `duration-m`: duration of the voucher in minutes. If no value is provided a permanent voucher will be created.
 The duration takes affect when the voucher is activated.
+- `activation-deadline`: after this date (unix time) the voucher cannot be activated.
 
 To create a 60 minutes voucher
 Ex.: `voucher add my-voucher-name 60`

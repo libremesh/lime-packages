@@ -56,12 +56,12 @@ captive_portal.deactivate = function(id)
     return vouchera.deactivate(id)
 end
 
-captive_portal.add = function(name, duration_m)
+captive_portal.add = function(name, duration_m, activation_deadline)
     if type(duration_m) == "string" then
         duration_m = tonumber(duration_m)
     end
     local qty = 1
-    res, msg = vouchera.create(name, qty, duration_m)
+    res, msg = vouchera.create(name, qty, duration_m, activation_deadline)
     if res ~= nil then
         local voucher = vouchera.get_by_id(res[1].id)
         print(voucher.tostring())
