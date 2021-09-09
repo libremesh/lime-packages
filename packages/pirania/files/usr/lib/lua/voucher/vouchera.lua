@@ -29,6 +29,9 @@ function voucher_init(obj)
         return nil, "id must be a string"
     end
 
+    if type(obj.name) ~= "string" then
+        return nil, "name must be a string"
+    end
     voucher.name = obj.name
 
     if type(obj.code) ~= "string" then
@@ -127,7 +130,7 @@ function vouchera.create(basename, qty, duration_m, activation_deadline)
                    activation_deadline=activation_deadline}
         local voucher, msg = vouchera.add(v)
         if voucher == nil then
-            return nil, "Can't create voucher"
+            return nil, msg
         end
         table.insert(vouchers, n, {id=voucher.id, code=voucher.code})
     end
