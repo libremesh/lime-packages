@@ -67,24 +67,14 @@ config lime network
 #########################################################
 ### WiFi general options
 
-config lime wifi
+config lime wifi					# Settings in this section applies to all radios. 
 #	option country 'ES'				# set this to your location country code, for example in Spain, setting ES allows you to use channel 13
-	option channel_2ghz '11'			# May be either a list or a single option, in case of a list channel will be selected according to radio index
-#	option channel_5ghz '48'			# Check for allowed channels on https://en.wikipedia.org/wiki/List_of_WLAN_channels#regulatory_tables5.0ghz
-	list channel_5ghz '48'				# If channel is a list, each entry of the list is used for a different radio
-	list channel_5ghz '157'
-#	option htmode_2ghz 'HT20'
-	option htmode_5ghz 'HT40'
-	option distance_2ghz '100'			# Distance between the ap and the furthest client in meters, heavily affects performances
-	option distance_5ghz '1000'			# Distance between this node and the furthest connected node in meters, heavily affects performances
-#	list modes 'ap_2ghz'				# You can specify if the mode is applied to all radios or just some particular type, for example apname_2ghz and adhoc_5ghz to have an access point in 2ghz and the adhoc in 5ghz. These suffixes (_2ghz and _5ghz) work for all modes
-#	list modes 'apname_2ghz'			# For networks where only dual band routers are used, AP and APname can be on the 2.4 GHz radio...
-#	list modes 'ieee80211s_5ghz'			# ...while the 5 GHz radio can be reserved for the node-to-node connections
-	list modes 'ap'
-	list modes 'apname'
-	list modes 'ieee80211s'
-#	list modes 'adhoc'				# See below for adhoc configuration
-#	list modes 'client'				# See below for client configuration
+#	list modes 'ap'					# This mode setup an Access Point, with the same ssid in each node for roaming purposes.
+#	list modes 'apname'				# This mode setup an Access Point, with specific ssid for each node.
+#	list modes 'ieee80211s'			# Used for mesh links between nodes.
+	list modes 'adhoc'				# See below for adhoc configuration
+	list modes 'client'				# See below for client configuration
+#	option country 'ES'				# set this to your location country code, for example in Spain, setting ES allows you to use channel 13
 	option ap_ssid 'LibreMesh.org'			# set here your network name, **this value is required even if AP is not used**, as it is used for calculating fields with %Nn. Connect to this network to roam across APs.
 #	option ap_key 'SomeWPA2PskKey'
 #	option ap_encryption 'psk2'
@@ -93,14 +83,25 @@ config lime wifi
 #	option apname_encryption 'psk2'
 	option adhoc_ssid 'LiMe'			# SSID of the APs (nodes) when meshing in ad-hoc mode, i.e., the nodes form an IBSS. Not used when meshing in 802.11s (the default)
 	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
-	option adhoc_mcast_rate_2ghz '24000'
-	option adhoc_mcast_rate_5ghz '6000'
-	option ieee80211s_mcast_rate_2ghz '24000'
-	option ieee80211s_mcast_rate_5ghz '6000'
 	option ieee80211s_mesh_fwding '0'		# Settings needed only for 802.11s
 	option ieee80211s_mesh_id 'LiMe'		# Mesh cloud identifier (close to SSID in concept). Used by the nodes to join and participate in the mesh network.
 #	option ieee80211s_encryption 'psk2/aes'		# in order to use encrypted mesh, the wpad-mini package have to be replaced with wpad-mesh-wolfssl package either manually or by the selected network-profile
 #	option ieee80211s_key 'SomePsk2AESKey'
+
+#########################################################
+### WiFi specific band options
+config lime-wifi-band '5ghz' # Settings in this section applies for all radios in '5ghz' (or '2gzh') band. And take presedence over 'lime wifi' section 
+	list modes 'ieee80211s'	# For networks where only dual band routers are used, the 5 GHz radio can be reserved for the node-to-node connections
+	option channel '48' # May be either a list or a single option, in case of a list a channel for each radio will be selected according to radio index			
+						# Check for allowed channels on https://en.wikipedia.org/wiki/List_of_WLAN_channels#regulatory_tables5.0ghz
+	option distance '1000' # Distance between this node/ap and the furthest connected node/client in meters, heavily affects performances
+	option htmode 'HT40'
+	option adhoc_mcast_rate '6000'
+	option ieee80211s_mcast_rate '24000'
+
+config lime-wifi-band '2ghz'
+	list modes 'ap'				# For networks where only dual band routers are used,
+	list modes 'apname'			# 2.4Ghz radios can be reserved for access points.
 
 #########################################################
 ### Configuration directed to other UCI files
@@ -116,11 +117,11 @@ config generic_uci_config uhttpd_https
 ### WiFi interface specific options ( override defaults options )
 
 ## use radio99 only for mesh
-config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1. All the other non-specified options will be taken from the general "config lime wifi" section
+config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1. All the other non-specified options will be taken from "config lime-wifi-band" and the general "config lime wifi" sections
 	list modes 'ieee80211s'
 
 ## change ssid for radio99
-config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1. All the other non-specified options will be taken from the general "config lime wifi" section
+config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1. All the other non-specified options will be taken from "config lime-wifi-band" and the general "config lime wifi" sections
 	option ap_ssid 'Special'
 
 ## disable lime-config for radio99
@@ -134,13 +135,12 @@ config wifi radio99 # you should ensure that the chosen radio name exists, for e
 	option txpower '14' # For knowing the current txpower, use the "iwinfo" command.
 
 ## set radio99 to do only adhoc and set the channel
-config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1. All the other non-specified options will be taken from the general "config lime wifi" section
+config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1. All the other non-specified options will be taken from "config lime-wifi-band" and the general "config lime wifi" sections
 	list modes 'adhoc'
 	option channel '1'
 	option adhoc_ssid 'LiMe'			# Parametrizable with %M, %H
 	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
-	option adhoc_mcast_rate_2ghz '24000'
-	option adhoc_mcast_rate_5ghz '6000'
+	option adhoc_mcast_rate '24000'
 
 #########################################################
 # If you want to use Wifi client mode just to connect to an AP offering internet
@@ -149,7 +149,7 @@ config wifi radio99 # you should ensure that the chosen radio name exists, for e
 # WAN port, you will need also the third piece of configuration for disabling it.
 
 ## set radio99 as client of access point for internet access, both the following "wifi" and "net" sections are required
-config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1. All the other non-specified options will be taken from the general "config lime wifi" section
+config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1. All the other non-specified options will be taken from "config lime-wifi-band" and the general "config lime wifi" sections
 	list modes 'client'
 	option channel 'auto'
 	option client_ssid 'SomeWiFiNetwork'
@@ -187,7 +187,7 @@ config net wirelessAPbackbone
 	list protocols 'batadv:%N1'
 
 ## set radio99 as backbone client of a backbone access point (not for users connection, specific AP configuration reported above) using Batman-adv and Babeld, both the following "wifi" and "net" sections are required on the client
-config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1. All the other non-specified options will be taken from the general "config lime wifi" section
+config wifi radio99 # you should ensure that the chosen radio name exists, for example with "wifi status" command, likely radio0 or radio1. All the other non-specified options will be taken from "config lime-wifi-band" and the general "config lime wifi" sections
 	list modes 'client'
 	option channel '11'
 	option client_ssid 'backbone/LiMe-ddeeff'	# specify here the name of the specifically configured backbone AP interface you want to connect to
