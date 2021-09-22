@@ -129,7 +129,6 @@ function wireless.configure()
 				if type(channel) == "table" then
 					channel = channel[1 + radio.per_band_index % #channel]
 				end
-				-- Checkout what happens with option channel 1 for instance.
 			else
 				channel = options["channel"] or "auto"
 			end
@@ -147,8 +146,6 @@ function wireless.configure()
 
 			for _,modeName in pairs(options["modes"]) do
 				local args = {}
-				-- modeSuffix = utils.split(modeName, "_")[2]	
-				-- modeName = utils.split(modeName, "_")[1]	
 				local mode = require("lime.mode."..modeName)
 
 				-- gather mode specific configs (eg ieee80211s_mcast_rate_5ghz)
