@@ -4,7 +4,7 @@ local config = require 'lime.config'
 local wireless = require 'lime.wireless'
 local uci = config.get_uci_cursor()
 
-local uci_files = { config.UCI_NODE_NAME, config.UCI_COMMUNITY_NAME }
+local uci_files = { config.UCI_COMMUNITY_NAME, config.UCI_NODE_NAME  }
 
 local function move_modes_to_specific_band(file_name)
     local modes = uci:get(file_name, 'wifi', 'modes') or {}
@@ -20,9 +20,6 @@ local function move_modes_to_specific_band(file_name)
             table.insert(modes_5ghz, mode_name)
         end
     end
-    -- If band specific modes were left undefined, then general modes would be used.
-    -- The mode 'manual' is used to prevent this behaviour (missing empty list configs),
-    -- and mantain consistency with previous config setup. 
     modes_2ghz = utils.tableLength(modes_2ghz) > 0 and modes_2ghz or {'manual'}
     modes_5ghz = utils.tableLength(modes_5ghz) > 0 and modes_5ghz or {'manual'}
     uci:set(file_name, '2ghz', 'lime-wifi-band')
@@ -45,19 +42,6 @@ local function move_restof_to_specific_band(file_name)
         end
     end
 end
-
--- local function modes_up_to_prev_level(file_name)
---     local modes = {}
---     local default_modes = uci:get(config.UCI_DEFAULTS_NAME, 'wifi', 'modes') 
---     local community_modes = uci:get(config.UCI_COMMUNITY_NAME, 'wifi', 'modes')
---     if file_name == config.UCI_NODE_NAME then
---         modes = community_modes or default_modes
---     end
---     if file_name == config.UCI_COMMUNITY_NAME then
---         modes = default_modes
---     end
---     return modes
--- end
 
 local function migrate_file(file_name)
     move_modes_to_specific_band(file_name)
