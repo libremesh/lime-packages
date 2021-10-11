@@ -210,37 +210,71 @@ function network.scandevices()
 	local wireless = require("lime.wireless")
 
 	function dev_parser(dev)
-		if dev == nil then return end
+		if dev == nil then
+			utils.log("network.scandevices.dev_parser got nil device")
+			return
+		end
 
 		if dev:match("^eth%d+$") then
 			devices[dev] = devices[dev] or {}
+			utils.log( "network.scandevices.dev_parser found plain Ethernet " ..
+			           "device %s", dev )
 		end
 
 		if dev:match("^eth%d+%.%d+$") then
 			local rawif = dev:match("^eth%d+")
 			devices[rawif] = { nobridge = true }
 			devices[dev] = {}
+			utils.log( "network.scandevices.dev_parser found vlan device %s " ..
+			           "and marking %s as nobridge", dev, rawif )
 		end
 
 		if dev:match("^wlan%d+"..wireless.wifiModeSeparator.."%w+$") then
 			devices[dev] = {}
+			utils.log( "network.scandevices.dev_parser found WiFi device %s",
+			           dev )
 		end
 	end
 
 	function owrt_ifname_parser(section)
 		local ifn = section["ifname"]
-		if ( type(ifn) == "string" ) then dev_parser(ifn) end
-		if ( type(ifn) == "table" ) then for _,v in pairs(ifn) do dev_parser(v) end end
+		if ( type(ifn) == "string" ) then
+			utils.log( "network.scandevices.owrt_ifname_parser found ifname %s",
+			           ifn )
+			dev_parser(ifn)
+		end
+		if ( type(ifn) == "table" ) then
+			for _,v in pairs(ifn) do
+				utils.log( "network.scandevices.owrt_ifname_parser found " ..
+				           "ifname %s in compound interface", v )
+				dev_parser(v)
+			end
+		end
 	end
 
 	function owrt_device_parser(section)
-		dev_parser(section["name"])
-		dev_parser(section["ifname"])
+		local created_device = section["name"]
+		local base_interface = section["ifname"]
+		utils.log( "network.scandevices.owrt_device_parser found base "..
+		           "interface %s and derived device %s", base_interface,
+		           created_device )
+		dev_parser(created_device)
+		dev_parser(base_interface)
 	end
 
 	function owrt_switch_vlan_parser(section)
-		local kernel_visible = section["ports"]:match("0t")
-		if kernel_visible then switch_vlan[section["vlan"]] = section["device"] end
+		--! Gio 2021/10/11: as of today OpenWrt still doesn't provide a way to
+		--! programmatically know if a switch vlan interface is visible to the
+		--! kernel via a tagged vlan, the assumption we made in the past that 0t
+		--! was almost always the switch port connected to the CPU become
+		--! problematic due to LibreRouter being wired differently, so ATM we
+		--! just do not filter switch vlan anymore to avoid elegible interfaces
+		--! like LibreRouter eth1.2 being ignored. Corner cases where an
+		--! interface must be ignored or need special config can still be
+		--! handled via specific config sections.
+		--! local kernel_visible = section["ports"]:match("0t")
+		--! if kernel_visible then !$ end
+		switch_vlan[section["vlan"]] = section["device"] 
 	end
 
 	--! Scrape from uci wireless
@@ -258,8 +292,11 @@ function network.scandevices()
 	stdOut:close()
 
 	--! Scrape switch_vlan devices from /sys/class/net/
-	local stdOut = io.popen("ls -1 /sys/class/net/ | grep -x 'eth[0-9][0-9]*\.[0-9][0-9]*'")
-	for dev in stdOut:lines() do if switch_vlan[dev:match("%d+$")] then dev_parser(dev) end end
+	local stdOut = io.popen( "ls -1 /sys/class/net/ | " ..
+	                         "grep -x 'eth[0-9][0-9]*\.[0-9][0-9]*'" )
+	for dev in stdOut:lines() do
+		if switch_vlan[dev:match("%d+$")] then dev_parser(dev) end
+	end
 	stdOut:close()
 
 	return devices
