@@ -92,11 +92,11 @@ end
 
 function babeld.setup_interface(ifname, args)
 	if not args["specific"] and ifname:match("^wlan%d+.ap") then
-		utils.log("lime.proto.babeld.setup_interface(...)", ifname, "ignored")
+		utils.log("lime.proto.babeld.setup_interface(%s, ...) ignored", ifname)
 		return
 	end
 
-	utils.log("lime.proto.babeld.setup_interface(...)", ifname)
+	utils.log("lime.proto.babeld.setup_interface(%s, ...)", ifname)
 
 	local vlanId = args[2] or 17
 	local vlanProto = args[3] or "8021ad"
