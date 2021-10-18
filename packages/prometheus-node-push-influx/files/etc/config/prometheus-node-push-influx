@@ -1,0 +1,11 @@
+#config prometheus-node-push-influx 'main'
+#	option disabled '1'
+#	option server_address 'victoriametrics.server'
+#	option server_port '8428' # this example will POST to http://victoriametrics.server:8428/write
+#	option interval '30'      # every 30 seconds
+
+#config prometheus-node-push-influx 'backup'
+#	option disabled '1'
+#	option server_address 'influxdb.server'
+#	option server_port '8086' # this example will POST to http://influxdb.server:8086/write
+#	option interval '30'      # every 30 seconds

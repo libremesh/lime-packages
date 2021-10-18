@@ -1,0 +1,186 @@
+#!/usr/bin/lua
+
+-- Metrics web server
+
+-- Copyright (c) 2016 Jeff Schornick <jeff@schornick.org>
+-- Copyright (c) 2015 Kevin Lyda
+-- Licensed under the Apache License, Version 2.0
+
+socket = require("socket")
+
+-- load LiMe config ap_ssid only if it exists. don't fail otherwise
+local status, lime_config = pcall(require, 'lime.config')
+if status then
+  ap_ssid = lime_config.get("wifi", "ap_ssid")
+end
+
+-- common labels
+
+local ubus = require "ubus"
+local u = ubus.connect()
+local domain = u:call("uci", "get", {config = "dhcp", section = "@dnsmasq[0]", option = "domain"}).value
+local host = u:call("system", "board", {}).hostname
+local hostmac = u:call("network.device", "status", {name = "br-lan"}).macaddr
+u = nil
+ubus = nil
+
+function debug(...)
+  print(socket.gettime(), unpack(arg))
+end
+
+-- Parsing
+
+function space_split(s)
+  local elements = {}
+  for element in s:gmatch("%S+") do
+    table.insert(elements, element)
+  end
+  return elements
+end
+
+function get_contents(filename)
+  local f = io.open(filename, "rb")
+  local contents = ""
+  if f then
+    contents = f:read "*a"
+    f:close()
+  end
+
+  return contents
+end
+
+-- Metric printing
+
+function print_metric(metric, labels, value)
+  local label_string = ""
+  if ap_ssid then
+    label_string = label_string .. 'ap_ssid' .. '=' .. ap_ssid .. ','
+  end
+  label_string = label_string .. 'domain' .. '=' .. domain .. ','
+  label_string = label_string .. 'host' .. '=' .. host .. ','
+  label_string = label_string .. 'hostmac' .. '=' .. hostmac .. ','
+  if labels then
+    for label,value in pairs(labels) do
+      label_string =  label_string .. string.gsub(label, "[ ,=]", "\\%0") .. '=' .. string.gsub(value, "[ ,=]", "\\%0") .. ','
+    end
+  end
+  label_string = string.sub(label_string, 1, -2)
+  local metric_prefix = metric:gsub("_.*", "")
+  local metric_suffix = metric:gsub("[^_]+_", "", 1)
+  output(string.format("%s,%s %s=%s", metric_prefix, label_string, metric_suffix, value))
+end
+
+function metric(name, mtype, labels, value)
+  local outputter = function(labels, value)
+    print_metric(name, labels, value)
+  end
+  if value then
+    outputter(labels, value)
+  end
+  return outputter
+end
+
+function timed_scrape(collector)
+  local start_time = socket.gettime()
+  local success = 1
+  local status, err = pcall(collector.scrape)
+  if not status then
+    success = 0
+    print(err)
+  end
+  return (socket.gettime() - start_time), success, err
+end
+
+function run_all_collectors(collectors)
+  local metric_duration = metric("node_scrape_collector_duration_seconds", "gauge")
+  local metric_success = metric("node_scrape_collector_success", "gauge")
+  for _,cname in pairs(collectors) do
+    if col_mods[cname] ~= nil then
+      local duration, success, err = timed_scrape(col_mods[cname])
+      local labels = {collector=cname}
+      metric_duration(labels, duration)
+      metric_success(labels, success)
+      debug('collector', cname, duration)
+      if err and string.match(err, "interrupted!") then os.exit() end
+    end
+  end
+end
+
+function push_loop()
+  local tcp, status, err
+  local start_time = socket.gettime()
+
+  while 1 do
+    local lastrun_time = socket.gettime()
+    local drift = (lastrun_time - start_time) % interval
+
+    if tcp then tcp:close() end
+    tcp = assert(socket.tcp6())
+    tcp:settimeout(10) -- seconds
+    debug("### try connecting to "..server_address.." over IPv6")
+    status, err = tcp:connect(server_address, server_port)
+    if not status then -- retry falling back to ipv4
+      debug("tcp status:", status, "err:", err)
+      debug("# retry connecting to "..server_address.." over IPv4")
+      tcp = assert(socket.tcp())
+      tcp:settimeout(10) -- seconds
+      status, err = tcp:connect(server_address, server_port)
+    end
+    debug("tcp status:", status, "err:", err)
+
+    if status then
+      tcp:send("POST /write HTTP/1.1\n")
+      tcp:send("User-Agent: prometheus-node-push-influx\n")
+      tcp:send("Host: "..server_address..":"..server_port.."\n")
+      tcp:send("Content-Type: application/x-www-form-urlencoded\n")
+      tcp:send("Transfer-Encoding: chunked\n")
+      tcp:send("\n")
+      local collectors_output = ""
+      output = function (str) collectors_output = collectors_output..str.."\n" end
+      debug("run_all_collectors...")
+      run_all_collectors(col_names)
+      debug("run_all_collectors done: "..string.len(collectors_output).." bytes to send")
+      tcp:send(string.len(collectors_output).."\n")
+      status, err, last_byte = tcp:send(collectors_output)
+      tcp:send("0\n\n")
+      debug('### sent: ', status, err, last_byte)
+      tcp:close()
+    end
+
+    repeat
+      socket.sleep((lastrun_time + interval - drift) - socket.gettime())
+    until (lastrun_time + interval - drift) < socket.gettime()
+  end
+  tcp:close()
+end
+
+-- Main program
+
+for k,v in ipairs(arg) do
+  if (v == "-s") or (v == "--server") then
+    server_address = arg[k+1]
+  end
+  if (v == "-p") or (v == "--port") then
+    server_port = arg[k+1]
+  end
+  if (v == "-i") or (v == "--interval") then
+    interval = arg[k+1]
+  end
+end
+
+col_mods = {}
+col_names = {}
+ls_fd = io.popen("ls -1 /usr/lib/lua/prometheus-collectors/*.lua")
+for c in ls_fd:lines() do
+  c = c:match("([^/]+)%.lua$")
+  col_mods[c] = require('prometheus-collectors.'..c)
+  col_names[#col_names+1] = c
+end
+ls_fd:close()
+
+if server_address and server_port and interval then
+  push_loop()
+else
+  output = print
+  run_all_collectors(col_names)
+end
