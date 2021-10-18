@@ -1,0 +1,25 @@
+#!/bin/sh
+# this script looks up the IP address of system.@system[0].log_host
+# if the DNS resolves succesfully (an IP address is found)
+# and that IP address is different from current system.@system[0].log_ip
+# it will set system.@system[0].log_ip to the new IP address
+# and reload log daemon so that it reconnects to the new IP.
+# sleep and repeat, every 5 minutes.
+
+ip_from_host() {
+  nslookup "$1" | grep 'Address 1' | awk '{print $3}'
+}
+
+while true; do
+  log_host="$(uci -q get system.@system[0].log_host)"
+  log_ip_old="$(uci -q get system.@system[0].log_ip)"
+  log_ip_new="$(ip_from_host "$log_host")"
+
+  if [ -n "$log_ip_new" ] && [ "$log_ip_old" != "$log_ip_new" ]; then
+    uci set system.@system[0].log_ip="$log_ip_new"
+    uci commit system
+    /etc/init.d/log reload
+  fi
+
+  sleep 300  # 5 minutes
+done
