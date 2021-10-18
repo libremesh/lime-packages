@@ -1,0 +1,23 @@
+{
+    "lime-app": {
+        "description": "lime-app public access",
+        "read": {
+            "ubus": {
+                "wireless-service": ['*'],
+            }
+        }
+    },
+    "root": {
+		"description": "root access only",
+		"read": {
+			"ubus": {
+                "wireless-service-admin": [ "*" ]
+			}
+		},
+		"write": {
+			"ubus": {
+                "wireless-service-admin": [ "*" ]
+			}
+		}
+	}
+}
