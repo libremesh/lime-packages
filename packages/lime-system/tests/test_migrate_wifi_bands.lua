@@ -75,6 +75,8 @@ describe('migrate-wifi-bands-cfg script #migratewifibands', function()
         assert.are.same({ 'manual' }, community_5ghz['modes'])
         local community_2ghz = uci:get_all(config.UCI_COMMUNITY_NAME, '2ghz')
         assert.are.same({ 'ap', 'apname'}, community_2ghz['modes'])
+        local node_5ghz = uci:get_all(config.UCI_NODE_NAME, '5ghz')
+        assert.is.equal(nil, node_5ghz)
     end)
 
     it('migrates other configs such as channel and htmode to lime-wifi-band uci sections', function()

@@ -7,7 +7,10 @@ local uci = config.get_uci_cursor()
 local uci_files = { config.UCI_COMMUNITY_NAME, config.UCI_NODE_NAME  }
 
 local function move_modes_to_specific_band(file_name)
-    local modes = uci:get(file_name, 'wifi', 'modes') or {}
+    local modes = uci:get(file_name, 'wifi', 'modes')
+    if modes == nil then
+        return
+    end
     local modes_2ghz = {}
     local modes_5ghz = {}
     for _, mode in pairs(modes) do
