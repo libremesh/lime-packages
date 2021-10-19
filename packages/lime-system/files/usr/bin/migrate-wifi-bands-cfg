@@ -1,0 +1,62 @@
+#!/usr/bin/lua
+
+local config = require 'lime.config'
+local wireless = require 'lime.wireless'
+local uci = config.get_uci_cursor()
+
+local uci_files = { config.UCI_COMMUNITY_NAME, config.UCI_NODE_NAME  }
+
+local function move_modes_to_specific_band(file_name)
+    local modes = uci:get(file_name, 'wifi', 'modes')
+    if modes == nil then
+        return
+    end
+    local modes_2ghz = {}
+    local modes_5ghz = {}
+    for _, mode in pairs(modes) do
+        local mode_name = utils.split(mode, '_')[1]
+        local mode_band = utils.split(mode, '_')[2]
+        if mode_band == nil or mode_band == '2ghz' then
+            table.insert(modes_2ghz, mode_name)
+        end
+        if mode_band == nil or mode_band == '5ghz' then
+            table.insert(modes_5ghz, mode_name)
+        end
+    end
+    modes_2ghz = utils.tableLength(modes_2ghz) > 0 and modes_2ghz or {'manual'}
+    modes_5ghz = utils.tableLength(modes_5ghz) > 0 and modes_5ghz or {'manual'}
+    uci:set(file_name, '2ghz', 'lime-wifi-band')
+    uci:set(file_name, '2ghz', 'modes', modes_2ghz)
+    uci:set(file_name, '5ghz', 'lime-wifi-band')
+    uci:set(file_name, '5ghz', 'modes', modes_5ghz)
+    uci:delete(file_name, 'wifi', 'modes')
+end
+
+
+local function move_restof_to_specific_band(file_name)
+    local options = uci:get_all(file_name, 'wifi')
+    for key, value in pairs(options) do
+        local band_name = utils.split(key, '_')[2]
+        if band_name == '2ghz' or band_name == '5ghz' then
+            uci:set(file_name, band_name, 'lime-wifi-band')
+            local derived_key = utils.split(key, '_')[1]
+            uci:set(file_name, band_name, derived_key, value)
+            uci:delete(file_name, 'wifi', key)
+        end
+    end
+end
+
+local function migrate_file(file_name)
+    move_modes_to_specific_band(file_name)
+    move_restof_to_specific_band(file_name)
+    local changes = uci:changes()
+    if utils.tableLength(changes) > 0 then
+        uci:commit(file_name)
+    end
+end
+
+for _, file_name in pairs(uci_files) do
+    migrate_file(file_name)
+end
+
+print('migrate-wifi-modes: migration finished, now run lime-config')
