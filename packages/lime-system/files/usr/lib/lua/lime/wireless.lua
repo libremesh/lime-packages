@@ -102,17 +102,6 @@ function wireless.createBaseWirelessIface(radio, mode, nameSuffix, extras)
 	return uci:get_all("wireless", wirelessInterfaceName)
 end
 
-local function getFreqSuffixOption(param, freqSuffix, specRadioOptions, options)
-    local value
-    if specRadioOptions then
-        value = specRadioOptions[param..freqSuffix] or specRadioOptions[param]
-    end
-    if not value then
-        value = options[param..freqSuffix] or options[param]
-    end
-    return value
-end
-
 function wireless.configure()
 	local specificRadios = {}
 	config.foreach("wifi", function(radio)
@@ -122,59 +111,41 @@ function wireless.configure()
 	local allRadios = wireless.scandevices()
 	for _,radio in pairs(allRadios) do
 		local radioName = radio[".name"]
-		local specRadio = specificRadios[radioName]
-		local modes = config.get("wifi", "modes", {})
+		local radioBand = wireless.is5Ghz(radioName) and '5ghz' or '2ghz'
+		local radioOptions = specificRadios[radioName] or {}
+		local bandOptions = config.get_all(radioBand) or {}
 		local options = config.get_all("wifi")
-
-		if specRadio then
-			modes = specRadio["modes"] or modes
-			options = utils.tableMelt(options, specRadio)
-		end
+		
+		options = utils.tableMelt(options, bandOptions)
+		options = utils.tableMelt(options, radioOptions)
 
 		--! If manual mode is used toghether with other modes it results in an
 		--! unpredictable behaviour
-		local freqSuffix
-		local ignoredSuffix
-		local distance
-		local htmode
-		local modeSuffix
-		if modes[1] ~= "manual" then
-			if wireless.is5Ghz(radioName) then
-				freqSuffix = "_5ghz"
-				ignoredSuffix = "_2ghz"
-			else
-				freqSuffix = "_2ghz"
-				ignoredSuffix = "_5ghz"
-			end
-			local distance = getFreqSuffixOption("distance", freqSuffix, specRadio, options)
-			local htmode = getFreqSuffixOption("htmode", freqSuffix, specRadio, options)
-
+		if options["modes"][1] ~= "manual" then
 			--! fallback to "auto" in client mode
 			local channel
-			if modes[1] ~= "client" then
-				channel = getFreqSuffixOption("channel", freqSuffix, specRadio, options)
+			if options["modes"][1] ~= "client" then
+				channel = options["channel"]
 				if type(channel) == "table" then
 					channel = channel[1 + radio.per_band_index % #channel]
 				end
 			else
-				channel = specRadio["channel"..freqSuffix] or specRadio["channel"] or "auto"
+				channel = options["channel"] or "auto"
 			end
 
 			local uci = config.get_uci_cursor()
 			uci:set("wireless", radioName, "disabled", 0)
-			uci:set("wireless", radioName, "distance", distance)
+			uci:set("wireless", radioName, "distance", options["distance"])
 			uci:set("wireless", radioName, "noscan", 1)
 			uci:set("wireless", radioName, "channel", channel)
 			if options["country"] then uci:set("wireless", radioName, "country", options["country"]) end
 			if options["legacy_rates"] and not wireless.is5Ghz(radioName) then uci:set("wireless", radioName, "legacy_rates", options["legacy_rates"]) end
 			if options["txpower"] then uci:set("wireless", radioName, "txpower", options["txpower"]) end
-			if htmode then uci:set("wireless", radioName, "htmode", htmode) end
+			if options["htmode"] then uci:set("wireless", radioName, "htmode", options["htmode"]) end
 			uci:save("wireless")
 
-			for _,modeName in pairs(modes) do
+			for _,modeName in pairs(options["modes"]) do
 				local args = {}
-				modeSuffix = utils.split(modeName, "_")[2]	
-				modeName = utils.split(modeName, "_")[1]	
 				local mode = require("lime.mode."..modeName)
 
 				-- gather mode specific configs (eg ieee80211s_mcast_rate_5ghz)
@@ -187,10 +158,9 @@ function wireless.configure()
 					                and (not key:match("legacy_rates"))
 					                and (not key:match("txpower"))
 					                and (not key:match("htmode"))
-					                and (not (wireless.isMode(keyPrefix) and keyPrefix ~= modeName))
-					                and (not key:match(ignoredSuffix)) )
+					                and (not (wireless.isMode(keyPrefix) and keyPrefix ~= modeName)))
 					if isGoodOption then
-						local nk = key:gsub("^"..modeName.."_", ""):gsub(freqSuffix.."$", "")
+						local nk = key:gsub("^"..modeName.."_", "")
 						if nk == "ssid" then
 							value = utils.applyHostnameTemplate(value)
 							value = utils.applyMacTemplate16(value, network.primary_mac())
@@ -200,10 +170,7 @@ function wireless.configure()
 					end
 				end
 
-				if ( modeSuffix == nil ) or ("_"..modeSuffix == freqSuffix) then
-					mode.setup_radio(radio, args)
-				end
-
+				mode.setup_radio(radio, args)
 			end
 		end
 	end
