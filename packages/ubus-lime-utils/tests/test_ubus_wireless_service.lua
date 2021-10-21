@@ -17,10 +17,10 @@ local snapshot -- to revert luassert stubs and spies
 
 describe('ubus_wireless_service_admin #ubus_wireless_service', function()
 
-    it('get_wifi_data wires to with get_access_points_data lib', function()
+    it('get_access_points_data wires to get_access_points_data lib', function()
         local mocked_data = { some_data = "some_value" }
         stub(wireless, "get_access_points_data", function () return mocked_data end)
-        local response = rpcd_call(wireless_service_admin, {'call', 'get_wifi_data'}, '')
+        local response = rpcd_call(wireless_service_admin, {'call', 'get_access_points_data'}, '')
         assert.stub(wireless.get_access_points_data).was.called_with(true)
         assert.is_equal("ok", response.status)
         assert.is_equal(mocked_data.some_data, response.some_data)

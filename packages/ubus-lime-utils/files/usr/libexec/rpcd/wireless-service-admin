@@ -16,7 +16,7 @@ if not conn then
     error("Failed to connect to ubus")
 end
 
-local function get_wifi_data()
+local function get_access_points_data()
     local data = wireless.get_access_points_data(true)
     data.status = "ok"
     return utils.printJson(data)
@@ -33,7 +33,7 @@ local function set_community_ap(msg)
 end
 
 local methods = {
-    get_wifi_data = { no_params = 0 },
+    get_access_points_data = { no_params = 0 },
     set_node_ap = { has_password = 'value', password = 'value' },
     set_community_ap = { enabled = 'value' }
 }
@@ -45,7 +45,7 @@ end
 if arg[1] == 'call' then
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
-    if      arg[2] == 'get_wifi_data' then get_wifi_data(msg)
+    if      arg[2] == 'get_access_points_data' then get_access_points_data(msg)
     elseif  arg[2] == 'set_node_ap' then set_node_ap(msg)
     elseif  arg[2] == 'set_community_ap' then set_community_ap(msg)
     else utils.printJson({ error = "Method not found" })
