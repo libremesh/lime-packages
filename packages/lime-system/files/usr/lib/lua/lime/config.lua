@@ -189,7 +189,7 @@ function config.main()
 
 	--! Populate the default template configs if lime-node and lime-community
 	--! are not found in /etc/config
-	for _, cfg_name in pairs({config.UCI_COMMUNITY_NAME, config.UCI_MAC_NAME, config.UCI_NODE_NAME}) do
+	for _, cfg_name in pairs({config.UCI_COMMUNITY_NAME, config.UCI_NODE_NAME}) do
         local lime_path = config.uci:get_confdir() .. "/" .. cfg_name
 		local cf = io.open(lime_path)
 		if not cf then
