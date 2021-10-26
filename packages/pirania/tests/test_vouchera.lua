@@ -4,12 +4,7 @@ local fs = require("nixio.fs")
 local config = require('voucher.config')
 require('packages/pirania/tests/pirania_test_utils').fake_for_tests()
 local vouchera = require('voucher.vouchera')
-local utils = require('voucher.utils')
-
-
-function utils.log(...)
-    print(...)
-end
+local utils = require('lime.utils')
 
 local current_time_s = 1008513158
 
@@ -53,6 +48,12 @@ describe('Vouchera tests #vouchera', function()
         local voucher_j = vouchera.voucher({name='myvoucher', code='secret_code', id='bar', duration_m=100, creation_date=current_time_s})
         assert.is.equal(voucher_h, voucher_i)
         assert.is.not_equal(voucher_h, voucher_j)
+    end)
+
+    it('test add voucher', function()
+        vouchera.init()
+        local voucher = vouchera.add({name='myvoucher', code='secret_code'})
+        assert.is.equal(voucher.author_node, utils.hostname())
     end)
 
     it('Rename vouchers', function()
@@ -242,6 +243,7 @@ describe('Vouchera tests #vouchera', function()
         assert.is.equal(100, listed[5].duration_m)
         assert.is_false(listed[1].permanent)
         assert.is_false(listed[1].is_active)
+        assert.is.equal(listed[1].author_node, utils.hostname())
     end)
 
     before_each('', function()
