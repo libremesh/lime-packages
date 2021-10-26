@@ -2,7 +2,7 @@
 
 local store = require('voucher.store')
 local config = require('voucher.config')
-local utils = require('voucher.utils')
+local utils = require('lime.utils')
 
 local vouchera = {}
 
@@ -50,6 +50,9 @@ function voucher_init(obj)
     if not obj.creation_date then
         return nil, "creation_date can't be nil"
     end
+
+    voucher.author_node = obj.author_node
+
     voucher.creation_date = obj.creation_date
 
     voucher.activation_date = obj.activation_date
@@ -102,6 +105,7 @@ function vouchera.add(obj)
     if not obj.creation_date then
         obj.creation_date = os.time()
     end
+    obj.author_node = utils.hostname()
     local voucher, errmsg = voucher_init(obj)
     if vouchera.vouchers[obj.id] ~= nil then
         return nil, "voucher with same id already exists"
@@ -272,6 +276,7 @@ function vouchera.list()
             is_active=vouchera.is_active(v),
             permanent=not v.duration_m,
             activation_deadline=v.activation_deadline,
+            author_node=v.author_node,
             })
     end
     return vouchers
