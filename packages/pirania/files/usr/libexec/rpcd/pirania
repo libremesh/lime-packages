@@ -70,6 +70,11 @@ local function rename(msg)
     return utils.printJson({ status = voucher and 'ok' or 'error' })
 end
 
+local function invalidate(msg)
+    local voucher = vouchera.remove_globally(msg.id)
+    return utils.printJson({ status = voucher and 'ok' or 'error' })
+end
+
 
 local function list_vouchers(msg)
     local vouchers = vouchera.list()
@@ -86,6 +91,7 @@ local methods = {
   add_vouchers = { name='str', qty='int', duration_m='int', activation_deadline='timestamp', permanent='bool'},
   list_vouchers = { no_params = 0 },
   rename = { id = 'str', name = 'str' },
+  invalidate = { id = 'str' },
 }
 
 if arg[1] == 'list' then
@@ -102,7 +108,7 @@ if arg[1] == 'call' then
   elseif   arg[2] == 'change_url'	        	then change_url(msg)
   elseif   arg[2] == 'list_vouchers'	    	then list_vouchers(msg)
   elseif   arg[2] == 'add_vouchers'	        then add_vouchers(msg)
-  elseif   arg[2] == 'invalidate_voucher'	        then invalidate_voucher(msg)
+  elseif   arg[2] == 'invalidate'	        then invalidate(msg)
   elseif   arg[2] == 'rename'	        then rename(msg)
   else     utils.printJson({ error = "Method not found" })
   end

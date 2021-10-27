@@ -32,14 +32,13 @@ describe('pirania rpcd tests #piraniarpcd', function()
     end)
 
     it('test rename voucher', function()
-        local json_data = json.stringify({name='foo', duration_m=100, activation_deadline=nil, permanent = false, qty=1})
-        local response = rpcd_call(pirania, {'call', 'add_vouchers'}, json_data)
-        local id = response.vouchers[1]['id']
+        vouchera.init()
+        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=100})
 
         spy.on(vouchera, "rename")
-        local response  = rpcd_call(pirania, {'call', 'rename'}, json.stringify({id=id, name='bar'}))
+        local response  = rpcd_call(pirania, {'call', 'rename'}, json.stringify({id=voucher.id, name='bar'}))
         assert.is.equal("ok", response.status)
-        assert.stub.spy(vouchera.rename).was.called_with(id, 'bar')
+        assert.stub.spy(vouchera.rename).was.called_with(voucher.id, 'bar')
     end)
 
     it('test list vouchers', function()
@@ -52,6 +51,20 @@ describe('pirania rpcd tests #piraniarpcd', function()
         assert.is.equal(5, #response.vouchers)
         assert.stub.spy(vouchera.list).was.called()
     end)
+
+    it('test invalidate voucher', function()
+        vouchera.init()
+        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=100})
+
+        spy.on(vouchera, "remove_globally")
+        local response  = rpcd_call(pirania, {'call', 'invalidate'}, json.stringify({id=voucher.id}))
+        assert.is.equal("ok", response.status)
+        assert.stub.spy(vouchera.remove_globally).was.called_with(voucher.id)
+
+        local response  = rpcd_call(pirania, {'call', 'invalidate'}, json.stringify({id='invalidid'}))
+        assert.is.equal("error", response.status)
+    end)
+
 
     before_each('', function()
         snapshot = assert:snapshot()
