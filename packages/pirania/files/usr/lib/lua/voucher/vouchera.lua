@@ -163,7 +163,6 @@ end
 function vouchera.remove_globally(id)
     local voucher = vouchera.vouchers[id]
     if voucher then
-        voucher.mac = nil
         voucher.duration_m = 0
         voucher.mod_counter = voucher.mod_counter + 1
         return store.add_voucher(config.db_path, voucher, voucher_init)

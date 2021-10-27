@@ -56,6 +56,10 @@ captive_portal.deactivate = function(id)
     return vouchera.deactivate(id)
 end
 
+captive_portal.invalidate = function(id)
+    return vouchera.remove_globally(id)
+end
+
 captive_portal.add = function(name, duration_m, activation_deadline)
     if type(duration_m) == "string" then
         duration_m = tonumber(duration_m)
