@@ -29,7 +29,7 @@ define Package/$(PKG_NAME)
 	+luci-mod-status +uhttpd +libiwinfo-lua \
 	+luci-theme-bootstrap +luci-i18n-base-en \
 	+LIMEWEBUI_ES:luci-i18n-base-es +LIMEWEBUI_PT:luci-i18n-base-pt \
-	+LIMEWEBUI_DE:luci-i18n-base-de
+	+LIMEWEBUI_DE:luci-i18n-base-de +luci-compat
 endef
 
 define Package/$(PKG_NAME)/config
