@@ -237,7 +237,7 @@ function vouchera.is_active(voucher)
     if voucher.mac == nil then
         return false
     else
-        if voucher.expiration_date() and voucher.expiration_date() < os.time() then
+        if voucher.expiration_date() and voucher.expiration_date() <= os.time() then
             return false
         end
     end
