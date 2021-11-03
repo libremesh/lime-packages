@@ -81,6 +81,17 @@ function voucher_init(obj)
         return ret
     end
 
+    voucher.is_active = function()
+        if voucher.mac == nil then
+            return false
+        else
+            if voucher.expiration_date() and voucher.expiration_date() <= os.time() then
+                return false
+            end
+        end
+        return true
+    end
+
     setmetatable(voucher, voucher_metatable)
     return voucher
 end
@@ -210,7 +221,7 @@ end
 function vouchera.is_mac_authorized(mac)
     if mac ~= nil then
         for k, v in pairs(vouchera.vouchers) do
-            if v.mac == mac and vouchera.is_active(v) then
+            if v.mac == mac and v.is_active() then
                 return true
             end
         end
@@ -231,17 +242,6 @@ function vouchera.is_activable(code)
         end
     end
     return false
-end
-
-function vouchera.is_active(voucher)
-    if voucher.mac == nil then
-        return false
-    else
-        if voucher.expiration_date() and voucher.expiration_date() <= os.time() then
-            return false
-        end
-    end
-    return true
 end
 
 function vouchera.should_be_pruned(voucher)
@@ -272,7 +272,7 @@ function vouchera.list()
             creation_date=v.creation_date,
             activation_date=v.activation_date,
             expiration_date=v.expiration_date(),
-            is_active=vouchera.is_active(v),
+            is_active=v.is_active(),
             permanent=not v.duration_m,
             activation_deadline=v.activation_deadline,
             author_node=v.author_node,
