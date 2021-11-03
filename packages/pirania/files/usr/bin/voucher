@@ -78,7 +78,7 @@ end
 
 captive_portal.show_authorized_macs = function()
     for _, voucher in pairs(vouchera.vouchers) do
-        if vouchera.is_active(voucher) then
+        if voucher.is_active() then
             print(voucher.mac)
         end
     end
