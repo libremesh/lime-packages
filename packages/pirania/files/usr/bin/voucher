@@ -35,13 +35,25 @@ captive_portal.is_mac_authorized = function(mac)
     end
 end
 
-captive_portal.list_active = function()
+local function _list_by_status(status)
     for _, voucher in pairs(vouchera.vouchers) do
-        if vouchera.is_active(voucher) then
+        if voucher.status() == status then
             print(voucher.tostring())
         end
     end
     return true
+end
+
+captive_portal.list_available = function()
+    return _list_by_status('available')
+end
+
+captive_portal.list_active = function()
+    return _list_by_status('active')
+end
+
+captive_portal.list_expired = function()
+    return _list_by_status('expired')
 end
 
 -- List all vouchers

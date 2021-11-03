@@ -92,6 +92,22 @@ function voucher_init(obj)
         return true
     end
 
+    voucher.is_expired = function()
+        local curr_time = os.time()
+        return (voucher.expiration_date() ~= nil and voucher.expiration_date() < curr_time) or
+               (voucher.activation_deadline ~= nil and voucher.activation_deadline < curr_time)
+    end
+
+    voucher.status = function()
+        local status = 'available'
+        if voucher.is_expired() then
+            status = 'expired'
+        elseif voucher.is_active() then
+            status = 'active'
+        end
+        return status
+    end
+
     setmetatable(voucher, voucher_metatable)
     return voucher
 end
@@ -234,8 +250,7 @@ function vouchera.is_activable(code)
     local curr_time = os.time()
     for k, v in pairs(vouchera.vouchers) do
         if v.code == code and v.mac == nil then
-            if (v.expiration_date() ~= nil and v.expiration_date() < curr_time) or
-               (v.activation_deadline ~= nil and v.activation_deadline < curr_time) then
+            if v.is_expired() then
                 return false
             end
             return v
@@ -276,6 +291,7 @@ function vouchera.list()
             permanent=not v.duration_m,
             activation_deadline=v.activation_deadline,
             author_node=v.author_node,
+            status=v.status(),
             })
     end
     return vouchers

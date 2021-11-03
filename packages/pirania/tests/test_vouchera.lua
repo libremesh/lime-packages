@@ -54,6 +54,7 @@ describe('Vouchera tests #vouchera', function()
         vouchera.init()
         local voucher = vouchera.add({name='myvoucher', code='secret_code'})
         assert.is.equal(voucher.author_node, utils.hostname())
+        assert.is.equal(voucher.status(), 'available')
     end)
 
     it('Rename vouchers', function()
@@ -98,6 +99,7 @@ describe('Vouchera tests #vouchera', function()
         assert.is_false(vouchera.is_activable('secret_code'))
         assert.is_true(voucher.is_active())
         assert.is_true(vouchera.is_mac_authorized("aa:bb:cc:dd:ee:ff"))
+        assert.is.equal(voucher.status(), 'active')
 
         --! let's pretend that the expiration date is in the past now
         stub(os, "time", function () return current_time_s + (101*60) end)
@@ -144,8 +146,12 @@ describe('Vouchera tests #vouchera', function()
 
         local voucher = vouchera.add({name='myvoucher2', code='secret_code2', duration_m=100,
                                      activation_deadline=deadline})
+        assert.is_false(voucher.is_expired())
+        assert.is.equal('available', voucher.status())
         stub(os, "time", function () return deadline + 1 end)
         assert.is_false(vouchera.activate('secret_code2', "aa:bb:cc:dd:ee:ff"))
+        assert.is_true(voucher.is_expired())
+        assert.is.equal('expired', voucher.status())
 
     end)
 
@@ -259,7 +265,8 @@ describe('Vouchera tests #vouchera', function()
         assert.is.equal(100, listed[5].duration_m)
         assert.is_false(listed[1].permanent)
         assert.is_false(listed[1].is_active)
-        assert.is.equal(listed[1].author_node, utils.hostname())
+        assert.is.equal(utils.hostname(), listed[1].author_node)
+        assert.is.equal('available', listed[1].status)
     end)
 
     before_each('', function()
