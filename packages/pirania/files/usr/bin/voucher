@@ -77,7 +77,7 @@ captive_portal.add = function(name, duration_m, activation_deadline)
         duration_m = tonumber(duration_m)
     end
     local qty = 1
-    res, msg = vouchera.create(name, qty, duration_m, activation_deadline)
+    res, msg = vouchera.create(name, qty, tonumber(duration_m), tonumber(activation_deadline))
     if res ~= nil then
         local voucher = vouchera.get_by_id(res[1].id)
         print(voucher.tostring())
