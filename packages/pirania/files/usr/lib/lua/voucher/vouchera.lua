@@ -42,9 +42,12 @@ function voucher_init(obj)
     if type(obj.mac) == "string" and #obj.mac ~= 17 then
         return nil, "invalid mac"
     end
-
     voucher.mac = obj.mac
 
+
+    if not (type(obj.duration_m) == "nil" or type(obj.duration_m) == "number") then
+        return nil, "invalid duration_m type"
+    end
     voucher.duration_m = obj.duration_m -- use nil to create a permanent voucher
 
     if not obj.creation_date then
@@ -57,6 +60,9 @@ function voucher_init(obj)
 
     voucher.activation_date = obj.activation_date
 
+    if not (type(obj.activation_deadline) == "nil" or type(obj.activation_deadline) == "number") then
+        return nil, "invalid activation_deadline type", type(obj.activation_deadline)
+    end
     voucher.activation_deadline = obj.activation_deadline
 
     voucher.mod_counter = obj.mod_counter or 1
