@@ -102,6 +102,13 @@ function wireless.createBaseWirelessIface(radio, mode, nameSuffix, extras)
 	return uci:get_all("wireless", wirelessInterfaceName)
 end
 
+function wireless.resolve_ssid(ssid)
+	local result = utils.applyHostnameTemplate(ssid)
+	result = utils.applyMacTemplate16(result, network.primary_mac())
+	result = string.sub(result, 1, 32)
+	return result
+end
+
 function wireless.configure()
 	local specificRadios = {}
 	config.foreach("wifi", function(radio)
@@ -162,9 +169,7 @@ function wireless.configure()
 					if isGoodOption then
 						local nk = key:gsub("^"..modeName.."_", "")
 						if nk == "ssid" then
-							value = utils.applyHostnameTemplate(value)
-							value = utils.applyMacTemplate16(value, network.primary_mac())
-							value = string.sub(value, 1, 32)
+							value = wireless.resolve_ssid(value)
 						end
 						args[nk] = value
 					end
@@ -174,6 +179,74 @@ function wireless.configure()
 			end
 		end
 	end
+end
+
+function wireless.get_band_config(band)
+	local general_cfg = config.get_all("wifi") or {}
+	local band_cfg = config.get_all(band) or {}
+	local result = general_cfg
+	utils.tableMelt(result, band_cfg)
+	return result
+end
+
+function wireless.get_community_band_config(band)
+	local uci = config.get_uci_cursor()
+	local default_general_cfg = uci:get_all(config.UCI_DEFAULTS_NAME, "wifi") or {}
+	local default_band_cfg = uci:get_all(config.UCI_DEFAULTS_NAME, band) or {}
+	local community_general_cfg = uci:get_all(config.UCI_COMMUNITY_NAME, "wifi") or {}
+	local community_band_cfg = uci:get_all(config.UCI_COMMUNITY_NAME, band) or {}
+	local result = default_general_cfg
+	utils.tableMelt(result, default_band_cfg)
+	utils.tableMelt(result, community_general_cfg)
+	utils.tableMelt(result, community_band_cfg)
+	return result
+end
+
+function wireless.add_band_mode(band, mode_name)
+	local uci = config.get_uci_cursor()
+	local cfg = wireless.get_band_config(band)
+	if not utils.has_value(cfg.modes, mode_name) then
+		local modes = uci:get(config.UCI_NODE_NAME, band, 'modes')
+		if not modes or modes[1] == 'manual' then
+			modes = { mode_name }
+		else
+			table.insert(modes, mode_name)
+		end
+		uci:set(config.UCI_NODE_NAME, band, 'lime-wifi-band')
+		uci:set(config.UCI_NODE_NAME, band, 'modes', modes)
+		uci:commit(config.UCI_NODE_NAME)
+		utils.unsafe_shell('lime-config')
+	end
+end
+
+function wireless.remove_band_mode(band, mode_name)
+	local uci = config.get_uci_cursor()
+	local cfg = wireless.get_band_config(band)
+	if utils.has_value(cfg.modes, mode_name) then
+		local new_modes = {}
+		for _, mode in pairs(cfg.modes) do
+			if mode ~= mode_name then
+				table.insert(new_modes, mode)
+			end
+		end
+		if utils.tableLength(new_modes) == 0 then
+			new_modes = {'manual'}
+		end
+		uci:set(config.UCI_NODE_NAME, band, 'lime-wifi-band')
+		uci:set(config.UCI_NODE_NAME, band, 'modes', new_modes)
+		uci:commit(config.UCI_NODE_NAME)
+		utils.unsafe_shell('lime-config')
+	end
+end
+
+function wireless.set_band_config(band, cfg)
+	local uci = config.get_uci_cursor()
+	uci:set(config.UCI_NODE_NAME, band, 'lime-wifi-band')
+	for key, value in pairs(cfg) do
+		uci:set(config.UCI_NODE_NAME, band, key, value)
+	end
+	uci:commit(config.UCI_NODE_NAME)
+	utils.unsafe_shell('lime-config')
 end
 
 return wireless

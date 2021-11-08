@@ -1,0 +1,53 @@
+#!/usr/bin/env lua
+--[[
+  Copyright (C) 2021 LibreMesh.org
+  This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
+
+  Copyright 2021 German Ferrero <germanferrero@altermundi.net>
+]]--
+
+local ubus = require "ubus"
+local json = require 'luci.jsonc'
+local utils = require 'lime.utils'
+local wireless = require 'lime.wireless_service'
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function get_access_points_data()
+    local data = wireless.get_access_points_data(true)
+    data.status = "ok"
+    return utils.printJson(data)
+end
+
+local function set_node_ap(msg)
+    wireless.set_node_ap(msg.has_password, msg.password)
+    return utils.printJson({status = 'ok'})
+end
+
+local function set_community_ap(msg)
+    wireless.set_community_ap(msg.enabled)
+    return utils.printJson({status = 'ok'})
+end
+
+local methods = {
+    get_access_points_data = { no_params = 0 },
+    set_node_ap = { has_password = 'value', password = 'value' },
+    set_community_ap = { enabled = 'value' }
+}
+
+if arg[1] == 'list' then
+    utils.printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = utils.rpcd_readline()
+    msg = json.parse(msg)
+    if      arg[2] == 'get_access_points_data' then get_access_points_data(msg)
+    elseif  arg[2] == 'set_node_ap' then set_node_ap(msg)
+    elseif  arg[2] == 'set_community_ap' then set_community_ap(msg)
+    else utils.printJson({ error = "Method not found" })
+    end
+end
