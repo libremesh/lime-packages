@@ -1,7 +1,7 @@
 local utils = require "lime.utils"
 local test_utils = require "tests.utils"
 local json = require 'luci.jsonc'
-
+local test_utils = require 'tests.utils'
 
 require('packages/pirania/tests/pirania_test_utils').fake_for_tests()
 local vouchera = require('voucher.vouchera')
@@ -11,14 +11,43 @@ local test_file_name = "packages/pirania/files/usr/libexec/rpcd/pirania"
 local pirania = test_utils.load_lua_file_as_function(test_file_name)
 
 local rpcd_call = test_utils.rpcd_call
-
+local uci
 local current_time_s = 1008513158
 
 describe('pirania rpcd tests #piraniarpcd', function()
     local snapshot -- to revert luassert stubs and spies
     it('test list methods', function()
         local response  = rpcd_call(pirania, {'list'})
-        assert.is.equal(0, response.status.no_params)
+        assert.is.equal(0, response.get_portal_config.no_params)
+    end)
+
+    it('test portal_config', function()
+        stub(utils, "unsafe_shell", function () return end)
+        --spy.on(utils, "unsafe_shell")
+        local default_cfg = io.open('./packages/pirania/files/etc/config/pirania'):read("*all")
+        test_utils.write_uci_file(uci, 'pirania', default_cfg)
+
+        local response  = rpcd_call(pirania, {'call', 'get_portal_config'}, '')
+        assert.is.equal("ok", response.status)
+        assert.is_false(response.activated)
+
+        local json_data = json.stringify({activated=true, with_vouchers=true})
+        local response  = rpcd_call(pirania, {'call', 'set_portal_config'}, json_data)
+        assert.is.equal("ok", response.status)
+        assert.stub.spy(utils.unsafe_shell).was.called_with('captive-portal start')
+
+        local response  = rpcd_call(pirania, {'call', 'get_portal_config'}, '')
+        assert.is.equal("ok", response.status)
+        assert.is_true(response.activated)
+
+        local json_data = json.stringify({activated=false, with_vouchers=true})
+        local response  = rpcd_call(pirania, {'call', 'set_portal_config'}, json_data)
+        assert.is.equal("ok", response.status)
+        assert.stub.spy(utils.unsafe_shell).was.called_with('captive-portal stop')
+
+        local response  = rpcd_call(pirania, {'call', 'get_portal_config'}, '')
+        assert.is.equal("ok", response.status)
+        assert.is_false(response.activated)
     end)
 
     it('test add three vouchers', function()
@@ -69,6 +98,7 @@ describe('pirania rpcd tests #piraniarpcd', function()
     before_each('', function()
         snapshot = assert:snapshot()
         stub(os, "time", function () return current_time_s end)
+        uci = test_utils.setup_test_uci()
     end)
 
     after_each('', function()
@@ -76,5 +106,6 @@ describe('pirania rpcd tests #piraniarpcd', function()
         local p = io.popen("rm -rf /tmp/pirania_vouchers")
         p:read('*all')
         p:close()
+        test_utils.teardown_test_uci(uci)
     end)
 end)
