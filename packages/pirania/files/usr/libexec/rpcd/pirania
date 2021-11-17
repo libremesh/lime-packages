@@ -13,35 +13,40 @@ local json = require 'luci.jsonc'
 local uci = require 'uci'
 local vouchera = require('voucher.vouchera')
 local utils = require('lime.utils')
+local config = require('lime.config')
 
 vouchera.init()
 
-local uci_cursor = uci.cursor()
+local uci_cursor = config.get_uci_cursor()
 
 local conn = ubus.connect()
 if not conn then
     error("Failed to connect to ubus")
 end
 
-local function status(msg)
-    local output = logic.iptables_status()
-    utils.printJson(output)
+local function get_portal_config()
+    local activated = false
+    if uci_cursor:get("pirania", "base_config", "enabled") == '1' then
+       activated = true
+    end
+    return utils.printJson({ status = 'ok', activated = activated, with_vouchers = true})
 end
 
-local function enable(msg)
-    uci_cursor:set("pirania", "base_config", "enabled", "1")
+local function set_portal_config(msg)
+    if msg.activated then
+        uci_cursor:set("pirania", "base_config", "enabled", "1")
+        utils.unsafe_shell("captive-portal start")
+    else
+        uci_cursor:set("pirania", "base_config", "enabled", "0")
+        utils.unsafe_shell("captive-portal stop")
+    end
     uci_cursor:commit("pirania")
-    utils.unsafe_shell("captive-portal start")
-    utils.printJson({ status = "ok" })
+    if not msg.with_vouchers then
+        utils.printJson({ status = "error", message = 'with_vouchers=false is not supported yet' })
+    else
+        utils.printJson({ status = "ok" })
+    end
 end
-
-local function disable(msg)
-    uci_cursor:set("pirania", "base_config", "enabled", "0")
-    uci_cursor:commit("pirania")
-    utils.unsafe_shell("captive-portal stop")
-    utils.printJson({ status = "ok" })
-end
-
 
 local function show_url(msg)
     utils.printJson({ status = 'ok', url = uci_cursor:get("pirania", "base_config", "portal_url") });
@@ -83,8 +88,8 @@ end
 
 
 local methods = {
-  status = { no_params = 0 },
-  enable = { no_params = 0 },
+  get_portal_config = { no_params = 0 },
+  set_portal_config = { activated = 'bool', with_vouchers = 'bool' },
   disable = { no_params = 0 },
   show_url = { no_params = 0 },
   change_url = { url = 'value' },
@@ -101,12 +106,12 @@ end
 if arg[1] == 'call' then
   local msg = utils.rpcd_readline()
   msg = json.parse(msg)
-  if   arg[2] == 'status'										then status(msg)
-  elseif   arg[2] == 'enable'								then enable(msg)
-  elseif   arg[2] == 'disable'							then disable(msg)
+  if       arg[2] == 'get_portal_config'	then get_portal_config(msg)
+  elseif   arg[2] == 'set_portal_config'	then set_portal_config(msg)
+  elseif   arg[2] == 'disable'				then disable(msg)
   elseif   arg[2] == 'show_url'	            then show_url(msg)
-  elseif   arg[2] == 'change_url'	        	then change_url(msg)
-  elseif   arg[2] == 'list_vouchers'	    	then list_vouchers(msg)
+  elseif   arg[2] == 'change_url'	        then change_url(msg)
+  elseif   arg[2] == 'list_vouchers'	    then list_vouchers(msg)
   elseif   arg[2] == 'add_vouchers'	        then add_vouchers(msg)
   elseif   arg[2] == 'invalidate'	        then invalidate(msg)
   elseif   arg[2] == 'rename'	        then rename(msg)
