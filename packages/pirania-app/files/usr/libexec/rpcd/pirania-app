@@ -1,5 +1,6 @@
 #!/usr/bin/env lua
 --[[
+Copyright 2021 German Ferrero <germanferrero@altermundi.net>
 Copyright 2018 Marcos Gutierrez <gmarcos87@gmail.com>
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -11,10 +12,6 @@ require "ubus"
 local json = require 'luci.jsonc'
 local utils = require 'lime.utils'
 
-local function printJson (obj)
-    print(json.stringify(obj))
-end
-
 local conn = ubus.connect()
 if not conn then
     error("Failed to connect to ubus")
@@ -22,28 +19,29 @@ end
 
 local function read_content(msg)
     local path = '/etc/pirania/content.json'
-    printJson(utils.read_obj_store(path))
+    utils.printJson(utils.read_obj_store(path))
 end
 
 local function write_content(msg)
     local path = '/etc/pirania/content.json'
-    printJson(utils.write_obj_store(path, msg))
+    utils.write_obj_store(path, msg)
+    utils.printJson({ status = 'ok'})
 end
 
 local methods = {
     read_content = { no_params = 0 },
     write_content = {
         title = 'value',
-        backgroundColor = 'value',
-        welcome = 'value',
-        body = 'value',
+        main_text = 'value',
         logo = 'value',
+        link_title = 'value',
+        link_url = 'value',
         background_color = 'value'
     },
 }
 
 if arg[1] == 'list' then
-    printJson(methods)
+    utils.printJson(methods)
 end
 
 if arg[1] == 'call' then

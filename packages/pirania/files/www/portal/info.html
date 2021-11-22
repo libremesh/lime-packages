@@ -16,12 +16,8 @@
       <img id="content-logo" class="hidden" src="" alt="logo" />
     </a>
     <h1 id="content-title"></h1>
-    <div id="content-media"></div>
-    <div id="content-rules"></div>
-    <div id="form-container">
-          <a id="link" href="/portal/auth.html"><input type="submit" value="Portal"></a>
-          <br>
-      </div>
+    <div id="content-main-text"></div>
+    <div id="form-container"></div>
   </main>
   <script src="js/int.js"></script>
   <script src="js/ubusFetch.js"></script>
@@ -29,7 +25,6 @@
   <script>
     var paramsArray = window.location.search.split('?')[1]
     if (paramsArray) {
-      document.getElementById('link').className = 'hidden'
       var variousParams = null
       var formContainer = document.getElementById('form-container')
       var form = document.createElement('form')
