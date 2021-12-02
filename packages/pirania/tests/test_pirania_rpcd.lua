@@ -5,6 +5,7 @@ local test_utils = require 'tests.utils'
 
 require('packages/pirania/tests/pirania_test_utils').fake_for_tests()
 local vouchera = require('voucher.vouchera')
+local portal = require('portal.portal')
 
 
 local test_file_name = "packages/pirania/files/usr/libexec/rpcd/pirania"
@@ -22,32 +23,25 @@ describe('pirania rpcd tests #piraniarpcd', function()
     end)
 
     it('test portal_config', function()
-        stub(utils, "unsafe_shell", function () return end)
-        --spy.on(utils, "unsafe_shell")
-        local default_cfg = io.open('./packages/pirania/files/etc/config/pirania'):read("*all")
-        test_utils.write_uci_file(uci, 'pirania', default_cfg)
+        stub(portal, "get_config", function () return {activated=false} end)
+        stub(portal, "set_config", function () return true end)
 
         local response  = rpcd_call(pirania, {'call', 'get_portal_config'}, '')
         assert.is.equal("ok", response.status)
         assert.is_false(response.activated)
+        assert.stub.spy(portal.get_config).was.called()
 
-        local json_data = json.stringify({activated=true, with_vouchers=true})
-        local response  = rpcd_call(pirania, {'call', 'set_portal_config'}, json_data)
-        assert.is.equal("ok", response.status)
-        assert.stub.spy(utils.unsafe_shell).was.called_with('captive-portal start')
-
-        local response  = rpcd_call(pirania, {'call', 'get_portal_config'}, '')
-        assert.is.equal("ok", response.status)
-        assert.is_true(response.activated)
 
         local json_data = json.stringify({activated=false, with_vouchers=true})
         local response  = rpcd_call(pirania, {'call', 'set_portal_config'}, json_data)
         assert.is.equal("ok", response.status)
-        assert.stub.spy(utils.unsafe_shell).was.called_with('captive-portal stop')
+        assert.stub.spy(portal.set_config).was.called_with(false, true)
 
-        local response  = rpcd_call(pirania, {'call', 'get_portal_config'}, '')
-        assert.is.equal("ok", response.status)
-        assert.is_false(response.activated)
+        stub(portal, "set_config", function () return nil, 'errormsg' end)
+        local json_data = json.stringify({activated=true, with_vouchers=false})
+        local response  = rpcd_call(pirania, {'call', 'set_portal_config'}, json_data)
+        assert.is.equal("error", response.status)
+        assert.is.equal("errormsg", response.message)
     end)
 
     it('test add three vouchers', function()
