@@ -14,6 +14,7 @@ local uci = require 'uci'
 local vouchera = require('voucher.vouchera')
 local utils = require('lime.utils')
 local config = require('lime.config')
+local portal = require('portal.portal')
 
 vouchera.init()
 
@@ -25,27 +26,29 @@ if not conn then
 end
 
 local function get_portal_config()
-    local activated = false
-    if uci_cursor:get("pirania", "base_config", "enabled") == '1' then
-       activated = true
-    end
-    return utils.printJson({ status = 'ok', activated = activated, with_vouchers = true})
+    local portal_config = portal.get_config()
+    portal_config.status = 'ok'
+    return utils.printJson(portal_config)
 end
 
 local function set_portal_config(msg)
-    if msg.activated then
-        uci_cursor:set("pirania", "base_config", "enabled", "1")
-        utils.unsafe_shell("captive-portal start")
-    else
-        uci_cursor:set("pirania", "base_config", "enabled", "0")
-        utils.unsafe_shell("captive-portal stop")
-    end
-    uci_cursor:commit("pirania")
-    if not msg.with_vouchers then
-        utils.printJson({ status = "error", message = 'with_vouchers=false is not supported yet' })
+    local status, error_msg = portal.set_config(msg.activated, msg.with_vouchers)
+    if not status then
+        utils.printJson({ status = "error", message = error_msg })
     else
         utils.printJson({ status = "ok" })
     end
+end
+
+local function get_portal_page_content(msg)
+    local path = '/etc/pirania/content.json'
+    utils.printJson(utils.read_obj_store(path))
+end
+
+local function set_portal_page_content(msg)
+    local path = '/etc/pirania/content.json'
+    utils.write_obj_store(path, msg)
+    utils.printJson({ status = 'ok'})
 end
 
 local function show_url(msg)
@@ -85,18 +88,6 @@ local function list_vouchers(msg)
     local vouchers = vouchera.list()
     return utils.printJson({ status = vouchers and 'ok' or 'error', vouchers = vouchers })
 end
-
-local function get_portal_page_content(msg)
-    local path = '/etc/pirania/content.json'
-    utils.printJson(utils.read_obj_store(path))
-end
-
-local function set_portal_page_content(msg)
-    local path = '/etc/pirania/content.json'
-    utils.write_obj_store(path, msg)
-    utils.printJson({ status = 'ok'})
-end
-
 
 local methods = {
   get_portal_config = { no_params = 0 },
