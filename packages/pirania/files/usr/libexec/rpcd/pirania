@@ -86,6 +86,17 @@ local function list_vouchers(msg)
     return utils.printJson({ status = vouchers and 'ok' or 'error', vouchers = vouchers })
 end
 
+local function read_content(msg)
+    local path = '/etc/pirania/content.json'
+    utils.printJson(utils.read_obj_store(path))
+end
+
+local function write_content(msg)
+    local path = '/etc/pirania/content.json'
+    utils.write_obj_store(path, msg)
+    utils.printJson({ status = 'ok'})
+end
+
 
 local methods = {
   get_portal_config = { no_params = 0 },
@@ -97,6 +108,15 @@ local methods = {
   list_vouchers = { no_params = 0 },
   rename = { id = 'str', name = 'str' },
   invalidate = { id = 'str' },
+  read_content = { no_params = 0 },
+  write_content = {
+        title = 'value',
+        main_text = 'value',
+        logo = 'value',
+        link_title = 'value',
+        link_url = 'value',
+        background_color = 'value'
+    },
 }
 
 if arg[1] == 'list' then
@@ -115,6 +135,8 @@ if arg[1] == 'call' then
   elseif   arg[2] == 'add_vouchers'	        then add_vouchers(msg)
   elseif   arg[2] == 'invalidate'	        then invalidate(msg)
   elseif   arg[2] == 'rename'	        then rename(msg)
+  elseif   arg[2] == 'read_content'    then read_content(msg)
+  elseif   arg[2] == 'write_content'   then write_content(msg)
   else     utils.printJson({ error = "Method not found" })
   end
 end

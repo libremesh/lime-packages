@@ -33,7 +33,7 @@ let content = {
 }
 
 function getContent () {
-  ubusFetch('pirania-app', 'read_content')
+  ubusFetch('pirania', 'get_portal_page_content')
     .then(res => {
       content = res;
       const { background_color, title, main_text, logo, link_title, link_url } = content;
