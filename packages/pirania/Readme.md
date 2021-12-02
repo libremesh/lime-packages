@@ -22,7 +22,6 @@ This software assumes that will be running on a OpenWRT/LEDE distribution (becau
 
   * add the libremesh software feed to opkg
   * opkg install pirania
-  * opkg install pirania-app
 
 ## Command line
 

@@ -21,7 +21,6 @@ Este software corre sobre la distirbución OpenWrt (ya que utiliza [UCI](https:/
 
   * Agregar la fuente de libremesh a opkg
   * `opkg install pirania`
-  * `opkg install pirania-app`
 
 # Cómo funciona
 
