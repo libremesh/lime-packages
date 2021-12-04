@@ -69,7 +69,7 @@ captive_portal.deactivate = function(id)
 end
 
 captive_portal.invalidate = function(id)
-    return vouchera.remove_globally(id)
+    return vouchera.invalidate(id)
 end
 
 captive_portal.add = function(name, duration_m, activation_deadline)

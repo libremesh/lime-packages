@@ -79,7 +79,7 @@ local function rename(msg)
 end
 
 local function invalidate(msg)
-    local voucher = vouchera.remove_globally(msg.id)
+    local voucher = vouchera.invalidate(msg.id)
     return utils.printJson({ status = voucher and 'ok' or 'error' })
 end
 

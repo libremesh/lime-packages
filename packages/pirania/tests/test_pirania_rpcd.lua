@@ -79,10 +79,10 @@ describe('pirania rpcd tests #piraniarpcd', function()
         vouchera.init()
         local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=100})
 
-        spy.on(vouchera, "remove_globally")
+        spy.on(vouchera, "invalidate")
         local response  = rpcd_call(pirania, {'call', 'invalidate'}, json.stringify({id=voucher.id}))
         assert.is.equal("ok", response.status)
-        assert.stub.spy(vouchera.remove_globally).was.called_with(voucher.id)
+        assert.stub.spy(vouchera.invalidate).was.called_with(voucher.id)
 
         local response  = rpcd_call(pirania, {'call', 'invalidate'}, json.stringify({id='invalidid'}))
         assert.is.equal("error", response.status)

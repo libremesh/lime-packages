@@ -174,11 +174,41 @@ describe('Vouchera tests #vouchera', function()
         assert.is_true(voucher.is_active())
         assert.is_false(vouchera.should_be_pruned(voucher))
         assert.is_true(vouchera.remove_globally('myvoucher'))
+        assert.is_true(voucher.is_invalidated())
         assert.is_false(vouchera.should_be_pruned(voucher))
         assert.is_false(vouchera.is_activable(voucher))
         assert.is_false(voucher.is_active())
-        assert.is.equal(0, vouchera.get_by_id('myvoucher').duration_m)
+
     end)
+
+    it('prune invalidated vouchers', function()
+        vouchera.init()
+
+        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code'})
+        vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff")
+        assert.is_true(vouchera.invalidate('myvoucher'))
+
+        assert.is.equal('invalidated', voucher.status())
+        local pre_expiry_time = current_time_s + vouchera.PRUNE_OLDER_THAN_S - 1
+        stub(os, "time", function () return pre_expiry_time end)
+        assert.is_false(vouchera.should_be_pruned(voucher))
+        stub(os, "time", function () return pre_expiry_time + 10 end)
+        assert.is_true(vouchera.should_be_pruned(voucher))
+    end)
+
+    it('prune expired vouchers', function()
+        vouchera.init()
+        duration_m = 100
+        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=duration_m})
+        vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff")
+        local pre_expiry_time = current_time_s + vouchera.PRUNE_OLDER_THAN_S + (duration_m*60) - 1
+
+        stub(os, "time", function () return pre_expiry_time end)
+        assert.is_false(vouchera.should_be_pruned(voucher))
+        stub(os, "time", function () return pre_expiry_time + 10 end)
+        assert.is_true(vouchera.should_be_pruned(voucher))
+    end)
+
 
     it('add and remove globally inactive vouchers', function()
         vouchera.init()
@@ -189,7 +219,7 @@ describe('Vouchera tests #vouchera', function()
         assert.is_false(vouchera.should_be_pruned(voucher))
         assert.is_false(vouchera.is_activable(voucher))
         assert.is_false(voucher.is_active())
-        assert.is.equal(0, vouchera.get_by_id('myvoucher').duration_m)
+        assert.is_true(voucher.is_invalidated())
     end)
 
     it('test automatic pruning of old voucher', function()
