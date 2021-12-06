@@ -19,7 +19,7 @@ const int = {
   en: {
     selectVoucher: 'Enter a voucher',
     invalid: 'Invalid voucher',
-    authenticated: "You're device is authenticated!",
+    authenticated: "Your device is authenticated!",
     wait: 'Wait',
     continue: 'Continue',
   }
