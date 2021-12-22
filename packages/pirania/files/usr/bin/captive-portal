@@ -3,14 +3,10 @@
 
 clean_tables () {
 	echo "Cleaning captive-portal rules"
-	catch_wifi_mode_ifaces=$(uci get pirania.base_config.catch_wifi_mode_ifaces)
-	if [ $catch_wifi_mode_ifaces = "yes" ] ; then
-		for iface in $(uci get pirania.base_config.wifi_mode_ifaces_catched); do
-			ebtables -t nat -D PREROUTING -i $iface -j mark --mark-set 0x9124714
-		done
-	fi
+	for iface in $(uci get pirania.base_config.catch_bridged_interfaces); do
+		ebtables -t nat -D PREROUTING -i $iface -j mark --mark-set 0x9124714
+	done
 
-	catch_virtual_ifaces=$(uci get pirania.base_config.catch_virtual_ifaces)
 	for ipvX in ipv4 ipv6 ; do
 		if [ "$ipvX" = "ipv4" ] ; then
 			iptables=iptables
@@ -22,15 +18,11 @@ clean_tables () {
 			ipaddr=ip6addr
 		fi
 
-		if [ $catch_wifi_mode_ifaces = "yes" ] ; then
-			$iptables -t mangle -D PREROUTING -m mark --mark 0x9124714 -j pirania
-		fi
+		$iptables -t mangle -D PREROUTING -m mark --mark 0x9124714 -j pirania
 
-		if [ $catch_virtual_ifaces = "yes" ] ; then
-			for interface in $(uci get pirania.base_config.virtual_ifaces_catched); do
-				$iptables -t mangle -D PREROUTING -i $interface -j pirania
-			done
-		fi
+		for interface in $(uci get pirania.base_config.catch_interfaces); do
+			$iptables -t mangle -D PREROUTING -i $interface -j pirania
+		done
 
 		$iptables -t nat -D PREROUTING -j pirania
 		$iptables -t filter -D FORWARD -j pirania
@@ -58,14 +50,11 @@ set_iptables () {
 		AorI="I"
 	fi
 
-	# Mark every packet from catch_wifi_mode_ifaces to be handled later.
-	# wifi mode ifaces need cant be handled by iptables.
-	catch_wifi_mode_ifaces=$(uci get pirania.base_config.catch_wifi_mode_ifaces)
-	if [ $catch_wifi_mode_ifaces = "yes" ] ; then
-		for iface in $(uci get pirania.base_config.wifi_mode_ifaces_catched); do
-			ebtables -t nat -$AorI PREROUTING -i $iface -j mark --mark-set 0x9124714
-		done
-	fi
+	# Mark every packet from catch_bridged_interfaces to be handled later.
+	# bridged interfaces cant be handled by iptables.
+	for iface in $(uci get pirania.base_config.catch_bridged_interfaces); do
+		ebtables -t nat -$AorI PREROUTING -i $iface -j mark --mark-set 0x9124714
+	done
 
 	for ipvX in ipv4 ipv6 ; do
 		if [ "$ipvX" = "ipv4" ] ; then
@@ -83,18 +72,15 @@ set_iptables () {
 			$iptables -t $table -N pirania
 		done
 
-		# Redirect to pirania chain every packet from catch_wifi_mode_ifaces
-		if [ $catch_wifi_mode_ifaces = "yes" ] ; then
+		# Redirect to pirania chain every packet from catch_bridged_interfaces
+		if [ -n "$(uci get pirania.base_config.catch_bridged_interfaces)" ] ; then
 			$iptables -t mangle -$AorI PREROUTING -m mark --mark 0x9124714 -j pirania
 		fi
 
-		catch_virtual_ifaces=$(uci get pirania.base_config.catch_virtual_ifaces)
-		# Redirect to pirania chain every packet from virtual_ifaces_catched
-		if [ $catch_virtual_ifaces = "yes" ]; then
-			for interface in $(uci get pirania.base_config.virtual_ifaces_catched); do
-				$iptables -t mangle -$AorI PREROUTING -i $interface -j pirania
-			done
-		fi
+		# Redirect to pirania chain every packet from catch_interfaces
+		for interface in $(uci get pirania.base_config.catch_interfaces); do
+			$iptables -t mangle -$AorI PREROUTING -i $interface -j pirania
+		done
 
 		# stop processing the chain for authorized macs and allowed ips (so they are accepted)
 		$iptables -t mangle -A pirania -m set --match-set pirania-auth-macs src -j RETURN
