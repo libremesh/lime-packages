@@ -41,12 +41,12 @@ local function set_portal_config(msg)
 end
 
 local function get_portal_page_content(msg)
-    local path = '/etc/pirania/content.json'
+    local path = '/etc/pirania/portal.json'
     utils.printJson(utils.read_obj_store(path))
 end
 
 local function set_portal_page_content(msg)
-    local path = '/etc/pirania/content.json'
+    local path = '/etc/pirania/portal.json'
     utils.write_obj_store(path, msg)
     utils.printJson({ status = 'ok'})
 end
