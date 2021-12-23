@@ -18,6 +18,10 @@ function anygw.configure(args)
 	anygw.configured = true
 
 	local cloudDomain = config.get("system", "domain")
+	if not utils.has_value(anygw.FQDN, cloudDomain) then
+		table.insert(anygw.FQDN, cloudDomain)
+	end
+
 	local ipv4, ipv6 = network.primary_address()
 	local anygw_mac = config.get("network", "anygw_mac")
 	anygw_mac = utils.applyNetTemplate16(anygw_mac)
