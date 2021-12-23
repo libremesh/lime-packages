@@ -1,4 +1,5 @@
 local test_utils = require 'tests.utils'
+local shared_state = require('shared-state')
 local portal = require('portal.portal')
 
 local uci
@@ -10,7 +11,7 @@ describe('Pirania portal tests #portal', function()
         stub(utils, "unsafe_shell", function () return end)
         local default_cfg = io.open('./packages/pirania/files/etc/config/pirania'):read("*all")
         test_utils.write_uci_file(uci, 'pirania', default_cfg)
-        
+
         local portal_cfg = portal.get_config()
 
         assert.is_false(portal_cfg.activated)
