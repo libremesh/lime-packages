@@ -14,14 +14,7 @@ describe('Pirania redirect request handler #portalredirect', function()
     local snapshot
     
     it('should redirect to url_auth when vouchers are active', function()
-        local default_cfg = io.open(CONFIG_PATH):read("*all")
-        test_utils.write_uci_file(uci, 'pirania', default_cfg)
-        test_utils.load_lua_file_as_function(REDIRECT_PATH)()
         local url_auth = uci:get('pirania', 'base_config', 'url_auth')
-        _G.uhttpd = {
-            send = function(msg) end
-        }
-        stub(uhttpd, "send")
         handle_request(FAKE_ENV)
         assert.stub(uhttpd.send).was_called_with(
             'Location: http://thisnode.info' .. url_auth ..
@@ -31,16 +24,9 @@ describe('Pirania redirect request handler #portalredirect', function()
     end)
 
     it('should redirect to read_for_access portal when vouchers are non active', function()
-        local default_cfg = io.open(CONFIG_PATH):read("*all")
-        test_utils.write_uci_file(uci, 'pirania', default_cfg)
-        test_utils.load_lua_file_as_function(REDIRECT_PATH)()
         uci:set('pirania', 'base_config', 'with_vouchers', '0')
         uci:commit('pirania')
         local url_portal = uci:get('pirania', 'read_for_access', 'url_portal')
-        _G.uhttpd = {
-            send = function(msg) end
-        }
-        stub(uhttpd, "send")
         handle_request(FAKE_ENV)
         assert.stub(uhttpd.send).was_called_with(
             'Location: http://thisnode.info' .. url_portal ..
@@ -53,6 +39,13 @@ describe('Pirania redirect request handler #portalredirect', function()
         snapshot = assert:snapshot()
         test_dir = test_utils.setup_test_dir()
         uci = test_utils.setup_test_uci()
+        local default_cfg = io.open(CONFIG_PATH):read("*all")
+        test_utils.write_uci_file(uci, 'pirania', default_cfg)
+        test_utils.load_lua_file_as_function(REDIRECT_PATH)()
+        _G.uhttpd = {
+            send = function(msg) end
+        }
+        stub(uhttpd, "send")
     end)
 
     after_each('', function()
