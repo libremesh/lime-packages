@@ -1,11 +1,19 @@
+local fs = require('nixio.fs')
 local read_for_access = {}
-read_for_access.WORK_DIR = '/tmp/pirania/read_for_access'
-read_for_access.AUTH_MACS_FILE = read_for_access.WORK_DIR .. '/auth_macs'
+
+function read_for_access.set_workdir(workdir)
+    if not utils.file_exists(workdir) then
+        os.execute('mkdir -p ' .. workdir)
+    end
+    if fs.stat(workdir, "type") ~= "dir" then
+        error("Can't configure workdir " .. workdir)
+    end
+    read_for_access.AUTH_MACS_FILE = workdir .. '/auth_macs'   
+end
+
+read_for_access.set_workdir('/tmp/pirania/read_for_access')
 
 function read_for_access.authorize_mac(mac)
-    if not utils.file_exists(read_for_access.WORK_DIR) then
-        os.execute('mkdir -p ' .. read_for_access.WORK_DIR)
-    end
     local uci = config.get_uci_cursor()
     local found = false
     if utils.file_exists(read_for_access.AUTH_MACS_FILE) then
