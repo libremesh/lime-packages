@@ -30,7 +30,7 @@ describe('Pirania redirect request handler #portalredirect', function()
         )
     end)
 
-    it('should redirect to read_for_access portal vouchers are non active', function()
+    it('should redirect to read_for_access portal when vouchers are non active', function()
         local default_cfg = io.open(CONFIG_PATH):read("*all")
         test_utils.write_uci_file(uci, 'pirania', default_cfg)
         test_utils.load_lua_file_as_function(REDIRECT_PATH)()
