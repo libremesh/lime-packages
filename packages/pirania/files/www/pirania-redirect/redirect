@@ -1,9 +1,10 @@
 #!/usr/bin/lua
 local utils = require('voucher.utils')
 local portal = require('portal.portal')
+local config = require('lime.config')
 
-local uci = require('uci')
-local uci_cursor = uci.cursor()
+
+local uci_cursor = config.get_uci_cursor()
 
 function handle_request (env)
   local method = 'http://'
