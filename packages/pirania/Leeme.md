@@ -67,9 +67,12 @@ Reglas:
 
 ### Flujo HTTP
 
-`/etc/init.d/pirania-uhttpd` arranca un servidor HTTP (uhttpd) en el puerto 59080 que responde cualquier solicitud redireccionando a una URL predefinida (`pirania.base_config.portal_url`). Esto lo hace el siguiente script lua `/www/pirania-redirect/redirect`. Como `pirania.base_config.portal_url` está en la `allowlist` (http://minodo.info/portal/ por defecto) entonces el servidor HTTP "normal" que escucha en el puerto 80 responderá luego del redireccionamiento.
+`/etc/init.d/pirania-uhttpd` arranca un servidor HTTP (uhttpd) en el puerto 59080 que responde cualquier solicitud redireccionando a una URL predefinida.
+ - En caso de que el uso de vouchers esté activado: `pirania.base_config.url_auth`.
+ - En caso contrario: `pirania.read_for_access.url_portal`
+Esto lo hace el siguiente script lua `/www/pirania-redirect/redirect`. Como ambas configs apuntan a recursos del nodo y la ip del nodo está en la `allowlist` (http://minodo.info/portal/... por defecto) entonces el servidor HTTP "normal" que escucha en el puerto 80 responderá luego del redireccionamiento.
 
-Así, el flujo es:
+El flujo, con uso de vouchers es:
 * navegas hacia una ip no permitida, por ejemplo: `http://orignal.org/baz/?foo=bar`
 * se redirecciona la solicitud con un código HTTP 302 donde puedes poner el pin para entrar: `http://minodo.info/cgi-bin/portal/auth.html?prev=http%3A%2F%2Foriginal.org%2Fbaz%2F%3Ffoo%3Dbar`
 * agregas el pin (elpinsecreto) en una caja de texto, y envías la solicitud `GET` a `http://minodo.info/cgi-bin/pirania/preactivate_voucher?voucher=elpinsecreto&prev=http%3A%2F%2Foriginal.org%2Fbaz%2F%3Ffoo%3Dbar`
@@ -78,6 +81,13 @@ Así, el flujo es:
     * Si `nojs=true` entonces el pin se activa y se asocia con la MAC del cliente (tomada de la tabla ARP con su IP). Si la activación es exitosa se redirige hacia `url_authenticated`.
     * Si `nojs=false` se verifica la validez del pin (si es un pin válido y sin usar). Si el pin es válido se redirige a la página INFO del portal (`pirania.base_config.url_info`) que se activa con el pin como parámetro URL. INFO muestra la información actualizada de la comunidad y hay un tiempo durante el cual se debe esperar antes de que se permita el acceso (esto se hace con JS). Cuando el contador llega a 0 se puede hacer clic para continuar. Se redirige entonces hacia `http://minodo.info/cgi-bin/pirania/activate_voucher?voucher=elpinsecreto`. El script `activate_voucher` activa el pin y luego redirige hacia `url_authenticated`. Si el pin falla, se redireccionará hacia `http://minodo.info/cgi-bin/portal/fail.html` que es idéntico a `auth.html` pero con un mensaje de error.
 
+El flujo sin uso de vouchers es:
+* navegas hacia una ip no permitida, por ejemplo: `http://original.org/baz/?foo=bar`
+* se redirecciona la solicitud con un código HTTP 302 a: `http://minodo.info/cgi-bin/portal/without_vouchers.html?prev=http%3A%2F%2Foriginal.org%2Fbaz%2F%3Ffoo%3Dbar`
+* Allí en caso de tener soporte para js, se muestra un contador de 15 segundos y cuando llega a 0 puedes hacer click en un botón que hace una request GET a: `http://minodo.info/cgi-bin/pirania/authorize_mac?prev=http%3A%2F%2Foriginal.org%2Fbaz%2F%3Ffoo%3Dbar`.
+Y en caso de éxito (lo esperable) eres redirigido a la `prev` url.
+* En caso de no tener soporte para js, el botón se muestra directamente,
+y en caso de éxito eres redirigido a `url_authenticated`, pues no se incluye la información de la url previa.
 ### API de ubus
 
 * `enable()` -> llama a `captive-portal start` y lo habilita en `/etc/config/pirania`
