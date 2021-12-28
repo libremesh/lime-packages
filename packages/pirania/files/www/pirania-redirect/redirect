@@ -1,6 +1,6 @@
 #!/usr/bin/lua
-
-utils = require('voucher.utils')
+local utils = require('voucher.utils')
+local portal = require('portal.portal')
 
 local uci = require('uci')
 local uci_cursor = uci.cursor()
@@ -9,10 +9,15 @@ function handle_request (env)
   local method = 'http://'
   local origin_url = utils.urlencode(method .. env.HTTP_HOST .. env.REQUEST_URI)
   local portal_domain = uci_cursor:get("pirania", "base_config", "portal_domain")
-  local auth_url = uci_cursor:get("pirania", "base_config", "url_auth")
-
-  local redirect_url = method .. portal_domain .. auth_url .. "?prev=" .. origin_url
-
+  local with_vouchers = portal.get_config().with_vouchers
+  local redirect_path = ''
+  if with_vouchers then
+    redirect_path = uci_cursor:get("pirania", "base_config", "url_auth")
+  else
+    redirect_path = uci_cursor:get("pirania", "read_for_access", "url_portal")
+  end
+  local redirect_url = method .. portal_domain .. redirect_path .. "?prev=" .. origin_url
+  
   uhttpd.send("Status: 302 \r\n")
   uhttpd.send("Location: " .. redirect_url .. "\r\n")
   uhttpd.send("\r\n") --! indicate uhttpd to send the response
