@@ -1,4 +1,6 @@
 local fs = require('nixio.fs')
+local utils = require('lime.utils')
+
 local read_for_access = {}
 
 function read_for_access.set_workdir(workdir)
@@ -26,7 +28,7 @@ function read_for_access.authorize_mac(mac)
     end
     if not found then
         local duration = uci:get("pirania", "read_for_access", "duration_m")
-        local timestamp = os.time() + tonumber(duration) * 60
+        local timestamp = utils.uptime_s() + tonumber(duration) * 60
         local ofile = io.open(read_for_access.AUTH_MACS_FILE, 'a')
         ofile:write(mac .. ' ' .. timestamp .. '\n')
         ofile:close()
@@ -37,7 +39,7 @@ end
 function read_for_access.get_authorized_macs()
     local result = {}
     local with_vouchers
-    local current_time = os.time()
+    local current_time = utils.uptime_s()
     if not utils.file_exists(read_for_access.AUTH_MACS_FILE) then
         return result
     end
