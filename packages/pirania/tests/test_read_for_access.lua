@@ -34,7 +34,7 @@ describe('read_for_access tests #readforaccess', function()
         uci = test_utils.setup_test_uci()
         local default_cfg = io.open(CONFIG_PATH):read("*all")
         test_utils.write_uci_file(uci, 'pirania', default_cfg)
-        stub(os, "time", function () return current_time_s end)
+        stub(utils, "uptime_s", function () return current_time_s end)
     end)
 
     after_each('', function()
