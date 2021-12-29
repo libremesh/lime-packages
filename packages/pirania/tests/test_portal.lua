@@ -48,7 +48,7 @@ describe('Pirania portal tests #portal', function()
         portal.set_page_content(title, main_text, logo, link_title, link_url, bgcolor)
 
         local content = portal.get_page_content()
-        assert.are.same({title=title, background_color=bgcolor, link_title=link_title, link_url=link_url, logo=logo}, content)
+        assert.are.same({title=title, main_text=main_text, background_color=bgcolor, link_title=link_title, link_url=link_url, logo=logo}, content)
 
     end)
 
