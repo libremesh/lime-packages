@@ -3,6 +3,10 @@ local utils = require('lime.utils')
 
 local read_for_access = {}
 
+function uptime_s()
+    return math.floor(utils.uptime_s())
+end
+
 function read_for_access.set_workdir(workdir)
     if not utils.file_exists(workdir) then
         os.execute('mkdir -p ' .. workdir)
@@ -26,12 +30,16 @@ function read_for_access.authorize_mac(mac)
             end
         end
     end
+    local duration = uci:get("pirania", "read_for_access", "duration_m")
+    local timestamp = uptime_s() + tonumber(duration) * 60
     if not found then
-        local duration = uci:get("pirania", "read_for_access", "duration_m")
-        local timestamp = utils.uptime_s() + tonumber(duration) * 60
         local ofile = io.open(read_for_access.AUTH_MACS_FILE, 'a')
         ofile:write(mac .. ' ' .. timestamp .. '\n')
         ofile:close()
+    else
+        local content = utils.read_file(read_for_access.AUTH_MACS_FILE)
+        content = content:gsub("(" .. mac .. ") %d+", "%1 " .. timestamp)
+        utils.write_file(read_for_access.AUTH_MACS_FILE, content)
     end
     os.execute('/usr/bin/captive-portal update')
 end
@@ -39,7 +47,7 @@ end
 function read_for_access.get_authorized_macs()
     local result = {}
     local with_vouchers
-    local current_time = utils.uptime_s()
+    local current_time = uptime_s()
     if not utils.file_exists(read_for_access.AUTH_MACS_FILE) then
         return result
     end
