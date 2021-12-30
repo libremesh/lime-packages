@@ -52,7 +52,7 @@ end
 
 
 function portal.set_page_content(title, main_text, logo, link_title, link_url, background_color)
-    local data = {title=title, main_text=main_texst, logo=logo, link_title=link_title, link_url=link_url, background_color=background_color}
+    local data = {title=title, main_text=main_text, logo=logo, link_title=link_title, link_url=link_url, background_color=background_color}
     local db = shared_state.SharedStateMultiWriter:new('pirania_persistent')
     return db:insert({portal=data})
 end
