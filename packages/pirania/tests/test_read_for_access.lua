@@ -3,7 +3,7 @@ local utils = require('lime.utils')
 local read_for_access = require('read_for_access.read_for_access')
 local CONFIG_PATH = "./packages/pirania/files/etc/config/pirania"
 
-local current_time_s = 1008513158
+local current_time_s = 66040.78
 local uci
 
 describe('read_for_access tests #readforaccess', function()
@@ -16,15 +16,27 @@ describe('read_for_access tests #readforaccess', function()
         local auth_macs = read_for_access.get_authorized_macs()
         assert.is.equal(1, utils.tableLength(auth_macs))
         assert.is.equal('AA:BB:CC:DD:EE:FF', auth_macs[1])
-        current_time_s = 1008513158 + (duration_m * 60) + 1
+        current_time_s = current_time_s + (duration_m * 60) + 1
         auth_macs = read_for_access.get_authorized_macs()
         assert.is.equal(0, utils.tableLength(auth_macs))
     end)
 
+    
     it('calls captive-portal-update on authorize_mac', function()
         stub(os, 'execute', function() end)
         read_for_access.authorize_mac('AA:BB:CC:DD:EE:FF')
         assert.stub(os.execute).was_called_with('/usr/bin/captive-portal update')
+    end)
+    
+    it('let us re-authorize a mac', function()
+        stub(os, 'execute', function() end)
+        local duration_m = uci:get('pirania', 'read_for_access', 'duration_m')
+        read_for_access.authorize_mac('AA:BB:CC:DD:EE:FF')
+        current_time_s = current_time_s + (duration_m * 60) + 1
+        read_for_access.authorize_mac('AA:BB:CC:DD:EE:FF')
+        local auth_macs = read_for_access.get_authorized_macs()
+        assert.is.equal(1, utils.tableLength(auth_macs))
+        assert.is.equal('AA:BB:CC:DD:EE:FF', auth_macs[1])
     end)
 
     before_each('', function()
