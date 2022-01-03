@@ -3,7 +3,8 @@
 local store = require('voucher.store')
 local config = require('voucher.config')
 local utils = require('lime.utils')
-
+local portal = require('portal.portal')
+local hooks = require('voucher.hooks')
 local vouchera = {}
 
 vouchera.ID_SIZE = 6
@@ -183,6 +184,8 @@ function vouchera.create(basename, qty, duration_m, activation_deadline)
         end
         table.insert(vouchers, n, {id=voucher.id, code=voucher.code})
     end
+    portal.update_captive_portal(true)
+    hooks.run('db_change')
     return vouchers
 end
 
@@ -199,15 +202,6 @@ function vouchera.remove_locally(id)
     return nil, "can't find voucher to remove"
 end
 
---! Remove a voucher from the shared db.
---! This will eventualy prune the voucher in all the dbs after PRUNE_OLDER_THAN_S seconds.
---! It is important to maintain the "removed" (invalidated) voucher in the shared db for some time
---! so that all nodes (even nodes that are offline when this is executed) have time to update locally
---! and eventualy prune the voucher.
-function vouchera.remove_globally(id)
-    return vouchera.invalidate(id)
-end
-
 local function modify_voucher_with_func(id, func)
     local voucher = vouchera.vouchers[id]
     if voucher then
@@ -218,11 +212,22 @@ local function modify_voucher_with_func(id, func)
     return voucher
 end
 
+--! Remove a voucher from the shared db.
+--! This will eventualy prune the voucher in all the dbs after PRUNE_OLDER_THAN_S seconds.
+--! It is important to maintain the "removed" (invalidated) voucher in the shared db for some time
+--! so that all nodes (even nodes that are offline when this is executed) have time to update locally
+--! and eventualy prune the voucher.
 function vouchera.invalidate(id)
+    local is_active = vouchera.vouchers[id].is_active()
     local function _update(v)
         v.invalidation_date = os.time()
     end
-    return modify_voucher_with_func(id, _update)
+    local voucher = modify_voucher_with_func(id, _update)
+    if is_active then
+        portal.update_captive_portal(true)
+    end
+    hooks.run('db_change')
+    return voucher
 end
 
 --! Activate a voucher returning true or false depending on the status of the operation.
@@ -234,6 +239,8 @@ function vouchera.activate(code, mac)
             v.activation_date = os.time()
         end
         modify_voucher_with_func(voucher.id, _update)
+        portal.update_captive_portal(false)
+        hooks.run('db_change')
     end
     return voucher
 end
