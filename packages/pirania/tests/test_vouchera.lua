@@ -225,6 +225,11 @@ describe('Vouchera tests #vouchera', function()
 
     end)
 
+    it('invalidate return nils for invalid id', function()
+        vouchera.init()
+        assert.is_nil(vouchera.invalidate('non_existent_id'))
+    end)
+
     it('invalidate calls captive portal update daemonized if the voucher was active', function()
         vouchera.init()
         local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=100})
