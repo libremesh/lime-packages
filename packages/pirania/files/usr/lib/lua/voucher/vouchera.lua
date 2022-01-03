@@ -218,7 +218,8 @@ end
 --! so that all nodes (even nodes that are offline when this is executed) have time to update locally
 --! and eventualy prune the voucher.
 function vouchera.invalidate(id)
-    local is_active = vouchera.vouchers[id].is_active()
+    local voucher = vouchera.vouchers[id]
+    local is_active = voucher ~= nil and voucher.is_active()
     local function _update(v)
         v.invalidation_date = os.time()
     end
