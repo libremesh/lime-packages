@@ -57,4 +57,12 @@ function portal.set_page_content(title, main_text, logo, link_title, link_url, b
     return db:insert({portal=data})
 end
 
+function portal.update_captive_portal(daemonized)
+    if (daemonized) then
+        utils.execute_daemonized('captive-portal update')
+    else
+        os.execute('captive-portal update')
+    end
+end
+
 return portal
