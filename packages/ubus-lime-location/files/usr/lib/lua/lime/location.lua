@@ -12,6 +12,7 @@ local iwinfo = require "iwinfo"
 local json = require "luci.jsonc"
 local config = require "lime.config"
 local wireless = require "lime.wireless"
+local system = require "lime.system"
 
 local location = {}
 
@@ -44,8 +45,10 @@ function location.set(lat, long)
     uci:set("location", "settings", "node_latitude", lat)
     uci:set("location", "settings", "node_longitude", long)
     uci:commit("location")
-
-    io.popen("shared-state insert nodes_and_links", "w"):write(json.stringify(location.nodes_and_links()))
+    local hostname = system.get_hostname()
+    local data = {}
+    data[hostname] = location.nodes_and_links()
+    io.popen("shared-state insert nodes_and_links", "w"):write(json.stringify(data))
 end
 
 function location.nodes_and_links()
