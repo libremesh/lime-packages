@@ -2,7 +2,6 @@ local utils = require "lime.utils"
 local test_utils = require "tests.utils"
 local json = require 'luci.jsonc'
 local test_utils = require 'tests.utils'
-
 require('packages/pirania/tests/pirania_test_utils').fake_for_tests()
 local vouchera = require('voucher.vouchera')
 local portal = require('portal.portal')
@@ -107,6 +106,7 @@ describe('pirania rpcd tests #piraniarpcd', function()
     before_each('', function()
         snapshot = assert:snapshot()
         stub(os, "time", function () return current_time_s end)
+        stub(portal, "update_captive_portal", function() end)
         uci = test_utils.setup_test_uci()
     end)
 
