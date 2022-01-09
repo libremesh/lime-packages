@@ -3,6 +3,7 @@ local config = require('voucher.config')
 local vouchera = require('voucher.vouchera')
 local handlers = require('voucher.cgi_handlers')
 local utils = require('voucher.utils')
+local portal = require('portal.portal')
 require('packages/pirania/tests/pirania_test_utils').fake_for_tests()
 
 function utils.log(...)
@@ -115,13 +116,17 @@ describe('Vouchera tests #piraniahandlers', function()
         stub(utils, "getIpv4AndMac", function () return {mac='AA:BB:CC:DD:EE:FF', ip='10.1.1.1'} end)
         vouchera.init()
         local voucher = vouchera.add({name='myvoucher', code='secret_code', duration_m=15})
-
+        
         vouchera.activate('secret_code', 'AA:BB:CC:DD:EE:FF')
-
+        
         local url = handlers.activate_voucher()
         assert.is.equal('/authenticated', url)
         os.getenv:revert()
         utils.getIpv4AndMac:revert()
+    end)
+    
+    before_each('', function()
+        stub(portal, "update_captive_portal", function() end)
     end)
 
     after_each('', function()
