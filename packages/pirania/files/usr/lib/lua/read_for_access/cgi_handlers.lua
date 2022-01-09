@@ -3,7 +3,7 @@ local read_for_access = require('read_for_access.read_for_access')
 local portal = require('portal.portal')
 local config = require('lime.config')
 
-handlers = {}
+local handlers = {}
 
 function handlers.authorize_mac()
     local uci = config.get_uci_cursor()
