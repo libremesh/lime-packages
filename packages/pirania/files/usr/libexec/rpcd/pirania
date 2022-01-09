@@ -7,7 +7,6 @@ you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
     http://www.apache.org/licenses/LICENSE-3.0
 ]]--
-
 local ubus = require "ubus"
 local json = require 'luci.jsonc'
 local uci = require 'uci'
@@ -41,13 +40,18 @@ local function set_portal_config(msg)
 end
 
 local function get_portal_page_content(msg)
-    local path = '/etc/pirania/portal.json'
-    utils.printJson(utils.read_obj_store(path))
+    utils.printJson(portal.get_page_content())
 end
 
 local function set_portal_page_content(msg)
-    local path = '/etc/pirania/portal.json'
-    utils.write_obj_store(path, msg)
+    portal.set_page_content(
+        msg.title,
+        msg.main_text,
+        msg.logo,
+        msg.link_title,
+        msg.link_url,
+        msg.background_color
+    )
     utils.printJson({ status = 'ok'})
 end
 
