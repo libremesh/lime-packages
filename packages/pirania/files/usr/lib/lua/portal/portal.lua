@@ -1,7 +1,6 @@
 local utils = require('lime.utils')
 local config = require('lime.config')
 local shared_state = require("shared-state")
-local vouchera = require("voucher.vouchera")
 local read_for_access = require("read_for_access.read_for_access")
 local portal = {}
 
@@ -51,6 +50,7 @@ function portal.get_authorized_macs()
     local auth_macs = {}
     local with_vouchers = portal.get_config().with_vouchers
     if with_vouchers then
+        local vouchera = require("voucher.vouchera")
         vouchera.init()
         auth_macs = vouchera.get_authorized_macs()
     else
