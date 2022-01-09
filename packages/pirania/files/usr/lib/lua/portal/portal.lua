@@ -2,6 +2,7 @@ local utils = require('lime.utils')
 local config = require('lime.config')
 local shared_state = require("shared-state")
 local read_for_access = require("read_for_access.read_for_access")
+
 local portal = {}
 
 portal.PAGE_CONTENT_OBJ_PATH = '/etc/pirania/portal.json'
@@ -60,7 +61,7 @@ function portal.get_authorized_macs()
 end
 
 function portal.update_captive_portal(daemonized)
-    if (daemonized) then
+    if daemonized then
         utils.execute_daemonized('captive-portal update')
     else
         os.execute('captive-portal update')

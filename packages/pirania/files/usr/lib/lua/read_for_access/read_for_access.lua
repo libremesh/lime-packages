@@ -1,5 +1,6 @@
 local fs = require('nixio.fs')
 local utils = require('lime.utils')
+local config = require('lime.config')
 
 local read_for_access = {}
 
@@ -14,7 +15,7 @@ function read_for_access.set_workdir(workdir)
     if fs.stat(workdir, "type") ~= "dir" then
         error("Can't configure workdir " .. workdir)
     end
-    read_for_access.AUTH_MACS_FILE = workdir .. '/auth_macs'   
+    read_for_access.AUTH_MACS_FILE = workdir .. '/auth_macs'
 end
 
 read_for_access.set_workdir('/tmp/pirania/read_for_access')
@@ -46,13 +47,12 @@ end
 
 function read_for_access.get_authorized_macs()
     local result = {}
-    local with_vouchers
     local current_time = uptime_s()
     if not utils.file_exists(read_for_access.AUTH_MACS_FILE) then
         return result
     end
     for line in io.lines(read_for_access.AUTH_MACS_FILE) do
-        words = {}
+        local words = {}
         for w in line:gmatch("%S+") do table.insert(words, w) end
         if tonumber(words[2]) > current_time then
             table.insert(result, words[1])

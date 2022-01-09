@@ -223,7 +223,7 @@ function vouchera.invalidate(id)
     local function _update(v)
         v.invalidation_date = os.time()
     end
-    local voucher = modify_voucher_with_func(id, _update)
+    voucher = modify_voucher_with_func(id, _update)
     if is_active then
         portal.update_captive_portal(true)
     end
