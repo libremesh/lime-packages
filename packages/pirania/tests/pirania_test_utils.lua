@@ -7,6 +7,7 @@ function utils.fake_for_tests()
     local config = require('voucher.config')
 
     config.db_path = '/tmp/pirania_vouchers'
+    os.execute("mkdir -p " .. config.db_path)
     config.prune_expired_for_days = '30'
 
     hooks.run = function(action) end
