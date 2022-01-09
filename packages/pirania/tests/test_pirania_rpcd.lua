@@ -2,7 +2,6 @@ local utils = require "lime.utils"
 local test_utils = require "tests.utils"
 local json = require 'luci.jsonc'
 local test_utils = require 'tests.utils'
-
 require('packages/pirania/tests/pirania_test_utils').fake_for_tests()
 local vouchera = require('voucher.vouchera')
 local portal = require('portal.portal')
@@ -88,10 +87,26 @@ describe('pirania rpcd tests #piraniarpcd', function()
         assert.is.equal("error", response.status)
     end)
 
+    it('test set_portal_page_content calls set_page_content', function()
+        local msg = {}
+        msg.title = 'My Portal'
+        msg.main_text = 'my text'
+        msg.logo = 'mylogo'
+        msg.link_title = 'linktitle'
+        msg.link_url = 'http://foo'
+        msg.background_color = '#aabbcc'
+        stub(portal, "set_page_content", function() end)
+        local response  = rpcd_call(pirania, {'call', 'set_portal_page_content'}, json.stringify(msg))
+        assert.stub(portal.set_page_content).was_called_with(
+            msg.title, msg.main_text, msg.logo, msg.link_title,
+            msg.link_url, msg.background_color
+        )
+    end)
 
     before_each('', function()
         snapshot = assert:snapshot()
         stub(os, "time", function () return current_time_s end)
+        stub(portal, "update_captive_portal", function() end)
         uci = test_utils.setup_test_uci()
     end)
 
