@@ -59,4 +59,12 @@ function portal.get_authorized_macs()
     return auth_macs
 end
 
+function portal.update_captive_portal(daemonized)
+    if (daemonized) then
+        utils.execute_daemonized('captive-portal update')
+    else
+        os.execute('captive-portal update')
+    end
+end
+
 return portal
