@@ -3,6 +3,10 @@
 
 clean_tables () {
 	echo "Cleaning captive-portal rules"
+	for iface in $(uci get pirania.base_config.catch_bridged_interfaces); do
+		ebtables -t nat -D PREROUTING -i $iface -j mark --mark-set 0x9124714
+	done
+
 	for ipvX in ipv4 ipv6 ; do
 		if [ "$ipvX" = "ipv4" ] ; then
 			iptables=iptables
@@ -14,14 +18,14 @@ clean_tables () {
 			ipaddr=ip6addr
 		fi
 
-		### Cleanup
-		for interface in br-lan anygw; do
+		$iptables -t mangle -D PREROUTING -m mark --mark 0x9124714 -j pirania
+
+		for interface in $(uci get pirania.base_config.catch_interfaces); do
 			$iptables -t mangle -D PREROUTING -i $interface -j pirania
 		done
 
 		$iptables -t nat -D PREROUTING -j pirania
 		$iptables -t filter -D FORWARD -j pirania
-
 		for table in mangle nat filter; do
 			$iptables -t $table -F pirania
 			$iptables -t $table -X pirania
@@ -46,6 +50,12 @@ set_iptables () {
 		AorI="I"
 	fi
 
+	# Mark every packet from catch_bridged_interfaces to be handled later.
+	# bridged interfaces cant be handled by iptables.
+	for iface in $(uci get pirania.base_config.catch_bridged_interfaces); do
+		ebtables -t nat -$AorI PREROUTING -i $iface -j mark --mark-set 0x9124714
+	done
+
 	for ipvX in ipv4 ipv6 ; do
 		if [ "$ipvX" = "ipv4" ] ; then
 			iptables=iptables
@@ -62,31 +72,37 @@ set_iptables () {
 			$iptables -t $table -N pirania
 		done
 
-		# send the packets that we want to filter to the pirania chains
-		# 'nat' table is consulted when a packet that creates a new connection is encountered and with PREROUTING, as soon as they come in.
-		$iptables -t nat -$AorI PREROUTING --jump pirania
-		# 'filter' table is the default table, FORWARD for packets being routed through the box
-		$iptables -t filter -$AorI FORWARD --jump pirania
+		# Redirect to pirania chain every packet from catch_bridged_interfaces
+		if [ -n "$(uci get pirania.base_config.catch_bridged_interfaces)" ] ; then
+			$iptables -t mangle -$AorI PREROUTING -m mark --mark 0x9124714 -j pirania
+		fi
 
-		# we are going to modify only the packets specified in 'catch_interfaces', so sending them to the pirania chain
+		# Redirect to pirania chain every packet from catch_interfaces
 		for interface in $(uci get pirania.base_config.catch_interfaces); do
 			$iptables -t mangle -$AorI PREROUTING -i $interface -j pirania
 		done
-
-		# send DNS requests, that are not from valid ips or macs, to our own captive portal DNS at 59053
-		$iptables -t nat -A pirania -p udp  -m set ! --match-set pirania-allowlist-$ipvX src -m set ! --match-set pirania-auth-macs src --dport 53 -j DNAT --to-destination $anygw:59053
 
 		# stop processing the chain for authorized macs and allowed ips (so they are accepted)
 		$iptables -t mangle -A pirania -m set --match-set pirania-auth-macs src -j RETURN
 		$iptables -t mangle -A pirania -m set --match-set pirania-allowlist-$ipvX dst -j RETURN
 
-		# mark packages to be redirected (puerto 80) and to be rejected (the resto)
-		$iptables -t mangle -A pirania -j MARK --set-mark 0x66/0xff  # everything not auth nor in allowlist will be marked for REJECT
-		$iptables -t mangle -A pirania -p tcp -m tcp --dport 80 -j MARK --set-mark 0x80/0xff  # unless is dport 80, re-set mark for REDIRECT
+		# mark other packages to be rejected later
+		$iptables -t mangle -A pirania -j MARK --set-mark 0x66/0xff
+		# except their dest port is 80, in this case mark to be redirected later
+		$iptables -t mangle -A pirania -p tcp -m tcp --dport 80 -j MARK --set-mark 0x80/0xff
 
-		# redirect packets marked with 0x80/0xff redirect redirect to 59080
-		# reject packets marked with 0x66/0xff (drop the packet and send an error to the client)
-		$iptables -t nat    -A pirania -p tcp -m tcp -m mark --mark 0x80/0xff -j REDIRECT --to-ports 59080
+		# marked packages reach nat-prerouting table, send them to nat-pirania chain.
+		$iptables -t nat -$AorI PREROUTING --jump pirania
+	
+		# in nat-pirania chain do:
+		# send DNS requests, that are not from valid ips or macs, to our own captive portal DNS at 59053
+		$iptables -t nat -A pirania -p udp  -m set ! --match-set pirania-allowlist-$ipvX src -m set ! --match-set pirania-auth-macs src --dport 53 -j DNAT --to-destination $anygw:59053
+		# redirect packets with dest port 80 to port 59080 of this host (the captive portal page).
+		$iptables -t nat -A pirania -p tcp -m tcp -m mark --mark 0x80/0xff -j REDIRECT --to-ports 59080
+		
+		# Other packets, if intended to be forwarded will reach filter-forward chain, send them to filter-pirania chain.  
+		$iptables -t filter -$AorI FORWARD --jump pirania
+		# And in there let's reject them with the best suited reject reason.
 		$iptables -t filter -A pirania -p tcp -m mark --mark 0x66/0xff -j REJECT --reject-with tcp-reset
 		$iptables -t filter -A pirania -m mark --mark 0x66/0xff -j REJECT
 	done
