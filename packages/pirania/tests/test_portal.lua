@@ -34,7 +34,9 @@ describe('Pirania portal tests #portal', function()
 
         with_vouchers = false
         status, message = portal.set_config(activated, with_vouchers)
-        assert.is_nil(status)
+        assert.is_true(status)
+        portal_cfg = portal.get_config()
+        assert.is_false(portal_cfg.with_vouchers)
     end)
 
     it('get and set portal page', function()

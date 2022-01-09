@@ -20,7 +20,8 @@ if (prevUrl) {
   prevElem.setAttribute('value', prevUrl)
   prevElem.setAttribute('id', 'prev')
   prevElem.setAttribute('name', 'prev')
-  document.getElementById('voucher').appendChild(prevElem)
+  prevElem.setAttribute('class', 'hidden')
+  document.getElementById('form').appendChild(prevElem)
 }
 
 let content = {

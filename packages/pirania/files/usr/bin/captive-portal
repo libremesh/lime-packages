@@ -98,7 +98,7 @@ update_ipsets () {
 	# is not needed
 	ipset -exist create pirania-auth-macs hash:mac timeout 0
 	ipset -exist create pirania-auth-macs-tmp hash:mac timeout 0
-	for mac in $(voucher show_authorized_macs) ; do
+	for mac in $(pirania_authorized_macs) ; do
 		ipset -exist add pirania-auth-macs-tmp $mac
 	done
 	ipset swap pirania-auth-macs-tmp pirania-auth-macs

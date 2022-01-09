@@ -223,7 +223,7 @@ function vouchera.invalidate(id)
     local function _update(v)
         v.invalidation_date = os.time()
     end
-    local voucher = modify_voucher_with_func(id, _update)
+    voucher = modify_voucher_with_func(id, _update)
     if is_active then
         portal.update_captive_portal(true)
     end
@@ -323,6 +323,16 @@ function vouchera.list()
             })
     end
     return vouchers
+end
+
+function vouchera.get_authorized_macs()
+    local auth_macs = {} 
+    for _, voucher in pairs(vouchera.vouchers) do
+        if voucher.is_active() then
+            table.insert(auth_macs, voucher.mac)
+        end
+    end
+    return auth_macs
 end
 
 vouchera.voucher = voucher_init
