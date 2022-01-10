@@ -1,0 +1,49 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <title>Pirania</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+
+<body>
+  <main class="main">
+     <a href="/portal">
+      <img id="content-logo" class="hidden" src="" alt="logo" />
+    </a>
+    <h1 id="content-title"></h1>
+    <div id="content-main-text"></div>
+    <div>
+        <form id='form' action="/cgi-bin/pirania/authorize_mac">
+            <input id="submit-btn" type="submit" value="Navigate">
+        </form>
+    </div>
+  </main>
+  <script src="js/int.js"></script>
+  <script src="js/ubusFetch.js"></script>
+  <script src="js/content.js"></script>
+  <script>
+    var btn = document.getElementById('submit-btn');
+    btn.setAttribute('disabled', true);
+    var timeOut = 15;
+    var passingValue = int[lang]['wait']+' '
+    btn.value = passingValue+timeOut
+    passTime()
+    function passTime () {
+        window.setTimeout(() => {
+        timeOut--
+        btn.value = passingValue+timeOut
+        if (timeOut == 0) {
+            btn.removeAttribute('disabled')
+            btn.value = int[lang]['continue']
+        } else {
+            passTime()
+        }
+    }, 1000);
+    }
+  </script>
+</body>

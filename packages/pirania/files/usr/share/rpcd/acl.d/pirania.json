@@ -3,7 +3,7 @@
         "description": "pirania voucher public access",
         "write": {
             "ubus": {
-                    "pirania": [ "auth_voucher", "get_clients", "print_valid_macs", "show_url", "show_active_vouchers" ]
+                    "pirania": ["show_url", "get_portal_page_content"]
             }
         }
     },
@@ -11,7 +11,7 @@
         "description": "lime-app public access",
         "read": {
             "ubus": {
-                    "pirania": [ "auth_voucher", "get_clients", "print_valid_macs", "show_url", "show_active_vouchers" ]
+                    "pirania": ["show_url", "get_portal_config", "get_portal_page_content"]
             }
         }
     },
