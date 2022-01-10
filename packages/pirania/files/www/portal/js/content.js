@@ -20,55 +20,43 @@ if (prevUrl) {
   prevElem.setAttribute('value', prevUrl)
   prevElem.setAttribute('id', 'prev')
   prevElem.setAttribute('name', 'prev')
-  document.getElementById('voucher').appendChild(prevElem)
+  prevElem.setAttribute('class', 'hidden')
+  document.getElementById('form').appendChild(prevElem)
 }
 
 let content = {
   backgroundColor: 'white',
   title: '',
-  welcome: '',
-  body: '',
+  main_text: '',
   logo: '',
-  rules: '',
-  mediaUrl: ''
+  link_title: '',
+  link_URL: ''
 }
 
 function getContent () {
-  ubusFetch('pirania-app', 'read_content')
+  ubusFetch('pirania', 'get_portal_page_content')
     .then(res => {
-      content = res
-      const { backgroundColor, title, welcome, body, logo, rules, mediaUrl } = content
-      document.body.style.backgroundColor = backgroundColor
+      content = res;
+      const { background_color, title, main_text, logo, link_title, link_url } = content;
+      document.body.style.backgroundColor = background_color;
       const contentLogo = document.getElementById('content-logo')
       const contentTitle = document.getElementById('content-title')
-      const contentWelcome = document.getElementById('content-welcome')
-      const contentBody = document.getElementById('content-body')
-      const contentRules = document.getElementById('content-rules')
-      const contentMedia = document.getElementById('content-media')
+      const contentMainText = document.getElementById('content-main-text');
+      const contentLink = document.getElementById('content-link');
 
       if (contentLogo) {
-        show(contentLogo)
-        contentLogo.src = logo
+        show(contentLogo);
+        contentLogo.src = logo;
       }
-      if (contentTitle) contentTitle.innerHTML = title
-      if (contentWelcome) contentWelcome.innerHTML = welcome
-      if (contentBody) contentBody.innerHTML = body
-      if (contentRules) contentRules.innerHTML = rules
-      if (contentMedia) {
-        var mediaType = mediaUrl.split('.')[mediaUrl.split('.').length -1]
-        if (mediaType === 'mp4' || mediaType === 'webm' || mediaType === 'avi') {
-          var videoContainerElem = document.createElement('video')
-          var videoElem = document.createElement('source')
-          contentMedia.append(videoContainerElem)
-          videoElem.setAttribute('src', mediaUrl)
-          videoElem.setAttribute('type', 'video/'+mediaType)
-          videoContainerElem.appendChild(videoElem)
-        } else if (mediaType === 'jpg' || mediaType === 'png' || mediaType === 'jpeg' || mediaType === 'gif' || mediaType === 'svg') {
-          var imageElem = document.createElement('img')
-          contentMedia.append(imageElem)
-          imageElem.setAttribute('src', mediaUrl)
-          imageElem.setAttribute('type', 'image/'+mediaType)
-        }
+      if (contentTitle) contentTitle.innerHTML = title;
+      if (contentMainText) contentMainText.innerHTML = main_text;
+      if (contentLink && link_title && link_url) {
+        var sectionTitle = document.getElementById('content-link-title');
+        show(sectionTitle);
+        var link_elem = document.createElement('a');
+        link_elem.innerHTML = link_title;
+        link_elem.setAttribute('href', link_url);
+        contentLink.appendChild(link_elem);
       }
     })
     .catch(err => {

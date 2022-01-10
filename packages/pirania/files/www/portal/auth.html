@@ -9,36 +9,31 @@
   <link rel="stylesheet" href="css/normalize.css">
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/loader2.css">
-  <link rel="stylesheet" href="css/mobile-icons.css">
 </head>
 
 <body>
   <main class="main">
     <div class="content">
-       <a href="/portal">
       <img id="content-logo" class="hidden" src="" alt="logo" />
     </a>
       <h1 id="content-title"></h1>
-      <p id="content-welcome"></p>
-      <p id="content-body"></p>
+      <p id="content-main-text"></p>
+      <div id="content-link">
+        <h3 id="content-link-title" class="hidden int-links">Links</h3>
+      </div>
       <div class="voucher">
-          <form method="get" action="/cgi-bin/pirania/preactivate_voucher">
+          <form id="form" method="get" action="/cgi-bin/pirania/preactivate_voucher">
             <label class="int-selectVoucher"></label>
-            <div class="hidden" id="station-list"></div>
             <input type="text" id="voucher" name="voucher">
             <input type="hidden" id="nojs" name="nojs" value="true">
             <br><input type="submit" id="voucherInput-submit" class="int-continue">
           </form>
-          <br>
-          <a id="link" href="/portal/info.html"><input class="int-info" type="submit"></a>
-          <br>
       </div>
     </div>
   </main>
   <script src="js/int.js"></script>
   <script src="js/ubusFetch.js"></script>
   <script src="js/content.js"></script>
-  <script src="js/voucher.js"></script>
 </body>
 
 </html>

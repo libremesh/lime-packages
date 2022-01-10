@@ -35,41 +35,52 @@ captive_portal.is_mac_authorized = function(mac)
     end
 end
 
-captive_portal.show_active = function()
+local function _list_by_status(status)
     for _, voucher in pairs(vouchera.vouchers) do
-        if vouchera.is_active(voucher) then
+        if voucher.status() == status then
             print(voucher.tostring())
         end
     end
     return true
 end
 
+captive_portal.list_available = function()
+    return _list_by_status('available')
+end
+
+captive_portal.list_active = function()
+    return _list_by_status('active')
+end
+
+captive_portal.list_expired = function()
+    return _list_by_status('expired')
+end
+
 -- List all vouchers
-captive_portal.show = function()
+captive_portal.list = function()
     for _, voucher in pairs(vouchera.vouchers) do
         print(voucher.tostring())
     end
     return true
 end
 
--- Renew voucher
-captive_portal.renew_voucher = function(id, new_expiration_date)
-    new_expiration_date = tonumber(new_expiration_date)
-    if new_expiration_date  then
-        return vouchera.update_expiration_date(id, new_expiration_date)
-    end
-end
-
 captive_portal.deactivate = function(id)
     return vouchera.deactivate(id)
 end
 
-captive_portal.add = function(name, code, expiration_date, duration_m)
-    local v = {name=name, code=code, expiration_date=tonumber(expiration_date),
-               duration=tonumber(duration_m)}
-    res, msg = vouchera.add(v)
+captive_portal.invalidate = function(id)
+    return vouchera.invalidate(id)
+end
+
+captive_portal.add = function(name, duration_m, activation_deadline)
+    if type(duration_m) == "string" then
+        duration_m = tonumber(duration_m)
+    end
+    local qty = 1
+    res, msg = vouchera.create(name, qty, tonumber(duration_m), tonumber(activation_deadline))
     if res ~= nil then
-        print('ok')
+        local voucher = vouchera.get_by_id(res[1].id)
+        print(voucher.tostring())
         os.exit(0)
     else
         print(msg)
@@ -79,7 +90,7 @@ end
 
 captive_portal.show_authorized_macs = function()
     for _, voucher in pairs(vouchera.vouchers) do
-        if vouchera.is_active(voucher) then
+        if voucher.is_active() then
             print(voucher.mac)
         end
     end

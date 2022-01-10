@@ -13,7 +13,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=Network
   MAINTAINER:=Luandro <luandro@gmail.com>
   TITLE:=Captive portal with vouchers.
-  DEPENDS:=+ip6tables-mod-nat +ipset +shared-state-pirania +uhttpd-mod-lua
+  DEPENDS:=+ip6tables-mod-nat +ipset +shared-state-pirania +uhttpd-mod-lua +lime-system
   PKGARCH:=all
 endef
 
