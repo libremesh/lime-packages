@@ -14,6 +14,8 @@ describe('Pirania redirect request handler #portalredirect', function()
     local snapshot
     
     it('should redirect to url_auth when vouchers are active', function()
+        uci:set('pirania', 'base_config', 'with_vouchers', '1')
+        uci:commit('pirania')
         local url_auth = uci:get('pirania', 'base_config', 'url_auth')
         handle_request(FAKE_ENV)
         assert.stub(uhttpd.send).was_called_with(
