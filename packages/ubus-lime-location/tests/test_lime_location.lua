@@ -4,6 +4,8 @@ local config = require 'lime.config'
 local network = require 'lime.network'
 local location = require 'lime.location'
 local iwinfo = require('iwinfo')
+local system = require 'lime.system'
+local json = require "luci.jsonc"
 
 local test_file_name = "packages/ubus-lime-location/files/usr/libexec/rpcd/lime-location"
 local ubus_lime_loc = test_utils.load_lua_file_as_function(test_file_name)
@@ -57,7 +59,7 @@ describe('ubus-lime-utils tests #ubuslimelocation', function()
         local f = io.open("/tmp/lime_location_testing", "w")
         stub(network, "get_own_macs", function () return {"00:11:7f:13:36:16", "02:ce:16:aa:83:52"} end)
         stub(io, "popen", function () return f end)
-
+        stub(system, "get_hostname", function() return 'my-hostname' end)
         uci:set("location", "settings", "location")
         lat = uci:set("location", "settings", "node_latitude", "15.123")
         lon = uci:set("location", "settings", "node_longitude", "-5")
@@ -132,6 +134,23 @@ describe('ubus-lime-utils tests #liblocation', function()
         lon = uci:set("location", "settings", "community_longitude", "-45")
         assert.are.same({lat=latitude, long=longitude}, location.get_node())
     end)
+
+    it('test set calls shared-state insert with hostname = data json', function()
+        local nodes_and_links = location.nodes_and_links()
+        stub(system, "get_hostname", function() return 'my-hostname' end)
+        local fake_io_popen = { write = function() end }
+        stub(fake_io_popen, "write", function() end)
+        stub(io, "popen", fake_io_popen)
+        local latitude = "15.123"
+        local longitude = "-5"
+        location.set(latitude, longitude)
+        assert.stub(io.popen).was_called_with('shared-state insert nodes_and_links', 'w')
+        local expected = {}
+        expected['my-hostname'] = nodes_and_links
+        assert.stub(fake_io_popen.write).was_called_with(match.is_table(), json.stringify(expected))
+        io.popen:revert()
+    end)
+
 
     it('test nodes_and_links no wireless', function()
         local result = location.nodes_and_links()
