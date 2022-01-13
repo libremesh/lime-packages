@@ -106,18 +106,6 @@ local function hotspot_wwan_disable(msg)
     end
 end
 
-local function hotspot_wwan_get_status(msg)
-    local msg = msg or {}
-    local status, errmsg = hotspot_wwan.status(msg.radio)
-    if status then
-        return utils.printJson({status = 'ok', enabled = status.enabled,
-                                connected = status.connected,
-                                signal = status.signal})
-    else
-        return utils.printJson({status = 'error', message = errmsg})
-    end
-end
-
 
 local methods = {
     set_root_password = { password = 'value'},
@@ -127,8 +115,7 @@ local methods = {
     last_upgrade_metadata = { no_params = 0 },
     firmware_confirm = { no_params = 0 },
     hotspot_wwan_enable = { radio = 'value', ssid = 'value', password = 'value', encryption = 'value'},
-    hotspot_wwan_disable = { radio = 'value' },
-    hotspot_wwan_get_status = { no_params = 0 }
+    hotspot_wwan_disable = { radio = 'value' }
 }
 
 if arg[1] == 'list' then
@@ -146,7 +133,6 @@ if arg[1] == 'call' then
     elseif  arg[2] == 'firmware_confirm' then firmware_confirm(msg)
     elseif  arg[2] == 'hotspot_wwan_enable' then hotspot_wwan_enable(msg)
     elseif  arg[2] == 'hotspot_wwan_disable' then hotspot_wwan_disable(msg)
-    elseif  arg[2] == 'hotspot_wwan_get_status' then hotspot_wwan_get_status(msg)
     else utils.printJson({ error = "Method not found" })
     end
 end
