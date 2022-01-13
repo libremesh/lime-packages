@@ -1,0 +1,10 @@
+#!/usr/bin/lua
+
+local hotspot_wwan = require('lime.hotspot_wwan')
+local utils = require('lime.utils')
+local status = hotspot_wwan.status()
+
+if status.enabled then
+    utils.log('hotspot_wwan watchping: Disabling hotspot_wwan')
+    hotspot_wwan.disable()
+end
