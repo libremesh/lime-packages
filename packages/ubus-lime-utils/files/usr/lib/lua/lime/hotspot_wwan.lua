@@ -9,6 +9,7 @@
 local utils = require 'lime.utils'
 local config = require 'lime.config'
 local iwinfo = require "iwinfo"
+local wireless = require "lime.wireless"
 
 local pkg = {}
 
@@ -67,6 +68,51 @@ function pkg.enable(ssid, password, encryption, radio)
     uci:commit(config.UCI_NODE_NAME)
     pkg._apply_change()
     return true
+end
+
+function ap_match_encryption(ap, encryption)
+    if encryption == 'psk2' then
+        return ap.encryption.enabled and ap.encryption.wpa == 2
+    end
+    return false
+end
+
+function is_safe(ssid, encryption, radio)
+    local ifaces = wireless.get_radio_ifaces(radio)
+    if utils.tableLength(ifaces) == 0 then
+        return true
+    end
+    for _, iface in pairs(ifaces) do
+        if wireless.is_mesh(iface) then
+            return false, 'radio has mesh ifaces'
+        end
+    end
+    ifname = ifaces[1].ifname
+    iface_type = iwinfo.type(ifname)
+    if iface_type ~= nil then
+        scanlist = iwinfo[iface_type].scanlist(ifname)
+        for _, ap in pairs(scanlist) do
+            if (ap.ssid == ssid and ap_match_encryption(ap, encryption)) then
+                return true
+            end
+        end
+    end
+    return false, 'hotspot ap not found'
+end
+
+function pkg.safe_enable(ssid, password, encryption, radio)
+    -- Enables the hotpost client only if the hotpost is already available
+    -- in order to avoid clients from ap interfaces to be kicked out.
+    local encryption = encryption or pkg.DEFAULT_ENCRYPTION
+    local ssid = ssid or pkg.DEFAULT_SSID
+    local radio = radio or pkg.DEFAULT_RADIO
+
+    local is_safe, reason = is_safe(ssid, encryption, radio)
+    if is_safe then
+        return pkg.enable(ssid, password, encryption, radio)
+    else
+        return false, reason
+    end
 end
 
 function pkg.disable(radio)
