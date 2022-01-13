@@ -140,9 +140,9 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
 
     it('test hotspot_wwan_enable with args #fooo', function()
         stub(hotspot_wwan, "_apply_change", function () return true end)
-        stub(hotspot_wwan, "enable", function () return true end)
+        stub(hotspot_wwan, "safe_enable", function () return true end)
         local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_enable'}, '{"radio":"radio1", "password": "mypass"}')
-        assert.stub(hotspot_wwan.enable).was.called_with(nil, 'mypass', nil, 'radio1')
+        assert.stub(hotspot_wwan.safe_enable).was.called_with(nil, 'mypass', nil, 'radio1')
 
         stub(hotspot_wwan, "disable", function () return true end)
         local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_disable'}, '{"radio":"radio1"}')

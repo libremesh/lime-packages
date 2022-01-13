@@ -87,7 +87,7 @@ end
 --! Creates a client connection to a wifi hotspot
 local function hotspot_wwan_enable(msg)
     local msg = msg or {}
-    local status, errmsg = hotspot_wwan.enable(msg.ssid, msg.password, msg.encryption, msg.radio)
+    local status, errmsg = hotspot_wwan.safe_enable(msg.ssid, msg.password, msg.encryption, msg.radio)
     if status then
         return utils.printJson({status = 'ok'})
     else
