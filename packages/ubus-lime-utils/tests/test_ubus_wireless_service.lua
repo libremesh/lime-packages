@@ -55,10 +55,10 @@ end)
 
 describe('ubus_wireless_service #ubus_wireless_service', function()
 
-    it('get_wifi_data wires to with get_acesss_points_data lib', function()
+    it('get_access_points_data wires to with get_acesss_points_data lib', function()
         local mocked_data = { some_data = "some_value" }
         stub(wireless, "get_access_points_data", function () return mocked_data end)
-        local response = rpcd_call(wireless_service, {'call', 'get_wifi_data'}, '')
+        local response = rpcd_call(wireless_service, {'call', 'get_access_points_data'}, '')
         assert.stub(wireless.get_access_points_data).was.called_with()
         assert.is_equal("ok", response.status)
         assert.is_equal(mocked_data.some_data, response.some_data)
