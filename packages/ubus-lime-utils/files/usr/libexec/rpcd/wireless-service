@@ -16,14 +16,14 @@ if not conn then
     error("Failed to connect to ubus")
 end
 
-local function get_wifi_data()
+local function get_access_points_data()
     local data = wireless.get_access_points_data()
     data.status = "ok"
     return utils.printJson(data)
 end
 
 local methods = {
-    get_wifi_data = { no_params = 0 },
+    get_access_points_data = { no_params = 0 },
 }
 
 if arg[1] == 'list' then
@@ -33,7 +33,7 @@ end
 if arg[1] == 'call' then
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
-    if      arg[2] == 'get_wifi_data' then get_wifi_data(msg)
+    if      arg[2] == 'get_access_points_data' then get_access_points_data(msg)
     else utils.printJson({ error = "Method not found" })
     end
 end
