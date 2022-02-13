@@ -8,6 +8,23 @@ local uci
 
 stub(hotspot_wwan, "_apply_change", function () return '' end)
 
+function config_uci_hotspot_radio()
+    uci:set('wireless', 'radio0', 'wifi-device')
+    uci:set('wireless', 'radio0', 'type', 'mac80211')
+    uci:set('wireless', 'radio0', 'channel', '4')
+    uci:set('wireless', 'radio0', 'hwmode', '11a')
+    uci:set('wireless', 'radio0', 'macaddr', '01:23:45:67:89:AB')
+    uci:set('wireless', 'radio0', 'disabled', '0')
+
+    uci:set('wireless', 'lm_client_wwan', 'wifi-iface')
+    uci:set('wireless', 'lm_client_wwan', 'device', 'radio0')
+    uci:set('wireless', 'lm_client_wwan', 'network', 'lm_client_wwan')
+    uci:set('wireless', 'lm_client_wwan', 'mode', 'sta')
+    uci:set('wireless', 'lm_client_wwan', 'ifname', 'client-wan')
+    uci:commit('wireless')
+end
+
+
 describe('hotspot_wwan tests #hotspot_wwan', function()
     local snapshot -- to revert luassert stubs and spies
 
@@ -69,6 +86,67 @@ describe('hotspot_wwan tests #hotspot_wwan', function()
         local status = hotspot_wwan.status('radio1')
         assert.is_true(status.connected)
         assert.is.equal(-66, status.signal)
+    end)
+
+    it('test is_safe is false when no mesh ifaces configured', function()
+        uci:set('wireless', 'radio0', 'wifi-device')
+        uci:set('wireless', 'radio0', 'type', 'mac80211')
+        uci:set('wireless', 'radio0', 'channel', '4')
+        uci:set('wireless', 'radio0', 'hwmode', '11a')
+        uci:set('wireless', 'radio0', 'macaddr', '01:23:45:67:89:AB')
+        uci:set('wireless', 'radio0', 'disabled', '0')
+        uci:commit('wireless')
+
+        local is_safe = hotspot_wwan._is_safe('internet', 'psk2', 'radio0')
+        assert.is_true(is_safe)
+    end)
+
+    it('test is_safe is false when mesh ifaces configured', function()
+    uci:set('wireless', 'radio0', 'wifi-device')
+    uci:set('wireless', 'radio0', 'type', 'mac80211')
+    uci:set('wireless', 'radio0', 'channel', '4')
+    uci:set('wireless', 'radio0', 'hwmode', '11a')
+    uci:set('wireless', 'radio0', 'macaddr', '01:23:45:67:89:AB')
+    uci:set('wireless', 'radio0', 'disabled', '0')
+
+    uci:set('wireless', 'lm_client_wwan', 'wifi-iface')
+    uci:set('wireless', 'lm_client_wwan', 'device', 'radio0')
+    uci:set('wireless', 'lm_client_wwan', 'network', 'lm_client_wwan')
+    uci:set('wireless', 'lm_client_wwan', 'mode', 'sta')
+    uci:set('wireless', 'lm_client_wwan', 'ifname', 'client-wan')
+    uci:commit('wireless')
+        local is_safe = hotspot_wwan._is_safe('internet', 'psk2', 'radio0')
+        assert.is_false(is_safe)
+    end)
+
+    it('test is_safe', function()
+        config_uci_hotspot_radio()
+        local ap = {
+            ["encryption"] = {["enabled"] = true, ["wpa"] = 2},
+            ["ssid"] = 'internet',
+            ["mode"] = "Master",
+        }
+        iwinfo.fake.set_scanlist('client-wan', {ap})
+        local is_safe = hotspot_wwan._is_safe('internet', 'psk2', 'radio0')
+        assert.is_true(is_safe)
+    end)
+
+    it('test is_safe is false when encryption does not match', function()
+
+        config_uci_hotspot_radio()
+        local ap = {
+            ["encryption"] = {["enabled"] = false, ["wpa"] = 0},
+            ["ssid"] = 'internet',
+            ["mode"] = "Master",
+        }
+        iwinfo.fake.set_scanlist('client-wan', {ap})
+        local is_safe = hotspot_wwan._is_safe('internet', 'psk2', 'radio0')
+        assert.is_false(is_safe)
+    end)
+
+    it('test hotspot_wwan_is_safe when no ifaces configured', function()
+        local is_safe = hotspot_wwan._is_safe('internet', 'internet', 'psk2')
+        assert.is_true(is_safe)
     end)
 
     before_each('', function()
