@@ -65,6 +65,10 @@ function iwinfo.nl80211.assoclist(radio)
     return iwinfo.fake._assoclists[radio] or {}
 end
 
+function iwinfo.type(phy_id)
+    return 'nl80211'
+end
+
 function iwinfo.fake.gen_assoc_station(rx_ht_mode, tx_ht_mode, signal, quality, inactive_ms,
                                         tx_packets, rx_packets)
     local utils = require("lime.utils")
