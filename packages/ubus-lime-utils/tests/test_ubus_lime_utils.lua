@@ -1,6 +1,8 @@
 local utils = require "lime.utils"
 local test_utils = require "tests.utils"
 local config = require 'lime.config'
+local hotspot_wwan = require 'lime.hotspot_wwan'
+
 
 local test_file_name = "packages/ubus-lime-utils/files/usr/libexec/rpcd/lime-utils"
 local ubus_lime_utils = test_utils.load_lua_file_as_function(test_file_name)
@@ -68,6 +70,26 @@ describe('ubus-lime-utils tests #ubuslimeutils', function()
 
         os.execute:revert()
         os.execute("rm -f /tmp/upgrade_info_cache")
+    end)
+
+    it('test hotspot_wwan_get_status', function()
+        stub(hotspot_wwan, "status", function () return {connected = false} end)
+
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_get_status'}, '')
+        assert.is.equal("ok", response.status)
+        assert.is_false(response.connected)
+        assert.stub(hotspot_wwan.status).was.called()
+
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_get_status'}, '{"radio":"radio1"}')
+        assert.stub(hotspot_wwan.status).was.called_with('radio1')
+    end)
+
+    it('test hotspot_wwan_is_connected when connected', function()
+        stub(hotspot_wwan, "status", function () return {connected = true, signal = -66} end)
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_get_status'}, '')
+        assert.is.equal("ok", response.status)
+        assert.is_true(response.connected)
+        assert.is.equal(-66, response.signal)
     end)
 
     before_each('', function()
