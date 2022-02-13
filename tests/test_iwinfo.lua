@@ -140,6 +140,10 @@ describe('iwinfo fake tests #iwinfo', function()
         assert.are.same('4', iwinfo.nl80211.channel('radio0'))
     end)
 
+    it('test iwinfo.type()', function()
+        assert.is.equal('nl80211', iwinfo.type('phy1'))
+    end)
+
     before_each('', function()
         uci = test_utils.setup_test_uci()
     end)
