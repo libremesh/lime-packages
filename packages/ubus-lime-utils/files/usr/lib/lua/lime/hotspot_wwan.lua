@@ -64,7 +64,7 @@ function ap_match_encryption(ap, encryption)
     return false
 end
 
-function is_safe(ssid, encryption, radio)
+function pkg._is_safe(ssid, encryption, radio)
     local ifaces = wireless.get_radio_ifaces(radio)
     if utils.tableLength(ifaces) == 0 then
         return true
@@ -94,7 +94,7 @@ function pkg.safe_enable(ssid, password, encryption, radio)
     local ssid = ssid or pkg.DEFAULT_SSID
     local radio = radio or pkg.DEFAULT_RADIO
 
-    local is_safe, reason = is_safe(ssid, encryption, radio)
+    local is_safe, reason = pkg._is_safe(ssid, encryption, radio)
     if is_safe then
         return pkg.enable(ssid, password, encryption, radio)
     else
