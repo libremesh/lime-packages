@@ -60,6 +60,10 @@ describe('iwinfo fake tests #iwinfo', function()
         assert.are.same({station}, scanlist)
     end)
 
+    it('test scanlist of unknown radio, phy or interface', function()
+        local scanlist = iwinfo.nl80211.scanlist('foo')
+        assert.are.same({}, scanlist)
+    end)
 
     it('test channel(phy) in a device with two phys', function()
         iwinfo.fake.set_channel('phy0', 1)
