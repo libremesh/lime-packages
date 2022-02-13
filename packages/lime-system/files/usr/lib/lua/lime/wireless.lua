@@ -59,13 +59,29 @@ function wireless.isMode(m)
 	return wireless.availableModes[m]
 end
 
+function wireless.is_mesh(iface)
+	return iface.mode == 'mesh' or iface.mode == 'adhoc'
+end
+
 function wireless.mesh_ifaces()
 	local uci = config.get_uci_cursor()
 	local ifaces = {}
 
 	uci:foreach("wireless", "wifi-iface", function(entry)
-			if entry.disabled ~= '1' and (entry.mode == 'mesh' or entry.mode == 'adhoc') then
+			if entry.disabled ~= '1' and wireless.is_mesh(entry) then
 				table.insert(ifaces, entry.ifname)
+			end
+		end)
+	return ifaces
+end
+
+function wireless.get_radio_ifaces(radio)
+	local uci = config.get_uci_cursor()
+	local ifaces = {}
+
+	uci:foreach("wireless", "wifi-iface", function(entry)
+			if entry.disabled ~= '1' and entry.device == radio then
+				table.insert(ifaces, entry)
 			end
 		end)
 	return ifaces
