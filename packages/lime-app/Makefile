@@ -10,7 +10,7 @@ PKG_VERSION:=v0.2.23
 PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_HASH:=6f2ae40404c229e75a8aff10e26cff32f43163bde7a468d69559baede3d570dd
+PKG_HASH:=562912e0956699feb2a53f0afd97754e9a5e413796fcd36cfee358ea14322acc
 PKG_SOURCE_URL:=https://repo.libremesh.org/limeapp/$(PKG_SOURCE)
 
 include $(INCLUDE_DIR)/package.mk
