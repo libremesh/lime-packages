@@ -1,0 +1,24 @@
+#!/bin/sh
+
+update_services () {
+}
+
+# check if services are enabled in /etc/config/services
+enabled=$(uci get services.base_config.enabled)
+
+if  [ "$1" = "start" ]; then
+	echo "Running services"
+	update_services
+	exit
+elif [ "$1" = "update" ] ; then
+	update_services
+	exit
+elif [ "$enabled" = "1" ]; then
+	update_services
+	exit
+else
+	echo "Services are disabled. Try running services start"
+	exit
+	
+fi
+
