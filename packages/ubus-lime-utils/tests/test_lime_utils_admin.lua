@@ -2,6 +2,8 @@ local utils = require "lime.utils"
 local test_utils = require "tests.utils"
 local config = require 'lime.config'
 local upgrade = require 'lime.upgrade'
+local iwinfo = require 'iwinfo'
+local hotspot_wwan = require 'lime.hotspot_wwan'
 
 local test_file_name = "packages/ubus-lime-utils/files/usr/libexec/rpcd/lime-utils-admin"
 local ubus_lime_utils = test_utils.load_lua_file_as_function(test_file_name)
@@ -118,6 +120,33 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
         stub(os, "execute", function() return 0 end)
         local response  = rpcd_call(ubus_lime_utils, {'call', 'firmware_confirm'}, '')
         assert.is.equal("ok", response.status)
+    end)
+
+    it('test hotspot_wwan_enable default args', function()
+        stub(hotspot_wwan, "_apply_change", function () return true end)
+        stub(hotspot_wwan, "enable", function () return true end)
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_enable'}, '{}')
+        assert.is.equal("ok", response.status)
+        assert.stub(hotspot_wwan.enable).was.called()
+    end)
+
+    it('test hotspot_wwan_enable no obj as arg', function()
+        stub(hotspot_wwan, "_apply_change", function () return true end)
+        stub(hotspot_wwan, "enable", function () return true end)
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_enable'}, '')
+        assert.is.equal("ok", response.status)
+        assert.stub(hotspot_wwan.enable).was.called()
+    end)
+
+    it('test hotspot_wwan_enable with args #fooo', function()
+        stub(hotspot_wwan, "_apply_change", function () return true end)
+        stub(hotspot_wwan, "safe_enable", function () return true end)
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_enable'}, '{"radio":"radio1", "password": "mypass"}')
+        assert.stub(hotspot_wwan.safe_enable).was.called_with(nil, 'mypass', nil, 'radio1')
+
+        stub(hotspot_wwan, "disable", function () return true end)
+        local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_disable'}, '{"radio":"radio1"}')
+        assert.stub(hotspot_wwan.disable).was.called_with('radio1')
     end)
 
     before_each('', function()
