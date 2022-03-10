@@ -11,6 +11,7 @@ local json = require 'luci.jsonc'
 local utils = require 'lime.utils'
 local config = require 'lime.config'
 local upgrade = require 'lime.upgrade'
+local hotspot_wwan = require "lime.hotspot_wwan"
 
 local conn = ubus.connect()
 if not conn then
@@ -83,6 +84,28 @@ local function firmware_confirm()
     return utils.printJson({status = status, exit_code = exit_code})
 end
 
+--! Creates a client connection to a wifi hotspot
+local function hotspot_wwan_enable(msg)
+    local msg = msg or {}
+    local status, errmsg = hotspot_wwan.safe_enable(msg.ssid, msg.password, msg.encryption, msg.radio)
+    if status then
+        return utils.printJson({status = 'ok'})
+    else
+        return utils.printJson({status = 'error', message = errmsg})
+    end
+end
+
+
+local function hotspot_wwan_disable(msg)
+    local msg = msg or {}
+    local status, errmsg = hotspot_wwan.disable(msg.radio)
+    if status then
+        return utils.printJson({status = 'ok'})
+    else
+        return utils.printJson({status = 'error', message = errmsg})
+    end
+end
+
 
 local methods = {
     set_root_password = { password = 'value'},
@@ -90,7 +113,9 @@ local methods = {
     is_upgrade_confirm_supported = { no_params = 0 },
     firmware_upgrade = { fw_path = 'value', preserve_config = 'value', metadata = 'value', fw_type = 'value'},
     last_upgrade_metadata = { no_params = 0 },
-    firmware_confirm = { no_params = 0 }
+    firmware_confirm = { no_params = 0 },
+    hotspot_wwan_enable = { radio = 'value', ssid = 'value', password = 'value', encryption = 'value'},
+    hotspot_wwan_disable = { radio = 'value' }
 }
 
 if arg[1] == 'list' then
@@ -106,6 +131,8 @@ if arg[1] == 'call' then
     elseif  arg[2] == 'firmware_upgrade' then firmware_upgrade(msg)
     elseif  arg[2] == 'last_upgrade_metadata' then last_upgrade_metadata(msg)
     elseif  arg[2] == 'firmware_confirm' then firmware_confirm(msg)
+    elseif  arg[2] == 'hotspot_wwan_enable' then hotspot_wwan_enable(msg)
+    elseif  arg[2] == 'hotspot_wwan_disable' then hotspot_wwan_disable(msg)
     else utils.printJson({ error = "Method not found" })
     end
 end
