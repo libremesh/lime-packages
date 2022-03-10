@@ -37,7 +37,7 @@ local function set_hostname(msg)
         local uci = config.get_uci_cursor()
         uci:set(config.UCI_NODE_NAME, 'system', 'hostname', msg.hostname)
         uci:commit(config.UCI_NODE_NAME)
-        utils.unsafe_shell("lime-config && lime-apply")
+        utils.unsafe_shell("lime-config")
         return utils.printJson({ status = 'ok'})
     else
         local err
