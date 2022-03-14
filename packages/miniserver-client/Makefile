@@ -24,10 +24,10 @@ define Package/$(PKG_NAME)
             +prometheus-node-exporter-lua \
             +prometheus-node-exporter-lua-openwrt \
             +prometheus-node-exporter-lua-wifi_stations \
-            +prometheus-node-exporter-lua-wifi_stations_extra \
-            +prometheus-node-exporter-lua-wifi_survey \
-            +prometheus-node-exporter-lua-wifi_params \
-            +prometheus-node-exporter-lua-location_latlon \
+            +prometheus-node-exporter-lua-wifi-stations-extra \
+            +prometheus-node-exporter-lua-wifi-survey \
+            +prometheus-node-exporter-lua-wifi-params \
+            +prometheus-node-exporter-lua-location-latlon \
 
 endef
 
