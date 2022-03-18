@@ -14,18 +14,7 @@ if not conn then
 end
 
 local function search_networks (msg)
-    local scan_file = fbw.check_scan_file()
-    local status
-    if(scan_file == nil) or (msg.scan == true) then
-        os.execute("rm -f /tmp/scanning")
-        os.execute("/etc/init.d/firstbootwizard start")
-    end
-    if (scan_file == nil) or (scan_file == "true") or (msg.scan == true) then
-        status = 'scanning'
-    else
-        status = 'scanned'
-    end
-    return utils.printJson({status= status, networks = fbw.read_configs()})
+    return utils.printJson(fbw.search_networks())
 end
 
 local function status ()
