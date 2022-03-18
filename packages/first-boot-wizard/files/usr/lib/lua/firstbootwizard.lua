@@ -354,11 +354,6 @@ end
 function fbw.check_scan_status()
     local scan_status
     local scan_file = fbw.check_scan_file()
-    -- reload config cursor to delete the uci cache. This is needed in daemon mode to
-    -- ensure that we have the latest configs from the config files and not some cache
-    -- stored from an older request
-    config.set_uci_cursor(nil)
-    config.get_uci_cursor()
 
     -- if no scan file return 0
     if scan_file == nil then scan_status = 0
