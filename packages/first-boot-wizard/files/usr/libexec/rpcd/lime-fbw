@@ -1,90 +1,103 @@
 #!/usr/bin/lua
 
-require "ubus"
-require "uloop"
+local ubus = require "ubus"
 local fbw = require 'firstbootwizard'
 local nixio = require "nixio"
 local json = require 'luci.jsonc'
 local config = require "lime.config"
+local utils = require('lime.utils')
 
-uloop.init()
 
 local conn = ubus.connect()
 if not conn then
 	error("Failed to connect to ubus")
 end
 
-local methods = {
-    ['lime-fbw'] = {
-        search_networks = {
-            function(req, msg)
-                local scan_file = fbw.check_scan_file()
-                local status
-                if(scan_file == nil) or (msg.scan == true) then
-                    os.execute("rm -f /tmp/scanning")
-                    os.execute("/etc/init.d/firstbootwizard start")
-                end
-                if (scan_file == nil) or (scan_file == "true") or (msg.scan == true) then
-                    status = 'scanning'
-                else
-                    status = 'scanned'
-                end
-                conn:reply(req, {status= status, networks = fbw.read_configs()})
+local function search_networks (msg)
+    local scan_file = fbw.check_scan_file()
+    local status
+    if(scan_file == nil) or (msg.scan == true) then
+        os.execute("rm -f /tmp/scanning")
+        os.execute("/etc/init.d/firstbootwizard start")
+    end
+    if (scan_file == nil) or (scan_file == "true") or (msg.scan == true) then
+        status = 'scanning'
+    else
+        status = 'scanned'
+    end
+    return utils.printJson({status= status, networks = fbw.read_configs()})
+end
 
-            end, { scan = ubus.BOOLEAN }
-        },
-        status = {
-            function(req, msg)
-                local scan_status
-                local scan_file = fbw.check_scan_file()
-                -- reload config cursor to delete the uci cache. This is needed in daemon mode to
-                -- ensure that we have the latest configs from the config files and not some cache
-                -- stored from an older request
-                config.set_uci_cursor(nil)
-                config.get_uci_cursor()
+local function status ()
+    local scan_status
+    local scan_file = fbw.check_scan_file()
+    -- reload config cursor to delete the uci cache. This is needed in daemon mode to
+    -- ensure that we have the latest configs from the config files and not some cache
+    -- stored from an older request
+    config.set_uci_cursor(nil)
+    config.get_uci_cursor()
 
-                -- if no scan file return 0
-                if scan_file == nil then scan_status = 0
-                -- if scanning return 1
-                elseif scan_file == "true" then scan_status = 1
-                -- if done scanning return 2
-                elseif scan_file == "false" then scan_status = 2
-                end
-                local status = {
-                    lock = not fbw.is_configured() and not fbw.is_dismissed(),
-                    scan = scan_status
-                }
-                conn:reply(req, status)
-            end, {}
-        },
-        set_network = {
-            function(req, msg)
-                local file = msg.file
-                local hostname = msg.hostname
-                conn:reply(req, { status = 'configuring' })
-                fbw.apply_file_config(file, hostname)
-            end, { file = ubus.STRING, hostname = ubus.STRING }
-        },
-        create_network = {
-            function(req, msg)
-                if (msg.network ~= nil and msg.hostname ~= nil) then
-                    conn:reply(req, { status = 'done' })
-                    fbw.create_network(msg.network, msg.hostname, msg.adminPassword, msg.country)
-                    return
-                else
-                    conn:reply(req, { status = 'error', msg = "Network and hostname are required" })
-                end
-            end, { network = ubus.STRING, hostname = ubus.STRING, password = ubus.STRING,
-                   country = ubus.STRING }
-        },
-        dismiss = {
-            function (req, msg)
-                conn:reply(req, {status = 'done'})
-                fbw.dismiss()
-            end, {}
-        }
+    -- if no scan file return 0
+    if scan_file == nil then scan_status = 0
+    -- if scanning return 1
+    elseif scan_file == "true" then scan_status = 1
+    -- if done scanning return 2
+    elseif scan_file == "false" then scan_status = 2
+    end
+    local status = {
+        lock = not fbw.is_configured() and not fbw.is_dismissed(),
+        scan = scan_status
     }
+    return utils.printJson(status)
+end
+
+local function set_network(msg)
+    local file = msg.file
+    local hostname = msg.hostname
+    utils.printJson({ status = 'configuring'})
+    fbw.apply_file_config(file, hostname)
+end
+
+local function create_network(msg)
+    if (msg.network ~= nil and msg.hostname ~= nil) then
+        utils.printJson({ status = 'done' })
+        fbw.create_network(msg.network, msg.hostname, msg.adminPassword, msg.country)
+        return
+    else
+        return utils.printJson({ status = 'error', msg = "Network and hostname are required" })
+    end
+end
+
+local function dismiss()
+    utils.printJson({status = 'done'})
+    fbw.dismiss()
+end
+
+local methods = {
+    search_networks = { scan = 'bool' },
+    status = {},
+    set_network = { file = 'str', hostname = 'str' },
+    create_network = {
+        network =   'str',
+        hostname =  'str',
+        password =  'str',
+        country =   'str'
+    },
+    dismiss = {},
 }
 
-conn:add(methods)
-uloop.run()
+if arg[1] == 'list' then
+    utils.printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = utils.rpcd_readline()
+    msg = json.parse(msg)
+    if      arg[2] == 'search_networks'	then search_networks(msg)
+    elseif  arg[2] == 'status'	        then status(msg)
+    elseif  arg[2] == 'set_network'     then set_network(msg)
+    elseif  arg[2] == 'create_network'  then create_network(msg)
+    elseif  arg[2] == 'dismiss'         then dismiss(msg)
+    else     utils.printJson({ error = "Method not found" })
+  end
+end
