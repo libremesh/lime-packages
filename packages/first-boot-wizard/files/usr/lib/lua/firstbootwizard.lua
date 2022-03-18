@@ -337,6 +337,14 @@ function fbw.stop_get_all_networks()
 return true
 end
 
+-- Apply file config for specific file, hostname and stop scanning if running
+function fbw.set_network(file, hostname)
+    fbw.stop_get_all_networks()
+    local file = file
+    local hostname = hostname
+    fbw.apply_file_config(file, hostname)
+end
+
 -- Scan for networks and fetch configurations files
 function fbw.get_all_networks()
     local networks = {}
