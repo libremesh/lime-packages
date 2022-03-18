@@ -75,7 +75,7 @@ end
 
 local methods = {
     search_networks = { scan = 'bool' },
-    status = {},
+    status = {no_params = 0},
     set_network = { file = 'str', hostname = 'str' },
     create_network = {
         network =   'str',
@@ -83,7 +83,7 @@ local methods = {
         password =  'str',
         country =   'str'
     },
-    dismiss = {},
+    dismiss = {no_params = 0},
 }
 
 if arg[1] == 'list' then
