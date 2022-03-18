@@ -25,6 +25,8 @@ local fbw = {}
 fbw.WORKDIR = '/tmp/fbw/'
 fbw.COMMUNITY_HOST_CONFIG_PREFIX = 'lime-community__host__'
 fbw.COMMUNITY_ASSETS_TMPL = 'lime-community_assets__host__%s.tar.gz'
+fbw.SCAN_RESULTS_FILE = 'lime-scan-results.json'
+
 
 utils.execute('mkdir -p ' .. fbw.WORKDIR)
 
@@ -290,6 +292,7 @@ function fbw.read_configs()
             })
         end
     end
+
     return result
 end
 
@@ -331,6 +334,7 @@ end
 function fbw.stop_get_all_networks()
     local scan_file = fbw.check_scan_file()
     if (scan_file == "true") then
+        fbw.log('Stopping firstbootwizard service')
         os.execute("/etc/init.d/firstbootwizard stop")
         fbw.end_scan()
     end
@@ -349,6 +353,7 @@ end
 function fbw.get_all_networks()
     local networks = {}
     local configs = {}
+    fbw.log("Starting search networks")
 
     fbw.log('Add lock file')
     fbw.start_scan_file()
@@ -358,6 +363,8 @@ function fbw.get_all_networks()
     fbw.backup_wifi_config()
     fbw.log('Get mesh networks')
     networks = fbw.get_networks()
+    fbw.log('Saving mesh scan results')
+    utils.save_json(networks, fbw.WORKDIR + fbw.SCAN_RESULTS_FILE)
     fbw.log('Get configs files')
     configs = ft.reduce(fbw.get_config, networks, {})
     fbw.log('Restore previus wireless configuration')

@@ -194,4 +194,17 @@ function utils.filter_alredy_scanned(hosts, results)
     end, hosts)
 end
 
+-- From a object, json.stringify it and then store it on path
+function utils.save_json(data, path)
+    local file = io.open(path, "w")
+    if file then
+        local contents = json.stringify(data)
+        file:write( contents )
+        io.close( file )
+        return true
+    else
+        return false
+    end
+end
+
 return utils
