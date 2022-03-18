@@ -14,7 +14,7 @@ if not conn then
 end
 
 local function search_networks (msg)
-    return utils.printJson(fbw.search_networks())
+    return utils.printJson(fbw.start_search_networks(msg))
 end
 
 local function status ()
