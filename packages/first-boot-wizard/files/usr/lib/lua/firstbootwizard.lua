@@ -374,4 +374,21 @@ function fbw.check_scan_status()
     return status
 end
 
+-- Start /etc/init/firstbootwizard daemon to start get_all_networks
+-- Return object with status and read_configs() results
+function fbw.start_search_networks()
+    local scan_file = fbw.check_scan_file()
+    local status
+    if(scan_file == nil) or (msg.scan == true) then
+        os.execute("rm -f /tmp/scanning")
+        os.execute("/etc/init.d/firstbootwizard start")
+    end
+    if (scan_file == nil) or (scan_file == "true") or (msg.scan == true) then
+        status = 'scanning'
+    else
+        status = 'scanned'
+    end
+    return {status= status, networks = fbw.read_configs()}
+end
+
 return fbw
