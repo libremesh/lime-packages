@@ -14,7 +14,7 @@ if not conn then
 end
 
 local function search_networks (msg)
-    return utils.printJson(fbw.start_search_networks(msg))
+    return utils.printJson(fbw.start_search_networks(msg.scan))
 end
 
 local function status ()
@@ -22,6 +22,9 @@ local function status ()
 end
 
 local function set_network(msg)
+    if (msg.file == nil or msg.hostname == nil) then
+        return utils.printJson({ status = 'error', msg = "File and hostname are required" })
+    end
     local file = msg.file
     local hostname = msg.hostname
     utils.printJson({ status = 'configuring'})
