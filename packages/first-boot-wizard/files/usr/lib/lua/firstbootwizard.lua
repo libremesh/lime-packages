@@ -336,6 +336,9 @@ function fbw.stop_get_all_networks()
     if (scan_file == "true") then
         fbw.log('Stopping firstbootwizard service')
         os.execute("/etc/init.d/firstbootwizard stop")
+        fbw.log('Restore previus wireless configuration')
+        fbw.restore_wifi_config()
+        fbw.log('Remove lock file')
         fbw.end_scan()
     end
 return true
