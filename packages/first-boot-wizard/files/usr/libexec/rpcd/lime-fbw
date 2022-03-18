@@ -22,10 +22,8 @@ local function status ()
 end
 
 local function set_network(msg)
-    local file = msg.file
-    local hostname = msg.hostname
     utils.printJson({ status = 'configuring'})
-    fbw.apply_file_config(file, hostname)
+    fbw.set_network(msg.file, msg.hostname)
 end
 
 local function create_network(msg)
