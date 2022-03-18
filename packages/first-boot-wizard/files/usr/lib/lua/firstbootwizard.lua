@@ -371,7 +371,7 @@ end
 
 -- Start /etc/init/firstbootwizard daemon to start get_all_networks
 -- Return object with status and read_configs() results
-function fbw.start_search_networks()
+function fbw.start_search_networks(msg)
     local scan_file = fbw.check_scan_file()
     local status
     if(scan_file == nil) or (msg.scan == true) then
