@@ -327,6 +327,16 @@ function fbw.end_config()
     os.execute("reboot")
 end
 
+-- Function that stop get_all_networks function if running
+function fbw.stop_get_all_networks()
+    local scan_file = fbw.check_scan_file()
+    if (scan_file == "true") then
+        os.execute("/etc/init.d/firstbootwizard stop")
+        fbw.end_scan()
+    end
+return true
+end
+
 -- Scan for networks and fetch configurations files
 function fbw.get_all_networks()
     local networks = {}
