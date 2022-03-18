@@ -350,4 +350,28 @@ function fbw.get_all_networks()
     return configs
 end
 
+-- Check scan status and return object status{ lock: boolean, scan: 0|1|2 }
+function fbw.check_scan_status()
+    local scan_status
+    local scan_file = fbw.check_scan_file()
+    -- reload config cursor to delete the uci cache. This is needed in daemon mode to
+    -- ensure that we have the latest configs from the config files and not some cache
+    -- stored from an older request
+    config.set_uci_cursor(nil)
+    config.get_uci_cursor()
+
+    -- if no scan file return 0
+    if scan_file == nil then scan_status = 0
+    -- if scanning return 1
+    elseif scan_file == "true" then scan_status = 1
+    -- if done scanning return 2
+    elseif scan_file == "false" then scan_status = 2
+    end
+    local status = {
+        lock = not fbw.is_configured() and not fbw.is_dismissed(),
+        scan = scan_status
+    }
+    return status
+end
+
 return fbw
