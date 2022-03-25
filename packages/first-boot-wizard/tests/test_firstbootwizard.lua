@@ -5,9 +5,55 @@ local utils = require 'lime.utils'
 local test_utils = require 'tests.utils'
 local fs = require("nixio.fs")
 local fbw_utils = require('firstbootwizard.utils')
+local iwinfo = require 'iwinfo'
+local json = require("luci.jsonc")
+
 
 local uci = nil
 config.log = function () end
+
+
+local scanlist_result = {
+    [1] = {
+        ["encryption"] = {
+            ["enabled"] = true,
+            ["auth_algs"] = { },
+            ["description"] = "WPA2 PSK (CCMP)",
+            ["wep"] = false,
+            ["auth_suites"] = { {"PSK"}} ,
+            ["wpa"] = 2,
+            ["pair_ciphers"] = {"CCMP"} ,
+            ["group_ciphers"] = {"CCMP"} ,
+            } ,
+        ["quality_max"] = 70,
+        ["ssid"] = "foo_ssid",
+        ["channel"] = 1,
+        ["signal"] = -53,
+        ["bssid"] = "38:AB:C0:C1:D6:70",
+        ["mode"] = "Master",
+        ["quality"] = 57,
+      } ,
+      [2] = {
+        ["encryption"] = {
+            ["enabled"] = false,
+            ["auth_algs"] = { } ,
+            ["description"] = "None",
+            ["wep"] = false,
+            ["auth_suites"] = { } ,
+            ["wpa"] = 0,
+            ["pair_ciphers"] = { } ,
+            ["group_ciphers"] = { } ,
+        } ,
+        ["quality_max"] = 70,
+        ["ssid"] = "bar_ssid",
+        ["channel"] = 11,
+        ["signal"] = -67,
+        ["bssid"] = "C2:4A:00:BE:7B:B7",
+        ["mode"] = "Master",
+        ["quality"] = 43,
+        } ,
+    }
+    
 
 local community_file = [[
 config lime 'system'
@@ -94,17 +140,20 @@ describe('FirstBootWizard tests #fbw', function()
     end)
 
     it('test save_scan_results write and read', function()
-        local networks = fbw.get_networks()
+        iwinfo.fake.set_scanlist('phy0', scanlist_result)
+        local scanlist = iwinfo.nl80211.scanlist('phy0')
         -- Assert saving data
-        assert.is.equal(true, fbw.save_scan_results(networks))
-        local f=io.open(fbw.WORKDIR .. fbw.SCAN_RESULTS_FILE,"r")
+        assert.is.equal(true, fbw.save_scan_results(scanlist))
+        local f = io.open(fbw.WORKDIR .. fbw.SCAN_RESULTS_FILE,"r")
         assert.is.equal(true, f~=nil)
+        assert.is.equal(json.stringify(scanlist), f:read("*a"))
         io.close(f)
 
         -- Assert reading data
         fbw.start_scan_file() -- simulate is scanning to don't start the scan
         local results = fbw.start_search_networks()
         assert(true, type(results['scanned']) == table)
+        assert(true, utils.deepcompare(scanlist, results['scanned']))
     end)
 
     it('test stop_get_all_networks', function()
