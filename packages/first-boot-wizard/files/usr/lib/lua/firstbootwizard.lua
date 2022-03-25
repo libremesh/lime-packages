@@ -349,15 +349,16 @@ function fbw.stop_get_all_networks()
         fbw.restore_wifi_config()
         fbw.log('Remove lock file')
         fbw.end_scan()
+        return true
+    else
+        return true
     end
-return true
+    return false
 end
 
 -- Apply file config for specific file, hostname and stop scanning if running
 function fbw.set_network(file, hostname)
-    fbw.stop_get_all_networks()
-    local file = file
-    local hostname = hostname
+    fbw.stop_get_all_networks() -- Stop firstbootwizard service if running
     fbw.apply_file_config(file, hostname)
 end
 
@@ -379,7 +380,7 @@ function fbw.get_all_networks()
     fbw.save_scan_results(networks)
     fbw.log('Get configs files')
     configs = ft.reduce(fbw.get_config, networks, {})
-    fbw.log('Restore previus wireless configuration')
+    fbw.log('Restore previous wireless configuration')
     fbw.restore_wifi_config()
     fbw.log('Remove lock file')
     fbw.end_scan()

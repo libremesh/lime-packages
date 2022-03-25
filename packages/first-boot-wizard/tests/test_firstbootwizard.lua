@@ -107,6 +107,12 @@ describe('FirstBootWizard tests #fbw', function()
         assert(true, type(results['scanned']) == table)
     end)
 
+    it('test stop_get_all_networks', function()
+        fbw.start_search_networks()
+        assert(true, fbw.stop_get_all_networks())
+        assert('false', fbw.check_scan_file())
+    end)
+
     before_each('', function()
         fbw_utils.execute('rm -f /tmp/fbw/*')
         fbw_utils.execute('rm -f /tmp/scanning')
