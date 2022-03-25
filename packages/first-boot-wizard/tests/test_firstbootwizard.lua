@@ -93,6 +93,20 @@ describe('FirstBootWizard tests #fbw', function()
         assert.stub(utils.set_password).was.called_with('root', "mypassword")
     end)
 
+    it('test save_scan_results write and read', function()
+        local networks = fbw.get_networks()
+        -- Assert saving data
+        assert.is.equal(true, fbw.save_scan_results(networks))
+        local f=io.open(fbw.WORKDIR .. fbw.SCAN_RESULTS_FILE,"r")
+        assert.is.equal(true, f~=nil)
+        io.close(f)
+
+        -- Assert reading data
+        fbw.start_scan_file() -- simulate is scanning to don't start the scan
+        local results = fbw.start_search_networks()
+        assert(true, type(results['scanned']) == table)
+    end)
+
     before_each('', function()
         fbw_utils.execute('rm -f /tmp/fbw/*')
         fbw_utils.execute('rm -f /tmp/scanning')
