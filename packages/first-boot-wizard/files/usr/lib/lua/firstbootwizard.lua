@@ -330,6 +330,15 @@ function fbw.end_config()
     os.execute("reboot")
 end
 
+function fbw.save_scan_results(networks)
+    return lutils.write_obj_store(fbw.WORKDIR .. fbw.SCAN_RESULTS_FILE, networks)
+end
+
+function fbw.read_scan_results(networks)
+    return lutils.read_obj_store(fbw.WORKDIR .. fbw.SCAN_RESULTS_FILE)
+end
+
+
 -- Function that stop get_all_networks function if running
 function fbw.stop_get_all_networks()
     local scan_file = fbw.check_scan_file()
@@ -367,7 +376,7 @@ function fbw.get_all_networks()
     fbw.log('Get mesh networks')
     networks = fbw.get_networks()
     fbw.log('Saving mesh scan results')
-    utils.save_json(networks, fbw.WORKDIR + fbw.SCAN_RESULTS_FILE)
+    fbw.save_scan_results(networks)
     fbw.log('Get configs files')
     configs = ft.reduce(fbw.get_config, networks, {})
     fbw.log('Restore previus wireless configuration')
@@ -398,7 +407,7 @@ function fbw.check_scan_status()
 end
 
 -- Start /etc/init/firstbootwizard daemon to start get_all_networks
--- Return object with status and read_configs() results
+-- Return object with status, read_configs() and read_scan_results()
 function fbw.start_search_networks(scan)
     local scan_file = fbw.check_scan_file()
     local status
@@ -411,7 +420,7 @@ function fbw.start_search_networks(scan)
     else
         status = 'scanned'
     end
-    return {status= status, networks = fbw.read_configs()}
+    return {status= status, networks = fbw.read_configs(), scanned = fbw.read_scan_results()}
 end
 
 return fbw
