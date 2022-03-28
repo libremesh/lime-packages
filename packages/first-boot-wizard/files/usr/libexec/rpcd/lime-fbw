@@ -1,0 +1,76 @@
+#!/usr/bin/lua
+
+local ubus = require "ubus"
+local fbw = require 'firstbootwizard'
+local nixio = require "nixio"
+local json = require 'luci.jsonc'
+local config = require "lime.config"
+local utils = require('lime.utils')
+
+
+local conn = ubus.connect()
+if not conn then
+	error("Failed to connect to ubus")
+end
+
+local function search_networks (msg)
+    return utils.printJson(fbw.start_search_networks(msg.scan))
+end
+
+local function status ()
+    return utils.printJson(fbw.check_scan_status())
+end
+
+local function set_network(msg)
+    if (msg.file == nil or msg.hostname == nil) then
+        return utils.printJson({ status = 'error', msg = "File and hostname are required" })
+    end
+    local file = msg.file
+    local hostname = msg.hostname
+    utils.printJson({ status = 'configuring'})
+    fbw.apply_file_config(file, hostname)
+end
+
+local function create_network(msg)
+    if (msg.network ~= nil and msg.hostname ~= nil) then
+        utils.printJson({ status = 'done' })
+        fbw.create_network(msg.network, msg.hostname, msg.adminPassword, msg.country)
+        return
+    else
+        return utils.printJson({ status = 'error', msg = "Network and hostname are required" })
+    end
+end
+
+local function dismiss()
+    utils.printJson({status = 'done'})
+    fbw.dismiss()
+end
+
+local methods = {
+    search_networks = { scan = 'bool' },
+    status = {no_params = 0},
+    set_network = { file = 'str', hostname = 'str' },
+    create_network = {
+        network =   'str',
+        hostname =  'str',
+        password =  'str',
+        country =   'str'
+    },
+    dismiss = {no_params = 0},
+}
+
+if arg[1] == 'list' then
+    utils.printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = utils.rpcd_readline()
+    msg = json.parse(msg)
+    if      arg[2] == 'search_networks'	then search_networks(msg)
+    elseif  arg[2] == 'status'	        then status(msg)
+    elseif  arg[2] == 'set_network'     then set_network(msg)
+    elseif  arg[2] == 'create_network'  then create_network(msg)
+    elseif  arg[2] == 'dismiss'         then dismiss(msg)
+    else     utils.printJson({ error = "Method not found" })
+  end
+end
