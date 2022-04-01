@@ -109,7 +109,7 @@ function fbw.get_config(results, mesh_network)
     local hosts = ft.map(utils.append_network(dev_id), linksLocalIpv6)
     -- Add aditional info
     local data = ft.map(function(host)
-        return { host = host, signal = mesh_network.signal, ssid = mesh_network.ssid }
+        return { host = host, signal = mesh_network.signal, ssid = mesh_network.ssid, bssid = mesh_network.bssid  }
     end, hosts)
     data = utils.filter_alredy_scanned(data, results)
     -- Try to fetch remote config file
@@ -167,7 +167,7 @@ function fbw.fetch_config(data)
     fbw.log('Hostname found: '.. hostname)
     if (hostname == '') then hostname = host end
 
-    local lime_community_fname = fbw.WORKDIR .. fbw.COMMUNITY_HOST_CONFIG_PREFIX .. hostname
+    local lime_community_fname = fbw.WORKDIR .. fbw.COMMUNITY_HOST_CONFIG_PREFIX .. hostname .. "__" .. data.bssid
 
     utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/cgi-bin/lime/lime-community -O " .. lime_community_fname)
     if not utils.file_exists(lime_community_fname) then
