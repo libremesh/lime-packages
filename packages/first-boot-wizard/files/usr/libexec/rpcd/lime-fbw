@@ -25,8 +25,6 @@ local function set_network(msg)
     if (msg.file == nil or msg.hostname == nil) then
         return utils.printJson({ status = 'error', msg = "File and hostname are required" })
     end
-    local file = msg.file
-    local hostname = msg.hostname
     utils.printJson({ status = 'configuring'})
     fbw.set_network(msg.file, msg.hostname)
 end

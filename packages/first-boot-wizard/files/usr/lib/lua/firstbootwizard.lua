@@ -273,6 +273,7 @@ end
 local function getConfig(path)
     local uci_cursor = uci.cursor(fbw.WORKDIR)
     local config = uci_cursor:get_all(path)
+
     if config ~= nil then
         return config
     end
@@ -286,8 +287,10 @@ function fbw.read_configs()
     for file in tempFiles do
         if (file ~= nil and file:match("^" .. lutils.literalize(fbw.COMMUNITY_HOST_CONFIG_PREFIX))) then
             local config = getConfig(file)
+            local trimedConfig = {}
+            trimedConfig.wifi = config['wifi']
             table.insert(result, {
-                config = config,
+                config = trimedConfig,
                 file = file
             })
         end
