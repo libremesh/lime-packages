@@ -73,8 +73,8 @@ function fbw.get_networks()
     networks = ft.reduce(ft.flatTable, networks, {})
     -- Filter only remote mesh and ad-hoc networks
     networks = ft.filter(utils.filter_mesh, networks)
-    -- Sort by channel and mode
-    networks = utils.sort_by_channel_and_mode(networks)
+    -- Sort by signal
+    networks = utils.sort_by_signal(networks)
     -- Remove dupicated results in multiradios devices
     networks = utils.only_best(networks)
     return networks
