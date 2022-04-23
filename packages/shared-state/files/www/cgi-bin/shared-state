@@ -26,4 +26,11 @@ echo
 PATH_INFO="${PATH_INFO#/}"
 echo "$PATH_INFO" | grep -q '^[a-zA-Z0-9_-]*$' || exit 22
 
-cat - | shared-state reqsync "$PATH_INFO"
+case "$QUERY_STRING" in
+  *"gzip"*)
+    zcat - | shared-state reqsync "$PATH_INFO" | gzip -
+    ;;
+  *)
+    cat - | shared-state reqsync "$PATH_INFO"
+    ;;
+esac
