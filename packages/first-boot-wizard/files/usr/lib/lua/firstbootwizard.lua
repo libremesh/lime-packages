@@ -27,11 +27,10 @@ fbw.COMMUNITY_HOST_CONFIG_PREFIX = 'lime-community__host__'
 fbw.COMMUNITY_ASSETS_TMPL = 'lime-community_assets__host__%s.tar.gz'
 fbw.SCAN_RESULTS_FILE = 'lime-scan-results.json'
 
-fbw.GET_CONFIG_STATUS = {
+fbw.FETCH_CONFIG_STATUS = {
     downloaded_config = "downloaded_config",
     downloading_config = "downloading_config",
-    error_reach_hostname = "error_reach_hostname",
-    error_reach_lime_community = "error_reach_lime_community",
+    error_download_lime_community = "error_download_lime_community",
     error_not_configured = "error_not_configured",
     error_download_community_assets = "error_download_community_assets"
 }
@@ -167,9 +166,17 @@ function fbw.setup_wireless(mesh_network)
     os.execute("sleep 10s")
 end
 
+-- Used to safely execute command
+function fbw.execute_command(command)
+    return utils.execute(command)
+end
+
+
+
 -- Fetch remote configuration and save result
 function fbw.fetch_config(data)
     fbw.log('Fetch config from '.. json.stringify(data))
+    fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.downloading_config)
     local host = data.host
 
     local hostname = utils.execute("wget --no-check-certificate http://["..data.host.."]/cgi-bin/hostname -qO - "):gsub("\n", "")
@@ -191,16 +198,28 @@ function fbw.fetch_config(data)
         local content = f:read("*a")
         f:close()
         if not content:match("ap_ssid") then
+            fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.error_not_configured)
             utils.execute("rm " .. lime_community_fname)
+        else
+            local fname = lime_community_assets_name(hostname)
+            utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/cgi-bin/lime/lime-community-assets -O " .. fname)
+            if not utils.file_exists(fname) then
+                -- Error downloading assets
+                fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.error_download_community_assets)
+            end
         end
+    else
+        -- Error downloading lime community
+        fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.error_download_lime_community)
     end
 
+    local success = false
     if utils.file_exists(lime_community_fname) then
-        local fname = lime_community_assets_name(hostname)
-        utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/cgi-bin/lime/lime-community-assets -O " .. fname)
+        fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.downloaded_config)
+        success = true;
     end
 
-    return { host = host, filename = lime_community_fname, success = utils.file_exists(lime_community_fname) }
+    return { host = host, filename = lime_community_fname, success = success}
 end
 
 -- Restore previus wireless configuration
