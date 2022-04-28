@@ -170,7 +170,7 @@ describe('FirstBootWizard tests #fbw', function()
         assert.is.equal(true, fbw.save_scan_results(scanlist))
 
         local destBssid = 'C2:4A:00:BE:7B:B7'
-        local status = fbw.GET_CONFIG_STATUS.downloading_config
+        local status = fbw.FETCH_CONFIG_STATUS.downloading_config
 
         fbw.set_status_to_scanned_bbsid(destBssid, status)
 
@@ -188,7 +188,7 @@ describe('FirstBootWizard tests #fbw', function()
 
         check_status(status)
         -- Check status
-        status = fbw.GET_CONFIG_STATUS.downloaded_config
+        status = fbw.FETCH_CONFIG_STATUS.downloaded_config
         fbw.set_status_to_scanned_bbsid(destBssid, status)
         check_status(status)
     end)
