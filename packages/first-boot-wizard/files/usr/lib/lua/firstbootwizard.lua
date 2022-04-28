@@ -27,6 +27,15 @@ fbw.COMMUNITY_HOST_CONFIG_PREFIX = 'lime-community__host__'
 fbw.COMMUNITY_ASSETS_TMPL = 'lime-community_assets__host__%s.tar.gz'
 fbw.SCAN_RESULTS_FILE = 'lime-scan-results.json'
 
+fbw.GET_CONFIG_STATUS = {
+    downloaded_config = "downloaded_config",
+    downloading_config = "downloading_config",
+    error_reach_hostname = "error_reach_hostname",
+    error_reach_lime_community = "error_reach_lime_community",
+    error_not_configured = "error_not_configured",
+    error_download_community_assets = "error_download_community_assets"
+}
+
 
 utils.execute('mkdir -p ' .. fbw.WORKDIR)
 
@@ -337,8 +346,24 @@ function fbw.save_scan_results(networks)
     return lutils.write_obj_store(fbw.WORKDIR .. fbw.SCAN_RESULTS_FILE, networks)
 end
 
-function fbw.read_scan_results(networks)
+function fbw.read_scan_results( )
     return lutils.read_obj_store(fbw.WORKDIR .. fbw.SCAN_RESULTS_FILE)
+end
+
+-- Used to add "status" to an entry on the scanresults file
+function fbw.set_status_to_scanned_bbsid(destBssid, status)
+    -- Open scan_results.json
+    local results = fbw.read_scan_results()
+    -- Search ssid
+    for k, v in pairs(results) do
+        if(v['bssid'] == destBssid) then
+            -- Add status message
+            v["status"] = status
+            break
+        end
+    end
+    -- Store it again
+    fbw.save_scan_results(results)
 end
 
 
