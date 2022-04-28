@@ -162,6 +162,37 @@ describe('FirstBootWizard tests #fbw', function()
         assert('false', fbw.check_scan_file())
     end)
 
+
+    it('test add status message to scan_results.json', function()
+        -- Create mocked scan results
+        iwinfo.fake.set_scanlist('phy0', scanlist_result)
+        local scanlist = iwinfo.nl80211.scanlist('phy0')
+        assert.is.equal(true, fbw.save_scan_results(scanlist))
+
+        local destBssid = 'C2:4A:00:BE:7B:B7'
+        local status = fbw.GET_CONFIG_STATUS.downloading_config
+
+        fbw.set_status_to_scanned_bbsid(destBssid, status)
+
+        -- Check was modified properly
+        local function check_status(check) 
+            local results = fbw.read_scan_results()
+            for k, v in pairs(results) do
+                if(v['bssid'] == destBssid) then 
+                    assert.is.equal(check, v['status'])
+                else
+                    assert.is_nil(v['status'])
+                end
+            end
+        end
+
+        check_status(status)
+        -- Check status
+        status = fbw.GET_CONFIG_STATUS.downloaded_config
+        fbw.set_status_to_scanned_bbsid(destBssid, status)
+        check_status(status)
+    end)
+
     before_each('', function()
         fbw_utils.execute('rm -f /tmp/fbw/*')
         fbw_utils.execute('rm -f /tmp/scanning')
