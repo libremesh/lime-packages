@@ -170,9 +170,11 @@ function fbw.setup_wireless(mesh_network)
     os.execute("sleep 10s")
 end
 
--- Used to safely execute command
-function fbw.execute_command(command)
-    return utils.execute(command)
+function fbw.fetch_lime_community(host, lime_community_fname)
+    utils.execute("wget --no-check-certificate http://[" .. host .. "]/cgi-bin/lime/lime-community -O " .. lime_community_fname)
+    if utils.file_not_exists_or_empty(lime_community_fname) then
+        utils.execute("wget --no-check-certificate http://[" .. host .. "]/lime-community -O " .. lime_community_fname)
+    end
 end
 
 -- Fetch remote configuration and save result
@@ -187,10 +189,7 @@ function fbw.fetch_config(data)
 
     local lime_community_fname = fbw.get_lime_communty_fname(hostname, data.bssid)
 
-    utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/cgi-bin/lime/lime-community -O " .. lime_community_fname)
-    if utils.file_not_exists_or_empty(lime_community_fname) then
-        utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/lime-community -O " .. lime_community_fname)
-    end
+    fbw.fetch_lime_community(data.host, lime_community_fname)
 
     -- Remove lime-community files that are not yet configured.
     -- For this we asume that no ap_ssid options equals not configured.

@@ -67,6 +67,15 @@ config lime 'wifi'
 	option ieee80211s_mesh_id 'LiMe'
 ]]
 
+local community_file_unconfigured = [[
+config lime 'system'
+
+config lime 'network'
+
+config lime 'wifi'
+]]
+
+
 -- Return a mocked scan result
 local function create_mocked_scan_results ()
     iwinfo.fake.set_scanlist('phy0', scanlist_result)
@@ -209,12 +218,15 @@ describe('FirstBootWizard tests #fbw', function()
         local status = fbw.FETCH_CONFIG_STATUS.error_download_lime_community
         check_fetch_network_status(destBssid, status)
 
-        -- Todo: this test not works yet. On docker image no cgi server is up
         -- Test not ap_ssid configured
-        -- scanlist[1]["host"] = "::1" -- Download from localhost 
-        -- result = fbw.fetch_config(scanlist[1])
-        -- status = fbw.FETCH_CONFIG_STATUS.error_not_configured
-        -- check_fetch_network_status(destBssid, status)
+        stub(fbw, "fetch_lime_community", 
+            function(host, fname) 
+                utils.write_file(fname, community_file_unconfigured)
+            end
+        )
+        result = fbw.fetch_config(scanlist[1])
+        status = fbw.FETCH_CONFIG_STATUS.error_not_configured
+        check_fetch_network_status(destBssid, status)
         
     end)
 
