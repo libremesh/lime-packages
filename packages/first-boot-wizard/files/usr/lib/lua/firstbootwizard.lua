@@ -171,8 +171,6 @@ function fbw.execute_command(command)
     return utils.execute(command)
 end
 
-
-
 -- Fetch remote configuration and save result
 function fbw.fetch_config(data)
     fbw.log('Fetch config from '.. json.stringify(data))
@@ -186,14 +184,13 @@ function fbw.fetch_config(data)
     local lime_community_fname = fbw.WORKDIR .. fbw.COMMUNITY_HOST_CONFIG_PREFIX .. hostname .. "__" .. data.bssid
 
     utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/cgi-bin/lime/lime-community -O " .. lime_community_fname)
-    if not utils.file_exists(lime_community_fname) then
-        -- For backwards compatibility
+    if utils.file_not_exists_or_empty(lime_community_fname) then
         utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/lime-community -O " .. lime_community_fname)
     end
 
     -- Remove lime-community files that are not yet configured.
     -- For this we asume that no ap_ssid options equals not configured.
-    if utils.file_exists(lime_community_fname) then
+    if not utils.file_not_exists_or_empty(lime_community_fname) then
         local f = io.open(lime_community_fname)
         local content = f:read("*a")
         f:close()
@@ -203,7 +200,7 @@ function fbw.fetch_config(data)
         else
             local fname = lime_community_assets_name(hostname)
             utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/cgi-bin/lime/lime-community-assets -O " .. fname)
-            if not utils.file_exists(fname) then
+            if not utils.file_not_exists_or_empty(fname) then
                 -- Error downloading assets
                 fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.error_download_community_assets)
             end
@@ -214,7 +211,7 @@ function fbw.fetch_config(data)
     end
 
     local success = false
-    if utils.file_exists(lime_community_fname) then
+    if not utils.file_not_exists_or_empty(lime_community_fname) then
         fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.downloaded_config)
         success = true;
     end
