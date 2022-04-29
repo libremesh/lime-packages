@@ -32,7 +32,6 @@ fbw.FETCH_CONFIG_STATUS = {
     downloading_config = "downloading_config",
     error_download_lime_community = "error_download_lime_community",
     error_not_configured = "error_not_configured",
-    error_download_community_assets = "error_download_community_assets"
 }
 
 
@@ -203,10 +202,6 @@ function fbw.fetch_config(data)
         else
             local fname = lime_community_assets_name(hostname)
             utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/cgi-bin/lime/lime-community-assets -O " .. fname)
-            if not utils.file_not_exists_or_empty(fname) then
-                -- Error downloading assets
-                fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.error_download_community_assets)
-            end
         end
     else
         -- Error downloading lime community
