@@ -46,6 +46,10 @@ local function lime_community_assets_name(hostname)
     return fbw.WORKDIR .. string.format(fbw.COMMUNITY_ASSETS_TMPL, hostname)
 end
 
+function fbw.get_lime_communty_fname(hostname, bssid)
+    return fbw.WORKDIR .. fbw.COMMUNITY_HOST_CONFIG_PREFIX .. hostname .. "__" .. bssid
+end
+
 -- Write lock file at begin
 function fbw.start_scan_file()
     local file = io.open("/tmp/scanning", "w")
@@ -181,7 +185,7 @@ function fbw.fetch_config(data)
     fbw.log('Hostname found: '.. hostname)
     if (hostname == '') then hostname = host end
 
-    local lime_community_fname = fbw.WORKDIR .. fbw.COMMUNITY_HOST_CONFIG_PREFIX .. hostname .. "__" .. data.bssid
+    local lime_community_fname = fbw.get_lime_communty_fname(hostname, data.bssid)
 
     utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/cgi-bin/lime/lime-community -O " .. lime_community_fname)
     if utils.file_not_exists_or_empty(lime_community_fname) then
