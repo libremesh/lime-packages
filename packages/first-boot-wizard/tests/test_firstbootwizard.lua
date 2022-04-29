@@ -67,6 +67,24 @@ config lime 'wifi'
 	option ieee80211s_mesh_id 'LiMe'
 ]]
 
+-- Return a mocked scan result
+local function create_mocked_scan_results ()
+    iwinfo.fake.set_scanlist('phy0', scanlist_result)
+    return iwinfo.nl80211.scanlist('phy0')
+end
+
+-- For a scan results check that bssid has status
+local function check_fetch_network_status(bssid, status) 
+    local results = fbw.read_scan_results()
+    for k, v in pairs(results) do
+        if(v['bssid'] == bssid) then 
+            assert.is.equal(status, v['status'])
+        else
+            assert.is_nil(v['status'])
+        end
+    end
+end
+
 describe('FirstBootWizard tests #fbw', function()
 
     it('test start/end_scan() and check_scan_file()', function()
@@ -140,8 +158,7 @@ describe('FirstBootWizard tests #fbw', function()
     end)
 
     it('test save_scan_results write and read', function()
-        iwinfo.fake.set_scanlist('phy0', scanlist_result)
-        local scanlist = iwinfo.nl80211.scanlist('phy0')
+        local scanlist = create_mocked_scan_results()
         -- Assert saving data
         assert.is.equal(true, fbw.save_scan_results(scanlist))
         local f = io.open(fbw.WORKDIR .. fbw.SCAN_RESULTS_FILE,"r")
@@ -165,8 +182,7 @@ describe('FirstBootWizard tests #fbw', function()
 
     it('test add status message to scan_results.json', function()
         -- Create mocked scan results
-        iwinfo.fake.set_scanlist('phy0', scanlist_result)
-        local scanlist = iwinfo.nl80211.scanlist('phy0')
+        local scanlist = create_mocked_scan_results()
         assert.is.equal(true, fbw.save_scan_results(scanlist))
 
         local destBssid = 'C2:4A:00:BE:7B:B7'
@@ -174,23 +190,32 @@ describe('FirstBootWizard tests #fbw', function()
 
         fbw.set_status_to_scanned_bbsid(destBssid, status)
 
-        -- Check was modified properly
-        local function check_status(check) 
-            local results = fbw.read_scan_results()
-            for k, v in pairs(results) do
-                if(v['bssid'] == destBssid) then 
-                    assert.is.equal(check, v['status'])
-                else
-                    assert.is_nil(v['status'])
-                end
-            end
-        end
-
-        check_status(status)
-        -- Check status
+        check_fetch_network_status(destBssid, status)
         status = fbw.FETCH_CONFIG_STATUS.downloaded_config
         fbw.set_status_to_scanned_bbsid(destBssid, status)
-        check_status(status)
+        check_fetch_network_status(destBssid, status)
+    end)
+
+    -- Test if fetch config wget's fail
+    it('test fetch_config wget errors', function()
+        local scanlist = create_mocked_scan_results()
+        fbw.save_scan_results(scanlist)
+
+        -- Test can't get lime community
+        scanlist[1]["host"] = "dummy" 
+        local result = fbw.fetch_config(scanlist[1])
+
+        local destBssid = "38:AB:C0:C1:D6:70"
+        local status = fbw.FETCH_CONFIG_STATUS.error_download_lime_community
+        check_fetch_network_status(destBssid, status)
+
+        -- Todo: this test not works yet. On docker image no cgi server is up
+        -- Test not ap_ssid configured
+        -- scanlist[1]["host"] = "::1" -- Download from localhost 
+        -- result = fbw.fetch_config(scanlist[1])
+        -- status = fbw.FETCH_CONFIG_STATUS.error_not_configured
+        -- check_fetch_network_status(destBssid, status)
+        
     end)
 
     before_each('', function()
