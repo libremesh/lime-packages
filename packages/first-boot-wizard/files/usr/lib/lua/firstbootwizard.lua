@@ -28,11 +28,21 @@ fbw.COMMUNITY_ASSETS_TMPL = 'lime-community_assets__host__%s.tar.gz'
 fbw.SCAN_RESULTS_FILE = 'lime-scan-results.json'
 
 fbw.FETCH_CONFIG_STATUS = {
-    downloaded_config = "downloaded_config",
-    downloading_config = "downloading_config",
-    error_download_lime_community = "error_download_lime_community",
-    error_not_configured = "error_not_configured",
-    error_download_lime_assets = "error_download_lime_assets",
+    downloaded_config = {
+        retval = true, code = "downloaded_config"
+    },
+    downloading_config = {
+        retval = true, code = "downloading_config"
+    },
+    error_download_lime_community = {
+        retval = false, code = "error_download_lime_community"
+    },
+    error_not_configured = {
+        retval = false, code = "error_not_configured"
+    },
+    error_download_lime_assets = {
+        retval = false, code = "error_download_lime_assets"
+    },
 }
 
 
