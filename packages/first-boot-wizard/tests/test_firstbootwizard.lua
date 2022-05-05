@@ -85,6 +85,7 @@ end
 -- For a scan results check that bssid has status
 local function check_fetch_network_status(bssid, status) 
     local results = fbw.read_scan_results()
+    assert.are_not.equal("[]", json.stringify(results))
     for k, v in pairs(results) do
         if(v['bssid'] == bssid) then 
             assert.is.equal(status, v['status'])
@@ -205,20 +206,31 @@ describe('FirstBootWizard tests #fbw', function()
         check_fetch_network_status(destBssid, status)
     end)
 
-    -- Test if fetch config wget's fail
-    it('test fetch_config wget errors', function()
+    it('test fetch lime assets download error handling', function()
+        local host = "dummy"
+        local fname = fbw.lime_community_assets_name(host)
+        -- Check error downloading assets
+        assert.is.equal(false, fbw.fetch_lime_community_assets(host, fname))
+        -- Check download ok 
+        stub(fbw_utils, 'execute', function() return "" end)
+        assert.is.equal(true, fbw.fetch_lime_community_assets(host, fname))
+        fbw_utils.execute:revert()
+    end)
+
+    it('test fetch_config status messages', function()
         local scanlist = create_mocked_scan_results()
-        fbw.save_scan_results(scanlist)
+        assert.is.equal(true, fbw.save_scan_results(scanlist))
+        local destBssid = "38:AB:C0:C1:D6:70"
 
         -- Test can't get lime community
         scanlist[1]["host"] = "dummy" 
-        local result = fbw.fetch_config(scanlist[1])
-
-        local destBssid = "38:AB:C0:C1:D6:70"
         local status = fbw.FETCH_CONFIG_STATUS.error_download_lime_community
+        local result = fbw.fetch_config(scanlist[1])
+        assert.is.equal(false, result['success']) 
         check_fetch_network_status(destBssid, status)
 
         -- Test not ap_ssid configured
+        scanlist[1]["host"] = "::1" 
         stub(fbw, "fetch_lime_community", 
             function(host, fname) 
                 utils.write_file(fname, community_file_unconfigured)
@@ -227,6 +239,31 @@ describe('FirstBootWizard tests #fbw', function()
         result = fbw.fetch_config(scanlist[1])
         status = fbw.FETCH_CONFIG_STATUS.error_not_configured
         check_fetch_network_status(destBssid, status)
+        assert.is.equal(false, result['success']) 
+        
+        -- Test community files configured but error downloading community 
+        -- assets
+        stub(fbw, "fetch_lime_community", 
+            function(host, fname) 
+                utils.write_file(fname, community_file)
+            end
+        )
+        result = fbw.fetch_config(scanlist[1])
+        status = fbw.FETCH_CONFIG_STATUS.error_download_lime_assets
+        check_fetch_network_status(destBssid, status)
+        assert.is.equal(false, result['success']) 
+
+        -- Test community files and assets Ok
+        stub(fbw, "fetch_lime_community_assets", 
+            function(host, fname) 
+                return true
+            end)
+
+        result = fbw.fetch_config(scanlist[1])
+        status = fbw.FETCH_CONFIG_STATUS.downloaded_config
+        assert.is.equal(true, result['success']) 
+
+
         
     end)
 

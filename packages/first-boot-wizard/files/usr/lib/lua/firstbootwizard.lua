@@ -32,6 +32,7 @@ fbw.FETCH_CONFIG_STATUS = {
     downloading_config = "downloading_config",
     error_download_lime_community = "error_download_lime_community",
     error_not_configured = "error_not_configured",
+    error_download_lime_assets = "error_download_lime_assets",
 }
 
 
@@ -41,7 +42,7 @@ function fbw.log(text)
     nixio.syslog('info', '[FBW] ' .. text)
 end
 
-local function lime_community_assets_name(hostname)
+function fbw.lime_community_assets_name(hostname)
     return fbw.WORKDIR .. string.format(fbw.COMMUNITY_ASSETS_TMPL, hostname)
 end
 
@@ -176,10 +177,26 @@ function fbw.fetch_lime_community(host, lime_community_fname)
     end
 end
 
+-- Return true if download success, false otherwise
+function fbw.fetch_lime_community_assets(host, fname)
+    local errorMsg = "Error downloading lime community assets for " .. host
+    local res = utils.execute("wget --no-check-certificate http://[" .. host .. "]/cgi-bin/lime/lime-community-assets -O " .. fname .. " 2>&1 || echo " .. errorMsg)
+    -- Looking for wget error will let us know if download failed or lime 
+    -- community assets don't exist on destination host (command success but 
+    -- file not exists)
+    if res:find(errorMsg) then
+        fbw.log(res)
+        return false
+    else
+        return true
+    end
+end
+
 -- Fetch remote configuration and save result
 function fbw.fetch_config(data)
     fbw.log('Fetch config from '.. json.stringify(data))
     fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.downloading_config)
+    local success = true
     local host = data.host
 
     local hostname = utils.execute("wget --no-check-certificate http://["..data.host.."]/cgi-bin/hostname -qO - "):gsub("\n", "")
@@ -199,19 +216,23 @@ function fbw.fetch_config(data)
         if not content:match("ap_ssid") then
             fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.error_not_configured)
             utils.execute("rm " .. lime_community_fname)
+            success = false
         else
-            local fname = lime_community_assets_name(hostname)
-            utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/cgi-bin/lime/lime-community-assets -O " .. fname)
+            local fname = fbw.lime_community_assets_name(hostname)
+            success = fbw.fetch_lime_community_assets(data.host, fname)
+            if not success then
+                -- Error downloading lime community assets
+                fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.error_download_lime_assets)
+            end
         end
     else
         -- Error downloading lime community
         fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.error_download_lime_community)
+        success = false
     end
 
-    local success = false
-    if not utils.file_not_exists_or_empty(lime_community_fname) then
+    if success then
         fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.downloaded_config)
-        success = true;
     end
 
     return { host = host, filename = lime_community_fname, success = success}
@@ -229,7 +250,7 @@ function fbw.restore_wifi_config()
     end
 end
 
--- Apply configuraation permanenty
+-- Apply configuration permanenty
 -- TODO: check if config is valid
 -- TODO: use safe-reboot
 function fbw.apply_file_config(file, hostname)
