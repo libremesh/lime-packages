@@ -88,7 +88,8 @@ local function check_fetch_network_status(bssid, status)
     assert.are_not.equal("[]", json.stringify(results))
     for k, v in pairs(results) do
         if(v['bssid'] == bssid) then 
-            assert.is.equal(status, v['status'])
+            assert.is.equal(status['retval'], v['status']['retval'])
+            assert.is.equal(status['code'], v['status']['code'])
         else
             assert.is_nil(v['status'])
         end
@@ -263,8 +264,6 @@ describe('FirstBootWizard tests #fbw', function()
         status = fbw.FETCH_CONFIG_STATUS.downloaded_config
         assert.is.equal(true, result['success']) 
 
-
-        
     end)
 
     before_each('', function()
