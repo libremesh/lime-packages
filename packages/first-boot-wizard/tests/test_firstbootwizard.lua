@@ -76,12 +76,6 @@ config lime 'wifi'
 ]]
 
 
--- Return a mocked scan result
-local function create_mocked_scan_results ()
-    iwinfo.fake.set_scanlist('phy0', scanlist_result)
-    return iwinfo.nl80211.scanlist('phy0')
-end
-
 -- For a scan results check that bssid has status
 local function check_fetch_network_status(bssid, status) 
     local results = fbw.read_scan_results()
@@ -94,6 +88,13 @@ local function check_fetch_network_status(bssid, status)
             assert.is_nil(v['status'])
         end
     end
+end
+
+local function save_mocked_scan_results ()
+    iwinfo.fake.set_scanlist('phy0', scanlist_result)
+    local scanlist =  iwinfo.nl80211.scanlist('phy0')
+    assert.is.equal(true, fbw.save_scan_results(scanlist))
+    return scanlist
 end
 
 describe('FirstBootWizard tests #fbw', function()
@@ -169,9 +170,7 @@ describe('FirstBootWizard tests #fbw', function()
     end)
 
     it('test save_scan_results write and read', function()
-        local scanlist = create_mocked_scan_results()
-        -- Assert saving data
-        assert.is.equal(true, fbw.save_scan_results(scanlist))
+        local scanlist = save_mocked_scan_results()
         local f = io.open(fbw.WORKDIR .. fbw.SCAN_RESULTS_FILE,"r")
         assert.is.equal(true, f~=nil)
         assert.is.equal(json.stringify(scanlist), f:read("*a"))
@@ -192,9 +191,7 @@ describe('FirstBootWizard tests #fbw', function()
 
 
     it('test add status message to scan_results.json', function()
-        -- Create mocked scan results
-        local scanlist = create_mocked_scan_results()
-        assert.is.equal(true, fbw.save_scan_results(scanlist))
+        save_mocked_scan_results()
 
         local destBssid = 'C2:4A:00:BE:7B:B7'
         local status = fbw.FETCH_CONFIG_STATUS.downloading_config
@@ -218,19 +215,22 @@ describe('FirstBootWizard tests #fbw', function()
         utils.http_client_get:revert()
     end)
 
-    it('test fetch_config status messages', function()
-        local scanlist = create_mocked_scan_results()
-        assert.is.equal(true, fbw.save_scan_results(scanlist))
+    it('test fetch_config can\'t get lime community', function()
+        local scanlist = save_mocked_scan_results()
         local destBssid = "38:AB:C0:C1:D6:70"
 
-        -- Test can't get lime community
         scanlist[1]["host"] = "dummy" 
         local status = fbw.FETCH_CONFIG_STATUS.error_download_lime_community
         local result = fbw.fetch_config(scanlist[1])
         assert.is.equal(false, result['success']) 
         check_fetch_network_status(destBssid, status)
 
-        -- Test not ap_ssid configured
+    end)
+
+    it('test fetch_config not ap_ssid configured', function()
+        local scanlist = save_mocked_scan_results()
+        local destBssid = "38:AB:C0:C1:D6:70"
+
         scanlist[1]["host"] = "::1" 
         stub(fbw, "fetch_lime_community", 
             function(host, fname) 
@@ -242,9 +242,12 @@ describe('FirstBootWizard tests #fbw', function()
         status = fbw.FETCH_CONFIG_STATUS.error_not_configured
         check_fetch_network_status(destBssid, status)
         assert.is.equal(false, result['success']) 
-        
-        -- Test community files configured but error downloading community 
-        -- assets
+    end)
+
+    it('test fetch_config community files configured but error downloading community assets', function()
+        local scanlist = save_mocked_scan_results()
+        local destBssid = "38:AB:C0:C1:D6:70"
+
         stub(fbw, "fetch_lime_community", 
             function(host, fname) 
                 utils.write_file(fname, community_file)
@@ -255,8 +258,11 @@ describe('FirstBootWizard tests #fbw', function()
         status = fbw.FETCH_CONFIG_STATUS.error_download_lime_assets
         check_fetch_network_status(destBssid, status)
         assert.is.equal(false, result['success']) 
+    end)
 
-        -- Test community files and assets Ok
+    it('test fetch_config community files and assets download correctly', function()
+        local scanlist = save_mocked_scan_results()
+        local destBssid = "38:AB:C0:C1:D6:70"
         stub(fbw, "fetch_lime_community_assets", 
             function(host, fname) 
                 return true
@@ -265,7 +271,6 @@ describe('FirstBootWizard tests #fbw', function()
         result = fbw.fetch_config(scanlist[1])
         status = fbw.FETCH_CONFIG_STATUS.downloaded_config
         assert.is.equal(true, result['success']) 
-
     end)
 
     before_each('', function()
