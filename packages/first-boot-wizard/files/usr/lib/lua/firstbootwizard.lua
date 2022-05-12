@@ -181,25 +181,17 @@ function fbw.setup_wireless(mesh_network)
 end
 
 function fbw.fetch_lime_community(host, lime_community_fname)
-    utils.execute("wget --no-check-certificate http://[" .. host .. "]/cgi-bin/lime/lime-community -O " .. lime_community_fname)
-    if utils.file_not_exists_or_empty(lime_community_fname) then
-        utils.execute("wget --no-check-certificate http://[" .. host .. "]/lime-community -O " .. lime_community_fname)
+    local res = lutils.http_client_get("http://[" .. host .. "]/cgi-bin/lime/lime-community", 10, lime_community_fname)
+    if res == nil or utils.file_not_exists_or_empty(lime_community_fname) then
+        res = lutils.http_client_get("http://[" .. host .. "]/lime-community", 10, lime_community_fname)
     end
+    return res
 end
 
 -- Return true if download success, false otherwise
 function fbw.fetch_lime_community_assets(host, fname)
-    local errorMsg = "Error downloading lime community assets for " .. host
-    local res = utils.execute("wget --no-check-certificate http://[" .. host .. "]/cgi-bin/lime/lime-community-assets -O " .. fname .. " 2>&1 || echo " .. errorMsg)
-    -- Looking for wget error will let us know if download failed or lime 
-    -- community assets don't exist on destination host (command success but 
-    -- file not exists)
-    if res:find(errorMsg) then
-        fbw.log(res)
-        return false
-    else
-        return true
-    end
+    local res = lutils.http_client_get("http://[" .. host .. "]/cgi-bin/lime/lime-community-assets", 10, lime_community_fname)
+    return res
 end
 
 -- Fetch remote configuration and save result
@@ -215,11 +207,11 @@ function fbw.fetch_config(data)
 
     local lime_community_fname = fbw.get_lime_communty_fname(hostname, data.bssid)
 
-    fbw.fetch_lime_community(data.host, lime_community_fname)
+    local res = fbw.fetch_lime_community(data.host, lime_community_fname)
 
     -- Remove lime-community files that are not yet configured.
     -- For this we asume that no ap_ssid options equals not configured.
-    if not utils.file_not_exists_or_empty(lime_community_fname) then
+    if res == true and not utils.file_not_exists_or_empty(lime_community_fname) then
         local f = io.open(lime_community_fname)
         local content = f:read("*a")
         f:close()
@@ -230,8 +222,9 @@ function fbw.fetch_config(data)
         else
             local fname = fbw.lime_community_assets_name(hostname)
             success = fbw.fetch_lime_community_assets(data.host, fname)
-            if not success then
+            if success == nil then
                 -- Error downloading lime community assets
+                success = false
                 fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.error_download_lime_assets)
             end
         end
