@@ -211,11 +211,11 @@ describe('FirstBootWizard tests #fbw', function()
         local host = "dummy"
         local fname = fbw.lime_community_assets_name(host)
         -- Check error downloading assets
-        assert.is.equal(false, fbw.fetch_lime_community_assets(host, fname))
+        assert.is.equal(nil, fbw.fetch_lime_community_assets(host, fname))
         -- Check download ok 
-        stub(fbw_utils, 'execute', function() return "" end)
+        stub(utils, 'http_client_get', function() return true end)
         assert.is.equal(true, fbw.fetch_lime_community_assets(host, fname))
-        fbw_utils.execute:revert()
+        utils.http_client_get:revert()
     end)
 
     it('test fetch_config status messages', function()
@@ -235,6 +235,7 @@ describe('FirstBootWizard tests #fbw', function()
         stub(fbw, "fetch_lime_community", 
             function(host, fname) 
                 utils.write_file(fname, community_file_unconfigured)
+                return true
             end
         )
         result = fbw.fetch_config(scanlist[1])
@@ -247,6 +248,7 @@ describe('FirstBootWizard tests #fbw', function()
         stub(fbw, "fetch_lime_community", 
             function(host, fname) 
                 utils.write_file(fname, community_file)
+                return true
             end
         )
         result = fbw.fetch_config(scanlist[1])
