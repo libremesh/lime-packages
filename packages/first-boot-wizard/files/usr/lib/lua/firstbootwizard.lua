@@ -270,7 +270,7 @@ function fbw.apply_file_config(file, hostname)
 
     -- Setup the shared lime-assets
     local remote_hostname = string.sub(file, #fbw.COMMUNITY_HOST_CONFIG_PREFIX + 1)
-    local lime_community_assets_fname = lime_community_assets_name(remote_hostname)
+    local lime_community_assets_fname = fbw.lime_community_assets_name(remote_hostname)
     if utils.file_exists(lime_community_assets_fname) then
         utils.execute(string.format("tar xfz %s -C /etc/lime-assets/", lime_community_assets_fname))
     end
