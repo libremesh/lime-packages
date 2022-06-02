@@ -132,20 +132,6 @@ function utils.unpack_table(t)
     return unpacked
 end
 
--- Deprecated by sort_by_signal
-function utils.sort_by_channel_and_mode(networks)
-    networks = ft.splitBy('mode')(networks)
-    networks = ft.map(ft.sortBy('channel'), networks)
-    networks = ft.reduce(ft.flatTable,networks, {})
-    return networks
-end
-
-function utils.sort_by_signal(networks)
-    networks = ft.map(ft.sortBy('signal'), networks)
-    networks = ft.reduce(ft.flatTable,networks, {})
-    return networks
-end
-
 function utils.filter_mesh(n)
     return n.mode == "Ad-Hoc" or n.mode == "Mesh Point"
 end
