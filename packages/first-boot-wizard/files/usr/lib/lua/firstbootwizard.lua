@@ -454,25 +454,6 @@ function fbw.get_all_networks()
     return configs
 end
 
--- Check scan status and return object status{ lock: boolean, scan: 0|1|2 }
-function fbw.check_scan_status()
-    local scan_status
-    local scan_file = fbw.check_scan_file()
-
-    -- if no scan file return 0
-    if scan_file == nil then scan_status = 0
-    -- if scanning return 1
-    elseif scan_file == "true" then scan_status = 1
-    -- if done scanning return 2
-    elseif scan_file == "false" then scan_status = 2
-    end
-    local status = {
-        lock = not fbw.is_configured() and not fbw.is_dismissed(),
-        scan = scan_status
-    }
-    return status
-end
-
 -- Run daemonized /bin/firstbootwizard execution that start get_all_networks
 -- Return object with status, read_configs() and read_scan_results()
 function fbw.start_search_networks(scan)
