@@ -406,7 +406,7 @@ end
 
 
 -- Function that stop get_all_networks function if running
-function fbw.stop_get_all_networks()
+function fbw.stop_search_networks()
     local scan_file = fbw.check_scan_file()
     if (scan_file == "true") then
         fbw.log('Stopping firstbootwizard service')
@@ -424,7 +424,7 @@ end
 
 -- Apply file config for specific file, hostname and stop scanning if running
 function fbw.set_network(file, hostname)
-    fbw.stop_get_all_networks() -- Stop firstbootwizard service if running
+    fbw.stop_search_networks() -- Stop firstbootwizard service if running
     fbw.apply_file_config(file, hostname)
 end
 
