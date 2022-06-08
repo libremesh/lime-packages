@@ -13,8 +13,20 @@ if not conn then
 	error("Failed to connect to ubus")
 end
 
-local function search_networks (msg)
-    return utils.printJson(fbw.start_search_networks(msg.scan))
+local function start (msg)
+    return utils.printJson(result = fbw.start_search_networks())
+end
+
+local function stop (msg)
+    return utils.printJson(result = fbw.stop_search_networks())
+end
+
+local function status (msg)
+    return utils.printJson(fbw.status_search_networks())
+end
+
+local function restart (msg)
+    return utils.printJson(result = fbw.restart_search_networks())
 end
 
 local function set_network(msg)
@@ -60,8 +72,11 @@ end
 if arg[1] == 'call' then
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
-    if      arg[2] == 'search_networks'	then search_networks(msg)
-    elseif  arg[2] == 'status'	        then status(msg)
+    if      arg[2] == 'start'	        then start(msg)
+    elseif  arg[2] == 'stop'        	then stop(msg)
+    elseif  arg[2] == 'status'      	then status(msg)
+    elseif  arg[2] == 'restart'     	then restart(msg)
+
     elseif  arg[2] == 'set_network'     then set_network(msg)
     elseif  arg[2] == 'create_network'  then create_network(msg)
     elseif  arg[2] == 'dismiss'         then dismiss(msg)
