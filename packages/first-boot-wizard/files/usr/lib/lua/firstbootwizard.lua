@@ -404,24 +404,6 @@ function fbw.set_status_to_scanned_bbsid(destBssid, status)
     fbw.save_scan_results(results)
 end
 
-
--- Function that stop get_all_networks function if running
-function fbw.stop_search_networks()
-    local scan_file = fbw.check_scan_file()
-    if (scan_file == "true") then
-        fbw.log('Stopping firstbootwizard service')
-        os.execute("killall firstbootwizard")
-        fbw.log('Restore previus wireless configuration')
-        fbw.restore_wifi_config()
-        fbw.log('Remove lock file')
-        fbw.end_scan()
-        return true
-    else
-        return true
-    end
-    return false
-end
-
 -- Apply file config for specific file, hostname and stop scanning if running
 function fbw.set_network(file, hostname)
     fbw.stop_search_networks() -- Stop firstbootwizard service if running
@@ -455,20 +437,52 @@ function fbw.get_all_networks()
 end
 
 -- Run daemonized /bin/firstbootwizard execution that start get_all_networks
+-- Return false if already runing
+function fbw.start_search_networks()
+    local scan_file = fbw.check_scan_file()
+    if(scan_file == nil) or (scan_file == false) then
+        os.execute("rm -f /tmp/scanning")
+        lutils.execute_daemonized("/bin/firstbootwizard")
+        return true
+    end
+    return false
+end
+
 -- Return object with status, read_configs() and read_scan_results()
-function fbw.start_search_networks(scan)
+function fbw.status_search_networks()
     local scan_file = fbw.check_scan_file()
     local status
-    if(scan_file == nil) or (scan == true) then
-        lutils.execute_daemonized("/bin/firstbootwizard")
-        os.execute("rm -f /tmp/scanning")
-    end
-    if (scan_file == nil) or (scan_file == "true") or (scan == true) then
+    if (scan_file == nil) or (scan_file == "true") then
         status = 'scanning'
     else
         status = 'scanned'
     end
-    return {status= status, networks = fbw.read_configs(), scanned = fbw.read_scan_results()}
+    return {status=status, networks = fbw.read_configs(), scanned = fbw.read_scan_results()}
+end
+
+-- Function that stop get_all_networks function if running
+function fbw.stop_search_networks()
+    local scan_file = fbw.check_scan_file()
+    if (scan_file == "true") then
+        fbw.log('Stopping firstbootwizard service')
+        os.execute("killall firstbootwizard")
+        fbw.log('Restore previus wireless configuration')
+        fbw.restore_wifi_config()
+        fbw.log('Remove lock file')
+        fbw.end_scan()
+        return true
+    else
+        return true
+    end
+    return false
+end
+
+-- Return false if can't perform the restart
+function fbw.restart_search_networks()
+    if fbw.stop_search_networks() then
+        return fbw.start_search_networks()
+    end
+    return false        
 end
 
 return fbw
