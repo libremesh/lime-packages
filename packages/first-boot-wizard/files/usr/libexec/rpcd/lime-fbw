@@ -17,10 +17,6 @@ local function search_networks (msg)
     return utils.printJson(fbw.start_search_networks(msg.scan))
 end
 
-local function status ()
-    return utils.printJson(fbw.check_scan_status())
-end
-
 local function set_network(msg)
     if (msg.file == nil or msg.hostname == nil) then
         return utils.printJson({ status = 'error', msg = "File and hostname are required" })
