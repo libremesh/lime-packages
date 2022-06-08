@@ -410,7 +410,7 @@ function fbw.stop_get_all_networks()
     local scan_file = fbw.check_scan_file()
     if (scan_file == "true") then
         fbw.log('Stopping firstbootwizard service')
-        os.execute("/etc/init.d/firstbootwizard stop")
+        os.execute("killall firstbootwizard")
         fbw.log('Restore previus wireless configuration')
         fbw.restore_wifi_config()
         fbw.log('Remove lock file')
@@ -473,14 +473,14 @@ function fbw.check_scan_status()
     return status
 end
 
--- Start /etc/init/firstbootwizard daemon to start get_all_networks
+-- Run daemonized /bin/firstbootwizard execution that start get_all_networks
 -- Return object with status, read_configs() and read_scan_results()
 function fbw.start_search_networks(scan)
     local scan_file = fbw.check_scan_file()
     local status
     if(scan_file == nil) or (scan == true) then
+        lutils.execute_daemonized("/bin/firstbootwizard")
         os.execute("rm -f /tmp/scanning")
-        os.execute("/etc/init.d/firstbootwizard start")
     end
     if (scan_file == nil) or (scan_file == "true") or (scan == true) then
         status = 'scanning'

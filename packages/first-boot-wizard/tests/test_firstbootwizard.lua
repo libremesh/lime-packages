@@ -183,12 +183,18 @@ describe('FirstBootWizard tests #fbw', function()
         assert(true, utils.deepcompare(scanlist, results['scanned']))
     end)
 
+    it('test start daemonized search networks', function()
+        fbw.end_scan()
+        local results = fbw.start_search_networks(true)
+        assert(true, results['status'] == 'scanning')
+        assert(true, fbw.check_scan_file())
+    end)
+
     it('test stop_get_all_networks', function()
         fbw.start_search_networks()
         assert(true, fbw.stop_get_all_networks())
         assert('false', fbw.check_scan_file())
     end)
-
 
     it('test add status message to scan_results.json', function()
         save_mocked_scan_results()
