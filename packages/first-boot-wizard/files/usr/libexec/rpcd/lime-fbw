@@ -29,6 +29,10 @@ local function restart (msg)
     return utils.printJson(result = fbw.restart_search_networks())
 end
 
+local function fbw_status ()
+    return utils.printJson(fbw.check_fbw_status())
+end
+
 local function set_network(msg)
     if (msg.file == nil or msg.hostname == nil) then
         return utils.printJson({ status = 'error', msg = "File and hostname are required" })
@@ -80,6 +84,8 @@ if arg[1] == 'call' then
     elseif  arg[2] == 'set_network'     then set_network(msg)
     elseif  arg[2] == 'create_network'  then create_network(msg)
     elseif  arg[2] == 'dismiss'         then dismiss(msg)
+    elseif  arg[2] == 'fbw_status'     	then fbw_status(msg)
+
     else     utils.printJson({ error = "Method not found" })
   end
 end
