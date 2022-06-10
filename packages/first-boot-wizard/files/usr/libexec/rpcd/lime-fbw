@@ -57,8 +57,11 @@ local function dismiss()
 end
 
 local methods = {
-    search_networks = { scan = 'bool' },
+    start = {no_params = 0},
+    stop = {no_params = 0},
     status = {no_params = 0},
+    restart = {no_params = 0},
+    
     set_network = { file = 'str', hostname = 'str' },
     create_network = {
         network =   'str',
