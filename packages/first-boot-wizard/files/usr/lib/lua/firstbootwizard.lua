@@ -440,7 +440,7 @@ end
 -- Return false if already runing
 function fbw.start_search_networks()
     local scan_file = fbw.check_scan_file()
-    if(scan_file == nil) or (scan_file == false) then
+    if(scan_file == nil) or (scan_file == "false") then
         os.execute("rm -f /tmp/scanning")
         lutils.execute_daemonized("/bin/firstbootwizard")
         return true
