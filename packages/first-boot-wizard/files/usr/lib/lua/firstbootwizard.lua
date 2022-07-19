@@ -460,12 +460,17 @@ function fbw.status_search_networks()
     return {status=status, networks = fbw.read_configs(), scanned = fbw.read_scan_results()}
 end
 
+-- todo(kon): check this work properly
+function fbw.kill_fbw()
+    os.execute("killall firstbootwizard")
+end
+
 -- Function that stop get_all_networks function if running
 function fbw.stop_search_networks()
     local scan_file = fbw.check_scan_file()
     if (scan_file == "true") then
         fbw.log('Stopping firstbootwizard service')
-        os.execute("killall firstbootwizard")
+        fbw.kill_fbw()
         fbw.log('Restore previus wireless configuration')
         fbw.restore_wifi_config()
         fbw.log('Remove lock file')
