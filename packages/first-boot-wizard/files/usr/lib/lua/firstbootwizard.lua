@@ -459,7 +459,8 @@ function fbw.status_search_networks()
     else
         status = 'scanned'
     end
-    return {status=status, networks = fbw.read_configs(), scanned = fbw.read_scan_results()}
+    lock = not fbw.is_configured() and not fbw.is_dismissed()
+    return { lock = lock, status = status, networks = fbw.read_configs(), scanned = fbw.read_scan_results()}
 end
 
 -- todo(kon): check this work properly
@@ -490,25 +491,6 @@ function fbw.restart_search_networks()
         return fbw.start_search_networks()
     end
     return false        
-end
-
--- Check scan status and return object status{ lock: boolean, scan: 0|1|2 }
-function fbw.check_fbw_status()
-    local scan_status
-    local scan_file = fbw.check_scan_file()
-
-    -- if no scan file return 0
-    if scan_file == nil then scan_status = 0
-    -- if scanning return 1
-    elseif scan_file == "true" then scan_status = 1
-    -- if done scanning return 2
-    elseif scan_file == "false" then scan_status = 2
-    end
-    local status = {
-        lock = not fbw.is_configured() and not fbw.is_dismissed(),
-        scan = scan_status
-    }
-    return status
 end
 
 return fbw
