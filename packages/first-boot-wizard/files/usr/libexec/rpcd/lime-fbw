@@ -13,24 +13,29 @@ if not conn then
 	error("Failed to connect to ubus")
 end
 
-local function start (msg)
-    return utils.printJson(result = fbw.start_search_networks())
+local function start ()
+    local result = fbw.start_search_networks()
+    utils.printJson(result)
 end
 
-local function stop (msg)
-    return utils.printJson(result = fbw.stop_search_networks())
+local function stop ()
+    local result = fbw.stop_search_networks()
+    utils.printJson(result)
 end
 
-local function status (msg)
-    return utils.printJson(fbw.status_search_networks())
+local function status ()
+    local result = fbw.status_search_networks()
+    utils.printJson()
 end
 
-local function restart (msg)
-    return utils.printJson(result = fbw.restart_search_networks())
+local function restart ()
+    local result = fbw.restart_search_networks()
+    utils.printJson(result)
 end
 
 local function fbw_status ()
-    return utils.printJson(fbw.check_fbw_status())
+    local result = fbw.check_fbw_status()
+    return utils.printJson(result)
 end
 
 local function set_network(msg)
@@ -83,7 +88,6 @@ if arg[1] == 'call' then
     elseif  arg[2] == 'stop'        	then stop(msg)
     elseif  arg[2] == 'status'      	then status(msg)
     elseif  arg[2] == 'restart'     	then restart(msg)
-
     elseif  arg[2] == 'set_network'     then set_network(msg)
     elseif  arg[2] == 'create_network'  then create_network(msg)
     elseif  arg[2] == 'dismiss'         then dismiss(msg)
