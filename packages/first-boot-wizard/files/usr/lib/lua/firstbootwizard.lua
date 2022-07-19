@@ -452,7 +452,9 @@ end
 function fbw.status_search_networks()
     local scan_file = fbw.check_scan_file()
     local status
-    if (scan_file == nil) or (scan_file == "true") then
+    if (scan_file == nil) then
+        status = 'idle'
+    elseif(scan_file == "true") then
         status = 'scanning'
     else
         status = 'scanned'
