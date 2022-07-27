@@ -15,22 +15,22 @@ end
 
 local function start ()
     local result = fbw.start_search_networks()
-    utils.printJson(result)
+    utils.printJson({status = result})
 end
 
 local function stop ()
     local result = fbw.stop_search_networks()
-    utils.printJson(result)
+    utils.printJson({status = result})
 end
 
 local function status ()
     local result = fbw.status_search_networks()
-    utils.printJson()
+    utils.printJson({status = result})
 end
 
 local function restart ()
     local result = fbw.restart_search_networks()
-    utils.printJson(result)
+    utils.printJson({status = result})
 end
 
 local function set_network(msg)
