@@ -25,7 +25,7 @@ end
 
 local function status ()
     local result = fbw.status_search_networks()
-    utils.printJson({status = result})
+    utils.printJson(result)
 end
 
 local function restart ()
