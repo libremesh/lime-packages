@@ -7,11 +7,12 @@
 
 local fs = require("nixio.fs")
 local libuci = require("uci")
+local nixio = require "nixio"
 
 config = {}
 
-function config.log(...)
-	print(...)
+function config.log(text)
+	nixio.syslog('info', '[config] ' .. text)
 end
 
 config.uci = nil
