@@ -169,7 +169,7 @@ describe('FirstBootWizard tests #fbw', function()
         assert.stub(utils.set_password).was.called_with('root', "mypassword")
     end)
 
-    it('test save_scan_results write and read', function()
+    it('test save_scan_results write and read file', function()
         local scanlist = save_mocked_scan_results()
         local f = io.open(fbw.WORKDIR .. fbw.SCAN_RESULTS_FILE,"r")
         assert.is.equal(true, f~=nil)
@@ -178,19 +178,57 @@ describe('FirstBootWizard tests #fbw', function()
 
         -- Assert reading data
         fbw.start_scan_file() -- simulate is scanning to don't start the scan
+        local results = fbw.status_search_networks()
+        assert.is_true(type(results['scanned']) == "table")
+        assert.is_true(utils.deepcompare(scanlist, results['scanned']))
+    end)
+
+    it('test start_search_networks call execute_daemonized successfully', function()
+        fbw.end_scan()
+        local s = spy.on(utils, "execute_daemonized")
         local results = fbw.start_search_networks()
-        assert(true, type(results['scanned']) == table)
-        assert(true, utils.deepcompare(scanlist, results['scanned']))
-    end)
-
-    it('test stop_get_all_networks', function()
-        fbw.start_search_networks()
-        assert(true, fbw.stop_get_all_networks())
-        assert('false', fbw.check_scan_file())
+        assert.is_true(results)
+        assert.spy(s).was_called_with("/bin/firstbootwizard")
     end)
 
 
-    it('test add status message to scan_results.json', function()
+    it('test stop_search_networks stop fbw, restore de configuration and remove lock file', function()
+        fbw.start_scan_file()
+        local kill_fbw = spy.on(fbw, "kill_fbw")
+        local restore_wifi_config = spy.on(fbw_utils, "execute")
+        assert.is_true(fbw.stop_search_networks())
+        assert.is.equal('false', fbw.check_scan_file())
+        assert.spy(kill_fbw).was_called_with()
+        assert.spy(restore_wifi_config).was_called_with("cp /tmp/wireless-temp /etc/config/wireless")
+    end)
+
+    it('test status_search_networks return correct json object', function()
+        fbw.start_scan_file()
+        local scanlist = save_mocked_scan_results()
+        utils.write_file('/tmp/fbw/lime-community__host__foonode', community_file)
+        local networks = fbw.read_configs()
+
+        local results = fbw.status_search_networks()
+        assert.is_true(type(results['scanned']) == "table")
+        assert.is_true(utils.deepcompare(scanlist, results['scanned']))
+        assert.is_true(type(results['networks']) == "table")
+        assert.is_true(utils.deepcompare(networks, results['networks']))
+        assert.is_true(results['status'] == 'scanning')
+        assert.is_true(results['lock'])
+    end)
+
+    it('test status_search_networks return locked true and status idle if nothing done berfore ', function()
+        local results = fbw.status_search_networks()
+
+        assert.is_true(type(results['scanned']) == "table")
+        assert.is_true(next(results['scanned']) == nil)
+        assert.is_true(type(results['networks']) == "table")
+        assert.is_true(next(results['networks']) == nil)
+        assert.is_true(results['status'] == 'idle')
+        assert.is_true(results['lock'])
+    end)
+
+    it('test add status message to a specific bssid on scan_results.json', function()
         save_mocked_scan_results()
 
         local destBssid = 'C2:4A:00:BE:7B:B7'
@@ -204,7 +242,7 @@ describe('FirstBootWizard tests #fbw', function()
         check_fetch_network_status(destBssid, status)
     end)
 
-    it('test fetch lime assets download error handling', function()
+    it('test when fetch_lime_community_assets has a download error return nil', function()
         local host = "dummy"
         local fname = fbw.lime_community_assets_name(host)
         -- Check error downloading assets
@@ -215,7 +253,7 @@ describe('FirstBootWizard tests #fbw', function()
         utils.http_client_get:revert()
     end)
 
-    it('test fetch_config can\'t get lime community', function()
+    it('test fetch_config can\'t get lime community return false', function()
         local scanlist = save_mocked_scan_results()
         local destBssid = "38:AB:C0:C1:D6:70"
 
@@ -227,7 +265,7 @@ describe('FirstBootWizard tests #fbw', function()
 
     end)
 
-    it('test fetch_config not ap_ssid configured', function()
+    it('test fetch_config not ap_ssid configured return false', function()
         local scanlist = save_mocked_scan_results()
         local destBssid = "38:AB:C0:C1:D6:70"
 
@@ -244,7 +282,7 @@ describe('FirstBootWizard tests #fbw', function()
         assert.is.equal(false, result['success']) 
     end)
 
-    it('test fetch_config community files configured but error downloading community assets', function()
+    it('test fetch_config community files configured but error downloading community assets return false', function()
         local scanlist = save_mocked_scan_results()
         local destBssid = "38:AB:C0:C1:D6:70"
 
@@ -272,6 +310,7 @@ describe('FirstBootWizard tests #fbw', function()
         status = fbw.FETCH_CONFIG_STATUS.downloaded_config
         assert.is.equal(true, result['success']) 
     end)
+
 
     before_each('', function()
         fbw_utils.execute('rm -f /tmp/fbw/*')
