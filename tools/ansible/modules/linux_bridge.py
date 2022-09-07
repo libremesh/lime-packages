@@ -54,17 +54,16 @@ class LinuxBridge (object) :
         self.module = module
         self.bridge = module.params['bridge']
         self.state = module.params['state']
-
         return
 
     def brctl (self, cmd) :
 
-        return self.module.run_command (['brctl'] + cmd)
+       	return self.module.run_command (['brctl'] + cmd)
 
 
-    def ifconfig (self, cmd) :
+    def ip(self, cmd) : 
 
-        return self.module.run_command (['ifconfig'] + cmd)
+        return self.module.run_command (['ip'] + cmd) 
 
 
     def br_exists (self) :
@@ -79,22 +78,22 @@ class LinuxBridge (object) :
 
 
     def addbr (self) :
-        
-        (rc, out, err) = self.brctl (['addbr', self.bridge])
+    
+        (rc, out, err) = self.ip (['link', 'add', 'name', self.bridge, 'type', 'bridge'])
 
         if rc != 0 :
             raise Exception (err)
 
-        self.ifconfig ([self.bridge, 'up'])
+        self.ip(['link','set','up', self.bridge]) 
 
         return
 
 
     def delbr (self) :
         
-        self.ifconfig ([self.bridge, 'down'])
-
-        (rc, out, err) = self.brctl (['delbr', self.bridge])
+        self.ip(['link','set', 'down', self.bridge]) 
+        
+        (rc, out, err) = self.ip (['link', 'del', self.bridge])
 
         if rc != 0 :
             raise Exception (err)
