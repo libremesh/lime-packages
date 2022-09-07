@@ -104,5 +104,8 @@
           now to manage the cloud you can do:
 
           clusterssh {{ linklocals | join(' ') }}
+          
+          to access to node you can do:
+          ssh -o StrictHostKeyChecking=no -o"HostkeyAlgorithms +ssh-rsa" {{ linklocals | join(' ') }}
 
           ===================================
