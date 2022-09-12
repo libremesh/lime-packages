@@ -40,7 +40,7 @@ Please read the [[Unit Testing Guide](TESTING.md)] for more details about testin
 
 ### Mailing Lists
 
-The project has a main mailing list [lime-users@lists.libremesh.org][8] and an Element (#libremesh-dev:matrix.guifi.net) bridged on IRC (#libremesh-dev on Freenode) chat room, check out this page for how to join the chatroom:
+The project has an official mailing list [libremesh@krutt.org][8] and an Element (#libremesh-dev:matrix.guifi.net) chat room; check out [this page][9] with the links for joining the chatroom.
 
 
 ### Contributors
@@ -79,7 +79,8 @@ Support this project by becoming a sponsor. Your logo will show up here with a l
 [2]: https://openwrt.org/toh/start
 [4]: https://libremesh.org/howitworks.html
 [5]: https://libremesh.org/
-[8]: https://lists.libremesh.org/mailman/listinfo/lime-users
+[8]: https://www.autistici.org/mailman/listinfo/libremesh
+[9]: https://libremesh.org/communication.html
 [10]: https://github.com/libremesh/network-profiles/
 [12]: https://opencollective.com/libremesh
 [13]: https://libremesh.org/development.html
