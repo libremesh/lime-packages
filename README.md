@@ -5,7 +5,7 @@
 
 # [LibreMesh][5] packages
 
-[![LibreMesh logo](https://raw.githubusercontent.com/libremesh/lime-web/master/logo/logo.png)](http://libremesh.org)
+[![LibreMesh logo](https://raw.githubusercontent.com/libremesh/lime-web/master/logo/logo.png)](https://libremesh.org)
 
 [LibreMesh project][5] includes the development of several tools used for deploying libre/free mesh networks.
 
@@ -13,22 +13,21 @@ The firmware (the main piece) will allow simple deployment of auto-configurable,
 yet versatile, multi-radio mesh networks. Check the [Network Architecture][4] to
 see the basic ideas.
 
-## Download Precompiled Binaries
-
-This is the easiest way to first test and install LibreMesh in your router.
+We encourage each network community to create its firmware profile on
+[network-profiles][10] repository and build the images locally.
 
 You can download a firmware image with **generic configuration** of the last
 **release** at [downloads][9] subdomain.
 
-## Customize and Download a Firmware Image Using online Chef (ImageBuilder)
+## Supported hardware
 
-We encourage each network community to create its firmware profile on
-[network-profiles][10] repository and build the images with the [online
-Chef][11].
+[In this page][1] we provide a list of requirements that ensure you to have a working LibreMesh node on your router.
+This list comes with no warranties: read carefully the [model-specific instructions on OpenWrt wiki][2] and be extra-careful when flashing your routers!
+
 
 ## Building a Firmware Image on Your PC
 
-The LibreMesh firmware can be compiled by following [instructions found here][13].
+The LibreMesh firmware can be compiled by following [these instructions][13].
 
 
 ## Testing
@@ -43,12 +42,8 @@ Please read the [[Unit Testing Guide](TESTING.md)] for more details about testin
 
 ### Mailing Lists
 
-The project offers the following mailing lists
+The project has an official mailing list [libremesh@krutt.org][8] and an Element (#libremesh-dev:matrix.guifi.net) chat room; check out [this page][3] with the links for joining the chatroom.
 
-- [lime-dev@lists.libremesh.org][7] - This list is used for general development
-  related work.
-- [lime-users@lists.libremesh.org][8] - This list is used for project
-  organisational purposes. And for user specific questions.
 
 ### Contributors
 
@@ -82,19 +77,13 @@ Support this project by becoming a sponsor. Your logo will show up here with a l
 <a href="https://opencollective.com/libremesh/sponsor/8/website" target="_blank"><img src="https://opencollective.com/libremesh/sponsor/8/avatar.svg"></a>
 <a href="https://opencollective.com/libremesh/sponsor/9/website" target="_blank"><img src="https://opencollective.com/libremesh/sponsor/9/avatar.svg"></a>
 
-[1]: https://openwrt.org/docs/guide-developer/quickstart-build-images
-[4]: http://libremesh.org/howitworks.html
-[5]: http://libremesh.org/
-[7]: https://lists.libremesh.org/mailman/listinfo/lime-dev
-[8]: https://lists.libremesh.org/mailman/listinfo/lime-users
+[1]: https://libremesh.org/docs/hardware/
+[2]: https://openwrt.org/toh/start
+[3]: https://libremesh.org/communication.html
+[4]: https://libremesh.org/howitworks.html
+[5]: https://libremesh.org/
+[8]: https://www.autistici.org/mailman/listinfo/libremesh
 [9]: http://repo.libremesh.org/current/
 [10]: https://github.com/libremesh/network-profiles/
-[11]: https://chef.libremesh.org/
 [12]: https://opencollective.com/libremesh
 [13]: https://libremesh.org/development.html
-
-
-
-
-
-
