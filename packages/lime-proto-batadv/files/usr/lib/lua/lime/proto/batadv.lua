@@ -63,8 +63,14 @@ end
 
 function batadv.setup_interface(ifname, args)
 	if not args["specific"] then
-		if ifname:match("^wlan%d+.ap") then return end
+		if ifname:match("^wlan%d+.ap") then
+			utils.log( "lime.proto.batadv.setup_interface(%s, ...) ignored",
+			           ifname )
+			return
+		end
 	end
+
+	utils.log("lime.proto.batadv.setup_interface(%s, ...)", ifname)
 
 	local vlanId = args[2] or "%N1"
 	local vlanProto = args[3] or "8021ad"
