@@ -56,11 +56,6 @@ class LinuxBridge (object) :
         self.state = module.params['state']
         return
 
-    def brctl (self, cmd) :
-
-       	return self.module.run_command (['brctl'] + cmd)
-
-
     def ip(self, cmd) : 
 
         return self.module.run_command (['ip'] + cmd) 
