@@ -4,8 +4,9 @@
 #  you can use --limit regexp to start just two clouds, for example:
 #  sudo ansible-playbook qemu_cloud_start.yml -l *cloud[AB]*
 
-- name: create bridges for qemu nodes
+- import_playbook: cloud_and_node_packages.yml
 
+- name: create bridges for qemu nodes
   hosts: all
   connection: local
   gather_facts: no
@@ -102,10 +103,7 @@
         prompt: |
           ===================================
           now to manage the cloud you can do:
-
-          clusterssh {{ linklocals | join(' ') }}
           
-          to access to node you can do:
-          ssh -o StrictHostKeyChecking=no -o"HostkeyAlgorithms +ssh-rsa" {{ linklocals | join(' ') }}
+          clusterssh -o "-o "StrictHostKeyChecking=no" -o HostKeyAlgorithms=+ssh-rsa" root@{{ linklocals | join(' ') }}
 
           ===================================
