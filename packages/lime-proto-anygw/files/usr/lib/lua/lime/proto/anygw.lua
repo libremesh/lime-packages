@@ -110,7 +110,7 @@ function anygw.configure(args)
 	--! Now define host records with proper node IPs
 	local hostname = system.get_hostname()
 	uci:set("dhcp", "node_name_dns", "hostrecord")
-	uci:set("dhcp", "node_name_dns", "name", {hostname, hostname.."."..cloudDomain})
+	uci:set("dhcp", "node_name_dns", "name", {hostname, hostname.."."..cloudDomain, hostname..".test"})
 	uci:set("dhcp", "node_name_dns", "ip", ipv4:host():string() .. "," .. ipv6:host():string())
 
 	--! Use host-record to declare own DNS entries (and not dnsmasq address as
