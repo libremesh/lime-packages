@@ -41,6 +41,14 @@ function utils.file_exists(filename)
     return fs.stat(filename, "type") == "reg"
 end
 
+function utils.file_not_exists_or_empty(filename)
+    local f=io.open(filename,"r") 
+    if not f then return true end
+    local size = f:seek("end")
+    if f~=nil then io.close(f) end
+    if size == 0 then return true else return false end
+end
+
 function split(str, sep)
     local sep, fields = sep or ":", {}
     local pattern = string.format("([^%s]+)", sep)
@@ -122,13 +130,6 @@ function utils.unpack_table(t)
         end
     end
     return unpacked
-end
-
-function utils.sort_by_channel_and_mode(networks)
-    networks = ft.splitBy('mode')(networks)
-    networks = ft.map(ft.sortBy('channel'), networks)
-    networks = ft.reduce(ft.flatTable,networks, {})
-    return networks
 end
 
 function utils.filter_mesh(n)
