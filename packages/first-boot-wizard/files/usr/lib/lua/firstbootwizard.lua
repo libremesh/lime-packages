@@ -25,6 +25,26 @@ local fbw = {}
 fbw.WORKDIR = '/tmp/fbw/'
 fbw.COMMUNITY_HOST_CONFIG_PREFIX = 'lime-community__host__'
 fbw.COMMUNITY_ASSETS_TMPL = 'lime-community_assets__host__%s.tar.gz'
+fbw.SCAN_RESULTS_FILE = 'lime-scan-results.json'
+
+fbw.FETCH_CONFIG_STATUS = {
+    downloaded_config = {
+        retval = true, code = "downloaded_config"
+    },
+    downloading_config = {
+        retval = true, code = "downloading_config"
+    },
+    error_download_lime_community = {
+        retval = false, code = "error_download_lime_community"
+    },
+    error_not_configured = {
+        retval = false, code = "error_not_configured"
+    },
+    error_download_lime_assets = {
+        retval = false, code = "error_download_lime_assets"
+    },
+}
+
 
 utils.execute('mkdir -p ' .. fbw.WORKDIR)
 
@@ -32,8 +52,12 @@ function fbw.log(text)
     nixio.syslog('info', '[FBW] ' .. text)
 end
 
-local function lime_community_assets_name(hostname)
+function fbw.lime_community_assets_name(hostname)
     return fbw.WORKDIR .. string.format(fbw.COMMUNITY_ASSETS_TMPL, hostname)
+end
+
+function fbw.get_lime_communty_fname(hostname, bssid)
+    return fbw.WORKDIR .. fbw.COMMUNITY_HOST_CONFIG_PREFIX .. hostname .. "__" .. bssid
 end
 
 -- Write lock file at begin
@@ -71,8 +95,8 @@ function fbw.get_networks()
     networks = ft.reduce(ft.flatTable, networks, {})
     -- Filter only remote mesh and ad-hoc networks
     networks = ft.filter(utils.filter_mesh, networks)
-    -- Sort by channel and mode
-    networks = utils.sort_by_channel_and_mode(networks)
+    -- Sort by signal
+    networks = ft.sortBy('signal', true)(networks)
     -- Remove dupicated results in multiradios devices
     networks = utils.only_best(networks)
     return networks
@@ -107,7 +131,7 @@ function fbw.get_config(results, mesh_network)
     local hosts = ft.map(utils.append_network(dev_id), linksLocalIpv6)
     -- Add aditional info
     local data = ft.map(function(host)
-        return { host = host, signal = mesh_network.signal, ssid = mesh_network.ssid }
+        return { host = host, signal = mesh_network.signal, ssid = mesh_network.ssid, bssid = mesh_network.bssid  }
     end, hosts)
     data = utils.filter_alredy_scanned(data, results)
     -- Try to fetch remote config file
@@ -156,40 +180,65 @@ function fbw.setup_wireless(mesh_network)
     os.execute("sleep 10s")
 end
 
+function fbw.fetch_lime_community(host, lime_community_fname)
+    local res = lutils.http_client_get("http://[" .. host .. "]/cgi-bin/lime/lime-community", 10, lime_community_fname)
+    if res == nil or utils.file_not_exists_or_empty(lime_community_fname) then
+        res = lutils.http_client_get("http://[" .. host .. "]/lime-community", 10, lime_community_fname)
+    end
+    return res
+end
+
+-- Return true if download success, false otherwise
+function fbw.fetch_lime_community_assets(host, fname)
+    local res = lutils.http_client_get("http://[" .. host .. "]/cgi-bin/lime/lime-community-assets", 10, lime_community_fname)
+    return res
+end
+
 -- Fetch remote configuration and save result
 function fbw.fetch_config(data)
     fbw.log('Fetch config from '.. json.stringify(data))
+    fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.downloading_config)
+    local success = true
     local host = data.host
 
     local hostname = utils.execute("wget --no-check-certificate http://["..data.host.."]/cgi-bin/hostname -qO - "):gsub("\n", "")
     fbw.log('Hostname found: '.. hostname)
     if (hostname == '') then hostname = host end
 
-    local lime_community_fname = fbw.WORKDIR .. fbw.COMMUNITY_HOST_CONFIG_PREFIX .. hostname
+    local lime_community_fname = fbw.get_lime_communty_fname(hostname, data.bssid)
 
-    utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/cgi-bin/lime/lime-community -O " .. lime_community_fname)
-    if not utils.file_exists(lime_community_fname) then
-        -- For backwards compatibility
-        utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/lime-community -O " .. lime_community_fname)
-    end
+    local res = fbw.fetch_lime_community(data.host, lime_community_fname)
 
     -- Remove lime-community files that are not yet configured.
     -- For this we asume that no ap_ssid options equals not configured.
-    if utils.file_exists(lime_community_fname) then
+    if res == true and not utils.file_not_exists_or_empty(lime_community_fname) then
         local f = io.open(lime_community_fname)
         local content = f:read("*a")
         f:close()
         if not content:match("ap_ssid") then
+            fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.error_not_configured)
             utils.execute("rm " .. lime_community_fname)
+            success = false
+        else
+            local fname = fbw.lime_community_assets_name(hostname)
+            success = fbw.fetch_lime_community_assets(data.host, fname)
+            if success == nil then
+                -- Error downloading lime community assets
+                success = false
+                fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.error_download_lime_assets)
+            end
         end
+    else
+        -- Error downloading lime community
+        fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.error_download_lime_community)
+        success = false
     end
 
-    if utils.file_exists(lime_community_fname) then
-        local fname = lime_community_assets_name(hostname)
-        utils.execute("wget --no-check-certificate http://[" .. data.host .. "]/cgi-bin/lime/lime-community-assets -O " .. fname)
+    if success then
+        fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.downloaded_config)
     end
 
-    return { host = host, filename = lime_community_fname, success = utils.file_exists(lime_community_fname) }
+    return { host = host, filename = lime_community_fname, success = success}
 end
 
 -- Restore previus wireless configuration
@@ -204,7 +253,7 @@ function fbw.restore_wifi_config()
     end
 end
 
--- Apply configuraation permanenty
+-- Apply configuration permanenty
 -- TODO: check if config is valid
 -- TODO: use safe-reboot
 function fbw.apply_file_config(file, hostname)
@@ -221,7 +270,7 @@ function fbw.apply_file_config(file, hostname)
 
     -- Setup the shared lime-assets
     local remote_hostname = string.sub(file, #fbw.COMMUNITY_HOST_CONFIG_PREFIX + 1)
-    local lime_community_assets_fname = lime_community_assets_name(remote_hostname)
+    local lime_community_assets_fname = fbw.lime_community_assets_name(remote_hostname)
     if utils.file_exists(lime_community_assets_fname) then
         utils.execute(string.format("tar xfz %s -C /etc/lime-assets/", lime_community_assets_fname))
     end
@@ -271,6 +320,7 @@ end
 local function getConfig(path)
     local uci_cursor = uci.cursor(fbw.WORKDIR)
     local config = uci_cursor:get_all(path)
+
     if config ~= nil then
         return config
     end
@@ -284,12 +334,15 @@ function fbw.read_configs()
     for file in tempFiles do
         if (file ~= nil and file:match("^" .. lutils.literalize(fbw.COMMUNITY_HOST_CONFIG_PREFIX))) then
             local config = getConfig(file)
+            local trimedConfig = {}
+            trimedConfig.wifi = config['wifi']
             table.insert(result, {
-                config = config,
+                config = trimedConfig,
                 file = file
             })
         end
     end
+
     return result
 end
 
@@ -327,10 +380,41 @@ function fbw.end_config()
     os.execute("reboot")
 end
 
+function fbw.save_scan_results(networks)
+    return lutils.write_obj_store(fbw.WORKDIR .. fbw.SCAN_RESULTS_FILE, networks)
+end
+
+function fbw.read_scan_results( )
+    return lutils.read_obj_store(fbw.WORKDIR .. fbw.SCAN_RESULTS_FILE)
+end
+
+-- Used to add "status" to an entry on the scanresults file
+function fbw.set_status_to_scanned_bbsid(destBssid, status)
+    -- Open scan_results.json
+    local results = fbw.read_scan_results()
+    -- Search ssid
+    for k, v in pairs(results) do
+        if(v['bssid'] == destBssid) then
+            -- Add status message
+            v["status"] = status
+            break
+        end
+    end
+    -- Store it again
+    fbw.save_scan_results(results)
+end
+
+-- Apply file config for specific file, hostname and stop scanning if running
+function fbw.set_network(file, hostname)
+    fbw.stop_search_networks() -- Stop firstbootwizard service if running
+    fbw.apply_file_config(file, hostname)
+end
+
 -- Scan for networks and fetch configurations files
 function fbw.get_all_networks()
     local networks = {}
     local configs = {}
+    fbw.log("Starting search networks")
 
     fbw.log('Add lock file')
     fbw.start_scan_file()
@@ -340,9 +424,11 @@ function fbw.get_all_networks()
     fbw.backup_wifi_config()
     fbw.log('Get mesh networks')
     networks = fbw.get_networks()
+    fbw.log('Saving mesh scan results')
+    fbw.save_scan_results(networks)
     fbw.log('Get configs files')
     configs = ft.reduce(fbw.get_config, networks, {})
-    fbw.log('Restore previus wireless configuration')
+    fbw.log('Restore previous wireless configuration')
     fbw.restore_wifi_config()
     fbw.log('Remove lock file')
     fbw.end_scan()
@@ -350,40 +436,61 @@ function fbw.get_all_networks()
     return configs
 end
 
--- Check scan status and return object status{ lock: boolean, scan: 0|1|2 }
-function fbw.check_scan_status()
-    local scan_status
+-- Run daemonized /bin/firstbootwizard execution that start get_all_networks
+-- Return false if already runing
+function fbw.start_search_networks()
     local scan_file = fbw.check_scan_file()
-
-    -- if no scan file return 0
-    if scan_file == nil then scan_status = 0
-    -- if scanning return 1
-    elseif scan_file == "true" then scan_status = 1
-    -- if done scanning return 2
-    elseif scan_file == "false" then scan_status = 2
+    if(scan_file == nil) or (scan_file == "false") then
+        os.execute("rm -f /tmp/scanning")
+        lutils.execute_daemonized("/bin/firstbootwizard")
+        return true
     end
-    local status = {
-        lock = not fbw.is_configured() and not fbw.is_dismissed(),
-        scan = scan_status
-    }
-    return status
+    return false
 end
 
--- Start /etc/init/firstbootwizard daemon to start get_all_networks
--- Return object with status and read_configs() results
-function fbw.start_search_networks(scan)
+-- Return object with status, read_configs() and read_scan_results()
+function fbw.status_search_networks()
     local scan_file = fbw.check_scan_file()
     local status
-    if(scan_file == nil) or (scan == true) then
-        os.execute("rm -f /tmp/scanning")
-        os.execute("/etc/init.d/firstbootwizard start")
-    end
-    if (scan_file == nil) or (scan_file == "true") or (scan == true) then
+    if (scan_file == nil) then
+        status = 'idle'
+    elseif(scan_file == "true") then
         status = 'scanning'
     else
         status = 'scanned'
     end
-    return {status= status, networks = fbw.read_configs()}
+    lock = not fbw.is_configured() and not fbw.is_dismissed()
+    return { lock = lock, status = status, networks = fbw.read_configs(), scanned = fbw.read_scan_results()}
+end
+
+-- todo(kon): check this work properly
+function fbw.kill_fbw()
+    os.execute("killall firstbootwizard")
+end
+
+-- Function that stop get_all_networks function if running
+function fbw.stop_search_networks()
+    local scan_file = fbw.check_scan_file()
+    if (scan_file == "true") then
+        fbw.log('Stopping firstbootwizard service')
+        fbw.kill_fbw()
+        fbw.log('Restore previus wireless configuration')
+        fbw.restore_wifi_config()
+        fbw.log('Remove lock file')
+        fbw.end_scan()
+        return true
+    else
+        return true
+    end
+    return false
+end
+
+-- Return false if can't perform the restart
+function fbw.restart_search_networks()
+    if fbw.stop_search_networks() then
+        return fbw.start_search_networks()
+    end
+    return false        
 end
 
 return fbw
