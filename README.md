@@ -38,7 +38,7 @@ Please read the [[Unit Testing Guide](TESTING.md)] for more details about testin
 
 ## Virtualization
 LibreMesh allows you to test it without having to deal with routers since they can be lifted libremesh instances on virtual machines using QEMU.
-Please read VIRTUALIZING.md for more details on node virtualization.
+Please read [https://github.com/irina556/lime-packages/blob/easing-libremesh-virtualization/VIRTUALIZING.md](https://github.com/irina556/lime-packages/blob/easing-libremesh-virtualization/VIRTUALIZING.md) for more details on node virtualization.
 
 ## Get in Touch with LibreMesh Community
 
