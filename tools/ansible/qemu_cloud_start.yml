@@ -104,6 +104,6 @@
           ===================================
           now to manage the cloud you can do:
           
-          clusterssh -o "-o "StrictHostKeyChecking=no" -o HostKeyAlgorithms=+ssh-rsa" root@{{ linklocals | join(' ') }}
+          clusterssh -o "-o 'StrictHostKeyChecking=no' -o 'HostKeyAlgorithms=+ssh-rsa'" {{ linklocals | join(' ') }}
 
           ===================================
