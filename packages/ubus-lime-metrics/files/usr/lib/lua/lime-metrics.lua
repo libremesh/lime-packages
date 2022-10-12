@@ -4,8 +4,11 @@ local utils = require('lime-metrics.utils')
 local lutils = require("lime.utils")
 local json = require 'luci.jsonc'
 
-
 local metrics = {}
+
+function metrics.get_last_internet_path_filename()
+    return "/etc/last_internet_path"
+end
 
 function metrics.get_metrics(target)
     local result = {}
@@ -15,10 +18,10 @@ function metrics.get_metrics(target)
 
     if lutils.is_installed("lime-proto-bmx6") then
         loss = utils.get_loss(node..".mesh", 6)
-        shell_output = utils.shell("netperf -6 -l 10 -H "..node..".mesh| tail -n1| awk '{ print $5 }'")
+        shell_output = lutils.unsafe_shell("netperf -6 -l 10 -H "..node..".mesh| tail -n1| awk '{ print $5 }'")
     elseif lutils.is_installed("lime-proto-babeld") then
         loss = utils.get_loss(node, 4)
-        shell_output = utils.shell("netperf -l 10 -H "..node.."| tail -n1| awk '{ print $5 }'")
+        shell_output = lutils.unsafe_shell("netperf -l 10 -H "..node.."| tail -n1| awk '{ print $5 }'")
     end
     local bw = 0
     if shell_output ~= "" then
@@ -34,7 +37,7 @@ function metrics.get_gateway()
     local result = {}
     local gw = nil
 
-    local internet_path_file = io.open("/etc/last_internet_path", "r")
+    local internet_path_file = io.open(metrics.get_last_internet_path_filename(), "r")
     if internet_path_file then
         local path_content = assert(internet_path_file:read("*a"), nil)
         internet_path_file:close()
@@ -48,7 +51,7 @@ function metrics.get_gateway()
 end
 
 function metrics.get_last_internet_path(msg)
-    local internet_path_file = io.open("/etc/last_internet_path", "r")
+    local internet_path_file = io.open(metrics.get_last_internet_path_filename(), "r")
     if internet_path_file then
         path_content = assert(internet_path_file:read("*a"), nil)
         internet_path_file:close()
@@ -79,7 +82,7 @@ function metrics.get_internet_status( )
     else
       result.IPv6 = { working=false }
     end
-    local lookup_output = utils.nslookup_working()
+    local lookup_output = utils.is_nslookup_working()
     if lookup_output ~= "" then
         result.DNS = { working=true }
     else
@@ -93,7 +96,7 @@ function metrics.get_station_traffic(msg)
     local iface = msg.iface
     local mac = msg.station_mac
     local result = {}
-    local traffic = utils.shell("iw "..iface.." station get "..mac.." | grep bytes | awk '{ print $3}'")
+    local traffic = lutils.unsafe_shell("iw "..iface.." station get "..mac.." | grep bytes | awk '{ print $3}'")
     words = {}
     for w in traffic:gmatch("[^\n]+") do table.insert(words, w) end
     rx = words[1]
