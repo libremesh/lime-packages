@@ -28,7 +28,7 @@ function metrics.get_metrics(target)
         return result
     end
     local bw = 0
-    if shell_output ~= "" then
+    if shell_output ~= "" and shell_output ~= nil then
         bw = shell_output:match("[%d.]+")
     end
     result.loss = loss

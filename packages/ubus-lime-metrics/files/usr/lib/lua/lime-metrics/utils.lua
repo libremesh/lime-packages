@@ -16,7 +16,7 @@ function utils.get_loss(host, ip_version)
     end
     local shell_output = lutils.unsafe_shell(ping_cmd.." -q  -i 0.1 -c4 -w2 "..host)
     local loss = "100"
-    if shell_output ~= "" then
+    if shell_output ~= "" and shell_output ~= nil then
         loss = shell_output:match("(%d*)%% packet loss")
     end
     return loss

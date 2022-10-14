@@ -64,6 +64,7 @@ describe('Lime-metric tests', function()
         assert.is.equal("ok", response.status)
         assert.is.equal(22785424, response.tx_bytes)
         assert.is.equal(256723649, response.rx_bytes)
+        lutils.unsafe_shell:revert()
     end)
 
 
@@ -76,13 +77,13 @@ describe('Lime-metric tests', function()
 
     -- todo(kon): it fail because get loss return random numbers like 256723649
     -- shell_output on get_loss function
-    -- it('test get_metrics no link', function()
-    --     stub(lutils, "is_installed", function (m) return m == "lime-proto-babeld" end)
-    --     local response  = metrics.get_metrics('nodename')
-    --     assert.is.equal("ok", response.status)
-    --     assert.is.equal("100", response.loss)
-    --     assert.is.equal(0, response.bandwidth)
-    -- end)
+    it('test get_metrics no link', function()
+        stub(lutils, "is_installed", function (m) return m == "lime-proto-babeld" end)
+        local response  = metrics.get_metrics('nodename')
+        assert.is.equal("ok", response.status)
+        assert.is.equal("100", response.loss)
+        assert.is.equal(0, response.bandwidth)
+    end)
 
 
     it('test get_internet_status with internet', function()
