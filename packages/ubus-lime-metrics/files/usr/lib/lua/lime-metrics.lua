@@ -22,6 +22,10 @@ function metrics.get_metrics(target)
     elseif lutils.is_installed("lime-proto-babeld") then
         loss = utils.get_loss(node, 4)
         shell_output = lutils.unsafe_shell("netperf -l 10 -H "..node.."| tail -n1| awk '{ print $5 }'")
+    else
+        result.status = "error"
+        result.msg = "No lime-proto-bmx6 or lime-proto-babeld found"
+        return result
     end
     local bw = 0
     if shell_output ~= "" then
