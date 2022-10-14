@@ -23,9 +23,7 @@ function metrics.get_metrics(target)
         loss = utils.get_loss(node, 4)
         shell_output = lutils.unsafe_shell("netperf -l 10 -H "..node.."| tail -n1| awk '{ print $5 }'")
     else
-        result.status = "error"
-        result.msg = "No lime-proto-bmx6 or lime-proto-babeld found"
-        return result
+        return {status="error", error={msg="No lime-proto-bmx6 or lime-proto-babeld found", code="1"}}
     end
     local bw = 0
     if shell_output ~= "" and shell_output ~= nil then
@@ -101,6 +99,9 @@ function metrics.get_station_traffic(msg)
     local mac = msg.station_mac
     local result = {}
     local traffic = lutils.unsafe_shell("iw "..iface.." station get "..mac.." | grep bytes | awk '{ print $3}'")
+    if traffic == "" or traffic == nil then
+        return {status="error", error={msg="No interface found.", code="1"}}
+    end
     words = {}
     for w in traffic:gmatch("[^\n]+") do table.insert(words, w) end
     rx = words[1]
