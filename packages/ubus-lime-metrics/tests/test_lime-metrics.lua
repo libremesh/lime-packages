@@ -47,13 +47,13 @@ describe('Lime-metric tests', function()
 
 
     -- todo(kon): fail due it always return `ok`
-    -- it('test get_station_traffic of inexistent interface or inexistent station', function()
-    --     stub(utils, "unsafe_shell", function () return ''  end)
-    --     local msg = json.parse('{"iface": "wlan0", "station_mac": "AA:BB:CC:DD:EE:FF"}')
-    --     local response  = metrics.get_station_traffic(msg)
-    --     assert.is.equal("error", response.status)
-    --     assert.is.equal("1", response.error.code)
-    -- end)
+    it('test get_station_traffic of inexistent interface or inexistent station', function()
+        stub(utils, "unsafe_shell", function () return ''  end)
+        local msg = json.parse('{"iface": "wlan0", "station_mac": "AA:BB:CC:DD:EE:FF"}')
+        local response  = metrics.get_station_traffic(msg)
+        assert.is.equal("error", response.status)
+        assert.is.equal("1", response.error.code)
+    end)
 
 
     it('test get_station_traffic', function()
@@ -75,8 +75,7 @@ describe('Lime-metric tests', function()
         assert.is.equal("error", response.status)
     end)
 
-    -- todo(kon): it fail because get loss return random numbers like 256723649
-    -- shell_output on get_loss function
+
     it('test get_metrics no link', function()
         stub(lutils, "is_installed", function (m) return m == "lime-proto-babeld" end)
         local response  = metrics.get_metrics('nodename')
