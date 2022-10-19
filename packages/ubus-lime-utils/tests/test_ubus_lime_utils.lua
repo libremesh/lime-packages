@@ -1,6 +1,5 @@
 local utils = require "lime.utils"
 local test_utils = require "tests.utils"
-local config = require 'lime.config'
 local hotspot_wwan = require 'lime.hotspot_wwan'
 local limeutils = require "lime-utils"
 local json = require 'luci.jsonc'
