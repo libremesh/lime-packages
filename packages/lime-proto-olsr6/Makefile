@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LibreMesh
 	MAINTAINER:=leonaard <leone@inventati.org>
 	URL:=http://libremesh.org
-	DEPENDS:=+lua +libuci-lua +lime-system +olsrd +olsrd-mod-jsoninfo
+	DEPENDS:=+lua +libuci-lua +lime-system +olsrd +olsrd-mod-jsoninfo +luci-lib-ip
 	PKGARCH:=all
 endef
 
