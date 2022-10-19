@@ -20,7 +20,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=Utilities
 	MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
 	PKGARCH:=all
-	DEPENDS:=+uclient-fetch
+	DEPENDS:=+uclient-fetch +lime-system
 endef
 
 define Package/$(PKG_NAME)/description
