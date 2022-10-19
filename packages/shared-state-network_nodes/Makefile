@@ -11,7 +11,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=Utilities
   TITLE:=$(PKG_NAME) provides shared state database of all times network nodes
   MAINTAINER:=Germán Ferrero <germanferrero@altermundi.net>
-  DEPENDS:=+shared-state +shared-state-nodes_and_links +lime-system
+  DEPENDS:=+shared-state +shared-state-nodes_and_links +lime-system +luci-lib-jsonc
   PKGARCH:=all
 endef
 
