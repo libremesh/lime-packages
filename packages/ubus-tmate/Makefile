@@ -13,7 +13,7 @@ define Package/$(PKG_NAME)
   SUBMENU:=SSH
   MAINTAINER:=Nicolas Pace <nicopace@altermundi.net>
   TITLE:=tmate.io ubus bindings
-  DEPENDS:=+tmate 
+  DEPENDS:=+tmate +lime-system
   PKGARCH:=all
 endef
 
