@@ -1,8 +1,6 @@
 #!/usr/bin/env lua
 
 -- Used on lime-utils ubus script
-local ubus = require "ubus"
-local json = require 'luci.jsonc'
 local limewireless = require 'lime.wireless'
 local iwinfo = require 'iwinfo'
 local utils = require 'lime.utils'
