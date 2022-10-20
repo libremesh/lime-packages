@@ -20,7 +20,7 @@ define Package/$(PKG_NAME)
   TITLE:=LiMe hardware detection usb radio support
   CATEGORY:=LibreMesh
   URL:=http://libremesh.org
-  DEPENDS:=+lime-system +lua +libuci-lua
+  DEPENDS:=+lime-system +lua +libuci-lua +luci-lib-nixio
   PKGARCH:=all
 endef
 
