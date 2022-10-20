@@ -13,7 +13,9 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
   SUBMENU:=3. Applications
   TITLE:=LIbremesh ubus utils module
-  DEPENDS:= +lua +libubox-lua +libubus-lua +libuci +lime-system +libiwinfo-lua +cgi-io +rpcd-mod-file
+  DEPENDS:= +lua +libubox-lua +libubus-lua +libuci +lime-system +libiwinfo-lua +cgi-io +rpcd-mod-file \
+	    +luci-lib-jsonc
+
   PKGARCH:=all
 endef
 
