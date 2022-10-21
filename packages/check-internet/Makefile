@@ -20,7 +20,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=Utilities
 	MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
 	PKGARCH:=all
-	DEPENDS:=+uclient-fetch +lime-system +luci-lib-jsonc
+	DEPENDS:=+uclient-fetch +lime-system +luci-lib-jsonc +libubus-lua
 endef
 
 define Package/$(PKG_NAME)/description
