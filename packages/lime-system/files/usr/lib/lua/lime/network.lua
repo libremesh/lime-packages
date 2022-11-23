@@ -256,8 +256,8 @@ function network.scandevices()
 		local created_device = section["name"]
 		local base_interface = section["ifname"]
 		utils.log( "network.scandevices.owrt_device_parser found base "..
-		           "interface %s and derived device %s", base_interface,
-		           created_device )
+		           "interface %s and derived device %s", base_interface or "not_found",
+		           created_device or "not_found")
 		dev_parser(created_device)
 		dev_parser(base_interface)
 	end
