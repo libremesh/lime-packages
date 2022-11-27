@@ -35,6 +35,9 @@ end
 
 local function move_restof_to_specific_band(file_name)
     local options = uci:get_all(file_name, 'wifi')
+    if options == nil then
+        return
+    end
     for key, value in pairs(options) do
         local band_name = utils.split(key, '_')[2]
         if band_name == '2ghz' or band_name == '5ghz' then
