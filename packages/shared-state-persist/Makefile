@@ -20,7 +20,7 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Marcos Gutierrez <gmacos@altermundi.net>
 	URL:=http://libremesh.org
 	DEPENDS:=+block-mount +kmod-usb-storage +kmod-fs-vfat\
-		shared-state
+		shared-state +luci-lib-nixio
 	PKGARCH:=all
 endef
 

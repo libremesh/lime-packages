@@ -19,7 +19,8 @@ define Package/$(PKG_NAME)
   SUBMENU:=2. Modules
   TITLE:=LuCI status - some read-only info without login
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
-  DEPENDS:= +uhttpd +luci-base +libiwinfo-lua +luci-lib-jquery-1-4 +luci-lib-jquery-flot-0-8 +luci-lib-json
+  DEPENDS:= +uhttpd +luci-base +libiwinfo-lua +luci-lib-jquery-1-4 +luci-lib-jquery-flot-0-8 +luci-lib-json \
+	    +luci-lib-nixio +luci-compat
   PKGARCH:=all
 endef
 

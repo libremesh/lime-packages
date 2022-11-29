@@ -23,7 +23,8 @@ define Package/$(PKG_NAME)
 	URL:=http://libremesh.org
 	DEPENDS:=+dnsmasq-dhcpv6 +ebtables +libuci-lua \
 		+lime-system +lua +kmod-ebtables +kmod-macvlan \
-		+shared-state +shared-state-dnsmasq_leases +kmod-ebtables-ipv6
+		+shared-state +shared-state-dnsmasq_leases +kmod-ebtables-ipv6 \
+		+luci-lib-nixio
   PKGARCH:=all
 endef
 
