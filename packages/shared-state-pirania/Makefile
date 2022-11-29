@@ -20,7 +20,7 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Marcos Gutierrez <gmacos@altermundi.net>
 	URL:=http://libremesh.org
 	DEPENDS:=+@BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT +lua +luci-lib-jsonc \
-		shared-state
+		shared-state +pirania
 	PKGARCH:=all
 endef
 

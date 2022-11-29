@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
   TITLE:=$(PKG_NAME) pushes influx line protocol over TCP
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   PKGARCH:=all
-  DEPENDS:= +lua +libuci-lua +luasocket
+  DEPENDS:= +lua +libuci-lua +luasocket +libubus-lua
 endef
 
 define Package/$(PKG_NAME)/description

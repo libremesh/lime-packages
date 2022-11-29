@@ -27,7 +27,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LibreMesh
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libremesh.org
-  DEPENDS:=+libiwinfo-lua +lua +libuci-lua +luci-lib-ip +luci-lib-nixio
+  DEPENDS:=+libiwinfo-lua +lua +libuci-lua +luci-lib-ip +luci-lib-nixio +luci-lib-jsonc
   PKGARCH:=all
 endef
 
