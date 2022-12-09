@@ -1,0 +1,10 @@
+#!/bin/sh
+cat << EOF >> /usr/bin/lime-apply
+
+# Update title in lime-app
+[ -f /www/app/index.html ] && {
+        sed -i -e "s/\(<title>\).*\(<\/title>\)/\1\${hostname}\2/g" /www/app/index.html
+}
+EOF
+/usr/bin/lime-apply
+exit 0
