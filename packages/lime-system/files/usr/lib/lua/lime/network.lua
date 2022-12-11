@@ -228,6 +228,16 @@ function network.scandevices()
 			utils.log( "network.scandevices.dev_parser found vlan device %s " ..
 			           "and marking %s as nobridge", dev, rawif )
 		end
+		--! With DSA, the LAN ports are not anymore eth0.1 but lan1, lan2...
+		if dev:match("^lan%d+$") then
+			local lower_if_path = utils.unsafe_shell("ls -d /sys/class/net/" .. dev .. "/lower*")
+			local lower_if_table = utils.split(lower_if_path, "_")
+			local lower_if = lower_if_table[#lower_if_table]:gsub("\n", "")
+			devices[lower_if] = { nobridge = true }
+			devices[dev] = {}
+			utils.log( "network.scandevices.dev_parser found LAN port %s " ..
+			           "and marking %s as nobridge", dev, lower_if )
+		end
 
 		if dev:match("^wlan%d+"..wireless.wifiModeSeparator.."%w+$") then
 			devices[dev] = {}
@@ -260,6 +270,14 @@ function network.scandevices()
 		           created_device or "not_found")
 		dev_parser(created_device)
 		dev_parser(base_interface)
+		--! With DSA switch config, lan* ports are included in br-lan as "ports"
+		local ports = section["ports"]
+		for _,port in pairs(ports) do
+		utils.log( "network.scandevices.owrt_device_parser found "..
+			   "interface %s with port %s",
+			   created_device or "not_found", port or "not_found")
+			   dev_parser(port)
+		end
 	end
 
 	function owrt_switch_vlan_parser(section)
