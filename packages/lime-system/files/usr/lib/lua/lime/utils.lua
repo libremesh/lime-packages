@@ -568,4 +568,13 @@ function utils.deepcompare(t1,t2)
     return true
 end
 
+function utils.is_dsa()
+    --! Code adapted from Jow https://forum.openwrt.org/t/how-to-detect-dsa/111868/4
+    local shell_output = utils.unsafe_shell("grep -s DEVTYPE=dsa /sys/class/net/*/uevent")
+    if shell_output ~= "" and shell_output ~= nil then
+        return true
+    end
+    return false
+end
+
 return utils
