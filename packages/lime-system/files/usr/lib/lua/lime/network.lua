@@ -272,11 +272,13 @@ function network.scandevices()
 		dev_parser(base_interface)
 		--! With DSA switch config, lan* ports are included in br-lan as "ports"
 		local ports = section["ports"]
-		for _,port in pairs(ports) do
-		utils.log( "network.scandevices.owrt_device_parser found "..
-			   "interface %s with port %s",
-			   created_device or "not_found", port or "not_found")
-			   dev_parser(port)
+		if ports ~= "" and ports ~= nil then
+			for _,port in pairs(ports) do
+				utils.log( "network.scandevices.owrt_device_parser found "..
+					   "interface %s with port %s",
+					   created_device or "not_found", port or "not_found")
+					   dev_parser(port)
+			end
 		end
 	end
 
