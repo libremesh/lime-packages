@@ -6,6 +6,10 @@ local iwinfo = require 'iwinfo'
 local utils = require 'lime.utils'
 local upgrade = require 'lime.upgrade'
 local hotspot_wwan = require "lime.hotspot_wwan"
+local ubus = require "ubus"
+
+local conn = ubus.connect()
+if not conn then error("Failed to connect to ubus") end
 
 local limeutils = {}
 

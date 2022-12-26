@@ -8,14 +8,10 @@
   Copyright 2017 Marcos Gutierrez <gmarcos@altermindi.net>
   Copyright 2017 Nicolas Echaniz <nicoechaniz@altermundi.net>
 ]] --
-local ubus = require "ubus"
 local json = require 'luci.jsonc'
 local utils = require 'lime.utils'
 
 local limeutils = require 'lime-utils'
-
-local conn = ubus.connect()
-if not conn then error("Failed to connect to ubus") end
 
 local function get_cloud_nodes(msg)
     local cloud = limeutils.get_cloud_nodes()
