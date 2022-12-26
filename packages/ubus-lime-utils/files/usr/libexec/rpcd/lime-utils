@@ -38,7 +38,7 @@ local function get_notes()
 end
 
 local function set_notes(msg)
-    local result = limeutils.set_notes()
+    local result = limeutils.set_notes(msg)
     utils.printJson(result)
 end
 
