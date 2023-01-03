@@ -8,6 +8,9 @@ local wu = {}
 wu.FREQ_2GHZ_LIST = "2412 2462"
 wu.FREQ_5GHZ_LIST = "5180 5240"
 
+-- if iw runs for 5 min, it is likely hanging
+wu.TIMEOUT = 300
+
 function wu.get_stickable_ifaces()
 	local uci = config.get_uci_cursor()
 	local ifaces = {}
@@ -28,8 +31,48 @@ function wu.get_stickable_ifaces()
 	return ifaces
 end
 
+function wu.wait_and_kill_on_timeout(pid_time_started)
+	local pid_done = {}
+
+	for pid,time_started in pairs(pid_time_started) do
+		pid_done[pid]=false
+	end
+
+	repeat
+		-- wait for 100ms
+		nixio.nanosleep(0,100e6)
+
+		-- see if something changed
+		while true do
+			pid,state,code = nixio.waitpid(nil,"nohang")
+			if not pid then break end
+			pid_done[pid] = true
+		end
+
+		-- see if time is up
+		now = os.time()
+		for pid,time_started in pairs(pid_time_started) do
+			time_is_up = now - time_started > wu.TIMEOUT
+			if not pid_done[pid] and time_is_up then
+				-- time is up. send SIGTERM
+				nixio.kill(pid,15)
+				-- we don't care any longer about processes we signaled
+				pid_done[pid] = true
+			end
+		end
+
+		-- see if there are remaining processes
+		all_done = true
+		for pid,done in pairs(pid_done) do
+			all_done = all_done and done
+		end
+	until all_done
+
+end
+
 function wu.do_workaround()
 	local ifaces = wu.get_stickable_ifaces()
+	local pid_time_started = {}
 
 	for _, iface in pairs(ifaces) do
 		local cmd = "iw dev " .. iface .. " scan freq "
@@ -41,10 +84,22 @@ function wu.do_workaround()
 				cmd = cmd .. wu.FREQ_5GHZ_LIST
 			end
 			utils.log(cmd)
-			io.popen(cmd)
+
+			-- we can not use os.popen here, because it does not give us the
+			-- pid
+			pid = nixio.fork()
+			if pid == 0 then
+				nixio.exec('/bin/sh','-c',cmd..' >/dev/null')
+				os.exit(1)
+			else
+				pid_time_started[pid] = os.time()
+			end
+
 			nixio.nanosleep(1)
 		end
 	end
+
+	wu.wait_and_kill_on_timeout(pid_time_started)
 end
 
 return wu
