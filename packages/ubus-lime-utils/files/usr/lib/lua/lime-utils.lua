@@ -6,6 +6,10 @@ local iwinfo = require 'iwinfo'
 local utils = require 'lime.utils'
 local upgrade = require 'lime.upgrade'
 local hotspot_wwan = require "lime.hotspot_wwan"
+local ubus = require "ubus"
+
+local conn = ubus.connect()
+if not conn then error("Failed to connect to ubus") end
 
 local limeutils = {}
 
@@ -99,7 +103,7 @@ function limeutils.get_node_status()
                 most_active = station
             end
         end
-        local station_traffic = get_station_traffic({
+        local station_traffic = limeutils.get_station_traffic({
             iface = most_active.iface,
             station_mac = most_active.station_mac
         })
@@ -171,7 +175,7 @@ end
 function limeutils.get_config()
     local result = conn:call("uci", "get",
                              {config = "lime-autogen", section = "wifi"})
-    result.channels = get_channels()
+    result.channels = limeutils.get_channels()
     return result
 end
 
