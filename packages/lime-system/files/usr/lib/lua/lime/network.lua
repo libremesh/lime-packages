@@ -156,11 +156,11 @@ function network.setup_dns()
 			--! allow queries from non-local ips (i.e. from other clouds)
 			uci:set("dhcp", s[".name"], "localservice", "0")
 			uci:set("dhcp", s[".name"], "server", resolvers)
+			uci:set("dhcp", s[".name"], "confdir", "/etc/dnsmasq.d")
 		end
 	)
 	uci:save("dhcp")
 
-	fs.writefile("/etc/dnsmasq.conf", "conf-dir=/etc/dnsmasq.d\n")
 	fs.mkdir("/etc/dnsmasq.d")
 end
 
