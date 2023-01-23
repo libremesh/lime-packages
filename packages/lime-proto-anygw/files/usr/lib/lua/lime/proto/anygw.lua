@@ -11,7 +11,7 @@ anygw = {}
 anygw.configured = false
 
 anygw.SAFE_CLIENT_MTU = 1350
-anygw.FQDN = {"thisnode.info", "minodo.info"}
+anygw.FQDN = {"thisnode.info", "minodo.info", "meuno.info"}
 
 function anygw.configure(args)
 	if anygw.configured then return end
