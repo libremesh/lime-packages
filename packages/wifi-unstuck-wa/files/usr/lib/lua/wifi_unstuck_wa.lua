@@ -46,6 +46,7 @@ function wu.wait_and_kill_on_timeout(pid_time_started)
 		while true do
 			pid,state,code = nixio.waitpid(nil,"nohang")
 			if not pid then break end
+			if pid == 0 then break end
 			pid_done[pid] = true
 		end
 
