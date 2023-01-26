@@ -1,26 +1,9 @@
 local limewireless = require 'lime.wireless'
 local iwinfo = require 'iwinfo'
+local utils = require 'lime.utils'
 
 -- Functions used by get_node_status
 local node_status = {}
-
-function node_status.get_station_traffic(params)
-    local iface = params.iface
-    local mac = params.station_mac
-    local result = {}
-    local traffic = utils.unsafe_shell(
-                        "iw " .. iface .. " station get " .. mac ..
-                            " | grep bytes | awk '{ print $3}'")
-    local words = {}
-    for w in traffic:gmatch("[^\n]+") do table.insert(words, w) end
-    local rx = words[1]
-    local tx = words[2]
-    result.station = mac
-    result.rx_bytes = tonumber(rx, 10)
-    result.tx_bytes = tonumber(tx, 10)
-    result.status = "ok"
-    return result
-end
 
 function node_status.get_ips()
     local res = {}
@@ -59,39 +42,35 @@ function node_status.get_stations()
     return res
 end
 
+function node_status.get_station_stats(station)
+    local iface = station.iface
+    local mac = station.station_mac
+    local iw_result = utils.unsafe_shell(
+                                "iw " .. iface .. " station get " .. mac)
+    station.rx_bytes = tonumber(
+        string.match(iw_result, "rx bytes:%s+(.-)\n"), 10)
+    station.tx_bytes = tonumber(
+        string.match(iw_result, "rx bytes:%s+(.-)\n"), 10)
+    station.signal = string.match(iw_result, "signal:%s+(.-)\n")
+    return station
+end
+
 function node_status.get_most_active()
     local res = {}
     local stations = node_status.get_stations()
     if next(stations) ~= nil then
-        local most_active_rx = 0
-        local most_active = nil
+        local most_active = {}
+        most_active.rx_bytes = 0
         for _, station in ipairs(stations) do
-            local traffic = utils.unsafe_shell(
-                                "iw " .. station.iface .. " station get " ..
-                                    station.station_mac ..
-                                    " | grep bytes | awk '{ print $3}'")
-            local words = {}
-            for w in traffic:gmatch("[^\n]+") do
-                table.insert(words, w)
-            end
-            local rx = words[1]
-            local tx = words[2]
-            station.rx_bytes = tonumber(rx, 10)
-            station.tx_bytes = tonumber(tx, 10)
-            if station.rx_bytes > most_active_rx then
-                most_active_rx = station.rx_bytes
+            local station_stats = node_status.get_station_stats(station)
+            if station_stats.rx_bytes > most_active.rx_bytes then
                 most_active = station
             end
         end
-        local station_traffic = node_status.get_station_traffic({
-            iface = most_active.iface,
-            station_mac = most_active.station_mac
-        })
-        most_active.rx_bytes = station_traffic.rx_bytes
-        most_active.tx_bytes = station_traffic.tx_bytes
         res = most_active
     end
     return res
 end
+
 
 return node_status
