@@ -11,7 +11,8 @@ dhcp4_kill () {
 }
 
 dnsmasq_start () {
-	rm /var/run/dnsmasq/disable-dhcp-server-in-br-lan
+	# delete the content of the configuration file
+	true > /var/run/dnsmasq/disable-dhcp-server-in-br-lan
 	/etc/init.d/dnsmasq restart
 }
 
