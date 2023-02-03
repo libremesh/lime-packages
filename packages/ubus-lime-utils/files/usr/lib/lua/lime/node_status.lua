@@ -76,11 +76,9 @@ function node_status.switch_status()
     local board = utils.getBoardAsTable()
     local ports = {}
     for _, port in ipairs(board['switch']['switch0']['ports']) do
-        -- todo(kon): check the only one without role is the 0, connected to the 
-        -- cpu one also in librerouters.
-        -- And see if this helps also https://github.com/libremesh/lime-packages/blob/master/packages/lime-system/files/usr/lib/lua/lime/network.lua#L265
+        -- On tested routers, the switch directly conected to the cpu doesn't have role 
         if port['role'] then
-            ports[port['num']] = { num = port['num'], role = port['role'] }
+            table.insert(ports, { num = port['num'], role = port['role'] })
         end
     end
     node_status.swconfig_get_link_status(ports)
@@ -96,6 +94,7 @@ function node_status.swconfig_get_link_status(ports)
             end
         end
     end
+    
     local swconfig = utils.unsafe_shell("swconfig dev switch0 show")
     local lines = {}
     for line in swconfig:gmatch("[^\r\n]+") do
