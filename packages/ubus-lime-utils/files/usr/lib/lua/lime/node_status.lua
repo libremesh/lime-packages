@@ -73,18 +73,33 @@ function node_status.get_most_active()
 end
 
 function node_status.switch_status()
+    local function add_device_to_port(ports, port_number, device)
+        for x, obj in pairs(ports) do
+            if obj.num == port_number then
+               obj["device"] = device
+            end
+        end
+    end
     local board = utils.getBoardAsTable()
-    local ports = {}
+    local response_ports = {}
     for _, port in ipairs(board['switch']['switch0']['ports']) do
         -- On tested routers, the switch directly conected to the cpu doesn't have role 
         if port['role']  then
-            table.insert(ports, { num = port['num'], role = port['role'] })
+            table.insert(response_ports, { num = port['num'], role = port['role'] })
         else
-            table.insert(ports, { num = port['num'], role = "cpu" })
+            table.insert(response_ports, { num = port['num'], role = "cpu" })
         end
     end
-    node_status.swconfig_get_link_status(ports)
-    return ports
+    for _, role in ipairs(board['switch']['switch0']['roles']) do
+        if role['ports'] and role['device'] then
+            for port_number in string.gmatch(role['ports'], "%d+") do
+                add_device_to_port(response_ports, tonumber(port_number), role['device'])
+            end
+
+        end
+    end
+    node_status.swconfig_get_link_status(response_ports)
+    return response_ports
 end
 
 
