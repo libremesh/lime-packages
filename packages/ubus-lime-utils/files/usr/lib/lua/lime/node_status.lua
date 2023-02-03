@@ -77,8 +77,10 @@ function node_status.switch_status()
     local ports = {}
     for _, port in ipairs(board['switch']['switch0']['ports']) do
         -- On tested routers, the switch directly conected to the cpu doesn't have role 
-        if port['role'] then
+        if port['role']  then
             table.insert(ports, { num = port['num'], role = port['role'] })
+        else
+            table.insert(ports, { num = port['num'], role = "cpu" })
         end
     end
     node_status.swconfig_get_link_status(ports)
