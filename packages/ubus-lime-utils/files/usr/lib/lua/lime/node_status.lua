@@ -94,7 +94,7 @@ function node_status.swconfig_get_link_status(ports)
             end
         end
     end
-    
+
     local swconfig = utils.unsafe_shell("swconfig dev switch0 show")
     local lines = {}
     for line in swconfig:gmatch("[^\r\n]+") do
