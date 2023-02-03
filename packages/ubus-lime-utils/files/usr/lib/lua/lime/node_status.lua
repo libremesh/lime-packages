@@ -73,6 +73,12 @@ function node_status.get_most_active()
 end
 
 function node_status.switch_status()
+    local response_ports = node_status.board_get_ports()
+    node_status.swconfig_get_link_status(response_ports)
+    return response_ports
+end
+
+function node_status.boardjson_get_ports()
     local function add_device_to_port(ports, port_number, device)
         for x, obj in pairs(ports) do
             if obj.num == port_number then
@@ -98,10 +104,8 @@ function node_status.switch_status()
 
         end
     end
-    node_status.swconfig_get_link_status(response_ports)
     return response_ports
 end
-
 
 function node_status.swconfig_get_link_status(ports)
     local function add_link_status(port_number, status)
