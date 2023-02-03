@@ -37,6 +37,7 @@ function limeutils.get_node_status()
     result.hostname = utils.hostname()
     result.ips = node_status.get_ips()
     result.most_active = node_status.get_most_active()
+    result.switch_status = node_status.switch_status()
     result.uptime = tostring(utils.uptime_s())
     result.status = "ok"
     return result

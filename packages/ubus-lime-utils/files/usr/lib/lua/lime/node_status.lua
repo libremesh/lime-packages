@@ -72,4 +72,48 @@ function node_status.get_most_active()
     return res
 end
 
+function node_status.switch_status()
+    local board = utils.getBoardAsTable()
+    local ports = {}
+    for _, port in ipairs(board['switch']['switch0']['ports']) do
+        -- todo(kon): check the only one without role is the 0, connected to the 
+        -- cpu one also in librerouters.
+        -- And see if this helps also https://github.com/libremesh/lime-packages/blob/master/packages/lime-system/files/usr/lib/lua/lime/network.lua#L265
+        if port['role'] then
+            ports[port['num']] = { num = port['num'], role = port['role'] }
+        end
+    end
+    node_status.swconfig_get_link_status(ports)
+    return ports
+end
+
+
+function node_status.swconfig_get_link_status(ports)
+    local function add_link_status(port_number, status)
+        for x, obj in pairs(ports) do
+            if obj.num == port_number then
+               obj["link"] = status
+            end
+        end
+    end
+    local swconfig = utils.unsafe_shell("swconfig dev switch0 show")
+    local lines = {}
+    for line in swconfig:gmatch("[^\r\n]+") do
+        table.insert(lines, line)
+    end
+
+    local port_number
+    for i, line in ipairs(lines) do
+        if line:match("Port %d:") then
+            port_number = tonumber(line:match("Port (%d):"))
+        end
+        if string.find(line, "link:up") then
+            add_link_status(port_number, "up")
+        elseif string.find(line, "link:down") then
+            add_link_status(port_number, "down")
+        end
+    end
+    return ports
+end
+
 return node_status
