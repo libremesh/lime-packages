@@ -125,3 +125,4 @@ function node_status.swconfig_get_link_status(ports)
 end
 
 return node_status
+
