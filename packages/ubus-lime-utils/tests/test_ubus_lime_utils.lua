@@ -46,12 +46,28 @@ describe('ubus-lime-utils tests #ubuslimeutils', function()
     it('test get_node_status', function()
         stub(utils, "unsafe_shell", function () return '' end)
         stub(utils, "uptime_s", function () return '123' end)
-
+        stub(utils, "getBoardAsTable", function () return json.parse(mocks.boardJSON) end)
         local response  = limeutils.get_node_status()
         assert.is.equal("ok", response.status)
         assert.is.equal(utils.hostname(), response.hostname)
         assert.are.same({}, response.ips)
         assert.is.equal("123", response.uptime)
+    end)
+
+    it('test get_node_status switch links are shown', function()
+        stub(utils, "unsafe_shell", 
+        function (param)
+            if param == "swconfig dev switch0 show" then
+                return mocks.swconfig_dev_switch0_show
+            end
+            return ''
+        end
+        )
+        stub(utils, "uptime_s", function () return '123' end)
+        stub(utils, "getBoardAsTable", function () return json.parse(mocks.boardJSON) end)
+        local response  = limeutils.get_node_status()
+        local expected = json.parse(mocks.switch_status_result)
+        assert.is_true(utils.deepcompare(expected, response['switch_status']))
     end)
 
 
@@ -241,3 +257,204 @@ mocks.get_stations = {
         ["signal"] = -13
       }
 }
+
+mocks.boardJSON = [[
+    {
+        "model": {
+                "id": "tplink,tl-wdr3600-v1",
+                "name": "TP-Link TL-WDR3600 v1"
+        },
+        "switch": {
+                "switch0": {
+                        "enable": true,
+                        "reset": true,
+                        "ports": [
+                                {
+                                        "num": 0,
+                                        "device": "eth0",
+                                        "need_tag": false,
+                                        "want_untag": false
+                                },
+                                {
+                                        "num": 2,
+                                        "role": "lan",
+                                        "index": 1
+                                },
+                                {
+                                        "num": 3,
+                                        "role": "lan",
+                                        "index": 2
+                                },
+                                {
+                                        "num": 4,
+                                        "role": "lan",
+                                        "index": 3
+                                },
+                                {
+                                        "num": 5,
+                                        "role": "lan",
+                                        "index": 4
+                                },
+                                {
+                                        "num": 1,
+                                        "role": "wan"
+                                }
+                        ],
+                        "roles": [
+                                {
+                                        "role": "lan",
+                                        "ports": "2 3 4 5 0t",
+                                        "device": "eth0.1"
+                                },
+                                {
+                                        "role": "wan",
+                                        "ports": "1 0t",
+                                        "device": "eth0.2"
+                                }
+                        ]
+                }
+        },
+        "network": {
+                "lan": {
+                        "device": "eth0.1",
+                        "protocol": "static"
+                },
+                "wan": {
+                        "device": "eth0.2",
+                        "protocol": "dhcp",
+                        "macaddr": "e8:94:f6:68:33:65"
+                }
+        }
+}
+
+]]
+
+mocks.swconfig_dev_switch0_show = [[
+    Global attributes:
+	enable_vlan: 1
+	ar8xxx_mib_poll_interval: 0
+	ar8xxx_mib_type: 0
+	enable_mirror_rx: 0
+	enable_mirror_tx: 0
+	mirror_monitor_port: 0
+	mirror_source_port: 0
+	arl_age_time: 300
+	arl_table: address resolution table
+Port 0: MAC ba:be:c9:88:d6:b2
+Port 0: MAC 02:13:f2:be:7b:0a
+Port 0: MAC c0:4a:00:be:7b:0a
+Port 0: MAC ba:be:7c:96:b6:9b
+Port 0: MAC ba:be:74:fa:59:d8
+Port 0: MAC 02:db:d6:be:7b:0a
+Port 0: MAC c0:4a:00:be:7b:0b
+Port 0: MAC aa:aa:aa:db:f8:aa
+Port 0: MAC ba:be:69:c9:e3:f3
+Port 0: MAC 02:95:39:be:7b:0a
+Port 2: MAC 14:dd:a9:11:c3:1c
+
+	igmp_snooping: 0
+	igmp_v3: 0
+Port 0:
+	mib: ???
+	enable_eee: ???
+	igmp_snooping: 0
+	vlan_prio: 0
+	pvid: 0
+	link: port:0 link:up speed:1000baseT full-duplex txflow rxflow 
+Port 1:
+	mib: ???
+	enable_eee: 0
+	igmp_snooping: 0
+	vlan_prio: 0
+	pvid: 2
+	link: port:1 link:up
+Port 2:
+	mib: ???
+	enable_eee: 0
+	igmp_snooping: 0
+	vlan_prio: 0
+	pvid: 1
+	link: port:2 link:up speed:100baseT full-duplex txflow rxflow eee100 eee1000 auto
+Port 3:
+	mib: ???
+	enable_eee: 0
+	igmp_snooping: 0
+	vlan_prio: 0
+	pvid: 1
+	link: port:3 link:down
+Port 4:
+	mib: ???
+	enable_eee: 0
+	igmp_snooping: 0
+	vlan_prio: 0
+	pvid: 1
+	link: port:4 link:down
+Port 5:
+	mib: ???
+	enable_eee: 0
+	igmp_snooping: 0
+	vlan_prio: 0
+	pvid: 1
+	link: port:5 link:down
+Port 6:
+	mib: ???
+	enable_eee: ???
+	igmp_snooping: 0
+	vlan_prio: 0
+	pvid: 0
+	link: port:6 link:up speed:10baseT half-duplex 
+VLAN 1:
+	vid: 1
+	ports: 0t 2 3 4 5 
+VLAN 2:
+	vid: 2
+	ports: 0t 1 
+
+]]
+
+mocks.switch_status_result = [[
+    [
+    {
+      "device": "eth0.1",
+      "num": 2,
+      "role": "lan",
+      "link": "up"
+    },
+    {
+      "device": "eth0.1",
+      "num": 3,
+      "role": "lan",
+      "link": "down"
+    },
+    {
+      "device": "eth0.1",
+      "num": 4,
+      "role": "lan",
+      "link": "down"
+    },
+    {
+      "device": "eth0.1",
+      "num": 5,
+      "role": "lan",
+      "link": "down"
+    },
+    {
+      "device": "eth0.1",
+      "num": 0,
+      "role": "cpu",
+      "link": "up"
+    },
+    {
+      "device": "eth0.2",
+      "num": 1,
+      "role": "wan",
+      "link": "up"
+    },
+    {
+      "device": "eth0.2",
+      "num": 0,
+      "role": "cpu",
+      "link": "up"
+    }
+  ]
+]]
