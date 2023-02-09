@@ -74,23 +74,27 @@ end
 
 function node_status.switch_status()
     local response_ports = node_status.boardjson_get_ports()
-    node_status.swconfig_get_link_status(response_ports)
+    if #response_ports ~= 0 then
+        node_status.swconfig_get_link_status(response_ports)
+    end
     return response_ports
 end
 
 function node_status.boardjson_get_ports()
     local response_ports = {}
     local board = utils.getBoardAsTable()
-    for _, role in ipairs(board['switch']['switch0']['roles']) do
-        for port_number in string.gmatch(role['ports'], "%S+") do
-            if not tonumber(port_number) then
-                local n = tonumber(string.match(port_number, "^%d+"))
-                table.insert(response_ports, { num = n, role = "cpu", device = role['device']})
-            else
-                table.insert(response_ports, { num = tonumber(port_number), role = role['role'], device = role['device']})
+    if board['switch'] ~= nil and board['switch']['switch0'] ~= nil then
+        for _, role in ipairs(board['switch']['switch0']['roles']) do
+            for port_number in string.gmatch(role['ports'], "%S+") do
+                if not tonumber(port_number) then
+                    local n = tonumber(string.match(port_number, "^%d+"))
+                    table.insert(response_ports, { num = n, role = "cpu", device = role['device']})
+                else
+                    table.insert(response_ports, { num = tonumber(port_number), role = role['role'], device = role['device']})
+                end
             end
-        end
 
+        end
     end
     return response_ports
 end
