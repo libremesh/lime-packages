@@ -51,7 +51,13 @@ function node_status.get_station_stats(station)
         string.match(iw_result, "rx bytes:%s+(.-)\n"), 10)
     station.tx_bytes = tonumber(
         string.match(iw_result, "tx bytes:%s+(.-)\n"), 10)
-    station.signal = string.match(iw_result, "signal:%s+(.-)\n")
+    local signal_str = string.match(iw_result, "signal:%s+(.-)\n")
+    local signal, chain = string.match(signal_str, "(%-?%d+)%s+%[(.-)%]")
+    station.signal = tonumber(signal)
+    station.chains = {}
+    for num in string.gmatch(chain, "%-?%d+") do
+        table.insert(station.chains, tonumber(num))
+    end
     return station
 end
 
