@@ -82,7 +82,9 @@ describe('ubus-lime-utils tests #ubuslimeutils', function()
         stub(node_status, "get_stations", function () return mocks.get_stations end)
         local most_active = node_status.get_most_active()
         assert.is.equal("wlan0-mesh", most_active["iface"])
-        assert.is.equal("13 [10, 11] dBm", most_active["signal"])
+        assert.is.equal(-14, most_active["signal"])
+        assert.is.equal(-17, most_active["chains"][1])
+        assert.is.equal(-18, most_active["chains"][2])
         assert.is.equal(3116498, most_active["rx_bytes"])
         assert.is.equal(1166333, most_active["tx_bytes"])
     end)
@@ -179,8 +181,8 @@ mocks.iw_station_get_result_wlan0 = [[
 	tx retries:	2448
 	tx failed:	15
 	rx drop misc:	938
-	signal:  	13 [10, 11] dBm
-	signal avg:	25 [-28, -15] dBm
+	signal:  	-14 [-17, -18] dBm
+	signal avg:	-14 [-17, -18] dBm
 	Toffset:	18446744073577465064 us
 	tx bitrate:	6.5 MBit/s MCS 0
 	rx bitrate:	39.0 MBit/s MCS 10
