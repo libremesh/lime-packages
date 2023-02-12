@@ -71,11 +71,16 @@ function add_dhcp_leases_from_files()
 end
 
 function add_lease(client_mac, client_ip, client_hostname)
-	local leaseData = {}
-	leaseData[client_ip] = { hostname=client_hostname, mac=client_mac }
-	local cStdin = io.popen("shared-state insert dnsmasq-leases", "w")
-	cStdin:write(JSON.stringify(leaseData))
-	cStdin:close()
+	-- avoid adding IPv6 as collisions are very unlikely
+	-- if we were going to include it, we should prepend "id:" to the duid received as first argument
+	-- see https://github.com/libremesh/lime-packages/pull/975#issuecomment-1413984349
+	if client_ip:match('^%d+%.%d+%.%d+%.%d+$') then
+		local leaseData = {}
+		leaseData[client_ip] = { hostname=client_hostname, mac=client_mac }
+		local cStdin = io.popen("shared-state insert dnsmasq-leases", "w")
+		cStdin:write(JSON.stringify(leaseData))
+		cStdin:close()
+	end
 
 	if type(client_hostname) == "string" and client_hostname:len() > 1 then
 		local hostTable = {}
