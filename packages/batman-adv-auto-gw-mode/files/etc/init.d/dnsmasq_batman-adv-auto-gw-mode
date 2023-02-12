@@ -1,0 +1,13 @@
+#!/bin/sh /etc/rc.common
+# Create the file needed by batman-adv-auto-gw-mode for changing often
+# the dnsmasq configuration without writing on the flash memory
+# See https://github.com/libremesh/lime-packages/pull/971
+# Copyright (C) 2023 LibreMesh.org
+
+START=18
+
+start() {
+	[[ -d /var/run/dnsmasq ]] || mkdir -p /var/run/dnsmasq
+	touch /var/run/dnsmasq/disable-dhcp-server-in-br-lan
+} 
+
