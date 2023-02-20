@@ -240,6 +240,16 @@ function network.scandevices()
 			utils.log( "network.scandevices.dev_parser found LAN port %s " ..
 			           "and marking %s as nobridge", dev, lower_if )
 		end
+		--! With DSA, the WAN is named wan. Copying the code from the lan case.
+		if dev:match("^wan$") then
+			local lower_if_path = utils.unsafe_shell("ls -d /sys/class/net/" .. dev .. "/lower*")
+			local lower_if_table = utils.split(lower_if_path, "_")
+			local lower_if = lower_if_table[#lower_if_table]:gsub("\n", "")
+			devices[lower_if] = { nobridge = true }
+			devices[dev] = {}
+			utils.log( "network.scandevices.dev_parser found WAN port %s " ..
+			           "and marking %s as nobridge", dev, lower_if )
+		end
 
 		if dev:match("^wlan%d+"..wireless.wifiModeSeparator.."%w+$") then
 			devices[dev] = {}
