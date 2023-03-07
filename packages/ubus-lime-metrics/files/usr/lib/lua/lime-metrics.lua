@@ -35,6 +35,22 @@ function metrics.get_metrics(target)
     return result
 end
 
+function metrics.get_loss(target)
+    local result = {}
+    local node = target
+    local loss = nil
+
+    if lutils.is_installed("lime-proto-babeld") then
+        loss = utils.get_loss(node, 4)
+    else
+        return {status="error", error={msg="No lime-proto-babeld found", code="1"}}
+    end
+    result.loss = loss
+    result.status = "ok"
+    return result
+end
+
+
 function metrics.get_gateway()
     local result = {}
     local gw = nil
