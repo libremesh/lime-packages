@@ -12,7 +12,7 @@ unique_append()
 }
 
 unique_append \
-	'*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync dnsmasq-leases &> /dev/null)&)'\
+	'*/5 * * * * ((sleep $(($(hexdump -n 2 -e \"%u\" /dev/urandom) % 120)); shared-state sync dnsmasq-leases &> /dev/null)&)'\
 	/etc/crontabs/root
 
 exit 0

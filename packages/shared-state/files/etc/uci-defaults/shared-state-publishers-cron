@@ -6,7 +6,7 @@ unique_append()
 }
 
 unique_append \
-	'*/30 * * * * ((sleep $(($RANDOM % 1000)); shared-state-publish-all &> /dev/null)&)'\
+	'*/30 * * * * ((sleep $(($(hexdump -n 2 -e \"%u\" /dev/urandom) % 1000)); shared-state-publish-all &> /dev/null)&)'\
 	/etc/crontabs/root
 
 unique_append \

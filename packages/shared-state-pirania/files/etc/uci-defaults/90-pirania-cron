@@ -6,7 +6,7 @@ unique_append()
 }
 
 unique_append \
-	'*/2 * * * * ((sleep $(($RANDOM % 30)); /etc/shared-state/publishers/shared-state-publish_vouchers && shared-state sync pirania-vouchers &> /dev/null)&)'\
+	'*/2 * * * * ((sleep $(($(hexdump -n 2 -e \"%u\" /dev/urandom) % 30)); /etc/shared-state/publishers/shared-state-publish_vouchers && shared-state sync pirania-vouchers &> /dev/null)&)'\
 	/etc/crontabs/root
 
 exit 0
