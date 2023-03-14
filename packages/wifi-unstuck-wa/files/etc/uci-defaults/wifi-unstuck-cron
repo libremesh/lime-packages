@@ -2,7 +2,7 @@
 
 unique_append()
 {
-	grep -qF "$1" "$2" || echo "$1" >> "$2"
+	[ -f "$2" ] && grep -qF "$1" "$2" || echo "$1" >> "$2"
 }
 
 unique_append \
