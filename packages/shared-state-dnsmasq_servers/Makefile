@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LiMe
 	MAINTAINER:=Gui iribarren <gui@altermundi.net>
 	URL:=http://libremesh.org
-	DEPENDS:=+@BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT +lua +luci-lib-jsonc \
+	DEPENDS:=+lua +luci-lib-jsonc \
 		shared-state
 	PKGARCH:=all
 endef
