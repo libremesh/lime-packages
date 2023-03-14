@@ -154,11 +154,11 @@ function network.setup_dns()
 			uci:set("dhcp", s[".name"], "expandhosts", "1")
 			uci:set("dhcp", s[".name"], "domainneeded", "1")
 			uci:set("dhcp", s[".name"], "server", resolvers)
+			uci:set("dhcp", s[".name"], "confdir", "/etc/dnsmasq.d")
 		end
 	)
 	uci:save("dhcp")
 
-	fs.writefile("/etc/dnsmasq.conf", "conf-dir=/etc/dnsmasq.d\n")
 	fs.mkdir("/etc/dnsmasq.d")
 end
 
