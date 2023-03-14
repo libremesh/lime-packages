@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LibreMesh
 	MAINTAINER:=Nicolas Pace <nico@libre.ws>
 	URL:=http://libremesh.org
-	DEPENDS:=+@BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT +lua +luci-lib-jsonc \
+	DEPENDS:=+lua +luci-lib-jsonc \
 		shared-state +ubus-lime-location
 	PKGARCH:=all
 endef
