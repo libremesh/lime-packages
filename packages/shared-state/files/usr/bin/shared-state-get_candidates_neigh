@@ -47,7 +47,7 @@ for iface in $(ls /sys/class/net/) ; do
 		awk '{if ($3 == "from") print substr($4, 1, length($4)-1)'"\"%${iface}\""'}'
 done | sort -u -r)"
 
-babelCandidateAddresses="$(
+babelCandidateAddresses="$([ -e /var/etc/babeld.conf ] &&
 for iface in $(grep interface /var/etc/babeld.conf | awk '{print $2}'); do
 	ping6 -i 0.1 -c 2 ff02::1%${iface} 2> /dev/null | \
 		awk '{if ($3 == "from") print substr($4, 1, length($4)-1)'"\"%${iface}\""'}'
