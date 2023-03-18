@@ -91,5 +91,5 @@ $(echo "$candidateAddresses" | grep -v "$cIp")"
 
 done
 
-echo "$candidateAddresses" | tee "$cacheFile"
+echo "$candidateAddresses" | grep -v "^$" | tee "$cacheFile"
 get_uptime > "$lastRunFile"
