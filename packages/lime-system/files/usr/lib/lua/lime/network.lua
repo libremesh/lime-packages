@@ -1,5 +1,12 @@
 #!/usr/bin/lua
 
+--! LibreMesh community mesh networks meta-firmware
+--!
+--! Copyright (C) 2013-2023  Gioacchino Mazzurco <gio@eigenlab.org>
+--! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--!
+--! SPDX-License-Identifier: AGPL-3.0-only
+
 network = {}
 
 local ip = require("luci.ip")
@@ -452,6 +459,7 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 		uci:set("network", owrtDeviceName, "device")
 		uci:set("network", owrtDeviceName, "type", vlanProtocol)
 		uci:set("network", owrtDeviceName, "name", linux802adIfName)
+		--! This is ifname also on current OpenWrt
 		uci:set("network", owrtDeviceName, "ifname", linuxBaseIfname)
 		uci:set("network", owrtDeviceName, "vid", vlanId)
 	end
@@ -468,7 +476,7 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 	--! ifname in network because it is already set in wireless, because
 	--! setting ifname on both places cause a netifd race condition
 	if vid ~= 0 or not linux802adIfName:match("^wlan") then
-		uci:set("network", owrtInterfaceName, "ifname", linux802adIfName)
+		uci:set("network", owrtInterfaceName, "device", linux802adIfName)
 	end
 
 	uci:save("network")
@@ -495,14 +503,16 @@ function network.createMacvlanIface(baseIfname, linuxName, argsDev, argsIf)
 
 	local owrtDeviceName = network.limeIfNamePrefix..baseIfname.."_"..linuxName.."_dev"
 	local owrtInterfaceName = network.limeIfNamePrefix..baseIfname.."_"..linuxName.."_if"
-	owrtDeviceName = owrtDeviceName:gsub("[^%w_]", "_") -- sanitize uci section name
-	owrtInterfaceName = owrtInterfaceName:gsub("[^%w_]", "_") -- sanitize uci section name
+	--! sanitize uci sections name
+	owrtDeviceName = owrtDeviceName:gsub("[^%w_]", "_")
+	owrtInterfaceName = owrtInterfaceName:gsub("[^%w_]", "_")
 
 	local uci = config.get_uci_cursor()
 
 	uci:set("network", owrtDeviceName, "device")
 	uci:set("network", owrtDeviceName, "type", "macvlan")
 	uci:set("network", owrtDeviceName, "name", linuxName)
+	--! This is ifname also on current OpenWrt
 	uci:set("network", owrtDeviceName, "ifname", baseIfname)
 	for k,v in pairs(argsDev) do
 		uci:set("network", owrtDeviceName, k, v)
@@ -510,7 +520,7 @@ function network.createMacvlanIface(baseIfname, linuxName, argsDev, argsIf)
 
 	uci:set("network", owrtInterfaceName, "interface")
 	uci:set("network", owrtInterfaceName, "proto", "none")
-	uci:set("network", owrtInterfaceName, "ifname", linuxName)
+	uci:set("network", owrtInterfaceName, "device", linuxName)
 	uci:set("network", owrtInterfaceName, "auto", "1")
 	for k,v in pairs(argsIf) do
 		uci:set("network", owrtInterfaceName, k, v)
