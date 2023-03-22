@@ -1,5 +1,12 @@
 #!/usr/bin/lua
 
+--! LibreMesh community mesh networks meta-firmware
+--!
+--! Copyright (C) 2014-2023  Gioacchino Mazzurco <gio@eigenlab.org>
+--! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--!
+--! SPDX-License-Identifier: AGPL-3.0-only
+
 local libuci = require("uci")
 local fs = require("nixio.fs")
 local utils = require("lime.utils")
@@ -20,7 +27,7 @@ end
 
 function wan.setup_interface(ifname, args)
 	local uci = libuci:cursor()
-	uci:set("network", "wan", "ifname", ifname)
+	uci:set("network", "wan", "device", ifname)
 	uci:save("network")
 
 	if utils.is_installed('firewall') then
