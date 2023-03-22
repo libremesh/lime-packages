@@ -1,5 +1,12 @@
 #!/usr/bin/lua
 
+--! LibreMesh community mesh networks meta-firmware
+--!
+--! Copyright (C) 2014-2023  Gioacchino Mazzurco <gio@eigenlab.org>
+--! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--!
+--! SPDX-License-Identifier: AGPL-3.0-only
+
 utils = {}
 
 local config = require("lime.config")
@@ -10,6 +17,22 @@ local nixio = require("nixio")
 utils.BOARD_JSON_PATH = "/etc/board.json"
 utils.SHADOW_FILENAME = "/etc/shadow"
 utils.KEEP_ON_UPGRADE_FILES_BASE_PATH = '/lib/upgrade/keep.d/'
+
+function utils.dbg(...)
+	local ofd = io.stderr
+
+	ofd:write( debug.getinfo(2, 'S').source, ":",
+	           debug.getinfo(2, 'l').currentline, " ",
+	           debug.getinfo(2, 'n').name )
+
+	for n=1, select('#', ...) do
+		--! Assigantion needed to take only the Nth element discarding the rest
+		local nE = select(n, ...)
+		ofd:write(" ", nE)
+	end
+
+	ofd:write("\n")
+end
 
 function utils.log(...)
 	if DISABLE_LOGGING ~= nil then return end
