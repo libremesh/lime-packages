@@ -1,5 +1,12 @@
 #!/usr/bin/lua
 
+--! LibreMesh community mesh networks meta-firmware
+--!
+--! Copyright (C) 2013-2023  Gioacchino Mazzurco <gio@eigenlab.org>
+--! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--!
+--! SPDX-License-Identifier: AGPL-3.0-only
+
 network = {}
 
 local ip = require("luci.ip")
@@ -228,6 +235,26 @@ function network.scandevices()
 			utils.log( "network.scandevices.dev_parser found vlan device %s " ..
 			           "and marking %s as nobridge", dev, rawif )
 		end
+		--! With DSA, the LAN ports are not anymore eth0.1 but lan1, lan2...
+		if dev:match("^lan%d+$") then
+			local lower_if_path = utils.unsafe_shell("ls -d /sys/class/net/" .. dev .. "/lower*")
+			local lower_if_table = utils.split(lower_if_path, "_")
+			local lower_if = lower_if_table[#lower_if_table]:gsub("\n", "")
+			devices[lower_if] = { nobridge = true }
+			devices[dev] = {}
+			utils.log( "network.scandevices.dev_parser found LAN port %s " ..
+			           "and marking %s as nobridge", dev, lower_if )
+		end
+		--! With DSA, the WAN is named wan. Copying the code from the lan case.
+		if dev:match("^wan$") then
+			local lower_if_path = utils.unsafe_shell("ls -d /sys/class/net/" .. dev .. "/lower*")
+			local lower_if_table = utils.split(lower_if_path, "_")
+			local lower_if = lower_if_table[#lower_if_table]:gsub("\n", "")
+			devices[lower_if] = { nobridge = true }
+			devices[dev] = {}
+			utils.log( "network.scandevices.dev_parser found WAN port %s " ..
+			           "and marking %s as nobridge", dev, lower_if )
+		end
 
 		if dev:match("^wlan%d+"..wireless.wifiModeSeparator.."%w+$") then
 			devices[dev] = {}
@@ -260,6 +287,16 @@ function network.scandevices()
 		           created_device or "not_found")
 		dev_parser(created_device)
 		dev_parser(base_interface)
+		--! With DSA switch config, lan* ports are included in br-lan as "ports"
+		local ports = section["ports"]
+		if ports ~= "" and ports ~= nil then
+			for _,port in pairs(ports) do
+				utils.log( "network.scandevices.owrt_device_parser found "..
+					   "interface %s with port %s",
+					   created_device or "not_found", port or "not_found")
+					   dev_parser(port)
+			end
+		end
 	end
 
 	function owrt_switch_vlan_parser(section)
@@ -422,6 +459,7 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 		uci:set("network", owrtDeviceName, "device")
 		uci:set("network", owrtDeviceName, "type", vlanProtocol)
 		uci:set("network", owrtDeviceName, "name", linux802adIfName)
+		--! This is ifname also on current OpenWrt
 		uci:set("network", owrtDeviceName, "ifname", linuxBaseIfname)
 		uci:set("network", owrtDeviceName, "vid", vlanId)
 	end
@@ -438,7 +476,7 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 	--! ifname in network because it is already set in wireless, because
 	--! setting ifname on both places cause a netifd race condition
 	if vid ~= 0 or not linux802adIfName:match("^wlan") then
-		uci:set("network", owrtInterfaceName, "ifname", linux802adIfName)
+		uci:set("network", owrtInterfaceName, "device", linux802adIfName)
 	end
 
 	uci:save("network")
@@ -465,14 +503,16 @@ function network.createMacvlanIface(baseIfname, linuxName, argsDev, argsIf)
 
 	local owrtDeviceName = network.limeIfNamePrefix..baseIfname.."_"..linuxName.."_dev"
 	local owrtInterfaceName = network.limeIfNamePrefix..baseIfname.."_"..linuxName.."_if"
-	owrtDeviceName = owrtDeviceName:gsub("[^%w_]", "_") -- sanitize uci section name
-	owrtInterfaceName = owrtInterfaceName:gsub("[^%w_]", "_") -- sanitize uci section name
+	--! sanitize uci sections name
+	owrtDeviceName = owrtDeviceName:gsub("[^%w_]", "_")
+	owrtInterfaceName = owrtInterfaceName:gsub("[^%w_]", "_")
 
 	local uci = config.get_uci_cursor()
 
 	uci:set("network", owrtDeviceName, "device")
 	uci:set("network", owrtDeviceName, "type", "macvlan")
 	uci:set("network", owrtDeviceName, "name", linuxName)
+	--! This is ifname also on current OpenWrt
 	uci:set("network", owrtDeviceName, "ifname", baseIfname)
 	for k,v in pairs(argsDev) do
 		uci:set("network", owrtDeviceName, k, v)
@@ -480,7 +520,7 @@ function network.createMacvlanIface(baseIfname, linuxName, argsDev, argsIf)
 
 	uci:set("network", owrtInterfaceName, "interface")
 	uci:set("network", owrtInterfaceName, "proto", "none")
-	uci:set("network", owrtInterfaceName, "ifname", linuxName)
+	uci:set("network", owrtInterfaceName, "device", linuxName)
 	uci:set("network", owrtInterfaceName, "auto", "1")
 	for k,v in pairs(argsIf) do
 		uci:set("network", owrtInterfaceName, k, v)

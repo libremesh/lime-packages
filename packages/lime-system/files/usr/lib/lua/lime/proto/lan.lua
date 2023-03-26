@@ -48,7 +48,10 @@ function lan.setup_interface(ifname, args)
 
 	local uci = config.get_uci_cursor()
 	local bridgedIfs = {}
-	local oldIfs = uci:get("network", "lan", "ifname") or {}
+	-- here we bet that the first device section is the bridge one,
+	-- as it does not have a name for addressing it
+	local oldIfs = uci:get("network", "@device[0]", "ports") or {}
+	-- it should be a table, it was a string in old OpenWrt releases
 	if type(oldIfs) == "string" then oldIfs = utils.split(oldIfs, " ") end
 	for _,iface in pairs(oldIfs) do
 		if iface ~= ifname then
@@ -56,7 +59,7 @@ function lan.setup_interface(ifname, args)
 		end
 	end
 	table.insert(bridgedIfs, ifname)
-	uci:set("network", "lan", "ifname", bridgedIfs)
+	uci:set("network", "@device[0]", "ports", bridgedIfs)
 	uci:save("network")
 end
 
