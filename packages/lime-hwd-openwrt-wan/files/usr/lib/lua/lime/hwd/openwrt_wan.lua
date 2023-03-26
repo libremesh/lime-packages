@@ -1,5 +1,13 @@
 #!/usr/bin/lua
 
+--! LibreMesh community mesh networks meta-firmware
+--!
+--! Copyright (C) 2014-2023  Gioacchino Mazzurco <gio@eigenlab.org>
+--! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--!
+--! SPDX-License-Identifier: AGPL-3.0-only
+
+
 local hardware_detection = require("lime.hardware_detection")
 local config = require("lime.config")
 local utils = require("lime.utils")
@@ -22,7 +30,7 @@ function openwrt_wan.detect_hardware()
 		if networkTable then
 			local wanTable = networkTable['wan']
 			if wanTable then
-				ifname = wanTable['ifname']
+				ifname = wanTable['device']
 			end
 		end
 		if ifname and ifname ~= "" then
@@ -47,8 +55,10 @@ function openwrt_wan.detect_hardware()
 			config.set(openwrt_wan.sectionName, "protocols", protos)
 			config.set(openwrt_wan.sectionName, "linux_name", ifname)
 			config.end_batch()
+
+			utils.dbg("WAN interface:", ifname)
 		else
-			utils.log("No wan interface detected")
+			utils.dbg("WAN interface not found")
 		end
 	end
 end
