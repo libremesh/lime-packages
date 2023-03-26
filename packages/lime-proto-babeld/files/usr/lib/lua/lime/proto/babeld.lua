@@ -42,6 +42,7 @@ function babeld.configure(args)
 
 	uci:set("babeld", "general", "general")
 	uci:set("babeld", "general", "local_port", "30003")
+	uci:set("babeld", "general", "ubus_bindings", "true")
 
 	uci:set("babeld", "ula6", "filter")
 	uci:set("babeld", "ula6", "type", "redistribute")
