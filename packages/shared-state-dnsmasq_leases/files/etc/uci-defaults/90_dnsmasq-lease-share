@@ -1,15 +1,12 @@
 #!/bin/sh
 
+. /lib/libremesh.sh
+
 dhcpHostsFile="/tmp/dhcp.hosts_remote"
 
 uci set dhcp.@dnsmasq[0].dhcpscript=/usr/bin/dnsmasq-lease-share.sh
 uci set dhcp.@dnsmasq[0].dhcphostsfile=$dhcpHostsFile
 uci commit dhcp
-
-unique_append()
-{
-	[ -f "$2" ] && grep -qF "$1" "$2" || echo "$1" >> "$2"
-}
 
 unique_append \
 	'*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync dnsmasq-leases &> /dev/null)&)'\

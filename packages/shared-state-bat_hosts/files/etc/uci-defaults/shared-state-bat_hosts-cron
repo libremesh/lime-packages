@@ -1,9 +1,6 @@
 #!/bin/sh
 
-unique_append()
-{
-	[ -f "$2" ] && grep -qF "$1" "$2" || echo "$1" >> "$2"
-}
+. /lib/libremesh.sh
 
 unique_append \
 	'*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync bat-hosts &> /dev/null)&)'\
