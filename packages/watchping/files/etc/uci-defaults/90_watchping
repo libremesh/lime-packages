@@ -15,5 +15,3 @@ uci -q get system.@watchping[0] || {
         commit system
 EOF
 }
-
-exit 0

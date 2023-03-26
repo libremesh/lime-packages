@@ -9,5 +9,3 @@ sed -i -e s/"^DISTRIB_ID=.*"/"DISTRIB_ID='$LIME_ID'"/g \
 	-e s/"^DISTRIB_CODENAME=.*"/"DISTRIB_CODENAME='$LIME_CODENAME'"/g \
 	-e s/"^DISTRIB_DESCRIPTION=.*"/"DISTRIB_DESCRIPTION='$LIME_DESCRIPTION'"/g \
 	/etc/openwrt_release
-
-exit 0

@@ -11,5 +11,3 @@ uci commit dhcp
 unique_append \
 	'*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync dnsmasq-leases &> /dev/null)&)'\
 	/etc/crontabs/root
-
-exit 0
