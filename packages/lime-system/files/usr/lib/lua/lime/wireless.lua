@@ -50,8 +50,8 @@ function wireless.scandevices()
 end
 
 function wireless.is5Ghz(radio)
-	local devModes = iwinfo.nl80211.hwmodelist(radio)
-	return devModes.a or devModes.ac
+	local uci = config.get_uci_cursor()
+	return uci:get("wireless", radio, "band") == '5g'
 end
 
 wireless.availableModes = { adhoc=true, ap=true, apname=true, apbb=true, ieee80211s=true }
