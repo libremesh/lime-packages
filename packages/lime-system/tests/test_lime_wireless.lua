@@ -8,17 +8,15 @@ local uci = nil
 describe('LiMe Wireless tests #wireless', function()
 
     it('test is5Ghz(phy) with single freq radios', function()
-        iwinfo.fake.set_hwmodelist('phy0', { ["a"] = true, ["b"] = false, ["ac"] = false, ["g"] = false, ["n"] = true,})
-        assert.is_true(wireless.is5Ghz('phy0'))
-        iwinfo.fake.set_hwmodelist('phy0', { ["a"] = true, ["b"] = false, ["ac"] = false, ["g"] = false, ["n"] = false,})
-        assert.is_true(wireless.is5Ghz('phy0'))
-        iwinfo.fake.set_hwmodelist('phy0', { ["a"] = false, ["b"] = false, ["ac"] = true, ["g"] = false, ["n"] = true,})
-        assert.is_true(wireless.is5Ghz('phy0'))
+        uci:set('wireless', 'radio0', 'wifi-device')
+        uci:set('wireless', 'radio0', 'band', '2g')
+        uci:set('wireless', 'radio1', 'wifi-device')
+        uci:set('wireless', 'radio1', 'band', '5g')
 
-        iwinfo.fake.set_hwmodelist('phy0', { ["a"] = false, ["b"] = true, ["ac"] = false, ["g"] = false, ["n"] = true,})
-        assert.is_false(wireless.is5Ghz('phy0'))
-        iwinfo.fake.set_hwmodelist('phy0', { ["a"] = false, ["b"] = true, ["ac"] = false, ["g"] = true, ["n"] = false,})
-        assert.is_false(wireless.is5Ghz('phy0'))
+        local devices = wireless.scandevices()
+
+        assert.is_false(devices["radio0"].is5Ghz('phy0'))
+        assert.is_true(devices["radio1"].is5Ghz('phy0'))
     end)
 
     it('test scandevices() no wireless', function()
