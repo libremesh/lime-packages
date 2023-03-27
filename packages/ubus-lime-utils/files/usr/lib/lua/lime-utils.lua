@@ -2,9 +2,9 @@
 
 -- Used on lime-utils ubus script
 local limewireless = require 'lime.wireless'
-local iwinfo = require 'iwinfo'
 local utils = require 'lime.utils'
 local upgrade = require 'lime.upgrade'
+local node_status = require 'lime.node_status'
 local hotspot_wwan = require "lime.hotspot_wwan"
 local ubus = require "ubus"
 
@@ -25,24 +25,6 @@ function limeutils.get_cloud_nodes()
     return result
 end
 
--- todo(kon): move to utility class?? 
-function limeutils.get_station_traffic(params)
-    local iface = params.iface
-    local mac = params.station_mac
-    local result = {}
-    local traffic = utils.unsafe_shell(
-                        "iw " .. iface .. " station get " .. mac ..
-                            " | grep bytes | awk '{ print $3}'")
-    words = {}
-    for w in traffic:gmatch("[^\n]+") do table.insert(words, w) end
-    rx = words[1]
-    tx = words[2]
-    result.station = mac
-    result.rx_bytes = tonumber(rx, 10)
-    result.tx_bytes = tonumber(tx, 10)
-    result.status = "ok"
-    return result
-end
 
 function limeutils.get_mesh_ifaces()
     local result = {}
@@ -53,66 +35,10 @@ end
 function limeutils.get_node_status()
     local result = {}
     result.hostname = utils.hostname()
-    result.ips = {}
-    local ips = utils.unsafe_shell(
-                    "ip a s br-lan | grep inet | awk '{ print $1, $2 }'")
-    for line in ips:gmatch("[^\n]+") do
-        local words = {}
-        for w in line:gmatch("%S+") do
-            if w ~= "" then table.insert(words, w) end
-        end
-        local version = words[1]
-        local address = words[2]
-        if version == "inet6" then
-            table.insert(result.ips, {version = "6", address = address})
-        else
-            table.insert(result.ips, {version = "4", address = address})
-        end
-    end
-    local ifaces = limewireless.mesh_ifaces()
-    local stations = {}
-    for _, iface in ipairs(ifaces) do
-        iface_type = iwinfo.type(iface)
-        iface_stations = iface_type and iwinfo[iface_type].assoclist(iface)
-        if iface_stations then
-            for mac, station in pairs(iface_stations) do
-                station['iface'] = iface
-                station.station_mac = mac
-                table.insert(stations, station)
-            end
-        end
-    end
-    if next(stations) ~= nil then
-        local most_active_rx = 0
-        local most_active = nil
-        for _, station in ipairs(stations) do
-            local traffic = utils.unsafe_shell(
-                                "iw " .. station.iface .. " station get " ..
-                                    station.station_mac ..
-                                    " | grep bytes | awk '{ print $3}'")
-            words = {}
-            for w in traffic:gmatch("[^\n]+") do
-                table.insert(words, w)
-            end
-            rx = words[1]
-            tx = words[2]
-            station.rx_bytes = tonumber(rx, 10)
-            station.tx_bytes = tonumber(tx, 10)
-            if station.rx_bytes > most_active_rx then
-                most_active_rx = station.rx_bytes
-                most_active = station
-            end
-        end
-        local station_traffic = limeutils.get_station_traffic({
-            iface = most_active.iface,
-            station_mac = most_active.station_mac
-        })
-        most_active.rx_bytes = station_traffic.rx_bytes
-        most_active.tx_bytes = station_traffic.tx_bytes
-        result.most_active = most_active
-    end
+    result.ips = node_status.get_ips()
+    result.most_active = node_status.get_most_active()
+    result.switch_status = node_status.switch_status()
     result.uptime = tostring(utils.uptime_s())
-
     result.status = "ok"
     return result
 end
