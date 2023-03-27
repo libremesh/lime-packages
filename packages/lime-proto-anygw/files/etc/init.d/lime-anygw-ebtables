@@ -1,0 +1,26 @@
+#!/bin/sh /etc/rc.common
+
+START=22
+USE_PROCD=0
+
+ANYGW_MACS="aa:aa:aa:00:00:00/ff:ff:ff:00:00:00"
+IPV6_ETHER_TYPE="86DD" # Workaround missing /etc/ethertypes
+
+RULE_DO_NOT_FORWARD_ANYGW_1="FORWARD -j DROP -d $ANYGW_MACS"
+RULE_DO_NOT_FORWARD_ANYGW_2="POSTROUTING -t nat -o bat0 -j DROP -s $ANYGW_MACS"
+RULE_DO_NOT_FORWARD_RA="POSTROUTING -t nat -o bat0 --protocol $IPV6_ETHER_TYPE --ip6-protocol ipv6-icmp --ip6-icmp-type router-solicitation -j DROP"
+RULE_DO_NOT_FORWARD_ROGUE_RA="POSTROUTING -t nat -o bat0 --protocol $IPV6_ETHER_TYPE --ip6-protocol ipv6-icmp --ip6-icmp-type router-advertisement -j DROP"
+
+start_service() {
+	ebtables -A $RULE_DO_NOT_FORWARD_ANYGW_1
+	ebtables -A $RULE_DO_NOT_FORWARD_ANYGW_2
+	ebtables -A $RULE_DO_NOT_FORWARD_RA
+	ebtables -A $RULE_DO_NOT_FORWARD_ROGUE_RA
+}
+
+stop_service() {
+	ebtables -D $RULE_DO_NOT_FORWARD_ANYGW_1
+	ebtables -D $RULE_DO_NOT_FORWARD_ANYGW_2
+	ebtables -D $RULE_DO_NOT_FORWARD_RA
+	ebtables -D $RULE_DO_NOT_FORWARD_ROGUE_RA
+}
