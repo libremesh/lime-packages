@@ -6,5 +6,5 @@ unique_append()
 }
 
 unique_append \
-	'*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync nodes_and_links &> /dev/null)&)'\
+	'*/5 * * * * ((sleep $(($(random-numgen) % 120)); shared-state sync nodes_and_links &> /dev/null)&)'\
 	/etc/crontabs/root
