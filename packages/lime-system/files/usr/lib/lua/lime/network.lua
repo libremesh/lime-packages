@@ -160,6 +160,8 @@ function network.setup_dns()
 			uci:set("dhcp", s[".name"], "local", "/"..cloudDomain.."/")
 			uci:set("dhcp", s[".name"], "expandhosts", "1")
 			uci:set("dhcp", s[".name"], "domainneeded", "1")
+			--! allow queries from non-local ips (i.e. from other clouds)
+			uci:set("dhcp", s[".name"], "localservice", "0")
 			uci:set("dhcp", s[".name"], "server", resolvers)
 			uci:set("dhcp", s[".name"], "confdir", "/etc/dnsmasq.d")
 		end

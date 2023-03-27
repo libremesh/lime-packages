@@ -1,7 +1,7 @@
 #!/usr/bin/lua
 
 --! LibreMesh
---! Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
+--! Copyright (C) 2020 Gui iribarren <gui@altermundi.net>
 --!
 --! This program is free software: you can redistribute it and/or modify
 --! it under the terms of the GNU Affero General Public License as
@@ -18,16 +18,19 @@
 
 local JSON = require("luci.jsonc")
 
-local outputTable = {}
+local uci = require("uci"):cursor()
 
-for key,value in pairs(
-	JSON.parse(io.stdin:read("*all")) ) do
-		table.insert(outputTable, key)
-end
+uci:foreach("dhcp", "dnsmasq",
+  function(s)
+    localDomain = uci:get("dhcp", s[".name"], "local"):gsub("/","")
+  end
+)
 
-local outputFile = io.open("/var/hosts/shared-state-dnsmasq_hosts", "w")
-if outputFile then
-	outputFile:write(table.concat(outputTable,"\n").."\n")
-	outputFile:close()
-	os.execute("killall -HUP dnsmasq 2>/dev/null")
-end
+local anygwIPv6 = uci:get("network", "lm_net_br_lan_anygw_if", "ip6addr")
+if anygwIPv6 then anygwIPv6 = anygwIPv6:gsub("/.*$", "") end
+
+local domains = {}
+domains[localDomain] = anygwIPv6
+
+--! JSON.stringify(domains) will output for example {"cloud1.mesh":"fd0d:fe46:8ce8::ab:cd00"}
+io.popen("shared-state insert dnsmasq-servers", "w"):write(JSON.stringify(domains))
