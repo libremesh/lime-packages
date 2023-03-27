@@ -186,64 +186,6 @@ function limeutils.get_upgrade_info()
     return result
 end
 
-function limeutils.safe_reboot(msg)
-    local result = {}
-    local function getStatus()
-        local f = io.open('/overlay/upper/.etc.last-good.tgz', "rb")
-        if f then f:close() end
-        return f ~= nil
-    end
-
-    -- Get safe-reboot status
-    if msg.action == nil then return {error = true} end
-    if msg.action == 'status' then result.stauts = getStatus() end
-
-    --  Start safe-reboot
-    if msg.action == 'start' then
-        local args = ''
-        if msg.value ~= nil then
-            if msg.value.wait ~= nil then
-                args = args .. ' -w ' .. msg.value.wait
-            end
-            if msg.value.fallback ~= nil then
-                args = args .. ' -f ' .. msg.value.fallback
-            end
-        end
-        local sr = assert(io.popen('safe-reboot ' .. args))
-        sr:close()
-        result.status = getStatus()
-        if result.status == true then result.started = true end
-    end
-
-    -- Rreboot now and wait for fallback timeout
-    if msg.action == 'now' then
-        local sr = assert(io.popen('safe-reboot now'))
-        result.status = getStatus()
-        result.now = result.status
-    end
-
-    -- Keep changes and stop safe-reboot
-    if msg.action == 'cancel' then
-        result.status = true
-        result.canceled = false
-        local sr = assert(io.popen('safe-reboot cancel'))
-        sr:close()
-        if getStatus() == false then
-            result.status = false
-            result.canceled = true
-        end
-    end
-
-    --  Discard changes - Restore previous state and reboot
-    if msg.action == 'discard' then
-        local sr = assert(io.popen('safe-reboot discard'))
-        sr:close()
-        result.status = getStatus()
-        if result.status == true then result.started = true end
-    end
-
-    return result
-end
 
 function limeutils.hotspot_wwan_get_status(msg)
     local msg = msg or {}
