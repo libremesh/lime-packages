@@ -40,11 +40,7 @@ function metrics.get_loss(target)
     local node = target
     local loss = nil
 
-    if lutils.is_installed("lime-proto-babeld") then
-        loss = utils.get_loss(node, 4)
-    else
-        return {status="error", error={msg="No lime-proto-babeld found", code="1"}}
-    end
+    loss = utils.get_loss(node, 4)
     result.loss = loss
     result.status = "ok"
     return result
