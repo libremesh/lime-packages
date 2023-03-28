@@ -4,7 +4,7 @@ define Package/$(PKG_NAME)
   SECTION:=lime
   CATEGORY:=LibreMesh
   TITLE:=LiMe wan proto support
-  DEPENDS:=+lime-system +lua +libuci-lua +kmod-ipt-nat +iptables +luci-lib-nixio
+  DEPENDS:=+firewall4 +lime-system +lua +libuci-lua
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   VERSION:=$(if $(PKG_VERSION),$(PKG_VERSION),$(PKG_SRC_VERSION))
   PKGARCH:=all
