@@ -113,7 +113,7 @@ function limeutilsadmin.safe_reboot(msg)
 
     -- Get safe-reboot status
     if msg.action == nil then return {error = true} end
-    if msg.action == 'status' then result.stauts = getStatus() end
+    if msg.action == 'status' then result.status = getStatus() end
 
     --  Start safe-reboot
     if msg.action == 'start' then
