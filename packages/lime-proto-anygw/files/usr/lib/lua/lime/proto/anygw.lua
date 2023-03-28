@@ -4,6 +4,7 @@ local fs = require("nixio.fs")
 local network = require("lime.network")
 local config = require("lime.config")
 local system = require("lime.system")
+local utils = require("lime.utils")
 
 
 anygw = {}
@@ -65,24 +66,7 @@ function anygw.configure(args)
 
 	uci:save("network")
 
-	fs.mkdir("/etc/firewall.lime.d")
-	fs.writefile(
-		"/etc/firewall.lime.d/20-anygw-ebtables",
-		"\n" ..
-		"ebtables -D FORWARD -j DROP -d " .. anygw_mac .. "/" .. anygw_mac_mask .. "\n" ..
-		"ebtables -A FORWARD -j DROP -d " .. anygw_mac .. "/" .. anygw_mac_mask .. "\n" ..
-		"ebtables -t nat -D POSTROUTING -o bat0 -j DROP -s " .. anygw_mac .. "/" .. anygw_mac_mask .. "\n" ..
-		"ebtables -t nat -A POSTROUTING -o bat0 -j DROP -s " .. anygw_mac .. "/" .. anygw_mac_mask .. "\n" ..
-		"# Filter IPv6 Router Solicitation\n" ..
-		"ebtables -t nat -D POSTROUTING -o bat0 --protocol ipv6 --ip6-protocol ipv6-icmp --ip6-icmp-type router-solicitation -j DROP\n" ..
-		"ebtables -t nat -A POSTROUTING -o bat0 --protocol ipv6 --ip6-protocol ipv6-icmp --ip6-icmp-type router-solicitation -j DROP\n" ..
-		"# Filter rogue IPv6 Router advertisement\n" ..
-		"ebtables -t nat -D POSTROUTING -o bat0 --protocol ipv6 --ip6-protocol ipv6-icmp --ip6-icmp-type router-advertisement -j DROP\n" ..
-		"ebtables -t nat -A POSTROUTING -o bat0 --protocol ipv6 --ip6-protocol ipv6-icmp --ip6-icmp-type router-advertisement -j DROP\n"
-	)
-
 	uci:set("dhcp", "lan", "ignore", "1")
-
 	uci:set("dhcp", owrtInterfaceName.."_dhcp", "dhcp")
 	uci:set("dhcp", owrtInterfaceName.."_dhcp", "interface", owrtInterfaceName)
 	anygw_dhcp_start = config.get("network", "anygw_dhcp_start")
@@ -129,7 +113,8 @@ function anygw.configure(args)
 	table.insert(content, "dhcp-option=tag:anygw,option6:domain-search,"..cloudDomain)
 	fs.writefile("/etc/dnsmasq.d/lime-proto-anygw-20-ipv6.conf", table.concat(content, "\n").."\n")
 
-	io.popen("/etc/init.d/dnsmasq enable || true"):close()
+	utils.unsafe_shell("/etc/init.d/dnsmasq enable || true")
+	utils.unsafe_shell("/etc/init.d/lime-anygw-ebtables enable || true")
 end
 
 function anygw.setup_interface(ifname, args) end
