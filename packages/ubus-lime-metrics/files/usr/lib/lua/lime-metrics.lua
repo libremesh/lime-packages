@@ -35,6 +35,18 @@ function metrics.get_metrics(target)
     return result
 end
 
+function metrics.get_loss(target)
+    local result = {}
+    local node = target
+    local loss = nil
+
+    loss = utils.get_loss(node, 4)
+    result.loss = loss
+    result.status = "ok"
+    return result
+end
+
+
 function metrics.get_gateway()
     local result = {}
     local gw = nil
