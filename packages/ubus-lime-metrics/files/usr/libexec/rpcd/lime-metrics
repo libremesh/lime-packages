@@ -24,6 +24,11 @@ local function get_metrics(msg)
     utils.printJson(result)
 end
 
+local function get_loss(msg)
+    local result = metrics.get_loss(msg.target)
+    utils.printJson(result)
+end
+
 local function get_gateway(msg)
     utils.printJson(metrics.get_gateway())
 end
@@ -42,6 +47,7 @@ end
 
 local methods = {
 	get_metrics = { target = 'value' },
+	get_loss = { target = 'value' },
     get_gateway = { no_params = 0 },
     get_path = { target = 'value' },
     get_last_internet_path = { no_params = 0 },
@@ -57,6 +63,7 @@ if arg[1] == 'call' then
     local msg = io.read()
     msg = json.parse(msg)
     if       arg[2] == 'get_metrics'            then get_metrics(msg)
+    elseif   arg[2] == 'get_loss'               then get_loss(msg)
     elseif   arg[2] == 'get_gateway'            then get_gateway(msg)
     elseif   arg[2] == 'get_path'               then get_path(msg)
     elseif   arg[2] == 'get_last_internet_path' then get_path(msg)
