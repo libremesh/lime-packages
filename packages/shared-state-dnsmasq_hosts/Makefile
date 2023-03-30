@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LibreMesh
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
-	DEPENDS:=+lua +luci-lib-jsonc \
+	DEPENDS:=+lua +luci-lib-jsonc +random-numgen \
 		shared-state
 	PKGARCH:=all
 endef

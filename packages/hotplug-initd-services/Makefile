@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LibreMesh
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
-	DEPENDS:=+libubox-lua +libubus-lua \
+	DEPENDS:=+libubox-lua +libubus-lua +random-numgen \
 		+lua +luci-lib-nixio
 	PKGARCH:=all
 endef
