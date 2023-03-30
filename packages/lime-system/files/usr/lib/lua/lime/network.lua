@@ -272,12 +272,14 @@ function network.scandevices()
 			           ifn )
 			dev_parser(ifn)
 		end
-		if ( type(ifn) == "table" ) then
-			for _,v in pairs(ifn) do
-				utils.log( "network.scandevices.owrt_ifname_parser found " ..
-				           "ifname %s in compound interface", v )
-				dev_parser(v)
-			end
+	end
+
+	function owrt_network_interface_parser(section)
+		local ifn = section["device"]
+		if ( type(ifn) == "string" ) then
+			utils.log( "network.scandevices.owrt_network_interface_parser found ifname %s",
+			           ifn )
+			dev_parser(ifn)
 		end
 	end
 
@@ -321,7 +323,7 @@ function network.scandevices()
 	uci:foreach("wireless", "wifi-iface", owrt_ifname_parser)
 
 	--! Scrape from uci network
-	uci:foreach("network", "interface", owrt_ifname_parser)
+	uci:foreach("network", "interface", owrt_network_interface_parser)
 	uci:foreach("network", "device", owrt_device_parser)
 	uci:foreach("network", "switch_vlan", owrt_switch_vlan_parser)
 
