@@ -30,6 +30,7 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/javierajorge/epollcoroutinedoctest.git
+PKG_SOURCE_VERSION:= 15ec133ed7136a8cc8d729207d3109f3596f3234
 PKG_MAINTAINER:=Javier Jorge <javierbrk@gmail.com>
 PKG_LICENSE:=AGPL-3.0
 
