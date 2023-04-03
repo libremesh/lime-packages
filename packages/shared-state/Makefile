@@ -14,20 +14,14 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
 
-include ../../ping6retrocompat.mk
-
 define Package/$(PKG_NAME)
 	TITLE:=Very minimal state sharing betwen nodes
 	CATEGORY:=LibreMesh
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
 	DEPENDS:=+libuci-lua +lime-system +lua +luci-lib-jsonc +luci-lib-nixio \
-		+$(PING6_PACKAGE) +uclient-fetch
+		+iputils-ping +uclient-fetch
 	PKGARCH:=all
-endef
-
-define Package/$(PKG_NAME)/config
-	select $(PING6_SYMLINK)
 endef
 
 define Package/$(PKG_NAME)/description
