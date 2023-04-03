@@ -78,9 +78,9 @@ CMAKE_OPTIONS += \
 #	$(Build/Patch)
 #endef
 
-define Package/sharedstate/install
+define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/main $(1)/usr/bin/sharedstate
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/main $(1)/usr/bin/$(PKG_NAME)
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
