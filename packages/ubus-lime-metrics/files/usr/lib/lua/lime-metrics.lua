@@ -17,10 +17,10 @@ function metrics.get_metrics(target)
     local shell_output = ""
 
     if lutils.is_installed("lime-proto-bmx6") then
-        loss = utils.get_loss(node..".mesh", 6)
+        loss = utils.get_loss(node..".mesh")
         shell_output = lutils.unsafe_shell("netperf -6 -l 10 -H "..node..".mesh| tail -n1| awk '{ print $5 }'")
     elseif lutils.is_installed("lime-proto-babeld") then
-        loss = utils.get_loss(node, 4)
+        loss = utils.get_loss(node)
         shell_output = lutils.unsafe_shell("netperf -l 10 -H "..node.."| tail -n1| awk '{ print $5 }'")
     else
         return {status="error", error={msg="No lime-proto-bmx6 or lime-proto-babeld found", code="1"}}
@@ -40,7 +40,7 @@ function metrics.get_loss(target)
     local node = target
     local loss = nil
 
-    loss = utils.get_loss(node, 4)
+    loss = utils.get_loss(node)
     result.loss = loss
     result.status = "ok"
     return result
@@ -90,7 +90,7 @@ function metrics.get_internet_status( )
       result.IPv4 = { working=false }
     end
 
-    local lossV6 = utils.get_loss("2600::", 6)
+    local lossV6 = utils.get_loss("2600::")
     if lossV6 ~= "100" then
         result.IPv6 = { working=true }
     else
