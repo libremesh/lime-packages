@@ -25,8 +25,6 @@ GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
 PKG_NAME:=shared-state-async-server
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
-#PKG_SOURCE_VERSION:=dc438f9ee005f9ad75d509bdb4dc2f22af99a579
-
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/javierajorge/epollcoroutinedoctest.git
@@ -34,15 +32,12 @@ PKG_SOURCE_VERSION:= 15ec133ed7136a8cc8d729207d3109f3596f3234
 PKG_MAINTAINER:=Javier Jorge <javierbrk@gmail.com>
 PKG_LICENSE:=AGPL-3.0
 
-#PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-#PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 HOST_BUILD_PREFIX:=$(STAGING_DIR_HOST)
 
 # Source settings (i.e. where to find the source codes)
 # This is a custom variable, used below 
-# disable git package source and enable Build/Prepare line xx
+# disable git package source and enable Build/Prepare line 29-30
 #SOURCE_DIR:=/home/jjorge/Desktop/epollcoroutinedoctest
-
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -71,7 +66,7 @@ CMAKE_OPTIONS += \
 
 # Package preparation instructions; create the build directory and copy the source code. 
 # The last command is necessary to ensure our preparation instructions remain compatible with the patching system.
-# only used in conjuntion with SOURCE_DIR line 43
+# only used in conjuntion with SOURCE_DIR line 40
 #define Build/Prepare
 #	mkdir -p $(PKG_BUILD_DIR)
 #	cp $(SOURCE_DIR)/* $(PKG_BUILD_DIR) -R
