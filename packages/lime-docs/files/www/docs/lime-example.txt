@@ -68,7 +68,6 @@ config lime network
 ### WiFi general options
 
 config lime wifi					# Settings in this section applies to all radios. 
-#	option country 'ES'				# set this to your location country code, for example in Spain, setting ES allows you to use channel 13
 	list modes 'ap'					# This mode setup an Access Point, with the same ssid in each node for roaming purposes.
 	list modes 'apname'				# This mode setup an Access Point, with specific ssid for each node.
 	list modes 'ieee80211s'				# Used for mesh links between nodes.
