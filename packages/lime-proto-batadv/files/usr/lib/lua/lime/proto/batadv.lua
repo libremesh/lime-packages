@@ -20,6 +20,11 @@ function batadv.configure(args)
 	uci:set("network", "bat0", "proto", "batadv")
 	uci:set("network", "bat0", "bridge_loop_avoidance", "1")
 	uci:set("network", "bat0", "multicast_mode", "0")
+	-- by default, BATMAN-adv sends out one Originator Message (OGM) every second (orig_interval=1000)
+	-- in a network with static nodes, a larger interval between OGM packets can be used (e.g. 2000)
+	-- see https://github.com/libremesh/lime-packages/issues/1010
+	local orig_interval = config.get("network", "batadv_orig_interval", "2000")
+        uci:set("network", "bat0", "orig_interval", orig_interval)
 
 	-- if anygw enabled disable DAT that doesn't play well with it
 	-- and set gw_mode=client everywhere. Since there's no gw_mode=server, this makes bat0 never forward requests
