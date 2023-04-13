@@ -22,6 +22,7 @@ describe('LiMe proto Batman-adv #protobatadv', function()
         assert.is.equal('batadv', uci:get('network', 'bat0', 'proto'))
         assert.is.equal('1', uci:get('network', 'bat0', 'bridge_loop_avoidance'))
         assert.is.equal('0', uci:get('network', 'bat0', 'multicast_mode'))
+        assert.is.equal('2000', uci:get('network', 'bat0', 'orig_interval'))
 
         -- anygw is disabled
         assert.is_nil(uci:get('network', 'bat0', 'distributed_arp_table'))
