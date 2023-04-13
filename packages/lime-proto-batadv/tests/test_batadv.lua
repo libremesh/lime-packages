@@ -14,7 +14,6 @@ describe('LiMe proto Batman-adv #protobatadv', function()
     it('test config', function()
         config.set('network', 'lime')
         config.set('network', 'protocols', {'lan'})
-        stub(proto, "detect_old_cfg_api", function () return false end)
         stub(network, "primary_mac", function () return  {'00', '00', '00', '00', '00', '00'} end)
 
         batadv.configured = false
@@ -32,7 +31,6 @@ describe('LiMe proto Batman-adv #protobatadv', function()
     it('test config 2', function()
         config.set('network', 'lime')
         config.set('network', 'protocols', {'lan', 'anygw'})
-        stub(proto, "detect_old_cfg_api", function () return false end)
         stub(network, "primary_mac", function () return  {'00', '00', '00', '00', '00', '00'} end)
 
         batadv.configured = false
@@ -41,20 +39,6 @@ describe('LiMe proto Batman-adv #protobatadv', function()
         -- anygw is enabled
         assert.is.equal('0', uci:get('network', 'bat0', 'distributed_arp_table'))
         assert.is.equal('client', uci:get('network', 'bat0', 'gw_mode'))
-    end)
-
-    it('test config pre 2019.0-2 config api', function()
-
-        config.set('network', 'lime')
-        config.set('network', 'protocols', {'lan'})
-        stub(proto, "detect_old_cfg_api", function () return true end)
-        stub(network, "primary_mac", function () return  {'00', '00', '00', '00', '00', '00'} end)
-
-        batadv.configured = false
-        proto.configure()
-
-        assert.is.equal('1', uci:get('batman-adv', 'bat0', 'bridge_loop_avoidance'))
-        assert.is.equal('0', uci:get('batman-adv', 'bat0', 'multicast_mode'))
     end)
 
     before_each('', function()
