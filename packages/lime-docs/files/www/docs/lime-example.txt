@@ -60,6 +60,7 @@ config lime network
 	option bmx7_wifi_rate_max 'auto'
 	option bmx7_enable_pki false			# Trust only nodes in /etc/bmx7/trustedNodes when set (default is to trust all nodes)
 	option batadv_orig_interval '2000'		# BATMAN-adv will send one Originator Message (OGM) packet every 2000 ms (2 s). This value should be ok for the static networks, in which the LibreMesh routers are not moving. If you have a LibreMesh node moving (e.g. in your backpack) consider decreasing this value. A smaller value means that BATMAN-adv will take less time for realizing which links are better, but will generate more background traffic on all the interfaces.
+	option batadv_routing_algo 'BATMAN_IV'		# BATMAN_V uses throughput rather than packet loss (as in BATMAN_IV) for evaluating the quality of a link 
 	option anygw_mac 'aa:aa:aa:%N1:%N2:aa'		# Parametrizable with %Nn. Keep in mind that the ebtables rule will use a mask of ff:ff:ff:00:00:00 so br-lan will not forward anything coming in that matches the first 3 bytes of it's own anygw_mac (aa:aa:aa: by default)
 #	option autoap_enabled 0				# Requires lime-ap-watchping installed. If enabled AP SSID is changed to ERROR when network issues
 #	option autoap_hosts "8.8.8.8 141.1.1.1"		# Requires lime-ap-watchping installed. Hosts used to check if the network is working fine
