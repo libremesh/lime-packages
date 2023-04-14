@@ -12,7 +12,7 @@ define Package/$(PKG_NAME)
   TITLE:=$(PKG_NAME) provides shared state database of all times network nodes
   MAINTAINER:=Germán Ferrero <germanferrero@altermundi.net>
   DEPENDS:=+shared-state +shared-state-nodes_and_links +lime-system +luci-lib-jsonc \
-	   +libubus-lua
+	   +libubus-lua +random-numgen
   PKGARCH:=all
 endef
 

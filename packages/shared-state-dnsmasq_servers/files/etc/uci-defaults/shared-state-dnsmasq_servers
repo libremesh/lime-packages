@@ -10,5 +10,5 @@ unique_append()
 }
 
 unique_append \
-	'*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync dnsmasq-servers &> /dev/null)&)'\
+	'*/5 * * * * ((sleep $(($(random-numgen) % 120)); shared-state sync dnsmasq-servers &> /dev/null)&)'\
 	/etc/crontabs/root
