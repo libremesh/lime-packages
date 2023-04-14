@@ -18,6 +18,10 @@ function batadv.configure(args)
 
 	uci:set("network", "bat0", "interface")
 	uci:set("network", "bat0", "proto", "batadv")
+	-- BATMAN_V uses throughput rather than packet loss (as in BATMAN_IV) for evaluating
+	-- the quality of a link. Still, by default we continue selecting BATMAN_IV
+	local routing_algo = config.get("network", "batadv_routing_algo", "BATMAN_IV")
+	uci:set("network", "bat0", "routing_algo", routing_algo)
 	uci:set("network", "bat0", "bridge_loop_avoidance", "1")
 	uci:set("network", "bat0", "multicast_mode", "0")
 
