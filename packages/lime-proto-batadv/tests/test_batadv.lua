@@ -20,6 +20,7 @@ describe('LiMe proto Batman-adv #protobatadv', function()
         proto.configure()
 
         assert.is.equal('batadv', uci:get('network', 'bat0', 'proto'))
+        assert.is.equal('BATMAN_IV', uci:get('network', 'bat0', 'routing_algo'))
         assert.is.equal('1', uci:get('network', 'bat0', 'bridge_loop_avoidance'))
         assert.is.equal('0', uci:get('network', 'bat0', 'multicast_mode'))
         assert.is.equal('2000', uci:get('network', 'bat0', 'orig_interval'))
