@@ -28,6 +28,37 @@ extra-careful when flashing your routers!
 
 The LibreMesh firmware can be compiled by following [these instructions][13].
 
+### Using the ImageBuilder
+
+Start an ImageBuilder of your choice, use containers for an easier setup:
+
+```shell
+mkdir ./images/
+docker run -it -v $(pwd)/images:/images/ ghcr.io/openwrt/imagebuilder:ath79-generic-v22.03.4
+```
+
+Within the container, add the `lime-packages` feed:
+
+```shell
+echo "src/gz libremesh https://feed.libremesh.org/master" >> repositories.conf
+echo  "untrusted comment: signed by libremesh.org key a71b3c8285abd28b" > keys/a71b3c8285abd28b
+echo "RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8" >> keys/a71b3c8285abd28b
+```
+
+Ideally add your own `lime-community` files within the container in the folder
+`./files/etc/config/`. To find possible options consult the
+[lime-example.txt][lime-example] file. It is also possible to mount an existing
+`lime-community` file directly via `-v
+$(pwd)/lime-community:/builder/files/etc/config/lime-community`.
+
+Now create an image of your choice, to see the names of supported profiles run
+`make info` first.
+
+```shell
+make image PROFILE=ubnt_unifi PACKAGES="lime-system lime-proto-babeld" BIN_DIR=/images FILES=files
+```
+
+Your images should be available outside of the container in the `./images/` folder
 
 ## Testing
 
@@ -92,3 +123,5 @@ sponsor](https://opencollective.com/libremesh#sponsor)]
 [10]: https://github.com/libremesh/network-profiles/
 [12]: https://opencollective.com/libremesh
 [13]: https://libremesh.org/development.html
+
+[lime-example]: https://github.com/libremesh/lime-packages/blob/master/packages/lime-docs/files/www/docs/lime-example.txt
