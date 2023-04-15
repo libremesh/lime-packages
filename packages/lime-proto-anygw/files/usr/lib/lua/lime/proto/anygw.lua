@@ -102,7 +102,7 @@ function anygw.configure(args)
 	--! it wildcards subdomains)
 	uci:set("dhcp", "anygw_dns", "hostrecord")
 	uci:set("dhcp", "anygw_dns", "name", {"anygw", unpack(anygw.FQDN)})
-	uci:set("dhcp", "anygw_dns", "ip", anygw_ipv4:host():string() .. "," .. anygw_ipv6:host():string())
+	uci:set("dhcp", "anygw_dns", "ip", ipv4:host():string() .. "," .. ipv6:host():string())
 
 	uci:save("dhcp")
 
