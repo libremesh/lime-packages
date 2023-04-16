@@ -17,6 +17,7 @@ define Package/random-numgen
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Generates a random number 0-65535
+  PKGARCH:=all
 endef
 
 define Package/random-numgen/description
