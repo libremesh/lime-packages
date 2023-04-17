@@ -16,10 +16,10 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
 	TITLE:=Mesh DNS module for shared-state
-	CATEGORY:=LiMe
+	CATEGORY:=LibreMesh
 	MAINTAINER:=Gui iribarren <gui@altermundi.net>
 	URL:=http://libremesh.org
-	DEPENDS:=+@BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT +lua +luci-lib-jsonc \
+	DEPENDS:=+lua +luci-lib-jsonc +random-numgen \
 		shared-state
 	PKGARCH:=all
 endef

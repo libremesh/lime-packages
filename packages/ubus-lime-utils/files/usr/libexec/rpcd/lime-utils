@@ -53,11 +53,6 @@ local function get_upgrade_info(msg)
     utils.printJson(result)
 end
 
-local function safe_reboot(msg)
-    local result = limeutils.safe_reboot(msg)
-    utils.printJson(result)
-end
-
 local function hotspot_wwan_get_status(msg)
     local result = limeutils.hotspot_wwan_get_status(msg)
     utils.printJson(result)
@@ -72,7 +67,6 @@ local methods = {
     get_community_settings = {no_params = 0},
     get_config = {no_params = 0},
     get_upgrade_info = {no_params = 0},
-    safe_reboot = {action = 'value', value = 'value'},
     hotspot_wwan_get_status = {no_params = 0}
 }
 
@@ -97,8 +91,6 @@ if arg[1] == 'call' then
         get_config(msg)
     elseif arg[2] == 'get_upgrade_info' then
         get_upgrade_info(msg)
-    elseif arg[2] == 'safe_reboot' then
-        safe_reboot(msg)
     elseif arg[2] == 'hotspot_wwan_get_status' then
         hotspot_wwan_get_status(msg)
     else

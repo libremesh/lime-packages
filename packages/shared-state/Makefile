@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
 	DEPENDS:=+libuci-lua +lime-system +lua +luci-lib-jsonc +luci-lib-nixio \
-		+$(PING6_PACKAGE) +uclient-fetch
+		+$(PING6_PACKAGE) +uclient-fetch +random-numgen
 	PKGARCH:=all
 endef
 
