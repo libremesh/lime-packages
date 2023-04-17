@@ -25,7 +25,7 @@ define Package/$(PKG_NAME)
 		+busybox +ethtool +iwinfo +iw +mtr +ip \
 		+iputils-ping \
 		+sprunge +safe-reboot +netperf +pv +tcpdump-mini +bwm-ng \
-		+lime-report
+		+lime-report +iperf3 +jq
 	PKGARCH:=all
 endef
 

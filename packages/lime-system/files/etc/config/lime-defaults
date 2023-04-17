@@ -45,6 +45,8 @@ config lime network
 	option bmx7_pref_gw none
 	option bmx7_wifi_rate_max 'auto'
 	option bmx7_enable_pki false
+	option batadv_orig_interval '2000'
+	option batadv_routing_algo 'BATMAN_IV'
 	option anygw_mac "aa:aa:aa:%N1:%N2:aa"
 	option use_odhcpd false
 

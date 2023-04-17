@@ -62,6 +62,10 @@ local function hotspot_wwan_disable(msg)
     return utils.printJson(result)
 end
 
+local function safe_reboot(msg)
+    local result = limeutilsadmin.safe_reboot(msg)
+    utils.printJson(result)
+end
 
 local methods = {
     set_root_password = { password = 'value'},
@@ -71,7 +75,8 @@ local methods = {
     last_upgrade_metadata = { no_params = 0 },
     firmware_confirm = { no_params = 0 },
     hotspot_wwan_enable = { radio = 'value', ssid = 'value', password = 'value', encryption = 'value'},
-    hotspot_wwan_disable = { radio = 'value' }
+    hotspot_wwan_disable = { radio = 'value' },
+    safe_reboot = {action = 'value', value = 'value'},
 }
 
 if arg[1] == 'list' then
@@ -89,6 +94,7 @@ if arg[1] == 'call' then
     elseif  arg[2] == 'firmware_confirm' then firmware_confirm(msg)
     elseif  arg[2] == 'hotspot_wwan_enable' then hotspot_wwan_enable(msg)
     elseif  arg[2] == 'hotspot_wwan_disable' then hotspot_wwan_disable(msg)
+    elseif arg[2] == 'safe_reboot' then safe_reboot(msg)
     else utils.printJson({ error = "Method not found" })
     end
 end
