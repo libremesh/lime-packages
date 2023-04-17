@@ -16,8 +16,6 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
 
-include ../../ping6retrocompat.mk
-
 define Package/$(PKG_NAME)
 	TITLE:=libremesh debug utils
 	CATEGORY:=LibreMesh
@@ -25,7 +23,7 @@ define Package/$(PKG_NAME)
 	URL:=http://libremesh.org
 	DEPENDS:=+bandwidth-test \
 		+busybox +ethtool +iwinfo +iw +mtr +ip \
-		+$(PING6_PACKAGE) +iputils-ping \
+		+iputils-ping \
 		+sprunge +safe-reboot +netperf +pv +tcpdump-mini +bwm-ng \
 		+lime-report +iperf3 +jq
 	PKGARCH:=all
