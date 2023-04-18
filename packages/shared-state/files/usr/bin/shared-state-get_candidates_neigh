@@ -43,13 +43,13 @@ for iface in $(ls /sys/class/net/) ; do
 	echo "${iface}" | grep -E "mesh|adhoc" &> /dev/null && continue
 
 #[Doc] ping6 from busybox doesn't support float intervals iputils-ping does
-	ping6 -i 0.1 -c 2 ff02::1%${iface} 2> /dev/null | \
+	ping -i 0.1 -c 2 ff02::1%${iface} 2> /dev/null | \
 		awk '{if ($3 == "from") print substr($4, 1, length($4)-1)'"\"%${iface}\""'}'
 done | sort -u -r)"
 
 babelCandidateAddresses="$([ -e /var/etc/babeld.conf ] &&
 for iface in $(grep interface /var/etc/babeld.conf | awk '{print $2}'); do
-	ping6 -i 0.1 -c 2 ff02::1%${iface} 2> /dev/null | \
+	ping -i 0.1 -c 2 ff02::1%${iface} 2> /dev/null | \
 		awk '{if ($3 == "from") print substr($4, 1, length($4)-1)'"\"%${iface}\""'}'
 done | sort -u -r)"
 
@@ -72,7 +72,7 @@ wirelessCandidateAddresses=$(echo "$wifi_get_macs" | lua -  | sort -u -r)
 candidateAddresses="$batmanNonMeshCandidateAddresses
 $babelCandidateAddresses
 $wirelessCandidateAddresses
-$(ping6 -i 0.1 -c 2 ff02::1%br-lan | \
+$(ping -i 0.1 -c 2 ff02::1%br-lan | \
 	awk '{if ($3 == "from" && substr($7,6)+0 < 2) print substr($4, 1, length($4)-1)"%br-lan" }' | sort -u)"
 
 for ownAddr in $(ip -6 address show | awk '{if ($1 == "inet6") print $2}' | awk -F/ '{print $1}') ; do
