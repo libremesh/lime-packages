@@ -13,8 +13,8 @@ PKG_NAME:=lime-system
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 LIME_ID:=LiMe
-LIME_RELEASE:=$(shell git branch | sed -n '/\* /s///p')
-LIME_CODENAME:=development
+LIME_RELEASE:=2020.4
+LIME_CODENAME:=ExpansiveEmancipation
 LIME_BRANCH:=$(shell git branch | sed -n '/\* /s///p')
 LIME_REVISION:=$(shell git log -n 1 --pretty=%h)
 LIME_BUILDDATE:=$(shell date +%Y%m%d_%H%M)
