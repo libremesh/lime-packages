@@ -152,18 +152,15 @@ function bmx7.configure(args)
 		uci:set("bmx7", "lm_net_br_lan", "dev", "br-lan")
 
 		if(hasBatadv and not bmxOverBatdv) then
-			fs.mkdir("/etc/firewall.lime.d")
-			fs.writefile("/etc/firewall.lime.d/20-bmx7-not-over-bat0-ebtables",
-			"ebtables -t nat -A POSTROUTING -o bat0 -p ipv6"..
-			" --ip6-proto udp --ip6-sport 6270 --ip6-dport 6270 -j DROP\n")
+			utils.unsafe_shell("/etc/init.d/lime-bmx7-not-over-bat0-ebtables enable || true")
 		else
-			fs.remove("/etc/firewall.lime.d/20-bmx7-not-over-bat0-ebtables")
+			utils.unsafe_shell("/etc/init.d/lime-bmx7-not-over-bat0-ebtables disable || true")
 		end
 	end
 
 	uci:save(bmx7.f)
 
-	if utils.is_installed("firewall") then
+	if utils.is_installed("firewall") or utils.is_installed("firewall4") then
 		uci:delete("firewall", "bmxtun")
 
 		uci:set("firewall", "bmxtun", "zone")
@@ -188,6 +185,7 @@ function bmx7.configure(args)
 			"iptables -t mangle -A FORWARD -o X7+ -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 		)
 	end
+	
 end
 
 function bmx7.setup_interface(ifname, args)

@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+
+START=22
+USE_PROCD=0
+
+IPV6_ETHER_TYPE="86DD" # Workaround missing /etc/ethertypes
+UDP_PROTO_NUMBER="17" # Workaround missing 
+
+RULE_BMX_NOT_OVER_BAT0="POSTROUTING -t nat -o bat0 -p $IPV6_ETHER_TYPE --ip6-proto $UDP_PROTO_NUMBER --ip6-sport 6270 --ip6-dport 6270 -j DROP"
+
+start_service() {
+	ebtables -A $RULE_BMX_NOT_OVER_BAT0
+}
+
+stop_service() {
+	ebtables -D $RULE_BMX_NOT_OVER_BAT0
+}
