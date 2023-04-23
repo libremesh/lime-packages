@@ -1,0 +1,16 @@
+#!/bin/sh /etc/rc.common
+
+START=22
+USE_PROCD=0
+
+TCP_PROTO_NUMBER="6" # Workaround missing /etc/protocols file
+
+RULE_BMX7TUN_MTU_FIX="FORWARD -t mangle -o X7+ -p $TCP_PROTO_NUMBER --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu"
+
+start_service() {
+	ebtables -A $RULE_BMX7TUN_MTU_FIX
+}
+
+stop_service() {
+	ebtables -D $RULE_BMX7TUN_MTU_FIX
+}

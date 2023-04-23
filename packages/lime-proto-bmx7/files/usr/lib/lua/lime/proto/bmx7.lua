@@ -175,17 +175,11 @@ function bmx7.configure(args)
 
 		uci:save("firewall")
 
-		fs.remove("/etc/firewall.lime.d/20-bmx7tun-mtu_fix")
+		utils.unsafe_shell("/etc/init.d/lime-bmx7tun-mtu_fix disable || true")
 	else
-		fs.mkdir("/etc/firewall.lime.d")
-		fs.writefile(
-			"/etc/firewall.lime.d/20-bmx7tun-mtu_fix",
-			"\n" ..
-			"iptables -t mangle -D FORWARD -o X7+ -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" ..
-			"iptables -t mangle -A FORWARD -o X7+ -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
-		)
+		utils.unsafe_shell("/etc/init.d/lime-bmx7tun-mtu_fix enable || true")
 	end
-	
+
 end
 
 function bmx7.setup_interface(ifname, args)
