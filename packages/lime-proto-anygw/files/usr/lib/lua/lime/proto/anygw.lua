@@ -106,6 +106,13 @@ function anygw.configure(args)
 
 	uci:save("dhcp")
 
+	--! Let firewall4 append a table of family 'bridge' with chains that hook
+	--! into forward and postrouting.
+	local includeDir = "/usr/share/nftables.d/ruleset-post/"
+	local nftFileName = "lime-proto-anygw_anycast-rules.nft"
+	fs.mkdirr(includeDir)
+	fs.symlink("/usr/share/lime/"..nftFileName, includeDir..nftFileName)
+
 	local content = { }
 	table.insert(content, "enable-ra")
 	table.insert(content, "ra-param=anygw,mtu:"..anygw.SAFE_CLIENT_MTU..",120")
@@ -114,7 +121,6 @@ function anygw.configure(args)
 	fs.writefile("/etc/dnsmasq.d/lime-proto-anygw-20-ipv6.conf", table.concat(content, "\n").."\n")
 
 	utils.unsafe_shell("/etc/init.d/dnsmasq enable || true")
-	utils.unsafe_shell("/etc/init.d/lime-anygw-ebtables enable || true")
 end
 
 function anygw.setup_interface(ifname, args) end
