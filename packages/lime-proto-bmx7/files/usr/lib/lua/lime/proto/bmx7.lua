@@ -138,8 +138,8 @@ function bmx7.configure(args)
 	end
 
 	if config.get("network", "bmx7_over_librenet6", false) then
-		uci:set("bmx7", "librenet6", "dev")
-		uci:set("bmx7", "librenet6", "dev", "librenet6")
+		uci:set(bmx7.f, "librenet6", "dev")
+		uci:set(bmx7.f, "librenet6", "dev", "librenet6")
 	end
 
 	local enablePKI = config.get_bool("network", "bmx7_enable_pki")
@@ -148,46 +148,42 @@ function bmx7.configure(args)
 	end
 
 	if(hasLan) then
-		uci:set("bmx7", "lm_net_br_lan", "dev")
-		uci:set("bmx7", "lm_net_br_lan", "dev", "br-lan")
+		uci:set(bmx7.f, "lm_net_br_lan", "dev")
+		uci:set(bmx7.f, "lm_net_br_lan", "dev", "br-lan")
+	end
 
-		if(hasBatadv and not bmxOverBatdv) then
-			fs.mkdir("/etc/firewall.lime.d")
-			fs.writefile("/etc/firewall.lime.d/20-bmx7-not-over-bat0-ebtables",
-			"ebtables -t nat -A POSTROUTING -o bat0 -p ipv6"..
-			" --ip6-proto udp --ip6-sport 6270 --ip6-dport 6270 -j DROP\n")
-		else
-			fs.remove("/etc/firewall.lime.d/20-bmx7-not-over-bat0-ebtables")
-		end
+	if(hasLan and hasBatadv and not bmxOverBatdv) then
+		--! Let firewall4 append a table of family 'bridge' with a chain
+		--! that hooks into postrouting and prevents bmx7 over batadv.
+		local includeDir = "/usr/share/nftables.d/ruleset-post/"
+		local fileName = "lime-proto-bmx7_bmx7-not-over-bat0.nft"
+		fs.mkdirr(includeDir)
+		fs.symlink(
+			"/usr/share/lime/"..fileName,
+			includeDir..fileName
+		)
+	else
+		fs.unlink(
+			"/usr/share/nftables.d/ruleset-post/"..
+			"lime-proto-bmx7_bmx7-not-over-bat0.nft"
+		)
 	end
 
 	uci:save(bmx7.f)
 
-	if utils.is_installed("firewall") then
-		uci:delete("firewall", "bmxtun")
+	uci:delete("firewall", "bmxtun")
 
-		uci:set("firewall", "bmxtun", "zone")
-		uci:set("firewall", "bmxtun", "name", "bmx7tun")
-		uci:set("firewall", "bmxtun", "input", "ACCEPT")
-		uci:set("firewall", "bmxtun", "output", "ACCEPT")
-		uci:set("firewall", "bmxtun", "forward", "ACCEPT")
-		uci:set("firewall", "bmxtun", "mtu_fix", "1")
-		uci:set("firewall", "bmxtun", "conntrack", "1")
-		uci:set("firewall", "bmxtun", "device", "X7+")
-		uci:set("firewall", "bmxtun", "family", "ipv4")
+	uci:set("firewall", "bmxtun", "zone")
+	uci:set("firewall", "bmxtun", "name", "bmx7tun")
+	uci:set("firewall", "bmxtun", "input", "ACCEPT")
+	uci:set("firewall", "bmxtun", "output", "ACCEPT")
+	uci:set("firewall", "bmxtun", "forward", "ACCEPT")
+	uci:set("firewall", "bmxtun", "mtu_fix", "1")
+	uci:set("firewall", "bmxtun", "conntrack", "1")
+	uci:set("firewall", "bmxtun", "device", "X7+")
+	uci:set("firewall", "bmxtun", "family", "ipv4")
 
-		uci:save("firewall")
-
-		fs.remove("/etc/firewall.lime.d/20-bmx7tun-mtu_fix")
-	else
-		fs.mkdir("/etc/firewall.lime.d")
-		fs.writefile(
-			"/etc/firewall.lime.d/20-bmx7tun-mtu_fix",
-			"\n" ..
-			"iptables -t mangle -D FORWARD -o X7+ -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" ..
-			"iptables -t mangle -A FORWARD -o X7+ -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
-		)
-	end
+	uci:save("firewall")
 end
 
 function bmx7.setup_interface(ifname, args)
@@ -231,8 +227,8 @@ function bmx7.setup_interface(ifname, args)
 end
 
 function bmx7.apply()
-	os.execute("killall bmx7 ; sleep 2 ; killall -9 bmx7")
-	os.execute(bmx7.f)
+	utils.unsafe_shell("killall bmx7 ; sleep 2 ; killall -9 bmx7")
+	utils.unsafe_shell("bmx7")
 end
 
 function bmx7.bgp_conf(templateVarsIPv4, templateVarsIPv6)
