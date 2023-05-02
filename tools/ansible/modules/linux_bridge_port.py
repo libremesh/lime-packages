@@ -60,10 +60,9 @@ class LinuxPort (object) :
 
         return
 
+    def ip(self, cmd) :
 
-    def brctl (self, cmd) :
-        
-        return self.module.run_command (['brctl'] + cmd)
+        return self.module.run_command (['ip'] + cmd)
 
 
     def port_exists (self) :
@@ -79,7 +78,7 @@ class LinuxPort (object) :
 
     def addif (self) :
 
-        (rc, out, err) = self.brctl (['addif', self.bridge, self.port])
+        (rc, out, err) = self.ip (['link', 'set', self.port,'master',self.bridge])
         
         if rc != 0 :
             raise Exception (err)
@@ -89,7 +88,7 @@ class LinuxPort (object) :
 
     def delif (self) :
 
-        (rc, out, err) = self.brctl (['delif', self.bridge, self.port])
+        (rc, out, err) = self.ip (['link', 'del', self.port,'dev',self.bridge])
         
         if rc != 0 :
             raise Exception (err)

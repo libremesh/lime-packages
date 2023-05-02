@@ -1,0 +1,27 @@
+- name: Install packages
+  hosts: localhost
+  become: yes
+  connection: local
+  gather_facts: no
+  tasks:
+   - name: Install bridge_utils
+     apt:
+      name: bridge-utils
+      state: present
+   - name: Install clusterssh
+     apt:
+      name: clusterssh
+      state: present
+   - name: Install dnsmasq
+     apt: 
+      name: dnsmasq
+      state: present
+   - name: Install iptables
+     apt:
+      name: iptables
+      state: present
+   - name: Install qemusystem
+     apt:
+      name: qemu-system-x86
+      state: present
+

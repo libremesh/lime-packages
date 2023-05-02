@@ -36,6 +36,10 @@ To run the tests simply execute `./run_tests`.
 
 Please read the [[Unit Testing Guide](TESTING.md)] for more details about testing and how to add tests to LibreMesh.
 
+## Virtualization
+LibreMesh allows you to test it without having to deal with routers since they can be lifted libremesh instances on virtual machines using QEMU.
+Please read [VIRTUALIZING.md][14] for more details on node virtualization.
+
 ## Get in Touch with LibreMesh Community
 
 ### Mailing Lists
@@ -84,3 +88,4 @@ Support this project by becoming a sponsor. Your logo will show up here with a l
 [10]: https://github.com/libremesh/network-profiles/
 [12]: https://opencollective.com/libremesh
 [13]: https://libremesh.org/development.html
+[14]: https://github.com/irina556/lime-packages/blob/easing-libremesh-virtualization/VIRTUALIZING.md
