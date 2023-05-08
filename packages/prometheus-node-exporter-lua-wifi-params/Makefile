@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
   TITLE:=Prometheus node exporter (wifi_params collector)
   PKGARCH:=all
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
-  DEPENDS:= +lua +libuci-lua @(PACKAGE_iw||PACKAGE_iw-full)
+  DEPENDS:= +lua +libuci-lua +iw
 endef
 
 define Build/Compile
