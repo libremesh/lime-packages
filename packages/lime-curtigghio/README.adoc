@@ -1,0 +1,639 @@
+= README
+:email: gio@altermundi.net
+:revdate: May 08, 2023
+:lang: en
+
+*TL;DR* Fiddling with hostad code I have managed to successfully establish WiFi
+communication between multiple AP configured in WDS, each of them send and
+receive traffic from the other as if the where associated stations, while they
+are all configured in AP WDS mode. This P2P like behavior have multiple
+advantages compared to the usual setup where one of them is configures as AP and
+all the others as station, and also compared to Ad-Hoc mode and 802.11s.
+
+
+== A bit of context
+
+In community networks we need to maximize the possible paths of communitacions
+between nodes. In a classical AP-STA approach it is not possible to guarantee
+communication between all possible nodes in all scenarios. As an example if we
+have 4 nodes A, B, C and D where A and B sees each other, B and C sees each
+other C and D sees each other. With AP-STA mode each radio must operate either
+as AP or as STA, each STA must connect to only one AP at once, STA need an AP to
+relay communication between thems. In each combination configuring each node
+either as AP or STA you will see that some of them will end up not being able to
+connect. To overcome this issue in the past adhoc mode was used which solved the
+basic connectivity issue, still it\'s implementation wasn\'t high quality and
+it\'s design had important flaws, this resulted it in becoming
+unmaintained after a few years. Luckly while adhoc was growing outdated 802.11s
+emerged, it had a few improvements, still some design choice such as complex
+ways to bridge other networks and routing between nodes fossilized into the
+standard, increased WiFi drivers complexity became problematic and lastly
+determined it\'s silent demisal. New radios drivers and firmwares doesn\'t
+support 802.11s well. New WiFi standards doesn\'t bring much improvements to
+802.11s mesh mode, while they do improve a lot AP-STA modes. Still our need of
+nodes being able to comunicate to anyone in range is strong. In this context,
+looking for a modern solution I started talking with Felix Fietkau (nbd), in
+this conversation a new idea emerged, if AP mode is what is getting more support
+and improvements, can\'t we just use that on all nodes with some slight
+modification so all AP can talk each other?
+Felix suggested that this should be possible and with a bit of luck should not
+even need kernel and driver modifications, modifing `hostapd` in a way that each
+AP adds the other in sight to its station list could be enough and it is indeed
+the staring point to start experimenting and see what happens.
+
+
+== Deep diving into hostapd
+
+File +src/hostapd/drivers/driver.h+ contain API specification and documentation
+of hostapd -> WiFi driver interface.
+
+File +src/hostapd/drivers/driver_nl80211.c+ hostapd WiFi driver interface
+implementation for nl80211 based wireless devices.
+
+
+=== Adding STA flow
+
+`ap_sta_add(...)`
+
+Relevant functions:
+	- `wpa_driver_nl80211_sta_add(...)`
+
+File +src/hostapd/drivers/driver_nl80211_event.c+ hostapd receives and handle
+events from nl80211 based wireless devices.
+
+Relevant functions:
+	- `do_process_drv_event(...)`
+
+File `wpa_supplicant/events.c`
+
+Relevant functions:
+	-  `wpa_supplicant_event(...)`
+
+	
+Adding STA function flow:
+
+`do_process_drv_event(...) +driver_nl80211_event.c+ ->
+`case NL80211_CMD_NEW_STATION:` ->
+`nl80211_new_station_event(...)` ->
+`drv_event_assoc(...)` +driver.h+ ->
+`wpa_supplicant_event(..., EVENT_ASSOC, ...)` +wpa_supplicant/events.c+  ->
+`case EVENT_ASSOC:` ->
+`wpa_supplicant_event_assoc(..) && wpa_supplicant_event_assoc_auth(...)`
+
+
+`wpa_supplicant_event_assoc(..)` ->
+`hostapd_notif_assoc(...)` drv_callbacks.c ->
+`ap_sta_add(...) ; hostapd_sta_assoc(...)` ->
+
+
+`ap_sta_add(...)` +stainfo.c+ the new station is finally added to the list of
+associated station to this AP in hostapd
+
+
+`hostapd_sta_assoc(...)` -> `driver->sta_assoc(...)` +driver.h+
++driver_nl80211.c+ does nothing for nl80211 devices
+
+
+`wpa_supplicant_event_assoc_auth(...)` +wpa_supplicant/events.c+ seems to deal
+with WPA authentication specific stuff
+
+
+=== Adding WDS station flow
+
+Relevant functions:
+ - `wpa_driver_ops->set_wds_sta(...)` file +src/drivers/driver.h+ pointer to
+	hostapd
+	driver specific function to add or remove WDS stations, along with some
+	documentation about it 
+ - `hostapd_set_wds_sta(...)` file +src/ap/ap_drv_ops.c+ do a few checks and
+	operations about bridging configuration then call
+	`hapd->driver->set_wds_sta(...)` aka `i802_set_wds_sta(...)`
+ - `i802_set_wds_sta(...)` file +src/hostapd/drivers/driver_nl80211.c+
+	implementation of `wpa_driver_ops->set_wds_sta(...)` for mac80211 driver
+
+When an AP receive an association request `handle_assoc_cb(...)` file
++src/ap/ieee802_11.c+ is called if `WLAN_STA_WDS` flag is set then
+`hostapd_set_wds_sta(...)` is called
+
+
+=== Other APs beacon handling flow
+
+--------------------------------------------------------------------------------
+ * @NL80211_CMD_REGISTER_BEACONS: Register this socket to receive beacons from
+ *	other BSSes when any interfaces are in AP mode. This helps implement
+ *	OLBC handling in hostapd. Beacons are reported in %NL80211_CMD_FRAME
+ *	messages. Note that per PHY only one application may register.
+--------------------------------------------------------------------------------
+
+`nl80211_register_beacons(...)` +driver_nl80211.c+ register hostapd to
+receive events from the kernel when beacons from other BSS are received, inside
+this function no specific callback is passed to the kernel.
+Inside `nl80211_get_wiphy_data_ap(...)` +driver_nl80211.c+ I have found the only
+usage of the former function, `process_beacon_event(...)` +driver_nl80211.c+ is
+registered as
+callback and then `nl80211_register_beacons(...)` is finally called if
+everything goes fine another function
+`nl80211_recv_beacons(...)` +driver_nl80211.c+ is register with a call to
+`nl80211_register_eloop_read(...)` +driver_nl80211.c+ .
+
+
+`nl80211_recv_beacons(...)` +driver_nl80211.c+ which just call the more obscure
+`nl_recvmsgs(handle, w->nl_cb);` where `w->nl_cb` seems to be
+`process_beacon_event(...)` again...
+
+
+`process_beacon_event(...)` +driver_nl80211.c+ do a few checks and then forward
+the event to `wpa_supplicant_event(drv->ctx, EVENT_RX_MGMT, &event);` which if
+the beacon was received on an AP interface just call
+`ap_mgmt_rx(wpa_s, &data->rx_mgmt);` at line 5598 of +wpa_supplicant/events.c+.
+
+`ap_mgmt_rx(...)` +wpa_supplicant/ap.c+ just call
+`ieee802_11_mgmt(...)` +src/ap/iee802_11.c+ which at line 6337 calls
+`handle_beacon(...);` +src/ap/iee802_11.c+ which do a few checks and then calls
+`ap_list_process_beacon(...)` +src/ap/ap_list.c+ which finally seems to add the
+AP from where the beacon originated to the list of known APs and do a few more
+checks about _overlapping legacy BSS condition_.
+
+
+== OpenWrt hostapd packaging
+
+`hostapd` openwrt package is shipped toghether with OpenWrt sources, and it is
+found at +package/network/services/hostapd/+. In this directory we find
++README.md+ file which show a few interesting methods of the hostapd ubus
+interface and +Makefile+ where all the `hostapd` OpenWrt variants like `wpad`
+are defined. The +Makefile+ is a bit complex because the variants are a lot
+depending on which subset of `hostapd` features are enabled, on what SSL/TLS
+library is used etc. it is structured to avoid duplicating code and
+common options all around that effectlively reduces the size of the `Makefile`
+and probably ease the work for the maintainer.
+
+Depending on package variant OpenWrt `hostapd` package +Makefile+ sets multiple
+configs with statments like `DRIVER_MAKEOPTS += CONFIG_AP=y` or
+`DRIVER_MAKEOPTS += CONFIG_TLS=openssl CONFIG_SAE=y` those configurations
+doesn't seems to impact directly in the hostapd C code `#ifdef` but are dealt
+within `hostapd` and `wpa_supplicant` sources +Makefile+ which depending on the
+passed configs set the proper `CFLAGS`, C source files and output objects files.
+
+To use our customized `hostapd` source in OpenWrt we use source tree override
+https://forum.archive.openwrt.org/viewtopic.php?id=46916[as explained by Jow]
+
+Plus a couple more steps to integrate OpenWrt `hostapd` specific patches and
+additional sources.
+
+`rsync -aPh ~/Builds/openwrt/package/network/services/hostapd/src/ ./`
+`for mPatch in ~/Builds/openwrt/package/network/services/hostapd/patches/*.patch  ; do patch -p1 < $mPatch ; done`
+
+The modified `hostapd` code I published on my
+https://gitlab.com/g10h4ck/hostap/-/tree/lime_curtigghio[gitlab sandbox] already
+includes those so you don't need to reapply them.
+
+To clean and re-build only hostapd package use
+`make package/network/services/hostapd/clean`
+`make package/network/services/hostapd/compile`
+
+
+== hostapd modifications
+
+To enable WDS AP - AP I have modified `handle_beacon(...)` function defined in
++src/ap/ieee802_11.c+, so when a beacon from another AP is received beside the
+usual processing, it checks if the advertised SSID is the same as one advertised
+by current istance, if so, information from that beacon is extracted and
+adapted to look like station information, and a station entry is populated and
+saved into hostapd station list. This modifications should be put into their own
+function later.
+
+To avoid all specific interface created for each AP-AP connection being bridged
+automatically by `hostapd` and potentially creating a loop, I have temporarly
+disabled bridging in `hostapd_set_wds_sta` defined in +src/ap/ap_drv_ops.c+,
+this should become a runtime configuration later.
+
+I have also added a compile time config `CONFIG_NO_LIME_CURTIGGHIO` in
++hostapd/Makefile+ so this modifications can easly be disabled at compile time.
+
+I have tested the modifications and after a bunch of round of trial and error
+works as expected, with good performances, you can see the +test.sh+ script
+which configures four vanilla OpenWrt routers into a working testbed to see how
+to use this.
+
+The modified `hostapd` code is published on my
+https://gitlab.com/g10h4ck/hostap/-/tree/lime_curtigghio[gitlab sandbox]
+
+
+== Useful snippets
+
+.Log: Attempt to add WDS AP as WDS STA
+--------------------------------------------------------------------------------
+Sun Jan  1 20:39:09 2023 daemon.notice hostapd: phy0-ap0: interface state UNINITIALIZED->ENABLED
+Sun Jan  1 20:39:09 2023 daemon.notice hostapd: phy0-ap0: AP-ENABLED
+Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO handle_beacon(...) elems.ssid Cabañas Hebelina
+Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO nl80211: Drv Event 60 (NL80211_CMD_FRAME_TX_STATUS) received for phy0-ap0
+Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO handle_beacon(...) elems.ssid libre-curtigghio
+Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO ap_sta_add addr: e8:94:f6:68:33:63
+Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO ap_sta_add addr: e8:94:f6:68:33:63 New STA
+Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO hostapd_sta_add explicit params addr=e8:94:f6:68:33:63 aid=0 capability=0 supp_rates=0x55642f0e supp_rates_len=8 listen_interval=0 ht_capab=0 vht_capab=0 he_capab=0 he_capab_len=0 eht_capab=0 eht_capab_len=0 he_6ghz_capab=0 flags=0 qosinfo=0 vht_opmode=0 supp_p2p_ps=0 set=0
+Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO hostapd_sta_add explicit params addr=e8:94:f6:68:33:63 aid=0 capability=1057 supp_rates=0x55642f0e supp_rates_len=8 listen_interval=0 ht_capab=0 vht_capab=0 he_capab=0 he_capab_len=0 eht_capab=0 eht_capab_len=0 he_6ghz_capab=0 flags=3 qosinfo=0 vht_opmode=0 supp_p2p_ps=0 set=1
+Sun Jan  1 20:39:09 2023 daemon.err hostapd: nl80211: kernel reports: integer out of range
+Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO hostapd_set_wds_sta addr=e8:94:f6:68:33:63 aid=0 val=1 bridge=(null)
+Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO i802_set_wds_sta addr=e8:94:f6:68:33:63 aid=0 val=1 bridge_ifname=(null)
+Sun Jan  1 20:39:10 2023 daemon.notice hostapd: phy0-ap0: WDS-STA-INTERFACE-ADDED ifname=phy0-ap0.sta0 sta_addr=e8:94:f6:68:33:63
+Sun Jan  1 20:39:10 2023 daemon.notice hostapd: LIME_CURTIJJO handle_beacon(...) aRet: 0 flags: 3, mRet: 0, mIfname: phy0-ap0.sta0, sRet: -34
+Sun Jan  1 20:39:10 2023 daemon.notice hostapd: LIME_CURTIJJO nl80211: Drv Event 19 (NL80211_CMD_NEW_STATION) received for phy0-ap0
+--------------------------------------------------------------------------------
+
+.Log: plain station connecting and desconnecting to the AP
+--------------------------------------------------------------------------------
+Sun Jan  1 22:06:54 2023 daemon.notice hostapd: phy0-ap0: interface state UNINITIALIZED->ENABLED
+Sun Jan  1 22:06:54 2023 daemon.notice hostapd: phy0-ap0: AP-ENABLED
+Sun Jan  1 22:06:54 2023 daemon.notice hostapd: LIME_CURTIJJO nl80211: Drv Event 60 (NL80211_CMD_FRAME_TX_STATUS) received for phy0-ap0
+Sun Jan  1 22:07:09 2023 daemon.notice hostapd: LIME_CURTIJJO nl80211: Drv Event 60 (NL80211_CMD_FRAME_TX_STATUS) received for phy0-ap0
+Sun Jan  1 22:07:09 2023 daemon.notice hostapd: LIME_CURTIJJO ap_sta_add addr: b4:9d:0b:87:ed:06
+Sun Jan  1 22:07:09 2023 daemon.notice hostapd: LIME_CURTIJJO ap_sta_add addr: b4:9d:0b:87:ed:06 New STA
+Sun Jan  1 22:07:09 2023 daemon.notice hostapd: LIME_CURTIJJO hostapd_sta_add explicit params addr=b4:9d:0b:87:ed:06 aid=0 capability=0 supp_rates=0x77aee688 supp_rates_len=3 listen_interval=0 ht_capab=0 vht_capab=0 he_capab=0 he_capab_len=0 eht_capab=0 eht_capab_len=0 he_6ghz_capab=0 flags=0 qosinfo=0 vht_opmode=0 supp_p2p_ps=0 set=0
+Sun Jan  1 22:07:09 2023 daemon.debug hostapd: phy0-ap0: STA b4:9d:0b:87:ed:06 IEEE 802.11: authentication OK (open system)
+Sun Jan  1 22:07:09 2023 daemon.debug hostapd: phy0-ap0: STA b4:9d:0b:87:ed:06 MLME: MLME-AUTHENTICATE.indication(b4:9d:0b:87:ed:06, OPEN_SYSTEM)
+Sun Jan  1 22:07:09 2023 daemon.debug hostapd: phy0-ap0: STA b4:9d:0b:87:ed:06 MLME: MLME-DELETEKEYS.request(b4:9d:0b:87:ed:06)
+Sun Jan  1 22:07:09 2023 daemon.notice hostapd: LIME_CURTIJJO nl80211: Drv Event 19 (NL80211_CMD_NEW_STATION) received for phy0-ap0
+Sun Jan  1 22:07:09 2023 daemon.notice hostapd: LIME_CURTIJJO nl80211: Drv Event 60 (NL80211_CMD_FRAME_TX_STATUS) received for phy0-ap0
+Sun Jan  1 22:07:09 2023 daemon.info hostapd: phy0-ap0: STA b4:9d:0b:87:ed:06 IEEE 802.11: authenticated
+Sun Jan  1 22:07:09 2023 daemon.debug hostapd: phy0-ap0: STA b4:9d:0b:87:ed:06 IEEE 802.11: association OK (aid 1)
+Sun Jan  1 22:07:09 2023 daemon.notice hostapd: LIME_CURTIJJO hostapd_sta_add explicit params addr=b4:9d:0b:87:ed:06 aid=1 capability=1057 supp_rates=0x77aee688 supp_rates_len=8 listen_interval=1 ht_capab=0x7f7aec04 vht_capab=0 he_capab=0 he_capab_len=0 eht_capab=0 eht_capab_len=0 he_6ghz_capab=0 flags=35459 qosinfo=0 vht_opmode=0 supp_p2p_ps=0 set=1
+Sun Jan  1 22:07:09 2023 daemon.notice hostapd: LIME_CURTIJJO nl80211: Drv Event 60 (NL80211_CMD_FRAME_TX_STATUS) received for phy0-ap0
+Sun Jan  1 22:07:09 2023 daemon.info hostapd: phy0-ap0: STA b4:9d:0b:87:ed:06 IEEE 802.11: associated (aid 1)
+Sun Jan  1 22:07:09 2023 daemon.notice hostapd: phy0-ap0: AP-STA-CONNECTED b4:9d:0b:87:ed:06 auth_alg=open
+Sun Jan  1 22:07:09 2023 daemon.debug hostapd: phy0-ap0: STA b4:9d:0b:87:ed:06 MLME: MLME-ASSOCIATE.indication(b4:9d:0b:87:ed:06)
+Sun Jan  1 22:07:09 2023 daemon.debug hostapd: phy0-ap0: STA b4:9d:0b:87:ed:06 MLME: MLME-DELETEKEYS.request(b4:9d:0b:87:ed:06)
+Sun Jan  1 22:07:09 2023 daemon.debug hostapd: phy0-ap0: STA b4:9d:0b:87:ed:06 IEEE 802.11: binding station to interface 'phy0-ap0'
+Sun Jan  1 22:07:12 2023 daemon.info dnsmasq-dhcp[1]: DHCPDISCOVER(br-lan) b4:9d:0b:87:ed:06
+Sun Jan  1 22:07:12 2023 daemon.info dnsmasq-dhcp[1]: DHCPOFFER(br-lan) 192.168.1.122 b4:9d:0b:87:ed:06
+Sun Jan  1 22:07:12 2023 daemon.info dnsmasq-dhcp[1]: DHCPREQUEST(br-lan) 192.168.1.122 b4:9d:0b:87:ed:06
+Sun Jan  1 22:07:12 2023 daemon.info dnsmasq-dhcp[1]: DHCPNAK(br-lan) 192.168.1.122 b4:9d:0b:87:ed:06 wrong server-ID
+Sun Jan  1 22:07:28 2023 daemon.notice hostapd: phy0-ap0: AP-STA-DISCONNECTED b4:9d:0b:87:ed:06
+Sun Jan  1 22:07:28 2023 daemon.debug hostapd: phy0-ap0: STA b4:9d:0b:87:ed:06 IEEE 802.11: deauthenticated
+Sun Jan  1 22:07:28 2023 daemon.debug hostapd: phy0-ap0: STA b4:9d:0b:87:ed:06 MLME: MLME-DEAUTHENTICATE.indication(b4:9d:0b:87:ed:06, 3)
+Sun Jan  1 22:07:28 2023 daemon.debug hostapd: phy0-ap0: STA b4:9d:0b:87:ed:06 MLME: MLME-DELETEKEYS.request(b4:9d:0b:87:ed:06)
+Sun Jan  1 22:07:28 2023 daemon.notice hostapd: LIME_CURTIJJO nl80211: Drv Event 20 (NL80211_CMD_DEL_STATION) received for phy0-ap0
+--------------------------------------------------------------------------------
+
+.Dump ieee802_11_elems
+--------------------------------------------------------------------------------
+	wpa_printf( MSG_INFO,
+	            "handle_beacon(...) elems: "
+	            "ssid %.*s "
+	            "supp_rates_len %d, "
+	            "ds_params %p, "
+	            "challenge_len %d, "
+	            "erp_info %p, "
+	            "ext_supp_rates_len %d, "
+	            "wpa_ie_len %d, "
+	            "rsn_ie_len %d, "
+	            "rsnxe_len %d, "
+	            "wmm_len %d, "
+	            "wmm_tspec_len %d, "
+	            "wps_ie_len %d, "
+	            "supp_channels_len %d, "
+	            "mdie_len %d, "
+	            "ftie_len %d, "
+	            "timeout_int %p, "
+	            "ht_capabilities %p, "
+	            "ht_operation %p, "
+	            "mesh_config_len %d, "
+	            "mesh_id_len %d, "
+	            "peer_mgmt_len %d, "
+	            "vht_capabilities %p, "
+	            "vht_operation %p, "
+	            "vht_opmode_notif %p, "
+	            "vendor_ht_cap_len %d, "
+	            "vendor_vht_len %d, "
+	            "p2p_len %d, "
+	            "wfd_len %d, "
+	            "link_id %p, "
+	            "interworking_len %d, "
+	            "qos_map_set_len %d, "
+	            "hs20_len %d, "
+	            "bss_max_idle_period %p, "
+	            "ext_capab_len %d, "
+	            "ssid_list_len %d, "
+	            "osen_len %d, "
+	            "mbo_len %d, "
+	            "ampe_len %d, "
+	            "mic_len %d, "
+	            "pref_freq_list_len %d, "
+	            "supp_op_classes_len %d, "
+	            "rrm_enabled_len %d, "
+	            "cag_number_len %d, "
+	            "ap_csn %p, "
+	            "fils_indic_len %d, "
+	            "dils_len %d, "
+	            "assoc_delay_info %p,"
+	            "fils_req_params_len %d, "
+	            "fils_key_confirm_len %d, "
+	            "fils_session %p, "
+	            "fils_hlp_len %d, "
+	            "fils_ip_addr_assign_len %d, "
+	            "key_delivery_len %d, "
+	            "wrapped_data_len %d, "
+	            "fils_pk_len %d, "
+	            "fils_nonce %p, "
+	            "owe_dh_len %d, "
+	            "power_capab_len %d, "
+	            "roaming_cons_sel_len %d, "
+	            "password_id_len %d, "
+	            "oci_len %d, "
+	            "multi_ap_len %d, "
+	            "he_capabilities_len %d, "
+	            "he_operation_len %d, "
+	            "short_ssid_list_len %d, "
+	            "he_6ghz_band_cap %p,"
+	            "sae_pk_len %d, "
+	            "s1g_capab %p, "
+	            "pasn_params_len %d, "
+	            "eht_capabilities_len %d, "
+	            "eht_operation_len %d, "
+	            "basic_mle_len %d, "
+	            "probe_req_mle_len %d, "
+	            "reconf_mle_len %d, "
+	            "tdls_mle_len %d, "
+	            "prior_access_mle_len %d, "
+	            "mbssid_known_bss_len %d |END|"
+	            ,
+	            (int) elems.ssid_len, elems.ssid,
+	            elems.supp_rates_len,
+	            elems.ds_params,
+	            elems.challenge_len,
+	            elems.erp_info,
+	            elems.ext_supp_rates_len,
+	            elems.wpa_ie_len,
+	            elems.rsn_ie_len,
+	            elems.rsnxe_len,
+	            elems.wmm_len,
+	            elems.wmm_tspec_len,
+	            elems.wps_ie_len,
+	            elems.supp_channels_len,
+	            elems.mdie_len,
+	            elems.ftie_len,
+	            elems.timeout_int,
+	            elems.ht_capabilities,
+	            elems.ht_operation,
+	            elems.mesh_config_len,
+	            elems.mesh_id_len,
+	            elems.peer_mgmt_len,
+	            elems.vht_capabilities,
+	            elems.vht_operation,
+	            elems.vht_opmode_notif,
+	            elems.vendor_ht_cap_len,
+	            elems.vendor_vht_len,
+	            elems.p2p_len,
+	            elems.wfd_len,
+	            elems.link_id,
+	            elems.interworking_len,
+	            elems.qos_map_set_len,
+	            elems.hs20_len,
+	            elems.bss_max_idle_period,
+	            elems.ext_capab_len,
+	            elems.ssid_list_len,
+	            elems.osen_len,
+	            elems.mbo_len,
+	            elems.ampe_len,
+	            elems.mic_len,
+	            elems.pref_freq_list_len,
+	            elems.supp_op_classes_len,
+	            elems.rrm_enabled_len,
+	            elems.cag_number_len,
+	            elems.ap_csn,
+	            elems.fils_indic_len,
+	            elems.dils_len,
+	            elems.assoc_delay_info,
+	            elems.fils_req_params_len,
+	            elems.fils_key_confirm_len,
+	            elems.fils_session,
+	            elems.fils_hlp_len,
+	            elems.fils_ip_addr_assign_len,
+	            elems.key_delivery_len,
+	            elems.wrapped_data_len,
+	            elems.fils_pk_len,
+	            elems.fils_nonce,
+	            elems.owe_dh_len,
+	            elems.power_capab_len,
+	            elems.roaming_cons_sel_len,
+	            elems.password_id_len,
+	            elems.oci_len,
+	            elems.multi_ap_len,
+	            elems.he_capabilities_len,
+	            elems.he_operation_len,
+	            elems.short_ssid_list_len,
+	            elems.he_6ghz_band_cap,
+	            elems.sae_pk_len,
+	            elems.s1g_capab,
+	            elems.pasn_params_len,
+	            elems.eht_capabilities_len,
+	            elems.eht_operation_len,
+	            elems.basic_mle_len,
+	            elems.probe_req_mle_len,
+	            elems.reconf_mle_len,
+	            elems.tdls_mle_len,
+	            elems.prior_access_mle_len,
+	            elems.mbssid_known_bss_len
+	            );
+--------------------------------------------------------------------------------
+
+
+http://www.bradgoodman.com/bittool/
+
+== WDS Station interface bridging
+
+hostapd add WDS STA interfaces to a bridge either the same of plain station
+passed with the `bridge` option or to another one passed with the `wds_bridge`,
+in our use case this is not ideal as we might want the routing propocols access
+directly to the station interface. Moreover in a mesh setup multiple links could
+easily cause a bridge loop, that linux simple bride will be not able to handle
+as is.
+The fester and temporary workaround seems to be to create a custom bridge with
+pass that via the `wds_bridge` option and disable forwarding between interfaces
+via nftables.
+Later we can create an option for hostapd to disable the WDS station interface
+bridging.
+
+
+== Interesting conversations
+
+--------------------------------------------------------------------------------
+[16:11] <dwfreed> G10h4ck: ovsdb is what actually contains the switch configuration; it's needed
+[16:13] <-- Guest2984 (~srslypasc@0002bff5.user.oftc.net) has left this server (Ping timeout: 480 seconds).
+[16:19] <-- Borromini (~Jean-Jacq@0001344c.user.oftc.net) has left this server (Quit: Lost terminal).
+[16:27] <-- cbeznea (~claudiu@82.78.167.116) has left this server (Quit: Leaving.).
+[16:41] <-- borek (~Thunderbi@2001:1488:fffe:6:e258:8d45:f844:67) has left this server (Ping timeout: 480 seconds).
+[17:11] <G10h4ck> dwfreed in my case the heig level configuration is managed by another custom compontent which is able to output openflow 
+[17:11] --> csrf1 (~csrf@ip72-199-118-215.sd.sd.cox.net) has joined this channel.
+[17:12] <G10h4ck> in that case I guess only only ovs-vswitchd should be needed
+[17:13] <G10h4ck> anyway I see  libopenvswitch is 2.3M it seems huge for an embedded device, and used by even the most basic tool ovs-ctl -_-  is this the toll to use openvswitch ?
+[17:14] <-- csrf1 (~csrf@ip72-199-118-215.sd.sd.cox.net) has left this server.
+[17:14] --> csrf (~csrf@ip72-199-118-215.sd.sd.cox.net) has joined this channel.
+[17:19] <dwfreed> I mean, yeah
+[17:20] <dwfreed> ovs is not intended for microscopic devices
+[17:21] <dwfreed> equally I would not expect non-trivial configs to work well with the barebones DSA implementations of embedded devices
+[17:22] <G10h4ck> dwfreed the idea is to use openvswitch mainly as datapath, another component which understand mesh networks would configure it
+[17:22] <-- csrf (~csrf@ip72-199-118-215.sd.sd.cox.net) has left this server (Remote host closed the connection).
+[17:22] <G10h4ck> sadly batman-adv seems not much alive anymore so we are looking for alternatives way
+[17:22] --> csrf (~csrf@ip72-199-118-215.sd.sd.cox.net) has joined this channel.
+[17:23] <G10h4ck> the idea we had was "let's implement layed 2 mesh logic in userspace and then configure openvswitch as kernel space datapath"
+[17:23] <G10h4ck> and we are investigating the fesibility
+[17:24] <G10h4ck> so basically we would have an ovs bridge with ethernet ports and wifi mesh ports, and then the table of the switch would be manipulated by a mesh aware compontent, to deal with loops, lossy links etc..
+[17:25] <nbd> if you're doing your own datapath thing anyway, why not just implement the datapath in ebpf?
+[17:29] <G10h4ck> I have thinked of that too nbd to use openvswitch was to avoid implementing the datapath, and just implement the mesh logic
+[17:29] <G10h4ck> nbd did you recognized me? it's Gio from libre-mesh
+[17:29] <nbd> yes
+[17:29] <nbd> it's been a while
+[17:30] <G10h4ck> how ar ere you?
+[17:31] <nbd> doing fine, thanks. how about you?
+[17:31] <G10h4ck> I am good too, in Argentina right now with the Altermundi people
+[17:31] <nbd> cool
+[17:31] <G10h4ck> so I thinked that openvswitch datapath should be fine for libre-mesh setup, but was just exploring that
+[17:32] <G10h4ck> do you think reimplementing the datapath in ebpf would endup working better then attempting to reuse openvswitch stuff?
+[17:32] <nbd> depends on the needs of the routing algorithm, i guess
+[17:32] <nbd> with ebpf you can have more control over the datapath
+[17:33] <G10h4ck> my idea was to keep the datapath kernel-space and move the wole mesh login like link discovery. quality measure, calculatinc best path etc. in user space
+[17:33] <nbd> but it takes a while to learn how to fight the verifier :)
+[17:33] <nbd> that makes sense
+[17:34] <nbd> either way, if you choose ovs, i would recommend simply not using any of the existing ovs user space code
+[17:35] <nbd> and just write your own thing that talks to the kernel ovs api
+[17:35] <nbd> i don't think there's any easy way to cut down on the amount of bloat in the ovs user space
+[17:36] <G10h4ck> it is a pity the ovs userspace is so bloated...
+[17:37] <G10h4ck> thanks nbd i was feeling a bit lost exploring all that stuff and your opinion helps a lot 
+[17:38] <nbd> i think a ebpf data path in the kernel might actually end up being rather simple
+[17:39] <nbd> the routing table is basically a map that uses the destination mac as primary key
+[17:39] <nbd> and points to an entry in another map that keeps track of links
+[17:39] <nbd> containing metadata such as the output device, packet counters, etc.
+[17:40] <nbd> the program should recognize protocol data packets and simply bounce them to user space on a separate device
+[17:41] <nbd> if you're using a custom eth type for encapsulation and don't use IP, the header overhead should be small as well
+[17:41] <nbd> initially i would recommend simply bouncing all multicast traffic into user space and forwarding it from there
+[17:42] <nbd> multicast/broadcast
+[17:42] <nbd> makes it easier to deal with special cases for dhcp, arp, etc.
+[17:43] <G10h4ck> thanks!
+[17:43] <nbd> you're welcome. let me know how it goes and which approach you decide on
+[17:43] <nbd> i'm definitely interested in this
+[17:44] <nbd> i also have some experience writing ebpf programs, so i can offer some advice if you get stuck somewhere
+[17:44] <G10h4ck> great!
+[17:45] <nbd> for openwrt, i wrote 'bridger', which is a fast path for the linux bridge code and 'qosify' which does rule based dscp marking
+[17:45] <G10h4ck> in current openwrt compiling ebpf stuff is already integrated in the toolchain?
+[17:46] <nbd> there's some makefile magic to make it easy to build and package ebpf code
+[17:46] <G10h4ck> didn't know of those new components at all!
+[17:47] <nbd> inside qosify or unetd you can also find a header file bpf_skb_utils.h which makes it much easier to parse ip protocol stuff in skbs
+[17:47] <G10h4ck> qosify seems something we my end up using in libre-mesh
+[17:47] <nbd> maybe you might be interested in unetd as well
+[17:48] <nbd> my goal with it was to create the easiest way to deploy and manage fully meshed decentralized wireguard networks
+[17:48] <G10h4ck> very interesting
+[17:49] <nbd> it also makes it easy to layer vxlan on top to bridge l2 segments over the network
+[17:50] <G10h4ck> it seemsto have many interesting overlapping area which what i was investigating :D
+[17:50] <nbd> https://openwrt.org/docs/techref/unetd
+[17:50] <nbd> :)
+[17:51] <nbd> unetd can also do direct connections over double-NAT, assuming at least one node is publicly reachable (or you're using DHT + a STUN server)
+[17:52] <G10h4ck> and what happens if some connections are over lossy wifi links ? (smirk smirk)
+[17:53] <nbd> it doesn't do any form of mesh routing 
+[17:53] <nbd> though i guess that might be interesting too
+[17:54] <nbd> it has some limited configuration where you configure a node as a gateway for another node
+[17:55] <nbd> it works on the basis of having a cryptographically signed network topology with wireguard keys, hostnames and ip/subnet addresses reachable over nodes with those keys
+[17:56] <nbd> you can update the network topology and it'll spread across participating nodes
+[17:56] --> minimal (~minimal@0002b71e.user.oftc.net) has joined this channel.
+[17:56] <nbd> and it'll exchange peer endpoint information to try to get every node to be able to talk to all other nodes directly
+[17:58] <nbd> anyways... it was good talking to you, i need to get some sleep now
+[17:58] <nbd> the kids wake me up early in the morning
+[17:58] <G10h4ck> have a good sleep
+[17:58] <nbd> thanks
+[17:58] <G10h4ck> hugs to the family
+[17:58] <G10h4ck> and thanks for sharing all the interesting ideas
+
+[11:24] <G10h4ck> hi all!
+[11:24] --> Gaspare (~Gaspare@177-38-99-106.netway.psi.br) has joined this channel.
+[11:25] <G10h4ck> nbd I was diving into eBPF and found that linux have many helper functions like bpf_skb_vlan_push, i was wandering if it is powwible to manipulate wifi frames with similar helpers, in particular if there is a way to access and manypulate the 4 macaddress fields in the wifi data frames
+[11:29] <nbd> you can insert headers, manipulate frame data, etc.
+[11:29] <nbd> it's quite flexible
+[11:31] <G10h4ck> I was wondering about forwarding L2 frames without need to encapsulate them, encapsulating L2 stuff have gine MTU quirks historically expecially when both cabled ethernet and wifi links are involved
+[11:31] <G10h4ck> we managed to work around those hickups, but prevent them radically is tempting
+[11:32] <G10h4ck> so if we can access the four macs fields in the wifi frame we gould use one for real source and one for real destination
+[11:32] <-- Gaspare (~Gaspare@177-38-99-106.netway.psi.br) has left this server (Ping timeout: 480 seconds).
+[11:34] <nbd> G10h4ck: in unetd vxlan i had mtu issues as well, so i wrote a BPF program that fixes the TCP MSS option to deal with that
+[11:34] <G10h4ck> yeah we have that sort of workaround in place in libremesh too
+[11:34] <G10h4ck> but they always fix only part of the problem
+[11:35] <G10h4ck> at some point we endup having reports from users the the app X that uses it's own UDP based transport protocol doesn't work as expected for example
+[11:36] <G10h4ck> in the end we have all user facing network interfaces setted with MTU 1350
+[11:36] <G10h4ck> we also telle the clients via DHCP that the mtu is 1350 and so on
+[11:36] <G10h4ck> but there is always some quirks
+[11:37] <nbd> you could bounce oversized packets to user space and let user space send back ICMP error packets to trigger path MTU discovery
+[11:37] <G10h4ck> in our case it seems we can avoid it almost completely in most of the case by avoiding encapsulation unless it is strictly needed
+[11:38] <G10h4ck> on cabled links we could just forward the frame as-is to the correct interface
+[11:38] <G10h4ck> in wireless link we should set DST macaddress to the nextop, and save the real_DST somewhere, maybe in 4 mac address field
+[11:39] <nbd> just make a real 4-address wireless link
+[11:39] <nbd> then you can treat it as an ethernet link
+[11:39] <G10h4ck> or we could encapsulate on wireless only which supports greater mtu, and then decapsulate when forwarding over cabled link 
+[11:40] <nbd> at some point i was thinking of making a mesh-like mode which runs on top of a regular AP interface and simply creates 4-addr peer station entries/interfaces for its neighbors
+[11:40] <nbd> seems like it would fit nicely with what you're trying to do
+[11:40] <G10h4ck> also it seems that newer radios doesn'T supports 802,11s that well
+[11:40] <nbd> one useful property of this is that it doesn't require special addressing modes used for 802.11s
+[11:41] <nbd> it would work with any chipset that has normal mac80211 4-addr support
+[11:41] <nbd> and would work with the existing offload features
+[11:41] <nbd> e.g. encap offload on mtk chipsets
+[11:41] <nbd> with a bit of luck, it wouldn't even need user space changes
+[11:41] <nbd> sorry, kernel space changes
+[11:42] <nbd> it would work with a modified hostapd
+[11:42] <nbd> since all you're doing is creating extra station entries and handling mgmt/auth in user space
+[11:42] <G10h4ck> > it would work with any chipset that has normal mac80211 4-addr support< is this supported by most of the chips/drivers ?
+[11:42] <nbd> most common ones yes
+[11:42] <nbd> ath9k, ath10k, mt76
+[11:43] <nbd> it would definitely be a lot faster than 802.11s
+[11:45] <G10h4ck> do you think ath11k will be viable for this too ?
+[11:45] <G10h4ck> San was investigating 802.11ax radios for librerouter 2
+[11:46] <nbd> i think it could work, but i would definitely recommend going with mt7915 instead
+[11:46] <nbd> for 802.11ax
+[11:46] <G10h4ck> he has been playing with some mt7915e based radios
+[11:48] <nbd> from what i hear, ath11k still has a lot of firmware bugs
+[11:48] <nbd> and you can't really expect any reasonable support from qualcomm
+[11:48] <G10h4ck> so this AP + 4-addr custom mode you suggests seems very interesting
+[11:49] <nbd> with mt76, i can forward bug reports directly to mtk
+[11:49] <nbd> and they typically have been very responsive when it comes to dealing with firmware issues
+[11:49] <G10h4ck> so basically one should configure the radio in this mode on each router, and it would behave more or less like mesh node, but with better performances
+[11:49] <nbd> of course somebody would have to write the code for hostapd to do this
+[11:50] <nbd> one advantage is that you wouldn't even need a separate interface for meshing anymore. you could piggy-back on a normal ap interface with this
+[11:52] <G10h4ck> that would be great
+[11:53] <G10h4ck> from what I understand we will be also less dependant on driver support of "more exotic" features like virtual interfaces and 802.11s
+[11:53] <G10h4ck> so any radio with good AP support should work well
+[11:54] <G10h4ck> do I understand well?
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+[16:21] <nbd> G10h4ck: hi
+[16:41] <G10h4ck> hi nbd how are you?
+[16:45] <nbd> G10h4ck: fine, thx
+[16:45] <nbd> how about you?
+[16:48] <G10h4ck> I had some stomachache but now seem going good, also have been reading hostapd code, I have now some undertanding, still I need your suggestion on what should be the flow to add an AP as a station in the station list, AFAIR right now when a station try to associato to our AP an event is bubbled from the kernel to the hostapd code and the hostapd code do a few stuff, authentication etc. then add it in it's station list and call a driver specific callback (
+[16:48] <G10h4ck> driver->add_station or something similar) that in case of mac80211 is NULL so does nothing
+[17:05] <G10h4ck> so in case there is another AP, I guess that event is not triggered because the APwill not attempt to associate 
+[17:07] <G10h4ck> so there is some useful event bubbled to hostapd, for example when a beacon from another AP is received, where we can plug our code which create a station entry or should I "scan" for available AP in another way, and then trigger the station adding code?
+[17:09] <nbd> it's been a while since i looked at that part of hostapd
+[17:09] <nbd> so i don't have any answers yet
+[17:10] <nbd> i don't think you should scan
+[17:10] <nbd> beacons should be received already
+[17:10] <nbd> for coexistence purposes
+[17:10] <nbd> i just don't know in which part of the code
+[17:22] <G10h4ck> nbd: so in some part of the code hostapd should receive the beacons from other AP ?
+[17:23] <nbd> yes
+[17:25] <G10h4ck> so I need to keep digging into hostapd code and then come back with more questions :)
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+[14:51] <G10h4ck> nbd It's me getting too old or it's hostapd/wpa_supplicant code utterly convoluted? digging into function calls one and up falling in the white rabbit hole every a couple of them...
+[14:53] <dhewg> it's not just you, been there yesterday
+[14:56] <G10h4ck> i feel less alone :p
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+[11:41] <G10h4ck> Hi!
+[11:42] <G10h4ck> with device tree there is something wone can look at at runtime from userspace to explore the hardware? or it is available only at compile time ?
+[11:56] <f00b4r0> G10h4ck: /proc/device-tree
+[11:58] <G10h4ck> Great! thanks f00b4r0
+--------------------------------------------------------------------------------
+
+== Suggested readings
+
+https://wireless.wiki.kernel.org/en/users/Documentation/hostapd
+https://wireless.wiki.kernel.org/en/developers/documentation/glossary
