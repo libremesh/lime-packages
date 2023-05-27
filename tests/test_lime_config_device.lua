@@ -40,13 +40,13 @@ describe('LiMe Config tests', function()
 
         config.main()
 
-        assert.is.equal('eth0.1', config.get('lm_hwd_openwrt_wan', 'linux_name'))
-        assert.is.equal('eth0', uci:get('network', 'lm_net_eth0_babeld_dev', 'ifname'))
-        assert.is.equal('17', uci:get('network', 'lm_net_eth0_babeld_dev', 'vid'))
-        assert.is.equal('eth0_17', uci:get('network', 'lm_net_eth0_babeld_if', 'ifname'))
+        assert.is.equal('wan', config.get('lm_hwd_openwrt_wan', 'linux_name'))
+        assert.is.equal('lan1', uci:get('network', 'lm_net_lan1_babeld_dev', 'ifname'))
+        assert.is.equal('17', uci:get('network', 'lm_net_lan1_babeld_dev', 'vid'))
+        assert.is.equal('lan1_17', uci:get('network', 'lm_net_lan1_babeld_if', 'device'))
 
         assert.is.equal(tostring(network.MTU_ETH_WITH_VLAN),
-                        uci:get('network', 'lm_net_eth0_babeld_dev', 'mtu'))
+                        uci:get('network', 'lm_net_lan1_babeld_dev', 'mtu'))
 
         assert.is.equal('@lm_net_wlan1_mesh', uci:get('network', 'lm_net_wlan1_mesh_babeld_dev', 'ifname'))
         assert.is.equal('17', uci:get('network', 'lm_net_wlan1_mesh_babeld_dev', 'vid'))
