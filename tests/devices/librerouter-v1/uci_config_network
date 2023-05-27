@@ -4,12 +4,16 @@ config interface 'loopback'
 	option ipaddr '127.0.0.1'
 	option netmask '255.0.0.0'
 
+config device
+	option name 'br-lan'
+	option type 'bridge'
+	list ports 'lan1'
+
 config globals 'globals'
 	option ula_prefix 'auto'
 
 config interface 'lan'
-	option type 'bridge'
-	option ifname 'eth1.2'
+	option device 'br-lan'
 	option proto 'static'
 	option ipaddr '192.168.1.1'
 	option netmask '255.255.255.0'
@@ -22,18 +26,3 @@ config interface 'wan'
 config interface 'wan6'
 	option device 'wan'
 	option proto 'dhcpv6'
-
-config switch
-	option name 'switch0'
-	option reset '1'
-	option enable_vlan '1'
-
-config switch_vlan
-	option device 'switch0'
-	option vlan '1'
-	option ports '5 0t'
-
-config switch_vlan
-	option device 'switch0'
-	option vlan '2'
-	option ports '1 2 3 4 6t'
