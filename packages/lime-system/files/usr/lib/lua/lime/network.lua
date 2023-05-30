@@ -60,7 +60,7 @@ function network.primary_interface()
 	local ifname = config.get("network", "primary_interface", "eth0")
 	if ifname == "auto" then
 		local board = utils.getBoardAsTable()
-		ifname = board['network']['lan']['ifname']
+		ifname = board['network']['lan']['device']
 	end
 	network.assert_interface_exists(ifname)
 	return ifname
