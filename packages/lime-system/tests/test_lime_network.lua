@@ -12,11 +12,11 @@ local BOARD = {
     },
     ["network"] = {
         ["lan"] = {
-            ["ifname"] = "lo",
+            ["device"] = "lo",
             ["protocol"] = "static",
         },
         ["wan"] = {
-            ["ifname"] = "eth0",
+            ["device"] = "wan",
             ["protocol"] = "dhcp",
         },
     }
