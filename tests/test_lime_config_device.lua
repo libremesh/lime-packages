@@ -21,6 +21,7 @@ describe('LiMe Config tests', function()
 		stub(wireless, "get_phy_mac", utils.get_id)
         stub(network, "get_mac", utils.get_id)
         stub(network, "assert_interface_exists", function () return true end)
+        stub(network, "_get_lower", function () return "wan" end)
 
         -- copy openwrt first boot generated configs
 		for _, config_name in ipairs({'network', 'wireless'}) do
