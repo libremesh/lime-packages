@@ -66,7 +66,7 @@ function usbradio.detect_hardware()
 			uci:set("wireless", radioName, "wifi-device")
 			uci:set("wireless", radioName, "type", "mac80211")
 			uci:set("wireless", radioName, "channel", "11") --TODO: working on all 802.11bgn devices; find a general way for working in different devices
-			uci:set("wireless", radioName, "hwmode", "11g") --TODO: working on all 802.11gn devices; find a general way for working in different devices
+			uci:set("wireless", radioName, "band", "2g") --TODO: working on all 802.11gn devices; find a general way for working in different devices
 			uci:set("wireless", radioName, "path", phyPath)
 			uci:set("wireless", radioName, "htmode", "HT20")
 			uci:set("wireless", radioName, "disabled", "0")

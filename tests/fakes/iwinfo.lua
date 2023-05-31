@@ -136,9 +136,9 @@ end
 function iwinfo.fake.load_from_uci(uci_cursor)
     function create_device(dev)
         local hwmode
-        if dev.hwmode == '11a' then
+        if dev.band == '5g' then
             hwmode = iwinfo.fake.HWMODE.HW_5GHZ_N
-        elseif dev.hwmode == '11g' then
+        elseif dev.band == '2g' then
             hwmode = iwinfo.fake.HWMODE.HW_2GHZ_N
         else
             assert(0, 'posibility not supported yet, please add support!')
