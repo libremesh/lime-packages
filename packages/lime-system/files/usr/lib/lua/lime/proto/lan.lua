@@ -59,6 +59,7 @@ function lan.setup_interface(ifname, args)
 		end
 	end
 	table.insert(bridgedIfs, ifname)
+	uci:set("network", "@device[0]", "device")
 	uci:set("network", "@device[0]", "ports", bridgedIfs)
 	uci:save("network")
 end
