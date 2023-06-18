@@ -110,7 +110,7 @@ function babeld.setup_interface(ifname, args)
 
 	local uci = config.get_uci_cursor()
 
-	if(vlanId ~= 0 and ifname:match("^lan")) then
+	if(vlanId ~= 0 and (ifname:match("^eth") or ifname:match("^lan"))) then
 		uci:set("network", owrtDeviceName, "mtu", tostring(network.MTU_ETH_WITH_VLAN))
 	end
 
