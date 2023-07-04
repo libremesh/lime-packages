@@ -27,8 +27,8 @@ PKG_NAME:=shared-state-async-server
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/javierajorge/epollcoroutinedoctest.git
-PKG_SOURCE_VERSION:= 15ec133ed7136a8cc8d729207d3109f3596f3234
+PKG_SOURCE_URL:=https://github.com/libremesh/shared-state-async-node.git
+PKG_SOURCE_VERSION:= 691c4412a84bb8142c73b4f5ff319f025b3973f7
 PKG_MAINTAINER:=Javier Jorge <javierbrk@gmail.com>
 PKG_LICENSE:=AGPL-3.0
 
@@ -37,7 +37,7 @@ HOST_BUILD_PREFIX:=$(STAGING_DIR_HOST)
 # Source settings (i.e. where to find the source codes)
 # This is a custom variable, used below 
 # disable git package source and enable Build/Prepare line 29-30
-#SOURCE_DIR:=/home/jjorge/Desktop/epollcoroutinedoctest
+# SOURCE_DIR:=
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
