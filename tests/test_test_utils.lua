@@ -44,7 +44,7 @@ describe("Test utils tests #testutils", function()
     it("test write_uci_file", function()
         local content = [[
         config interface 'wan'
-            option ifname 'eth0.1'
+            option ifname 'wan'
             option proto 'dhcp'
         ]]
         test_utils.write_uci_file(uci, 'foo', content)

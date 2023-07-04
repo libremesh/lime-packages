@@ -60,7 +60,7 @@ function network.primary_interface()
 	local ifname = config.get("network", "primary_interface", "eth0")
 	if ifname == "auto" then
 		local board = utils.getBoardAsTable()
-		ifname = board['network']['lan']['ifname']
+		ifname = board['network']['lan']['device']
 	end
 	network.assert_interface_exists(ifname)
 	return ifname
@@ -213,6 +213,12 @@ function network.clean()
 	fs.writefile("/etc/config/6relayd", "")
 end
 
+function network._get_lower(dev)
+    local lower_if_path = utils.unsafe_shell("ls -d /sys/class/net/" .. dev .. "/lower*")
+    local lower_if_table = utils.split(lower_if_path, "_")
+    return lower_if_table[#lower_if_table]:gsub("\n", "")
+end
+
 function network.scandevices()
 	local devices = {}
 	local switch_vlan = {}
@@ -239,19 +245,16 @@ function network.scandevices()
 		end
 		--! With DSA, the LAN ports are not anymore eth0.1 but lan1, lan2...
 		if dev:match("^lan%d+$") then
-			local lower_if_path = utils.unsafe_shell("ls -d /sys/class/net/" .. dev .. "/lower*")
-			local lower_if_table = utils.split(lower_if_path, "_")
-			local lower_if = lower_if_table[#lower_if_table]:gsub("\n", "")
+			local lower_if = network._get_lower(dev)
 			devices[lower_if] = { nobridge = true }
 			devices[dev] = {}
 			utils.log( "network.scandevices.dev_parser found LAN port %s " ..
 			           "and marking %s as nobridge", dev, lower_if )
 		end
 		--! With DSA, the WAN is named wan. Copying the code from the lan case.
+
 		if dev:match("^wan$") then
-			local lower_if_path = utils.unsafe_shell("ls -d /sys/class/net/" .. dev .. "/lower*")
-			local lower_if_table = utils.split(lower_if_path, "_")
-			local lower_if = lower_if_table[#lower_if_table]:gsub("\n", "")
+			local lower_if = network._get_lower(dev)
 			devices[lower_if] = { nobridge = true }
 			devices[dev] = {}
 			utils.log( "network.scandevices.dev_parser found WAN port %s " ..
