@@ -243,16 +243,18 @@ function network.scandevices()
 			utils.log( "network.scandevices.dev_parser found vlan device %s " ..
 			           "and marking %s as nobridge", dev, rawif )
 		end
+
 		--! With DSA, the LAN ports are not anymore eth0.1 but lan1, lan2...
-		if dev:match("^lan%d+$") then
+		--! or just lan.
+		if dev:match("^lan%d*$") then
 			local lower_if = network._get_lower(dev)
 			devices[lower_if] = { nobridge = true }
 			devices[dev] = {}
 			utils.log( "network.scandevices.dev_parser found LAN port %s " ..
 			           "and marking %s as nobridge", dev, lower_if )
 		end
-		--! With DSA, the WAN is named wan. Copying the code from the lan case.
 
+		--! With DSA, the WAN is named wan. Copying the code from the lan case.
 		if dev:match("^wan$") then
 			local lower_if = network._get_lower(dev)
 			devices[lower_if] = { nobridge = true }
