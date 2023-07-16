@@ -332,6 +332,11 @@ function network.scandevices()
 	uci:foreach("network", "device", owrt_device_parser)
 	uci:foreach("network", "switch_vlan", owrt_switch_vlan_parser)
 
+	--! Scrape DSA switch ports from /sys/class/net/
+	local stdOut = io.popen("ls -1 /sys/class/net/ | grep -x 'lan[0-9]*'")
+	for dev in stdOut:lines() do dev_parser(dev) end
+	stdOut:close()
+
 	--! Scrape plain ethernet devices from /sys/class/net/
 	local stdOut = io.popen("ls -1 /sys/class/net/ | grep -x 'eth[0-9][0-9]*'")
 	for dev in stdOut:lines() do dev_parser(dev) end
