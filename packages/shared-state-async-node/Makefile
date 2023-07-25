@@ -59,15 +59,6 @@ CMAKE_OPTIONS += \
 	-DENABLE_STATIC=NO \
 	-DENABLE_TESTS=NO
 
-# Package preparation instructions; create the build directory and copy the source code. 
-# The last command is necessary to ensure our preparation instructions remain compatible with the patching system.
-# only used in conjuntion with SOURCE_DIR line 40
-#define Build/Prepare
-#	mkdir -p $(PKG_BUILD_DIR)
-#	cp $(SOURCE_DIR)/* $(PKG_BUILD_DIR) -R
-#	$(Build/Patch)
-#endef
-
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/main $(1)/usr/bin/$(PKG_NAME)
