@@ -34,11 +34,6 @@ PKG_LICENSE:=AGPL-3.0
 
 HOST_BUILD_PREFIX:=$(STAGING_DIR_HOST)
 
-# Source settings (i.e. where to find the source codes)
-# This is a custom variable, used below 
-# disable git package source and enable Build/Prepare line 29-30
-# SOURCE_DIR:=
-
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 include $(INCLUDE_DIR)/host-build.mk
