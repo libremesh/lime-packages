@@ -63,7 +63,7 @@ function location.nodes_and_links()
   for _, iface in pairs(interfaces) do
     currneigh = iwinfo.nl80211.assoclist(iface)
     for mac, station in pairs(currneigh) do
-        table.insert(links, {mac=string.lower(mac),signal=station.signal,noise=station.noise,rx_rate=station.rx_rate,tx_rate=station.tx_rate } )
+        table.insert(links, string.lower(mac))
     end
   end
   return {hostname=hostname, macs=macs, coordinates={lat=coords.lat, lon=coords.long}, links=links}
