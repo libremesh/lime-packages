@@ -574,6 +574,8 @@ function utils.is_valid_mac(string)
     end
 end
 
+--! TODO: Better having a C strcmp/memcmp like behavior so the output can be
+--! used for sorting beyond determining equality
 function utils.deepcompare(t1,t2)
     if t1 == t2 then return true end
     local ty1 = type(t1)
