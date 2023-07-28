@@ -221,24 +221,40 @@ https://gitlab.com/g10h4ck/hostap/-/tree/lime_curtigghio[gitlab sandbox]
 
 == Useful snippets
 
-.Log: Attempt to add WDS AP as WDS STA
+.Log: TL-WDR3600 and TL-WDR4300 WDS AP - AP connection success
 --------------------------------------------------------------------------------
-Sun Jan  1 20:39:09 2023 daemon.notice hostapd: phy0-ap0: interface state UNINITIALIZED->ENABLED
-Sun Jan  1 20:39:09 2023 daemon.notice hostapd: phy0-ap0: AP-ENABLED
-Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO handle_beacon(...) elems.ssid Cabañas Hebelina
-Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO nl80211: Drv Event 60 (NL80211_CMD_FRAME_TX_STATUS) received for phy0-ap0
-Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO handle_beacon(...) elems.ssid libre-curtigghio
-Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO ap_sta_add addr: e8:94:f6:68:33:63
-Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO ap_sta_add addr: e8:94:f6:68:33:63 New STA
-Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO hostapd_sta_add explicit params addr=e8:94:f6:68:33:63 aid=0 capability=0 supp_rates=0x55642f0e supp_rates_len=8 listen_interval=0 ht_capab=0 vht_capab=0 he_capab=0 he_capab_len=0 eht_capab=0 eht_capab_len=0 he_6ghz_capab=0 flags=0 qosinfo=0 vht_opmode=0 supp_p2p_ps=0 set=0
-Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO hostapd_sta_add explicit params addr=e8:94:f6:68:33:63 aid=0 capability=1057 supp_rates=0x55642f0e supp_rates_len=8 listen_interval=0 ht_capab=0 vht_capab=0 he_capab=0 he_capab_len=0 eht_capab=0 eht_capab_len=0 he_6ghz_capab=0 flags=3 qosinfo=0 vht_opmode=0 supp_p2p_ps=0 set=1
-Sun Jan  1 20:39:09 2023 daemon.err hostapd: nl80211: kernel reports: integer out of range
-Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO hostapd_set_wds_sta addr=e8:94:f6:68:33:63 aid=0 val=1 bridge=(null)
-Sun Jan  1 20:39:09 2023 daemon.notice hostapd: LIME_CURTIJJO i802_set_wds_sta addr=e8:94:f6:68:33:63 aid=0 val=1 bridge_ifname=(null)
-Sun Jan  1 20:39:10 2023 daemon.notice hostapd: phy0-ap0: WDS-STA-INTERFACE-ADDED ifname=phy0-ap0.sta0 sta_addr=e8:94:f6:68:33:63
-Sun Jan  1 20:39:10 2023 daemon.notice hostapd: LIME_CURTIJJO handle_beacon(...) aRet: 0 flags: 3, mRet: 0, mIfname: phy0-ap0.sta0, sRet: -34
-Sun Jan  1 20:39:10 2023 daemon.notice hostapd: LIME_CURTIJJO nl80211: Drv Event 19 (NL80211_CMD_NEW_STATION) received for phy0-ap0
+Fri Apr 28 22:24:11 2023 daemon.notice hostapd: Configuration file: /var/run/hostapd-phy1.conf (phy phy1-ap0) --> new PHY
+Fri Apr 28 22:24:11 2023 daemon.notice netifd: wan (1619): udhcpc: broadcasting discover
+Fri Apr 28 22:24:12 2023 kern.info kernel: [   39.574041] IPv6: ADDRCONF(NETDEV_CHANGE): phy1-ap0: link becomes ready
+Fri Apr 28 22:24:12 2023 daemon.notice hostapd: phy1-ap0: interface state UNINITIALIZED->ENABLED
+Fri Apr 28 22:24:12 2023 daemon.notice hostapd: phy1-ap0: AP-ENABLED
+Fri Apr 28 22:24:12 2023 daemon.notice hostapd: Configuration file: /var/run/hostapd-phy0.conf (phy phy0-ap0) --> new PHY
+Fri Apr 28 22:24:12 2023 kern.info kernel: [   39.827175] IPv6: ADDRCONF(NETDEV_CHANGE): phy0-ap0: link becomes ready
+Fri Apr 28 22:24:12 2023 daemon.notice hostapd: phy0-ap0: interface state UNINITIALIZED->ENABLED
+Fri Apr 28 22:24:12 2023 daemon.notice hostapd: phy0-ap0: AP-ENABLED
+Fri Apr 28 22:24:12 2023 daemon.notice hostapd: phy1-ap0: AP-STA-CONNECTED 64:70:02:de:c5:1e auth_alg=open
+Fri Apr 28 22:24:12 2023 daemon.notice hostapd: phy1-ap0: WDS-STA-INTERFACE-ADDED ifname=phy1-ap0.sta1 sta_addr=64:70:02:de:c5:1e
+Fri Apr 28 22:24:12 2023 daemon.notice hostapd: handle_beacon(...) Added WDS AP at phy1-ap0.sta1 with flags: 35491, capabilities 33
+Fri Apr 28 22:24:12 2023 daemon.notice hostapd: phy0-ap0: AP-STA-CONNECTED 64:70:02:de:c5:1d auth_alg=open
+Fri Apr 28 22:24:12 2023 daemon.notice hostapd: phy0-ap0: WDS-STA-INTERFACE-ADDED ifname=phy0-ap0.sta1 sta_addr=64:70:02:de:c5:1d
+Fri Apr 28 22:24:12 2023 daemon.notice hostapd: handle_beacon(...) Added WDS AP at phy0-ap0.sta1 with flags: 35491, capabilities 1057
 --------------------------------------------------------------------------------
+
+.Log: Two DAP-X1860-A1 WDS AP - AP connection success
+--------------------------------------------------------------------------------
+Thu May 25 21:55:04 2023 daemon.notice hostapd: phy0-ap0: AP-STA-CONNECTED a8:63:7d:2e:97:d9 auth_alg=open
+Thu May 25 21:55:05 2023 daemon.notice hostapd: phy0-ap0: WDS-STA-INTERFACE-ADDED ifname=phy0-ap0.sta1 sta_addr=a8:63:7d:2e:97:d9
+Thu May 25 21:55:05 2023 daemon.notice netifd: Interface 'curtigghio' is now down
+Thu May 25 21:55:05 2023 daemon.notice hostapd: handle_beacon(...) Added WDS AP at phy0-ap0.sta1 with flags: 35491, capabilities 1057
+Thu May 25 21:55:05 2023 daemon.notice netifd: Interface 'curtigghio' is setting up now
+Thu May 25 21:55:05 2023 daemon.notice netifd: Interface 'curtigghio' is now up
+Thu May 25 21:55:05 2023 daemon.notice netifd: Network device 'phy0-ap0.sta1' link is up
+Thu May 25 21:55:05 2023 daemon.notice hostapd: phy1-ap0: AP-STA-CONNECTED a8:63:7d:2e:97:dc auth_alg=open
+Thu May 25 21:55:05 2023 daemon.notice hostapd: phy1-ap0: WDS-STA-INTERFACE-ADDED ifname=phy1-ap0.sta1 sta_addr=a8:63:7d:2e:97:dc
+Thu May 25 21:55:05 2023 daemon.notice hostapd: handle_beacon(...) Added WDS AP at phy1-ap0.sta1 with flags: 297635, capabilities 33
+Thu May 25 21:55:05 2023 daemon.notice netifd: Network device 'phy1-ap0.sta1' link is up
+--------------------------------------------------------------------------------
+
 
 .Log: plain station connecting and desconnecting to the AP
 --------------------------------------------------------------------------------
