@@ -24,14 +24,12 @@ local network = require ("lime.network")
 local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
 local stations = node_status.get_stations()
 local links = {}
-if next(stations) ~= nil then
-	for _, station in ipairs(stations) do
-		macparts = network.get_mac(station.iface)
-		src_macaddr = table.concat(macparts,":")
-		local station_stats = node_status.get_station_stats(station)
-		print (src_macaddr ,station.station_mac,station_stats.signal,table.concat(station_stats.chains,","),station_stats.rx_rate,station_stats.tx_rate)
-		table.insert(links, {src_mac=src_macaddr ,dst_mac=station.station_mac,signal=station_stats.signal,chains=station_stats.chains,rx_rate=station_stats.rx_rate,tx_rate=station_stats.tx_rate } )
-	end
+for _, station in ipairs(stations) do
+	macparts = network.get_mac(station.iface)
+	src_macaddr = table.concat(macparts,":")
+	local station_stats = node_status.get_station_stats(station)
+	print (src_macaddr ,station.station_mac,station_stats.signal,table.concat(station_stats.chains,","),station_stats.rx_rate,station_stats.tx_rate)
+	table.insert(links, {src_mac=src_macaddr ,dst_mac=station.station_mac,signal=station_stats.signal,chains=station_stats.chains,rx_rate=station_stats.rx_rate,tx_rate=station_stats.tx_rate } )
 end
 
 local result = { [hostname] = links }

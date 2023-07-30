@@ -15,7 +15,7 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-	TITLE:=links info module for shared-state
+	TITLE:=WIFI links information module for shared-state
 	CATEGORY:=LibreMesh
 	MAINTAINER:=
 	URL:=http://libremesh.org
