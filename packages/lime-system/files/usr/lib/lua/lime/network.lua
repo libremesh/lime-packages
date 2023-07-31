@@ -243,16 +243,18 @@ function network.scandevices()
 			utils.log( "network.scandevices.dev_parser found vlan device %s " ..
 			           "and marking %s as nobridge", dev, rawif )
 		end
+
 		--! With DSA, the LAN ports are not anymore eth0.1 but lan1, lan2...
-		if dev:match("^lan%d+$") then
+		--! or just lan.
+		if dev:match("^lan%d*$") then
 			local lower_if = network._get_lower(dev)
 			devices[lower_if] = { nobridge = true }
 			devices[dev] = {}
 			utils.log( "network.scandevices.dev_parser found LAN port %s " ..
 			           "and marking %s as nobridge", dev, lower_if )
 		end
-		--! With DSA, the WAN is named wan. Copying the code from the lan case.
 
+		--! With DSA, the WAN is named wan. Copying the code from the lan case.
 		if dev:match("^wan$") then
 			local lower_if = network._get_lower(dev)
 			devices[lower_if] = { nobridge = true }
@@ -329,6 +331,11 @@ function network.scandevices()
 	uci:foreach("network", "interface", owrt_network_interface_parser)
 	uci:foreach("network", "device", owrt_device_parser)
 	uci:foreach("network", "switch_vlan", owrt_switch_vlan_parser)
+
+	--! Scrape DSA switch ports from /sys/class/net/
+	local stdOut = io.popen("ls -1 /sys/class/net/ | grep -x 'lan[0-9]*'")
+	for dev in stdOut:lines() do dev_parser(dev) end
+	stdOut:close()
 
 	--! Scrape plain ethernet devices from /sys/class/net/
 	local stdOut = io.popen("ls -1 /sys/class/net/ | grep -x 'eth[0-9][0-9]*'")
