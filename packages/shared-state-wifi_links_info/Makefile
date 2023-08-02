@@ -9,18 +9,18 @@ include $(TOPDIR)/rules.mk
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
-PKG_NAME:=shared-state_links_info
+PKG_NAME:=shared-state_wifi_links_info
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-	TITLE:=WIFI links information module for shared-state
+	TITLE:=WiFI links information module for shared-state
 	CATEGORY:=LibreMesh
 	MAINTAINER:=
 	URL:=http://libremesh.org
-	DEPENDS:=+lua +luci-lib-jsonc +random-numgen \
-		+ubus-lime-utils +lime-system shared-state 
+	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils\ 
+		+lime-system shared-state 
 	PKGARCH:=all
 endef
 
