@@ -38,3 +38,4 @@ end
 local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
 local result = { [hostname] = get_wifi_links_info() }
 io.popen("shared-state insert wifi_links_info", "w"):write(JSON.stringify(result))
+

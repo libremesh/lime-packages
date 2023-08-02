@@ -30,3 +30,4 @@ it('a simple test to get links info and assert requiered fields are present', fu
     assert.is.equal(13000, links_info[1].rx_rate)
     assert.is.equal("C0:00:00:00:00:00", links_info[1].src_mac)
 end)
+
