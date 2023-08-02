@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LibreMesh
 	MAINTAINER:=
 	URL:=http://libremesh.org
-	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils\ 
+	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils \
 		+lime-system shared-state 
 	PKGARCH:=all
 endef
