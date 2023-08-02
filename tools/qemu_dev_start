@@ -251,7 +251,6 @@ MONITOR_PORT="454${NODE_ID}"
 
 qemu-system-x86_64 \
 -m 128 \
--cpu host\
 -smp 1,sockets=1,cores=1,threads=1 \
 -no-user-config \
 -enable-kvm \
