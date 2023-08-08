@@ -88,6 +88,8 @@ config lime wifi					# Settings in this section applies to all radios.
 	option ieee80211s_mesh_id 'LiMe'		# Mesh cloud identifier (close to SSID in concept). Used by the nodes to join and participate in the mesh network.
 #	option ieee80211s_encryption 'psk2/aes'		# in order to use encrypted mesh, the wpad-mini package have to be replaced with wpad-mesh-wolfssl package either manually or by the selected network-profile
 #	option ieee80211s_key 'SomePsk2AESKey'
+	option unstuck_interval '10'			# Interval in minutes that defines how often to run the workaround script provided by the package wifi-unstuck-wa that rescan all available frequencies in active radios.
+	option unstuck_timeout '300'			# Timeout in seconds that defines how long the mentioned above workaround should go.
 
 #########################################################
 ### WiFi specific band options
