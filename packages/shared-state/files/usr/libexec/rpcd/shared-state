@@ -1,0 +1,54 @@
+#!/usr/bin/env lua                          
+--[[                                                                                 
+//TODO                                                                               
+]]--                                                                                 
+                                                                                     
+local ubus = require "ubus"                                                          
+local utils = require('lime.utils')                                                  
+local shared_state = require("shared-state")                                                    
+local json = require 'luci.jsonc'                                                               
+                                                                                                
+require("nixio.util") 
+
+local function get_from_sharedState (msg)
+	local sharedState = shared_state.SharedState:new(msg.data_type, nixio.syslog)
+	local resultTable = sharedState:get()
+	utils.printJson(resultTable)
+end
+
+local function get_from_sharedState_muti_writer (msg)
+	local sharedState = shared_state.SharedStateMultiWriter:new(msg.data_type, nixio.syslog)
+	local resultTable = sharedState:get()
+	utils.printJson(resultTable)
+end
+
+local function set_to_sharedState_muti_writer(msg)
+	local sharedState = shared_state.SharedStateMultiWriter:new(msg.data_type, nixio.syslog)
+	local inputTable = json.parse(msg.json) or {}
+	sharedState:insert(inputTable)
+end
+
+
+local methods = {
+	get_from_sharedState = { data_type = 'value' },
+	get_from_sharedState_muti_writer = { data_type = 'value' },
+	set_to_sharedState_muti_writer = { data_type = 'value', json = 'value' }
+}
+
+if arg[1] == 'list' then
+	utils.printJson(methods)
+end
+
+if arg[1] == 'call' then
+	local msg = utils.rpcd_readline()
+    msg = json.parse(msg)
+	if arg[2] == 'get_from_sharedState' then
+		get_from_sharedState(msg)
+	elseif arg[2] == 'get_from_sharedState_muti_writer' then
+		get_from_sharedState_muti_writer(msg)
+	elseif arg[2] == 'set_to_sharedState_muti_writer' then
+		set_to_sharedState_muti_writer(msg)
+	else
+		utils.printJson({ error = "Method not found" })
+	end
+end
