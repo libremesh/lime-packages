@@ -9,7 +9,7 @@ wu.FREQ_2GHZ_LIST = "2412 2462"
 wu.FREQ_5GHZ_LIST = "5180 5240"
 
 -- if iw runs for 5 min, it is likely hanging
-wu.TIMEOUT = 300
+wu.TIMEOUT = tonumber( config.get("wifi", "unstuck_timeout", 300 ))
 
 function wu.get_stickable_ifaces()
 	local uci = config.get_uci_cursor()
