@@ -1,8 +1,14 @@
-#!/usr/bin/env lua                          
+#!/usr/bin/env lua                     
 --[[                                                                                 
-//TODO                                                                               
+Shared State
+
+Copyright (c) 2023  Javier Jorge <jjorge@inti.gob.ar>
+Copyright (c) 2023  Instituto Nacional de Tecnología Industrial
+Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+
+This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
 ]]--                                                                                 
-                                                                                     
+
 local ubus = require "ubus"                                                          
 local utils = require('lime.utils')                                                  
 local shared_state = require("shared-state")                                                    
@@ -22,17 +28,16 @@ local function get_from_sharedState_muti_writer (msg)
 	utils.printJson(resultTable)
 end
 
-local function set_to_sharedState_muti_writer(msg)
+local function insert_into_sharedState_muti_writer(msg)
 	local sharedState = shared_state.SharedStateMultiWriter:new(msg.data_type, nixio.syslog)
-	local inputTable = json.parse(msg.json) or {}
+	local inputTable = msg.json or {}
 	sharedState:insert(inputTable)
 end
-
 
 local methods = {
 	get_from_sharedState = { data_type = 'value' },
 	get_from_sharedState_muti_writer = { data_type = 'value' },
-	set_to_sharedState_muti_writer = { data_type = 'value', json = 'value' }
+	insert_into_sharedState_muti_writer = { data_type = 'value', json = 'value' }
 }
 
 if arg[1] == 'list' then
@@ -46,8 +51,8 @@ if arg[1] == 'call' then
 		get_from_sharedState(msg)
 	elseif arg[2] == 'get_from_sharedState_muti_writer' then
 		get_from_sharedState_muti_writer(msg)
-	elseif arg[2] == 'set_to_sharedState_muti_writer' then
-		set_to_sharedState_muti_writer(msg)
+	elseif arg[2] == 'insert_into_sharedState_muti_writer' then
+		insert_into_sharedState_muti_writer(msg)
 	else
 		utils.printJson({ error = "Method not found" })
 	end
