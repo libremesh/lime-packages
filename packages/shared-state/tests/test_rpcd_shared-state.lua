@@ -1,31 +1,31 @@
-local test_utils = require "tests.utils"
-local shared_state = require("shared-state")
+local testUtils = require "tests.utils"
+local sharedState = require("shared-state")
 
-local test_file_name = "packages/shared-state/files/usr/libexec/rpcd/shared-state"
-local shared_state_rpc = test_utils.load_lua_file_as_function(test_file_name)
-local rpcd_call = test_utils.rpcd_call
+local testFileName = "packages/shared-state/files/usr/libexec/rpcd/shared-state"
+local sharedStateRpc = testUtils.load_lua_file_as_function(testFileName)
+local rpcdCall = testUtils.rpcd_call
 
 describe('ubus-shared-state tests #ubus-shared-state', function()
     before_each('', function()
-        test_dir = test_utils.setup_test_dir()
-        shared_state.DATA_DIR = test_dir
-        shared_state.PERSISTENT_DATA_DIR = test_dir
+        testDir = testUtils.setup_test_dir()
+        sharedState.DATA_DIR = testDir
+        sharedState.PERSISTENT_DATA_DIR = testDir
     end)
 
     after_each('', function()
-        test_utils.teardown_test_dir()
+        testUtils.teardown_test_dir()
     end)
 
     it('test list methods', function()
-        local response = rpcd_call(shared_state_rpc, {'list'})
-        assert.is.equal("value", response.get_from_sharedState.data_type)
-        assert.is.equal("value", response.get_from_sharedState_muti_writer.data_type)
-        assert.is.equal("value", response.insert_into_sharedState_muti_writer.data_type)
-        assert.is.equal("value", response.insert_into_sharedState_muti_writer.json)
+        local response = rpcdCall(sharedStateRpc, {'list'})
+        assert.is.equal("value", response.getFromSharedState.data_type)
+        assert.is.equal("value", response.getFromSharedStateMultiWriter.data_type)
+        assert.is.equal("value", response.insertIntoSharedStateMultiWriter.data_type)
+        assert.is.equal("value", response.insertIntoSharedStateMultiWriter.json)
     end)
 
     it('test get data ', function()
-        local sharedStateA = shared_state.SharedState:new('wifi_links_info')
+        local sharedStateA = sharedState.SharedState:new('wifi_links_info')
         sharedStateA:insert({
             bar = 'foo',
             baz = 'qux',
@@ -35,7 +35,7 @@ describe('ubus-shared-state tests #ubus-shared-state', function()
         assert.is.equal(dbA.bar.data, 'foo')
         assert.is.equal(dbA.baz.data, 'qux')
         assert.is.equal(dbA.zig.data, 'zag')
-        local response = rpcd_call(shared_state_rpc, {'call', 'get_from_sharedState'},
+        local response = rpcdCall(sharedStateRpc, {'call', 'getFromSharedState'},
             '{"data_type": "wifi_links_info"}')
         assert.is.equal(response.bar.data, 'foo')
         assert.is.equal(response.baz.data, 'qux')
@@ -43,7 +43,7 @@ describe('ubus-shared-state tests #ubus-shared-state', function()
     end)
 
     it('test get multiwriter data ', function()
-        local sharedStateA = shared_state.SharedStateMultiWriter:new('A')
+        local sharedStateA = sharedState.SharedStateMultiWriter:new('A')
         sharedStateA:insert({
             bar = 'foo',
             baz = 'qux',
@@ -52,15 +52,15 @@ describe('ubus-shared-state tests #ubus-shared-state', function()
         local dbA = sharedStateA:get()
         assert.is.equal('foo', dbA.bar.data)
         assert.is.equal('zag', dbA.zig.data)
-        local response = rpcd_call(shared_state_rpc, {'call', 
-            'get_from_sharedState_muti_writer'}, '{"data_type": "A"}')
+        local response = rpcdCall(sharedStateRpc, {'call', 
+            'getFromSharedStateMultiWriter'}, '{"data_type": "A"}')
         assert.is.equal(response.bar.data, 'foo')
         assert.is.equal(response.baz.data, 'qux')
         assert.is.equal(response.zig.data, 'zag')
     end)
 
     it('test set multiwriter data ', function()
-        local sharedStateA = shared_state.SharedStateMultiWriter:new('A')
+        local sharedStateA = sharedState.SharedStateMultiWriter:new('A')
         sharedStateA:insert({
             bar = 'foo',
             baz = 'qux',
@@ -69,8 +69,8 @@ describe('ubus-shared-state tests #ubus-shared-state', function()
         local dbA = sharedStateA:get()
         assert.is.equal('foo', dbA.bar.data)
         assert.is.equal('zag', dbA.zig.data)
-        local response = rpcd_call(shared_state_rpc, {'call', 
-            'insert_into_sharedState_muti_writer'},
+        local response = rpcdCall(sharedStateRpc, {'call', 
+            'insertIntoSharedStateMultiWriter'},
             '{"data_type": "A", "json": {"zig": "newzag"}}')
         local dbA = sharedStateA:get()
         assert.is.equal('foo', dbA.bar.data)
@@ -79,7 +79,7 @@ describe('ubus-shared-state tests #ubus-shared-state', function()
 
     it('test set multiwriter big chunk of data ', function()
 		
-        local wifi_status_jsonsample_27 = [[{"data_type": "ref_state_wifilinks",
+        local wifiStatusJsonsample27 = [[{"data_type": "ref_state_wifilinks",
 		"json": {"primero":{"bleachTTL":27, "data":[{"tx_rate":135000,"dst_mac":
 		"A0:F3:C1:46:28:97","chains":[-60,-60], "src_mac":"a8:40:41:1d:f9:35",
 		"rx_rate":150000,"signal":-57},{"tx_rate":135000,"dst_mac":"14:CC:20:DA:4E:AC",
@@ -97,7 +97,7 @@ describe('ubus-shared-state tests #ubus-shared-state', function()
 		"rx_rate":270000,"src_mac":"a0:f3:c1:46:28:97"},{"tx_rate":243000,
 		"dst_mac":"A8:40:41:1D:F9:35","chains":[-76,-65],"signal":-65,"rx_rate":135000,
 		"src_mac":"a0:f3:c1:46:28:97"}],"author":"LiMe-462895"}}}]]
-        local wifi_status_jsonsample_23 =[[{"data_type": "ref_state_wifilinks",
+        local wifiStatusJsonsample23 =[[{"data_type": "ref_state_wifilinks",
 		"json": {"primero":{"bleachTTL":23, "data":[{"tx_rate":135000,"dst_mac":
 		"A0:F3:C1:46:28:97","chains":[-60,-60], "src_mac":"a8:40:41:1d:f9:35",
 		"rx_rate":150000,"signal":-57},{"tx_rate":135000,"dst_mac":"14:CC:20:DA:4E:AC",
@@ -116,37 +116,37 @@ describe('ubus-shared-state tests #ubus-shared-state', function()
 		"dst_mac":"A8:40:41:1D:F9:35","chains":[-76,-65],"signal":-65,"rx_rate":135000,
 		"src_mac":"a0:f3:c1:46:28:97"}],"author":"LiMe-462895"}}}]]
 
-        local response = rpcd_call(shared_state_rpc, {'call', 
-            'insert_into_sharedState_muti_writer'},
+        local response = rpcdCall(sharedStateRpc, {'call', 
+            'insertIntoSharedStateMultiWriter'},
             '{"data_type": "A", "json": {"zig": "zag"}}')
-        response = rpcd_call(shared_state_rpc, {'call', 
-            'get_from_sharedState_muti_writer'}, '{"data_type": "A"}')
+        response = rpcdCall(sharedStateRpc, {'call', 
+            'getFromSharedStateMultiWriter'}, '{"data_type": "A"}')
         assert.is.equal(response.zig.data, 'zag')
 
-        response = rpcd_call(shared_state_rpc, {'call', 
-            'insert_into_sharedState_muti_writer'},
-            wifi_status_jsonsample_23)
-        response = rpcd_call(shared_state_rpc, {'call', 
-            'get_from_sharedState_muti_writer'},
+        response = rpcdCall(sharedStateRpc, {'call', 
+            'insertIntoSharedStateMultiWriter'},
+            wifiStatusJsonsample23)
+        response = rpcdCall(sharedStateRpc, {'call', 
+            'getFromSharedStateMultiWriter'},
             '{"data_type": "ref_state_wifilinks"}')
         assert.is.equal(response.primero.data.bleachTTL, 23)
         assert.is.equal(response.primero.data.author, "primero")
 
-        response = rpcd_call(shared_state_rpc, {'call', 
-        'insert_into_sharedState_muti_writer'},wifi_status_jsonsample_27)
+        response = rpcdCall(sharedStateRpc, {'call', 
+        'insertIntoSharedStateMultiWriter'},wifiStatusJsonsample27)
 
-        response = rpcd_call(shared_state_rpc, {'call', 
-            'get_from_sharedState_muti_writer'},
+        response = rpcdCall(sharedStateRpc, {'call', 
+            'getFromSharedStateMultiWriter'},
             '{"data_type": "ref_state_wifilinks"}')
 
         assert.is.equal(response.primero.data.bleachTTL, 27)
         assert.is.equal(response.primero.data.author, "primero")
 
-        response = rpcd_call(shared_state_rpc, {'call', 
-            'insert_into_sharedState_muti_writer'},
-            wifi_status_jsonsample_23)
-        response = rpcd_call(shared_state_rpc, {'call', 
-            'get_from_sharedState_muti_writer'},
+        response = rpcdCall(sharedStateRpc, {'call', 
+            'insertIntoSharedStateMultiWriter'},
+            wifiStatusJsonsample23)
+        response = rpcdCall(sharedStateRpc, {'call', 
+            'getFromSharedStateMultiWriter'},
             '{"data_type": "ref_state_wifilinks"}')
         assert.is.equal(response.primero.data.bleachTTL, 23)
         assert.is.equal(response.primero.data.author, "primero")
