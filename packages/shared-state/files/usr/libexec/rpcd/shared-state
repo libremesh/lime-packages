@@ -15,21 +15,21 @@ local json = require 'luci.jsonc'
 
 require("nixio.util")
 
-local function get_from_sharedState(msg)
+local function getFromSharedState(msg)
     local sharedState = shared_state.SharedState:new(msg.data_type, 
 		nixio.syslog)
     local resultTable = sharedState:get()
     utils.printJson(resultTable)
 end
 
-local function get_from_sharedState_muti_writer(msg)
+local function getFromSharedStateMultiWriter(msg)
     local sharedState = shared_state.SharedStateMultiWriter:new(msg.data_type, 
 		nixio.syslog)
     local resultTable = sharedState:get()
     utils.printJson(resultTable)
 end
 
-local function insert_into_sharedState_muti_writer(msg)
+local function insertIntoSharedStateMultiWriter(msg)
     local sharedState = shared_state.SharedStateMultiWriter:new(msg.data_type, 
 		nixio.syslog)
     local inputTable = msg.json or {}
@@ -37,13 +37,13 @@ local function insert_into_sharedState_muti_writer(msg)
 end
 
 local methods = {
-    get_from_sharedState = {
+    getFromSharedState = {
         data_type = 'value'
     },
-    get_from_sharedState_muti_writer = {
+    getFromSharedStateMultiWriter = {
         data_type = 'value'
     },
-    insert_into_sharedState_muti_writer = {
+    insertIntoSharedStateMultiWriter = {
         data_type = 'value',
         json = 'value'
     }
@@ -56,12 +56,12 @@ end
 if arg[1] == 'call' then
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
-    if arg[2] == 'get_from_sharedState' then
-        get_from_sharedState(msg)
-    elseif arg[2] == 'get_from_sharedState_muti_writer' then
-        get_from_sharedState_muti_writer(msg)
-    elseif arg[2] == 'insert_into_sharedState_muti_writer' then
-        insert_into_sharedState_muti_writer(msg)
+    if arg[2] == 'getFromSharedState' then
+        getFromSharedState(msg)
+    elseif arg[2] == 'getFromSharedStateMultiWriter' then
+        getFromSharedStateMultiWriter(msg)
+    elseif arg[2] == 'insertIntoSharedStateMultiWriter' then
+        insertIntoSharedStateMultiWriter(msg)
     else
         utils.printJson({
             error = "Method not found"
