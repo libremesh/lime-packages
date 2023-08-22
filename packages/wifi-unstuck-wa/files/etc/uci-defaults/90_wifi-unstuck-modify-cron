@@ -1,7 +1,0 @@
-#!/bin/sh
-
-if ! $(grep -q "hook_wifi-unstuck-wa" /usr/lib/lua/lime/wireless.lua); then 
-sed -i '/function wireless.configure()/r /etc/wifi-unstuck-wa/hook_wireless.lua.txt' /usr/lib/lua/lime/wireless.lua
-fi
-
-exit 0
