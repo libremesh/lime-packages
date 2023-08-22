@@ -103,4 +103,19 @@ function wu.do_workaround()
 	wu.wait_and_kill_on_timeout(pid_time_started)
 end
 
+function wu.configure()
+	interval = tonumber( config.get("wifi", "unstuck_interval", -1) )                                  
+                                                                                                           
+	if interval and interval > 0 then                                                                  
+		--! use sed to replace interval in /etc/crontabs/root                                      
+		io.popen("sed -i 's/\\*\\/\\d\\+ \\* \\* \\* \\* ((wifi-unstuck &> \\/dev\\/"..            
+			"null)&)/*\\/"..interval.." * * * * ((wifi-unstuck \\&> \\/dev\\/null)\\&)/g"..            
+			"' /etc/crontabs/root")                                                               
+	end
+end
+
+function wu.clean()
+    -- nothing to clean, but needs to be declared to comply with the API
+end
+
 return wu

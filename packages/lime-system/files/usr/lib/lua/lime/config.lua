@@ -185,6 +185,8 @@ end
 function config.main()
 	--! Get mac address and set mac-based configuration file name
 	local network = require("lime.network")
+	local utils = require("lime.utils")
+
 	config.UCI_MAC_NAME = "lime-" .. table.concat(network.primary_mac(),"")
 	print("Mac-config: " .. config.UCI_MAC_NAME)
 
@@ -203,6 +205,11 @@ function config.main()
 
 	local modules_name = { "hardware_detection", "wireless", "network", "firewall", "system",
                            "generic_config" }
+
+	if utils.isModuleAvailable("wifi_unstuck_wa") then
+		table.insert(modules_name, "wifi_unstuck_wa")
+	end
+
 	local modules = {}
 
 	for i, name in pairs(modules_name) do modules[i] = require("lime."..name) end
@@ -219,7 +226,6 @@ function config.main()
 		print("executed hook:", hookCmd, os.execute(hookCmd))
 	end
 
-	local utils = require("lime.utils") -- here to break circular require
 	local cfgpath = config.get_config_path()
 	--! flush all config changes
 	local uci = config.get_uci_cursor()
