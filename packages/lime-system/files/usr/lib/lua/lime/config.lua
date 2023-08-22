@@ -206,7 +206,7 @@ function config.main()
 	local modules_name = { "hardware_detection", "wireless", "network", "firewall", "system",
                            "generic_config" }
 
-	if utils.isModuleAvailable("wifi_unstuck_wa") then
+	if utils.isModuleAvailable("lime.wifi_unstuck_wa") then
 		table.insert(modules_name, "wifi_unstuck_wa")
 	end
 
