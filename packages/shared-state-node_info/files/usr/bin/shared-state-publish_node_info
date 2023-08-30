@@ -20,9 +20,9 @@ local JSON = require("luci.jsonc")
 local network = require ("lime.network")
 local location = require("lime.location")
 local utils = require('lime.utils')
+local config = require("lime.config")
 
 local hostname = utils.hostname()
-
 function get_node_info()
 	local uci = config.get_uci_cursor()
 	local coords = location.get_node() or location.get_community() or {lat="FIXME", long="FIXME"}
@@ -35,12 +35,11 @@ function get_node_info()
     if ipv6 then ipv6 = ipv6:gsub("/.*$", "") end
 	local uptime = utils.uptime_s()
 	local macs =  network.get_own_macs("*")
-
 	node = {}
 	table.insert(node, {hostname=hostname, member=member, fw_version=fw_version, board=board, ipv4=ipv4, ipv6=ipv6,coordinates=coords,macs= macs,uptime = uptime,device = "Router" } )
 	return node
 end
 
 local result = { [hostname] = get_node_info() }
-io.popen("shared-state insert wifi_links_info", "w"):write(JSON.stringify(result))
+io.popen("shared-state insert node_info", "w"):write(JSON.stringify(result))
 
