@@ -1,0 +1,39 @@
+#!/usr/bin/lua
+
+--! LibreMesh
+--! Copyright (C) 2023  Javier Jorge <jjorge@inti.gob.ar>
+--!
+--! This program is free software: you can redistribute it and/or modify
+--! it under the terms of the GNU Affero General Public License as
+--! published by the Free Software Foundation, either version 3 of the
+--! License, or (at your option) any later version.
+--!
+--! This program is distributed in the hope that it will be useful,
+--! but WITHOUT ANY WARRANTY; without even the implied warranty of
+--! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--! GNU Affero General Public License for more details.
+--!
+--! You should have received a copy of the GNU Affero General Public License
+--! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+local JSON = require("luci.jsonc")
+local network = require ("lime.network")
+local location = require("lime.location")
+local network_nodes = require('network-nodes')
+
+
+local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
+
+function get_node_info()
+	local coords = location.get_node() or location.get_community() or {lat="FIXME", long="FIXME"}
+	local node = network_nodes._create_node()
+	local uptime = utils.uptime_s()
+	local macs =  network.get_own_macs("*")
+	table.insert(node, {coordinates=coords,macs= macs,uptime = uptime,device = "Router" } )
+	return node
+end
+
+
+local result = { [hostname] = get_node_info() }
+io.popen("shared-state insert wifi_links_info", "w"):write(JSON.stringify(result))
+
