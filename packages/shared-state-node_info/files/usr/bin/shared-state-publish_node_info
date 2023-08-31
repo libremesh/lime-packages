@@ -26,15 +26,15 @@ local config = require("lime.config")
 local hostname = utils.hostname()
 function get_node_info()
 	local uci = config.get_uci_cursor()
-	local coords = location.get_node() or location.get_community() or 
+	local coords = location.get_node() or location.get_community() or
 	{lat="FIXME", long="FIXME"}
 	local fw_version =  "no version"
 	pcall(function () fw_version = utils.release_info()['DISTRIB_RELEASE'] end)
-    local board = "no board"
+	local board = "no board"
 	pcall(function () board = utils.current_board() end)
-    local ipv4 = uci:get("network", "lan", "ipaddr")
-    local ipv6 = uci:get("network", "lan", "ip6addr")
-    if ipv6 then ipv6 = ipv6:gsub("/.*$", "") end
+	local ipv4 = uci:get("network", "lan", "ipaddr")
+	local ipv6 = uci:get("network", "lan", "ip6addr")
+	if ipv6 then ipv6 = ipv6:gsub("/.*$", "") end
 	local uptime = utils.uptime_s()
 	local macs =  network.get_own_macs("*")
 	return {hostname=hostname, firmware_version=fw_version, board=board,
@@ -44,4 +44,3 @@ end
 
 local result = { [hostname] = get_node_info() }
 io.popen("shared-state insert node_info", "w"):write(JSON.stringify(result))
-
