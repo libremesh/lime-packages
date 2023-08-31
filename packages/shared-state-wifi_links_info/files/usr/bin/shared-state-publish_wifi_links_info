@@ -20,6 +20,8 @@
 local JSON = require("luci.jsonc")
 local node_status = require ("lime.node_status")
 local network = require ("lime.network")
+local iwinfo = require "iwinfo"
+
 
 function get_wifi_links_info()
 	local stations = node_status.get_stations()
@@ -28,9 +30,10 @@ function get_wifi_links_info()
 		macparts = network.get_mac(station.iface)
 		src_macaddr = table.concat(macparts,":")
 		local station_stats = node_status.get_station_stats(station)
+		local freq = iwinfo.nl80211.frequency(station.iface)
 		table.insert(links, {src_mac=src_macaddr ,dst_mac=station.station_mac,
 		signal=station_stats.signal,chains=station_stats.chains,
-		rx_rate=station_stats.rx_rate,tx_rate=station_stats.tx_rate } )
+		rx_rate=station_stats.rx_rate,tx_rate=station_stats.tx_rate,freq=freq } )
 	end
 	return links
 end

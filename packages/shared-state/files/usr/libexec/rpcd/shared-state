@@ -19,14 +19,22 @@ local function getFromSharedState(msg)
     local sharedState = shared_state.SharedState:new(msg.data_type, 
 		nixio.syslog)
     local resultTable = sharedState:get()
-    utils.printJson(resultTable)
+    local response ={}
+    for k,v in pairs(resultTable) do
+        response[k]=v.data
+    end
+    utils.printJson(response)
 end
 
 local function getFromSharedStateMultiWriter(msg)
     local sharedState = shared_state.SharedStateMultiWriter:new(msg.data_type, 
 		nixio.syslog)
     local resultTable = sharedState:get()
-    utils.printJson(resultTable)
+    local response ={}
+    for k,v in pairs(resultTable) do
+        response[k]=v.data
+    end
+    utils.printJson(response)
 end
 
 local function insertIntoSharedStateMultiWriter(msg)
