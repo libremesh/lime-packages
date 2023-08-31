@@ -20,7 +20,7 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=
 	URL:=http://libremesh.org
 	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils \
-		+lime-system shared-state 
+		+lime-system +libiwinfo-lua shared-state 
 	PKGARCH:=all
 endef
 
