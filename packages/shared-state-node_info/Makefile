@@ -17,7 +17,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
 	TITLE:=Node information module for shared-state
 	CATEGORY:=LibreMesh
-	MAINTAINER:=
+	MAINTAINER:= Javier <jjorge@inti.gob.ar>
 	URL:=http://libremesh.org
 	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils \
 		+lime-system +ubus-lime-location shared-state 
