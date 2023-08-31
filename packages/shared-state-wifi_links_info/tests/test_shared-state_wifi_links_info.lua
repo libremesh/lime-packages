@@ -13,7 +13,8 @@ it('a simple test to get links info and assert requiered fields are present', fu
         return iwinfo.mocks.iw_station_get_result_wlan1
     end)
     stub(node_status, "get_stations", function () return iwinfo.mocks.get_stations end)
-
+    stub(node_status, "get_stations", function () return iwinfo.mocks.get_stations end)
+    stub(iwinfo.nl80211,"frequency",function (iface) return 2400 end)
     stub(network, "get_mac", function (iface)
         if string.match(iface, "wlan0") then
             return iwinfo.mocks.wlan0_mesh_mac
@@ -28,6 +29,7 @@ it('a simple test to get links info and assert requiered fields are present', fu
     assert.is.same({-17,-18}, links_info[1].chains)
     assert.is.equal(-14, links_info[1].signal)
     assert.is.equal(13000, links_info[1].rx_rate)
+    assert.is.equal(2400, links_info[1].freq)
     assert.is.equal("C0:00:00:00:00:00", links_info[1].src_mac)
 end)
 
