@@ -32,7 +32,7 @@ function get_wifi_links_info()
 		local station_stats = node_status.get_station_stats(station)
 		local freq = iwinfo.nl80211.frequency(station.iface)
 		table.insert(links, {src_mac=src_macaddr ,dst_mac=station.station_mac,
-		signal=station_stats.signal,chains=station_stats.chains,
+		signal=station_stats.signal,chains=station_stats.chains,iface=station.iface,
 		rx_rate=station_stats.rx_rate,tx_rate=station_stats.tx_rate,freq=freq } )
 	end
 	return links

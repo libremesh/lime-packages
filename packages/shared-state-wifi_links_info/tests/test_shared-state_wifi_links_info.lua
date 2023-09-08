@@ -28,6 +28,7 @@ it('a simple test to get links info and assert requiered fields are present', fu
     assert.is.equal("C0:4A:00:BE:7B:09", links_info[1].dst_mac)
     assert.is.same({-17,-18}, links_info[1].chains)
     assert.is.equal(-14, links_info[1].signal)
+    assert.is.equal("wlan0-mesh", links_info[1].iface)
     assert.is.equal(13000, links_info[1].rx_rate)
     assert.is.equal(2400, links_info[1].freq)
     assert.is.equal("C0:00:00:00:00:00", links_info[1].src_mac)
