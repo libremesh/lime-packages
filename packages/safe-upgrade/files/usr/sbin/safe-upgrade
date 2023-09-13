@@ -24,8 +24,10 @@ local su = {}
 
 su.version = '1.0'
 local firmware_size_bytes = 7936*1024
-local fw1_addr = 0x9f050000
-local fw2_addr = 0x9f050000 + firmware_size_bytes
+-- Keep the fw addresses as strings beacause of https://gitlab.com/librerouter/librerouteros/-/issues/61
+local fw1_addr = '0x9f050000'
+local fw2_addr = '0x9f810000' -- fw1_addr + firmware_size_bytes
+
 su._supported_devices = {'librerouter-v1'}
 su._mtd_partitions_desc = '/proc/mtd'
 
@@ -280,8 +282,8 @@ local function bootstrap(args)
 
     set_stable_partition(1)
     set_testing_partition(0)
-    set_uboot_env('fw1_addr', string.format("0x%x", fw1_addr))
-    set_uboot_env('fw2_addr', string.format("0x%x", fw2_addr))
+    set_uboot_env('fw1_addr', fw1_addr)
+    set_uboot_env('fw2_addr', fw2_addr)
 
     -- configure cmdline using the current cmdline config to not force
     -- us to know here the correct cmdline bootargs of the running kernel
