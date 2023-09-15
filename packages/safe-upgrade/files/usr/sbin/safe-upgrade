@@ -262,11 +262,14 @@ function su.preserve_files_to_new_partition(args)
 end
 
 local function bootstrap(args)
-    --TODO: add --force option to upgrade SU
     if is_su_installed() then
-        print(string.format("safe-upgrade version '%s' is already installed, aborting",
-                            get_su_version()))
-        os.exit(su.EXIT_STATUS_ALREADY_INSTALLED)
+        if args.force then
+            print("Forcing the bootstrap.")
+        else
+            print(string.format("safe-upgrade version '%s' is already installed, aborting",
+                                get_su_version()))
+            os.exit(su.EXIT_STATUS_ALREADY_INSTALLED)
+        end
     end
 
 
@@ -421,8 +424,8 @@ local function parse_args()
     parser:command('confirm', ('Confirm the current partition. Use when after an upgrade ' ..
                                'or after running "test-other-partition".'))
 
-    parser:command('bootstrap', 'Install the safe-upgrade mechanism')
-
+    local bootstrap = parser:command('bootstrap', 'Install the safe-upgrade mechanism')
+    bootstrap:flag("--force", "Install even it is already installed.")
     parser:command('test-other-partition', 'Mark the other partition as testing partition.')
 
     parser:command('board-supported', 'Exits with 0 if board is supported')
