@@ -88,6 +88,8 @@ config lime wifi					# Settings in this section applies to all radios.
 	option ieee80211s_mesh_id 'LiMe'		# Mesh cloud identifier (close to SSID in concept). Used by the nodes to join and participate in the mesh network.
 #	option ieee80211s_encryption 'psk2/aes'		# in order to use encrypted mesh, the wpad-mini package have to be replaced with wpad-mesh-wolfssl package either manually or by the selected network-profile
 #	option ieee80211s_key 'SomePsk2AESKey'
+	option unstuck_interval '10'			# Interval in minutes that defines how often to run the workaround script provided by the package wifi-unstuck-wa that rescan all available frequencies in active radios.
+	option unstuck_timeout '300'			# Timeout in seconds that defines how long the mentioned above workaround should go.
 
 #########################################################
 ### WiFi specific band options
@@ -96,7 +98,7 @@ config lime wifi					# Settings in this section applies to all radios.
 config lime-wifi-band '2ghz' 			# Settings in this section applies for all radios in '2ghz' (or '5ghz') band. And take presedence over 'lime wifi' section
 	option channel '11'
 	option htmode 'HT20'			# htmode sets the width of the channel. HT40 should have better performances in non-noisy environments. Check out the documentation in the OpenWrt wiki here: https://openwrt.org/docs/guide-user/network/wifi/basic#htmodewi-fi_channel_width
-	option distance '100'
+	option distance '1000'			# 1 km max distance, farther clients or peers will not be able to connect
 	option adhoc_mcast_rate '24000'
 	option ieee80211s_mcast_rate '24000'
 #	list modes 'ap'				# For networks where only dual band routers are used,
@@ -108,7 +110,7 @@ config lime-wifi-band '5ghz'
 	list channel '157'			# Check for allowed channels on https://en.wikipedia.org/wiki/List_of_WLAN_channels#regulatory_tables5.0ghz
 	option htmode 'HT40'			# htmode sets the width of the channel. VHT80 should have better performances in non-noisy environment. Check out the valid channels list in this comment: https://github.com/libremesh/lime-packages/issues/647#issuecomment-1503968192 and check out the documentation in the OpenWrt wiki here: https://openwrt.org/docs/guide-user/network/wifi/basic#htmodewi-fi_channel_width
 #	list modes 'ieee80211s'			# For networks where only dual band routers are used, the 5 GHz radio can be reserved for the node-to-node connections
-	option distance '1000' 			# Distance between this node/ap and the furthest connected node/client in meters, heavily affects performances. If you are unsure of the right number, better to use a too-large distance here than a too-small one.
+	option distance '10000'			# Distance between this node/ap and the furthest connected node/client in meters, affects performances. If you are unsure of the right number, better to use a too-large distance here than a too-small one. Farther clients or peers will not be able to connect
 	option adhoc_mcast_rate '6000'
 	option ieee80211s_mcast_rate '6000'
 
@@ -165,7 +167,7 @@ config wifi radio99 # you should ensure that the chosen radio name exists, for e
 	option client_ssid 'SomeWiFiNetwork'
 	option client_key 'SomeWPApskPassword'
 	option client_encryption 'psk2'			# psk for WPA or psk2 for WPA2
-	option distance 300				# maximum distance to AP, heavily affects performances
+	option distance 1000				# maximum distance to AP, affects performances
 
 config net wirelessclientWAN
 	option linux_name 'wlan0-sta'			# verify the name, the client interface name could be named differently, like wlan1-sta
@@ -203,7 +205,7 @@ config wifi radio99 # you should ensure that the chosen radio name exists, for e
 	option client_ssid 'backbone/LiMe-ddeeff'	# specify here the name of the specifically configured backbone AP interface you want to connect to
 #	option client_key 'somePassword'
 #	option client_encryption 'psk2'
-	option distance 1000				# maximum distance to AP, heavily affects performances
+	option distance 1000				# maximum distance to AP, affects performances
 
 config net wirelessclientbackbone
 	option linux_name 'wlan0-sta'			# verify the name, the client interface name could be named differently, like wlan1-sta

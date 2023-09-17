@@ -9,7 +9,7 @@ wu.FREQ_2GHZ_LIST = "2412 2462"
 wu.FREQ_5GHZ_LIST = "5180 5240"
 
 -- if iw runs for 5 min, it is likely hanging
-wu.TIMEOUT = 300
+wu.TIMEOUT = tonumber( config.get("wifi", "unstuck_timeout", 300 ))
 
 function wu.get_stickable_ifaces()
 	local uci = config.get_uci_cursor()
@@ -101,6 +101,21 @@ function wu.do_workaround()
 	end
 
 	wu.wait_and_kill_on_timeout(pid_time_started)
+end
+
+function wu.configure()
+	interval = tonumber( config.get("wifi", "unstuck_interval", -1) )                                  
+                                                                                                           
+	if interval and interval > 0 then                                                                  
+		--! use sed to replace interval in /etc/crontabs/root                                      
+		io.popen("sed -i 's/\\*\\/\\d\\+ \\* \\* \\* \\* ((wifi-unstuck &> \\/dev\\/"..            
+			"null)&)/*\\/"..interval.." * * * * ((wifi-unstuck \\&> \\/dev\\/null)\\&)/g"..            
+			"' /etc/crontabs/root")                                                               
+	end
+end
+
+function wu.clean()
+    -- nothing to clean, but needs to be declared to comply with the API
 end
 
 return wu
