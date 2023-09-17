@@ -62,7 +62,7 @@ config lime wifi
 config lime-wifi-band '2ghz'
 	option channel '11'
 	option htmode 'HT20'
-	option distance '100'
+	option distance '1000'
 	option adhoc_mcast_rate '24000'
 	option ieee80211s_mcast_rate '24000'
 
@@ -70,7 +70,7 @@ config lime-wifi-band '5ghz'
 	list channel '48'
 	list channel '157'
 	option htmode 'HT40'
-	option distance '1000'
+	option distance '10000'
 	option adhoc_mcast_rate '6000'
 	option ieee80211s_mcast_rate '6000'
 

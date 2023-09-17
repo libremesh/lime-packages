@@ -94,7 +94,7 @@ config lime-wifi-band '5ghz' # Settings in this section applies for all radios i
 	list modes 'ieee80211s'	# For networks where only dual band routers are used, the 5 GHz radio can be reserved for the node-to-node connections
 	option channel '48' # May be either a list or a single option, in case of a list a channel for each radio will be selected according to radio index			
 						# Check for allowed channels on https://en.wikipedia.org/wiki/List_of_WLAN_channels#regulatory_tables5.0ghz
-	option distance '1000' # Distance between this node/ap and the furthest connected node/client in meters, heavily affects performances
+	option distance '10000' # Distance between this node/ap and the furthest connected node/client in meters, affects performances. If you are unsure of the right number, better to use a too-large distance here than a too-small one. Farther clients or peers will not be able to connect
 	option htmode 'HT40'
 	option adhoc_mcast_rate '6000'
 	option ieee80211s_mcast_rate '24000'
@@ -102,6 +102,7 @@ config lime-wifi-band '5ghz' # Settings in this section applies for all radios i
 config lime-wifi-band '2ghz'
 	list modes 'ap'				# For networks where only dual band routers are used,
 	list modes 'apname'			# 2.4Ghz radios can be reserved for access points.
+	option distance '1000'			# 1 km max distance, farther clients or peers will not be able to
 
 #########################################################
 ### Configuration directed to other UCI files
@@ -155,7 +156,7 @@ config wifi radio99 # you should ensure that the chosen radio name exists, for e
 	option client_ssid 'SomeWiFiNetwork'
 	option client_key 'SomeWPApskPassword'
 	option client_encryption 'psk2'			# psk for WPA or psk2 for WPA2
-	option distance 300				# maximum distance to AP, heavily affects performances
+	option distance 1000				# maximum distance to AP, affects performances
 
 config net wirelessclientWAN
 	option linux_name 'wlan0-sta'			# verify the name, the client interface name could be named differently, like wlan1-sta
@@ -193,7 +194,7 @@ config wifi radio99 # you should ensure that the chosen radio name exists, for e
 	option client_ssid 'backbone/LiMe-ddeeff'	# specify here the name of the specifically configured backbone AP interface you want to connect to
 #	option client_key 'somePassword'
 #	option client_encryption 'psk2'
-	option distance 1000				# maximum distance to AP, heavily affects performances
+	option distance 1000				# maximum distance to AP, affects performances
 
 config net wirelessclientbackbone
 	option linux_name 'wlan0-sta'			# verify the name, the client interface name could be named differently, like wlan1-sta
