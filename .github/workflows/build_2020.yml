@@ -1,13 +1,9 @@
 name: Build packages
 
 on:
-  release:
-    types: [published]
   push:
-    branches: [master]
     tags:
-      - v*
-      - '!v2020*'
+      - v2020*
 
 jobs:
   build:
@@ -20,7 +16,7 @@ jobs:
       - name: Build packages
         uses: openwrt/gh-action-sdk@v5
         env:
-          ARCH: "x86_64"
+          ARCH: "x86_64-19.07.10"
           FEEDNAME: "libremesh"
           IGNORE_ERRORS: "n m y"
           KEY_BUILD: "${{ secrets.KEY_BUILD }}"
