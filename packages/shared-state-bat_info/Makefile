@@ -17,7 +17,7 @@ define Package/$(PKG_NAME)
 endef
 
 define Package/$(PKG_NAME)/description
-	Syncronize node information beween nodes.
+	Syncronize batman protocol links information beween nodes.
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
