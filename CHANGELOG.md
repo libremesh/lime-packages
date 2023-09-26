@@ -2,7 +2,7 @@ All notable changes to this project will be documented in this file.
 
 ## 2023.1 - Unreleased
 
-## 2023.1-rc1 - Release candidate 2
+## 2023.1-rc2 - Release candidate 2 - 17 sep '23
 
 ### Full changelog since 2023.1-rc1
   - Fix safe-upgrade bootstrap broken since OpenWrt 19.07 (merge #1050)
@@ -17,7 +17,7 @@ All notable changes to this project will be documented in this file.
   - Shared state ubus (merge #1040)
   - New Shared-State wifi Links information module (merge #1038)
 
-## 2023.1-rc1 - Release candidate 1
+## 2023.1-rc1 - Release candidate 1 - 5 aug '23
 
 ### Full changelog
   - Add shared state async node (merge #1030)
@@ -47,6 +47,12 @@ All notable changes to this project will be documented in this file.
   - lime-proto-babeld: enable ubus bindings (merge #987)
   - ubus-lime-utils place scripts in /etc/udhcpc.user.d/ (merge #950, fix #927)
   - Replace OpenWrt 19.07 switch config style with OpenWrt 21.02 one in proto-lan and network.lua's device parser (merge #959)
+
+## 2020.4 Expansive Emancipation - 17 sep '23
+
+### Full changelog
+- default distance setting increase 10x 
+
 
 ## 2020.3 Expansive Emancipation - 21 apr '23
 
