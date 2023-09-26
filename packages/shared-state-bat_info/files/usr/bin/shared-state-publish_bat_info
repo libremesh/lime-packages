@@ -33,9 +33,7 @@ function get_bat_links_info()
 		macparts = network.get_mac(value.iface)
 		src_macaddr = table.concat(macparts,":")
 		value.src_mac=src_macaddr
-		utils.printJson(value)
 	end
-	utils.printJson(batneights_obj)
 	return batneights_obj
 end
 
