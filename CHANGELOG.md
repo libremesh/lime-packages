@@ -2,13 +2,19 @@ All notable changes to this project will be documented in this file.
 
 ## 2023.1 - Unreleased
 
+## 2023.1-rc1 - Release candidate 2
+
 ### Full changelog since 2023.1-rc1
+  - Fix safe-upgrade bootstrap broken since OpenWrt 19.07 (merge #1050)
+  - Add force option to safe-upgrade bootstrap cmd (merge #1051)
+  - Default distance setting: increase 10x (merge #1047)
+  - add wifi interface name in shared state wifi information module (merge #1048) 
   - add freq information (merge #1045) 
   - Enable Node Information Exchange (merge #1043)
   - readme: expanded instructions on ImageBuilder (merge #1028)
   - removed extra info from shared state (merge #1041) 
   - wifi-unstuck-wa: allow parametrizable values for interval and timeout (merge #1039, fix #1034) 
-  - Shrared state ubus (merge #1040)
+  - Shared state ubus (merge #1040)
   - New Shared-State wifi Links information module (merge #1038)
 
 ## 2023.1-rc1 - Release candidate 1
