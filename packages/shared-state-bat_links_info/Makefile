@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2023 Javier Jorge <jjorge@inti.gob.ar>
+# Copyright (c) 2023  Instituto Nacional de Tecnología Industrial
 # Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
 # This is free software, licensed under the GNU Affero General Public License v3.
 #
@@ -12,7 +13,7 @@ define Package/$(PKG_NAME)
 	TITLE:=Node information module for shared-state
 	MAINTAINER:= Javier <jjorge@inti.gob.ar>
 	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils \
-		+lime-system +ubus-lime-location shared-state   
+		+lime-system +batctl-default shared-state   
 	PKGARCH:=all
 endef
 
