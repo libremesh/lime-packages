@@ -10,7 +10,7 @@ include ../../libremesh.mk
 define Package/$(PKG_NAME)
 	SECTION:=lime
 	CATEGORY:=LibreMesh
-	TITLE:=Node information module for shared-state
+	TITLE:=Batman protocol links information module for shared-state
 	MAINTAINER:= Javier <jjorge@inti.gob.ar>
 	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils \
 		+lime-system +batctl-default shared-state   
