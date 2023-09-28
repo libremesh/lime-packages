@@ -1,5 +1,6 @@
 #
-# Copyright (C) 2023 Javier Jorge <jjorge@inti.gob.ar>
+# Copyright (c) 2023  Javier Jorge <jjorge@inti.gob.ar>
+# Copyright (c) 2023  Instituto Nacional de Tecnología Industrial
 # Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
 # This is free software, licensed under the GNU Affero General Public License v3.
 #
@@ -17,7 +18,7 @@ define Package/$(PKG_NAME)
 endef
 
 define Package/$(PKG_NAME)/description
-	Syncronize Babel links information beween nodes.
+	Synchronize Babel links information beween nodes.
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
