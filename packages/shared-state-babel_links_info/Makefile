@@ -13,7 +13,7 @@ define Package/$(PKG_NAME)
 	TITLE:=Babel links information module for shared-state
 	MAINTAINER:= Javier <jjorge@inti.gob.ar>
 	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils \
-		+libubus-lua shared-state   
+		+libubus-lua +random-numgen shared-state   
 	PKGARCH:=all
 endef
 
