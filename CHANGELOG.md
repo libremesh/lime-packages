@@ -2,7 +2,26 @@ All notable changes to this project will be documented in this file.
 
 ## 2023.1 - Unreleased
 
+## 2023.1-rc1 - Release candidate 2
+
+### Full changelog since 2023.1-rc1
+  - Fix safe-upgrade bootstrap broken since OpenWrt 19.07 (merge #1050)
+  - Add force option to safe-upgrade bootstrap cmd (merge #1051)
+  - Default distance setting: increase 10x (merge #1047)
+  - add wifi interface name in shared state wifi information module (merge #1048) 
+  - add freq information (merge #1045) 
+  - Enable Node Information Exchange (merge #1043)
+  - readme: expanded instructions on ImageBuilder (merge #1028)
+  - removed extra info from shared state (merge #1041) 
+  - wifi-unstuck-wa: allow parametrizable values for interval and timeout (merge #1039, fix #1034) 
+  - Shared state ubus (merge #1040)
+  - New Shared-State wifi Links information module (merge #1038)
+
+## 2023.1-rc1 - Release candidate 1
+
 ### Full changelog
+  - Add shared state async node (merge #1030)
+  - lime.network.scandevices: fix finding intefaces on dsa devices (merge #1033) 
   - Unit testing update (merge #1027)
   - various readme improvements (merge #1015)
   - remove old iw/iw-full compatibility check (merge #1024)
