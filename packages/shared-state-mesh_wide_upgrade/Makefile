@@ -13,7 +13,7 @@ define Package/$(PKG_NAME)
 	TITLE:=Mesh wide upgrade module for shared-state
 	MAINTAINER:= Javier <jjorge@inti.gob.ar>
 	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils \
-		+lime-system shared-state   
+		+libubus-lua shared-state   
 	PKGARCH:=all
 endef
 
