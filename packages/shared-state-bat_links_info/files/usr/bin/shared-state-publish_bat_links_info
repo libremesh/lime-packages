@@ -34,7 +34,6 @@ function get_bat_links_info()
 		value.hard_ifindex=nil
 		value.src_mac=src_macaddr
 	end
-	utils.printJson(batneights_obj)
 	return batneights_obj
 end
 
