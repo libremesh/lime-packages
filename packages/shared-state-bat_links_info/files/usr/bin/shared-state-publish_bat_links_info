@@ -24,15 +24,13 @@ local network = require ("lime.network")
 local hostname = utils.hostname()
 function get_bat_links_info()
 	local batneights_obj={}
-	local batneights = utils.unsafe_shell("batctl nj")
+	local batneights = utils.unsafe_shell("batctl oj")
 	batneights = string.gsub(batneights,"neigh_address","dst_mac")
+	batneights = string.gsub(batneights,"orig_address","src_mac")
 	batneights = string.gsub(batneights,"hard_ifname","iface")
 	batneights_obj = JSON.parse(batneights)
 	for key,value in pairs (batneights_obj) do
-		macparts = network.get_mac(value.iface)
-		src_macaddr = table.concat(macparts,":")
 		value.hard_ifindex=nil
-		value.src_mac=src_macaddr
 	end
 	return batneights_obj
 end
