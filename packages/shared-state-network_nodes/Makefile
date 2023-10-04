@@ -8,7 +8,7 @@ include ../../libremesh.mk
 
 define Package/$(PKG_NAME)
   CATEGORY:=LibreMesh
-  TITLE:=$(PKG_NAME) provides data-type for user marked reliable network nodes
+  TITLE:=$(PKG_NAME) provides data-type for network nodes marked as reliable by user
   MAINTAINER:=Asociacion Civil Altermundi <info@altermundi.net>
   DEPENDS:=+shared-state +shared-state-nodes_and_links +lime-system +luci-lib-jsonc \
 	   +libubus-lua +random-numgen
@@ -16,7 +16,7 @@ define Package/$(PKG_NAME)
 endef
 
 define Package/$(PKG_NAME)/description
-	TODO
+	Provides data-type for network nodes marked as reliable by user via lime-app
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
