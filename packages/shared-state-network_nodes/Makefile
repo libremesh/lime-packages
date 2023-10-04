@@ -1,23 +1,22 @@
 #
-# Copyright (C) 2020 German Ferrero <germanferrero@altermundi.net>
+# Copyright (C) 2020-2023 Asociacion Civil Altermundi <info@altermundi.net>
 #
-# This is free software, licensed under the GNU General Public License v3.
+# This is free software, licensed under the GNU Affero General Public License v3.
 #
 
 include ../../libremesh.mk
 
 define Package/$(PKG_NAME)
-  SECTION:=utils
-  CATEGORY:=Utilities
-  TITLE:=$(PKG_NAME) provides shared state database of all times network nodes
-  MAINTAINER:=Germán Ferrero <germanferrero@altermundi.net>
+  CATEGORY:=LibreMesh
+  TITLE:=$(PKG_NAME) provides data-type for network nodes marked as reliable by user
+  MAINTAINER:=Asociacion Civil Altermundi <info@altermundi.net>
   DEPENDS:=+shared-state +shared-state-nodes_and_links +lime-system +luci-lib-jsonc \
 	   +libubus-lua +random-numgen
   PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description
-	This $(PKG_NAME) provides shared state database of all times network nodes.
+	Provides data-type for network nodes marked as reliable by user via lime-app
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
