@@ -36,3 +36,45 @@ describe('Tests network_nodes #network_nodes', function()
         assert.are.equal("fe80::c24a:ff:fefc:3abd",babelinfo[1].src_ip)
     end)
 end)
+
+describe('Test get interface local ipv6', function()
+    before_each('', function()
+        local ifaces = {'lo', 'eth0-1_250', 'bat0', 'anygw'}
+        unsafe_shell_calls =0
+        stub(utils, "get_ifnames", function () return ifaces end)
+
+        --this function returns an output similar to the command invoked in get_interface_ip
+        stub(utils, "unsafe_shell", function (cmd) 
+            unsafe_shell_calls=unsafe_shell_calls+1
+            if string.match(cmd, 'lo') then 
+                --the loopback interface tipically dont have an ipv6 ip
+                return ""
+            end
+            if string.match(cmd, 'eth0%-1_250') then
+                return "fe80::db:d6ff:fefc:3abd"
+            end
+            if string.match(cmd, 'bat0') then 
+                --the bat0 interface may not have an ipv6 ip
+                return ""
+            end
+            if string.match(cmd, 'anygw') then 
+                return "fe80::a8aa:aaff:feea:d2aa"
+            end
+            return "not expected command: ".. cmd
+        end)
+        
+    end)
+    it('a simple test to get get interface local ipv6 address', function()
+        local unsafe_shell_spy = spy.on(utils, "unsafe_shell")
+        ifs = utils.get_ifnames()
+        
+        assert.are.equal("",get_interface_ip(ifs[1]))
+        assert.are.equal("fe80::db:d6ff:fefc:3abd",get_interface_ip(ifs[2]))
+        assert.are.equal("",get_interface_ip(ifs[3]))
+        assert.are.equal("fe80::a8aa:aaff:feea:d2aa",get_interface_ip(ifs[4]))
+        assert.are.equal("fe80::a8aa:aaff:feea:d2aa",get_interface_ip(ifs[4]))
+        assert.are.equal("fe80::a8aa:aaff:feea:d2aa",get_interface_ip(ifs[4]))
+        --cached values shoud be used instead of making the os call
+        assert.spy(unsafe_shell_spy).was.called(4)
+    end)
+end)
