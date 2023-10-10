@@ -172,6 +172,7 @@ describe('Tests bat_links_info #bat_links_info', function ()
         }
     ]
     ]]
+
     stub(utils, "unsafe_shell", function (cmd)
         if cmd == "batctl nj" then
             return nj_output
@@ -180,17 +181,22 @@ describe('Tests bat_links_info #bat_links_info', function ()
         end
         return ""
     end)
+
     stub(network, "get_mac", function (iface)
+        if string.match(iface, "wlan0") then
+            return iwinfo.mocks.wlan0_mesh_mac
+        end
         return iwinfo.mocks.wlan1_mesh_mac
     end)
-    
+
     package.path = package.path .. ";packages/shared-state-bat_links_info/files/usr/bin/?;;"
     require ("shared-state-publish_bat_links_info")
     
     it('a simple test to get node info and assert requiered fields are present', function()
         local links_info = {}
         links_info = get_bat_links_info()
-        assert.are.equal(table.concat(iwinfo.mocks.wlan1_mesh_mac,":"), links_info[1].src_mac)
+        assert.are.equal(table.concat(iwinfo.mocks.wlan0_mesh_mac,":"), links_info[1].src_mac)
+        assert.are.equal(table.concat(iwinfo.mocks.wlan1_mesh_mac,":"), links_info[4].src_mac)
         assert.are.equal('02:58:47:da:4e:aa', links_info[1].dst_mac)
         assert.are.equal(1040, links_info[1].last_seen_msecs)
         assert.are.equal("wlan0-mesh_250", links_info[1].iface)
