@@ -2,6 +2,13 @@ All notable changes to this project will be documented in this file.
 
 ## 2023.1 - Unreleased
 
+### Full changelog since 2023.1-rc2
+
+  - Use SPDX License Identifier to shrink size (merge [#1018](https://github.com/libremesh/lime-packages/pull/1018)) 
+  - Small cleaning (merge [#1037](https://github.com/libremesh/lime-packages/pull/1037))
+  - Add new reference state data types to shared state (merge [#1042](https://github.com/libremesh/lime-packages/pull/1042))
+
+
 ## 2023.1-rc2 - Release candidate 2 - 17 sep '23
 
 ### Full changelog since 2023.1-rc1
