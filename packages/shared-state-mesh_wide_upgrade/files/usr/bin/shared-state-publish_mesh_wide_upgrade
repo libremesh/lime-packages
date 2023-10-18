@@ -18,21 +18,26 @@
 --! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local JSON = require("luci.jsonc")
-local network = require ("lime.network")
-local location = require("lime.location")
 local utils = require('lime.utils')
-local config = require("lime.config")
 
 local hostname = utils.hostname()
-function get_node_info()
+function report_upgrade_status()
 	return {
-		transaction_hash= "",
-		state= "downloading",
-		error= 0,
-		safe_upgrade_status= "",
-		eup_STATUS= ""
+		type= "upgrade",
+		data={
+		  firmware_ver="xxxx",
+		  repo_url="http://10.13.0.1/lros/api/v1/",
+		  state="downloading|ready_for_upgrade|upgrade_scheluded|confirmation_pending|~~confirmed~~|updated|error",
+		  error="CODE",
+		  safe_upgrade_status="",
+		  eup_STATUS="",
+		},
+		timestamp=231354654,
+		id="",
+		state="started/aborted/finished",
+		master_node=""
 	}
 end
 
-local result = { [hostname] = get_node_info() }
+local result = { [hostname] = report_upgrade_status() }
 io.popen("shared-state insert mesh_wide_upgrade", "w"):write(JSON.stringify(result))
