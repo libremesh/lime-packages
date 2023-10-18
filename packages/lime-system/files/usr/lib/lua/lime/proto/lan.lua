@@ -48,9 +48,21 @@ function lan.setup_interface(ifname, args)
 
 	local uci = config.get_uci_cursor()
 	local bridgedIfs = {}
-	-- here we bet that the first device section is the bridge one,
-	-- as it does not have a name for addressing it
-	local oldIfs = uci:get("network", "@device[0]", "ports") or {}
+	-- here we bet that there is a device section of type bridge named 
+	-- br-lan
+	local bridge_section = nil
+	uci:foreach("network", "device",
+		function(s)
+			if bridge_section then return end
+			local dev_type = uci:get("network", s[".name"], "type")
+			local dev_name = uci:get("network", s[".name"], "name")
+			if not (dev_type == 'bridge') then return end
+			if not (dev_name == 'br-lan') then return end
+			bridge_section = s[".name"]
+		end
+	)
+	if not bridge_section then return end
+	local oldIfs = uci:get("network", bridge_section, "ports") or {}
 	-- it should be a table, it was a string in old OpenWrt releases
 	if type(oldIfs) == "string" then oldIfs = utils.split(oldIfs, " ") end
 	for _,iface in pairs(oldIfs) do
@@ -59,8 +71,7 @@ function lan.setup_interface(ifname, args)
 		end
 	end
 	table.insert(bridgedIfs, ifname)
-	uci:set("network", "@device[0]", "device")
-	uci:set("network", "@device[0]", "ports", bridgedIfs)
+	uci:set("network", bridge_section, "ports", bridgedIfs)
 	uci:save("network")
 end
 
