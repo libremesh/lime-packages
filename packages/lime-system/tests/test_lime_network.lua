@@ -93,6 +93,11 @@ describe('LiMe Network tests', function()
         stub(utils, "getBoardAsTable", function () return BOARD end)
         stub(network, "assert_interface_exists", function () return true end)
 
+        bridge_section = uci:add("network", "device")
+        uci:set("network", bridge_section, "type", "bridge")
+        uci:set("network", bridge_section, "name", "br-lan")
+        uci:commit("network")
+
         network.configure()
 
         assert.is.equal("1500", uci:get("network", "lan", "mtu"))
