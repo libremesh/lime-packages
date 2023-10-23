@@ -7,5 +7,7 @@ config mesh-upgrade 'main'
 	option eup_STATUS ''
 	option error 'CODE'
 	option timestamp '231354654'
-	option transaction_state="aborted",
-	option master_node="primero"
+	option transaction_state 'aborted'
+	option master_node 'primero'
+	#option notset ""
+	

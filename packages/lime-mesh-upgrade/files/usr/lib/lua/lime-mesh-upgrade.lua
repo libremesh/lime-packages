@@ -2,28 +2,35 @@
 local libuci = require "uci"
 
 local mesh_upgrade = {}
-local uci = libuci.cursor()
+
 
 function mesh_upgrade.became_master_node(urls)
     -- todo
 end
 
 function mesh_upgrade.upgrade_in_progress()
+    local uci = libuci.cursor()
     return uci:get('mesh_upgrade', 'main', 'transaction_state') == 'started'
 end
 
 function mesh_upgrade.abort()
+    local uci = libuci.cursor()
     uci:set('mesh_upgrade', 'main', 'transaction_state', 'aborted')
+    uci:save('mesh_upgrade')
+    uci:commit('mesh_upgrade')
     -- stop and delete everything
     -- trigger a shared state publish
 end
 
 function mesh_upgrade.start(upgrade_data)
+    local uci = libuci.cursor()
     if (type(upgrade_data.id) == "number") and
-        string.match(upgrade_data.repo_url, "https?://[%w-_%.%?%.:/%+=&]+") ~= nil
+        string.match(upgrade_data.data.repo_url, "https?://[%w-_%.%?%.:/%+=&]+") ~= nil
         --perform aditional checks
     then
-        uci:set('mesh_upgrade', 'main', 'id', upgrade_data.id)
+        print (uci:set('mesh_upgrade', 'main'))
+        print (uci:set('mesh_upgrade', 'main', "mesh_upgrade"))
+        print (uci:set('mesh_upgrade', 'main', 'id', upgrade_data.id))
         uci:set('mesh_upgrade', 'main', 'repo_url', upgrade_data.data.repo_url)
         uci:set('mesh_upgrade', 'main', 'firmware_ver', upgrade_data.data.firmware_ver)
         uci:set('mesh_upgrade', 'main', 'upgrade_state', 'starting')
@@ -59,6 +66,7 @@ end
 --
 function mesh_upgrade.get_status()
     local upgrade_data = {}
+    upgrade_data.data={}
     upgrade_data.type= "upgrade"
     upgrade_data.id = uci:get('mesh_upgrade', 'main', 'id')
     upgrade_data.data.firmware_ver = uci:get('mesh_upgrade', 'main', 'firmware_ver')
