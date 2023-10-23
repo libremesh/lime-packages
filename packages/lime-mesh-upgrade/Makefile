@@ -12,7 +12,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=selankon <selankon@selankon.xyz>
   SUBMENU:=3. Applications
   TITLE:=LibreMesh mesh wide firmware upgrade
-  DEPENDS:= +lua +libubus-lua +sysupgrade +wget +lime.utils
+  DEPENDS:= +lua +libubus-lua +wget 
   PKGARCH:=all
 endef
 
