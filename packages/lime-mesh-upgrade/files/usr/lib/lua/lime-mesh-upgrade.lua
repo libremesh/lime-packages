@@ -27,12 +27,11 @@ function mesh_upgrade.start(upgrade_data)
         string.match(upgrade_data.data.repo_url, "https?://[%w-_%.%?%.:/%+=&]+") ~= nil
         --perform aditional checks
     then
-        uci:set('mesh-upgrade', 'main'))
-        uci:set('mesh-upgrade', 'main', "mesh_upgrade"))
-        uci:set('mesh-upgrade', 'main', 'id', upgrade_data.id))
+        print (uci:set('mesh-upgrade', 'main', "mesh-upgrade"))
+        print(uci:set('mesh-upgrade', 'main', 'id', upgrade_data.id))
         uci:set('mesh-upgrade', 'main', 'repo_url', upgrade_data.data.repo_url)
         uci:set('mesh-upgrade', 'main', 'firmware_ver', upgrade_data.data.firmware_ver)
-        uci:set('mesh-upgrade', 'main', 'upgrade_state', 'starting')
+        print(uci:set('mesh-upgrade', 'main', 'upgrade_state', 'starting'))
         uci:set('mesh-upgrade', 'main', 'error', 0)
         uci:set('mesh-upgrade', 'main', 'timestamp', upgrade_data.timestamp)
         uci:set('mesh-upgrade', 'main', 'master_node', upgrade_data.master_node)

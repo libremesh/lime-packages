@@ -36,8 +36,6 @@ describe('LiMe mesh upgrade', function()
         print ("test")
         lime_mesh_upgrade.start(upgrade_data)
         utils.printJson(lime_mesh_upgrade.get_status())
-        
-
     end)
 
     it('test config 2', function()
