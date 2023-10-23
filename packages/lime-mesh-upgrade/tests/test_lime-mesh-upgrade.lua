@@ -32,7 +32,7 @@ local upgrade_data =
 describe('LiMe mesh upgrade', function()
     it('test config', function()
         print("pruebaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2")
-        print (uci:set('mesh_upgrade', 'main', "mesh_upgrade"))
+        print (uci:set('mesh-upgrade', 'main', "mesh-upgrade"))
         print ("test")
         lime_mesh_upgrade.start(upgrade_data)
         utils.printJson(lime_mesh_upgrade.get_status())
