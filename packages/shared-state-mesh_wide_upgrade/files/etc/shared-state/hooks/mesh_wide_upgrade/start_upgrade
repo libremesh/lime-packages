@@ -24,8 +24,8 @@ local mesh_upgrade = require "lime.mesh-upgrade"
 --if already involved in an upgrade transaction do nothing
 if not mesh_upgrade.upgrade_in_progress() then
 	for node, s_s_data in pairs(JSON.parse(io.stdin:read("*all"))) do
-		--if any node has started an upgrade process and start one too
-		--fetch the info from the master node publication
+		--if any node has started an upgrade process and start one too?
+		--fetch the info from the master node publication?
 		if s_s_data.data.master_node == node then
 			mesh_upgrade.start(s_s_data.data)
 			utils.unsafe_shell('logger -p daemon.info -t "messwideupgrade" "starting upgrade from"' ..
@@ -37,4 +37,7 @@ if not mesh_upgrade.upgrade_in_progress() then
 		JSON.stringify(s_s_data.data) .. " " .. node)
 		utils.log("hook started ", JSON.stringify(s_s_data.data), node)
 	end
+else
+	utils.unsafe_shell('logger -p daemon.info -t "messwideupgrade" "already started an upgrade process"')
+	utils.log("already started an upgrade process")
 end

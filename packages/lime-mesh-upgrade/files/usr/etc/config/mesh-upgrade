@@ -1,8 +1,11 @@
 config mesh-upgrade 'main'
 	option id '1'
+	option firmware_ver "xxxx"
 	option repo_url 'http://10.13.156.241:8000/web_test/releases/api/' # TODO: provide a saner default
 	option upgrade_state 'downloading'
+	option safe_upgrade_status ''
+	option eup_STATUS ''
 	option error 'CODE'
 	option timestamp '231354654'
-	option transaction_state="started",
+	option transaction_state="aborted",
 	option master_node="primero"
