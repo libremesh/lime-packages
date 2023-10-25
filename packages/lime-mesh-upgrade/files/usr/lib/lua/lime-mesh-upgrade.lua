@@ -1,18 +1,56 @@
+#!/usr/bin/env lua
+
 local libuci = require "uci"
+local eupgrade = require 'eupgrade'
 
 local mesh_upgrade = {}
 
-
-function mesh_upgrade.became_master_node(urls)
-    -- todo
+function mesh_upgrade.set_workdir(workdir)
+    if not utils.file_exists(workdir) then
+        os.execute('mkdir -p ' .. workdir)
+    end
+    if fs.stat(workdir, "type") ~= "dir" then
+        error("Can't configure workdir " .. workdir)
+    end
+    mesh_upgrade.WORKDIR = workdir
+    --mup.DOWNLOAD_INFO_CACHE_FILE = mup.WORKDIR .. '/download_status'
+    mesh_upgrade.FIRMWARE_LATEST_JSON = mup.WORKDIR .. "/firmware_latest_mesh_wide.json"
+    --mup.FIRMWARE_LATEST_JSON_SIGNATURE = mup.FIRMWARE_LATEST_JSON .. '.sig'
 end
 
-function mesh_upgrade.upgrade_in_progress()
+mesh_upgrade.set_workdir("/tmp/mesh_upgrade")
+
+-- This function will download latest librerouter os firmware and expose it as
+-- a local repository in order to be used for other nodes
+function mesh_upgrade.set_up_firmware_repository()
+    -- 1. Check if new version is available and download it demonized using eupgrade
+    local cached_only = false
+    local latest_data = eupgrade.is_new_version_available(cached_only)
+    if latest_data then
+        utils.execute_daemonized("eupgrade-download")
+    else
+        ret = {status = 'error', message = 'New version is not availabe'}
+    end
+
+    -- 2. Create local repository json data
+    --latest_data = json.parse(latest_json)
+    local upgrade_url = eupgrade.get_upgrade_api_url()
+    for _, im in pairs(latest_data['images']) do
+        im['download-urls'] = string.gsub(im['download-urls'], upgrade_url, "test")
+    end
+    -- todo(kon): implement create signature
+    utils.write_file(mesh_upgrade.FIRMWARE_LATEST_JSON, latest_data)
+end
+
+-- Shared state functions
+
+-- Validate if the upgrade is already started
+function mesh_upgrade.mesh_upgrade_is_started()
     local uci = libuci.cursor()
     return uci:get('mesh-upgrade', 'main', 'transaction_state') == 'started'
 end
 
-function mesh_upgrade.abort()
+function mesh_upgrade.mesh_upgrade_abort()
     local uci = libuci.cursor()
     uci:set('mesh-upgrade', 'main', 'transaction_state', 'aborted')
     uci:save('mesh-upgrade')
@@ -21,7 +59,9 @@ function mesh_upgrade.abort()
     -- trigger a shared state publish
 end
 
-function mesh_upgrade.start(upgrade_data)
+-- It set up the information of where to download the new firmware.
+-- Called by a shared state hook
+function mesh_upgrade.set_mesh_upgrade_info(upgrade_data)
     local uci = libuci.cursor()
     if (type(upgrade_data.id) == "number") and
         string.match(upgrade_data.data.repo_url, "https?://[%w-_%.%?%.:/%+=&]+") ~= nil
@@ -62,7 +102,7 @@ end
 --     master_node=""
 -- }
 --
-function mesh_upgrade.get_status()
+function mesh_upgrade.get_mesh_upgrade_status()
     local uci = libuci.cursor()
     local upgrade_data = {}
     upgrade_data.data={}
@@ -79,6 +119,5 @@ function mesh_upgrade.get_status()
     upgrade_data.transaction_state = uci:get('mesh-upgrade', 'main', 'transaction_state')
     return upgrade_data
 end
-
 
 return mesh_upgrade

@@ -9,8 +9,8 @@
 local json = require 'luci.jsonc'
 local mesh_upgrade = require 'lime-mesh-upgrade'
 
-local function became_master_node(msg)
-    local result = mesh_upgrade.became_master_node(msg)
+local function set_up_firmware_repository(msg)
+    local result = mesh_upgrade.set_up_firmware_repository(msg)
     return utils.printJson(result)
 end
 
@@ -23,7 +23,7 @@ if arg[1] == 'list' then utils.printJson(methods) end
 if arg[1] == 'call' then
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
-    if      arg[2] == 'became_master_node' then became_master_node(msg)
+    if      arg[2] == 'set_up_firmware_repository' then set_up_firmware_repository(msg)
     else utils.printJson({ error = "Method not found" })
     end
 end
