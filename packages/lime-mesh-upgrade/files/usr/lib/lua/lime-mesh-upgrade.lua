@@ -1,21 +1,18 @@
 #!/usr/bin/env lua
-
-local libuci = require "uci"
 local eupgrade = require 'eupgrade'
 local config = require "lime.config"
-
-
 
 local mesh_upgrade = {
     --posible tranactin states
     transaction_states = {
         NO_TRANSACTION="no_transaction",
-        STARTED = "started", --ther is a transaction in progress
+        STARTED = "started", --there is a transaction in progress
         ABORTED = "aborted",
         FINISHED = "finished"
     },
     --psible upgrade states enumeration
     upgrade_states = {
+        STARTING="starting",
         DOWNLOADING= "downloading",
         READY_FOR_UPGRADE="ready_for_upgrade",
         UPGRADE_SCHELUDED="upgrade_scheluded",
@@ -73,13 +70,13 @@ end
 
 -- Validate if the upgrade has already started
 function mesh_upgrade.mesh_upgrade_is_started()
-    local uci = libuci.cursor()
+    local uci = config.get_uci_cursor()
     return uci:get('mesh-upgrade', 'main', 'transaction_state') == 'started'
     --todo: what happens if a mesh_upgrade has started more than an hour ago ? should this node abort it ? 
 end
 
 function mesh_upgrade.mesh_upgrade_abort()
-    local uci = libuci.cursor()
+    local uci = config.get_uci_cursor()
     uci:set('mesh-upgrade', 'main', 'transaction_state', mesh_upgrade.transaction_states.ABORTED)
     uci:save('mesh-upgrade')
     uci:commit('mesh-upgrade')
@@ -93,14 +90,14 @@ function mesh_upgrade.set_mesh_upgrade_info(upgrade_data)
     local uci = config.get_uci_cursor()
     if (type(upgrade_data.id) == "number") and
         string.match(upgrade_data.data.repo_url, "https?://[%w-_%.%?%.:/%+=&]+") ~= nil
-    --perform aditional checks
-    then
+        --perform aditional checks 
+        then
         uci:get('mesh-upgrade', 'main','repo_url')
         uci:set('mesh-upgrade', 'main', "mesh-upgrade")
         uci:set('mesh-upgrade', 'main', 'id', upgrade_data.id)
         uci:set('mesh-upgrade', 'main', 'repo_url', upgrade_data.data.repo_url)
         uci:set('mesh-upgrade', 'main', 'firmware_ver', upgrade_data.data.firmware_ver)
-        uci:set('mesh-upgrade', 'main', 'upgrade_state', mesh_upgrade.upgrade_states.starting)
+        uci:set('mesh-upgrade', 'main', 'upgrade_state', mesh_upgrade.upgrade_states.STARTING)
         uci:set('mesh-upgrade', 'main', 'error', 0)
         uci:set('mesh-upgrade', 'main', 'timestamp', upgrade_data.timestamp)
         uci:set('mesh-upgrade', 'main', 'master_node', upgrade_data.master_node)
@@ -110,8 +107,7 @@ function mesh_upgrade.set_mesh_upgrade_info(upgrade_data)
         --wait for the download to be ready to trigger the shared state upgrade.
         --trigger firmware download from master_node url
     else
-        utils.log("upgrade not started input data errors")
-        print("upgrade not started input data errors")
+        config.log("upgrade not started input data errors")
     end
 end
 
@@ -147,6 +143,10 @@ function mesh_upgrade.get_mesh_upgrade_status()
     upgrade_data.timestamp = uci:get('mesh-upgrade', 'main', 'timestamp')
     upgrade_data.master_node = uci:get('mesh-upgrade', 'main', 'master_node')
     upgrade_data.transaction_state = uci:get('mesh-upgrade', 'main', 'transaction_state')
+    if(upgrade_data.transaction_state==nil) then
+        uci:set('mesh-upgrade', 'main', 'transaction_state', mesh_upgrade.transaction_states.NO_TRANSACTION)
+        upgrade_data.transaction_state = uci:get('mesh-upgrade', 'main', 'transaction_state')
+    end
     return upgrade_data
 end
 
