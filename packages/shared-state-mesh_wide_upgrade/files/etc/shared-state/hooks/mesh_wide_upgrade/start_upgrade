@@ -22,15 +22,14 @@ local mesh_upgrade = require "lime.mesh-upgrade"
 
 
 --if already involved in an upgrade transaction do nothing
-if not mesh_upgrade.upgrade_in_progress() then
+if not mesh_upgrade.mesh_upgrade_is_started() then
 	for node, s_s_data in pairs(JSON.parse(io.stdin:read("*all"))) do
 		--if any node has started an upgrade process and start one too?
-		--fetch the info from the master node publication?
+		--only fetch the info from the master node publication?
 		if s_s_data.data.master_node == node then
-			mesh_upgrade.start(s_s_data.data)
-			utils.unsafe_shell('logger -p daemon.info -t "messwideupgrade" "starting upgrade from"' ..
+			mesh_upgrade.set_mesh_upgrade_info(s_s_data.data)
+			utils.unsafe_shell('logger -p daemon.info -t "mesh upgrade" "mesh upgrade detected upgrade from"' ..
 			s_s_data.data.repo_url .. " " .. node)
-			--start the upgrade process referencing the original upgrade publication
 			--start_upgrade(s_s_data.timestamp,s_s_data.id,sate="started",s_s_data.data.master_node)
 		end
 		utils.unsafe_shell('logger -p daemon.info -t "messwideupgrade" "hoock +++++ "' ..

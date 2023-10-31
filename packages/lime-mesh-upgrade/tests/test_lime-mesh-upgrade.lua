@@ -8,7 +8,9 @@ local json = require 'luci.jsonc'
 
 
 -- disable logging in config module
-config.log = function() end
+config.log = function(text)
+    print (text)
+ end
 
 local uci
 
@@ -26,29 +28,36 @@ local upgrade_data =
     timestamp=231354654,
     id=21,
     transaction_state="started/aborted/finished",
-    master_node=""
+    master_node="prmiero"
 }
 
 describe('LiMe mesh upgrade', function()
-    it('test config', function()
-        print("pruebaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2")
-        print (uci:set('mesh-upgrade', 'main', "mesh-upgrade"))
-        print ("test")
-        lime_mesh_upgrade.start(upgrade_data)
-        utils.printJson(lime_mesh_upgrade.get_status())
+    it('test set mesh config', function()
+        local status = lime_mesh_upgrade.get_mesh_upgrade_status()
+        utils.printJson(status)
+        assert.is.equal(status.transaction_state, lime_mesh_upgrade.transaction_states.NO_TRANSACTION)
+        lime_mesh_upgrade.set_mesh_upgrade_info(upgrade_data)
+        status = lime_mesh_upgrade.get_mesh_upgrade_status()
+        utils.printJson(status)
+
+        assert.is.equal(status.master_node, lime_mesh_upgrade.upgrade_states.STARTING)
+        assert.is.equal(status.data.repo_url,upgrade_data.data.repo_url )
+
+        assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.STARTING)
+        assert.is.equal(status.transaction_state, lime_mesh_upgrade.transaction_states.STARTED)
     end)
 
     it('test config 2', function()
-        print("pruebaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbaaaaaaaaaaaaaaa2")
+        config.log("pruebaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbaaaaaaaaaaaaaaa2")
     end)
 
     before_each('', function()
-        print("pruebaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1")
+        config.log("pruebaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1")
         uci = test_utils.setup_test_uci()
     end)
 
     after_each('', function()
-        print("pruebaaaaaaaaaaaaaaaaaaaaaaaaaa3")
+        config.log("pruebaaaaaaaaaaaaaaaaaaaaaaaaaa3")
 
         test_utils.teardown_test_uci(uci)
     end)
