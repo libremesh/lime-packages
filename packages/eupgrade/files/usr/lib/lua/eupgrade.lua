@@ -36,6 +36,10 @@ function eup.get_upgrade_api_url()
     return uci:get('eupgrade', 'main', 'api_url') or ''
 end
 
+function eup.set_upgrade_api_url(url)
+    return uci:set('eupgrade', 'main', 'api_url',url)
+end
+
 function eup._check_signature(file_path, signature_path)
     local cmd = string.format("usign -q -V -P /etc/opkg/keys -x %s -m %s",
                               signature_path, file_path)
