@@ -176,6 +176,12 @@ Prebuilt development images can be downloaded from here:
 
 Install the package `qemu-system-x86_64` if you don't have already installed.
 
+
+> [!WARNING]
+> Since the commit https://github.com/libremesh/lime-packages/commit/64b7c01961c6e7bc776f83523aea9264724b3b23 lime packages breaks the qemu image and the interfaces cannot be setted up!
+> This is due the migration to newer version of OpenWRT.
+> To use latest lime packages use a OpenWRT 23 image .
+
 ### Build a mesh network
 
 Up to 100 qemu nodes can be setup. Use the `--node-id N`. All the node's LAN interfaces are
