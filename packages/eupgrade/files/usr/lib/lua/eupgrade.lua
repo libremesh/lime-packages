@@ -37,7 +37,10 @@ function eup.get_upgrade_api_url()
 end
 
 function eup.set_upgrade_api_url(url)
-    return uci:set('eupgrade', 'main', 'api_url',url)
+    status = uci:set('eupgrade', 'main', 'api_url',url)
+    uci:save('eupgrade')
+    uci:commit('eupgrade')
+    return status
 end
 
 function eup._check_signature(file_path, signature_path)

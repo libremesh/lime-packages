@@ -68,12 +68,21 @@ end
 function mesh_upgrade.start_node_download(url)
     local uci = config.get_uci_cursor()
     eupgrade.set_upgrade_api_url(url)
+    status = uci:set('eupgrade', 'main', 'api_url',url)
+    uci:save('eupgrade')
+    uci:commit('eupgrade')
     local cached_only = false
     --download new firmware if necessary
+    config.log("is_new_version_available ")
+
     local latest_data = eupgrade.is_new_version_available(cached_only)
     if latest_data then
+        config.log("start_node_download ")
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADING)
+        config.log("downloading")
+
         local image = eupgrade.download_firmware(latest_data)
+
         uci:set('mesh-upgrade', 'main', 'eup_STATUS', eupgrade.get_download_status())
         if eupgrade.get_download_status() == eupgrade.STATUS_DOWNLOADED then
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
@@ -137,7 +146,7 @@ end
 -- This line will genereate recursive dependencies like in pirania pakcage
 function mesh_upgrade.trigger_sheredstate_publish()
     utils.execute_daemonized(
-        "/etc/shared-state/publishers/endshared-state-publish_mesh_wide_upgrade && shared-state sync mesh_wide_upgrade")
+        "/etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state sync mesh_wide_upgrade")
 end
 
 --! changes the state of the upgrade and verifies that state transition is possible.
