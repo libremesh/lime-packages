@@ -35,6 +35,8 @@ local mesh_upgrade = {
     },
 }
 
+mesh_upgrade.FIRMWARE_REPO_PATH =  '/lros' -- path url for firmwares
+
 -- Get the base url for the firmware repository in this node
 function mesh_upgrade.get_repo_base_url()
     ipv4, ipv6 = network.primary_address()
@@ -59,12 +61,6 @@ function mesh_upgrade.set_workdir(workdir)
 end
 mesh_upgrade.set_workdir("/tmp/mesh_upgrade")
 
-function mesh_upgrade.set_http_dir(uhttp_folder, http_path)
-    mesh_upgrade.FIRMWARE_REPO_PATH =  http_path -- url path for firmwares
-    mesh_upgrade.FIRMWARE_HTTP_PATH = uhttp_folder .. mesh_upgrade.FIRMWARE_REPO_PATH -- Path to expose the firmware
-    --mesh_upgrade._configure_workdir(mesh_upgrade.FIRMWARE_HTTP_PATH)
-end
-mesh_upgrade.set_http_dir("/www", "/lros/")
 
 function mesh_upgrade.start_eupgrade_download()
     local cached_only = false
@@ -89,6 +85,12 @@ function mesh_upgrade.create_local_latest_json(latest_data)
     utils.write_file(mesh_upgrade.LATEST_JSON_PATH, json.stringify(latest_data))
 end
 
+function mesh_upgrade.share_firmware_packages(dest)
+    local images_folder = eupgrade.WORKDIR
+    mesh_upgrade._configure_workdir(dest)
+    os.execute("ln -s " .. images_folder .. "/* " .. dest )
+end
+
 -- This function will download latest librerouter os firmware and expose it as
 -- a local repository in order to be used for other nodes
 function mesh_upgrade.set_up_firmware_repository()
@@ -99,8 +101,7 @@ function mesh_upgrade.set_up_firmware_repository()
     mesh_upgrade.create_local_latest_json(latest_data)
 
     -- 3. Expose eupgrade folder to uhttp
-    local images_folder = eupgrade.WORKDIR
-    --os.execute("ln -s " .. images_folder .. "/* " .. mesh_upgrade.FIRMWARE_HTTP_PATH )
+    mesh_upgrade.share_firmware_packages('/www' .. mesh_upgrade.FIRMWARE_REPO_PATH)
 
     -- 4. Update the shared state
     -- mesh_upgrade.inform_download_location

@@ -102,6 +102,24 @@ describe('LiMe mesh upgrade', function()
         end
     end)
 
+    it('test that link properly the files downloaded by eupgrade to desired destination', function()
+        -- Create some dummy files
+        local files = {"file1", "file2", "file3"}
+        local dest = "/tmp/www" .. lime_mesh_upgrade.FIRMWARE_REPO_PATH
+        -- Delete previous links if exist
+        os.execute("rm -rf " .. dest)
+        for _, f in pairs(files) do
+            utils.write_file(eupgrade.WORKDIR .. "/" .. f, "dummy")
+        end
+        lime_mesh_upgrade.share_firmware_packages(dest)
+        -- Check if all files exist in the destination folder
+        for _, f in pairs(files) do
+            local file_path = dest .. "/" .. f
+            local file_exists = utils.file_exists(file_path)  -- You may need to implement or use an existing file_exists function
+            assert(file_exists, "File not found: " .. file_path)
+        end
+    end)
+
     before_each('', function()
         snapshot = assert:snapshot()
         uci = test_utils.setup_test_uci()
