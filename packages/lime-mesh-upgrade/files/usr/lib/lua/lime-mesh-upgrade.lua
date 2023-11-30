@@ -1,9 +1,10 @@
 #!/usr/bin/env lua
-
 local eupgrade = require 'eupgrade'
 local config = require "lime.config"
 local utils = require "lime.utils"
 local network = require("lime.network")
+local fs = require("nixio.fs")
+local json = require 'luci.jsonc'
 
 local mesh_upgrade = {
     -- posible tranactin states
@@ -36,12 +37,37 @@ local mesh_upgrade = {
 }
 
 -- shoud epgrade be disabled ?
-eupgrade.set_workdir("/tmp/mesh_upgrade")
+--eupgrade.set_workdir("/tmp/mesh_upgrade")
 
--- This function will download latest librerouter os firmware and expose it as
--- a local repository in order to be used for other nodes
-function mesh_upgrade.set_up_firmware_repository()
-    -- 1. Check if new version is available and download it demonized using eupgrade
+
+mesh_upgrade.FIRMWARE_REPO_PATH =  '/lros' -- path url for firmwares
+
+-- Get the base url for the firmware repository in this node
+function mesh_upgrade.get_repo_base_url()
+    ipv4, ipv6 = network.primary_address()
+    return "http://" .. ipv4 .. mesh_upgrade.FIRMWARE_REPO_PATH
+end
+
+-- Create a work directory if nor exist
+function mesh_upgrade._configure_workdir(workdir)
+    if not utils.file_exists(workdir) then
+        os.execute('mkdir -p ' .. workdir)
+    end
+    if fs.stat(workdir, "type") ~= "dir" then
+        error("Can't configure workdir " .. workdir)
+    end
+end
+
+function mesh_upgrade.set_workdir(workdir)
+    mesh_upgrade._configure_workdir(workdir)
+    mesh_upgrade.WORKDIR = workdir
+    mesh_upgrade.LATEST_JSON_FILE_NAME = "firmware_latest_mesh_wide.json" -- latest json with local lan url file name
+    mesh_upgrade.LATEST_JSON_PATH = mesh_upgrade.WORKDIR .. mesh_upgrade.LATEST_JSON_FILE_NAME -- latest json full path
+end
+mesh_upgrade.set_workdir("/tmp/mesh_upgrade")
+
+
+function mesh_upgrade.start_eupgrade_download()
     local cached_only = false
     local latest_data = eupgrade.is_new_version_available(cached_only)
     if latest_data then
@@ -52,15 +78,38 @@ function mesh_upgrade.set_up_firmware_repository()
             message = 'New version is not availabe'
         }
     end
+    return latest_data
+end
+
+function mesh_upgrade.create_local_latest_json(latest_data)
+    for _, im in pairs(latest_data['images']) do
+        --im['download-urls'] = string.gsub(im['download-urls'], upgrade_url, "test")
+        im['download-urls'] = {mesh_upgrade.get_repo_base_url() .. im['name']}
+    end
+    -- todo(kon): implement create SHA signature
+    utils.write_file(mesh_upgrade.LATEST_JSON_PATH, json.stringify(latest_data))
+end
+
+function mesh_upgrade.share_firmware_packages(dest)
+    local images_folder = eupgrade.WORKDIR
+    mesh_upgrade._configure_workdir(dest)
+    os.execute("ln -s " .. images_folder .. "/* " .. dest )
+end
+
+-- This function will download latest librerouter os firmware and expose it as
+-- a local repository in order to be used for other nodes
+function mesh_upgrade.set_up_firmware_repository()
+    -- 1. Check if new version is available and download it demonized using eupgrade
+    local latest_data = mesh_upgrade.start_eupgrade_download()
 
     -- 2. Create local repository json data
-    -- latest_data = json.parse(latest_json)
-    local upgrade_url = eupgrade.get_upgrade_api_url()
-    for _, im in pairs(latest_data['images']) do
-        im['download-urls'] = string.gsub(im['download-urls'], upgrade_url, "test")
-    end
-    -- todo(kon): implement create signature
-    utils.write_file(mesh_upgrade.FIRMWARE_LATEST_JSON, latest_data)
+    mesh_upgrade.create_local_latest_json(latest_data)
+
+    -- 3. Expose eupgrade folder to uhttp
+    mesh_upgrade.share_firmware_packages('/www' .. mesh_upgrade.FIRMWARE_REPO_PATH)
+
+    -- 4. Update the shared state
+    -- mesh_upgrade.inform_download_location
 end
 
 -- Shared state functions --
@@ -69,7 +118,7 @@ end
 -- function to be called by nodes to start download from master.
 function mesh_upgrade.start_node_download(url)
     local uci = config.get_uci_cursor()
-    eupgrade.set_upgrade_api_url(url)
+    eupgrade.set_custom_api_url(url)
     local cached_only = false
     --download new firmware if necessary
     config.log("is_new_version_available " .. url)
@@ -112,14 +161,12 @@ end
 
 function mesh_upgrade.inform_download_location(version)
     if eupgrade.get_download_status() == eupgrade.STATUS_DOWNLOADED then
-        -- TODO: setup uhttpd to serve workdir location
-        ipv4, ipv6 = network.primary_address()
+        --TODO: setup uhttpd to serve workdir location
         mesh_upgrade.set_mesh_upgrade_info({
             type = "upgrade",
             data = {
                 firmware_ver = version,
-                repo_url = "http://" .. ipv4 .. mesh_upgrade.MASTERNODE_ENDPOINT,
-                repo_url_v6 = "http://[" .. ipv6 .. "]".. mesh_upgrade.MASTERNODE_ENDPOINT,
+                repo_url = mesh_upgrade.get_repo_base_url(),
                 upgrde_state = mesh_upgrade.upgrade_states.READY_FOR_UPGRADE,
                 error = 0,
                 safe_upgrade_status = "",
