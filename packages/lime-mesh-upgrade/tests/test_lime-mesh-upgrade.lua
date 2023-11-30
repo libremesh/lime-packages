@@ -202,7 +202,6 @@ describe('LiMe mesh upgrade', function()
 
             return true
         end)
-        -- assert.is.equal('LibreRouterOs 1.5 r0+11434-e93615c947', eupgrade.is_new_version_available()['version'])
         lime_mesh_upgrade.set_mesh_upgrade_info(upgrade_data, lime_mesh_upgrade.upgrade_states.STARTING)
         status = lime_mesh_upgrade.get_mesh_upgrade_status()
         utils.printJson(status)

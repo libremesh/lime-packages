@@ -117,6 +117,7 @@ end
 
 -- function to be called by nodes to start download from master.
 function mesh_upgrade.start_node_download(url)
+    eupgrade.set_workdir("/tmp/mesh_upgrade")
     local uci = config.get_uci_cursor()
     eupgrade.set_custom_api_url(url)
     local cached_only = false
@@ -134,13 +135,11 @@ function mesh_upgrade.start_node_download(url)
         config.log("start_node_download ")
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADING)
         config.log("downloading")
-
-        local image = eupgrade.download_firmware(latest_data)
-
         local image = {}
         image, mesh_upgrade.fw_path = eupgrade.download_firmware(latest_data)
         uci:set('mesh-upgrade', 'main', 'eup_STATUS', eupgrade.get_download_status())
-        if eupgrade.get_download_status() == eupgrade.STATUS_DOWNLOADED then
+        if eupgrade.get_download_status() == eupgrade.STATUS_DOWNLOADED and image ~= nil then
+            utils.printJson(image)
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
         else
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR)
