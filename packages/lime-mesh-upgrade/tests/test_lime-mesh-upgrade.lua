@@ -213,6 +213,13 @@ describe('LiMe mesh upgrade', function()
         assert.is.equal(status.transaction_state, lime_mesh_upgrade.transaction_states.STARTED)
     end)
 
+    it('test custom latest json file is created', function()
+        stub(network, 'primary_address', function () return '10.13.0.1', 'ipv6' end)
+        lime_mesh_upgrade.create_local_latest_json(json.parse(latest_release_data))
+        local filexists = utils.file_exists(lime_mesh_upgrade.LATEST_JSON_PATH)
+        assert(filexists, "File not found: " .. lime_mesh_upgrade.LATEST_JSON_PATH)
+    end)
+
     it('test set_up_firmware_repository download the files correctly and fix the url on json', function()
         stub(network, 'primary_address', function () return '10.13.0.1', 'ipv6' end)
         lime_mesh_upgrade.create_local_latest_json(json.parse(latest_release_data))
@@ -238,7 +245,7 @@ describe('LiMe mesh upgrade', function()
         -- Check if all files exist in the destination folder
         for _, f in pairs(files) do
             local file_path = dest .. "/" .. f
-            local file_exists = utils.file_exists(file_path)  -- You may need to implement or use an existing file_exists function
+            local file_exists = utils.file_exists(file_path)
             assert(file_exists, "File not found: " .. file_path)
         end
     end)
