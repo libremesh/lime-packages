@@ -81,8 +81,8 @@ function mesh_upgrade.create_local_latest_json(latest_data)
         --im['download-urls'] = string.gsub(im['download-urls'], upgrade_url, "test")
         im['download-urls'] = {mesh_upgrade.get_repo_base_url() .. im['name']}
     end
-    -- todo(kon): implement create SHA signature
     utils.write_file(mesh_upgrade.LATEST_JSON_PATH, json.stringify(latest_data))
+    -- For the moment mesh upgrade will ignore the latest json signature on de master nodes
 end
 
 function mesh_upgrade.share_firmware_packages(dest)
