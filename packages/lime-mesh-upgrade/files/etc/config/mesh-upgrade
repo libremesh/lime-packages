@@ -1,0 +1,13 @@
+config mesh-upgrade 'main'
+	option id ''
+	option firmware_ver ''
+	option repo_url ''
+	option upgrade_state ''
+	option safe_upgrade_status ''
+	option eup_STATUS ''
+	option error '0'
+	option timestamp '0'
+	option transaction_state 'no_transaction'
+	option master_node ''
+	#option notset ""
+	

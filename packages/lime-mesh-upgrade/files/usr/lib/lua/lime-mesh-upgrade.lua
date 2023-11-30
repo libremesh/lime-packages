@@ -1,7 +1,6 @@
 #!/usr/bin/env lua
 
 local eupgrade = require 'eupgrade'
-local upgrade = require 'upgrade'
 local config = require "lime.config"
 local utils = require "lime.utils"
 local network = require("lime.network")
@@ -71,14 +70,17 @@ end
 function mesh_upgrade.start_node_download(url)
     local uci = config.get_uci_cursor()
     eupgrade.set_upgrade_api_url(url)
-    status = uci:set('eupgrade', 'main', 'api_url',url)
-    uci:save('eupgrade')
-    uci:commit('eupgrade')
     local cached_only = false
     --download new firmware if necessary
-    config.log("is_new_version_available ")
+    config.log("is_new_version_available " .. url)
+    local url2 = eupgrade.get_upgrade_api_url()
+    config.log("is_new_version_available " .. url2)
 
-    local latest_data = eupgrade.is_new_version_available(cached_only)
+    local latest_data, message = eupgrade.is_new_version_available(cached_only)
+    utils.printJson(latest_data)
+    print(message)
+    config.log("start_node_download from  ")
+
     if latest_data then
         config.log("start_node_download ")
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADING)
@@ -96,6 +98,8 @@ function mesh_upgrade.start_node_download(url)
             -- todo: how to handle this error
         end
     else
+        config.log("Error ... no latest data available")
+
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR)
     end
     mesh_upgrade.trigger_sheredstate_publish()
@@ -175,7 +179,7 @@ function mesh_upgrade.change_state(newstate, errortype)
     uci:set('mesh-upgrade', 'main', 'upgrade_state', newstate)
     uci:save('mesh-upgrade')
     uci:commit('mesh-upgrade')
-    return false
+    return true
 end
 
 -- set download information for the new firmware from master node
@@ -253,7 +257,7 @@ end
 
 function mesh_upgrade.start_safe_upgrade()
     if mesh_upgrade.change_state( mesh_upgrade.upgrade_states.UPGRADE_SCHELUDED) and utils.file_exists(mesh_upgrade.fw_path) then
-        upgrade.firmware_upgrade()
+        --perform safe upgrade
     else
         utils.log ("not able to start upgrade invalid state or firmware not found")
         mesh_upgrade.change_state( mesh_upgrade.upgrade_states.ERROR)

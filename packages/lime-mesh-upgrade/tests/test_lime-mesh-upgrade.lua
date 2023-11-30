@@ -2,33 +2,31 @@ local config = require 'lime.config'
 local utils = require 'lime.utils'
 local test_utils = require 'tests.utils'
 local lime_mesh_upgrade = require 'lime-mesh-upgrade'
-eupgrade = require 'eupgrade'
+local eupgrade = require 'eupgrade'
 
 utils.enable_logging()
 
-
 -- disable logging in config module
 config.log = function(text)
-    print (text)
- end
+    print(text)
+end
 
 local uci
 
-local upgrade_data =
-{
-    type= "upgrade",
-    data={
-      firmware_ver="xxxx",
-      repo_url="http://repo.librerouter.org/lros/api/v1/latest/",
-      upgrde_state="starting,downloading|ready_for_upgrade|upgrade_scheluded|confirmation_pending|~~confirmed~~|updated|error",
-      error="CODE",
-      safe_upgrade_status="",
-      eup_STATUS="",
+local upgrade_data = {
+    type = "upgrade",
+    data = {
+        firmware_ver = "xxxx",
+        repo_url = "http://repo.librerouter.org/lros/api/v1/latest/",
+        upgrde_state = "starting,downloading|ready_for_upgrade|upgrade_scheluded|confirmation_pending|~~confirmed~~|updated|error",
+        error = "CODE",
+        safe_upgrade_status = "",
+        eup_STATUS = ""
     },
-    timestamp=231354654,
-    id=21,
-    transaction_state="started/aborted/finished",
-    master_node="prmiero"
+    timestamp = 231354654,
+    id = 21,
+    transaction_state = "started/aborted/finished",
+    master_node = "prmiero"
 }
 
 local latest_release_data_sample = [[
@@ -89,79 +87,108 @@ describe('LiMe mesh upgrade', function()
         local status = lime_mesh_upgrade.get_mesh_upgrade_status()
         utils.printJson(status)
         assert.is.equal(status.transaction_state, lime_mesh_upgrade.transaction_states.NO_TRANSACTION)
-        assert.is.equal(lime_mesh_upgrade.started(),false)
+        assert.is.equal(lime_mesh_upgrade.started(), false)
     end)
 
     it('test set mesh config and get status', function()
-        stub(eupgrade, '_get_board_name', function () return 'test-board' end)
-        stub(eupgrade, '_get_current_fw_version', function () return 'LibreMesh 19.05' end)
-        stub(eupgrade, '_check_signature', function () return true end)
-        stub(utils, 'http_client_get', function () return latest_release_data_sample end)
-        stub(eupgrade, '_file_sha256', function () return 'fbd95fc091ea10cfa05cfb0ef870da43124ac7c1402890eb8f03b440c57d7b5' end)
+        stub(eupgrade, '_get_board_name', function()
+            return 'test-board'
+        end)
+        stub(eupgrade, '_get_current_fw_version', function()
+            return 'LibreMesh 19.05'
+        end)
+        stub(eupgrade, '_check_signature', function()
+            return true
+        end)
+        stub(utils, 'http_client_get', function()
+            return latest_release_data_sample
+        end)
+        stub(eupgrade, '_file_sha256', function()
+            return 'fbd95fc091ea10cfa05cfb0ef870da43124ac7c1402890eb8f03b440c57d7b5'
+        end)
 
         assert.is.equal('LibreMesh 20.10', eupgrade.is_new_version_available()['version'])
-        lime_mesh_upgrade.set_mesh_upgrade_info(upgrade_data,lime_mesh_upgrade.upgrade_states.STARTING)
+        lime_mesh_upgrade.set_mesh_upgrade_info(upgrade_data, lime_mesh_upgrade.upgrade_states.STARTING)
         status = lime_mesh_upgrade.get_mesh_upgrade_status()
         utils.printJson(status)
         assert.is.equal(status.master_node, upgrade_data.master_node)
-        assert.is.equal(status.data.repo_url,upgrade_data.data.repo_url )
+        assert.is.equal(status.data.repo_url, upgrade_data.data.repo_url)
         assert.is.equal(status.data.upgrade_state, lime_mesh_upgrade.upgrade_states.ERROR)
         assert.is.equal(status.data.eup_STATUS, eupgrade.STATUS_DOWNLOAD_FAILED)
         assert.is.equal(status.transaction_state, lime_mesh_upgrade.transaction_states.STARTED)
         -- assert.is.equal(status.transaction_state, lime_mesh_upgrade.transaction_states.ABORTED)
-        --TODO: javi en caso de falla ... reintentar ? abortar ? 
+        -- TODO: javi en caso de falla ... reintentar ? abortar ? 
     end)
     it('test set mesh config start download and assert status ready_for_upgrade', function()
-        stub(eupgrade, '_get_board_name', function () return 'test-board' end)
-        stub(eupgrade, '_get_current_fw_version', function () return 'LibreMesh 19.05' end)
-        stub(eupgrade, '_check_signature', function () return true end)
-        stub(utils, 'http_client_get', function () return latest_release_data_sample end)
-        stub(eupgrade, '_file_sha256', function () return 'fbd95fce091ea10cfa05cfb0ef870da43124ac7c1402890eb8f03b440c57d7b5' end)
+        stub(eupgrade, '_get_board_name', function()
+            return 'test-board'
+        end)
+        stub(eupgrade, '_get_current_fw_version', function()
+            return 'LibreMesh 19.05'
+        end)
+        stub(eupgrade, '_check_signature', function()
+            return true
+        end)
+        stub(utils, 'http_client_get', function()
+            return latest_release_data_sample
+        end)
+        stub(eupgrade, '_file_sha256', function()
+            return 'fbd95fce091ea10cfa05cfb0ef870da43124ac7c1402890eb8f03b440c57d7b5'
+        end)
 
         assert.is.equal('LibreMesh 20.10', eupgrade.is_new_version_available()['version'])
-        lime_mesh_upgrade.set_mesh_upgrade_info(upgrade_data,lime_mesh_upgrade.upgrade_states.STARTING)
+        lime_mesh_upgrade.set_mesh_upgrade_info(upgrade_data, lime_mesh_upgrade.upgrade_states.STARTING)
         status = lime_mesh_upgrade.get_mesh_upgrade_status()
         utils.printJson(status)
         assert.is.equal(status.master_node, upgrade_data.master_node)
-        assert.is.equal(status.data.repo_url,upgrade_data.data.repo_url )
+        assert.is.equal(status.data.repo_url, upgrade_data.data.repo_url)
         assert.is.equal(status.data.upgrade_state, lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
         assert.is.equal(status.data.eup_STATUS, eupgrade.STATUS_DOWNLOADED)
         assert.is.equal(status.transaction_state, lime_mesh_upgrade.transaction_states.STARTED)
     end)
 
     it('test set mesh config start download and assert status ready_for_upgrade', function()
-        stub(eupgrade, '_get_board_name', function () return 'librerouter-v1' end)
-        stub(eupgrade, '_get_current_fw_version', function () return 'LibreMesh 19.05' end)
-        stub(eupgrade, '_check_signature', function () return true end)
-        stub(eupgrade, '_file_sha256', function () return 'cec8920f93055cc57cfde1f87968e33ca5215b2df88611684195077402079acb' end)
-        --todo: javi este netodo no seria necesario que sea stub porque deberia tomar la url del set upgrade api pero no toma el config uci
-        stub(eupgrade, 'get_upgrade_api_url', function () return 'http://repo.librerouter.org/lros/api/v1/' end)
-        stub(utils, 'http_client_get',
-        function (url,to,file)
-             config.log("http_client_get "..url .. "  "..to.. (args or ""))
-             if url == "http://repo.librerouter.org/lros/releases/1.5/targets/ath79/generic/upgrade-lr-1.5.sh" then
-                 return true
-             end
-             if url == "http://repo.librerouter.org/lros/api/v1/latest/librerouter-v1.json.sig" then
+        stub(eupgrade, '_get_board_name', function()
+            return 'librerouter-v1'
+        end)
+        stub(eupgrade, '_get_current_fw_version', function()
+            return 'LibreMesh 19.05'
+        end)
+        stub(eupgrade, '_check_signature', function()
+            return true
+        end)
+        stub(eupgrade, '_file_sha256', function()
+            return 'cec8920f93055cc57cfde1f87968e33ca5215b2df88611684195077402079acb'
+        end)
+        -- todo: javi este netodo no seria necesario que sea stub porque deberia tomar la url del set upgrade api pero no toma el config uci
+        stub(eupgrade, 'get_upgrade_api_url', function()
+            return 'http://repo.librerouter.org/lros/api/v1/'
+        end)
+        stub(utils, 'http_client_get', function(url, to, file)
+            config.log("http_client_get " .. url .. "  " .. to .. (args or ""))
+            if url == "http://repo.librerouter.org/lros/releases/1.5/targets/ath79/generic/upgrade-lr-1.5.sh" then
+                return true
+            end
+            if url == "http://repo.librerouter.org/lros/api/v1/latest/librerouter-v1.json.sig" then
+                return latest_release_data_real_sig
+            end
+            if url == "http://repo.librerouter.org/lros/api/v1/latest/librerouter-v1.json" then
                 return latest_release_data_real
             end
-              if url == "http://repo.librerouter.org/lros/api/v1/latest/librerouter-v1.json" then
-                 return latest_release_data_real_sig
-             end
-             config.log("http_client_get "..url .. "  "..to.. (args or ""))
-             config.log("http_client_get "..url .. "  "..to.. (args or ""))
-             config.log("http_client_get "..url .. "  "..to.. (args or ""))
-             config.log("http_client_get "..url .. "  "..to.. (args or ""))
-             config.log("http_client_get "..url .. "  "..to.. (args or ""))
+            config.log("http_client_get " .. url .. "  " .. to .. (args or ""))
+            config.log("http_client_get " .. url .. "  " .. to .. (args or ""))
+            config.log("http_client_get " .. url .. "  " .. to .. (args or ""))
+            config.log("http_client_get " .. url .. "  " .. to .. (args or ""))
+            config.log("http_client_get " .. url .. "  " .. to .. (args or ""))
 
-             return true
+            return true
         end)
-        --assert.is.equal('LibreRouterOs 1.5 r0+11434-e93615c947', eupgrade.is_new_version_available()['version'])
-        lime_mesh_upgrade.set_mesh_upgrade_info(upgrade_data,lime_mesh_upgrade.upgrade_states.STARTING)
+        -- assert.is.equal('LibreRouterOs 1.5 r0+11434-e93615c947', eupgrade.is_new_version_available()['version'])
+        lime_mesh_upgrade.set_mesh_upgrade_info(upgrade_data, lime_mesh_upgrade.upgrade_states.STARTING)
         status = lime_mesh_upgrade.get_mesh_upgrade_status()
         utils.printJson(status)
         assert.is.equal(status.master_node, upgrade_data.master_node)
-        assert.is.equal(status.data.repo_url,upgrade_data.data.repo_url )
+        assert.is.equal(status.data.repo_url, upgrade_data.data.repo_url)
         assert.is.equal(status.data.upgrade_state, lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
         assert.is.equal(status.data.eup_STATUS, eupgrade.STATUS_DOWNLOADED)
         assert.is.equal(status.transaction_state, lime_mesh_upgrade.transaction_states.STARTED)
