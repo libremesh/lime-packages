@@ -14,8 +14,14 @@ local function set_up_firmware_repository(msg)
     return utils.printJson(result)
 end
 
+local function become_master_node(msg)
+    local result = mesh_upgrade.become_master_node(msg)
+    return utils.printJson(result)
+end
+
 local methods = {
-    became_master_node = {},
+    set_up_firmware_repository = {},
+    become_master_node = {},
 }
 
 if arg[1] == 'list' then utils.printJson(methods) end
@@ -24,6 +30,7 @@ if arg[1] == 'call' then
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
     if      arg[2] == 'set_up_firmware_repository' then set_up_firmware_repository(msg)
+    elseif  arg[2] == 'become_master_node' then become_master_node(msg)
     else utils.printJson({ error = "Method not found" })
     end
 end

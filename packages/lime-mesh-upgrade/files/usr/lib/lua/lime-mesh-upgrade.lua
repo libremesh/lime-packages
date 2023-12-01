@@ -109,6 +109,38 @@ function mesh_upgrade.set_up_firmware_repository()
     mesh_upgrade.share_firmware_packages()
 end
 
+-- Function that check if tihs node have all things needed to became a master node
+-- Then, call update shared state with the proper info
+function mesh_upgrade.become_master_node()
+    -- todo(kon): check if master node is already set or we are on mesh_upgrade status
+    local download_status = eupgrade.get_download_status()
+    -- Check if there are a new version available (cached only)
+    local latest = eup.is_new_version_available(true)
+    if not latest then
+        return { code = "NO_NEW_VERSION", error = "No new version is available"}
+    end
+    -- Check download is completed
+    if download_status == eupgrade.STATUS_DEFAULT then
+        return { code = download_status,  error = "Firmware download not started" }
+    elseif download_status == eup.STATUS_DOWNLOADING then
+        return { code = download_status, error = "Firmware is downloading"}
+    elseif download_status == eup.STATUS_DOWNLOAD_FAILED then
+        return { code = download_status, error = "Firmware download failed"}
+    end
+    -- Check if local json file exists
+    if not utils.file_exists(mesh_upgrade.LATEST_JSON_PATH) then
+        return { code = "NO_LOCAL_JSON", error = "Local json file not found"}
+    end
+    -- Check firmware packages are shared properly
+    -- we could check if the shared folder is empty or not and what files are present. Not needed imho
+    if not utils.file_exists(mesh_upgrade.FIRMWARE_SHARED_FOLDER) then
+        return { code = "NO_SHARED_FOLDER", error = "Shared folder not found"}
+    end
+    -- If we get here is supposed that everything is ready to be a master node
+    mesh_upgrade.inform_download_location(latest['version'])
+    return { code = "SUCCESS"}
+end
+
 -- Shared state functions --
 ----------------------------
 
@@ -154,7 +186,6 @@ end
 -- also will force shared state data refresh
 -- curl -6 'http://[fe80::a8aa:aaff:fe0d:feaa%lime_br0]/fw/resolv.conf'
 -- curl -6 'http://[fd0d:fe46:8ce8::1]/lros/api/v1/'
-
 function mesh_upgrade.inform_download_location(version)
     if eupgrade.get_download_status() == eupgrade.STATUS_DOWNLOADED then
         --TODO: setup uhttpd to serve workdir location
