@@ -41,8 +41,8 @@ local mesh_upgrade = {
 
 -- Get the base url for the firmware repository in this node
 function mesh_upgrade.get_repo_base_url()
-    ipv4, ipv6 = network.primary_address()
-    return "http://" .. ipv4 .. mesh_upgrade.FIRMWARE_REPO_PATH
+    local ipv4, ipv6 = network.primary_address()
+    return "http://" .. ipv4:host():string() .. mesh_upgrade.FIRMWARE_REPO_PATH
 end
 
 -- Create a work directory if nor exist
@@ -60,7 +60,7 @@ function mesh_upgrade.set_workdir(workdir)
     mesh_upgrade.WORKDIR = workdir
     mesh_upgrade.LATEST_JSON_FILE_NAME = "firmware_latest_mesh_wide.json" -- latest json with local lan url file name
     mesh_upgrade.LATEST_JSON_PATH = mesh_upgrade.WORKDIR .. "/" .. mesh_upgrade.LATEST_JSON_FILE_NAME -- latest json full path
-    mesh_upgrade.FIRMWARE_REPO_PATH =  'lros' -- path url for firmwares
+    mesh_upgrade.FIRMWARE_REPO_PATH =  '/lros/' -- path url for firmwares
     mesh_upgrade.FIRMWARE_SHARED_FOLDER = '/www/' .. mesh_upgrade.FIRMWARE_REPO_PATH
 end
 mesh_upgrade.set_workdir("/tmp/mesh_upgrade")
@@ -90,6 +90,9 @@ function mesh_upgrade.create_local_latest_json(latest_data)
 end
 
 function mesh_upgrade.share_firmware_packages(dest)
+    if dest == nil then 
+        dest = "/www" .. mesh_upgrade.FIRMWARE_REPO_PATH
+    end
     local images_folder = eupgrade.WORKDIR
     mesh_upgrade._configure_workdir(dest)
     os.execute("ln -s " .. images_folder .. "/* " .. dest )
@@ -136,6 +139,8 @@ function mesh_upgrade.become_master_node()
     if not utils.file_exists(mesh_upgrade.FIRMWARE_SHARED_FOLDER) then
         return { code = "NO_SHARED_FOLDER", error = "Shared folder not found"}
     end
+    --reshare downloaded files
+    mesh_upgrade.share_firmware_packages()
     -- If we get here is supposed that everything is ready to be a master node
     mesh_upgrade.inform_download_location(latest['version'])
     return { code = "SUCCESS"}
