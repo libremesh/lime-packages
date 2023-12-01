@@ -115,16 +115,16 @@ function mesh_upgrade.become_master_node()
     -- todo(kon): check if master node is already set or we are on mesh_upgrade status
     local download_status = eupgrade.get_download_status()
     -- Check if there are a new version available (cached only)
-    local latest = eup.is_new_version_available(true)
+    local latest = eupgrade.is_new_version_available(true)
     if not latest then
         return { code = "NO_NEW_VERSION", error = "No new version is available"}
     end
     -- Check download is completed
     if download_status == eupgrade.STATUS_DEFAULT then
         return { code = download_status,  error = "Firmware download not started" }
-    elseif download_status == eup.STATUS_DOWNLOADING then
+    elseif download_status == eupgrade.STATUS_DOWNLOADING then
         return { code = download_status, error = "Firmware is downloading"}
-    elseif download_status == eup.STATUS_DOWNLOAD_FAILED then
+    elseif download_status == eupgrade.STATUS_DOWNLOAD_FAILED then
         return { code = download_status, error = "Firmware download failed"}
     end
     -- Check if local json file exists
