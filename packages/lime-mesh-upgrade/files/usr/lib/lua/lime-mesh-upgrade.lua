@@ -39,9 +39,6 @@ local mesh_upgrade = {
 -- shoud epgrade be disabled ?
 --eupgrade.set_workdir("/tmp/mesh_upgrade")
 
-
-mesh_upgrade.FIRMWARE_REPO_PATH =  '/lros' -- path url for firmwares
-
 -- Get the base url for the firmware repository in this node
 function mesh_upgrade.get_repo_base_url()
     ipv4, ipv6 = network.primary_address()
@@ -62,7 +59,9 @@ function mesh_upgrade.set_workdir(workdir)
     mesh_upgrade._configure_workdir(workdir)
     mesh_upgrade.WORKDIR = workdir
     mesh_upgrade.LATEST_JSON_FILE_NAME = "firmware_latest_mesh_wide.json" -- latest json with local lan url file name
-    mesh_upgrade.LATEST_JSON_PATH = mesh_upgrade.WORKDIR .. mesh_upgrade.LATEST_JSON_FILE_NAME -- latest json full path
+    mesh_upgrade.LATEST_JSON_PATH = mesh_upgrade.WORKDIR .. "/" .. mesh_upgrade.LATEST_JSON_FILE_NAME -- latest json full path
+    mesh_upgrade.FIRMWARE_REPO_PATH =  'lros' -- path url for firmwares
+    mesh_upgrade.FIRMWARE_SHARED_FOLDER = '/www/' .. mesh_upgrade.FIRMWARE_REPO_PATH
 end
 mesh_upgrade.set_workdir("/tmp/mesh_upgrade")
 
@@ -94,6 +93,7 @@ function mesh_upgrade.share_firmware_packages(dest)
     local images_folder = eupgrade.WORKDIR
     mesh_upgrade._configure_workdir(dest)
     os.execute("ln -s " .. images_folder .. "/* " .. dest )
+    os.execute("ln -s " .. mesh_upgrade.LATEST_JSON_PATH .. " " .. dest )
 end
 
 -- This function will download latest librerouter os firmware and expose it as
@@ -106,10 +106,7 @@ function mesh_upgrade.set_up_firmware_repository()
     mesh_upgrade.create_local_latest_json(latest_data)
 
     -- 3. Expose eupgrade folder to uhttp
-    mesh_upgrade.share_firmware_packages('/www' .. mesh_upgrade.FIRMWARE_REPO_PATH)
-
-    -- 4. Update the shared state
-    -- mesh_upgrade.inform_download_location
+    mesh_upgrade.share_firmware_packages()
 end
 
 -- Shared state functions --

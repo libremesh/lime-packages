@@ -240,6 +240,9 @@ describe('LiMe mesh upgrade', function()
         for _, f in pairs(files) do
             utils.write_file(eupgrade.WORKDIR .. "/" .. f, "dummy")
         end
+        -- Create latest json file also
+        utils.write_file(lime_mesh_upgrade.LATEST_JSON_PATH, "dummy")
+        -- Create the links
         lime_mesh_upgrade.share_firmware_packages(dest)
         -- Check if all files exist in the destination folder
         for _, f in pairs(files) do
@@ -247,6 +250,10 @@ describe('LiMe mesh upgrade', function()
             local file_exists = utils.file_exists(file_path)
             assert(file_exists, "File not found: " .. file_path)
         end
+        -- Check that the local json file is also there
+        local json_link = dest .. "/" .. lime_mesh_upgrade.LATEST_JSON_FILE_NAME
+        local file_exists = utils.file_exists(json_link)
+        assert(file_exists, "File not found: " .. json_link)
     end)
 
     before_each('', function()
