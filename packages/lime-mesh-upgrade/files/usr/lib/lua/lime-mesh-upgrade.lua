@@ -1,4 +1,5 @@
 #!/usr/bin/env lua
+
 local eupgrade = require 'eupgrade'
 local config = require "lime.config"
 local utils = require "lime.utils"
@@ -46,7 +47,7 @@ function mesh_upgrade.get_repo_base_url()
 end
 
 -- Create a work directory if nor exist
-function mesh_upgrade._configure_workdir(workdir)
+function mesh_upgrade._create_workdir(workdir)
     if not utils.file_exists(workdir) then
         os.execute('mkdir -p ' .. workdir)
     end
@@ -56,11 +57,11 @@ function mesh_upgrade._configure_workdir(workdir)
 end
 
 function mesh_upgrade.set_workdir(workdir)
-    mesh_upgrade._configure_workdir(workdir)
+    mesh_upgrade._create_workdir(workdir)
     mesh_upgrade.WORKDIR = workdir
-    mesh_upgrade.LATEST_JSON_FILE_NAME = "firmware_latest_mesh_wide.json" -- latest json with local lan url file name
+    mesh_upgrade.LATEST_JSON_FILE_NAME = eupgrade._get_board_name()..".json" -- latest json with local lan url file name
     mesh_upgrade.LATEST_JSON_PATH = mesh_upgrade.WORKDIR .. "/" .. mesh_upgrade.LATEST_JSON_FILE_NAME -- latest json full path
-    mesh_upgrade.FIRMWARE_REPO_PATH =  '/lros/' -- path url for firmwares
+    mesh_upgrade.FIRMWARE_REPO_PATH = '/lros/' -- path url for firmwares
     mesh_upgrade.FIRMWARE_SHARED_FOLDER = '/www/' .. mesh_upgrade.FIRMWARE_REPO_PATH
 end
 mesh_upgrade.set_workdir("/tmp/mesh_upgrade")
@@ -94,9 +95,11 @@ function mesh_upgrade.share_firmware_packages(dest)
         dest = "/www" .. mesh_upgrade.FIRMWARE_REPO_PATH
     end
     local images_folder = eupgrade.WORKDIR
-    mesh_upgrade._configure_workdir(dest)
-    os.execute("ln -s " .. images_folder .. "/* " .. dest )
-    os.execute("ln -s " .. mesh_upgrade.LATEST_JSON_PATH .. " " .. dest )
+    mesh_upgrade._create_workdir(dest)
+    --json file has to be placed in a url that ends with latest 
+    mesh_upgrade._create_workdir(dest.."/latest")
+    os.execute("ln -s " .. images_folder .. "/* " .. dest)
+    os.execute("ln -s " .. mesh_upgrade.LATEST_JSON_PATH .. " " .. dest.. "/latest")
 end
 
 -- This function will download latest librerouter os firmware and expose it as
@@ -104,12 +107,16 @@ end
 function mesh_upgrade.set_up_firmware_repository()
     -- 1. Check if new version is available and download it demonized using eupgrade
     local latest_data = mesh_upgrade.start_eupgrade_download()
+    if latest_data then
+        -- 2. Create local repository json data
+        mesh_upgrade.create_local_latest_json(latest_data)
+        -- 3. Expose eupgrade folder to uhttp
+        -- mesh_upgrade.share_firmware_packages()
+        -- do not do it here since the download may fail.
+    else
+        utils.log("no new version available")
+    end
 
-    -- 2. Create local repository json data
-    mesh_upgrade.create_local_latest_json(latest_data)
-
-    -- 3. Expose eupgrade folder to uhttp
-    mesh_upgrade.share_firmware_packages()
 end
 
 -- Function that check if tihs node have all things needed to became a master node
@@ -130,6 +137,9 @@ function mesh_upgrade.become_master_node()
     elseif download_status == eupgrade.STATUS_DOWNLOAD_FAILED then
         return { code = download_status, error = "Firmware download failed"}
     end
+    -- 3. Expose eupgrade folder to uhttp (this is the best place to do it since
+    --    all the files are present)
+    mesh_upgrade.share_firmware_packages()
     -- Check if local json file exists
     if not utils.file_exists(mesh_upgrade.LATEST_JSON_PATH) then
         return { code = "NO_LOCAL_JSON", error = "Local json file not found"}
@@ -139,8 +149,6 @@ function mesh_upgrade.become_master_node()
     if not utils.file_exists(mesh_upgrade.FIRMWARE_SHARED_FOLDER) then
         return { code = "NO_SHARED_FOLDER", error = "Shared folder not found"}
     end
-    --reshare downloaded files
-    mesh_upgrade.share_firmware_packages()
     -- If we get here is supposed that everything is ready to be a master node
     mesh_upgrade.inform_download_location(latest['version'])
     return { code = "SUCCESS"}
@@ -151,24 +159,17 @@ end
 
 -- function to be called by nodes to start download from master.
 function mesh_upgrade.start_node_download(url)
-    eupgrade.set_workdir("/tmp/mesh_upgrade")
     local uci = config.get_uci_cursor()
     eupgrade.set_custom_api_url(url)
     local cached_only = false
-    --download new firmware if necessary
-    config.log("is_new_version_available " .. url)
     local url2 = eupgrade.get_upgrade_api_url()
-    config.log("is_new_version_available " .. url2)
-
     local latest_data, message = eupgrade.is_new_version_available(cached_only)
-    utils.printJson(latest_data)
-    print(message)
-    config.log("start_node_download from  ")
+    utils.log("start_node_download from  "..url2)
 
     if latest_data then
-        config.log("start_node_download ")
+        utils.log("start_node_download ")
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADING)
-        config.log("downloading")
+        utils.log("downloading")
         local image = {}
         image, mesh_upgrade.fw_path = eupgrade.download_firmware(latest_data)
         uci:set('mesh-upgrade', 'main', 'eup_STATUS', eupgrade.get_download_status())
@@ -180,7 +181,7 @@ function mesh_upgrade.start_node_download(url)
             -- todo: how to handle this error
         end
     else
-        config.log("Error ... no latest data available")
+        utils.log("Error ... no latest data available")
 
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR)
     end
@@ -210,7 +211,7 @@ function mesh_upgrade.inform_download_location(version)
             master_node = utils.hostname()
         }, mesh_upgrade.upgrade_states.READY_FOR_UPGRADE, mesh_upgrade.transaction_states.STARTED)
     else
-        config.log("eupgrade STATUS is not 'DOWNLOADED'")
+        utils.log("eupgrade STATUS is not 'DOWNLOADED'")
     end
 end
 
@@ -265,11 +266,10 @@ end
 -- Called by a shared state hook in non master nodes
 function mesh_upgrade.set_mesh_upgrade_info(upgrade_data, upgrade_state, transaction_state)
     local uci = config.get_uci_cursor()
-    if (type(upgrade_data.id) == "number") and string.match(upgrade_data.data.repo_url, "https?://[%w-_%.%?%.:/%+=&]+") ~=
-        nil -- perform aditional checks
+    if string.match(upgrade_data.data.repo_url, "https?://[%w-_%.%?%.:/%+=&]+") ~= nil -- perform aditional checks
     then
+        utils.log("seting up repo download info ")
         if (mesh_upgrade.change_state(upgrade_state)) then
-            uci:get('mesh-upgrade', 'main', 'repo_url')
             uci:set('mesh-upgrade', 'main', "mesh-upgrade")
             uci:set('mesh-upgrade', 'main', 'id', upgrade_data.id)
             uci:set('mesh-upgrade', 'main', 'repo_url', upgrade_data.data.repo_url)
@@ -284,12 +284,14 @@ function mesh_upgrade.set_mesh_upgrade_info(upgrade_data, upgrade_state, transac
             uci:commit('mesh-upgrade')
             -- trigger shared state data refresh
             mesh_upgrade.trigger_sheredstate_publish()
-            mesh_upgrade.start_node_download(upgrade_data.data.repo_url)
+            if (upgrade_state == mesh_upgrade.upgrade_states.STARTING) then
+                mesh_upgrade.start_node_download(upgrade_data.data.repo_url)
+            end
         else
-            config.log("invalid state change ")
+            utils.log("invalid state change ")
         end
     else
-        config.log("upgrade failed due input data errors")
+        utils.log("upgrade failed due input data errors")
     end
 end
 
@@ -335,8 +337,9 @@ function mesh_upgrade.get_mesh_upgrade_status()
 end
 
 function mesh_upgrade.start_safe_upgrade()
-    if mesh_upgrade.change_state( mesh_upgrade.upgrade_states.UPGRADE_SCHELUDED) and utils.file_exists(mesh_upgrade.fw_path) then
-        --perform safe upgrade
+    if mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPGRADE_SCHELUDED) and
+        utils.file_exists(mesh_upgrade.fw_path) then
+        -- perform safe upgrade
     else
         utils.log ("not able to start upgrade invalid state or firmware not found")
         mesh_upgrade.change_state( mesh_upgrade.upgrade_states.ERROR)

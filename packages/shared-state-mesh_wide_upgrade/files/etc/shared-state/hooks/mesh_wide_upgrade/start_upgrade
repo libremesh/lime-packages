@@ -19,22 +19,22 @@
 local JSON = require("luci.jsonc")
 local utils = require "lime.utils"
 local mesh_upgrade = require "lime-mesh-upgrade"
-
+local hostname = utils.hostname()
 
 --if already involved in an upgrade transaction do nothing
 if not mesh_upgrade.started() then
 	for node, s_s_data in pairs(JSON.parse(io.stdin:read("*all"))) do
 		--if any node has started an upgrade process and start one too?
 		--only fetch the info from the master node publication?
-		if s_s_data.data.master_node == node then
-
+		if node ~= hostname and s_s_data.data.master_node == node then
+			utils.unsafe_shell('logger -p daemon.info -t "mesh upgrade" "mesh upgrade detected upgrade from "' ..
+			s_s_data.data.data.repo_url .. " and masternode node  " .. node .. " with this data " .. JSON.stringify(s_s_data.data)) 
+			
 			mesh_upgrade.set_mesh_upgrade_info(s_s_data.data,mesh_upgrade.upgrade_states.STARTING)
-			utils.unsafe_shell('logger -p daemon.info -t "mesh upgrade" "mesh upgrade detected upgrade from"' ..
-			s_s_data.data.repo_url .. " " .. node)
+		else
+			utils.unsafe_shell('logger -p daemon.info -t "mesh upgrade" "status  "' ..
+		JSON.stringify(s_s_data.data) .. " from node " .. node)
 		end
-		utils.unsafe_shell('logger -p daemon.info -t "messwideupgrade" "hoock +++++ "' ..
-		JSON.stringify(s_s_data.data) .. " " .. node)
-		utils.log("hook started ", JSON.stringify(s_s_data.data), node)
 	end
 else
 	utils.unsafe_shell('logger -p daemon.info -t "messwideupgrade" "already started an upgrade process"')
