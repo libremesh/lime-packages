@@ -1,4 +1,9 @@
 local config = require 'lime.config'
+
+os.execute('mkdir /tmp/sysinfo/')
+os.execute('echo librerouter-v1 > /tmp/sysinfo/board_name')
+
+
 local lime_mesh_upgrade = require 'lime-mesh-upgrade'
 local network = require("lime.network")
 local utils = require "lime.utils"
@@ -213,14 +218,31 @@ describe('LiMe mesh upgrade', function()
     end)
 
     it('test custom latest json file is created', function()
-        stub(network, 'primary_address', function () return '10.13.0.1', 'ipv6' end)
+
+        config.set('network', 'lime')
+        config.set('network', 'main_ipv4_address', '10.%N1.0.0/16')
+        config.set('network', 'main_ipv6_address', 'fd%N1:%N2%N3:%N4%N5::/64')
+        config.set('network', 'protocols', {'lan'})
+        config.set('wifi', 'lime')
+        config.set('wifi', 'ap_ssid', 'LibreMesh.org')
+        uci:commit('lime')
+
+        --stub(network, 'primary_address', function () return '10.13.0.1', 'ipv6' end)
+
         lime_mesh_upgrade.create_local_latest_json(json.parse(latest_release_data))
         local filexists = utils.file_exists(lime_mesh_upgrade.LATEST_JSON_PATH)
         assert(filexists, "File not found: " .. lime_mesh_upgrade.LATEST_JSON_PATH)
     end)
 
     it('test set_up_firmware_repository download the files correctly and fix the url on json', function()
-        stub(network, 'primary_address', function () return '10.13.0.1', 'ipv6' end)
+        config.set('network', 'lime')
+        config.set('network', 'main_ipv4_address', '10.%N1.0.0/16')
+        config.set('network', 'main_ipv6_address', 'fd%N1:%N2%N3:%N4%N5::/64')
+        config.set('network', 'protocols', {'lan'})
+        config.set('wifi', 'lime')
+        config.set('wifi', 'ap_ssid', 'LibreMesh.org')
+        uci:commit('lime')
+        
         lime_mesh_upgrade.create_local_latest_json(json.parse(latest_release_data))
         local latest = json.parse(utils.read_file(lime_mesh_upgrade.LATEST_JSON_PATH))
         local repo_url = lime_mesh_upgrade.FIRMWARE_REPO_PATH
@@ -251,7 +273,7 @@ describe('LiMe mesh upgrade', function()
             assert(file_exists, "File not found: " .. file_path)
         end
         -- Check that the local json file is also there
-        local json_link = dest .. "/" .. lime_mesh_upgrade.LATEST_JSON_FILE_NAME
+        local json_link = dest .. "latest/" .. lime_mesh_upgrade.LATEST_JSON_FILE_NAME
         local file_exists = utils.file_exists(json_link)
         assert(file_exists, "File not found: " .. json_link)
     end)
