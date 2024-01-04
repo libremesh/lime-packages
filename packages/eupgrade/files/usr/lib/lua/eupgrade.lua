@@ -84,7 +84,7 @@ end
 function eup.is_new_version_available(cached_only)
     --! if 'latest' files are present is because there is a new version
     if utils.file_exists(eup.FIRMWARE_LATEST_JSON) and utils.file_exists(eup.FIRMWARE_LATEST_JSON_SIGNATURE) then
-        if eup._check_signature(eup.FIRMWARE_LATEST_JSON, eup.FIRMWARE_LATEST_JSON_SIGNATURE) then
+        if eup._check_signature(eup.FIRMWARE_LATEST_JSON, eup.FIRMWARE_LATEST_JSON_SIGNATURE) or eup.is_meshupgrade_enabled() then
             return json.parse(utils.read_file(eup.FIRMWARE_LATEST_JSON))
         end
     end
