@@ -8,7 +8,7 @@ local fs = require("nixio.fs")
 local json = require 'luci.jsonc'
 
 local mesh_upgrade = {
-    -- posible tranactin states
+    -- posible transaction states are derived from upgrade states
     transaction_states = {
         NO_TRANSACTION = "no_transaction",
         STARTED = "started", -- there is a transaction in progress
@@ -17,28 +17,31 @@ local mesh_upgrade = {
     },
     -- psible upgrade states enumeration
     upgrade_states = {
-        DEFAULT = "not upgrading",
+        DEFAULT = "not upgrading", -- When no transaction has started
         STARTING = "starting",
         DOWNLOADING = "downloading",
         READY_FOR_UPGRADE = "ready_for_upgrade",
         UPGRADE_SCHEDULED = "upgrade_scheluded",
         CONFIRMATION_PENDING = "confirmation_pending",
         CONFIRMED = "confirmed",
-        UPDATED = "updated",
         ERROR = "error"
     },
+
     -- list of possible errors
     errors = {
         DOWNLOAD_FAILED = "download failed",
-        CONFIRMATION_TIME_OUT = "confirmation timeout"
+        NO_LATEST_AVAILABLE = "no latest data available",
+        CONFIRMATION_TIME_OUT = "confirmation timeout",
+        ABORTED = "aborted"
+
     },
     fw_path = "",
     su_timeout = 600,
     MASTERNODE_ENDPOINT = "/lros/api/v1/"
 }
 
--- shoud epgrade be disabled ?
---eupgrade.set_workdir("/tmp/mesh_upgrade")
+-- should epgrade be disabled ?
+-- eupgrade.set_workdir("/tmp/mesh_upgrade")
 
 -- Get the base url for the firmware repository in this node
 function mesh_upgrade.get_repo_base_url()
@@ -59,13 +62,13 @@ end
 function mesh_upgrade.set_workdir(workdir)
     mesh_upgrade._create_workdir(workdir)
     mesh_upgrade.WORKDIR = workdir
-    mesh_upgrade.LATEST_JSON_FILE_NAME = eupgrade._get_board_name()..".json" -- latest json with local lan url file name
+    mesh_upgrade.LATEST_JSON_FILE_NAME = eupgrade._get_board_name() .. ".json" -- latest json with local lan url file name
     mesh_upgrade.LATEST_JSON_PATH = mesh_upgrade.WORKDIR .. "/" .. mesh_upgrade.LATEST_JSON_FILE_NAME -- latest json full path
     mesh_upgrade.FIRMWARE_REPO_PATH = '/lros/' -- path url for firmwares
     mesh_upgrade.FIRMWARE_SHARED_FOLDER = '/www/' .. mesh_upgrade.FIRMWARE_REPO_PATH
 end
-mesh_upgrade.set_workdir("/tmp/mesh_upgrade")
 
+mesh_upgrade.set_workdir("/tmp/mesh_upgrade")
 
 function mesh_upgrade.start_eupgrade_download()
     local cached_only = false
@@ -83,7 +86,7 @@ end
 
 function mesh_upgrade.create_local_latest_json(latest_data)
     for _, im in pairs(latest_data['images']) do
-        --im['download-urls'] = string.gsub(im['download-urls'], upgrade_url, "test")
+        -- im['download-urls'] = string.gsub(im['download-urls'], upgrade_url, "test")
         im['download-urls'] = {mesh_upgrade.get_repo_base_url() .. im['name']}
     end
     utils.write_file(mesh_upgrade.LATEST_JSON_PATH, json.stringify(latest_data))
@@ -91,15 +94,15 @@ function mesh_upgrade.create_local_latest_json(latest_data)
 end
 
 function mesh_upgrade.share_firmware_packages(dest)
-    if dest == nil then 
+    if dest == nil then
         dest = "/www" .. mesh_upgrade.FIRMWARE_REPO_PATH
     end
     local images_folder = eupgrade.WORKDIR
     mesh_upgrade._create_workdir(dest)
-    --json file has to be placed in a url that ends with latest 
-    mesh_upgrade._create_workdir(dest.."/latest")
+    -- json file has to be placed in a url that ends with latest
+    mesh_upgrade._create_workdir(dest .. "/latest")
     os.execute("ln -s " .. images_folder .. "/* " .. dest)
-    os.execute("ln -s " .. mesh_upgrade.LATEST_JSON_PATH .. " " .. dest.. "/latest")
+    os.execute("ln -s " .. mesh_upgrade.LATEST_JSON_PATH .. " " .. dest .. "/latest")
 end
 
 -- This function will download latest librerouter os firmware and expose it as
@@ -116,7 +119,6 @@ function mesh_upgrade.set_up_firmware_repository()
     else
         utils.log("no new version available")
     end
-
 end
 
 -- Function that check if tihs node have all things needed to became a master node
@@ -127,44 +129,72 @@ function mesh_upgrade.become_master_node()
     -- Check if there are a new version available (cached only)
     local latest = eupgrade.is_new_version_available(true)
     if not latest then
-        return { code = "NO_NEW_VERSION", error = "No new version is available"}
+        return {
+            code = "NO_NEW_VERSION",
+            error = "No new version is available"
+        }
     end
     -- Check download is completed
     if download_status == eupgrade.STATUS_DEFAULT then
-        return { code = download_status,  error = "Firmware download not started" }
+        return {
+            code = download_status,
+            error = "Firmware download not started"
+        }
     elseif download_status == eupgrade.STATUS_DOWNLOADING then
-        return { code = download_status, error = "Firmware is downloading"}
+        return {
+            code = download_status,
+            error = "Firmware is downloading"
+        }
     elseif download_status == eupgrade.STATUS_DOWNLOAD_FAILED then
-        return { code = download_status, error = "Firmware download failed"}
+        return {
+            code = download_status,
+            error = "Firmware download failed"
+        }
     end
     -- 3. Expose eupgrade folder to uhttp (this is the best place to do it since
     --    all the files are present)
     mesh_upgrade.share_firmware_packages()
     -- Check if local json file exists
     if not utils.file_exists(mesh_upgrade.LATEST_JSON_PATH) then
-        return { code = "NO_LOCAL_JSON", error = "Local json file not found"}
+        return {
+            code = "NO_LOCAL_JSON",
+            error = "Local json file not found"
+        }
     end
     -- Check firmware packages are shared properly
     -- we could check if the shared folder is empty or not and what files are present. Not needed imho
     if not utils.file_exists(mesh_upgrade.FIRMWARE_SHARED_FOLDER) then
-        return { code = "NO_SHARED_FOLDER", error = "Shared folder not found"}
+        return {
+            code = "NO_SHARED_FOLDER",
+            error = "Shared folder not found"
+        }
     end
     -- If we get here is supposed that everything is ready to be a master node
     mesh_upgrade.inform_download_location(latest['version'])
-    return { code = "SUCCESS"}
+    return {
+        code = "SUCCESS"
+    }
 end
 
 -- Shared state functions --
 ----------------------------
+function mesh_upgrade.report_error(error)
+    local uci = config.get_uci_cursor()
+    uci:set('mesh-upgrade', 'main', 'error', error)
+    uci:set('mesh-upgrade', 'main', 'timestamp', os.time())
+    uci:save('mesh-upgrade')
+    uci:commit('mesh-upgrade')
+    -- trigger shared state data refresh
+    mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR)
+end
 
 -- function to be called by nodes to start download from master.
 function mesh_upgrade.start_node_download(url)
-    local uci = config.get_uci_cursor()
     eupgrade.set_custom_api_url(url)
     local cached_only = false
     local url2 = eupgrade.get_upgrade_api_url()
     local latest_data, message = eupgrade.is_new_version_available(cached_only)
-    utils.log("start_node_download from  "..url2)
+    utils.log("start_node_download from  " .. url2)
 
     if latest_data then
         utils.log("start_node_download ")
@@ -172,20 +202,17 @@ function mesh_upgrade.start_node_download(url)
         utils.log("downloading")
         local image = {}
         image, mesh_upgrade.fw_path = eupgrade.download_firmware(latest_data)
-        uci:set('mesh-upgrade', 'main', 'eup_STATUS', eupgrade.get_download_status())
         if eupgrade.get_download_status() == eupgrade.STATUS_DOWNLOADED and image ~= nil then
             utils.printJson(image)
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
         else
-            mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR)
-            -- todo: how to handle this error
+            utils.log("Error ... download failed")
+            mesh_upgrade.report_error(mesh_upgrade.errors.DOWNLOAD_FAILED)
         end
     else
         utils.log("Error ... no latest data available")
-
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR)
+        mesh_upgrade.report_error(mesh_upgrade.errors.DOWNLOAD_FAILED)
     end
-    mesh_upgrade.trigger_sheredstate_publish()
 end
 
 -- this function will be called by the master node to inform that the firmware is available
@@ -194,22 +221,16 @@ end
 -- curl -6 'http://[fd0d:fe46:8ce8::1]/lros/api/v1/'
 function mesh_upgrade.inform_download_location(version)
     if eupgrade.get_download_status() == eupgrade.STATUS_DOWNLOADED then
-        --TODO: setup uhttpd to serve workdir location
+        -- TODO: setup uhttpd to serve workdir location
         mesh_upgrade.set_mesh_upgrade_info({
-            type = "upgrade",
-            data = {
-                firmware_ver = version,
-                repo_url = mesh_upgrade.get_repo_base_url(),
-                upgrde_state = mesh_upgrade.upgrade_states.READY_FOR_UPGRADE,
-                error = 0,
-                safe_upgrade_status = "",
-                eup_STATUS = eupgrade.STATUS_DOWNLOADED
-            },
-            timestamp = os.time(),
-            id = 21, -- todo: create a unique hash
-            transaction_state = mesh_upgrade.transaction_states.STARTED,
-            master_node = utils.hostname()
-        }, mesh_upgrade.upgrade_states.READY_FOR_UPGRADE, mesh_upgrade.transaction_states.STARTED)
+            candidate_fw = version,
+            repo_url = mesh_upgrade.get_repo_base_url(),
+            upgrde_state = mesh_upgrade.upgrade_states.READY_FOR_UPGRADE,
+            error = "",
+            master_node = true,
+            board_name = eupgrade._get_board_name(),
+            current_fw = eupgrade._get_current_fw_version()
+        }, mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
     else
         utils.log("eupgrade STATUS is not 'DOWNLOADED'")
     end
@@ -218,8 +239,14 @@ end
 -- Validate if the upgrade has already started
 function mesh_upgrade.started()
     local uci = config.get_uci_cursor()
-    return uci:get('mesh-upgrade', 'main', 'transaction_state') == mesh_upgrade.transaction_states.STARTED
-    -- todo: what happens if a mesh_upgrade has started more than an hour ago ? should this node abort it ?
+    local status = uci:get('mesh-upgrade', 'main', 'transaction_state')
+    if status == mesh_upgrade.upgrade_states.STARTING or status == mesh_upgrade.upgrade_states.CONFIRMATION_PENDING or
+        status == mesh_upgrade.upgrade_states.CONFIRMED or status == mesh_upgrade.upgrade_states.DOWNLOADING or status ==
+        mesh_upgrade.upgrade_states.READY_FOR_UPGRADE or status == mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED then
+        return true
+    end
+    return false
+    -- todo(javi): what happens if a mesh_upgrade has started more than an hour ago ? should this node abort it ?
 end
 
 function mesh_upgrade.state()
@@ -228,12 +255,9 @@ function mesh_upgrade.state()
 end
 
 function mesh_upgrade.mesh_upgrade_abort()
-    local uci = config.get_uci_cursor()
-    uci:set('mesh-upgrade', 'main', 'transaction_state', mesh_upgrade.transaction_states.ABORTED)
-    uci:save('mesh-upgrade')
-    uci:commit('mesh-upgrade')
-    -- stop and delete everything
-    -- trigger a shared state publish
+    mesh_upgrade.report_error(mesh_upgrade.errors.ABORTED)
+    -- todo(javi): stop and delete everything 
+
 end
 
 -- This line will genereate recursive dependencies like in pirania pakcage
@@ -245,48 +269,49 @@ end
 -- ! changes the state of the upgrade and verifies that state transition is possible.
 function mesh_upgrade.change_state(newstate, errortype)
     local uci = config.get_uci_cursor()
-    if newstate == mesh_upgrade.upgrade_states.STARTING and
-        (mesh_upgrade.state() == mesh_upgrade.upgrade_states.DEFAULT or mesh_upgrade.state() ==
+    if newstate == mesh_upgrade.upgrade_states.STARTING then
+        if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.DEFAULT or mesh_upgrade.state() ==
             mesh_upgrade.upgrade_states.ERROR or mesh_upgrade.state() == mesh_upgrade.upgrade_states.UPDATED) then
-        -- trigger firmware download from master_node url
-        uci:set('mesh-upgrade', 'main', 'upgrade_state', newstate)
-        uci:save('mesh-upgrade')
-        uci:commit('mesh-upgrade')
-        return true
+        else
+            return false
+        end
     end
-    -- todo: verify other states 
-    -- lets allow all types of state changes. 
+    -- todo(javi): verify other states and return false if it is not possible
+
+    -- lets allow all types of state changes.
     uci:set('mesh-upgrade', 'main', 'upgrade_state', newstate)
     uci:save('mesh-upgrade')
     uci:commit('mesh-upgrade')
+    mesh_upgrade.trigger_sheredstate_publish()
     return true
 end
 
+function mesh_upgrade.become_bot_node(upgrade_data)
+    upgrade_data.master_node = false
+    mesh_upgrade.set_mesh_upgrade_info(upgrade_data, mesh_upgrade.upgrade_states.STARTING)
+    if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.STARTING) then
+        mesh_upgrade.start_node_download(upgrade_data.repo_url)
+    end
+end
+
 -- set download information for the new firmware from master node
--- Called by a shared state hook in non master nodes
-function mesh_upgrade.set_mesh_upgrade_info(upgrade_data, upgrade_state, transaction_state)
+-- Called by a shared state hook in bot nodes
+function mesh_upgrade.set_mesh_upgrade_info(upgrade_data, upgrade_state)
     local uci = config.get_uci_cursor()
-    if string.match(upgrade_data.data.repo_url, "https?://[%w-_%.%?%.:/%+=&]+") ~= nil -- perform aditional checks
+    if string.match(upgrade_data.repo_url, "https?://[%w-_%.%?%.:/%+=&]+") ~= nil -- todo (javi): perform aditional checks
     then
         utils.log("seting up repo download info ")
         if (mesh_upgrade.change_state(upgrade_state)) then
             uci:set('mesh-upgrade', 'main', "mesh-upgrade")
-            uci:set('mesh-upgrade', 'main', 'id', upgrade_data.id)
-            uci:set('mesh-upgrade', 'main', 'repo_url', upgrade_data.data.repo_url)
-            uci:set('mesh-upgrade', 'main', 'firmware_ver', upgrade_data.data.firmware_ver)
-            -- uci:set('mesh-upgrade', 'main', 'upgrade_state', upgrade_state) already done in change state
-            uci:set('mesh-upgrade', 'main', 'error', 0)
+            uci:set('mesh-upgrade', 'main', 'repo_url', upgrade_data.repo_url)
+            uci:set('mesh-upgrade', 'main', 'candidate_fw', upgrade_data.candidate_fw)
+            uci:set('mesh-upgrade', 'main', 'error', "")
             uci:set('mesh-upgrade', 'main', 'timestamp', os.time())
-            uci:set('mesh-upgrade', 'main', 'master_node', upgrade_data.master_node)
-            uci:set('mesh-upgrade', 'main', 'transaction_state',
-                transaction_state or mesh_upgrade.transaction_states.STARTED)
+            uci:set('mesh-upgrade', 'main', 'master_node', tostring(upgrade_data.master_node))
             uci:save('mesh-upgrade')
             uci:commit('mesh-upgrade')
             -- trigger shared state data refresh
             mesh_upgrade.trigger_sheredstate_publish()
-            if (upgrade_state == mesh_upgrade.upgrade_states.STARTING) then
-                mesh_upgrade.start_node_download(upgrade_data.data.repo_url)
-            end
         else
             utils.log("invalid state change ")
         end
@@ -295,54 +320,42 @@ function mesh_upgrade.set_mesh_upgrade_info(upgrade_data, upgrade_state, transac
     end
 end
 
---
--- {
---     type= "upgrade",
---     data={
---       firmware_ver="xxxx",
---       repo_url="http://10.13.0.1/lros/api/v1/",
---       upgrde_state="starting,downloading|ready_for_upgrade|upgrade_scheluded|confirmation_pending|~~confirmed~~|updated|error",
---       error="CODE",
---       safe_upgrade_status="",
---       eup_STATUS="",eup.STATUS_DEFAULT = 'not-initiated' eup.STATUS_DOWNLOADING = 'downloading' eup.STATUS_DOWNLOADED = 'downloaded' eup.STATUS_DOWNLOAD_FAILED = 'download-failed'
---     },
---     timestamp=231354654,
---     id="",
---     transaction_state="started/aborted/finished",
---     master_node=""
--- }
---
+function mesh_upgrade.toboolean(str)
+    if str == "true" then
+        return true
+    end
+    return false
+end
 
 -- ! Read status from UCI
 function mesh_upgrade.get_mesh_upgrade_status()
     local uci = config.get_uci_cursor()
     local upgrade_data = {}
-    upgrade_data.data = {}
-    upgrade_data.type = "upgrade"
-    upgrade_data.id = uci:get('mesh-upgrade', 'main', 'id')
-    upgrade_data.data.firmware_ver = uci:get('mesh-upgrade', 'main', 'firmware_ver')
-    upgrade_data.data.repo_url = uci:get('mesh-upgrade', 'main', 'repo_url')
-    upgrade_data.data.upgrade_state = uci:get('mesh-upgrade', 'main', 'upgrade_state')
-    upgrade_data.data.error = uci:get('mesh-upgrade', 'main', 'error')
-    upgrade_data.data.safe_upgrade_status = uci:get('mesh-upgrade', 'main', 'safe_upgrade_status')
-    upgrade_data.data.eup_STATUS = uci:get('mesh-upgrade', 'main', 'eup_STATUS')
-    upgrade_data.timestamp = uci:get('mesh-upgrade', 'main', 'timestamp')
-    upgrade_data.master_node = uci:get('mesh-upgrade', 'main', 'master_node')
-    upgrade_data.transaction_state = uci:get('mesh-upgrade', 'main', 'transaction_state')
-    if (upgrade_data.transaction_state == nil) then
-        uci:set('mesh-upgrade', 'main', 'transaction_state', mesh_upgrade.transaction_states.NO_TRANSACTION)
-        upgrade_data.transaction_state = uci:get('mesh-upgrade', 'main', 'transaction_state')
+    upgrade_data.candidate_fw = uci:get('mesh-upgrade', 'main', 'candidate_fw')
+    upgrade_data.repo_url = uci:get('mesh-upgrade', 'main', 'repo_url')
+    upgrade_data.upgrade_state = uci:get('mesh-upgrade', 'main', 'upgrade_state')
+    if (upgrade_data.upgrade_state == nil) then
+        uci:set('mesh-upgrade', 'main', 'transaction_state', mesh_upgrade.upgrade_states.DEFAULT)
+        uci:save('mesh-upgrade')
+        uci:commit('mesh-upgrade')
+        upgrade_data.upgrade_state = uci:get('mesh-upgrade', 'main', 'transaction_state')
     end
+    upgrade_data.error = uci:get('mesh-upgrade', 'main', 'error')
+    upgrade_data.timestamp = uci:get('mesh-upgrade', 'main', 'timestamp')
+    upgrade_data.master_node =  mesh_upgrade.toboolean(uci:get('mesh-upgrade', 'main', 'master_node'))
+    upgrade_data.board_name = eupgrade._get_board_name()
+    upgrade_data.current_fw = eupgrade._get_current_fw_version()
     return upgrade_data
 end
 
 function mesh_upgrade.start_safe_upgrade()
     if mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPGRADE_SCHELUDED) and
         utils.file_exists(mesh_upgrade.fw_path) then
-        -- perform safe upgrade
+        -- perform safe upgrade 
+        return true
     else
-        utils.log ("not able to start upgrade invalid state or firmware not found")
-        mesh_upgrade.change_state( mesh_upgrade.upgrade_states.ERROR)
+        utils.log("not able to start upgrade invalid state or firmware not found")
+        return false
     end
 end
 
