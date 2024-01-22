@@ -70,20 +70,6 @@ end
 
 mesh_upgrade.set_workdir("/tmp/mesh_upgrade")
 
-function mesh_upgrade.start_eupgrade_download()
-    local cached_only = false
-    local latest_data = eupgrade.is_new_version_available(cached_only)
-    if latest_data then
-        utils.execute_daemonized("eupgrade-download")
-    else
-        ret = {
-            status = 'error',
-            message = 'New version is not availabe'
-        }
-    end
-    return latest_data
-end
-
 function mesh_upgrade.create_local_latest_json(latest_data)
     for _, im in pairs(latest_data['images']) do
         -- im['download-urls'] = string.gsub(im['download-urls'], upgrade_url, "test")
@@ -107,17 +93,20 @@ end
 
 -- This function will download latest librerouter os firmware and expose it as
 -- a local repository in order to be used for other nodes
-function mesh_upgrade.set_up_firmware_repository()
+function mesh_upgrade.set_up_local_repository()
     -- 1. Check if new version is available and download it demonized using eupgrade
-    local latest_data = mesh_upgrade.start_eupgrade_download()
+    local cached_only = false
+    local latest_data = eupgrade.is_new_version_available(cached_only)
     if latest_data then
         -- 2. Create local repository json data
         mesh_upgrade.create_local_latest_json(latest_data)
-        -- 3. Expose eupgrade folder to uhttp
-        -- mesh_upgrade.share_firmware_packages()
-        -- do not do it here since the download may fail.
+        utils.execute_daemonized("eupgrade-download")
     else
         utils.log("no new version available")
+        return {
+            status = 'error',
+            message = 'New version is not availabe'
+        }
     end
 end
 
