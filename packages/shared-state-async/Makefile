@@ -29,7 +29,7 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/libremesh/shared-state-async.git
-PKG_SOURCE_VERSION:=76dcbc5a88d6e88733054680371bb6caef793be4
+PKG_SOURCE_VERSION:=ac7b3be5d1990195b9eee09888ac97daf08c82c5
 PKG_MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 PKG_LICENSE:=AGPL-3.0
 
@@ -42,7 +42,6 @@ include $(INCLUDE_DIR)/host-build.mk
 define Package/$(PKG_NAME)
 	TITLE:=shared-state C++ async re-implementation
 	CATEGORY:=LibreMesh
-
 	# TODO: Statically linking libstdcpp instead of depending on it and then
 	# stripping unused symbols might reduce space usage, until this is the
 	# only package to use it
@@ -56,8 +55,16 @@ endef
 # Otherwise OpenWrt's CPPFLAGS are ignored
 TARGET_CFLAGS += $(TARGET_CPPFLAGS)
 
-CMAKE_OPTIONS += \
-	-DCMAKE_VERBOSE_MAKEFILE=ON
+CMAKE_OPTIONS += -DCMAKE_VERBOSE_MAKEFILE=ON
+
+# Disable Cpptrace as it depends on zlib and doesn't seems to work anyway on
+# OpenWrt even with CONFIG_DEBUG=y it prints out
+# Stack trace (most recent call first):
+# #0 0x00000000
+# #1 0x00000000
+# #2 0x00000000
+CMAKE_OPTIONS += -DSS_CPPTRACE_STACKTRACE=OFF
+
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/bin
