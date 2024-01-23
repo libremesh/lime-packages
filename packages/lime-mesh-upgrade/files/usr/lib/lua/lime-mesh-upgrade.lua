@@ -92,21 +92,10 @@ end
 
 -- This function will download latest librerouter os firmware and expose it as
 -- a local repository in order to be used for other nodes
-function mesh_upgrade.set_up_local_repository()
-    -- 1. Check if new version is available and download it demonized using eupgrade
-    local cached_only = false
-    local latest_data = eupgrade.is_new_version_available(cached_only)
-    if latest_data then
-        -- 2. Create local repository json data
-        mesh_upgrade.create_local_latest_json(latest_data)
-        utils.execute_daemonized("eupgrade-download")
-    else
-        utils.log("no new version available")
-        return {
-            status = 'error',
-            message = 'New version is not availabe'
-        }
-    end
+function mesh_upgrade.start_main_node_repository(latest_data)
+    -- Create local repository json data
+    mesh_upgrade.create_local_latest_json(latest_data)
+    utils.execute_daemonized("eupgrade-download")
 end
 
 -- Function that check if tihs node have all things needed to became a main node
@@ -116,28 +105,36 @@ function mesh_upgrade.become_main_node()
     local download_status = eupgrade.get_download_status()
     -- Check if there are a new version available (cached only)
     mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
-    local latest = eupgrade.is_new_version_available(true)
+    -- 1. Check if new version is available and download it demonized using eupgrade
+    local latest = eupgrade.is_new_version_available(false)
     if not latest then
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DEFAULT)
+        utils.log("no new version available")
         return {
             code = "NO_NEW_VERSION",
             error = "No new version is available"
         }
     end
+    -- 2. Start local repository and download latest firmware
+    mesh_upgrade.start_main_node_repository(latest)
     mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADING)
+end
+
+function mesh_upgrade.get_main_node_status()
     -- Check download is completed
     if download_status == eupgrade.STATUS_DEFAULT then
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR,mesh_upgrade.errors.DOWNLOAD_FAILED)
-
         return {
             code = download_status,
             error = "Firmware download not started"
         }
+
     elseif download_status == eupgrade.STATUS_DOWNLOADING then
         return {
             code = download_status,
             error = "Firmware is downloading"
         }
+
     elseif download_status == eupgrade.STATUS_DOWNLOAD_FAILED then
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR,mesh_upgrade.errors.DOWNLOAD_FAILED)
         return {
@@ -145,7 +142,11 @@ function mesh_upgrade.become_main_node()
             error = "Firmware download failed"
         }
     end
-    -- 3. Expose eupgrade folder to uhttp (this is the best place to do it since
+end
+
+function mesh_upgrade.start_firmware_upgrade_transaction()
+    -- todo(kon): do all needed checks also with the main node state etc..
+    -- Expose eupgrade folder to uhttp (this is the best place to do it since
     --    all the files are present)
     mesh_upgrade.share_firmware_packages()
     -- Check if local json file exists
