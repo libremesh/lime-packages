@@ -15,7 +15,7 @@ local mesh_upgrade = {
         ABORTED = "aborted",
         FINISHED = "finished"
     },
-    -- psible upgrade states enumeration
+    -- posible upgrade states enumeration
     upgrade_states = {
         DEFAULT = "not_upgrading", -- When no upgrade has started, after reboot
         STARTING = "starting",
@@ -102,7 +102,6 @@ end
 -- Then, call update shared state with the proper info
 function mesh_upgrade.become_main_node()
     -- todo(kon): check if main node is already set or we are on mesh_upgrade status
-    local download_status = eupgrade.get_download_status()
     -- Check if there are a new version available (cached only)
     mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
     -- 1. Check if new version is available and download it demonized using eupgrade
@@ -117,29 +116,35 @@ function mesh_upgrade.become_main_node()
     end
     -- 2. Start local repository and download latest firmware
     mesh_upgrade.start_main_node_repository(latest)
-    mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADING)
+    mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
 end
 
 function mesh_upgrade.get_main_node_status()
+    local download_status = eupgrade.get_download_status()
     -- Check download is completed
     if download_status == eupgrade.STATUS_DEFAULT then
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR,mesh_upgrade.errors.DOWNLOAD_FAILED)
+        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DEFAULT)
         return {
-            code = download_status,
-            error = "Firmware download not started"
+            code = mesh_upgrade.upgrade_states.DEFAULT,
         }
 
     elseif download_status == eupgrade.STATUS_DOWNLOADING then
+        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
         return {
-            code = download_status,
-            error = "Firmware is downloading"
+            code = mesh_upgrade.upgrade_states.STARTING,
+        }
+
+    elseif download_status == eupgrade.DOWNLOADED then
+        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADED)
+        return {
+            code = mesh_upgrade.upgrade_states.DOWNLOADED,
         }
 
     elseif download_status == eupgrade.STATUS_DOWNLOAD_FAILED then
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR,mesh_upgrade.errors.DOWNLOAD_FAILED)
+        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR, mesh_upgrade.errors.DOWNLOAD_FAILED)
         return {
-            code = download_status,
-            error = "Firmware download failed"
+            code = mesh_upgrade.upgrade_states.ERROR,
+            error = mesh_upgrade.errors.DOWNLOAD_FAILED
         }
     end
 end
