@@ -105,7 +105,7 @@ function mesh_upgrade.share_firmware_packages(dest)
     os.execute("ln -s " .. mesh_upgrade.LATEST_JSON_PATH .. " " .. dest .. "/latest")
 end
 
--- This function will download latest librerouter os firmware and expose it as
+-- This function will download latest firmware and expose it as
 -- a local repository in order to be used for other nodes
 function mesh_upgrade.set_up_firmware_repository()
     -- 1. Check if new version is available and download it demonized using eupgrade
@@ -139,7 +139,7 @@ function mesh_upgrade.become_master_node()
     mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADING)
     -- Check download is completed
     if download_status == eupgrade.STATUS_DEFAULT then
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR,mesh_upgrade.errors.DOWNLOAD_FAILED)
+        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR, mesh_upgrade.errors.DOWNLOAD_FAILED)
 
         return {
             code = download_status,
@@ -151,7 +151,7 @@ function mesh_upgrade.become_master_node()
             error = "Firmware is downloading"
         }
     elseif download_status == eupgrade.STATUS_DOWNLOAD_FAILED then
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR,mesh_upgrade.errors.DOWNLOAD_FAILED)
+        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR, mesh_upgrade.errors.DOWNLOAD_FAILED)
         return {
             code = download_status,
             error = "Firmware download failed"
@@ -162,7 +162,7 @@ function mesh_upgrade.become_master_node()
     mesh_upgrade.share_firmware_packages()
     -- Check if local json file exists
     if not utils.file_exists(mesh_upgrade.LATEST_JSON_PATH) then
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR,mesh_upgrade.errors.NO_LATEST_AVAILABLE)
+        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR, mesh_upgrade.errors.NO_LATEST_AVAILABLE)
 
         return {
             code = "NO_LOCAL_JSON",
@@ -196,7 +196,7 @@ function mesh_upgrade.report_error(error)
     mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR)
 end
 
--- function to be called by nodes to start download from master.
+-- function to be called by BOT nodes to start download from master.
 function mesh_upgrade.start_node_download(url)
     eupgrade.set_custom_api_url(url)
     local cached_only = false
@@ -291,20 +291,39 @@ function mesh_upgrade.change_state(newstate, errortype)
 
             return false
         end
-    end
-    if newstate == mesh_upgrade.upgrade_states.DOWNLOADING then
+    elseif newstate == mesh_upgrade.upgrade_states.DOWNLOADING then
         if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.STARTING) then
-            utils.log("ok to download")
+            utils.log("ok DOWNLOADING")
         else
-            utils.log("invalid statechange not able to star t")
+            utils.log("invalid statechange not able to move to DOWNLOADING")
             return false
         end
-    end
-    if newstate == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE then
+    elseif newstate == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE then
         if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.DOWNLOADING) then
-            utils.log("ok to be ready")
+            utils.log("ok READY_FOR_UPGRADE")
         else
-            utils.log("invalid statechange no able to be ready")
+            utils.log("invalid statechange not able to move to READY_FOR_UPGRADE")
+            return false
+        end
+    elseif newstate == mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED then
+        if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE) then
+            utils.log("ok UPGRADE_SCHEDULED")
+        else
+            utils.log("invalid statechange no able to UPGRADE_SCHEDULED")
+            return false
+        end
+    elseif newstate == mesh_upgrade.upgrade_states.CONFIRMATION_PENDING then
+        if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED) then
+            utils.log("ok CONFIRMATION_PENDING")
+        else
+            utils.log("invalid statechange no able to CONFIRMATION_PENDING")
+            return false
+        end
+    elseif newstate == mesh_upgrade.upgrade_states.UPDATED then
+        if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.CONFIRMATION_PENDING) then
+            utils.log("ok UPDATED")
+        else
+            utils.log("invalid statechange no able to UPDATED ")
             return false
         end
     end
@@ -325,7 +344,6 @@ function mesh_upgrade.become_bot_node(upgrade_data)
         upgrade_data.master_node = false
         mesh_upgrade.set_mesh_upgrade_info(upgrade_data, mesh_upgrade.upgrade_states.STARTING)
         if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.STARTING) then
-            mesh_upgrade.trigger_sheredstate_publish()
             mesh_upgrade.start_node_download(upgrade_data.repo_url)
         end
     end
@@ -386,13 +404,39 @@ function mesh_upgrade.get_mesh_upgrade_status()
 end
 
 function mesh_upgrade.start_safe_upgrade()
-    if mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPGRADE_SCHELUDED) and
-        utils.file_exists(mesh_upgrade.fw_path) then
-        -- perform safe upgrade 
+    if mesh_upgrade.state() == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE and utils.file_exists(mesh_upgrade.fw_path) then
+        -- perform safe upgrade preserving config and rebooting after 600 sec if
+        -- no confirmation is received
+        utils.execute_daemonized("safe-upgrade upgrade --reboot-safety-timeout=600 " .. mesh_upgrade.fw_path)
+        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPGRADE_SCHELUDED)
+        mesh_upgrade.trigger_sheredstate_publish()
         return true
     else
         utils.log("not able to start upgrade invalid state or firmware not found")
         return false
+    end
+end
+
+-- This command requires that the configuration be preserverd across upgrade,
+-- maybe this change achieves this objetive
+
+-- diff --git a/packages/lime-system/files/etc/config/lime-defaults b/packages/lime-system/files/etc/config/lime-defaults
+-- index 5f5c4a31..8d55d949 100644
+-- --- a/packages/lime-system/files/etc/config/lime-defaults
+-- +++ b/packages/lime-system/files/etc/config/lime-defaults
+-- @@ -8,7 +8,7 @@
+--  config lime system
+--         option hostname 'LiMe-%M4%M5%M6'
+--         option domain 'thisnode.info'
+-- -       option keep_on_upgrade 'libremesh dropbear minimum-essential /etc/sysupgrade.conf'
+-- +       option keep_on_upgrade 'libremesh dropbear minimum-essential /etc/sysupgrade.conf /etc/config/mesh-upgrade'
+--         option root_password_policy 'DO_NOTHING'
+--         option root_password_secret ''
+--         option deferable_reboot_uptime_s '97200'
+function mesh_upgrade.confirm()
+    if mesh_upgrade.state() == mesh_upgrade.upgrade_states.CONFIRMATION_PENDING then
+        utils.execute_daemonized("safe-upgrade confirm")
+        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPDATED)
     end
 end
 
