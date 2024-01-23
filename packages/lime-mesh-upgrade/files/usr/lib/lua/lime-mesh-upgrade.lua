@@ -10,21 +10,21 @@ local json = require 'luci.jsonc'
 local mesh_upgrade = {
     -- posible transaction states are derived from upgrade states
     transaction_states = {
-        NO_TRANSACTION = "no_transaction",
-        STARTED = "started", -- there is a transaction in progress
-        ABORTED = "aborted",
-        FINISHED = "finished"
+        NO_TRANSACTION = "NO_TRANSACTION",
+        STARTED = "STARTED", -- there is a transaction in progress
+        ABORTED = "ABORTED",
+        FINISHED = "FINISHED"
     },
-    -- psible upgrade states enumeration
+    -- posible upgrade states enumeration
     upgrade_states = {
-        DEFAULT = "not_upgrading", -- When no upgrade has started, after reboot
-        STARTING = "starting",
-        DOWNLOADING = "downloading",
-        READY_FOR_UPGRADE = "ready_for_upgrade",
-        UPGRADE_SCHEDULED = "upgrade_scheluded",
-        CONFIRMATION_PENDING = "confirmation_pending",
-        CONFIRMED = "confirmed",
-        ERROR = "error"
+        DEFAULT = "DEFAULT", -- When no upgrade has started, after reboot
+        STARTING = "STARTING",
+        DOWNLOADING = "DOWNLOADING",
+        READY_FOR_UPGRADE = "READY_FOR_UPGRADE",
+        UPGRADE_SCHEDULED = "UPGRADE_SCHEDULED",
+        CONFIRMATION_PENDING = "CONFIRMATION_PENDING",
+        CONFIRMED = "CONFIRMED",
+        ERROR = "ERROR"
     },
 
     -- list of possible errors
@@ -37,7 +37,6 @@ local mesh_upgrade = {
     },
     fw_path = "",
     su_timeout = 600,
-    MASTERNODE_ENDPOINT = "/lros/api/v1/"
 }
 
 -- should epgrade be disabled ?
@@ -70,27 +69,13 @@ end
 
 mesh_upgrade.set_workdir("/tmp/mesh_upgrade")
 
-function mesh_upgrade.start_eupgrade_download()
-    local cached_only = false
-    local latest_data = eupgrade.is_new_version_available(cached_only)
-    if latest_data then
-        utils.execute_daemonized("eupgrade-download")
-    else
-        ret = {
-            status = 'error',
-            message = 'New version is not availabe'
-        }
-    end
-    return latest_data
-end
-
 function mesh_upgrade.create_local_latest_json(latest_data)
     for _, im in pairs(latest_data['images']) do
         -- im['download-urls'] = string.gsub(im['download-urls'], upgrade_url, "test")
         im['download-urls'] = {mesh_upgrade.get_repo_base_url() .. im['name']}
     end
     utils.write_file(mesh_upgrade.LATEST_JSON_PATH, json.stringify(latest_data))
-    -- For the moment mesh upgrade will ignore the latest json signature on de master nodes
+    -- For the moment mesh upgrade will ignore the latest json signature on de main nodes
 end
 
 function mesh_upgrade.share_firmware_packages(dest)
@@ -107,57 +92,56 @@ end
 
 -- This function will download latest firmware and expose it as
 -- a local repository in order to be used for other nodes
-function mesh_upgrade.set_up_firmware_repository()
-    -- 1. Check if new version is available and download it demonized using eupgrade
-    local latest_data = mesh_upgrade.start_eupgrade_download()
-    if latest_data then
-        -- 2. Create local repository json data
-        mesh_upgrade.create_local_latest_json(latest_data)
-        -- 3. Expose eupgrade folder to uhttp
-        -- mesh_upgrade.share_firmware_packages()
-        -- do not do it here since the download may fail.
-    else
-        utils.log("no new version available")
-    end
+function mesh_upgrade.start_main_node_repository(latest_data)
+    -- Create local repository json data
+    mesh_upgrade.create_local_latest_json(latest_data)
+    utils.execute_daemonized("eupgrade-download")
 end
 
--- Function that check if tihs node have all things needed to became a master node
+-- Function that check if tihs node have all things needed to became a main node
 -- Then, call update shared state with the proper info
-function mesh_upgrade.become_master_node()
-    -- todo(kon): check if master node is already set or we are on mesh_upgrade status
-    local download_status = eupgrade.get_download_status()
+function mesh_upgrade.become_main_node()
+    -- todo(kon): check if main node is already set or we are on mesh_upgrade status
+    -- todo(kon): dont start again if status is started and eupgrade is downloaded for example
     -- Check if there are a new version available (cached only)
-    mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
-    local latest = eupgrade.is_new_version_available(true)
+    --mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
+    -- 1. Check if new version is available and download it demonized using eupgrade
+    local latest = eupgrade.is_new_version_available(false)
     if not latest then
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DEFAULT)
+        utils.log("no new version available")
         return {
             code = "NO_NEW_VERSION",
             error = "No new version is available"
         }
     end
-    mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADING)
+    -- 2. Start local repository and download latest firmware
+    mesh_upgrade.start_main_node_repository(latest)
+    mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
+end
+
+-- Return eupgrade status for this node and update mesh upgrade status accordingly
+function mesh_upgrade.get_main_node_status()
+    local download_status = eupgrade.get_download_status()
+
     -- Check download is completed
     if download_status == eupgrade.STATUS_DEFAULT then
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR, mesh_upgrade.errors.DOWNLOAD_FAILED)
-
-        return {
-            code = download_status,
-            error = "Firmware download not started"
-        }
+        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DEFAULT)
     elseif download_status == eupgrade.STATUS_DOWNLOADING then
-        return {
-            code = download_status,
-            error = "Firmware is downloading"
-        }
+        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
+    elseif download_status == eupgrade.STATUS_DOWNLOADED then
+        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
     elseif download_status == eupgrade.STATUS_DOWNLOAD_FAILED then
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR, mesh_upgrade.errors.DOWNLOAD_FAILED)
-        return {
-            code = download_status,
-            error = "Firmware download failed"
-        }
     end
-    -- 3. Expose eupgrade folder to uhttp (this is the best place to do it since
+    return {
+        code = download_status,
+    }
+end
+
+function mesh_upgrade.start_firmware_upgrade_transaction()
+    -- todo(kon): do all needed checks also with the main node state etc..
+    -- Expose eupgrade folder to uhttp (this is the best place to do it since
     --    all the files are present)
     mesh_upgrade.share_firmware_packages()
     -- Check if local json file exists
@@ -177,7 +161,8 @@ function mesh_upgrade.become_master_node()
             error = "Shared folder not found"
         }
     end
-    -- If we get here is supposed that everything is ready to be a master node
+    local latest = eupgrade.is_new_version_available(true)
+    -- If we get here is supposed that everything is ready to be a main node
     mesh_upgrade.inform_download_location(latest['version'])
     return {
         code = "SUCCESS"
@@ -196,7 +181,7 @@ function mesh_upgrade.report_error(error)
     mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR)
 end
 
--- function to be called by BOT nodes to start download from master.
+-- function to be called by nodes to start download from main.
 function mesh_upgrade.start_node_download(url)
     eupgrade.set_custom_api_url(url)
     local cached_only = false
@@ -227,7 +212,7 @@ function mesh_upgrade.start_node_download(url)
     end
 end
 
--- this function will be called by the master node to inform that the firmware is available
+-- this function will be called by the main node to inform that the firmware is available
 -- also will force shared state data refresh
 -- curl -6 'http://[fe80::a8aa:aaff:fe0d:feaa%lime_br0]/fw/resolv.conf'
 -- curl -6 'http://[fd0d:fe46:8ce8::1]/lros/api/v1/'
@@ -239,7 +224,7 @@ function mesh_upgrade.inform_download_location(version)
             repo_url = mesh_upgrade.get_repo_base_url(),
             upgrde_state = mesh_upgrade.upgrade_states.READY_FOR_UPGRADE,
             error = "",
-            master_node = true,
+            main_node = true,
             board_name = eupgrade._get_board_name(),
             current_fw = eupgrade._get_current_fw_version()
         }, mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
@@ -280,11 +265,16 @@ end
 
 -- ! changes the state of the upgrade and verifies that state transition is possible.
 function mesh_upgrade.change_state(newstate, errortype)
+    -- If the state is the same just return
+    if newstate == mesh_upgrade.state() then return false end
+
     local uci = config.get_uci_cursor()
     utils.log("changing from " .. mesh_upgrade.state() .. " to " .. newstate)
     if newstate == mesh_upgrade.upgrade_states.STARTING then
-        if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.DEFAULT or mesh_upgrade.state() ==
-            mesh_upgrade.upgrade_states.ERROR or mesh_upgrade.state() == mesh_upgrade.upgrade_states.UPDATED) then
+        if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.DEFAULT or
+                mesh_upgrade.state() == mesh_upgrade.upgrade_states.ERROR or
+                mesh_upgrade.state() == mesh_upgrade.upgrade_states.UPDATED)
+        then
             utils.log("ok to start")
         else
             utils.log("invalid state change not able to start")
@@ -341,7 +331,7 @@ function mesh_upgrade.become_bot_node(upgrade_data)
         utils.log("already a bot node")
     else
         utils.log("transfoming into a bot node")
-        upgrade_data.master_node = false
+        upgrade_data.main_node = false
         mesh_upgrade.set_mesh_upgrade_info(upgrade_data, mesh_upgrade.upgrade_states.STARTING)
         if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.STARTING) then
             mesh_upgrade.start_node_download(upgrade_data.repo_url)
@@ -349,7 +339,7 @@ function mesh_upgrade.become_bot_node(upgrade_data)
     end
 end
 
--- set download information for the new firmware from master node
+-- set download information for the new firmware from main node
 -- Called by a shared state hook in bot nodes
 function mesh_upgrade.set_mesh_upgrade_info(upgrade_data, upgrade_state)
     local uci = config.get_uci_cursor()
@@ -362,7 +352,7 @@ function mesh_upgrade.set_mesh_upgrade_info(upgrade_data, upgrade_state)
             uci:set('mesh-upgrade', 'main', 'candidate_fw', upgrade_data.candidate_fw)
             uci:set('mesh-upgrade', 'main', 'error', "")
             uci:set('mesh-upgrade', 'main', 'timestamp', os.time())
-            uci:set('mesh-upgrade', 'main', 'master_node', tostring(upgrade_data.master_node))
+            uci:set('mesh-upgrade', 'main', 'main_node', tostring(upgrade_data.main_node))
             uci:save('mesh-upgrade')
             uci:commit('mesh-upgrade')
             -- trigger shared state data refresh
@@ -397,7 +387,7 @@ function mesh_upgrade.get_mesh_upgrade_status()
     end
     upgrade_data.error = uci:get('mesh-upgrade', 'main', 'error')
     upgrade_data.timestamp = uci:get('mesh-upgrade', 'main', 'timestamp')
-    upgrade_data.master_node = mesh_upgrade.toboolean(uci:get('mesh-upgrade', 'main', 'master_node'))
+    upgrade_data.main_node = mesh_upgrade.toboolean(uci:get('mesh-upgrade', 'main', 'main_node'))
     upgrade_data.board_name = eupgrade._get_board_name()
     upgrade_data.current_fw = eupgrade._get_current_fw_version()
     return upgrade_data
