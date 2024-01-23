@@ -143,6 +143,14 @@ function mesh_upgrade.start_firmware_upgrade_transaction()
     -- todo(kon): do all needed checks also with the main node state etc..
     -- Expose eupgrade folder to uhttp (this is the best place to do it since
     --    all the files are present)
+    local latest = eupgrade.is_new_version_available(true)
+    if not latest then
+        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DEFAULT)
+        return {
+            code = "NO_NEW_VERSION",
+            error = "No new version is available"
+        }
+    end
     mesh_upgrade.share_firmware_packages()
     -- Check if local json file exists
     if not utils.file_exists(mesh_upgrade.LATEST_JSON_PATH) then
@@ -161,9 +169,9 @@ function mesh_upgrade.start_firmware_upgrade_transaction()
             error = "Shared folder not found"
         }
     end
-    local latest = eupgrade.is_new_version_available(true)
     -- If we get here is supposed that everything is ready to be a main node
     mesh_upgrade.inform_download_location(latest['version'])
+    mesh_upgrade.trigger_sheredstate_publish()
     return {
         code = "SUCCESS"
     }
@@ -289,7 +297,8 @@ function mesh_upgrade.change_state(newstate, errortype)
             return false
         end
     elseif newstate == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE then
-        if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.DOWNLOADING) then
+        if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.DOWNLOADING or
+         mesh_upgrade.state() == mesh_upgrade.upgrade_states.STARTING) then
             utils.log("ok READY_FOR_UPGRADE")
         else
             utils.log("invalid statechange not able to move to READY_FOR_UPGRADE")
@@ -397,13 +406,18 @@ function mesh_upgrade.start_safe_upgrade()
     if mesh_upgrade.state() == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE and utils.file_exists(mesh_upgrade.fw_path) then
         -- perform safe upgrade preserving config and rebooting after 600 sec if
         -- no confirmation is received
-        utils.execute_daemonized("safe-upgrade upgrade --reboot-safety-timeout=600 " .. mesh_upgrade.fw_path)
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPGRADE_SCHELUDED)
         mesh_upgrade.trigger_sheredstate_publish()
-        return true
+        utils.execute_daemonized("safe-upgrade upgrade --reboot-safety-timeout=600 " .. mesh_upgrade.fw_path)
+        return {
+            code = "SUCCESS"
+        }
     else
         utils.log("not able to start upgrade invalid state or firmware not found")
-        return false
+        return {
+            code = "NOT_ABLE_TO_START_UPGRADE",
+            error = "Firmware not found"
+        }
     end
 end
 
@@ -425,8 +439,12 @@ end
 --         option deferable_reboot_uptime_s '97200'
 function mesh_upgrade.confirm()
     if mesh_upgrade.state() == mesh_upgrade.upgrade_states.CONFIRMATION_PENDING then
-        utils.execute_daemonized("safe-upgrade confirm")
+        local shell_output = utils.unsafe_shell("safe-upgrade confirm")
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPDATED)
+        utils.log(shell_output)
+        return {
+            code = "SUCCESS"
+        }
     end
 end
 
