@@ -10,21 +10,21 @@ local json = require 'luci.jsonc'
 local mesh_upgrade = {
     -- posible transaction states are derived from upgrade states
     transaction_states = {
-        NO_TRANSACTION = "no_transaction",
-        STARTED = "started", -- there is a transaction in progress
-        ABORTED = "aborted",
-        FINISHED = "finished"
+        NO_TRANSACTION = "NO_TRANSACTION",
+        STARTED = "STARTED", -- there is a transaction in progress
+        ABORTED = "ABORTED",
+        FINISHED = "FINISHED"
     },
     -- posible upgrade states enumeration
     upgrade_states = {
-        DEFAULT = "not_upgrading", -- When no upgrade has started, after reboot
-        STARTING = "starting",
-        DOWNLOADING = "downloading",
-        READY_FOR_UPGRADE = "ready_for_upgrade",
-        UPGRADE_SCHEDULED = "upgrade_scheluded",
-        CONFIRMATION_PENDING = "confirmation_pending",
-        CONFIRMED = "confirmed",
-        ERROR = "error"
+        DEFAULT = "DEFAULT", -- When no upgrade has started, after reboot
+        STARTING = "STARTING",
+        DOWNLOADING = "DOWNLOADING",
+        READY_FOR_UPGRADE = "READY_FOR_UPGRADE",
+        UPGRADE_SCHEDULED = "UPGRADE_SCHEDULED",
+        CONFIRMATION_PENDING = "CONFIRMATION_PENDING",
+        CONFIRMED = "CONFIRMED",
+        ERROR = "ERROR"
     },
 
     -- list of possible errors
@@ -102,6 +102,7 @@ end
 -- Then, call update shared state with the proper info
 function mesh_upgrade.become_main_node()
     -- todo(kon): check if main node is already set or we are on mesh_upgrade status
+    -- todo(kon): dont start again if status is started and eupgrade is downloaded for example
     -- Check if there are a new version available (cached only)
     mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
     -- 1. Check if new version is available and download it demonized using eupgrade
@@ -119,34 +120,23 @@ function mesh_upgrade.become_main_node()
     mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
 end
 
+-- Return eupgrade status for this node and update mesh upgrade status accordingly
 function mesh_upgrade.get_main_node_status()
     local download_status = eupgrade.get_download_status()
+
     -- Check download is completed
     if download_status == eupgrade.STATUS_DEFAULT then
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DEFAULT)
-        return {
-            code = mesh_upgrade.upgrade_states.DEFAULT,
-        }
-
     elseif download_status == eupgrade.STATUS_DOWNLOADING then
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
-        return {
-            code = mesh_upgrade.upgrade_states.STARTING,
-        }
-
-    elseif download_status == eupgrade.DOWNLOADED then
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADED)
-        return {
-            code = mesh_upgrade.upgrade_states.DOWNLOADED,
-        }
-
+    elseif download_status == eupgrade.STATUS_DOWNLOADED then
+        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
     elseif download_status == eupgrade.STATUS_DOWNLOAD_FAILED then
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR, mesh_upgrade.errors.DOWNLOAD_FAILED)
-        return {
-            code = mesh_upgrade.upgrade_states.ERROR,
-            error = mesh_upgrade.errors.DOWNLOAD_FAILED
-        }
     end
+    return {
+        code = download_status,
+    }
 end
 
 function mesh_upgrade.start_firmware_upgrade_transaction()
@@ -171,6 +161,7 @@ function mesh_upgrade.start_firmware_upgrade_transaction()
             error = "Shared folder not found"
         }
     end
+    local latest = eupgrade.is_new_version_available(true)
     -- If we get here is supposed that everything is ready to be a main node
     mesh_upgrade.inform_download_location(latest['version'])
     return {
@@ -274,11 +265,16 @@ end
 
 -- ! changes the state of the upgrade and verifies that state transition is possible.
 function mesh_upgrade.change_state(newstate, errortype)
+    -- If the state is the same just return
+    if newstate == mesh_upgrade.state() then return false end
+
     local uci = config.get_uci_cursor()
     utils.log("changing from " .. mesh_upgrade.state() .. " to " .. newstate)
     if newstate == mesh_upgrade.upgrade_states.STARTING then
-        if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.DEFAULT or mesh_upgrade.state() ==
-            mesh_upgrade.upgrade_states.ERROR or mesh_upgrade.state() == mesh_upgrade.upgrade_states.UPDATED) then
+        if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.DEFAULT or
+                mesh_upgrade.state() == mesh_upgrade.upgrade_states.ERROR or
+                mesh_upgrade.state() == mesh_upgrade.upgrade_states.UPDATED)
+        then
             utils.log("ok to start")
         else
             utils.log("invalid state change not able to start")
@@ -290,7 +286,7 @@ function mesh_upgrade.change_state(newstate, errortype)
         if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.STARTING) then
             utils.log("ok to download")
         else
-            utils.log("invalid statechange not able to star t")
+            utils.log("invalid state change not able to downloading")
             return false
         end
     end
@@ -298,7 +294,7 @@ function mesh_upgrade.change_state(newstate, errortype)
         if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.DOWNLOADING) then
             utils.log("ok to be ready")
         else
-            utils.log("invalid statechange no able to be ready")
+            utils.log("invalid state change no able to be ready")
             return false
         end
     end
