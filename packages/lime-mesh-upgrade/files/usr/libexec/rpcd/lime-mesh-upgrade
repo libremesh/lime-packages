@@ -8,7 +8,12 @@
 ]] --
 local json = require 'luci.jsonc'
 local mesh_upgrade = require 'lime-mesh-upgrade'
+local ubus = require "ubus"
 
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
 
 local function become_main_node(msg)
     local result = mesh_upgrade.become_main_node(msg)
@@ -34,11 +39,12 @@ local methods = {
 if arg[1] == 'list' then utils.printJson(methods) end
 
 if arg[1] == 'call' then
+    utils.printJson({ error = "Method not foundsss" })
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
     if      arg[2] == 'become_main_node' then become_main_node(msg)
     elseif  arg[2] == 'get_main_node_status' then get_main_node_status(msg)
     elseif  arg[2] == 'start_firmware_upgrade_transaction' then start_firmware_upgrade_transaction(msg)
-    else utils.printJson({ error = "Method not found" })
+    else utils.printJson({ error = "Method not foundsss" })
     end
 end
