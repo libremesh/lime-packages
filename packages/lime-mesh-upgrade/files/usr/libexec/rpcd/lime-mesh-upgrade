@@ -31,20 +31,33 @@ local function start_firmware_upgrade_transaction(msg)
 end
 
 local methods = {
-    become_master_node = {},
-    get_main_node_status = {},
-    start_firmware_upgrade_transaction = {},
+    become_main_node = {
+        data_type = 'value'
+    },
+    get_main_node_status = {
+        data_type = 'value'
+    },
+    start_firmware_upgrade_transaction = {
+        data_type = 'value'
+    }
 }
 
-if arg[1] == 'list' then utils.printJson(methods) end
+if arg[1] == 'list' then
+    utils.printJson(methods)
+end
 
 if arg[1] == 'call' then
-    utils.printJson({ error = "Method not foundsss" })
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
-    if      arg[2] == 'become_main_node' then become_main_node(msg)
-    elseif  arg[2] == 'get_main_node_status' then get_main_node_status(msg)
-    elseif  arg[2] == 'start_firmware_upgrade_transaction' then start_firmware_upgrade_transaction(msg)
-    else utils.printJson({ error = "Method not foundsss" })
+    if arg[2] == 'become_main_node' then
+        become_main_node(msg)
+    elseif arg[2] == 'get_main_node_status' then
+        get_main_node_status(msg)
+    elseif arg[2] == 'start_firmware_upgrade_transaction' then
+        start_firmware_upgrade_transaction(msg)
+    else
+        utils.printJson({
+            error = "Method not foundsss"
+        })
     end
 end
