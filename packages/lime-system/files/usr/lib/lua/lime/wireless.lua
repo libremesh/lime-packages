@@ -50,8 +50,18 @@ function wireless.scandevices()
 end
 
 function wireless.is5Ghz(radio)
-	local devModes = iwinfo.nl80211.hwmodelist(radio)
-	return devModes.a or devModes.ac
+	local config = require("lime.config")
+	local uci = config.get_uci_cursor()
+	wifi_band = uci:get('wireless', radio, 'band')
+	if wifi_band then return wifi_band=='5g' end
+	wifi_channel = uci:get('wireless', radio, 'channel')
+	if tonumber(wifi_channel) then
+		wifi_channel = tonumber(wifi_channel)
+		return 32<=wifi_channel and wifi_channel<178
+	end
+	local backend = iwinfo.type(radio)
+	local devModes = backend and iwinfo[backend].hwmodelist(radio)
+	return devModes and (devModes.a or devModes.ac)
 end
 
 wireless.availableModes = { adhoc=true, ap=true, apname=true, apbb=true, ieee80211s=true }
