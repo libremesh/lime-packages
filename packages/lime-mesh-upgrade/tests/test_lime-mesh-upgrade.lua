@@ -27,7 +27,7 @@ local upgrade_data = {
         repo_url = "http://repo.librerouter.org/lros/api/v1/latest/",
         upgrde_state = "starting,downloading|ready_for_upgrade|upgrade_scheluded|confirmation_pending|~~confirmed~~|updated|error",
         error = "CODE",
-        master_node="true",
+        main_node="true",
         current_fw="LibreRouterOs 1.5 r0+11434-e93615c947",
         board_name = "qemu-standard-pc-i440fx-piix-1996"}
 
@@ -142,7 +142,7 @@ describe('LiMe mesh upgrade', function()
 
         lime_mesh_upgrade.become_bot_node(upgrade_data)
         status = lime_mesh_upgrade.get_mesh_upgrade_status()
-        assert.is.Not(status.master_node, false)
+        assert.is.Not(status.main_node, false)
         assert.is.equal(status.repo_url, upgrade_data.repo_url)
         assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.ERROR)
         assert.is.equal(status.error, lime_mesh_upgrade.errors.DOWNLOAD_FAILED)
@@ -171,7 +171,7 @@ describe('LiMe mesh upgrade', function()
         lime_mesh_upgrade.become_bot_node(upgrade_data)
         status = lime_mesh_upgrade.get_mesh_upgrade_status()
         utils.printJson(status)
-        assert.is.equal(status.master_node, upgrade_data.master_node)
+        assert.is.equal(status.main_node, upgrade_data.main_node)
         assert.is.equal(status.repo_url, upgrade_data.repo_url)
         assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
         --assert.is.equal(status.data.eup_STATUS, eupgrade.STATUS_DOWNLOADED)
@@ -217,7 +217,7 @@ describe('LiMe mesh upgrade', function()
         lime_mesh_upgrade.become_bot_node(upgrade_data)
         status = lime_mesh_upgrade.get_mesh_upgrade_status()
         utils.printJson(status)
-        assert.is.equal(status.master_node, upgrade_data.master_node)
+        assert.is.equal(status.main_node, upgrade_data.main_node)
         assert.is.equal(status.repo_url, upgrade_data.repo_url)
         assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
         --assert.is.equal(status.eup_STATUS, eupgrade.STATUS_DOWNLOADED)

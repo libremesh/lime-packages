@@ -28,11 +28,11 @@ if not mesh_upgrade.started() then
 		--if any node has started an upgrade process and start one too?
 		--only fetch the info from the master node publication?
 		if node ~= hostname and s_s_data.data.main_node then
-			utils.unsafe_shell('logger -p startupgrade.hock -t "mesh upgrade" "mesh upgrade detected upgrade from "' ..
+			utils.unsafe_shell('logger -p daemon.info -t "mesh upgrade" "mesh upgrade detected upgrade from "' ..
 			s_s_data.data.repo_url .. " and masternode node  " .. node .. " with this data " .. JSON.stringify(s_s_data.data)) 
 			mesh_upgrade.become_bot_node(s_s_data.data)
 		else
-			utils.unsafe_shell('logger -p startupgrade.hock -t "mesh upgrade" "status  "' ..
+			utils.unsafe_shell('logger -p daemon.info -t "mesh upgrade" "status  "' ..
 			JSON.stringify(s_s_data.data) .. " from node " .. node)
 		end
 	end
