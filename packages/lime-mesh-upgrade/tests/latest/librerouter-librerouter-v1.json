@@ -5,7 +5,8 @@
             "name": "upgrade-lr-1.5.sh",
             "type": "installer",
             "download-urls": [
-                "http://10.13.0.2:8080/librerouteros-1.5-r0+11434-e93615c947-ath79-generic-librerouter_librerouter-v1-squashfs-sysupgrade.bin"
+                "http://10.13.0.2:8080/librerouteros-1.5-r0+11434-e93615c947-ath79-generic-librerouter_librerouter-v1-squashfs-sysupgrade.bin",
+                "http://10.234.77.12:8080/librerouteros-1.5-r0+11434-e93615c947-ath79-generic-librerouter_librerouter-v1-squashfs-sysupgrade.bin"
             ],
             "sha256": "2da0abb549d6178a7978b357be3493d5aff5c07b993ea0962575fa61bef18c27"
         },
@@ -13,7 +14,7 @@
             "name": "firmware.bin",
             "type": "sysupgrade",
             "download-urls": [
-                "http://10.13.0.2:8080/librerouteros-1.5-r0+11434-e93615c947-ath79-generic-librerouter_librerouter-v1-squashfs-sysupgrade.bin"
+                "http://10.234.77.12:8080/librerouteros-1.5-r0+11434-e93615c947-ath79-generic-librerouter_librerouter-v1-squashfs-sysupgrade.bin"
             ],
             "sha256": "2da0abb549d6178a7978b357be3493d5aff5c07b993ea0962575fa61bef18c27"
         }

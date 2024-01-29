@@ -61,7 +61,7 @@ end
 function mesh_upgrade.set_workdir(workdir)
     mesh_upgrade._create_workdir(workdir)
     mesh_upgrade.WORKDIR = workdir
-    mesh_upgrade.LATEST_JSON_FILE_NAME = eupgrade._get_board_name() .. ".json" -- latest json with local lan url file name
+    mesh_upgrade.LATEST_JSON_FILE_NAME = utils.slugify(eupgrade._get_board_name()) .. ".json" -- latest json with local lan url file name
     mesh_upgrade.LATEST_JSON_PATH = mesh_upgrade.WORKDIR .. "/" .. mesh_upgrade.LATEST_JSON_FILE_NAME -- latest json full path
     mesh_upgrade.FIRMWARE_REPO_PATH = '/lros/' -- path url for firmwares
     mesh_upgrade.FIRMWARE_SHARED_FOLDER = '/www/' .. mesh_upgrade.FIRMWARE_REPO_PATH
@@ -74,8 +74,11 @@ function mesh_upgrade.create_local_latest_json(latest_data)
         -- im['download-urls'] = string.gsub(im['download-urls'], upgrade_url, "test")
         im['download-urls'] = {mesh_upgrade.get_repo_base_url() .. im['name']}
     end
+    
+    utils.log(json.stringify(latest_data))
     utils.write_file(mesh_upgrade.LATEST_JSON_PATH, json.stringify(latest_data))
     -- For the moment mesh upgrade will ignore the latest json signature on de main nodes
+    -- todo: add signature file with a valid signature... or review the signing process. 
 end
 
 function mesh_upgrade.share_firmware_packages(dest)
@@ -195,17 +198,17 @@ function mesh_upgrade.start_node_download(url)
     local cached_only = false
     local url2 = eupgrade.get_upgrade_api_url()
     local latest_data, message = eupgrade.is_new_version_available(cached_only)
-    utils.log("start_node_download from  " .. url2)
+    utils.log("start_node_download from  " .. url2 )
 
     if latest_data then
         utils.log("start_node_download ")
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADING)
         utils.log("downloading")
         local image = {}
-        image, mesh_upgrade.fw_path = eupgrade.download_firmware(latest_data)
-        utils.log(image)
-        utils.log(mesh_upgrade.fw_path)
-        utils.log(latest_data)
+        image = eupgrade.download_firmware(latest_data)
+        utils.printJson(image)
+        --utils.log(mesh_upgrade.fw_path)
+        --utils.log(latest_data)
         if eupgrade.get_download_status() == eupgrade.STATUS_DOWNLOADED and image ~= nil then
             utils.printJson(image)
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
@@ -215,7 +218,7 @@ function mesh_upgrade.start_node_download(url)
             mesh_upgrade.report_error(mesh_upgrade.errors.DOWNLOAD_FAILED)
         end
     else
-        utils.log("Error ... no latest data available")
+        utils.log("Error ... no latest data available" .. message)
         mesh_upgrade.report_error(mesh_upgrade.errors.DOWNLOAD_FAILED)
     end
 end
