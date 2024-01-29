@@ -32,13 +32,13 @@ end
 
 local methods = {
     become_main_node = {
-        data_type = 'value'
+        no_params = 0
     },
     get_main_node_status = {
-        data_type = 'value'
+        no_params = 0
     },
     start_firmware_upgrade_transaction = {
-        data_type = 'value'
+        no_params = 0
     }
 }
 
