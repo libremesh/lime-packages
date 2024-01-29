@@ -25,7 +25,7 @@ local uci
 local upgrade_data = {
         candidate_fw = "xxxx",
         repo_url = "http://repo.librerouter.org/lros/api/v1/latest/",
-        upgrde_state = "starting,downloading|ready_for_upgrade|upgrade_scheluded|confirmation_pending|~~confirmed~~|updated|error",
+        upgrade_state = "starting,downloading|ready_for_upgrade|upgrade_scheluded|confirmation_pending|~~confirmed~~|updated|error",
         error = "CODE",
         master_node="true",
         current_fw="LibreRouterOs 1.5 r0+11434-e93615c947",
@@ -150,6 +150,20 @@ describe('LiMe mesh upgrade', function()
         --assert.is.equal(status.transaction_state, lime_mesh_upgrade.transaction_states.ABORTED)
         --TODO: javi en caso de falla ... reintentar ? abortar ? 
     end)
+
+    it('test become main node changes the state to STARTING', function()
+        stub(eupgrade, 'is_new_version_available', function()
+            return json.parse(latest_release_data)
+        end)
+        stub(lime_mesh_upgrade, 'start_main_node_repository', function() end)
+        stub(eupgrade, '_get_current_fw_version', function() end)
+        local res = lime_mesh_upgrade.become_main_node()
+        assert.is.equal(res.code, 'SUCCESS')
+        local status = lime_mesh_upgrade.get_mesh_upgrade_status()
+        assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.STARTING)
+    end)
+
+
     it('test set mesh config start download and assert status ready_for_upgrade', function()
         stub(eupgrade, '_get_board_name', function()
             return 'test-board'
@@ -249,7 +263,7 @@ describe('LiMe mesh upgrade', function()
         config.set('wifi', 'lime')
         config.set('wifi', 'ap_ssid', 'LibreMesh.org')
         uci:commit('lime')
-        
+
         lime_mesh_upgrade.create_local_latest_json(json.parse(latest_release_data))
         local latest = json.parse(utils.read_file(lime_mesh_upgrade.LATEST_JSON_PATH))
         local repo_url = lime_mesh_upgrade.FIRMWARE_REPO_PATH
