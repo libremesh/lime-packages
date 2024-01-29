@@ -109,7 +109,6 @@ function mesh_upgrade.become_main_node()
     local latest = eupgrade.is_new_version_available(false)
     if not latest then
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DEFAULT)
-        utils.log("no new version available")
         return {
             code = "NO_NEW_VERSION",
             error = "No new version is available"
@@ -118,6 +117,9 @@ function mesh_upgrade.become_main_node()
     -- 2. Start local repository and download latest firmware
     mesh_upgrade.start_main_node_repository(latest)
     mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
+    return {
+        code = "SUCCESS",
+    }
 end
 
 -- Return eupgrade status for this node and update mesh upgrade status accordingly
@@ -236,8 +238,6 @@ function mesh_upgrade.inform_download_location(version)
             board_name = eupgrade._get_board_name(),
             current_fw = eupgrade._get_current_fw_version()
         }, mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
-    else
-        utils.log("eupgrade STATUS is not 'DOWNLOADED'")
     end
 end
 
@@ -245,11 +245,10 @@ end
 function mesh_upgrade.started()
     status = mesh_upgrade.state()
     if status == mesh_upgrade.upgrade_states.STARTING or status == mesh_upgrade.upgrade_states.CONFIRMATION_PENDING or
-        status == mesh_upgrade.upgrade_states.CONFIRMED or status == mesh_upgrade.upgrade_states.DOWNLOADING or status ==
-        mesh_upgrade.upgrade_states.READY_FOR_UPGRADE or status == mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED then
+            status == mesh_upgrade.upgrade_states.CONFIRMED or status == mesh_upgrade.upgrade_states.DOWNLOADING or status ==
+            mesh_upgrade.upgrade_states.READY_FOR_UPGRADE or status == mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED then
         return true
     end
-    utils.log(" started returned false !!! ")
     return false
     -- todo(javi): what happens if a mesh_upgrade has started more than an hour ago ? should this node abort it ?
 end
@@ -268,66 +267,38 @@ end
 -- This line will genereate recursive dependencies like in pirania pakcage
 function mesh_upgrade.trigger_sheredstate_publish()
     utils.execute_daemonized(
-        "/etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state sync mesh_wide_upgrade")
+            "/etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state sync mesh_wide_upgrade")
 end
 
 -- ! changes the state of the upgrade and verifies that state transition is possible.
-function mesh_upgrade.change_state(newstate, errortype)
+function mesh_upgrade.change_state(newstate)
     -- If the state is the same just return
     if newstate == mesh_upgrade.state() then return false end
 
     local uci = config.get_uci_cursor()
-    utils.log("changing from " .. mesh_upgrade.state() .. " to " .. newstate)
-    if newstate == mesh_upgrade.upgrade_states.STARTING then
-        if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.DEFAULT or
-                mesh_upgrade.state() == mesh_upgrade.upgrade_states.ERROR or
-                mesh_upgrade.state() == mesh_upgrade.upgrade_states.UPDATED)
-        then
-            utils.log("ok to start")
-        else
-            utils.log("invalid state change not able to start")
-
-            return false
-        end
-    elseif newstate == mesh_upgrade.upgrade_states.DOWNLOADING then
-        if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.STARTING) then
-            utils.log("ok DOWNLOADING")
-        else
-            utils.log("invalid statechange not able to move to DOWNLOADING")
-            return false
-        end
-    elseif newstate == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE then
-        if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.DOWNLOADING or
-         mesh_upgrade.state() == mesh_upgrade.upgrade_states.STARTING) then
-            utils.log("ok READY_FOR_UPGRADE")
-        else
-            utils.log("invalid statechange not able to move to READY_FOR_UPGRADE")
-            return false
-        end
-    elseif newstate == mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED then
-        if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE) then
-            utils.log("ok UPGRADE_SCHEDULED")
-        else
-            utils.log("invalid statechange no able to UPGRADE_SCHEDULED")
-            return false
-        end
-    elseif newstate == mesh_upgrade.upgrade_states.CONFIRMATION_PENDING then
-        if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED) then
-            utils.log("ok CONFIRMATION_PENDING")
-        else
-            utils.log("invalid statechange no able to CONFIRMATION_PENDING")
-            return false
-        end
-    elseif newstate == mesh_upgrade.upgrade_states.UPDATED then
-        if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.CONFIRMATION_PENDING) then
-            utils.log("ok UPDATED")
-        else
-            utils.log("invalid statechange no able to UPDATED ")
-            return false
-        end
+    if newstate == mesh_upgrade.upgrade_states.STARTING and
+            mesh_upgrade.state() ~= mesh_upgrade.upgrade_states.DEFAULT and
+            mesh_upgrade.state() ~= mesh_upgrade.upgrade_states.ERROR and
+            mesh_upgrade.state() ~= mesh_upgrade.upgrade_states.UPDATED then
+        return false
+    elseif newstate == mesh_upgrade.upgrade_states.DOWNLOADING and
+            mesh_upgrade.state() ~= mesh_upgrade.upgrade_states.STARTING then
+        return false
+    elseif newstate == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE and
+            mesh_upgrade.state() ~= mesh_upgrade.upgrade_states.DOWNLOADING and
+            mesh_upgrade.state() ~= mesh_upgrade.upgrade_states.STARTING then
+        return false
+    elseif newstate == mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED and
+            mesh_upgrade.state() ~= mesh_upgrade.upgrade_states.READY_FOR_UPGRADE then
+        return false
+    elseif newstate == mesh_upgrade.upgrade_states.CONFIRMATION_PENDING and
+            mesh_upgrade.state() ~= mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED then
+        return false
+    elseif newstate == mesh_upgrade.upgrade_states.UPDATED and
+            mesh_upgrade.state() ~= mesh_upgrade.upgrade_states.CONFIRMATION_PENDING then
+        return false
     end
     -- todo(javi): verify other states and return false if it is not possible
-
     -- lets allow all types of state changes.
     uci:set('mesh-upgrade', 'main', 'upgrade_state', newstate)
     uci:save('mesh-upgrade')
