@@ -81,7 +81,7 @@ end
 
 function mesh_upgrade.share_firmware_packages(dest)
     if dest == nil then
-        dest = "/www" .. mesh_upgrade.FIRMWARE_REPO_PATH
+        dest = mesh_upgrade.FIRMWARE_SHARED_FOLDER
     end
     local images_folder = eupgrade.WORKDIR
     mesh_upgrade._create_workdir(dest)
@@ -228,7 +228,7 @@ function mesh_upgrade.start_node_download(url)
         end
     else
         --utils.log("Error ... no latest data available" .. message)
-        mesh_upgrade.report_error(mesh_upgrade.errors.DOWNLOAD_FAILED)
+        mesh_upgrade.report_error(mesh_upgrade.errors.NO_LATEST_AVAILABLE)
     end
 end
 
@@ -318,9 +318,8 @@ end
 
 function mesh_upgrade.become_bot_node(upgrade_data)
     if mesh_upgrade.started() then
-        --utils.log("already a bot node")
+
     else
-        --utils.log("transfoming into a bot node")
         upgrade_data.main_node = false
         mesh_upgrade.set_mesh_upgrade_info(upgrade_data, mesh_upgrade.upgrade_states.STARTING)
         if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.STARTING) then
