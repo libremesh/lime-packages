@@ -7,10 +7,8 @@ stub(eupgrade, '_get_board_name', function()
 end)
 
 local lime_mesh_upgrade = require 'lime-mesh-upgrade'
-local network = require("lime.network")
 local utils = require "lime.utils"
 local test_utils = require "tests.utils"
-local eup = require "eupgrade"
 local json = require 'luci.jsonc'
 local uci
 
