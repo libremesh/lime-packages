@@ -107,15 +107,12 @@ function eup.is_new_version_available(cached_only)
             local sig_url = url .. ".sig"
             if not utils.http_client_get(sig_url, 10, eup.FIRMWARE_LATEST_JSON_SIGNATURE) then
                 message = "Can't download signature " .. sig_url
-                utils.log(message)
             end
             -- this will skip json signature verification when altenative url is set
             if eup._check_signature(eup.FIRMWARE_LATEST_JSON, eup.FIRMWARE_LATEST_JSON_SIGNATURE) or eup.is_meshupgrade_enabled() then
-                utils.log("Good signature of firmware_latest.json")
                 return latest_data
             else
                 message = "Bad signature of firmware_latest.json"
-                utils.log(message)
             end
         end
     end

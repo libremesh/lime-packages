@@ -16,7 +16,7 @@ if not conn then
 end
 
 local function become_main_node(msg)
-    local result = mesh_upgrade.become_main_node(msg)
+    local result = mesh_upgrade.become_main_node(msg.url)
     return utils.printJson(result)
 end
 
@@ -26,13 +26,13 @@ local function get_main_node_status(msg)
 end
 
 local function start_firmware_upgrade_transaction(msg)
-    local result = mesh_upgrade.start_firmware_upgrade_transaction(msg)
+    local result = mesh_upgrade.start_firmware_upgrade_transaction()
     return utils.printJson(result)
 end
 
 local methods = {
     become_main_node = {
-        no_params = 0
+        url = 'value'
     },
     get_main_node_status = {
         no_params = 0

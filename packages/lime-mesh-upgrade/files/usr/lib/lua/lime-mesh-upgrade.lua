@@ -51,7 +51,7 @@ end
 -- Create a work directory if nor exist
 function mesh_upgrade._create_workdir(workdir)
     if not utils.file_exists(workdir) then
-        os.execute('mkdir -p ' .. workdir)
+        os.execute('mkdir -p ' .. workdir  .. " >/dev/null")
     end
     if fs.stat(workdir, "type") ~= "dir" then
         error("Can't configure workdir " .. workdir)
@@ -75,7 +75,6 @@ function mesh_upgrade.create_local_latest_json(latest_data)
         im['download-urls'] = {mesh_upgrade.get_repo_base_url() .. im['name']}
     end
     
-    utils.log(json.stringify(latest_data))
     utils.write_file(mesh_upgrade.LATEST_JSON_PATH, json.stringify(latest_data))
     -- For the moment mesh upgrade will ignore the latest json signature on de main nodes
     -- todo: add signature file with a valid signature... or review the signing process. 
@@ -89,8 +88,13 @@ function mesh_upgrade.share_firmware_packages(dest)
     mesh_upgrade._create_workdir(dest)
     -- json file has to be placed in a url that ends with latest
     mesh_upgrade._create_workdir(dest .. "/latest")
-    os.execute("ln -s " .. images_folder .. "/* " .. dest)
-    os.execute("ln -s " .. mesh_upgrade.LATEST_JSON_PATH .. " " .. dest .. "/latest")
+    os.execute("ln -s " .. images_folder .. "/* " .. dest.. " >/dev/null")
+    --utils.unsafe_shell("ln -s " .. images_folder .. "/* " .. dest .. " >/dev/null")
+    os.execute("ln -s " .. mesh_upgrade.LATEST_JSON_PATH .. " " .. dest .. "/latest >/dev/null")
+    os.execute("chmod -R 664 "..  dest .." >/dev/null")
+    os.execute("chmod -R 664 "..  mesh_upgrade.WORKDIR  .." >/dev/null")
+    os.execute("chmod -R 664 "..  images_folder  .." >/dev/null")
+
 end
 
 -- This function will download latest firmware and expose it as
@@ -98,12 +102,16 @@ end
 function mesh_upgrade.start_main_node_repository(latest_data)
     -- Create local repository json data
     mesh_upgrade.create_local_latest_json(latest_data)
-    utils.execute_daemonized("eupgrade-download")
+    utils.execute_daemonized("eupgrade-download >/dev/null")
 end
 
--- Function that check if tihs node have all things needed to became a main node
--- Then, call update shared state with the proper info
-function mesh_upgrade.become_main_node()
+--- Function that check if tihs node have all things needed to became a main node
+--- Then, call update shared state with the proper info
+-- @url optional new url to get the firmware for local repo 
+function mesh_upgrade.become_main_node(url)
+    if url then
+        eupgrade.set_custom_api_url(url)
+    end
     -- todo(kon): check if main node is already set or we are on mesh_upgrade status
     -- todo(kon): dont start again if status is started and eupgrade is downloaded for example
     -- Check if there are a new version available (cached only)
@@ -122,6 +130,7 @@ function mesh_upgrade.become_main_node()
     mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
     return {
         code = "SUCCESS",
+        error = ""
     }
 end
 
@@ -178,7 +187,8 @@ function mesh_upgrade.start_firmware_upgrade_transaction()
     mesh_upgrade.inform_download_location(latest['version'])
     mesh_upgrade.trigger_sheredstate_publish()
     return {
-        code = "SUCCESS"
+        code = "SUCCESS",
+        error = ""
     }
 end
 
@@ -200,27 +210,27 @@ function mesh_upgrade.start_node_download(url)
     local cached_only = false
     local url2 = eupgrade.get_upgrade_api_url()
     local latest_data, message = eupgrade.is_new_version_available(cached_only)
-    utils.log("start_node_download from  " .. url2 )
+    --utils.log("start_node_download from  " .. url2 )
 
     if latest_data then
-        utils.log("start_node_download ")
+        --utils.log("start_node_download ")
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADING)
-        utils.log("downloading")
+        --utils.log("downloading")
         local image = {}
         image = eupgrade.download_firmware(latest_data)
-        utils.printJson(image)
-        --utils.log(mesh_upgrade.fw_path)
-        --utils.log(latest_data)
+        --utils.printJson(image)
+        ----utils.log(mesh_upgrade.fw_path)
+        ----utils.log(latest_data)
         if eupgrade.get_download_status() == eupgrade.STATUS_DOWNLOADED and image ~= nil then
-            utils.printJson(image)
+            --utils.printJson(image)
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
             mesh_upgrade.trigger_sheredstate_publish()
         else
-            utils.log("Error ... download failed")
+            --utils.log("Error ... download failed")
             mesh_upgrade.report_error(mesh_upgrade.errors.DOWNLOAD_FAILED)
         end
     else
-        utils.log("Error ... no latest data available" .. message)
+        --utils.log("Error ... no latest data available" .. message)
         mesh_upgrade.report_error(mesh_upgrade.errors.DOWNLOAD_FAILED)
     end
 end
@@ -311,9 +321,9 @@ end
 
 function mesh_upgrade.become_bot_node(upgrade_data)
     if mesh_upgrade.started() then
-        utils.log("already a bot node")
+        --utils.log("already a bot node")
     else
-        utils.log("transfoming into a bot node")
+        --utils.log("transfoming into a bot node")
         upgrade_data.main_node = false
         mesh_upgrade.set_mesh_upgrade_info(upgrade_data, mesh_upgrade.upgrade_states.STARTING)
         if (mesh_upgrade.state() == mesh_upgrade.upgrade_states.STARTING) then
@@ -328,7 +338,7 @@ function mesh_upgrade.set_mesh_upgrade_info(upgrade_data, upgrade_state)
     local uci = config.get_uci_cursor()
     if string.match(upgrade_data.repo_url, "https?://[%w-_%.%?%.:/%+=&]+") ~= nil -- todo (javi): perform aditional checks
     then
-        utils.log("seting up repo download info to " .. upgrade_state .. " actual " .. mesh_upgrade.state())
+        --utils.log("seting up repo download info to " .. upgrade_state .. " actual " .. mesh_upgrade.state())
         if (mesh_upgrade.change_state(upgrade_state)) then
             uci:set('mesh-upgrade', 'main', "mesh-upgrade")
             uci:set('mesh-upgrade', 'main', 'repo_url', upgrade_data.repo_url)
@@ -341,10 +351,10 @@ function mesh_upgrade.set_mesh_upgrade_info(upgrade_data, upgrade_state)
             -- trigger shared state data refresh
             mesh_upgrade.trigger_sheredstate_publish()
         else
-            utils.log("invalid state change ")
+            --utils.log("invalid state change ")
         end
     else
-        utils.log("upgrade failed due input data errors")
+        --utils.log("upgrade failed due input data errors")
     end
 end
 
@@ -387,7 +397,7 @@ function mesh_upgrade.start_safe_upgrade()
             code = "SUCCESS"
         }
     else
-        utils.log("not able to start upgrade invalid state or firmware not found")
+        --utils.log("not able to start upgrade invalid state or firmware not found")
         return {
             code = "NOT_ABLE_TO_START_UPGRADE",
             error = "Firmware not found"
@@ -415,7 +425,7 @@ function mesh_upgrade.confirm()
     if mesh_upgrade.state() == mesh_upgrade.upgrade_states.CONFIRMATION_PENDING then
         local shell_output = utils.unsafe_shell("safe-upgrade confirm")
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPDATED)
-        utils.log(shell_output)
+        --utils.log(shell_output)
         return {
             code = "SUCCESS"
         }
