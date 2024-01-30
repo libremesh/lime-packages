@@ -73,8 +73,7 @@ function mesh_upgrade.create_local_latest_json(latest_data)
     for _, im in pairs(latest_data['images']) do
         -- im['download-urls'] = string.gsub(im['download-urls'], upgrade_url, "test")
         im['download-urls'] = {mesh_upgrade.get_repo_base_url() .. im['name']}
-    end
-    
+    end 
     utils.write_file(mesh_upgrade.LATEST_JSON_PATH, json.stringify(latest_data))
     -- For the moment mesh upgrade will ignore the latest json signature on de main nodes
     -- todo: add signature file with a valid signature... or review the signing process. 
@@ -89,12 +88,10 @@ function mesh_upgrade.share_firmware_packages(dest)
     -- json file has to be placed in a url that ends with latest
     mesh_upgrade._create_workdir(dest .. "/latest")
     os.execute("ln -s " .. images_folder .. "/* " .. dest.. " >/dev/null")
-    --utils.unsafe_shell("ln -s " .. images_folder .. "/* " .. dest .. " >/dev/null")
     os.execute("ln -s " .. mesh_upgrade.LATEST_JSON_PATH .. " " .. dest .. "/latest >/dev/null")
-    os.execute("chmod -R 664 "..  dest .." >/dev/null")
-    os.execute("chmod -R 664 "..  mesh_upgrade.WORKDIR  .." >/dev/null")
-    os.execute("chmod -R 664 "..  images_folder  .." >/dev/null")
-
+    os.execute("chmod -R 777 "..  dest .." >/dev/null")
+    os.execute("chmod -R 777 "..  mesh_upgrade.WORKDIR  .." >/dev/null")
+    os.execute("chmod -R 777 "..  images_folder  .." >/dev/null")
 end
 
 -- This function will download latest firmware and expose it as
