@@ -110,6 +110,7 @@ function mesh_upgrade.start_main_node_repository(latest_data)
     -- Create local repository json data
     mesh_upgrade.create_local_latest_json(latest_data)
     utils.execute_daemonized("eupgrade-download >/dev/null")
+    mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADING)
 end
 
 --- Function that check if tihs node have all things needed to became a main node
@@ -146,7 +147,7 @@ function mesh_upgrade.check_eupgrade_download_failed()
     local download_status = eupgrade.get_download_status()
     local upgrade_state = mesh_upgrade.state()
 
-    if upgrade_state == mesh_upgrade.upgrade_states.STARTING
+    if upgrade_state == mesh_upgrade.upgrade_states.DOWNLOADING
         and download_status == eupgrade.STATUS_DOWNLOAD_FAILED then
         mesh_upgrade.report_error(mesh_upgrade.errors.DOWNLOAD_FAILED)
     end
@@ -158,6 +159,7 @@ function mesh_upgrade.start_firmware_upgrade_transaction()
     --    all the files are present)
     local download_status = eupgrade.get_download_status()
     if download_status ~= eupgrade.STATUS_DOWNLOADED then
+        mesh_upgrade.check_eupgrade_download_failed()
         return {
             code = "NO_FIRMWARE_AVAILABLE",
             error = "No new firmware file downloaded"
@@ -171,6 +173,7 @@ function mesh_upgrade.start_firmware_upgrade_transaction()
             error = "No new version is available"
         }
     end
+    mesh_upgrade.set_fw_path(latest['images'][1])
     mesh_upgrade.share_firmware_packages()
     -- Check if local json file exists
     if not utils.file_exists(mesh_upgrade.LATEST_JSON_PATH) then
@@ -380,7 +383,6 @@ end
 function mesh_upgrade.get_node_status()
     local uci = config.get_uci_cursor()
     local upgrade_data = {}
-    mesh_upgrade.check_eupgrade_download_failed()
     upgrade_data.candidate_fw = uci:get('mesh-upgrade', 'main', 'candidate_fw')
     upgrade_data.repo_url = uci:get('mesh-upgrade', 'main', 'repo_url')
     upgrade_data.upgrade_state = uci:get('mesh-upgrade', 'main', 'upgrade_state')
@@ -389,6 +391,10 @@ function mesh_upgrade.get_node_status()
         uci:save('mesh-upgrade')
         uci:commit('mesh-upgrade')
     end
+    if (state == mesh_upgrade.upgrade_states.DOWNLOADING) then
+        mesh_upgrade.check_eupgrade_download_failed()
+    end
+    upgrade_data.eupgradestate = eupgrade.get_download_status()
     if (state == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE) then
         if (tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining")) > 1) then
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.CONFIRMATION_PENDING)
@@ -408,6 +414,7 @@ function mesh_upgrade.start_safe_upgrade()
         if utils.file_exists(mesh_upgrade.get_fw_path()) then
             -- perform safe upgrade preserving config and rebooting after 600 sec if
             -- no confirmation is received
+            -- todo: javier first veryfy image
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPGRADE_SCHELUDED)
             mesh_upgrade.trigger_sheredstate_publish()
             utils.execute_daemonized("safe-upgrade upgrade --reboot-safety-timeout=600 " .. mesh_upgrade.get_fw_path())
@@ -447,12 +454,17 @@ end
 --         option root_password_secret ''
 --         option deferable_reboot_uptime_s '97200'
 function mesh_upgrade.confirm()
-    if mesh_upgrade.state() == mesh_upgrade.upgrade_states.CONFIRMATION_PENDING then
+    if mesh_upgrade.get_node_status().upgrade_state == mesh_upgrade.upgrade_states.CONFIRMATION_PENDING then
         local shell_output = utils.unsafe_shell("safe-upgrade confirm")
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPDATED)
         --utils.log(shell_output)
         return {
             code = "SUCCESS"
+        }
+    else
+        return {
+            code = "NOT_READY_TO_CONFIRM",
+            error = "NOT_READY_TO_CONFIRM"
         }
     end
 end

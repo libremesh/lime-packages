@@ -24,7 +24,7 @@ local mesh_upgrade = require "lime-mesh-upgrade"
 
 local hostname = utils.hostname()
 function report_upgrade_status()
-	return mesh_upgrade.get_mesh_upgrade_status()
+	return mesh_upgrade.get_node_status()
 end
 
 local result = { [hostname] = report_upgrade_status() }
