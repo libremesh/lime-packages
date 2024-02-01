@@ -141,24 +141,15 @@ function mesh_upgrade.become_main_node(url)
     }
 end
 
--- Return eupgrade status for this node and update mesh upgrade status accordingly
-function mesh_upgrade.get_main_node_status()
+-- Update the state witth an error if eupgrade download failed
+function mesh_upgrade.check_eupgrade_download_failed()
     local download_status = eupgrade.get_download_status()
+    local upgrade_state = mesh_upgrade.state()
 
-    -- Check download is completed
-    if download_status == eupgrade.STATUS_DEFAULT then
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DEFAULT)
-    elseif download_status == eupgrade.STATUS_DOWNLOADING then
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
-    elseif download_status == eupgrade.STATUS_DOWNLOADED then
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
-    elseif download_status == eupgrade.STATUS_DOWNLOAD_FAILED then
+    if upgrade_state == mesh_upgrade.upgrade_states.STARTING
+        and download_status == eupgrade.STATUS_DOWNLOAD_FAILED then
         mesh_upgrade.report_error(mesh_upgrade.errors.DOWNLOAD_FAILED)
     end
-    return {
-        code = download_status,
-        error = ""
-    }
 end
 
 function mesh_upgrade.start_firmware_upgrade_transaction()
@@ -386,21 +377,22 @@ function mesh_upgrade.toboolean(str)
 end
 
 -- ! Read status from UCI
-function mesh_upgrade.get_mesh_upgrade_status()
+function mesh_upgrade.get_node_status()
     local uci = config.get_uci_cursor()
     local upgrade_data = {}
+    mesh_upgrade.check_eupgrade_download_failed()
     upgrade_data.candidate_fw = uci:get('mesh-upgrade', 'main', 'candidate_fw')
     upgrade_data.repo_url = uci:get('mesh-upgrade', 'main', 'repo_url')
-    upgrade_data.upgrade_state = uci:get('mesh-upgrade', 'main', 'upgrade_state') 
+    upgrade_data.upgrade_state = uci:get('mesh-upgrade', 'main', 'upgrade_state')
     if (upgrade_data.upgrade_state == nil) then
         uci:set('mesh-upgrade', 'main', 'upgrade_state', mesh_upgrade.upgrade_states.DEFAULT)
         uci:save('mesh-upgrade')
         uci:commit('mesh-upgrade')
     end
-    if (state == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE) then 
-            if (tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining")) > 1) then
-                mesh_upgrade.change_state(mesh_upgrade.upgrade_states.CONFIRMATION_PENDING)
-            end
+    if (state == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE) then
+        if (tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining")) > 1) then
+            mesh_upgrade.change_state(mesh_upgrade.upgrade_states.CONFIRMATION_PENDING)
+        end
     end
     upgrade_data.upgrade_state = uci:get('mesh-upgrade', 'main', 'upgrade_state')
     upgrade_data.error = uci:get('mesh-upgrade', 'main', 'error')
