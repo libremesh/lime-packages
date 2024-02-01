@@ -131,24 +131,30 @@ function mesh_upgrade.become_main_node(url)
     }
 end
 
--- Return eupgrade status for this node and update mesh upgrade status accordingly
-function mesh_upgrade.get_main_node_status()
+-- Update the state witth an error if eupgrade download failed
+function mesh_upgrade.check_eupgrade_download_failed()
     local download_status = eupgrade.get_download_status()
+    local upgrade_state =  mesh_upgrade.state()
 
-    -- Check download is completed
-    if download_status == eupgrade.STATUS_DEFAULT then
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DEFAULT)
-    elseif download_status == eupgrade.STATUS_DOWNLOADING then
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
-    elseif download_status == eupgrade.STATUS_DOWNLOADED then
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.STARTING)
-    elseif download_status == eupgrade.STATUS_DOWNLOAD_FAILED then
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR, mesh_upgrade.errors.DOWNLOAD_FAILED)
+    if upgrade_state == mesh_upgrade.upgrade_states.STARTING
+            and download_status == eupgrade.STATUS_DOWNLOAD_FAILED then
+        mesh_upgrade.report_error(mesh_upgrade.errors.DOWNLOAD_FAILED)
     end
-    return {
-        code = download_status,
-    }
 end
+
+-- Function that return the uci data for mesh-upgrade
+function mesh_upgrade.get_mesh_upgrade_node_status()
+    local uci = config.get_uci_cursor()
+    mesh_upgrade.check_eupgrade_download_failed()
+    local status = {}
+    status['timestamp'] = uci:get('mesh-upgrade', 'main', 'timestamp')
+    status['master_node'] = uci:get('mesh-upgrade', 'main', 'master_node')
+    status['error'] = uci:get('mesh-upgrade', 'main', 'error')
+    status['transaction_state'] = uci:get('mesh-upgrade', 'main', 'transaction_state')
+    status['upgrade_state'] = mesh_upgrade.state()
+    return status
+end
+
 
 function mesh_upgrade.start_firmware_upgrade_transaction()
     -- todo(kon): do all needed checks also with the main node state etc..
