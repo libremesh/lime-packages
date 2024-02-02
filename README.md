@@ -88,7 +88,15 @@ Your images should be available outside of the container in the `./images/` fold
 
 ##### Without Docker
 
-Go to <https://firmware-selector.openwrt.org/>. Find your device. Click on the folder symbol right after "Links: ". Alternatively, find your device in [OpenWrt's Table of Hardware][OpenWrt-ToH], find the image download link, remove the filename from the right side of the link and put the result in your browsers address bar. Scroll down and download openwrt-imagebuilder-*. Unpack the file and open a terminal inside the directory. Create an image with
+Go to <https://firmware-selector.openwrt.org/>. Find your device. Click on the folder symbol right after "Links: ". Alternatively, find your device in [OpenWrt's Table of Hardware][OpenWrt-ToH], find the image download link, remove the filename from the right side of the link and put the result in your browsers address bar. Scroll down and download openwrt-imagebuilder-*. Unpack the file and open a terminal inside the directory. Add the `lime-packages` feed:
+
+```shell
+echo "src/gz libremesh https://feed.libremesh.org/master" >> repositories.conf
+echo  "untrusted comment: signed by libremesh.org key a71b3c8285abd28b" > keys/a71b3c8285abd28b
+echo "RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8" >> keys/a71b3c8285abd28b
+```
+
+Create an image with
 ```shell
 make image PROFILE=ubnt_unifi FILES=path-to-root-dir PACKAGES="lime-system lime-proto-babeld lime-proto-batadv lime-proto-anygw lime-hwd-openwrt-wan lime-hwd-ground-routing lime-app lime-debug lime-docs lime-docs-minimal shared-state-babeld_hosts shared-state-bat_hosts shared-state-dnsmasq_hosts shared-state-nodes_and_links babeld-auto-gw-mode check-date-http batctl-default -dnsmasq -odhcpd-ipv6only"
 ```
