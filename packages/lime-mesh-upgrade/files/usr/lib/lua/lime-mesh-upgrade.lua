@@ -163,6 +163,12 @@ function mesh_upgrade.start_firmware_upgrade_transaction()
     -- todo(kon): do all needed checks also with the main node state etc..
     -- Expose eupgrade folder to uhttp (this is the best place to do it since
     --    all the files are present)
+    if mesh_upgrade.main_node_state() ~= mesh_upgrade.main_node_states.STARTING then
+        return {
+            code = "BAD_NODE_STATE",
+            error = "This node main state status is not starting"
+        }
+    end
     local download_status = mesh_upgrade.check_eupgrade_download_failed()
     if download_status ~= eupgrade.STATUS_DOWNLOADED then
         return {
