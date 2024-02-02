@@ -143,6 +143,7 @@ function mesh_upgrade.become_main_node(url)
 end
 
 -- Update the state witth an error if eupgrade download failed
+-- It returns the download status
 function mesh_upgrade.check_eupgrade_download_failed()
     local download_status = eupgrade.get_download_status()
     local upgrade_state = mesh_upgrade.state()
@@ -151,15 +152,15 @@ function mesh_upgrade.check_eupgrade_download_failed()
         and download_status == eupgrade.STATUS_DOWNLOAD_FAILED then
         mesh_upgrade.report_error(mesh_upgrade.errors.DOWNLOAD_FAILED)
     end
+    return download_status
 end
 
 function mesh_upgrade.start_firmware_upgrade_transaction()
     -- todo(kon): do all needed checks also with the main node state etc..
     -- Expose eupgrade folder to uhttp (this is the best place to do it since
     --    all the files are present)
-    local download_status = eupgrade.get_download_status()
+    local download_status = mesh_upgrade.check_eupgrade_download_failed()
     if download_status ~= eupgrade.STATUS_DOWNLOADED then
-        mesh_upgrade.check_eupgrade_download_failed()
         return {
             code = "NO_FIRMWARE_AVAILABLE",
             error = "No new firmware file downloaded"
@@ -385,16 +386,13 @@ function mesh_upgrade.get_node_status()
     local upgrade_data = {}
     upgrade_data.candidate_fw = uci:get('mesh-upgrade', 'main', 'candidate_fw')
     upgrade_data.repo_url = uci:get('mesh-upgrade', 'main', 'repo_url')
+    upgrade_data.eupgradestate = mesh_upgrade.check_eupgrade_download_failed()
     upgrade_data.upgrade_state = uci:get('mesh-upgrade', 'main', 'upgrade_state')
     if (upgrade_data.upgrade_state == nil) then
         uci:set('mesh-upgrade', 'main', 'upgrade_state', mesh_upgrade.upgrade_states.DEFAULT)
         uci:save('mesh-upgrade')
         uci:commit('mesh-upgrade')
     end
-    if (state == mesh_upgrade.upgrade_states.DOWNLOADING) then
-        mesh_upgrade.check_eupgrade_download_failed()
-    end
-    upgrade_data.eupgradestate = eupgrade.get_download_status()
     if (state == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE) then
         if (tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining")) > 1) then
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.CONFIRMATION_PENDING)
