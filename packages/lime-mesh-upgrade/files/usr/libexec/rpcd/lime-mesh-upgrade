@@ -27,7 +27,7 @@ end
 
 -- It gets the mesh upgrade status for this node
 -- Shortcut to get the status without await the shared state synchronization
-local function get_mesh_upgrade_node_status(msg)
+local function get_node_status(msg)
     local result = mesh_upgrade.get_node_status()
     return utils.printJson(result)
 end
@@ -49,7 +49,7 @@ local methods = {
     start_firmware_upgrade_transaction = {
         no_params = 0
     },
-    get_mesh_upgrade_node_status = {
+    get_node_status = {
         no_params = 0
     },
     start_safe_upgrade = {
@@ -72,8 +72,8 @@ if arg[1] == 'call' then
         become_main_node(msg)
     elseif arg[2] == 'start_firmware_upgrade_transaction' then
         start_firmware_upgrade_transaction(msg)
-    elseif arg[2] == 'get_mesh_upgrade_node_status' then
-        get_mesh_upgrade_node_status(msg)
+    elseif arg[2] == 'get_node_status' then
+        get_node_status(msg)
     elseif arg[2] == 'start_safe_upgrade' then
         start_safe_upgrade(msg)
     elseif arg[2] == 'confirm_boot_partition' then
