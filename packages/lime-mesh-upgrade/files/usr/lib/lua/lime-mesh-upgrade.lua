@@ -338,26 +338,27 @@ end
 
 -- ! changes the state of the upgrade and verifies that state transition is possible.
 function mesh_upgrade.change_state(newstate)
+    local actual_state = mesh_upgrade.state()
     -- If the state is the same just return
-    if newstate == mesh_upgrade.state() then return false end
+    if newstate == actual_state then return false end
 
     local uci = config.get_uci_cursor()
     if newstate == mesh_upgrade.upgrade_states.DOWNLOADING and
-            mesh_upgrade.state() ~= mesh_upgrade.upgrade_states.DEFAULT and
-            mesh_upgrade.state() ~= mesh_upgrade.upgrade_states.ERROR and
-            mesh_upgrade.state() ~= mesh_upgrade.upgrade_states.UPDATED then
+            actual_state ~= mesh_upgrade.upgrade_states.DEFAULT and
+            actual_state ~= mesh_upgrade.upgrade_states.ERROR and
+            actual_state ~= mesh_upgrade.upgrade_states.UPDATED then
         return false
     elseif newstate == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE and
-        mesh_upgrade.state() ~= mesh_upgrade.upgrade_states.DOWNLOADING then
+            actual_state ~= mesh_upgrade.upgrade_states.DOWNLOADING then
         return false
     elseif newstate == mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED and
-        mesh_upgrade.state() ~= mesh_upgrade.upgrade_states.READY_FOR_UPGRADE then
+            actual_state ~= mesh_upgrade.upgrade_states.READY_FOR_UPGRADE then
         return false
     elseif newstate == mesh_upgrade.upgrade_states.CONFIRMATION_PENDING and
-        mesh_upgrade.state() ~= mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED then
+            actual_state ~= mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED then
         return false
     elseif newstate == mesh_upgrade.upgrade_states.UPDATED and
-        mesh_upgrade.state() ~= mesh_upgrade.upgrade_states.CONFIRMATION_PENDING then
+            actual_state ~= mesh_upgrade.upgrade_states.CONFIRMATION_PENDING then
         return false
     end
     -- todo(javi): verify other states and return false if it is not possible
