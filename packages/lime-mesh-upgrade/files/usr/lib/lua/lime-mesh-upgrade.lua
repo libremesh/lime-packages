@@ -372,7 +372,7 @@ end
 function mesh_upgrade.become_bot_node(upgrade_data)
     if mesh_upgrade.started() then return end
 
-    upgrade_data.main_node = false
+    upgrade_data.main_node = mesh_upgrade.main_node_states.NO
     mesh_upgrade.set_mesh_upgrade_info(upgrade_data, mesh_upgrade.upgrade_states.DOWNLOADING)
     mesh_upgrade.start_node_download(upgrade_data.repo_url)
 end
