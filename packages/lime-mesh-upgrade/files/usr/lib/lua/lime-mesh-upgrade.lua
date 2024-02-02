@@ -330,6 +330,8 @@ function mesh_upgrade.change_main_node_state(newstate)
             main_node_state ~= mesh_upgrade.main_node_states.STARTING then
         return false
     end
+
+    local uci = config.get_uci_cursor()
     uci:set('mesh-upgrade', 'main', 'main_node', newstate)
     uci:save('mesh-upgrade')
     uci:commit('mesh-upgrade')
@@ -342,7 +344,6 @@ function mesh_upgrade.change_state(newstate)
     -- If the state is the same just return
     if newstate == actual_state then return false end
 
-    local uci = config.get_uci_cursor()
     if newstate == mesh_upgrade.upgrade_states.DOWNLOADING and
             actual_state ~= mesh_upgrade.upgrade_states.DEFAULT and
             actual_state ~= mesh_upgrade.upgrade_states.ERROR and
@@ -363,6 +364,7 @@ function mesh_upgrade.change_state(newstate)
     end
     -- todo(javi): verify other states and return false if it is not possible
     -- lets allow all types of state changes.
+    local uci = config.get_uci_cursor()
     uci:set('mesh-upgrade', 'main', 'upgrade_state', newstate)
     uci:save('mesh-upgrade')
     uci:commit('mesh-upgrade')
