@@ -62,7 +62,7 @@ describe('LiMe mesh upgrade', function()
         end)
         local status = lime_mesh_upgrade.get_node_status()
         assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.DEFAULT)
-        assert.is.equal(status.main_node, false)
+        assert.is.equal(status.main_node, lime_mesh_upgrade.main_node_states.NO)
         assert.is.equal(status.current_fw, fw_version)
         assert.is.equal(status.board_name, boardname)
         assert.is.equal(lime_mesh_upgrade.started(), false)
@@ -100,7 +100,7 @@ describe('LiMe mesh upgrade', function()
         end)
         lime_mesh_upgrade.become_bot_node(upgrade_data)
         status = lime_mesh_upgrade.get_node_status()
-        assert.is.equal(status.main_node, false)
+        assert.is.equal(status.main_node, lime_mesh_upgrade.main_node_states.NO)
         assert.is.equal(status.repo_url, upgrade_data.repo_url)
         assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.ERROR)
         assert.is.equal(status.error, lime_mesh_upgrade.errors.NO_LATEST_AVAILABLE)
@@ -122,7 +122,7 @@ describe('LiMe mesh upgrade', function()
         assert.is.equal('LibreRouterOs 1.5', eupgrade.is_new_version_available()['version'])
         lime_mesh_upgrade.become_bot_node(upgrade_data)
         status = lime_mesh_upgrade.get_node_status()
-        assert.is.equal(status.main_node, false)
+        assert.is.equal(status.main_node, lime_mesh_upgrade.main_node_states.NO)
         assert.is.equal(status.repo_url, upgrade_data.repo_url)
         assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.ERROR)
         assert.is.equal(status.error, lime_mesh_upgrade.errors.DOWNLOAD_FAILED)
@@ -189,7 +189,8 @@ describe('LiMe mesh upgrade', function()
         local res = lime_mesh_upgrade.become_main_node()
         assert.is.equal(res.code, 'SUCCESS')
         local status = lime_mesh_upgrade.get_node_status()
-        assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.STARTING)
+        assert.is.equal(status.main_node, lime_mesh_upgrade.main_node_states.STARTING)
+        assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.DOWNLOADING)
     end)
 
     it('test custom latest json file is created', function()
@@ -273,15 +274,67 @@ describe('LiMe mesh upgrade', function()
         local res = lime_mesh_upgrade.become_main_node('http://repo.librerouter.org/lros/api/v1/')
         assert.is.equal(res.code, 'SUCCESS')
         local status = lime_mesh_upgrade.get_node_status()
-        assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.STARTING)
+        assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.DOWNLOADING)
         lime_mesh_upgrade.start_firmware_upgrade_transaction()
         status = lime_mesh_upgrade.get_node_status()
         assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
         assert.is.equal(status.candidate_fw, json.parse(latest_release_data).version)
         assert.is.equal(status.board_name, boardname)
-        assert.is.equal(status.main_node,true)
-        assert.is.equal(status.main_node,true)
+        assert.is.equal(status.main_node,lime_mesh_upgrade.main_node_states.MAIN_NODE)
         assert.is.equal(status.repo_url,'http://10.1.1.0/lros/')
+    end)
+
+    it('test start_safe_upgrade default timeouts', function()
+
+        stub(utils, 'execute_daemonized', function () 
+        end)
+        
+        stub(lime_mesh_upgrade, 'state', function()
+            return lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE
+        end)
+
+        stub(utils, 'file_exists', function()
+            return true
+        end)
+
+        stub(utils, 'file_exists', function()
+            return true
+        end)
+
+        stub(lime_mesh_upgrade, 'get_fw_path', function()
+            return "/tmp/foo.bar"
+        end)
+
+        lime_mesh_upgrade.start_safe_upgrade()
+        assert.is.equal(lime_mesh_upgrade.su_confirm_timeout,600)
+        assert.is.equal(lime_mesh_upgrade.su_start_time_out,60)
+        assert.stub.spy(utils.execute_daemonized).was.called.with("sleep 60; safe-upgrade upgrade --reboot-safety-timeout=600 /tmp/foo.bar")
+    end)
+
+    it('test start_safe_upgrade different timeouts', function()
+        stub(utils, 'execute_daemonized', function () 
+        end)
+
+        stub(lime_mesh_upgrade, 'state', function()
+            return lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE
+        end)
+
+        stub(utils, 'file_exists', function()
+            return true
+        end)
+
+        stub(utils, 'file_exists', function()
+            return true
+        end)
+
+        stub(lime_mesh_upgrade, 'get_fw_path', function()
+            return "/tmp/foo.bar"
+        end)
+
+        lime_mesh_upgrade.start_safe_upgrade(10,100)
+        assert.is.equal(lime_mesh_upgrade.su_confirm_timeout,100)
+        assert.is.equal(lime_mesh_upgrade.su_start_time_out,10)
+        assert.stub.spy(utils.execute_daemonized).was.called.with("sleep 10; safe-upgrade upgrade --reboot-safety-timeout=100 /tmp/foo.bar")
     end)
 
     before_each('', function()
@@ -290,7 +343,6 @@ describe('LiMe mesh upgrade', function()
         uci:set('mesh-upgrade', 'main', "mesh-upgrade")
         uci:save('mesh-upgrade')
         uci:commit('mesh-upgrade')
-        
     end)
 
     after_each('', function()
