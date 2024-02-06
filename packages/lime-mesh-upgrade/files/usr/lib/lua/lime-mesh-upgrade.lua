@@ -41,7 +41,8 @@ local mesh_upgrade = {
 
     },
     fw_path = "",
-    su_timeout = 600,
+    su_confirm_timeout = 600,
+    su_start_time_out = 60,
 }
 
 -- should epgrade be disabled ?
@@ -218,7 +219,6 @@ function mesh_upgrade.set_fw_path(image)
     uci:set('mesh-upgrade', 'main', 'fw_path', mesh_upgrade.fw_path)
     uci:save('mesh-upgrade')
     uci:commit('mesh-upgrade')
-    print(mesh_upgrade.fw_path)
 end
 
 -- Shared state functions --
@@ -239,7 +239,7 @@ function mesh_upgrade.start_node_download(url)
     local cached_only = false
     local url2 = eupgrade.get_upgrade_api_url()
     local latest_data, message = eupgrade.is_new_version_available(cached_only)
-    --utils.log("start_node_download from  " .. url2 )
+    --utils.log("start_node_download from  " .. url2)
 
     if latest_data then
         --utils.log("start_node_download ")
@@ -268,7 +268,7 @@ end
 -- curl -6 'http://[fd0d:fe46:8ce8::1]/lros/api/v1/'
 function mesh_upgrade.inform_download_location(version)
     if eupgrade.get_download_status() == eupgrade.STATUS_DOWNLOADED
-            and mesh_upgrade.mesh_upgrade.main_node_state() == mesh_upgrade.main_node_states.STARTING then
+        and mesh_upgrade.main_node_state() == mesh_upgrade.main_node_states.STARTING then
         -- TODO: setup uhttpd to serve workdir location
         mesh_upgrade.set_mesh_upgrade_info({
             candidate_fw = version,
@@ -286,7 +286,7 @@ end
 function mesh_upgrade.started()
     status = mesh_upgrade.state()
     if status == mesh_upgrade.upgrade_states.DEFAULT then return false end
-    return false
+    return true
     -- todo(javi): what happens if a mesh_upgrade has started more than an hour ago ? should this node abort it ?
 end
 
@@ -330,10 +330,10 @@ function mesh_upgrade.change_main_node_state(newstate)
     if newstate == main_node_state then return false end
 
     if newstate == mesh_upgrade.main_node_states.STARTING and
-            main_node_state ~= mesh_upgrade.main_node_states.NO then
+        main_node_state ~= mesh_upgrade.main_node_states.NO then
         return false
     elseif newstate == mesh_upgrade.main_node_states.MAIN_NODE and
-            main_node_state ~= mesh_upgrade.main_node_states.STARTING then
+        main_node_state ~= mesh_upgrade.main_node_states.STARTING then
         return false
     end
 
@@ -351,21 +351,21 @@ function mesh_upgrade.change_state(newstate)
     if newstate == actual_state then return false end
 
     if newstate == mesh_upgrade.upgrade_states.DOWNLOADING and
-            actual_state ~= mesh_upgrade.upgrade_states.DEFAULT and
-            actual_state ~= mesh_upgrade.upgrade_states.ERROR and
-            actual_state ~= mesh_upgrade.upgrade_states.UPDATED then
+        actual_state ~= mesh_upgrade.upgrade_states.DEFAULT and
+        actual_state ~= mesh_upgrade.upgrade_states.ERROR and
+        actual_state ~= mesh_upgrade.upgrade_states.UPDATED then
         return false
     elseif newstate == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE and
-            actual_state ~= mesh_upgrade.upgrade_states.DOWNLOADING then
+        actual_state ~= mesh_upgrade.upgrade_states.DOWNLOADING then
         return false
     elseif newstate == mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED and
-            actual_state ~= mesh_upgrade.upgrade_states.READY_FOR_UPGRADE then
+        actual_state ~= mesh_upgrade.upgrade_states.READY_FOR_UPGRADE then
         return false
     elseif newstate == mesh_upgrade.upgrade_states.CONFIRMATION_PENDING and
-            actual_state ~= mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED then
+        actual_state ~= mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED then
         return false
     elseif newstate == mesh_upgrade.upgrade_states.UPDATED and
-            actual_state ~= mesh_upgrade.upgrade_states.CONFIRMATION_PENDING then
+        actual_state ~= mesh_upgrade.upgrade_states.CONFIRMATION_PENDING then
         return false
     end
     -- todo(javi): verify other states and return false if it is not possible
@@ -378,11 +378,15 @@ function mesh_upgrade.change_state(newstate)
 end
 
 function mesh_upgrade.become_bot_node(upgrade_data)
-    if mesh_upgrade.started() then return end
-
-    upgrade_data.main_node = mesh_upgrade.main_node_states.NO
-    mesh_upgrade.set_mesh_upgrade_info(upgrade_data, mesh_upgrade.upgrade_states.DOWNLOADING)
-    mesh_upgrade.start_node_download(upgrade_data.repo_url)
+    if mesh_upgrade.started() then
+        --utils.log("started")
+        return
+    else
+        --utils.log("not started")
+        upgrade_data.main_node = mesh_upgrade.main_node_states.NO
+        mesh_upgrade.set_mesh_upgrade_info(upgrade_data, mesh_upgrade.upgrade_states.DOWNLOADING)
+        mesh_upgrade.start_node_download(upgrade_data.repo_url)
+    end
 end
 
 -- set download information for the new firmware from main node
@@ -440,20 +444,42 @@ function mesh_upgrade.get_node_status()
     return upgrade_data
 end
 
-function mesh_upgrade.start_safe_upgrade()
+function mesh_upgrade.start_safe_upgrade(su_start_time_out, su_confirm_timeout)
+    mesh_upgrade.su_start_time_out = su_start_time_out or mesh_upgrade.su_start_time_out
+    mesh_upgrade.su_confirm_timeout = su_confirm_timeout or mesh_upgrade.su_confirm_timeout
+
     if mesh_upgrade.state() == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE then
         if utils.file_exists(mesh_upgrade.get_fw_path()) then
             -- perform safe upgrade preserving config and rebooting after 600 sec if
             -- no confirmation is received
             -- todo: javier first veryfy image
+
+            -- just preserve meshconfig
+            --os.execute("tar cfz ".. mesh_upgrade.WORKDIR.."/mesh_upgrade_cfg.tgz -C / etc/config/mesh-upgrade")
+
+            -- perform a full config backup including mesh_upgrade config file needed for the next image
+            -- surprisingly this does not presrve nodename
+            -- os.execute("sysupgrade -b ".. mesh_upgrade.WORKDIR.."/mesh_upgrade_cfg.tgz")
+
+            config = require("lime.config")
+            local keep = config.get("system", "keep_on_upgrade", "")
+            keep = keep .. " lime-mesh-upgrade"
+            config.set("system", "keep_on_upgrade", keep) --use set but not commit, so this configuration wont be preserved.
+
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPGRADE_SCHELUDED)
             mesh_upgrade.trigger_sheredstate_publish()
-            utils.execute_daemonized("safe-upgrade upgrade --reboot-safety-timeout=600 " .. mesh_upgrade.get_fw_path())
+            --this must be executed after a safe upgrade timeout to enable all nodes to start_safe_upgrade
+            utils.execute_daemonized("sleep " ..
+            mesh_upgrade.su_start_time_out ..
+            "; safe-upgrade upgrade --reboot-safety-timeout=" ..
+            mesh_upgrade.su_confirm_timeout .. " " .. mesh_upgrade.get_fw_path())
+
             return {
-                code = "SUCCESS"
+                code = "SUCCESS",
+                error = ""
             }
         else
-            --utils.log("not able to start upgrade invalid state or firmware not found")
+            ----utils.log("not able to start upgrade invalid state or firmware not found")
             mesh_upgrade.report_error(mesh_upgrade.errors.FW_FILE_NOT_FOUND)
             return {
                 code = "NOT_ABLE_TO_START_UPGRADE",
@@ -488,7 +514,7 @@ function mesh_upgrade.confirm()
     if mesh_upgrade.get_node_status().upgrade_state == mesh_upgrade.upgrade_states.CONFIRMATION_PENDING then
         local shell_output = utils.unsafe_shell("safe-upgrade confirm")
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPDATED)
-        --utils.log(shell_output)
+        ----utils.log(shell_output)
         return {
             code = "SUCCESS"
         }
