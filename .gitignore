@@ -1,6 +1,13 @@
 build
-*~
-*.kate-swp
 luacov.stats.out
 tools/ansible/files/generic-rootfs.tar.gz
 tools/ansible/files/ramfs.bzImage
+
+# Vim text editor swap files
+**/*~
+
+# Kate KDE text editor swap files
+**/*.kate-swp
+
+# Ignore OpenWrt source tree override symlink
+**/git-src
