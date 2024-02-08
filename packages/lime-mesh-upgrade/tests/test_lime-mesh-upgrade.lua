@@ -148,6 +148,35 @@ describe('LiMe mesh upgrade', function()
         assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
     end)
 
+    it('test get fw path', function()
+
+        local fw_path = lime_mesh_upgrade.get_fw_path()
+        assert.is.equal(fw_path, " ")
+        
+        stub(eupgrade, '_get_current_fw_version', function()
+            return 'LibreMesh 19.05'
+        end)
+        stub(eupgrade, '_check_signature', function()
+            return true
+        end)
+        stub(utils, 'http_client_get', function()
+            return latest_release_data
+        end)
+        stub(eupgrade, '_file_sha256', function()
+            return 'cec8920f93055cc57cfde1f87968e33ca5215b2df88611684195077402079acb'
+        end)
+
+        lime_mesh_upgrade.become_bot_node(upgrade_data)
+        status = lime_mesh_upgrade.get_mesh_upgrade_status()
+        assert.is.equal(status.main_node, upgrade_data.main_node)
+        assert.is.equal(status.repo_url, upgrade_data.repo_url)
+        assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
+    
+        local fw_path = lime_mesh_upgrade.get_fw_path()
+        assert.is.equal(fw_path, '/tmp/eupgrades/upgrade-lr-1.5.sh')
+        
+    end)
+
     it('test become main node changes the state to STARTING', function()
         stub(eupgrade, 'is_new_version_available', function()
             return json.parse(latest_release_data)

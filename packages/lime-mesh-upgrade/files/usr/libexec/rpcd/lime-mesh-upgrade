@@ -20,13 +20,15 @@ local function become_main_node(msg)
     return utils.printJson(result)
 end
 
-local function get_main_node_status(msg)
-    local result = mesh_upgrade.get_main_node_status(msg)
+local function start_firmware_upgrade_transaction(msg)
+    local result = mesh_upgrade.start_firmware_upgrade_transaction()
     return utils.printJson(result)
 end
 
-local function start_firmware_upgrade_transaction(msg)
-    local result = mesh_upgrade.start_firmware_upgrade_transaction()
+-- It gets the mesh upgrade status for this node
+-- Shortcut to get the status without await the shared state synchronization
+local function get_mesh_upgrade_node_status(msg)
+    local result = mesh_upgrade.get_node_status(msg)
     return utils.printJson(result)
 end
 
@@ -34,10 +36,10 @@ local methods = {
     become_main_node = {
         url = 'value'
     },
-    get_main_node_status = {
+    start_firmware_upgrade_transaction = {
         no_params = 0
     },
-    start_firmware_upgrade_transaction = {
+    get_mesh_upgrade_node_status = {
         no_params = 0
     }
 }
@@ -51,13 +53,13 @@ if arg[1] == 'call' then
     msg = json.parse(msg)
     if arg[2] == 'become_main_node' then
         become_main_node(msg)
-    elseif arg[2] == 'get_main_node_status' then
-        get_main_node_status(msg)
     elseif arg[2] == 'start_firmware_upgrade_transaction' then
         start_firmware_upgrade_transaction(msg)
+    elseif arg[2] == 'get_mesh_upgrade_node_status' then
+        get_mesh_upgrade_node_status(msg)
     else
         utils.printJson({
-            error = "Method not foundsss"
+            error = "Method not found"
         })
     end
 end

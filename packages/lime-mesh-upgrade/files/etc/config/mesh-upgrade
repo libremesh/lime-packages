@@ -1,9 +1,10 @@
 config mesh-upgrade 'main'
 	option firmware_ver ''
 	option candidate_fw ''
+	option fw_path ''
 	option repo_url ''
 	option upgrade_state ''
 	option error '0'
 	option timestamp '0'
-	option master_node 'false'
+	option main_node 'false'
 	
