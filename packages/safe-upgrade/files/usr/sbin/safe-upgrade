@@ -98,7 +98,7 @@ function su.get_uboot_env(key)
 end
 
 local function set_uboot_env(key, value)
-    print("DEBUG: seting key:" .. key)
+    print("DEBUG: setting key:" .. key)
     print("DEBUG: value:" .. value)
     utils.unsafe_shell("fw_setenv " .. key .. " '" .. value .. "'")
 end
