@@ -8,6 +8,24 @@ local utils = require("lime.utils")
 
 lan.configured = false
 
+--! Find a device section in network with
+--! option name 'br-lan'
+--! option type 'bridge'
+local function find_brlan(uci)
+	local bridge_section = nil
+	uci:foreach("network", "device",
+		function(s)
+			if bridge_section then return end
+			local dev_type = uci:get("network", s[".name"], "type")
+			local dev_name = uci:get("network", s[".name"], "name")
+			if not (dev_type == 'bridge') then return end
+			if not (dev_name == 'br-lan') then return end
+			bridge_section = s[".name"]
+		end
+	)
+	return bridge_section
+end
+
 function lan.configure(args)
 	if lan.configured then return end
 	lan.configured = true
@@ -20,15 +38,16 @@ function lan.configure(args)
 	uci:set("network", "lan", "netmask", ipv4:mask():string())
 	uci:set("network", "lan", "proto", "static")
 	uci:set("network", "lan", "mtu", "1500")
-	uci:delete("network", "lan", "ifname")
+	local bridge_section = find_brlan(uci)
+	if bridge_section then uci:delete("network", bridge_section, "ports") end
 	uci:save("network")
 
 	-- disable bat0 on alfred if batadv not enabled
 	if utils.is_installed("alfred") then
 		local is_batadv_enabled = false
 		local generalProtocols = config.get("network", "protocols")
-			for _,protocol in pairs(generalProtocols) do
-				local protoModule = "lime.proto."..utils.split(protocol,":")[1]
+		for _,protocol in pairs(generalProtocols) do
+			local protoModule = "lime.proto."..utils.split(protocol,":")[1]
 			if protoModule == "lime.proto.batadv" then
 				is_batadv_enabled = true
 				break
@@ -48,19 +67,7 @@ function lan.setup_interface(ifname, args)
 
 	local uci = config.get_uci_cursor()
 	local bridgedIfs = {}
-	-- here we bet that there is a device section of type bridge named 
-	-- br-lan
-	local bridge_section = nil
-	uci:foreach("network", "device",
-		function(s)
-			if bridge_section then return end
-			local dev_type = uci:get("network", s[".name"], "type")
-			local dev_name = uci:get("network", s[".name"], "name")
-			if not (dev_type == 'bridge') then return end
-			if not (dev_name == 'br-lan') then return end
-			bridge_section = s[".name"]
-		end
-	)
+	local bridge_section = find_brlan(uci)
 	if not bridge_section then return end
 	local oldIfs = uci:get("network", bridge_section, "ports") or {}
 	-- it should be a table, it was a string in old OpenWrt releases
