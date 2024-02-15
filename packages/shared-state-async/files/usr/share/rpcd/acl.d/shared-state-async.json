@@ -1,0 +1,15 @@
+{
+    "lime-app": {
+        "description": "lime-app public access",
+        "read": {
+            "ubus": {
+                    "shared-state-async": [ "*" ]
+            }
+        },
+        "write": {
+            "ubus": {
+                    "shared-state-async": [ "*" ]
+            }
+        }
+    }
+}
