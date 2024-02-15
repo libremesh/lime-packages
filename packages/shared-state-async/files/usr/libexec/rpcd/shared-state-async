@@ -1,10 +1,10 @@
 #!/usr/bin/env lua
 --[[
-Shared State
+Shared State Async
 
-Copyright (c) 2023  Javier Jorge <jjorge@inti.gob.ar>
-Copyright (c) 2023  Instituto Nacional de Tecnolog..a Industrial
-Copyright (C) 2023  Asociaci..n Civil Altermundi <info@altermundi.net>
+Copyright (c) 2024  Javier Jorge <jjorge@inti.gob.ar>
+Copyright (c) 2024  Instituto Nacional de Tecnolog..a Industrial
+Copyright (C) 2024  Asociacion Civil Altermundi <info@altermundi.net>
 
 This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
 ]]
@@ -12,30 +12,45 @@ This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Vers
 local utils = require('lime.utils')
 local json = require 'luci.jsonc'
 
-require("nixio.util")
+local ERROR_LOG_FILE_NAME = "/tmp/shared_state_rpcd_error.log"
+
+local function parseErrors()
+    f = io.open(ERROR_LOG_FILE_NAME, "r")
+    if f ~= nil then
+        error = f:read("*a")
+        if string.find(error, "2000") ~= nil then
+            utils.printJson({
+                error = "invalid_data_type"
+            })
+        elseif string.find(error, "Invalid peer address:") ~= nil then
+            utils.printJson({
+                error = "invalid_peer_address"
+            })  
+        end
+    end
+end
 
 local function getFromSharedState(msg)
-    print(utils.unsafe_shell("shared-state-async get " .. msg.data_type .. " 2> /tmp/errlor.log"))
-    --if ther are any the function wont print.
+    print(utils.unsafe_shell("shared-state-async get " .. msg.data_type .. " 2> " .. ERROR_LOG_FILE_NAME))
+    --if ther are errors the function wont return and wont print.
+    parseErrors()
 end
 
 local function sync(msg)
-    --{"data_type":"data","peers_ip":["10.0.0.1","10.0.0.2"]}
-    --{"data_type":"data","peers_ip":["10.0.0.1"]}
-    local ret = " nada "
     if (type(msg.peers_ip) == 'table') then
-        ret = utils.unsafe_shell("shared-state-async sync " ..
-            msg.data_type .. " " .. table.concat(msg.peers_ip, " ") .. " 2> /tmp/errlor.log")
+        utils.unsafe_shell("shared-state-async sync " ..
+            msg.data_type .. " " .. table.concat(msg.peers_ip, " ") .. " 2> " .. ERROR_LOG_FILE_NAME)
     else
-        ret = utils.unsafe_shell("shared-state-async sync " .. msg.data_type .. " " .. " 2> /tmp/errlor.log")
+        utils.unsafe_shell("shared-state-async sync " .. msg.data_type .. " " .. " 2> " .. ERROR_LOG_FILE_NAME)
     end
+    parseErrors()
     utils.printJson({
-        status = ret ..
-            "shared-state-async sync " ..
-            msg.data_type .. " " ..  " 2> /tmp/errlor.log"
+        status = "success"
     })
 end
 
+--{"data_type":"data","peers_ip":["10.0.0.1","10.0.0.2"]}
+--{"data_type":"data","peers_ip":["10.0.0.1"]}
 local methods = {
     getFromSharedState = {
         data_type = 'value'
@@ -51,6 +66,7 @@ if arg[1] == 'list' then
 end
 
 if arg[1] == 'call' then
+    utils.unsafe_shell("rm " .. ERROR_LOG_FILE_NAME .."> /dev/null 2>&1")
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
     if arg[2] == 'getFromSharedState' then
