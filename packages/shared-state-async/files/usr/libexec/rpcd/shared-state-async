@@ -25,13 +25,14 @@ local function parseErrors()
         elseif string.find(error, "Invalid peer address:") ~= nil then
             utils.printJson({
                 error = "invalid_peer_address"
-            })  
+            })
         end
     end
 end
 
 local function getFromSharedState(msg)
-    print(utils.unsafe_shell("shared-state-async get " .. msg.data_type .. " 2> " .. ERROR_LOG_FILE_NAME))
+    print(utils.unsafe_shell("shared-state-async get " .. msg.data_type .. 
+    " 2> " .. ERROR_LOG_FILE_NAME))
     --if ther are errors the function wont return and wont print.
     parseErrors()
 end
@@ -39,9 +40,11 @@ end
 local function sync(msg)
     if (type(msg.peers_ip) == 'table') then
         utils.unsafe_shell("shared-state-async sync " ..
-            msg.data_type .. " " .. table.concat(msg.peers_ip, " ") .. " 2> " .. ERROR_LOG_FILE_NAME)
+            msg.data_type .. " " .. table.concat(msg.peers_ip, " ") .. " 2> " 
+            .. ERROR_LOG_FILE_NAME)
     else
-        utils.unsafe_shell("shared-state-async sync " .. msg.data_type .. " " .. " 2> " .. ERROR_LOG_FILE_NAME)
+        utils.unsafe_shell("shared-state-async sync " .. msg.data_type .. " " .. 
+        " 2> " .. ERROR_LOG_FILE_NAME)
     end
     parseErrors()
     utils.printJson({
@@ -66,7 +69,7 @@ if arg[1] == 'list' then
 end
 
 if arg[1] == 'call' then
-    utils.unsafe_shell("rm " .. ERROR_LOG_FILE_NAME .."> /dev/null 2>&1")
+    utils.unsafe_shell("rm " .. ERROR_LOG_FILE_NAME .. "> /dev/null 2>&1")
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
     if arg[2] == 'getFromSharedState' then
