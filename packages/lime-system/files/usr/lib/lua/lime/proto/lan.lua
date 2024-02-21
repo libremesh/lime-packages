@@ -11,19 +11,19 @@ lan.configured = false
 --! Find a device section in network with
 --! option name 'br-lan'
 --! option type 'bridge'
-local function find_brlan(uci)
-	local bridge_section = nil
+local function find_br_lan(uci)
+	local br_lan_section = nil
 	uci:foreach("network", "device",
 		function(s)
-			if bridge_section then return end
+			if br_lan_section then return end
 			local dev_type = uci:get("network", s[".name"], "type")
 			local dev_name = uci:get("network", s[".name"], "name")
 			if not (dev_type == 'bridge') then return end
 			if not (dev_name == 'br-lan') then return end
-			bridge_section = s[".name"]
+			br_lan_section = s[".name"]
 		end
 	)
-	return bridge_section
+	return br_lan_section
 end
 
 function lan.configure(args)
@@ -38,8 +38,8 @@ function lan.configure(args)
 	uci:set("network", "lan", "netmask", ipv4:mask():string())
 	uci:set("network", "lan", "proto", "static")
 	uci:set("network", "lan", "mtu", "1500")
-	local bridge_section = find_brlan(uci)
-	if bridge_section then uci:delete("network", bridge_section, "ports") end
+	local br_lan_section = find_br_lan(uci)
+	if br_lan_section then uci:delete("network", br_lan_section, "ports") end
 	uci:save("network")
 
 	-- disable bat0 on alfred if batadv not enabled
@@ -67,9 +67,9 @@ function lan.setup_interface(ifname, args)
 
 	local uci = config.get_uci_cursor()
 	local bridgedIfs = {}
-	local bridge_section = find_brlan(uci)
-	if not bridge_section then return end
-	local oldIfs = uci:get("network", bridge_section, "ports") or {}
+	local br_lan_section = find_br_lan(uci)
+	if not br_lan_section then return end
+	local oldIfs = uci:get("network", br_lan_section, "ports") or {}
 	-- it should be a table, it was a string in old OpenWrt releases
 	if type(oldIfs) == "string" then oldIfs = utils.split(oldIfs, " ") end
 	for _,iface in pairs(oldIfs) do
@@ -78,7 +78,7 @@ function lan.setup_interface(ifname, args)
 		end
 	end
 	table.insert(bridgedIfs, ifname)
-	uci:set("network", bridge_section, "ports", bridgedIfs)
+	uci:set("network", br_lan_section, "ports", bridgedIfs)
 	uci:save("network")
 end
 
