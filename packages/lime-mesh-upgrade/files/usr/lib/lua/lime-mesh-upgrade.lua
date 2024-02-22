@@ -33,16 +33,17 @@ local mesh_upgrade = {
     },
     -- list of possible errors
     errors = {
-        DOWNLOAD_FAILED = "download failed",
-        NO_LATEST_AVAILABLE = "no latest data available",
-        CONFIRMATION_TIME_OUT = "confirmation timeout",
+        DOWNLOAD_FAILED = "download_failed",
+        NO_LATEST_AVAILABLE = "no_latest_data_available",
+        CONFIRMATION_TIME_OUT = "confirmation_timeout",
         ABORTED = "aborted",
-        FW_FILE_NOT_FOUND = "firmware file not found"
+        FW_FILE_NOT_FOUND = "firmware_file_not_found"
 
     },
     fw_path = "",
     su_confirm_timeout = 600,
     su_start_time_out = 60,
+    max_retry_conunt = 4
 }
 
 -- should epgrade be disabled ?
@@ -189,7 +190,7 @@ function mesh_upgrade.start_firmware_upgrade_transaction()
     mesh_upgrade.share_firmware_packages()
     -- Check if local json file exists
     if not utils.file_exists(mesh_upgrade.LATEST_JSON_PATH) then
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR, mesh_upgrade.errors.NO_LATEST_AVAILABLE)
+        mesh_upgrade.report_error(mesh_upgrade.errors.NO_LATEST_AVAILABLE)
 
         return {
             code = "NO_LOCAL_JSON",
@@ -226,10 +227,8 @@ end
 function mesh_upgrade.report_error(error)
     local uci = config.get_uci_cursor()
     uci:set('mesh-upgrade', 'main', 'error', error)
-    uci:set('mesh-upgrade', 'main', 'timestamp', os.time())
     uci:save('mesh-upgrade')
     uci:commit('mesh-upgrade')
-    -- trigger shared state data refresh
     mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ERROR)
 end
 
@@ -275,17 +274,24 @@ function mesh_upgrade.inform_download_location(version)
             repo_url = mesh_upgrade.get_repo_base_url(),
             upgrde_state = mesh_upgrade.upgrade_states.READY_FOR_UPGRADE,
             error = "",
+            timestamp = os.time(),
             main_node = mesh_upgrade.main_node_states.MAIN_NODE,
             board_name = eupgrade._get_board_name(),
             current_fw = eupgrade._get_current_fw_version()
         }, mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
+        -- trigger shared state data refresh
+        mesh_upgrade.trigger_sheredstate_publish()
     end
 end
 
 -- Validate if the upgrade has already started
 function mesh_upgrade.started()
     status = mesh_upgrade.state()
-    if status == mesh_upgrade.upgrade_states.DEFAULT then return false end
+    if status == mesh_upgrade.upgrade_states.DEFAULT or
+        --if an error has ocurred then there is no transaction
+        status == mesh_upgrade.upgrade_states.ERROR then
+        return false
+    end
     return true
     -- todo(javi): what happens if a mesh_upgrade has started more than an hour ago ? should this node abort it ?
 end
@@ -316,13 +322,22 @@ end
 
 function mesh_upgrade.mesh_upgrade_abort()
     mesh_upgrade.report_error(mesh_upgrade.errors.ABORTED)
+    mesh_upgrade.change_main_node_state(mesh_upgrade.main_node_states.NO)
+    local uci = config.get_uci_cursor()
+    uci:set('mesh-upgrade', 'main', 'retry_count', 0)
+    uci:save('mesh-upgrade')
+    uci:commit('mesh-upgrade')
     -- todo(javi): stop and delete everything
+    return {
+        code = "SUCCESS",
+        error = ""
+    }
 end
 
 -- This line will genereate recursive dependencies like in pirania pakcage
 function mesh_upgrade.trigger_sheredstate_publish()
     utils.execute_daemonized(
-        "/etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state sync mesh_wide_upgrade")
+        "sleep 1;/etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state sync mesh_wide_upgrade")
 end
 
 function mesh_upgrade.change_main_node_state(newstate)
@@ -377,15 +392,26 @@ function mesh_upgrade.change_state(newstate)
     return true
 end
 
+--this function will retry max_retry_conunt tymes in case of error
 function mesh_upgrade.become_bot_node(upgrade_data)
     if mesh_upgrade.started() then
-        --utils.log("started")
         return
     else
-        --utils.log("not started")
         upgrade_data.main_node = mesh_upgrade.main_node_states.NO
-        mesh_upgrade.set_mesh_upgrade_info(upgrade_data, mesh_upgrade.upgrade_states.DOWNLOADING)
-        mesh_upgrade.start_node_download(upgrade_data.repo_url)
+        actual_state = mesh_upgrade.get_node_status()
+        if actual_state.timestamp == upgrade_data.timestamp and
+            actual_state.repo_url == upgrade_data.repo_url then
+            upgrade_data.retry_count = actual_state.retry_count + 1
+        else
+            upgrade_data.retry_count = 0
+        end
+        
+        if upgrade_data.retry_count < mesh_upgrade.max_retry_conunt then
+            mesh_upgrade.set_mesh_upgrade_info(upgrade_data, mesh_upgrade.upgrade_states.DOWNLOADING)
+            mesh_upgrade.start_node_download(upgrade_data.repo_url)
+            -- trigger shared state data refresh
+            mesh_upgrade.trigger_sheredstate_publish()
+        end
     end
 end
 
@@ -401,12 +427,12 @@ function mesh_upgrade.set_mesh_upgrade_info(upgrade_data, upgrade_state)
             uci:set('mesh-upgrade', 'main', 'repo_url', upgrade_data.repo_url)
             uci:set('mesh-upgrade', 'main', 'candidate_fw', upgrade_data.candidate_fw)
             uci:set('mesh-upgrade', 'main', 'error', "")
-            uci:set('mesh-upgrade', 'main', 'timestamp', os.time())
+            uci:set('mesh-upgrade', 'main', 'retry_count', upgrade_data.retry_count or 0)
+            --timestamp is used as id ... every node must have the same one
+            uci:set('mesh-upgrade', 'main', 'timestamp', upgrade_data.timestamp)
             uci:set('mesh-upgrade', 'main', 'main_node', upgrade_data.main_node)
             uci:save('mesh-upgrade')
             uci:commit('mesh-upgrade')
-            -- trigger shared state data refresh
-            mesh_upgrade.trigger_sheredstate_publish()
         else
             --utils.log("invalid state change ")
         end
@@ -437,6 +463,7 @@ function mesh_upgrade.get_node_status()
     end
     upgrade_data.upgrade_state = uci:get('mesh-upgrade', 'main', 'upgrade_state')
     upgrade_data.error = uci:get('mesh-upgrade', 'main', 'error')
+    upgrade_data.retry_count = tonumber(uci:get('mesh-upgrade', 'main', 'retry_count'))
     upgrade_data.timestamp = tonumber(uci:get('mesh-upgrade', 'main', 'timestamp'))
     upgrade_data.main_node = mesh_upgrade.main_node_state()
     upgrade_data.board_name = eupgrade._get_board_name()
@@ -470,9 +497,9 @@ function mesh_upgrade.start_safe_upgrade(su_start_time_out, su_confirm_timeout)
             mesh_upgrade.trigger_sheredstate_publish()
             --this must be executed after a safe upgrade timeout to enable all nodes to start_safe_upgrade
             utils.execute_daemonized("sleep " ..
-            mesh_upgrade.su_start_time_out ..
-            "; safe-upgrade upgrade --reboot-safety-timeout=" ..
-            mesh_upgrade.su_confirm_timeout .. " " .. mesh_upgrade.get_fw_path())
+                mesh_upgrade.su_start_time_out ..
+                "; safe-upgrade upgrade --reboot-safety-timeout=" ..
+                mesh_upgrade.su_confirm_timeout .. " " .. mesh_upgrade.get_fw_path())
 
             return {
                 code = "SUCCESS",

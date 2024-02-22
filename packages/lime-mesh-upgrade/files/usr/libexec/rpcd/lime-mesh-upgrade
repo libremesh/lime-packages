@@ -42,6 +42,11 @@ local function confirm(msg)
     return utils.printJson(result)
 end
 
+local function abort(msg)
+    local result = mesh_upgrade.mesh_upgrade_abort()
+    return utils.printJson(result)
+end
+
 local methods = {
     become_main_node = {
         url = 'value'
@@ -56,6 +61,9 @@ local methods = {
         no_params = 0
     },
     confirm_boot_partition = {
+        no_params = 0
+    },
+    abort = {
         no_params = 0
     }
 
@@ -78,6 +86,8 @@ if arg[1] == 'call' then
         start_safe_upgrade(msg)
     elseif arg[2] == 'confirm_boot_partition' then
         confirm(msg)
+    elseif arg[2] == 'abort' then
+        abort(msg)
     else
         utils.printJson({
             error = "Method not found"

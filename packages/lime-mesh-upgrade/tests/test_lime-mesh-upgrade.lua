@@ -20,6 +20,7 @@ local upgrade_data = {
     upgrade_state = "starting,downloading|ready_for_upgrade|upgrade_scheluded|confirmation_pending|~~confirmed~~|updated|error",
     error = "CODE",
     main_node = "true",
+    timestamp=02,
     current_fw = "LibreRouterOs 1.5 r0+11434-e93615c947",
     board_name = "qemu-standard-pc-i440fx-piix-1996"
 }
