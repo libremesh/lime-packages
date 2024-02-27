@@ -1,0 +1,16 @@
+#!/usr/bin/lua
+
+--! LibreMesh
+--! Copyright (C) 2019-2024  Gioacchino Mazzurco <gio@altermundi.net>
+--! Copyright (C) 2024  Asociación Civil Altermundi <info@altermundi.net>
+--! SPDX-License-Identifier: AGPL-3.0-only
+
+local JSON = require("luci.jsonc")
+
+local outputTable = {}
+
+for key,value in pairs(JSON.parse(io.stdin:read("*all")) ) do
+	table.insert(outputTable, key.." "..value)
+end
+
+io.output("/etc/bat-hosts"):write(table.concat(outputTable,"\n").."\n")
