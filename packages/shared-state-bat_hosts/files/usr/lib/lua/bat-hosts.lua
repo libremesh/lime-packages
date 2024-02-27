@@ -1,4 +1,5 @@
 local shared_state = require("shared-state")
+local JSON = require("luci.jsonc")
 local utils = require("lime.utils")
 
 local bat_hosts = {}
@@ -21,18 +22,10 @@ function bat_hosts.bathost_deserialize(hostname_plus_iface)
 end
 
 function bat_hosts.get_bathost(mac, outgoing_iface)
-	local sharedState = shared_state.SharedState:new('bat-hosts')
-	local bathosts = sharedState:get()
+	local bathosts = JSON.stringify(
+		io.popen("shared-state-async get bat-hosts", "r"):read("*all") )
 	local bathost = bathosts[mac:lower()]
-	if bathost == nil and outgoing_iface then
-		local ipv6ll = utils.mac2ipv6linklocal(mac) .. "%" .. outgoing_iface
-		sharedState:sync({ ipv6ll })
-		bathosts = sharedState:get()
-		bathost = bathosts[mac:lower()]
-	end
-	if bathost == nil then
-		return
-	end
+	if bathost == nil then return end
 	local hostname, iface = bat_hosts.bathost_deserialize(bathost.data)
 	return { hostname = hostname, iface = iface }
 end
