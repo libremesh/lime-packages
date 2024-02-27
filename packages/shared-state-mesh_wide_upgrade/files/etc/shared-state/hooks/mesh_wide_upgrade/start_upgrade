@@ -27,7 +27,7 @@ if not mesh_upgrade.started() then
 	for node, s_s_data in pairs(JSON.parse(io.stdin:read("*all"))) do
 		--if any node has started an upgrade process and start one too?
 		--only fetch the info from the master node publication?
-		if node ~= hostname and s_s_data.data.main_node then
+		if node ~= hostname and s_s_data.data.main_node == mesh_upgrade.main_node_states.MAIN_NODE then
 			utils.unsafe_shell('logger -p daemon.info -t "mesh upgrade" "mesh upgrade detected upgrade from "' ..
 			s_s_data.data.repo_url .. " and masternode node  " .. node .. " with this data " .. JSON.stringify(s_s_data.data)) 
 			mesh_upgrade.become_bot_node(s_s_data.data)

@@ -6,5 +6,6 @@ config mesh-upgrade 'main'
 	option upgrade_state ''
 	option error '0'
 	option timestamp '0'
-	option main_node 'false'
+	option main_node 'NO'
+	option retry_count '0'
 	
