@@ -8,12 +8,11 @@
 include ../../libremesh.mk
 
 define Package/$(PKG_NAME)
-	SECTION:=lime
 	CATEGORY:=LibreMesh
-	TITLE:=Mesh wide upgrade module for shared-state
-	MAINTAINER:= Javier <jjorge@inti.gob.ar>
+	TITLE:=Babel links module for shared-state
+	MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils \
-		+libubus-lua +random-numgen shared-state   
+		+libubus-lua +random-numgen shared-state-async   
 	PKGARCH:=all
 endef
 
