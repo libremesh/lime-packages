@@ -8,6 +8,24 @@ local utils = require("lime.utils")
 
 lan.configured = false
 
+--! Find a device section in network with
+--! option name 'br-lan'
+--! option type 'bridge'
+local function find_br_lan(uci)
+	local br_lan_section = nil
+	uci:foreach("network", "device",
+		function(s)
+			if br_lan_section then return end
+			local dev_type = uci:get("network", s[".name"], "type")
+			local dev_name = uci:get("network", s[".name"], "name")
+			if not (dev_type == 'bridge') then return end
+			if not (dev_name == 'br-lan') then return end
+			br_lan_section = s[".name"]
+		end
+	)
+	return br_lan_section
+end
+
 function lan.configure(args)
 	if lan.configured then return end
 	lan.configured = true
@@ -20,15 +38,16 @@ function lan.configure(args)
 	uci:set("network", "lan", "netmask", ipv4:mask():string())
 	uci:set("network", "lan", "proto", "static")
 	uci:set("network", "lan", "mtu", "1500")
-	uci:delete("network", "lan", "ifname")
+	local br_lan_section = find_br_lan(uci)
+	if br_lan_section then uci:delete("network", br_lan_section, "ports") end
 	uci:save("network")
 
 	-- disable bat0 on alfred if batadv not enabled
 	if utils.is_installed("alfred") then
 		local is_batadv_enabled = false
 		local generalProtocols = config.get("network", "protocols")
-			for _,protocol in pairs(generalProtocols) do
-				local protoModule = "lime.proto."..utils.split(protocol,":")[1]
+		for _,protocol in pairs(generalProtocols) do
+			local protoModule = "lime.proto."..utils.split(protocol,":")[1]
 			if protoModule == "lime.proto.batadv" then
 				is_batadv_enabled = true
 				break
@@ -48,9 +67,9 @@ function lan.setup_interface(ifname, args)
 
 	local uci = config.get_uci_cursor()
 	local bridgedIfs = {}
-	-- here we bet that the first device section is the bridge one,
-	-- as it does not have a name for addressing it
-	local oldIfs = uci:get("network", "@device[0]", "ports") or {}
+	local br_lan_section = find_br_lan(uci)
+	if not br_lan_section then return end
+	local oldIfs = uci:get("network", br_lan_section, "ports") or {}
 	-- it should be a table, it was a string in old OpenWrt releases
 	if type(oldIfs) == "string" then oldIfs = utils.split(oldIfs, " ") end
 	for _,iface in pairs(oldIfs) do
@@ -59,8 +78,7 @@ function lan.setup_interface(ifname, args)
 		end
 	end
 	table.insert(bridgedIfs, ifname)
-	uci:set("network", "@device[0]", "device")
-	uci:set("network", "@device[0]", "ports", bridgedIfs)
+	uci:set("network", br_lan_section, "ports", bridgedIfs)
 	uci:save("network")
 end
 
