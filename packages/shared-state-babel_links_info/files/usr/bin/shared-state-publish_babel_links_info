@@ -26,10 +26,10 @@ local ifaceip = {}
 
 function get_interface_ip(ifname)
     if ifaceip[ifname] == nil then
-        ifaceip[ifname] = string.gsub(utils.unsafe_shell("ip -6 address show " 
-        .. ifname ..
-        " | awk '{if ($1 == \"inet6\") print $2}' | grep fe80 | awk -F/ '{print $1}'"),
-        "\n", "")
+        ifaceip[ifname] = string.gsub(utils.unsafe_shell("ip -6 address show "
+                .. ifname ..
+                " | awk '{if ($1 == \"inet6\") print $2}' | grep fe80 | awk -F/ '{print $1}'"),
+            "\n", "")
     end
     return ifaceip[ifname]
 end
@@ -37,18 +37,19 @@ end
 function get_babel_links_info()
     local conn = ubus.connect()
     local links = {}
-    babelneigt_obj = ubus.call(conn,"babeld", "get_neighbours",{})
-    for key, value in pairs(babelneigt_obj.IPv6) do
-        table.insert(links, {
-            src_ip = get_interface_ip(value.dev),
-            dst_ip = key,
-            iface = value.dev
-        })
+    babelneigt_obj = ubus.call(conn, "babeld", "get_neighbours", {})
+    if babelneigt_obj ~= nil then
+        for key, value in pairs(babelneigt_obj.IPv6) do
+            table.insert(links, {
+                src_ip = get_interface_ip(value.dev),
+                dst_ip = key,
+                iface = value.dev
+            })
+        end
     end
     return links
 end
 
 local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
-local result = {[hostname] = get_babel_links_info()}
-io.popen("shared-state insert babel_links_info", "w"):write(JSON.stringify(result))
-
+local result = { [hostname] = get_babel_links_info() }
+io.popen("shared-state-async insert babel_links_info", "w"):write(JSON.stringify(result))

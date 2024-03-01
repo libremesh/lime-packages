@@ -4,6 +4,14 @@ unique_append()
 	grep -qF "$1" "$2" || echo "$1" >> "$2"
 }
 
+
+uci set shared-state.babel_links_info=dataType
+uci set shared-state.babel_links_info.name='babel_links_info'
+uci set shared-state.babel_links_info.scope='community'
+uci set shared-state.babel_links_info.ttl='2400'
+uci set shared-state.babel_links_info.update_interval='30'
+uci commit shared-state
+
 unique_append \
-	'*/5 * * * * ((sleep $(($(random-numgen) % 120)); shared-state sync babel_links_info &> /dev/null)&)'\
+	'*/30 * * * * ((sleep $(($RANDOM % 120)); shared-state-publish_babel_links_info &> /dev/null)&)' \
 	/etc/crontabs/root
