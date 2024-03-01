@@ -228,6 +228,17 @@ config net wirelessclientbackbone
 #	option static_ipv6 '2a00:1508:0a00::1234/64'
 #	option static_gateway_ipv6 'fe80::1'
 
+## (optional) configure lan1 for connection to other nodes, not for users connection:
+config net
+	option linux_name 'lan1'
+	list protocols 'batadv:%N1'  #needs to be specified if the other node is in the same mesh cloud i.e. same ssid
+	list protocols 'babeld:17'
+
+## (optional) configure lan1 for users to connect to, not for connection to other nodes:
+config net
+	option linux_name 'lan1'
+	list protocols 'lan'
+
 #########################################################
 ### Ground routing specific sections
 ### One section for each ground routing link
