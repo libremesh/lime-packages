@@ -477,6 +477,8 @@ function mesh_upgrade.get_node_status()
     upgrade_data.main_node = mesh_upgrade.main_node_state()
     upgrade_data.board_name = eupgrade._get_board_name()
     upgrade_data.current_fw = eupgrade._get_current_fw_version()
+    local ipv4, ipv6 = network.primary_address()
+    upgrade_data.node_ip = ipv4:host():string()
     return upgrade_data
 end
 
