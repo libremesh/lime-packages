@@ -61,13 +61,16 @@ docker run -it -v $(pwd)/images:/images/ ghcr.io/openwrt/imagebuilder:ath79-gene
 
 If your device is not part of ath79-generic profiles, you can replace it with another &lt;target&gt;-&lt;subtarget&gt; combination. For knowing which target and subtarget is best suited for your router, check out the page about it in the [OpenWrt's Table of Hardware][OpenWrt-ToH].
 
-Within the container, add the `lime-packages` feed:
+Within the container, add the `lime-packages` feeds:
 
 ```shell
 echo "src/gz libremesh https://feed.libremesh.org/master" >> repositories.conf
+echo "src/gz libremesh_arch_packages https://feed.libremesh.org/master/packages/mips_24kc" >> repositories.conf
 echo  "untrusted comment: signed by libremesh.org key a71b3c8285abd28b" > keys/a71b3c8285abd28b
 echo "RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8" >> keys/a71b3c8285abd28b
 ```
+
+If your device is not part of ath79-generic replace `mips_24kc` with the architecture of the selected &lt;target&gt;-&lt;subtarget&gt;.
 
 Ideally add your own `lime-community` files within the container in the folder
 `./files/etc/config/`. To find possible options consult the
@@ -92,6 +95,7 @@ Go to <https://firmware-selector.openwrt.org/>. Find your device. Click on the f
 
 ```shell
 echo "src/gz libremesh https://feed.libremesh.org/master" >> repositories.conf
+echo "src/gz libremesh_arch_packages https://feed.libremesh.org/master/packages/mips_24kc" >> repositories.conf
 echo  "untrusted comment: signed by libremesh.org key a71b3c8285abd28b" > keys/a71b3c8285abd28b
 echo "RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8" >> keys/a71b3c8285abd28b
 ```
