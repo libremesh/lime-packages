@@ -1,0 +1,78 @@
+name: Multi arch build packages
+
+on:
+  release:
+    types: [published]
+  push:
+    branches: [master]
+    tags:
+      - v*
+      - '!v2020*'
+    paths:
+      - 'packages/shared-state-async/**'
+      
+jobs:
+  build:
+    name: build ${{ matrix.arch }} ${{ github.ref }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch:
+          - aarch64_cortex-a53
+          - aarch64_cortex-a72
+          - aarch64_generic
+          - arm_arm1176jzf-s_vfp
+          - arm_arm926ej-s
+          - arm_cortex-a15_neon-vfpv4
+          - arm_cortex-a5_vfpv4
+          - arm_cortex-a7
+          - arm_cortex-a7_neon-vfpv4
+          - arm_cortex-a7_vfpv4
+          - arm_cortex-a8_vfpv3
+          - arm_cortex-a9
+          - arm_cortex-a9_neon
+          - arm_cortex-a9_vfpv3-d16
+          - arm_fa526
+          - arm_mpcore
+          - arm_xscale
+          - i386_pentium-mmx
+          - i386_pentium4
+          - mips64_octeonplus
+          - mips_24kc
+          - mips_4kec
+          - mips_mips32
+          - mipsel_24kc
+          - mipsel_24kc_24kf
+          - mipsel_74kc
+          - mipsel_mips32
+          - powerpc_464fp
+          - powerpc_8548
+          - riscv64_riscv64
+          - x86_64
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build packages ${{ matrix.arch }}
+        uses: openwrt/gh-action-sdk@v5
+        env:
+          ARCH: "${{ matrix.arch }}"
+          FEEDNAME: "libremesh"
+          IGNORE_ERRORS: "n m y"
+          KEY_BUILD: "${{ secrets.KEY_BUILD }}"
+          PACKAGES: "shared-state-bat_hosts"
+
+      - name: Set package destination
+        run: |
+          export TAG=$(echo "${{ github.ref }}" | cut -d '/' -f 3- | perl -pe 's/v([0-9])/$1/')
+          echo "$TAG"
+          echo "DEST_DIR=$TAG" >> $GITHUB_ENV
+
+      - name: Upload packages to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          external_repository: libremesh/lime-feed
+          publish_dir: bin/packages/${{ matrix.arch }}/libremesh/
+          destination_dir: ${{ env.DEST_DIR }}/packages/${{ matrix.arch }}
+
