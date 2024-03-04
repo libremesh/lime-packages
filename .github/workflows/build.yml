@@ -8,6 +8,10 @@ on:
     tags:
       - v*
       - '!v2020*'
+    paths:
+      - ".github/workflows/*"
+      - "libremesh.mk"
+      - "packages/**"
 
 jobs:
   build:
