@@ -12,10 +12,14 @@ feeds_file="/etc/opkg/limefeeds.conf"
   exit 0
 }
 
+arch_packages="$(cat /etc/os-release | grep OPENWRT_ARCH | sed 's/OPENWRT_ARCH=\"\(.*\)\"/\1/')"
+
 [ "$LIME_CODENAME" == "development" ] && {
 	packages_url="http://feed.libremesh.org/master";
+	arch_packages_url="http://feed.libremesh.org/master/packages/$arch_packages";
 } || {
 	packages_url="http://feed.libremesh.org/$LIME_RELEASE"
+	arch_packages_url="http://feed.libremesh.org/$LIME_RELEASE/packages/$arch_packages";
 }
 
 profiles_url="http://feed.libremesh.org/profiles"
@@ -25,6 +29,7 @@ key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
 
 echo "Configuring official LibreMesh opkg feeds"
 echo "src/gz libremesh $packages_url" > "$feeds_file"
+echo "src/gz libremesh_arch_packages $arch_packages_url" >> "$feeds_file"
 echo "src/gz profiles $profiles_url" >> "$feeds_file"
 echo "untrusted comment: signed by libremesh.org key $key_name" > "/etc/opkg/keys/$key_name"
 echo "$key_content" >> "/etc/opkg/keys/$key_name"
