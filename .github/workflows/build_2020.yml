@@ -1,0 +1,51 @@
+name: Build packages 2020.x
+
+on:
+  push:
+    branches: 
+      - 2020*
+    tags:
+      - v2020*
+
+jobs:
+  build:
+    name: Build ${{ github.ref }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build packages
+        uses: openwrt/gh-action-sdk@v1
+        env:
+          ARCH: "x86_64-19.07.10"
+          FEEDNAME: "libremesh"
+          IGNORE_ERRORS: "n m y"
+          KEY_BUILD: "${{ secrets.KEY_BUILD }}"
+
+      - name: Set package destination
+        run: |
+          export TAG=$(echo "${{ github.ref }}" | cut -d '/' -f 3- | perl -pe 's/v([0-9])/$1/')
+          echo "$TAG"
+          echo "DEST_DIR=$TAG" >> $GITHUB_ENV
+
+      - name: Upload packages to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          external_repository: libremesh/lime-feed
+          publish_dir: bin/packages/x86_64/libremesh/
+          destination_dir: ${{ env.DEST_DIR }}
+
+#     - name: Upload packages to S3
+#       uses: jakejarvis/s3-sync-action@master
+#       with:
+#         args: --acl public-read --follow-symlinks --delete
+#       env:
+#         AWS_S3_BUCKET: libremesh
+#         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#         AWS_S3_ENDPOINT: ${{ secrets.AWS_S3_ENDPOINT }}
+#         SOURCE_DIR: bin/packages/x86_64/libremesh/
+#         DEST_DIR: ${{ env.DEST_DIR }}
+
