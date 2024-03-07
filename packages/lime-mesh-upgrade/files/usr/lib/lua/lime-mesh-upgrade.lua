@@ -55,7 +55,7 @@ function mesh_upgrade.get_repo_base_url()
     return "http://" .. ipv4:host():string() .. mesh_upgrade.FIRMWARE_REPO_PATH
 end
 
--- Create a work directory if nor exist
+-- Create a work directory if doesn't exist
 function mesh_upgrade._create_workdir(workdir)
     if not utils.file_exists(workdir) then
         os.execute('mkdir -p ' .. workdir .. " >/dev/null")
@@ -65,10 +65,25 @@ function mesh_upgrade._create_workdir(workdir)
     end
 end
 
+-- Gets local downloaded firmware's path
 function mesh_upgrade.get_fw_path()
     local uci = config.get_uci_cursor()
-    return uci:get('mesh-upgrade', 'main', 'fw_path') or " "
+    local path = uci:get('mesh-upgrade', 'main', 'fw_path')
+    if path ~= nil and utils.file_exists(path) then
+        return path
+    else
+        return " "
+    end
 end
+
+function mesh_upgrade.set_fw_path(image)
+    mesh_upgrade.fw_path = eupgrade.WORKDIR .. "/" .. image['name']
+    local uci = config.get_uci_cursor()
+    uci:set('mesh-upgrade', 'main', 'fw_path', mesh_upgrade.fw_path)
+    uci:save('mesh-upgrade')
+    uci:commit('mesh-upgrade')
+end
+
 
 function mesh_upgrade.set_workdir(workdir)
     mesh_upgrade._create_workdir(workdir)
@@ -214,14 +229,6 @@ function mesh_upgrade.start_firmware_upgrade_transaction()
     }
 end
 
-function mesh_upgrade.set_fw_path(image)
-    mesh_upgrade.fw_path = eupgrade.WORKDIR .. "/" .. image['name']
-    local uci = config.get_uci_cursor()
-    uci:set('mesh-upgrade', 'main', 'fw_path', mesh_upgrade.fw_path)
-    uci:save('mesh-upgrade')
-    uci:commit('mesh-upgrade')
-end
-
 -- Shared state functions --
 ----------------------------
 function mesh_upgrade.report_error(error)
@@ -337,7 +344,9 @@ end
 -- This line will genereate recursive dependencies like in pirania pakcage
 function mesh_upgrade.trigger_sheredstate_publish()
     utils.execute_daemonized(
-        "sleep 1;/etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state sync mesh_wide_upgrade")
+        "sleep 1; \
+        shared-state bleach mesh_wide_upgrade; \
+        /etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state sync mesh_wide_upgrade")
 end
 
 function mesh_upgrade.change_main_node_state(newstate)
@@ -456,7 +465,7 @@ function mesh_upgrade.get_node_status()
     upgrade_data.repo_url = uci:get('mesh-upgrade', 'main', 'repo_url')
     upgrade_data.eupgradestate = mesh_upgrade.check_eupgrade_download_failed()
     upgrade_data.upgrade_state = mesh_upgrade.state()
-    if (state == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE) then
+    if (upgrade_data.upgrade_state == mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED) then
         if (tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining")) > 1) then
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.CONFIRMATION_PENDING)
         end
@@ -493,7 +502,7 @@ function mesh_upgrade.start_safe_upgrade(su_start_time_out, su_confirm_timeout)
             keep = keep .. " lime-mesh-upgrade"
             config.set("system", "keep_on_upgrade", keep) --use set but not commit, so this configuration wont be preserved.
 
-            mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPGRADE_SCHELUDED)
+            mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED)
             mesh_upgrade.trigger_sheredstate_publish()
             --this must be executed after a safe upgrade timeout to enable all nodes to start_safe_upgrade
             utils.execute_daemonized("sleep " ..
@@ -540,17 +549,17 @@ end
 function mesh_upgrade.confirm()
     if mesh_upgrade.get_node_status().upgrade_state == mesh_upgrade.upgrade_states.CONFIRMATION_PENDING then
         local shell_output = utils.unsafe_shell("safe-upgrade confirm")
-        mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPDATED)
-        ----utils.log(shell_output)
-        return {
-            code = "SUCCESS"
-        }
-    else
-        return {
+        if mesh_upgrade.change_state(mesh_upgrade.upgrade_states.CONFIRMED) then
+            return {
+                code = "SUCCESS"
+            }
+        end
+    end
+    return {
             code = "NOT_READY_TO_CONFIRM",
             error = "NOT_READY_TO_CONFIRM"
         }
-    end
+    
 end
 
 return mesh_upgrade

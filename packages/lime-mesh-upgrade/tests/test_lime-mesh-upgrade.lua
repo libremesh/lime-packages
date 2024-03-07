@@ -6,8 +6,15 @@ stub(eupgrade, '_get_board_name', function()
     return boardname
 end)
 
-local lime_mesh_upgrade = require 'lime-mesh-upgrade'
+confirm_remaining = -1
+
+stub(utils, 'unsafe_shell', function(command)
+    print(command)
+    return confirm_remaining
+end)
+
 local utils = require "lime.utils"
+local lime_mesh_upgrade = require 'lime-mesh-upgrade'
 local test_utils = require "tests.utils"
 local json = require 'luci.jsonc'
 local uci
@@ -18,7 +25,7 @@ local upgrade_data = {
     upgrade_state = "starting,downloading|ready_for_upgrade|upgrade_scheluded|confirmation_pending|~~confirmed~~|updated|error",
     error = "CODE",
     main_node = "true",
-    timestamp=02,
+    timestamp = 02,
     current_fw = "LibreRouterOs 1.5 r0+11434-e93615c947",
     board_name = "qemu-standard-pc-i440fx-piix-1996"
 }
@@ -54,8 +61,6 @@ describe('LiMe mesh upgrade', function()
 
     it('test get mesh config fresh start', function()
         local fw_version = 'LibreMesh 19.02'
-        config.log("\n test set mesh config.... \n")
-
         stub(eupgrade, '_get_current_fw_version', function()
             return fw_version
         end)
@@ -153,7 +158,7 @@ describe('LiMe mesh upgrade', function()
 
         local fw_path = lime_mesh_upgrade.get_fw_path()
         assert.is.equal(fw_path, " ")
-        
+
         stub(eupgrade, '_get_current_fw_version', function()
             return 'LibreMesh 19.05'
         end)
@@ -166,6 +171,9 @@ describe('LiMe mesh upgrade', function()
         stub(eupgrade, '_file_sha256', function()
             return 'cec8920f93055cc57cfde1f87968e33ca5215b2df88611684195077402079acb'
         end)
+        stub(utils, 'file_exists', function()
+            return true
+        end)
 
         lime_mesh_upgrade.become_bot_node(upgrade_data)
         status = lime_mesh_upgrade.get_node_status()
@@ -174,7 +182,7 @@ describe('LiMe mesh upgrade', function()
         assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
         local fw_path = lime_mesh_upgrade.get_fw_path()
         assert.is.equal(fw_path, '/tmp/eupgrades/upgrade-lr-1.5.sh')
-        
+
     end)
 
     it('test become main node changes the state to STARTING', function()
@@ -279,21 +287,13 @@ describe('LiMe mesh upgrade', function()
         assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
         assert.is.equal(status.candidate_fw, json.parse(latest_release_data).version)
         assert.is.equal(status.board_name, boardname)
-        assert.is.equal(status.main_node,lime_mesh_upgrade.main_node_states.MAIN_NODE)
-        assert.is.equal(status.repo_url,'http://10.1.1.0/lros/')
+        assert.is.equal(status.main_node, lime_mesh_upgrade.main_node_states.MAIN_NODE)
+        assert.is.equal(status.repo_url, 'http://10.1.1.0/lros/')
     end)
 
     it('test start_safe_upgrade default timeouts', function()
 
-        stub(utils, 'execute_daemonized', function () 
-        end)
-        
-        stub(lime_mesh_upgrade, 'state', function()
-            return lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE
-        end)
-
-        stub(utils, 'file_exists', function()
-            return true
+        stub(utils, 'execute_daemonized', function()
         end)
 
         stub(utils, 'file_exists', function()
@@ -304,14 +304,38 @@ describe('LiMe mesh upgrade', function()
             return "/tmp/foo.bar"
         end)
 
+        local fw_version = 'LibreMesh 19.02'
+        stub(eupgrade, '_get_current_fw_version', function()
+            return fw_version
+        end)
+        uci:set('mesh-upgrade', 'main', "mesh-upgrade")
+        uci:set('mesh-upgrade', 'main', "upgrade_state", "READY_FOR_UPGRADE")
+        uci:save('mesh-upgrade')
+        uci:commit('mesh-upgrade')
+        local status = lime_mesh_upgrade.get_node_status()
+        assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
+        
+        --should be called from rpcd
         lime_mesh_upgrade.start_safe_upgrade()
-        assert.is.equal(lime_mesh_upgrade.su_confirm_timeout,600)
-        assert.is.equal(lime_mesh_upgrade.su_start_time_out,60)
-        assert.stub.spy(utils.execute_daemonized).was.called.with("sleep 60; safe-upgrade upgrade --reboot-safety-timeout=600 /tmp/foo.bar")
+        status = lime_mesh_upgrade.get_node_status()
+        assert.stub.spy(utils.execute_daemonized).was.called.with(
+            "sleep 60; safe-upgrade upgrade --reboot-safety-timeout=600 /tmp/foo.bar")
+        assert.is.equal(lime_mesh_upgrade.su_confirm_timeout, 600)
+        assert.is.equal(lime_mesh_upgrade.su_start_time_out, 60)
+        assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED)
+
+        --after reboot confirm confirm_remaining will be grater than 0 
+        confirm_remaining = 10
+        status = lime_mesh_upgrade.get_node_status()
+        assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.CONFIRMATION_PENDING)
+        
+        lime_mesh_upgrade.confirm()
+        status = lime_mesh_upgrade.get_node_status()
+        assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.CONFIRMED)
     end)
 
     it('test start_safe_upgrade different timeouts', function()
-        stub(utils, 'execute_daemonized', function () 
+        stub(utils, 'execute_daemonized', function()
         end)
 
         stub(lime_mesh_upgrade, 'state', function()
@@ -330,16 +354,18 @@ describe('LiMe mesh upgrade', function()
             return "/tmp/foo.bar"
         end)
 
-        lime_mesh_upgrade.start_safe_upgrade(10,100)
-        assert.is.equal(lime_mesh_upgrade.su_confirm_timeout,100)
-        assert.is.equal(lime_mesh_upgrade.su_start_time_out,10)
-        assert.stub.spy(utils.execute_daemonized).was.called.with("sleep 10; safe-upgrade upgrade --reboot-safety-timeout=100 /tmp/foo.bar")
+        lime_mesh_upgrade.start_safe_upgrade(10, 100)
+        assert.is.equal(lime_mesh_upgrade.su_confirm_timeout, 100)
+        assert.is.equal(lime_mesh_upgrade.su_start_time_out, 10)
+        assert.stub.spy(utils.execute_daemonized).was.called.with(
+            "sleep 10; safe-upgrade upgrade --reboot-safety-timeout=100 /tmp/foo.bar")
     end)
 
     before_each('', function()
         snapshot = assert:snapshot()
         uci = test_utils.setup_test_uci()
         uci:set('mesh-upgrade', 'main', "mesh-upgrade")
+        uci:set('mesh-upgrade', 'main', "upgrade_state", "DEFAULT")
         uci:save('mesh-upgrade')
         uci:commit('mesh-upgrade')
     end)
