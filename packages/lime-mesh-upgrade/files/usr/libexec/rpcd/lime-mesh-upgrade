@@ -33,7 +33,7 @@ local function get_node_status(msg)
 end
 
 local function start_safe_upgrade(msg)
-    local result = mesh_upgrade.start_safe_upgrade()
+    local result = mesh_upgrade.start_safe_upgrade(msg.start_delay ,msg.confirm_timeout)
     return utils.printJson(result)
 end
 -- to be called after successfully reboot 
@@ -58,7 +58,8 @@ local methods = {
         no_params = 0
     },
     start_safe_upgrade = {
-        no_params = 0
+        confirm_timeout = 0,
+        start_delay = 0,
     },
     confirm_boot_partition = {
         no_params = 0

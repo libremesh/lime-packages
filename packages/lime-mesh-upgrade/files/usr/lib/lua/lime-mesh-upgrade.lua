@@ -329,11 +329,12 @@ end
 
 function mesh_upgrade.mesh_upgrade_abort()
     mesh_upgrade.report_error(mesh_upgrade.errors.ABORTED)
-    mesh_upgrade.change_main_node_state(mesh_upgrade.main_node_states.NO)
+    --mesh_upgrade.change_main_node_state(mesh_upgrade.main_node_states.NO)
     local uci = config.get_uci_cursor()
     uci:set('mesh-upgrade', 'main', 'retry_count', 0)
     uci:save('mesh-upgrade')
     uci:commit('mesh-upgrade')
+    mesh_upgrade.trigger_sheredstate_publish()
     -- todo(javi): stop and delete everything
     return {
         code = "SUCCESS",
@@ -404,6 +405,12 @@ end
 --this function will retry max_retry_conunt tymes in case of error
 function mesh_upgrade.become_bot_node(upgrade_data)
     if mesh_upgrade.started() then
+        if actual_state.timestamp == upgrade_data.timestamp and
+            upgrade_data.upgrade_state == mesh_upgrade.upgrade_states.ERROR and  
+            upgrade_data.error  == mesh_upgrade.errors.ABORTED    then
+                mesh_upgrade.mesh_upgrade_abort()
+        end
+
         return
     else
         upgrade_data.main_node = mesh_upgrade.main_node_states.NO
@@ -482,8 +489,8 @@ function mesh_upgrade.get_node_status()
     return upgrade_data
 end
 
-function mesh_upgrade.start_safe_upgrade(su_start_time_out, su_confirm_timeout)
-    mesh_upgrade.su_start_time_out = su_start_time_out or mesh_upgrade.su_start_time_out
+function mesh_upgrade.start_safe_upgrade(su_start_delay, su_confirm_timeout)
+    mesh_upgrade.su_start_time_out = su_start_delay or mesh_upgrade.su_start_time_out
     mesh_upgrade.su_confirm_timeout = su_confirm_timeout or mesh_upgrade.su_confirm_timeout
 
     if mesh_upgrade.state() == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE then
@@ -514,7 +521,10 @@ function mesh_upgrade.start_safe_upgrade(su_start_time_out, su_confirm_timeout)
 
             return {
                 code = "SUCCESS",
-                error = ""
+                error = "",
+                su_start_delay =  mesh_upgrade.su_start_time_out,
+                su_confirm_timeout = mesh_upgrade.su_confirm_timeout
+
             }
         else
             ----utils.log("not able to start upgrade invalid state or firmware not found")
