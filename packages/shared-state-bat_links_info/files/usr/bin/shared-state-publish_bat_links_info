@@ -1,0 +1,58 @@
+#!/usr/bin/lua
+
+--! LibreMesh
+--! Copyright (C) 2023  Javier Jorge <jjorge@inti.gob.ar>
+--! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--!
+--! This program is free software: you can redistribute it and/or modify
+--! it under the terms of the GNU Affero General Public License as
+--! published by the Free Software Foundation, either version 3 of the
+--! License, or (at your option) any later version.
+--!
+--! This program is distributed in the hope that it will be useful,
+--! but WITHOUT ANY WARRANTY; without even the implied warranty of
+--! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--! GNU Affero General Public License for more details.
+--!
+--! You should have received a copy of the GNU Affero General Public License
+--! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+local JSON = require("luci.jsonc")
+local utils = require('lime.utils')
+local network = require ("lime.network")
+
+local hostname = utils.hostname()
+
+function get_bat_links_info()
+	local bat_neighbors_obj={}
+	local bat_originators_obj={}
+	local bat_originators = utils.unsafe_shell("batctl oj")
+	bat_originators_obj = JSON.parse(bat_originators)
+
+
+	local bat_neighbors = utils.unsafe_shell("batctl nj")
+	bat_neighbors = string.gsub(bat_neighbors,"neigh_address","dst_mac")
+	bat_neighbors = string.gsub(bat_neighbors,"hard_ifname","iface")
+	bat_neighbors_obj = JSON.parse(bat_neighbors)
+
+	for key,neight_value in pairs (bat_neighbors_obj) do
+		local macparts = network.get_mac(neight_value.iface)
+		local src_macaddr = table.concat(macparts,":")
+		neight_value.hard_ifindex=nil
+		neight_value.src_mac=src_macaddr
+		for key,originator_value in pairs (bat_originators_obj) do
+			if originator_value.hard_ifname == neight_value.iface and 
+			originator_value.neigh_address== originator_value.orig_address and  
+			originator_value.neigh_address== neight_value.dst_mac then
+				-- Batman "transmit link quality" (tq) is a byte that describes 
+				-- the probability of a successful transmission towards a
+				-- neighbor node
+				neight_value.tq = originator_value.tq
+			end
+		end
+	end
+	return bat_neighbors_obj
+end
+
+local result = { [hostname] = get_bat_links_info() }
+io.popen("shared-state-async insert bat_links_info", "w"):write(JSON.stringify(result))
