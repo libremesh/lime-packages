@@ -1,3 +1,5 @@
+#!/usr/bin/env lua
+
 --[[
 Shared State Async
 
@@ -11,41 +13,20 @@ This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Vers
 local utils = require('lime.utils')
 local json = require 'luci.jsonc'
 
-local function parseoutput(output)
-    --filer possible debugging meesages
-    local response = output:match('{.*}')
-    if response ~= nil then
-        --make sure it is a json
-        local msg = json.parse(response)
-        if (msg) then
-            utils.printJson(msg)
-        end
-    end
+local function get(msg)
+    local error = os.execute("shared-state-async get " ..
+        msg.data_type .. " 2>/dev/null ")
     utils.printJson({
-        output = output
+        error = error
     })
 end
 
-local function get(msg)
-    local output = utils.unsafe_shell("shared-state-async get " ..
-        msg.data_type .. " 2>&1 ")
-    parseoutput(output)
-end
-
 local function sync(msg)
-    local output = nil
-    if (type(msg.peers_ip) == 'table') then
-        output = utils.unsafe_shell("shared-state-async sync " ..
-            msg.data_type .. " " .. table.concat(msg.peers_ip, " ") .. " 2>&1 ")
-    else
-        output = utils.unsafe_shell("shared-state-async sync " ..
-            msg.data_type .. " 2>&1 ")
-    end
-    if output then
-        utils.printJson({
-            output = output
-        })
-    end
+    local error = os.execute("shared-state-async sync " ..
+            msg.data_type .. " " .. table.concat(msg.peers_ip or {}, " ") .. " 2>/dev/null ")
+    utils.printJson({
+      error = error
+    })
 end
 
 --{"data_type":"data","peers_ip":["10.0.0.1","10.0.0.2"]}
@@ -65,7 +46,6 @@ if arg[1] == 'list' then
 end
 
 if arg[1] == 'call' then
-    utils.unsafe_shell("rm " .. ERROR_LOG_FILE_NAME .. "> /dev/null 2>&1")
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
     if arg[2] == 'get' then
