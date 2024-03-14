@@ -8,7 +8,7 @@ local rpcdCall = testUtils.rpcd_call
 
 --since there is no Shared State async binary, testing possiblities are reduced
 --manual testing can be done on a router with bat-hosts package using this commands:
---ubus -S call shared-state-async getFromSharedState "{'data_type': 'bat-hosts'}"
+--ubus -S call shared-state-async get "{'data_type': 'bat-hosts'}"
 --ubus -S call shared-state-async sync "{'data_type': 'bat-hosts'}"
 --ubus -S call shared-state-async sync "{'data_type': 'bat-hosts' ,'peers_ip':['10.0.0.1','10.0.0.2']}'"
 
