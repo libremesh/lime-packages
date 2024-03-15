@@ -16,6 +16,9 @@ local json = require 'luci.jsonc'
 local function get(msg)
     local error = os.execute("shared-state-async get " ..
         msg.data_type .. " 2>/dev/null ")
+        -- if os.execute dont fail will print the output and rpcd wont execute
+        -- the following lines. If there is an error the above code wont print
+        -- anything and this code will return the error code.
     utils.printJson({
         error = error
     })
