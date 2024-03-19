@@ -70,6 +70,11 @@ describe('ubus-lime-utils tests #ubuslimeutils', function()
         assert.is_true(utils.deepcompare(expected, response['switch_status']))
     end)
 
+    -- todo(kon): this have to be implemented, right now the available images for testing haven't DSA
+    -- create tests for this pr https://github.com/libremesh/lime-packages/pull/1096
+    --it('test get_node_status ports DSA support', function()
+
+
 
     it('test get_most_active return most active iface with stats from iw', function()
         stub(utils, "unsafe_shell", function (cmd) 
