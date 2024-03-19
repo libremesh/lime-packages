@@ -1,6 +1,8 @@
 local limewireless = require 'lime.wireless'
 local iwinfo = require 'iwinfo'
 local utils = require 'lime.utils'
+local json = require("luci.jsonc")
+
 
 -- Functions used by get_node_status
 local node_status = {}
@@ -81,7 +83,11 @@ end
 function node_status.switch_status()
     local response_ports = node_status.boardjson_get_ports()
     if #response_ports ~= 0 then
-        node_status.swconfig_get_link_status(response_ports)
+        if utils.is_dsa() then
+            node_status.dsa_get_link_status(response_ports)
+        else
+            node_status.swconfig_get_link_status(response_ports)
+        end
     end
     return response_ports
 end
@@ -89,7 +95,7 @@ end
 function node_status.boardjson_get_ports()
     local response_ports = {}
     local board = utils.getBoardAsTable()
-    if board['switch'] ~= nil and board['switch']['switch0'] ~= nil then
+    if board['switch'] ~= nil and board['switch']['switch0'] ~= nil then -- legacy swconfig devices support
         for _, role in ipairs(board['switch']['switch0']['roles']) do
             for port_number in string.gmatch(role['ports'], "%S+") do
                 if not tonumber(port_number) then
@@ -99,11 +105,40 @@ function node_status.boardjson_get_ports()
                     table.insert(response_ports, { num = tonumber(port_number), role = role['role'], device = role['device']})
                 end
             end
-
+        end
+    elseif board['network'] ~= nil then -- DSA devices support
+        for switch_name, switch in pairs(board['network']) do
+            if switch['ports'] ~= nil then
+                for _, port in ipairs(switch.ports) do
+                    table.insert(response_ports, { num = port, role = switch_name, device = switch_name})
+                end
+            else
+                table.insert(response_ports, { num = switch_name, role = switch_name, device = switch['device'] })
+            end
         end
     end
     return response_ports
 end
+
+function node_status.dsa_get_link_status(ports)
+    for _, port in ipairs(ports) do
+        local dsa = utils.unsafe_shell("ip -j -p link show " .. port['num'])
+        local dsa_json = json.parse(dsa)
+
+        port['device'] = port['num']
+        port['num'] = dsa_json[1]['ifindex']
+        port['role'] = dsa_json[1]['link']
+        if dsa_json[1]['link'] == nil then
+            port['role'] = dsa_json[1]['ifname']
+        end
+        port['link'] = dsa_json[1]['operstate']
+        if dsa_json[1]['operstate'] == "LOWERLAYERDOWN" then
+            port['link'] = "DOWN"
+        end
+    end
+    return ports
+end
+
 
 function node_status.swconfig_get_link_status(ports)
     local function add_link_status(port_number, status)
