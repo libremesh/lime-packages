@@ -17,10 +17,9 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
 	TITLE:=Pirania vaucher module for shared-state
 	CATEGORY:=LibreMesh
-	MAINTAINER:=Marcos Gutierrez <gmacos@altermundi.net>
+	MAINTAINER:=Asociación Civil AlterMundi <info@altermundi.net>
 	URL:=http://libremesh.org
-	DEPENDS:=+lua +luci-lib-jsonc +random-numgen \
-		shared-state +pirania
+	DEPENDS:=+lua +luci-lib-jsonc +random-numgen shared-state
 	PKGARCH:=all
 endef
 
