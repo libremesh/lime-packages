@@ -475,6 +475,8 @@ function mesh_upgrade.get_node_status()
     if (upgrade_data.upgrade_state == mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED) then
         if (tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining")) > 1) then
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.CONFIRMATION_PENDING)
+        elseif utils.file_exists(mesh_upgrade.get_fw_path()) == false then   
+            mesh_upgrade.report_error(mesh_upgrade.errors.FW_FILE_NOT_FOUND)
         end
     end
     upgrade_data.upgrade_state = uci:get('mesh-upgrade', 'main', 'upgrade_state')
