@@ -10,9 +10,8 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   CATEGORY:=LibreMesh
   MAINTAINER:=selankon <selankon@selankon.xyz>
-  SUBMENU:=3. Applications
   TITLE:=LibreMesh mesh wide firmware upgrade
-  DEPENDS:= +lua +libubus-lua +wget 
+  DEPENDS:= +lua +libubus-lua +wget +safe-upgrade +shared-state-mesh_wide_upgrade
   PKGARCH:=all
 endef
 
