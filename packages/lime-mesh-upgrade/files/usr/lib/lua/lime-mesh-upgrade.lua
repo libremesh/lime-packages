@@ -44,7 +44,8 @@ local mesh_upgrade = {
     fw_path = "",
     su_confirm_timeout = 600,
     su_start_time_out = 60,
-    max_retry_conunt = 4
+    max_retry_conunt = 4,
+    safeupgrade_start_mark=0
 }
 
 -- should epgrade be disabled ?
@@ -343,6 +344,10 @@ function mesh_upgrade.mesh_upgrade_abort()
         uci:commit('mesh-upgrade')
         mesh_upgrade.trigger_sheredstate_publish()
         -- todo(javi): stop and delete everything
+        -- kill posible safe upgrade command
+        utils.unsafe_shell("kill $(ps| grep 'sh -c (( sleep " ..
+        mesh_upgrade.su_start_time_out ..
+        "; safe-upgrade upgrade'| awk '{print $1}')")
     end
     return {
         code = "SUCCESS",
@@ -507,6 +512,8 @@ function mesh_upgrade.get_node_status()
     upgrade_data.current_fw = eupgrade._get_current_fw_version()
     local ipv4, ipv6 = network.primary_address()
     upgrade_data.node_ip = ipv4:host():string()
+    upgrade_data.safeupgrade_start_remining= (mesh_upgrade.su_start_time_out- (utils.uptime_s()-mesh_upgrade.safeupgrade_start_mark)>0 and  mesh_upgrade.su_start_time_out- (utils.uptime_s()-mesh_upgrade.safeupgrade_start_mark) or -1)                 
+    upgrade_data.confirm_remining= tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining"))
     return upgrade_data
 end
 
@@ -533,6 +540,7 @@ function mesh_upgrade.start_safe_upgrade(su_start_delay, su_confirm_timeout)
             config.set("system", "keep_on_upgrade", keep) --use set but not commit, so this configuration wont be preserved.
 
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED)
+            mesh_upgrade.safeupgrade_start_mark=utils.uptime_s()
             mesh_upgrade.trigger_sheredstate_publish()
             --this must be executed after a safe upgrade timeout to enable all nodes to start_safe_upgrade
             utils.execute_daemonized("sleep " ..

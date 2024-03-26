@@ -307,6 +307,8 @@ describe('LiMe mesh upgrade', function()
             "sleep 60; safe-upgrade upgrade --reboot-safety-timeout=600 /tmp/foo.bar")
         assert.is.equal(lime_mesh_upgrade.su_confirm_timeout, 600)
         assert.is.equal(lime_mesh_upgrade.su_start_time_out, 60)
+        assert(status.safeupgrade_start_remining<60 and status.safeupgrade_start_remining>10)
+        assert.is.equal(status.confirm_remining,-1)
         assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED)
 
         --after reboot confirm confirm_remaining will be grater than 0 
