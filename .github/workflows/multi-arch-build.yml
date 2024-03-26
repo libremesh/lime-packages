@@ -83,5 +83,5 @@ jobs:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           external_repository: libremesh/lime-feed
           publish_dir: bin/packages/${{ matrix.arch }}/libremesh/
-          destination_dir: ${{ env.DEST_DIR }}/packages/${{ matrix.arch }}
+          destination_dir: arch_packages/${{ env.DEST_DIR }}/${{ matrix.arch }}
 
