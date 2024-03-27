@@ -164,8 +164,8 @@ function mesh_upgrade.become_main_node(url)
     }
     end
     return {
-        code = "NO_NEW_VERSION",
-        error = "No new version is available"
+        code = "NO_ABLE_TO_BECOME_MAIN_NODE",
+        error = "Not able to start main node repository or change to starting"
     }
 end
 
@@ -365,7 +365,7 @@ end
 
 function mesh_upgrade.change_main_node_state(newstate)
     local main_node_state = mesh_upgrade.main_node_state()
-    if newstate == main_node_state then return false end
+    --if newstate == main_node_state then return false end
 
     -- if newstate == mesh_upgrade.main_node_states.STARTING and
     --     main_node_state ~= mesh_upgrade.main_node_states.NO then
