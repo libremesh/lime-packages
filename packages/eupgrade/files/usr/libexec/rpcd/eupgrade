@@ -17,7 +17,7 @@ if not conn then
 end
 
 local function is_new_version_available(msg)
-    local cached_only = true
+    local cached_only = false
     local ret = {}
     if eupgrade.is_enabled() then
         local latest_data = eupgrade.is_new_version_available(cached_only)
