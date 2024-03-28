@@ -11,10 +11,11 @@ define Package/$(PKG_NAME)
   SUBMENU:=Captive Portals
   SECTION:=net
   CATEGORY:=Network
-  MAINTAINER:=Luandro <luandro@gmail.com>
+  MAINTAINER:=Asociación Civil AlterMundi <info@altermundi.net>
   TITLE:=Captive portal with vouchers.
-  DEPENDS:=+ip6tables-mod-nat +ipset +shared-state-pirania +uhttpd-mod-lua +lime-system +luci-lib-jsonc \
-	   +liblucihttp-lua +luci-lib-nixio +libubus-lua +libuci-lua
+  DEPENDS:=+ip6tables-mod-nat +ipset +shared-state +shared-state-pirania \
+	+uhttpd-mod-lua +lime-system +luci-lib-jsonc \
+	+liblucihttp-lua +luci-lib-nixio +libubus-lua +libuci-lua
   PKGARCH:=all
 endef
 
