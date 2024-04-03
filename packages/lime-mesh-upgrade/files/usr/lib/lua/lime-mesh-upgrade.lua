@@ -38,14 +38,15 @@ local mesh_upgrade = {
         NO_LATEST_AVAILABLE = "no_latest_data_available",
         CONFIRMATION_TIME_OUT = "confirmation_timeout",
         --        ABORTED = "aborted",
-        FW_FILE_NOT_FOUND = "firmware_file_not_found"
+        FW_FILE_NOT_FOUND = "firmware_file_not_found",
+        INVALID_FW_FILE = "invalid_firmware_file"
 
     },
     fw_path = "",
     su_confirm_timeout = 600,
     su_start_time_out = 60,
     max_retry_conunt = 4,
-    safeupgrade_start_mark=0
+    safeupgrade_start_mark = 0
 }
 
 -- should epgrade be disabled ?
@@ -158,10 +159,10 @@ function mesh_upgrade.become_main_node(url)
     mesh_upgrade.start_main_node_repository(latest)
     mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADING)
     if mesh_upgrade.change_main_node_state(mesh_upgrade.main_node_states.STARTING) then
-    return {
-        code = "SUCCESS",
-        error = ""
-    }
+        return {
+            code = "SUCCESS",
+            error = ""
+        }
     end
     return {
         code = "NO_ABLE_TO_BECOME_MAIN_NODE",
@@ -199,6 +200,8 @@ function mesh_upgrade.start_firmware_upgrade_transaction()
             error = "No new firmware file downloaded"
         }
     end
+    --this is redundant but there is an scenario when download information is
+    --outdated and this check is necesary
     local latest = eupgrade.is_new_version_available(true)
     if not latest then
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DEFAULT)
@@ -346,8 +349,8 @@ function mesh_upgrade.mesh_upgrade_abort()
         -- todo(javi): stop and delete everything
         -- kill posible safe upgrade command
         utils.unsafe_shell("kill $(ps| grep 'sh -c (( sleep " ..
-        mesh_upgrade.su_start_time_out ..
-        "; safe-upgrade upgrade'| awk '{print $1}')")
+            mesh_upgrade.su_start_time_out ..
+            "; safe-upgrade upgrade'| awk '{print $1}')")
     end
     return {
         code = "SUCCESS",
@@ -512,8 +515,8 @@ function mesh_upgrade.get_node_status()
     upgrade_data.current_fw = eupgrade._get_current_fw_version()
     local ipv4, ipv6 = network.primary_address()
     upgrade_data.node_ip = ipv4:host():string()
-    upgrade_data.safeupgrade_start_remining= (mesh_upgrade.su_start_time_out- (utils.uptime_s()-mesh_upgrade.safeupgrade_start_mark)>0 and  mesh_upgrade.su_start_time_out- (utils.uptime_s()-mesh_upgrade.safeupgrade_start_mark) or -1)                 
-    upgrade_data.confirm_remining= tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining"))
+    upgrade_data.safeupgrade_start_remining = (mesh_upgrade.su_start_time_out - (utils.uptime_s() - mesh_upgrade.safeupgrade_start_mark) > 0 and mesh_upgrade.su_start_time_out - (utils.uptime_s() - mesh_upgrade.safeupgrade_start_mark) or -1)
+    upgrade_data.confirm_remining = tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining"))
     return upgrade_data
 end
 
@@ -523,15 +526,22 @@ function mesh_upgrade.start_safe_upgrade(su_start_delay, su_confirm_timeout)
 
     if mesh_upgrade.state() == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE then
         if utils.file_exists(mesh_upgrade.get_fw_path()) then
+            
+            -- veryfy the image before starting
+            if os.execute("sysupgrade --test " .. mesh_upgrade.get_fw_path()) ~= 0 then
+                mesh_upgrade.report_error(mesh_upgrade.errors.INVALID_FW_FILE)
+                return {
+                    code = "NOT_ABLE_TO_START_UPGRADE",
+                    error = "Firmware not valid"
+                }
+            end
+
             -- perform safe upgrade preserving config and rebooting after 600 sec if
             -- no confirmation is received
-            -- todo: javier first veryfy image
-
-            -- just preserve meshconfig
-            --os.execute("tar cfz ".. mesh_upgrade.WORKDIR.."/mesh_upgrade_cfg.tgz -C / etc/config/mesh-upgrade")
 
             -- perform a full config backup including mesh_upgrade config file needed for the next image
             -- surprisingly this does not presrve nodename
+            
             -- os.execute("sysupgrade -b ".. mesh_upgrade.WORKDIR.."/mesh_upgrade_cfg.tgz")
 
             config = require("lime.config")
@@ -540,7 +550,7 @@ function mesh_upgrade.start_safe_upgrade(su_start_delay, su_confirm_timeout)
             config.set("system", "keep_on_upgrade", keep) --use set but not commit, so this configuration wont be preserved.
 
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED)
-            mesh_upgrade.safeupgrade_start_mark=utils.uptime_s()
+            mesh_upgrade.safeupgrade_start_mark = utils.uptime_s()
             mesh_upgrade.trigger_sheredstate_publish()
             --this must be executed after a safe upgrade timeout to enable all nodes to start_safe_upgrade
             utils.execute_daemonized("sleep " ..
