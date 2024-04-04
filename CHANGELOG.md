@@ -1,68 +1,99 @@
 All notable changes to this project will be documented in this file.
 
-## 2024.1 - Unreleased
+## 2024.1-rc1 - Release candidate 1 (2024-04-03)
 
 ### Full changelog since 2023.1-rc2
 
-  - [6992335](https://github.com/libremesh/lime-packages/commit/699233525486def1c3ac9e7a698eb9d180a7b43f)
+  - [`3b2ccf5`](https://github.com/libremesh/lime-packages/commit/3b2ccf5944f10eeefef6d12f005e67b53de01be2)
+      lime-app: update to v0.2.26
+      (merge [#1101](https://github.com/libremesh/lime-packages/pull/1101))
+  - [`f7ff091`](https://github.com/libremesh/lime-packages/commit/f7ff091a6e5ec908b34ae3f2bdfa157830ca7afe)
+      ci: multi-arch-build: use a different output path
+      (merge [#1100](https://github.com/libremesh/lime-packages/pull/1100))
+  - [`4be8f34`](https://github.com/libremesh/lime-packages/commit/4be8f3416579c8590d29b010eb6dcb6103046593)
+      lime-utils: implement DSA support for node status
+      (merge [#1096](https://github.com/libremesh/lime-packages/pull/1096))
+  - [`d3d2086`](https://github.com/libremesh/lime-packages/commit/d3d20863306ac8a6e3fefa7051ab63a5554b1890)
+      Shared state Async ubus interface 
+      (merge [#1086](https://github.com/libremesh/lime-packages/pull/1086))
+  - [`8d5d7de`](https://github.com/libremesh/lime-packages/commit/8d5d7de7d20cf88c05a7f27c2c45adb523fb70a6)
+      bat_hosts: fixes rpcd error
+      (merge [#1094](https://github.com/libremesh/lime-packages/pull/1094), 
+      partial fix [#1093](https://github.com/libremesh/lime-packages/issues/1093))      
+  - [`069ac1a`](https://github.com/libremesh/lime-packages/commit/069ac1a8a187a4de00a78734f9527c9caa1cb7c3)
+      links information according to batman protocol
+      (merge [#1055](https://github.com/libremesh/lime-packages/pull/1055))
+  - [`7b7fcd7`](https://github.com/libremesh/lime-packages/commit/7b7fcd7600b2faafa352e8915c03f5c903cee09f)
+      Links information module for shared state according to babeld
+      (merge [#1056](https://github.com/libremesh/lime-packages/pull/1056))
+  - [`f7d279e`](https://github.com/libremesh/lime-packages/commit/f7d279e097a103169bd3caae586b9c7550b3a707)
+      ci: add multi-arch-build.yml
+      (merge [#1091](https://github.com/libremesh/lime-packages/pull/1091))
+  - [`90e3301`](https://github.com/libremesh/lime-packages/commit/90e330188543b9f671660eeca9bbb664a69a0e55)
+      ci: rebuild packages via sdk only when a package changes
+      (merge [#1089](https://github.com/libremesh/lime-packages/pull/1089))
+  - [`4dc7f98`](https://github.com/libremesh/lime-packages/commit/4dc7f984bb46e0d153f53d5764e06d3e29f69e7a)
+      lime-system: rename /lib/upgrade/keep.d/dropbear to /lib/upgrade/keep.d/dropbear-full
+      (merge [#1090](https://github.com/libremesh/lime-packages/pull/1090))
+  - [`6992335`](https://github.com/libremesh/lime-packages/commit/699233525486def1c3ac9e7a698eb9d180a7b43f)
       Add shared-state-async network statistics sharing
       (merge [#1087](https://github.com/libremesh/lime-packages/pull/1087))
-  - [ebf4b7b](https://github.com/libremesh/lime-packages/commit/ebf4b7be97866644a16e5b73edf48a6d8d2b5210)
+  - [`ebf4b7b`](https://github.com/libremesh/lime-packages/commit/ebf4b7be97866644a16e5b73edf48a6d8d2b5210)
       Fix removing ports from br-lan
       (merge [#1084](https://github.com/libremesh/lime-packages/pull/1084),
       fix [#1083](https://github.com/libremesh/lime-packages/issues/1083))
-  - [63242c2](https://github.com/libremesh/lime-packages/commit/63242c2fec24d629ac27e705e55e6788465d4ddb)
+  - [`63242c2`](https://github.com/libremesh/lime-packages/commit/63242c2fec24d629ac27e705e55e6788465d4ddb)
       Document how to set ethernet interfaces for mesh only or clients only.
       (merge [#1085](https://github.com/libremesh/lime-packages/pull/1085))
-  - [3aa8c1c](https://github.com/libremesh/lime-packages/commit/3aa8c1c6adee3ab838850887565b1365c898888e)
+  - [`3aa8c1c`](https://github.com/libremesh/lime-packages/commit/3aa8c1c6adee3ab838850887565b1365c898888e)
       shared-state-async fix log pollution
       (merge [#1082](https://github.com/libremesh/lime-packages/pull/1082),
       fix [#1081](https://github.com/libremesh/lime-packages/issues/1081))
-  - [8b577bf](https://github.com/libremesh/lime-packages/commit/8b577bf3d0ffc8974144f00005adb6f327733109)
+  - [`8b577bf`](https://github.com/libremesh/lime-packages/commit/8b577bf3d0ffc8974144f00005adb6f327733109)
       Fix lime-config fail when there is no lower iface
       (merge [#1080](https://github.com/libremesh/lime-packages/pull/1080))
-  - [0c8a915](https://github.com/libremesh/lime-packages/commit/0c8a915e95c2d5bbf6a7c9225bd012888bdd72b9)
+  - [`0c8a915`](https://github.com/libremesh/lime-packages/commit/0c8a915e95c2d5bbf6a7c9225bd012888bdd72b9)
       Set high metric on anygw prefix route
       (merge [#1079](https://github.com/libremesh/lime-packages/pull/1079),
       fix [#1078](https://github.com/libremesh/lime-packages/issues/1078))
-  - [e322985](https://github.com/libremesh/lime-packages/commit/e3229857362dced31657dd5c94dd4f46a6221b29)
+  - [`e322985`](https://github.com/libremesh/lime-packages/commit/e3229857362dced31657dd5c94dd4f46a6221b29)
       re-implement shared-state from scratch in modern C++
       (merge [#1067](https://github.com/libremesh/lime-packages/pull/1067))
-  - [a5eb7d8](https://github.com/libremesh/lime-packages/commit/a5eb7d888b681e4cab81289949d809ee0e968880)
+  - [`a5eb7d8`](https://github.com/libremesh/lime-packages/commit/a5eb7d888b681e4cab81289949d809ee0e968880)
       lime-unstuck-wa: Fix module path
       (merge [#1076](https://github.com/libremesh/lime-packages/pull/1076))
-  - [c98578e](https://github.com/libremesh/lime-packages/commit/c98578e81e338408c8fb62e3a413ff1e807196af)
+  - [`c98578e`](https://github.com/libremesh/lime-packages/commit/c98578e81e338408c8fb62e3a413ff1e807196af)
       Prevent unnecessary options in wifi-iface
       (merge [#1073](https://github.com/libremesh/lime-packages/pull/1073))
-  - [5053cf0](https://github.com/libremesh/lime-packages/commit/5053cf0cb46b7f865d9c3917c3b08232c88b66d1)
+  - [`5053cf0`](https://github.com/libremesh/lime-packages/commit/5053cf0cb46b7f865d9c3917c3b08232c88b66d1)
       README.md: add info about how to add package feed
       (merge [#1074](https://github.com/libremesh/lime-packages/pull/1074))
-  - [f8d54f2](https://github.com/libremesh/lime-packages/commit/f8d54f25d5fd005f72c18efbc8f1859f3d1d215f)
+  - [`f8d54f2`](https://github.com/libremesh/lime-packages/commit/f8d54f25d5fd005f72c18efbc8f1859f3d1d215f)
       Readme.md: improve imagebuilder instructions
       (merge [#1072](https://github.com/libremesh/lime-packages/pull/1072))
-  - [0d30e2c](https://github.com/libremesh/lime-packages/commit/0d30e2c47bc0b989bd8d9c442ed91255b1224756)
+  - [`0d30e2c`](https://github.com/libremesh/lime-packages/commit/0d30e2c47bc0b989bd8d9c442ed91255b1224756)
       lime.wireless: Fix wireless.is5Ghz 
       (merge [#1071](https://github.com/libremesh/lime-packages/pull/1071),
       fix [#1063](https://github.com/libremesh/lime-packages/issues/1063))
-  - [5a50b6f](https://github.com/libremesh/lime-packages/commit/5a50b6f8571ec94f171214fc43add787fee0a6fc)
+  - [`5a50b6f`](https://github.com/libremesh/lime-packages/commit/5a50b6f8571ec94f171214fc43add787fee0a6fc)
       lime-docs: update PKG_SOURCE_URL
       (merge [#1053](https://github.com/libremesh/lime-packages/pull/1053))
-  - [d0c498f](https://github.com/libremesh/lime-packages/commit/d0c498f7fec2512cece194c2da2b4d481a3aec6c)
+  - [`d0c498f`](https://github.com/libremesh/lime-packages/commit/d0c498f7fec2512cece194c2da2b4d481a3aec6c)
       Fix bridge device section confusion
       (merge [#1061](https://github.com/libremesh/lime-packages/pull/1061), 
       fix [#1060](https://github.com/libremesh/lime-packages/issues/1060))
-  - [4c51c7e](https://github.com/libremesh/lime-packages/commit/4c51c7e062c3dff6c5218ee797d5a79c2ad6bc3d)
+  - [`4c51c7e`](https://github.com/libremesh/lime-packages/commit/4c51c7e062c3dff6c5218ee797d5a79c2ad6bc3d)
       Use SPDX License Identifier to shrink size
       (merge [#1018](https://github.com/libremesh/lime-packages/pull/1018))
-  - [9f8754b](https://github.com/libremesh/lime-packages/commit/9f8754bc5392393a9c8c40b240b814f5f49c9413)
+  - [`9f8754b`](https://github.com/libremesh/lime-packages/commit/9f8754bc5392393a9c8c40b240b814f5f49c9413)
       Small cleaning 
       (merge [#1037](https://github.com/libremesh/lime-packages/pull/1037))
-  - [4569fec](https://github.com/libremesh/lime-packages/commit/4569fecca32f06012ce48065ccc7631a0d52a11f)
+  - [`4569fec`](https://github.com/libremesh/lime-packages/commit/4569fecca32f06012ce48065ccc7631a0d52a11f)
       Add new reference state data types to shared state 
       (merge [#1042](https://github.com/libremesh/lime-packages/pull/1042))
 
 
-## 2023.1-rc2 - Release candidate 2 - 17 sep '23
+## 2023.1-rc2 - Release candidate 2 (2023-09-17)
 
 ### Full changelog since 2023.1-rc1
   - Fix safe-upgrade bootstrap broken since OpenWrt 19.07 (merge [#1050](https://github.com/libremesh/lime-packages/pull/1050))
@@ -77,7 +108,7 @@ All notable changes to this project will be documented in this file.
   - Shared state ubus (merge [#1040](https://github.com/libremesh/lime-packages/pull/1040))
   - New Shared-State wifi Links information module (merge [#1038](https://github.com/libremesh/lime-packages/pull/1038))
 
-## 2023.1-rc1 - Release candidate 1 - 5 aug '23
+## 2023.1-rc1 - Release candidate 1 (2023-08-05)
 
 ### Full changelog
   - Add shared state async node (merge [#1030](https://github.com/libremesh/lime-packages/pull/1030))
@@ -108,13 +139,13 @@ All notable changes to this project will be documented in this file.
   - ubus-lime-utils place scripts in /etc/udhcpc.user.d/ (merge [#950](https://github.com/libremesh/lime-packages/pull/950), fix [#927](https://github.com/libremesh/lime-packages/issues/927))
   - Replace OpenWrt 19.07 switch config style with OpenWrt 21.02 one in proto-lan and network.lua's device parser (merge [#959](https://github.com/libremesh/lime-packages/pull/959))
 
-## 2020.4 Expansive Emancipation - 17 sep '23
+## 2020.4 Expansive Emancipation (2023-09-17)
 
 ### Full changelog
 - default distance setting increase 10x 
 
 
-## 2020.3 Expansive Emancipation - 21 apr '23
+## 2020.3 Expansive Emancipation (2023-04-21)
 
 ### Release notes
 List of notable changes since 2020.1:
@@ -136,7 +167,7 @@ Also, a priceless contribution came from the LibreMesh users who shared their ex
 ### Full changelog
   - adujst lime_release and lime_codename
 
-## 2020.2 Expansive Emancipation - 20 mar '23
+## 2020.2 Expansive Emancipation (2023-03-20)
 
 ### Full changelog
   - Check for /etc/init.d/odhcpd existence before executing (merge [#982](https://github.com/libremesh/lime-packages/pull/982), fix [#954](https://github.com/libremesh/lime-packages/issues/954))
@@ -211,7 +242,7 @@ Also, a priceless contribution came from the LibreMesh users who shared their ex
   - Add lua remote debugging instructions (merge [#828](https://github.com/libremesh/lime-packages/pull/828))
   - Update readme (merge [#827](https://github.com/libremesh/lime-packages/pull/827))
 
-## 2020.1 Expansive Emancipation - 14 dic '20
+## 2020.1 Expansive Emancipation (2020-12-14)
 
 ### Release notes
 The LibreMesh team is happy to announce a new version of LibreMesh, 2020.1 "ExpansiveEmancipation". 
@@ -235,7 +266,7 @@ This release has contributions from communities and individuals from all around 
 A list of the software developers that contributed to this release was easily gathered from the git history: AngiieOG, Brad, Daniel Golle, FreifunkUFO, German Ferrero, Gioacchino Mazzurco, Gui Iribarren, Ilario Gelmetti, Jess, Luandro, Marcos Gutierrez, Michael Jones, Mike Russell, Nicolás Pace, PatoGit, Pau, Paul Spooren, Pedro Mauro, Santiago Piccinini, Vittorio Cuculo, hiure, radikalbjr, valo.
 
 
-## 17.06 Dayboot Rely - 23 sep '17
+## 17.06 Dayboot Rely (2017-09-23)
 
 ### Release notes
 So, this release was meant to be announced many months ago (as the
@@ -363,7 +394,7 @@ well to everyone participating in mailing lists, maintaining website,
 documentation (spread around the web, in many languages!)
 
 
-## 16.07 Community Chaos - 8 sep '16
+## 16.07 Community Chaos (2016-09-08)
 
 ### Release notes
 Thanks to everyone involved, finally we have an official release!
