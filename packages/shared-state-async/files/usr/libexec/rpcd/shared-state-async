@@ -1,13 +1,11 @@
 #!/bin/sh
-# --[[
-# Shared State Async
 
+# Shared State Async
 # Copyright (c) 2024 Javier Jorge <jjorge@inti.gob.ar>
 # Copyright (c) 2024 Instituto Nacional de Tecnologia Industrial
 # Copyright (C) 2024 Asociacion Civil Altermundi <info@altermundi.net>
-
 # SPDX-License-Identifier: AGPL-3.0-only
-# ]]
+
 
 sinc_args=""
  
@@ -18,8 +16,8 @@ case "$1" in
     call)
         # source jshn shell library
         . /usr/share/libubox/jshn.sh
-        read nmsg
-        json_load $nmsg
+        read msg
+        json_load $msg
         json_get_vars data_type 
         json_get_vars peers_ip
         case "$2" in 
