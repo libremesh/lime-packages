@@ -1,14 +1,11 @@
 #!/usr/bin/env lua
---[[
-Shared State
 
-Copyright (c) 2023  Javier Jorge <jjorge@inti.gob.ar>
-Copyright (c) 2023  Instituto Nacional de Tecnología Industrial
-Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--! Shared State
+--! Copyright (c) 2023  Javier Jorge <jjorge@inti.gob.ar>
+--! Copyright (c) 2023  Instituto Nacional de Tecnología Industrial
+--! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--! SPDX-License-Identifier: AGPL-3.0-only
 
-This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
-]]
-   --
 local ubus = require "ubus"
 local utils = require('lime.utils')
 local shared_state = require("shared-state")
