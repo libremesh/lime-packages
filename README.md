@@ -65,12 +65,12 @@ Within the container, add the `lime-packages` feeds:
 
 ```shell
 echo "src/gz libremesh https://feed.libremesh.org/master" >> repositories.conf
-echo "src/gz libremesh_arch_packages https://feed.libremesh.org/master/packages/mips_24kc" >> repositories.conf
+echo "src/gz libremesh_arch_packages https://feed.libremesh.org/arch_packages/master/mips_24kc" >> repositories.conf
 echo  "untrusted comment: signed by libremesh.org key a71b3c8285abd28b" > keys/a71b3c8285abd28b
 echo "RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8" >> keys/a71b3c8285abd28b
 ```
 
-If your device is not part of ath79-generic replace `mips_24kc` with the architecture of the selected &lt;target&gt;-&lt;subtarget&gt;.
+If your device is not part of ath79-generic replace `mips_24kc` with the architecture of the selected &lt;target&gt;/&lt;subtarget&gt;.
 
 Ideally add your own `lime-community` files within the container in the folder
 `./files/etc/config/`. To find possible options consult the
@@ -95,10 +95,11 @@ Go to <https://firmware-selector.openwrt.org/>. Find your device. Click on the f
 
 ```shell
 echo "src/gz libremesh https://feed.libremesh.org/master" >> repositories.conf
-echo "src/gz libremesh_arch_packages https://feed.libremesh.org/master/packages/mips_24kc" >> repositories.conf
+echo "src/gz libremesh_arch_packages https://feed.libremesh.org/arch_packages/master/mips_24kc" >> repositories.conf
 echo  "untrusted comment: signed by libremesh.org key a71b3c8285abd28b" > keys/a71b3c8285abd28b
 echo "RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8" >> keys/a71b3c8285abd28b
 ```
+If your device is not part of ath79-generic replace `mips_24kc` with the architecture of the selected &lt;target&gt;/&lt;subtarget&gt;.
 
 Create an image with
 ```shell
