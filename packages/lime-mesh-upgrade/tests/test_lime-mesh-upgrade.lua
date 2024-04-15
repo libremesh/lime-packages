@@ -273,7 +273,7 @@ describe('LiMe mesh upgrade', function()
         assert.is.equal(status.candidate_fw, json.parse(latest_release_data).version)
         assert.is.equal(status.board_name, boardname)
         assert.is.equal(status.main_node, lime_mesh_upgrade.main_node_states.MAIN_NODE)
-        assert.is.equal(status.repo_url, 'http://10.1.1.0/lros/')
+        assert.is.equal(status.repo_url, 'http://10.5.0.5/lros/')
     end)
 
     it('test start_safe_upgrade default timeouts', function()
