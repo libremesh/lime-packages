@@ -28,4 +28,4 @@ function report_upgrade_status()
 end
 
 local result = { [hostname] = report_upgrade_status() }
-io.popen("shared-state insert mesh_wide_upgrade", "w"):write(JSON.stringify(result))
+io.popen("shared-state-async insert mesh_wide_upgrade", "w"):write(JSON.stringify(result))

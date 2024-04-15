@@ -14,7 +14,7 @@ stub(utils, 'unsafe_shell', function(command)
 end)
 
 local utils = require "lime.utils"
-local lime_mesh_upgrade = require 'lime-mesh-upgrade'
+local lime_mesh_upgrade = {}
 local test_utils = require "tests.utils"
 local json = require 'luci.jsonc'
 local uci
@@ -284,6 +284,10 @@ describe('LiMe mesh upgrade', function()
         stub(utils, 'file_exists', function()
             return true
         end)
+        
+        stub(os, 'execute', function()
+            return 0
+        end)
 
         stub(lime_mesh_upgrade, 'get_fw_path', function()
             return "/tmp/foo.bar"
@@ -300,13 +304,20 @@ describe('LiMe mesh upgrade', function()
         local status = lime_mesh_upgrade.get_node_status()
         assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
         
-        --should be called from rpcd
-        lime_mesh_upgrade.start_safe_upgrade()
-        status = lime_mesh_upgrade.get_node_status()
-        assert.stub.spy(utils.execute_daemonized).was.called.with(
-            "sleep 60; safe-upgrade upgrade --reboot-safety-timeout=600 /tmp/foo.bar")
         assert.is.equal(lime_mesh_upgrade.su_confirm_timeout, 600)
         assert.is.equal(lime_mesh_upgrade.su_start_time_out, 60)
+        --should be called from rpcd
+        local response = lime_mesh_upgrade.start_safe_upgrade()
+        assert.is.equal(response.code,"SUCCESS")
+        assert.is.equal(response.su_confirm_timeout,600)
+        assert.is.equal(response.su_start_time_out,60)
+        assert.stub.spy(utils.execute_daemonized).was.called.with(
+             "sleep 60; safe-upgrade upgrade --reboot-safety-timeout=600 /tmp/foo.bar")
+
+        status = lime_mesh_upgrade.get_node_status()
+        
+        assert.is.equal(lime_mesh_upgrade.su_confirm_timeout, 600)
+        assert.is.equal(status.su_start_time_out, 60)
         assert(status.safeupgrade_start_remining<60 and status.safeupgrade_start_remining>10)
         assert.is.equal(status.confirm_remining,-1)
         assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED)
@@ -325,31 +336,43 @@ describe('LiMe mesh upgrade', function()
         stub(utils, 'execute_daemonized', function()
         end)
 
-        stub(lime_mesh_upgrade, 'state', function()
-            return lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE
-        end)
-
         stub(utils, 'file_exists', function()
             return true
         end)
-
-        stub(utils, 'file_exists', function()
-            return true
+        
+        stub(os, 'execute', function()
+            return 0
         end)
 
         stub(lime_mesh_upgrade, 'get_fw_path', function()
             return "/tmp/foo.bar"
         end)
 
-        lime_mesh_upgrade.start_safe_upgrade(10, 100)
+        local fw_version = 'LibreMesh 19.02'
+        stub(eupgrade, '_get_current_fw_version', function()
+            return fw_version
+        end)
+        uci:set('mesh-upgrade', 'main', "mesh-upgrade")
+        uci:set('mesh-upgrade', 'main', "upgrade_state", "READY_FOR_UPGRADE")
+        uci:save('mesh-upgrade')
+        uci:commit('mesh-upgrade')
+
+        local response = lime_mesh_upgrade.start_safe_upgrade(10, 100)
+        assert.is.equal(response.code,"SUCCESS")
+
+        assert.is.equal(response.su_confirm_timeout, 100)
+
         assert.is.equal(lime_mesh_upgrade.su_confirm_timeout, 100)
         assert.is.equal(lime_mesh_upgrade.su_start_time_out, 10)
+
         assert.stub.spy(utils.execute_daemonized).was.called.with(
             "sleep 10; safe-upgrade upgrade --reboot-safety-timeout=100 /tmp/foo.bar")
     end)
 
     before_each('', function()
         snapshot = assert:snapshot()
+        lime_mesh_upgrade = require 'lime-mesh-upgrade'
+
         uci = test_utils.setup_test_uci()
         uci:set('mesh-upgrade', 'main', "mesh-upgrade")
         uci:set('mesh-upgrade', 'main', "upgrade_state", "DEFAULT")
@@ -360,6 +383,13 @@ describe('LiMe mesh upgrade', function()
         config.set('network', 'protocols', {'lan'})
         config.set('wifi', 'lime')
         config.set('wifi', 'ap_ssid', 'LibreMesh.org')
+
+        uci = config.get_uci_cursor()
+        uci:set('network', 'lan', 'interface')
+        uci:set('network', 'lan', 'ipaddr', '10.5.0.5')
+        uci:set('network', 'lan', 'ip6addr', 'fd0d:fe46:8ce8::ab:cd00/64')
+        uci:commit('network')
+        
         uci:commit('lime')
 
         uci:commit('mesh-upgrade')

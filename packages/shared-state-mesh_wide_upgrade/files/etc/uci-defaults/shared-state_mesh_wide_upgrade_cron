@@ -1,9 +1,18 @@
 #!/bin/sh
+
 unique_append()
 {
 	grep -qF "$1" "$2" || echo "$1" >> "$2"
 }
 
+uci set shared-state.mesh_wide_upgrade=dataType
+uci set shared-state.mesh_wide_upgrade.name='mesh_wide_upgrade'
+uci set shared-state.mesh_wide_upgrade.scope='community'
+uci set shared-state.mesh_wide_upgrade.ttl='2400'
+uci set shared-state.mesh_wide_upgrade.update_interval='30'
+uci commit shared-state
+
 unique_append \
-	'*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync mesh_wide_upgrade &> /dev/null)&)'\
+	'*/30 * * * * ((sleep $(($RANDOM % 120)); shared-state-publish_mesh_wide_upgrade &> /dev/null)&)' \
 	/etc/crontabs/root
+

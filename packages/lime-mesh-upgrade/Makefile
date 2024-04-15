@@ -11,7 +11,9 @@ define Package/$(PKG_NAME)
   CATEGORY:=LibreMesh
   MAINTAINER:=selankon <selankon@selankon.xyz>
   TITLE:=LibreMesh mesh wide firmware upgrade
-  DEPENDS:= +lua +libubus-lua +wget +safe-upgrade +shared-state-mesh_wide_upgrade
+  DEPENDS:= +lua +libubus-lua +wget +safe-upgrade 
+  +!shared-state-async:shared-state-mesh_wide_upgrade
+  +shared-state-async:shared-state-mesh_wide_upgrade-async
   PKGARCH:=all
 endef
 

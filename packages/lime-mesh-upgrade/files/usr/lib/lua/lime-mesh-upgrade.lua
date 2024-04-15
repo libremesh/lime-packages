@@ -54,8 +54,9 @@ local mesh_upgrade = {
 
 -- Get the base url for the firmware repository in this node
 function mesh_upgrade.get_repo_base_url()
-    local ipv4, ipv6 = network.primary_address()
-    return "http://" .. ipv4:host():string() .. mesh_upgrade.FIRMWARE_REPO_PATH
+    local uci = config.get_uci_cursor()
+    local ipv4 = uci:get("network", "lan", "ipaddr")
+    return "http://" .. ipv4 .. mesh_upgrade.FIRMWARE_REPO_PATH
 end
 
 -- Create a work directory if doesn't exist
@@ -279,8 +280,6 @@ end
 
 -- this function will be called by the main node to inform that the firmware is available
 -- also will force shared state data refresh
--- curl -6 'http://[fe80::a8aa:aaff:fe0d:feaa%lime_br0]/fw/resolv.conf'
--- curl -6 'http://[fd0d:fe46:8ce8::1]/lros/api/v1/'
 function mesh_upgrade.inform_download_location(version)
     if eupgrade.get_download_status() == eupgrade.STATUS_DOWNLOADED
         and mesh_upgrade.main_node_state() == mesh_upgrade.main_node_states.STARTING then
@@ -362,8 +361,7 @@ end
 function mesh_upgrade.trigger_sheredstate_publish()
     utils.execute_daemonized(
         "sleep 1; \
-        shared-state bleach mesh_wide_upgrade; \
-        /etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state sync mesh_wide_upgrade")
+        /etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state-async sync mesh_wide_upgrade")
 end
 
 function mesh_upgrade.change_main_node_state(newstate)
@@ -510,11 +508,16 @@ function mesh_upgrade.get_node_status()
     upgrade_data.error = uci:get('mesh-upgrade', 'main', 'error')
     upgrade_data.retry_count = tonumber(uci:get('mesh-upgrade', 'main', 'retry_count'))
     upgrade_data.timestamp = tonumber(uci:get('mesh-upgrade', 'main', 'timestamp'))
+    mesh_upgrade.safeupgrade_start_mark = tonumber(uci:get('mesh-upgrade', 'main', 'safeupgrade_start_mark')) or 0
+    upgrade_data.safeupgrade_start_mark = mesh_upgrade.safeupgrade_start_mark
+
+    mesh_upgrade.su_start_time_out = tonumber(uci:get('mesh-upgrade', 'main', 'su_start_time_out')) or mesh_upgrade.su_start_time_out
+    upgrade_data.su_start_time_out = mesh_upgrade.su_start_time_out
+
     upgrade_data.main_node = mesh_upgrade.main_node_state()
     upgrade_data.board_name = eupgrade._get_board_name()
     upgrade_data.current_fw = eupgrade._get_current_fw_version()
-    local ipv4, ipv6 = network.primary_address()
-    upgrade_data.node_ip = ipv4:host():string()
+    upgrade_data.node_ip = uci:get("network", "lan", "ipaddr")
     upgrade_data.safeupgrade_start_remining = (mesh_upgrade.su_start_time_out - (utils.uptime_s() - mesh_upgrade.safeupgrade_start_mark) > 0 and mesh_upgrade.su_start_time_out - (utils.uptime_s() - mesh_upgrade.safeupgrade_start_mark) or -1)
     upgrade_data.confirm_remining = tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining"))
     return upgrade_data
@@ -532,7 +535,7 @@ function mesh_upgrade.start_safe_upgrade(su_start_delay, su_confirm_timeout)
                 mesh_upgrade.report_error(mesh_upgrade.errors.INVALID_FW_FILE)
                 return {
                     code = "NOT_ABLE_TO_START_UPGRADE",
-                    error = "Firmware not valid"
+                    error = "Invalid Firmware"
                 }
             end
 
@@ -544,13 +547,20 @@ function mesh_upgrade.start_safe_upgrade(su_start_delay, su_confirm_timeout)
             
             -- os.execute("sysupgrade -b ".. mesh_upgrade.WORKDIR.."/mesh_upgrade_cfg.tgz")
 
-            config = require("lime.config")
+            --config = require("lime.config")
             local keep = config.get("system", "keep_on_upgrade", "")
             keep = keep .. " lime-mesh-upgrade"
             config.set("system", "keep_on_upgrade", keep) --use set but not commit, so this configuration wont be preserved.
 
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED)
             mesh_upgrade.safeupgrade_start_mark = utils.uptime_s()
+            local uci = config.get_uci_cursor()
+            uci:set('mesh-upgrade', 'main', 'safeupgrade_start_mark',mesh_upgrade.safeupgrade_start_mark)
+            uci:set('mesh-upgrade', 'main', 'su_start_time_out',mesh_upgrade.su_start_time_out)
+            uci:set('mesh-upgrade', 'main', 'su_confirm_timeout',mesh_upgrade.su_confirm_timeout)
+            uci:save('mesh-upgrade')
+            uci:commit('mesh-upgrade')
+
             mesh_upgrade.trigger_sheredstate_publish()
             --this must be executed after a safe upgrade timeout to enable all nodes to start_safe_upgrade
             utils.execute_daemonized("sleep " ..
@@ -561,7 +571,7 @@ function mesh_upgrade.start_safe_upgrade(su_start_delay, su_confirm_timeout)
             return {
                 code = "SUCCESS",
                 error = "",
-                su_start_delay = mesh_upgrade.su_start_time_out,
+                su_start_time_out = mesh_upgrade.su_start_time_out,
                 su_confirm_timeout = mesh_upgrade.su_confirm_timeout
 
             }
