@@ -12,8 +12,8 @@ define Package/$(PKG_NAME)
   MAINTAINER:=selankon <selankon@selankon.xyz>
   TITLE:=LibreMesh mesh wide firmware upgrade
   DEPENDS:= +lua +libubus-lua +wget +safe-upgrade 
-  +!shared-state-async:shared-state-mesh_wide_upgrade
-  +shared-state-async:shared-state-mesh_wide_upgrade-async
+  +shared-state-mesh_wide_upgrade
+
   PKGARCH:=all
 endef
 
