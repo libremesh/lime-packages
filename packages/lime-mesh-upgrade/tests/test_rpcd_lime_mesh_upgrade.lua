@@ -18,6 +18,17 @@ describe('general rpc testing', function()
         snapshot = assert:snapshot()
         uci = test_utils.setup_test_uci()
 
+        stub(utils, 'unsafe_shell', function(command)
+            if command == "safe-upgrade confirm-remaining" then
+            return confirm_remaining
+            elseif command == "shared-state-async get mesh_wide_upgrade" then
+                return "{}"
+            end
+            print(command)
+            return confirm_remaining
+        
+        end)
+
         local boardname = 'librerouter-v1'
         stub(eupgrade, '_get_board_name', function()
             return boardname

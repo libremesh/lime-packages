@@ -6,11 +6,55 @@ stub(eupgrade, '_get_board_name', function()
     return boardname
 end)
 
+local mesh_wide_sample = [[
+    {
+        "LiMe-8a50aa": {
+            "eupgradestate": "not-initiated",
+            "confirm_remining": -1,
+            "safeupgrade_start_remining": -1,
+            "safeupgrade_start_mark": 0,
+            "upgrade_state": "UPGRADE_SCHEDULED",
+            "current_fw": "LibreRouterOs 23.05-SNAPSHOT r1+1-48c81b80b2",
+            "main_node": "NO",
+            "node_ip": "10.13.80.170",
+            "board_name": "librerouter,librerouter-v1",
+            "su_start_time_out": 0,
+            "timestamp": 0,
+            "error": "0",
+            "retry_count": 0
+        },
+        "LiMe-a51ed1": {
+            "repo_url": "http://10.13.80.170/lros/",
+            "confirm_remining": -1,
+            "candidate_fw": "LibreRouterOs r23744",
+            "safeupgrade_start_remining": -1,
+            "safeupgrade_start_mark": 0,
+            "retry_count": 0,
+            "upgrade_state": "ERROR",
+            "current_fw": "LibreRouterOs 23.05-SNAPSHOT r1+1-48c81b80b2",
+            "main_node": "NO",
+            "node_ip": "10.13.30.209",
+            "board_name": "librerouter,librerouter-v1",
+            "su_start_time_out": 0,
+            "timestamp": 1713282042,
+            "error": "no_latest_data_available",
+            "eupgradestate": "not-initiated"
+        }
+    }
+    
+]]
+
 confirm_remaining = -1
 
 stub(utils, 'unsafe_shell', function(command)
+    if command == "safe-upgrade confirm-remaining" then
+    return confirm_remaining
+    elseif command == "shared-state-async get mesh_wide_upgrade" then
+        return mesh_wide_sample
+    end
     print(command)
     return confirm_remaining
+
 end)
 
 local utils = require "lime.utils"
@@ -83,12 +127,19 @@ describe('LiMe mesh upgrade', function()
     end)
 
     it('test abort ', function()
+        stub(utils, 'execute_daemonized', function()
+        end)
         stub(eupgrade, '_get_current_fw_version', function()
             return 'LibreMesh 19.05'
+        end)
+        stub(utils, 'hostname', function()
+            return "LiMe-8a50aa"
         end)
         lime_mesh_upgrade.mesh_upgrade_abort()
         status = lime_mesh_upgrade.get_node_status()
         assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.ABORTED)
+        assert.stub.spy(utils.execute_daemonized).was.called.with("sleep 30; \
+        /etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state-async sync mesh_wide_upgrade")
     end)
 
     it('test set upgrade info and fail NO_LATEST_AVAILABLE', function()
@@ -315,7 +366,10 @@ describe('LiMe mesh upgrade', function()
              "sleep 60; safe-upgrade upgrade --reboot-safety-timeout=600 /tmp/foo.bar")
 
         status = lime_mesh_upgrade.get_node_status()
-        
+
+        assert.stub.spy(utils.execute_daemonized).was.called.with(
+            "sleep 1; shared-state-async sync mesh_wide_upgrade")
+
         assert.is.equal(lime_mesh_upgrade.su_confirm_timeout, 600)
         assert.is.equal(status.su_start_time_out, 60)
         assert(status.safeupgrade_start_remining<60 and status.safeupgrade_start_remining>10)
@@ -371,6 +425,9 @@ describe('LiMe mesh upgrade', function()
 
     before_each('', function()
         snapshot = assert:snapshot()
+        stub(utils, 'hostname', function()
+            return "LiMe-8a50aa"
+        end)
         lime_mesh_upgrade = require 'lime-mesh-upgrade'
 
         uci = test_utils.setup_test_uci()

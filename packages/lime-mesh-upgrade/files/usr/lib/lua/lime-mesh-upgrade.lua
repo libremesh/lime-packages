@@ -287,7 +287,7 @@ function mesh_upgrade.inform_download_location(version)
         mesh_upgrade.set_mesh_upgrade_info({
             candidate_fw = version,
             repo_url = mesh_upgrade.get_repo_base_url(),
-            upgrde_state = mesh_upgrade.upgrade_states.READY_FOR_UPGRADE,
+            upgrade_state = mesh_upgrade.upgrade_states.READY_FOR_UPGRADE,
             error = "",
             timestamp = os.time(),
             main_node = mesh_upgrade.main_node_states.MAIN_NODE,
@@ -359,9 +359,19 @@ end
 
 -- This line will genereate recursive dependencies like in pirania pakcage
 function mesh_upgrade.trigger_sheredstate_publish()
-    utils.execute_daemonized(
-        "sleep 1; \
+    --utils.execute_daemonized(
+    --    "sleep 1; \
+    --    /etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state-async sync mesh_wide_upgrade")
+    -- minimum renewal time is 30s if not able to renew info just wait
+    utils.unsafe_shell("/etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade")
+    local status =  json.parse(utils.unsafe_shell("shared-state-async get mesh_wide_upgrade"))
+    if status and  next(status) ~= nil and status[utils.hostname()].upgrade_state ~= mesh_upgrade.state() then
+        utils.execute_daemonized("sleep 30; \
         /etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state-async sync mesh_wide_upgrade")
+    else
+        utils.execute_daemonized("sleep 1; shared-state-async sync mesh_wide_upgrade")
+    end
+
 end
 
 function mesh_upgrade.change_main_node_state(newstate)
