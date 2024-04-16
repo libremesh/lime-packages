@@ -1,9 +1,19 @@
+
+
 #!/bin/sh
+
 unique_append()
 {
 	grep -qF "$1" "$2" || echo "$1" >> "$2"
 }
 
+uci set shared-state.node_info=dataType
+uci set shared-state.node_info.name='node_info'
+uci set shared-state.node_info.scope='community'
+uci set shared-state.node_info.ttl='2400'
+uci set shared-state.node_info.update_interval='30'
+uci commit shared-state
+
 unique_append \
-	'*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync node_info &> /dev/null)&)'\
+	'*/30 * * * * ((sleep $(($RANDOM % 120)); shared-state-publish_node_info &> /dev/null)&)' \
 	/etc/crontabs/root
