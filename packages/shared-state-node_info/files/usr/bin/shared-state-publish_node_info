@@ -43,4 +43,4 @@ function get_node_info()
 end
 
 local result = { [hostname] = get_node_info() }
-io.popen("shared-state insert node_info", "w"):write(JSON.stringify(result))
+io.popen("shared-state-async insert node_info", "w"):write(JSON.stringify(result))
