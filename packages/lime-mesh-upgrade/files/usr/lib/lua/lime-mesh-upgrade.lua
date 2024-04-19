@@ -255,25 +255,18 @@ function mesh_upgrade.start_node_download(url)
     local cached_only = false
     local url2 = eupgrade.get_upgrade_api_url()
     local latest_data, message = eupgrade.is_new_version_available(cached_only)
-    --utils.log("start_node_download from  " .. url2)
-
     if latest_data then
-        --utils.log("start_node_download ")
         mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADING)
-        --utils.log("downloading")
         local image = {}
         image = eupgrade.download_firmware(latest_data)
         if eupgrade.get_download_status() == eupgrade.STATUS_DOWNLOADED and image ~= nil then
-            --utils.printJson(image)
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
             mesh_upgrade.trigger_sheredstate_publish()
             mesh_upgrade.set_fw_path(image)
         else
-            --utils.log("Error ... download failed")
             mesh_upgrade.report_error(mesh_upgrade.errors.DOWNLOAD_FAILED)
         end
     else
-        --utils.log("Error ... no latest data available" .. message)
         mesh_upgrade.report_error(mesh_upgrade.errors.NO_LATEST_AVAILABLE)
     end
 end
@@ -463,7 +456,6 @@ function mesh_upgrade.set_mesh_upgrade_info(upgrade_data, upgrade_state)
     local uci = config.get_uci_cursor()
     if string.match(upgrade_data.repo_url, "https?://[%w-_%.%?%.:/%+=&]+") ~= nil -- todo (javi): perform aditional checks
     then
-        --utils.log("seting up repo download info to " .. upgrade_state .. " actual " .. mesh_upgrade.state())
         if (mesh_upgrade.change_state(upgrade_state)) then
             uci:set('mesh-upgrade', 'main', "mesh-upgrade")
             uci:set('mesh-upgrade', 'main', 'repo_url', upgrade_data.repo_url)
@@ -477,11 +469,9 @@ function mesh_upgrade.set_mesh_upgrade_info(upgrade_data, upgrade_state)
             uci:commit('mesh-upgrade')
             return true
         else
-            --utils.log("invalid state change ")
             return false
         end
     else
-        --utils.log("upgrade failed due input data errors")
         return false
     end
 end
@@ -566,7 +556,7 @@ function mesh_upgrade.start_safe_upgrade(su_start_delay, su_confirm_timeout)
             uci:commit('mesh-upgrade')
 
             mesh_upgrade.trigger_sheredstate_publish()
-            --this must be executed after a safe upgrade timeout to enable all nodes to start_safe_upgrade
+            --upgrade must be executed after a safe upgrade timeout to enable all nodes to start_safe_upgrade
             utils.execute_daemonized("sleep " ..
                 mesh_upgrade.su_start_time_out ..
                 "; safe-upgrade upgrade --reboot-safety-timeout=" ..
@@ -580,7 +570,6 @@ function mesh_upgrade.start_safe_upgrade(su_start_delay, su_confirm_timeout)
 
             }
         else
-            ----utils.log("not able to start upgrade invalid state or firmware not found")
             mesh_upgrade.report_error(mesh_upgrade.errors.FW_FILE_NOT_FOUND)
             return {
                 code = "NOT_ABLE_TO_START_UPGRADE",
