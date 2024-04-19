@@ -66,7 +66,7 @@ local uci
 local upgrade_data = {
     candidate_fw = "xxxx",
     repo_url = "http://repo.librerouter.org/lros/api/v1/latest/",
-    upgrade_state = "starting,downloading|ready_for_upgrade|upgrade_scheluded|confirmation_pending|~~confirmed~~|updated|error",
+    upgrade_state = "READY_FOR_UPGRADE",
     error = "CODE",
     main_node = "true",
     timestamp = 02,
@@ -198,10 +198,49 @@ describe('LiMe mesh upgrade', function()
 
         assert.is.equal('LibreRouterOs 1.5', eupgrade.is_new_version_available()['version'])
         lime_mesh_upgrade.become_bot_node(upgrade_data)
-        status = lime_mesh_upgrade.get_node_status()
+        local status = lime_mesh_upgrade.get_node_status()
         assert.is.equal(status.main_node, upgrade_data.main_node)
         assert.is.equal(status.repo_url, upgrade_data.repo_url)
         assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
+    end)
+
+    it('test become botnode and assert status ready_for_upgrade', function()
+        stub(eupgrade, '_get_current_fw_version', function()
+            return 'LibreMesh 19.05'
+        end)
+        stub(eupgrade, '_check_signature', function()
+            return true
+        end)
+        stub(utils, 'http_client_get', function()
+            return latest_release_data
+        end)
+        stub(eupgrade, '_file_sha256', function()
+            return 'cec8920f93055cc57cfde1f87968e33ca5215b2df88611684195077402079acb'
+        end)
+
+        uci = test_utils.setup_test_uci()
+        uci:set('mesh-upgrade', 'main', "mesh-upgrade")
+        uci:set('mesh-upgrade', 'main', "upgrade_state", "UPGRADE_SCHEDULED")
+        uci:save('mesh-upgrade')
+        utils.log("about to become bot node")
+        assert.is.equal('LibreRouterOs 1.5', eupgrade.is_new_version_available()['version'])
+        lime_mesh_upgrade.become_bot_node(upgrade_data)
+        local status = lime_mesh_upgrade.get_node_status()
+        assert.is.equal(status.main_node, upgrade_data.main_node)
+        assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.ERROR)
+
+        utils.log("about to become bot node seccond time")
+        uci = test_utils.setup_test_uci()
+        uci:set('mesh-upgrade', 'main', "mesh-upgrade")
+        uci:set('mesh-upgrade', 'main', "upgrade_state", "CONFIRMED")
+        uci:save('mesh-upgrade')
+
+        lime_mesh_upgrade.become_bot_node(upgrade_data)
+        local status = lime_mesh_upgrade.get_node_status()
+        assert.is.equal(status.main_node, upgrade_data.main_node)
+        --assert.is.equal(status.repo_url, upgrade_data.repo_url)
+        assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.READY_FOR_UPGRADE)
+
     end)
 
     it('test get fw path', function()
@@ -368,7 +407,8 @@ describe('LiMe mesh upgrade', function()
         status = lime_mesh_upgrade.get_node_status()
 
         assert.stub.spy(utils.execute_daemonized).was.called.with(
-            "sleep 1; shared-state-async sync mesh_wide_upgrade")
+            "sleep 1; \
+        /etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state-async sync mesh_wide_upgrade")
 
         assert.is.equal(lime_mesh_upgrade.su_confirm_timeout, 600)
         assert.is.equal(status.su_start_time_out, 60)
