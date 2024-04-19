@@ -62,7 +62,7 @@ end
 -- Create a work directory if doesn't exist
 function mesh_upgrade._create_workdir(workdir)
     if not utils.file_exists(workdir) then
-        os.execute('mkdir -p ' .. workdir .. " >/dev/null")
+        os.execute('mkdir -p ' .. workdir .. " >/dev/null 2>&1")
     end
     if fs.stat(workdir, "type") ~= "dir" then
         error("Can't configure workdir " .. workdir)
@@ -121,11 +121,11 @@ function mesh_upgrade.share_firmware_packages(dest)
     mesh_upgrade._create_workdir(dest)
     -- json file has to be placed in a url that ends with latest
     mesh_upgrade._create_workdir(dest .. "/latest")
-    os.execute("ln -s " .. images_folder .. "/* " .. dest .. " >/dev/null")
-    os.execute("ln -s " .. mesh_upgrade.LATEST_JSON_PATH .. " " .. dest .. "/latest >/dev/null")
-    os.execute("chmod -R 777 " .. dest .. " >/dev/null")
-    os.execute("chmod -R 777 " .. mesh_upgrade.WORKDIR .. " >/dev/null")
-    os.execute("chmod -R 777 " .. images_folder .. " >/dev/null")
+    os.execute("ln -s " .. images_folder .. "/* " .. dest .. " >/dev/null 2>&1")
+    os.execute("ln -s " .. mesh_upgrade.LATEST_JSON_PATH .. " " .. dest .. "/latest >/dev/null 2>&1")
+    os.execute("chmod -R 777 " .. dest .. " >/dev/null 2>&1")
+    os.execute("chmod -R 777 " .. mesh_upgrade.WORKDIR .. " >/dev/null 2>&1")
+    os.execute("chmod -R 777 " .. images_folder .. " >/dev/null 2>&1")
 end
 
 -- This function will download latest firmware and expose it as
@@ -133,7 +133,7 @@ end
 function mesh_upgrade.start_main_node_repository(latest_data)
     -- Create local repository json data
     mesh_upgrade.create_local_latest_json(latest_data)
-    utils.execute_daemonized("eupgrade-download >/dev/null")
+    utils.execute_daemonized("eupgrade-download >/dev/null 2>&1")
     mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADING)
 end
 
@@ -359,19 +359,13 @@ end
 
 -- This line will genereate recursive dependencies like in pirania pakcage
 function mesh_upgrade.trigger_sheredstate_publish()
-    --utils.execute_daemonized(
-    --    "sleep 1; \
-    --    /etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state-async sync mesh_wide_upgrade")
-    -- minimum renewal time is 30s if not able to renew info just wait
-    utils.unsafe_shell("/etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade")
-    local status =  json.parse(utils.unsafe_shell("shared-state-async get mesh_wide_upgrade"))
-    if status and  next(status) ~= nil and status[utils.hostname()].upgrade_state ~= mesh_upgrade.state() then
-        utils.execute_daemonized("sleep 30; \
+    utils.execute_daemonized(
+       "sleep 1; \
         /etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state-async sync mesh_wide_upgrade")
-    else
-        utils.execute_daemonized("sleep 1; shared-state-async sync mesh_wide_upgrade")
-    end
-
+    --minimum renewal time is 30s if not able to renew info just wait, if firts fails the seccond success, 
+    -- if the first succesds the seccond will fail. Sadly merge will output 0 so both times will make sync.
+    utils.execute_daemonized("sleep 30; \
+        /etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state-async sync mesh_wide_upgrade")
 end
 
 function mesh_upgrade.change_main_node_state(newstate)
@@ -469,7 +463,7 @@ function mesh_upgrade.set_mesh_upgrade_info(upgrade_data, upgrade_state)
     local uci = config.get_uci_cursor()
     if string.match(upgrade_data.repo_url, "https?://[%w-_%.%?%.:/%+=&]+") ~= nil -- todo (javi): perform aditional checks
     then
-        utils.log("seting up repo download info to " .. upgrade_state .. " actual " .. mesh_upgrade.state())
+        --utils.log("seting up repo download info to " .. upgrade_state .. " actual " .. mesh_upgrade.state())
         if (mesh_upgrade.change_state(upgrade_state)) then
             uci:set('mesh-upgrade', 'main', "mesh-upgrade")
             uci:set('mesh-upgrade', 'main', 'repo_url', upgrade_data.repo_url)
