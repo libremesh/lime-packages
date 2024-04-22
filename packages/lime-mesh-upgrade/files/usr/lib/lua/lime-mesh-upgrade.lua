@@ -333,6 +333,7 @@ function mesh_upgrade.mesh_upgrade_abort()
         uci:commit('mesh-upgrade')
         mesh_upgrade.trigger_sheredstate_publish()
         -- todo(javi): stop and delete everything
+        os.execute("rm ".. eupgrade.WORKDIR .."  -r >/dev/null 2>&1")
         -- kill posible safe upgrade command
         utils.unsafe_shell("kill $(ps| grep 'sh -c (( sleep " .. mesh_upgrade.su_start_time_out ..
                                "; safe-upgrade upgrade'| awk '{print $1}')")

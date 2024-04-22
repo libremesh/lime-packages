@@ -21,12 +21,7 @@ local utils = require "lime.utils"
 local mesh_upgrade = require "lime-mesh-upgrade"
 local hostname = utils.hostname()
 
-utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "************************************* "')
-
 local indata = io.stdin:read("*all")
-utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "'.. indata .. ' fin"' )
-utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "************************************* "')
-
 --if already involved in an upgrade transaction do nothing
 if not mesh_upgrade.started() then
 	utils.log("async: starting an upgrade process")
