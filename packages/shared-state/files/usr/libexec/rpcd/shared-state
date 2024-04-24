@@ -1,13 +1,11 @@
-#!/usr/bin/env lua                     
---[[                                                                                 
-Shared State
+#!/usr/bin/env lua
 
-Copyright (c) 2023  Javier Jorge <jjorge@inti.gob.ar>
-Copyright (c) 2023  Instituto Nacional de Tecnología Industrial
-Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--! Shared State
+--! Copyright (c) 2023  Javier Jorge <jjorge@inti.gob.ar>
+--! Copyright (c) 2023  Instituto Nacional de Tecnología Industrial
+--! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--! SPDX-License-Identifier: AGPL-3.0-only
 
-This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
-]] --                                                                                 
 local ubus = require "ubus"
 local utils = require('lime.utils')
 local shared_state = require("shared-state")
@@ -15,31 +13,36 @@ local json = require 'luci.jsonc'
 
 require("nixio.util")
 
-local function getFromSharedState(msg)
-    local sharedState = shared_state.SharedState:new(msg.data_type, 
-		nixio.syslog)
+local response_template = {data = {}, error = 500}
+
+local function showData(sharedState)
     local resultTable = sharedState:get()
-    local response ={}
-    for k,v in pairs(resultTable) do
-        response[k]=v.data
+    if next(resultTable) == nill then
+        response_template.error = 404
+    else
+        for k, v in pairs(resultTable) do
+            response_template.data[k] = v.data
+        end
+        response_template.error = 0
     end
-    utils.printJson(response)
+    utils.printJson(response_template)
+end
+
+local function getFromSharedState(msg)
+    local sharedState = shared_state.SharedState:new(msg.data_type,
+        nixio.syslog)
+    showData(sharedState)
 end
 
 local function getFromSharedStateMultiWriter(msg)
-    local sharedState = shared_state.SharedStateMultiWriter:new(msg.data_type, 
-		nixio.syslog)
-    local resultTable = sharedState:get()
-    local response ={}
-    for k,v in pairs(resultTable) do
-        response[k]=v.data
-    end
-    utils.printJson(response)
+    local sharedState = shared_state.SharedStateMultiWriter:new(msg.data_type,
+        nixio.syslog)
+    showData(sharedState)
 end
 
 local function insertIntoSharedStateMultiWriter(msg)
-    local sharedState = shared_state.SharedStateMultiWriter:new(msg.data_type, 
-		nixio.syslog)
+    local sharedState = shared_state.SharedStateMultiWriter:new(msg.data_type,
+        nixio.syslog)
     local inputTable = msg.json or {}
     sharedState:insert(inputTable)
 end
