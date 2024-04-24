@@ -12,6 +12,3 @@ uci set shared-state.bat_hosts.ttl='2400'
 uci set shared-state.bat_hosts.update_interval='30'
 uci commit shared-state
 
-unique_append \
-	'*/30 * * * * ((sleep $(($RANDOM % 120)); shared-state-publish_bat_hosts &> /dev/null)&)' \
-	/etc/crontabs/root
