@@ -1,4 +1,0 @@
-#!/bin/sh
-logger -t bmx6-auto-gw "We got Internet access, announcing it to the mesh"
-bmx6 -c tunOut -inet4
-bmx6 -c tunIn inet4 /n 0.0.0.0/0
