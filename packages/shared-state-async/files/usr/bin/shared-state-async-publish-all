@@ -1,0 +1,5 @@
+#!/bin/sh
+
+for publisher in /usr/share/shared-state/publishers/* ; do
+    [ -x "$publisher" ] && "$publisher";
+done
