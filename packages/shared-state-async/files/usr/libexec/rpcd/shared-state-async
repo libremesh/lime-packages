@@ -1,63 +1,41 @@
-#!/usr/bin/env lua
+#!/bin/sh
 
---[[
-Shared State Async
+# Shared State Async
+# Copyright (c) 2024 Javier Jorge <jjorge@inti.gob.ar>
+# Copyright (c) 2024 Instituto Nacional de Tecnologia Industrial
+# Copyright (C) 2024 Asociacion Civil Altermundi <info@altermundi.net>
+# SPDX-License-Identifier: AGPL-3.0-only
 
-Copyright (c) 2024  Javier Jorge <jjorge@inti.gob.ar>
-Copyright (c) 2024  Instituto Nacional de Tecnolog..a Industrial
-Copyright (C) 2024  Asociacion Civil Altermundi <info@altermundi.net>
 
-This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
-]]
---
-local utils = require('lime.utils')
-local json = require 'luci.jsonc'
-
-local function get(msg)
-    local error = os.execute("shared-state-async get " ..
-        msg.data_type .. " 2>/dev/null ")
-        -- if os.execute dont fail will print the output and rpcd wont execute
-        -- the following lines. If there is an error the above code wont print
-        -- anything and this code will return the error code.
-    utils.printJson({
-        error = error
-    })
-end
-
-local function sync(msg)
-    local error = os.execute("shared-state-async sync " ..
-            msg.data_type .. " " .. table.concat(msg.peers_ip or {}, " ") .. " 2>/dev/null ")
-    utils.printJson({
-      error = error
-    })
-end
-
---{"data_type":"data","peers_ip":["10.0.0.1","10.0.0.2"]}
---{"data_type":"data","peers_ip":["10.0.0.1"]}
-local methods = {
-    get = {
-        data_type = 'value'
-    },
-    sync = {
-        data_type = 'value',
-        peers_ip = 'value'
-    }
-}
-
-if arg[1] == 'list' then
-    utils.printJson(methods)
-end
-
-if arg[1] == 'call' then
-    local msg = utils.rpcd_readline()
-    msg = json.parse(msg)
-    if arg[2] == 'get' then
-        get(msg)
-    elseif arg[2] == 'sync' then
-        sync(msg)
-    else
-        utils.printJson({
-            error = "Method not found"
-        })
-    end
-end
+sinc_args=""
+ 
+case "$1" in 
+    list) 
+        echo '{ "sync": { "data_type": "str", "peers_ip": "str" }, "get": { "data_type": "str" } }'
+    ;; 
+    call)
+        # source jshn shell library
+        . /usr/share/libubox/jshn.sh
+        read msg
+        json_load $msg
+        json_get_vars data_type 
+        json_get_vars peers_ip
+        case "$2" in 
+            get) 
+                if output=$(shared-state-async get $data_type 2>/dev/null) 
+                then 
+                    echo {\"data\": $output , \"error\" :$?}
+                else 
+                    echo {\"data\": {} , \"error\": $? } 
+                fi 
+            ;; 
+            sync) 
+                shared-state-async sync $data_type ${peers_ip//,/ } > /dev/null 2>&1
+                echo {\"data\": {} , \"error\": $? } 
+            ;; 
+            *)
+                 echo '{\"data\" {} ,\"error\" = "Method not found"}' 
+            ;; 
+        esac 
+    ;; 
+esac 
