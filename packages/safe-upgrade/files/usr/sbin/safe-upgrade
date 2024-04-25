@@ -346,7 +346,7 @@ local function upgrade(args)
     else
         fw_mtd_str = '7936k(firmware),7936k(fw2)'
     end
-    local boot_script_tpl = 'set bootargs console=ttyS0,115200 board=LIBREROUTERV1 mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),%s,128k(res),64k(ART); echo booting part %d; bootm ${fw_addr};'
+    local boot_script_tpl = 'set bootargs console=ttyS0,115200 board=LIBREROUTERV1 mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),%s,128k(res),64k(art); echo booting part %d; bootm ${fw_addr};'
     local boot_script = string.format(boot_script_tpl, fw_mtd_str, partitions.other)
     set_uboot_env(string.format('boot_%d', partitions.other), boot_script)
     set_testing_partition(partitions.other)
