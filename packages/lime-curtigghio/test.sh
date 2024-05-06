@@ -2,20 +2,126 @@
 
 ## LibreMesh community mesh networks meta-firmware
 ##
-## Copyright (C) 2023  Gioacchino Mazzurco <gio@eigenlab.org>
-## Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+## Copyright (C) 2023-2024  Gioacchino Mazzurco <gio@polymathes.cc>
+## Copyright (C) 2023-2024  Asociación Civil Altermundi <info@altermundi.net>
 ##
 ## SPDX-License-Identifier: AGPL-3.0-only
 
-mBuildDir="/home/gio/Builds/openwrt"
 
-cIface="em0"
+## Define default value for variable, take two arguments, $1 variable name,
+## $2 default variable value, if the variable is not already define define it
+## with default value.
+function define_default_value()
+{
+	VAR_NAME="${1}"
+	DEFAULT_VALUE="${2}"
+
+	[ -z "${!VAR_NAME}" ] && export ${VAR_NAME}="${DEFAULT_VALUE}" || true
+}
+
+
+define_default_value OPENWRT_BUILD_DIR "$HOME/Builds/openwrt-apup/"
+define_default_value KCONFIG_UTILS_DIR "$HOME/Development/kconfig-utils/"
+define_default_value HOSTAPD_REPO_DIR "$HOME/Development/hostap/"
+define_default_value OPENWRT_REPO_DIR "$HOME/Development/openwrt/"
+define_default_value NETIFD_REPO_DIR "$HOME/Development/netifd/"
+
+
+
+cIface="usbe1"
 
 bianco43IP="fe80::c24a:ff:fefc:2f12%$cIface"
 bluIP="fe80::6670:2ff:fede:c51e%$cIface"
 neroIP="fe80::c24a:ff:fe7a:acac%$cIface"
 verdeIP="fe80::ea94:f6ff:fe68:3364%$cIface"
 
+dax1Ipll="fe80::aa63:7dff:fe2e:97c8%$cIface"
+dax2Ipll="fe80::aa63:7dff:fe2e:97d8%$cIface"
+
+hlk1Ipll="169.254.145.20"
+hlk2Ipll="169.254.145.22"
+
+source "${KCONFIG_UTILS_DIR}/kconfig-utils.sh"
+
+function fTestConf()
+{
+	kconfig_set CONFIG_DEVEL
+	kconfig_set CONFIG_SRC_TREE_OVERRIDE
+
+	local mHostapdGitSrc="$OPENWRT_BUILD_DIR/package/network/services/hostapd/git-src"
+	rm -f "$mHostapdGitSrc"
+	ln -s "${HOSTAPD_REPO_DIR}/.git" "$mHostapdGitSrc"
+
+	local mNetifdGitSrc="$OPENWRT_BUILD_DIR/package/network/config/netifd/git-src"
+	rm -f "$mNetifdGitSrc"
+	ln -s "$NETIFD_REPO_DIR/.git" "$mNetifdGitSrc"
+
+	kconfig_set CONFIG_PACKAGE_iperf3
+
+	kconfig_unset CONFIG_PACKAGE_ppp
+	kconfig_unset CONFIG_PACKAGE_ppp-mod-pppoe
+	kconfig_unset CONFIG_PACKAGE_kmod-ppp
+	kconfig_unset CONFIG_PACKAGE_kmod-pppoe
+	kconfig_unset CONFIG_PACKAGE_kmod-pppox
+}
+
+function fBuildDapX()
+{
+	pushd "$OPENWRT_BUILD_DIR"
+
+	./scripts/feeds update -a
+	./scripts/feeds install -a
+
+	# Prepare firmware for D-Link DAP-X1860
+	echo "" > "$KCONFIG_CONFIG_PATH"
+	kconfig_init_register
+
+	kconfig_set CONFIG_TARGET_ramips
+	kconfig_set CONFIG_TARGET_ramips_mt7621
+	kconfig_set CONFIG_TARGET_ramips_mt7621_DEVICE_dlink_dap-x1860-a1
+	make defconfig
+
+	fTestConf
+	make defconfig
+
+	kconfig_check
+	kconfig_wipe_register
+
+	clean_hostapd
+
+	make -j $(($(nproc)-1))
+	popd
+}
+
+function fBuildHlk()
+{
+	pushd "$OPENWRT_BUILD_DIR"
+
+	./scripts/feeds update -a
+	./scripts/feeds install -a
+
+	# Prepare firmware for D-Link DAP-X1860
+	echo "" > "$KCONFIG_CONFIG_PATH"
+	kconfig_init_register
+
+	kconfig_set CONFIG_TARGET_ramips
+	kconfig_set CONFIG_TARGET_ramips_mt7621
+	kconfig_set CONFIG_TARGET_ramips_mt7621_DEVICE_hilink_hlk-7621a-evb
+	make defconfig
+
+	kconfig_set CONFIG_PACKAGE_pciutils
+	kconfig_set CONFIG_PACKAGE_kmod-mt7916-firmware
+	fTestConf
+	make defconfig
+
+	kconfig_check
+	kconfig_wipe_register
+
+	clean_packages
+
+	make -j $(($(nproc)-1))
+	popd
+}
 
 function dflash()
 {
@@ -30,7 +136,8 @@ function dflash()
 
 	[ "X$origHash" != "X$copiedHash" ] && echo "Hash mismatch" && return -1
 
-	ssh root@$dDevice "sysupgrade -n /tmp/$imgName"
+	# Do not use -n as this will erease IP confifuration for hilink_hlk-7621a-evb
+	ssh root@$dDevice "sysupgrade /tmp/$imgName"
 
 	# Wait the detached flashing to start
 	sleep 10
@@ -59,6 +166,14 @@ function dWait()
 
 function wait_all()
 {
+	dWait ${hlk1Ipll}
+	dWait ${hlk2Ipll}
+	return
+
+	dWait ${dax1Ipll}
+	dWait ${dax2Ipll}
+	return
+
 	dWait ${verdeIP}
 	dWait ${neroIP}
 	dWait ${bluIP}
@@ -86,14 +201,17 @@ function dConf()
 	set wireless.radio0.channel='9'
 	set wireless.default_radio0.ssid='libre-curtigghio'
 	set wireless.default_radio0.mode='ap'
-	set wireless.default_radio0.wds='1'
-	set wireless.default_radio0.network='curtigghio'
+	set wireless.default_radio0.apup='1'
+	set wireless.default_radio0.apup_peer_ifname_prefix='wlan0.peer'
+	set wireless.default_radio0.network='lan'
 
 	set wireless.radio1.disabled='0'
 	set wireless.default_radio1.ssid='libre-curtigghio'
 	set wireless.default_radio1.mode='ap'
-	set wireless.default_radio1.wds='1'
-	set wireless.default_radio1.network='curtigghio'
+	set wireless.default_radio1.apup='1'
+	set wireless.default_radio1.apup_peer_ifname_prefix='wlan1.peer'
+	set wireless.default_radio1.wds_bridge=''
+	set wireless.default_radio1.network='lan'
 
 	set firewall.@defaults[0].input='ACCEPT'
 	set firewall.@defaults[0].output='ACCEPT'
@@ -105,6 +223,14 @@ EOF
 
 function conf_all()
 {
+	dConf ${hlk1Ipll} "OpenWrt-Hlk1" "169.254.145.20"
+	dConf ${hlk2Ipll} "OpenWrt-Hlk2" "169.254.145.22"
+	return
+
+	dConf ${dax1Ipll} "OpenWrt-Dax1" "192.168.1.16"
+	dConf ${dax2Ipll} "OpenWrt-Dax2" "192.168.1.18"
+	return
+
 	dConf ${verdeIP} "OpenWrt-Verde" "192.168.1.4"
 	dConf ${neroIP} "OpenWrt-nero" "192.168.1.10"
 	dConf ${bluIP} "OpenWrt-blu" "192.168.1.8"
@@ -113,14 +239,31 @@ function conf_all()
 
 function flash_all()
 {
-	dflash ${verdeIP} "${mBuildDir}/bin/targets/ath79/generic/openwrt-ath79-generic-tplink_tl-wdr3600-v1-squashfs-sysupgrade.bin"
-	dflash ${neroIP} "${mBuildDir}/bin/targets/ath79/generic/openwrt-ath79-generic-tplink_tl-wdr3600-v1-squashfs-sysupgrade.bin"
-	dflash ${bluIP} "${mBuildDir}/bin/targets/ath79/generic/openwrt-ath79-generic-tplink_tl-wdr3600-v1-squashfs-sysupgrade.bin"
-	dflash ${bianco43IP} "${mBuildDir}/bin/targets/ath79/generic/openwrt-ath79-generic-tplink_tl-wdr4300-v1-squashfs-sysupgrade.bin"
+	dflash ${hlk1Ipll} "${OPENWRT_BUILD_DIR}/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-hilink_hlk-7621a-evb-squashfs-sysupgrade.bin"
+	dflash ${hlk2Ipll} "${OPENWRT_BUILD_DIR}/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-hilink_hlk-7621a-evb-squashfs-sysupgrade.bin"
+
+#	dflash ${dax1Ipll} "${OPENWRT_BUILD_DIR}/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-dlink_dap-x1860-a1-squashfs-sysupgrade.bin"
+#	dflash ${dax2Ipll} "${OPENWRT_BUILD_DIR}/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-dlink_dap-x1860-a1-squashfs-sysupgrade.bin"
+
+#	dflash ${verdeIP} "${OPENWRT_BUILD_DIR}/bin/targets/ath79/generic/openwrt-ath79-generic-tplink_tl-wdr3600-v1-squashfs-sysupgrade.bin"
+#	dflash ${neroIP} "${OPENWRT_BUILD_DIR}/bin/targets/ath79/generic/openwrt-ath79-generic-tplink_tl-wdr3600-v1-squashfs-sysupgrade.bin"
+#	dflash ${bluIP} "${OPENWRT_BUILD_DIR}/bin/targets/ath79/generic/openwrt-ath79-generic-tplink_tl-wdr3600-v1-squashfs-sysupgrade.bin"
+#	dflash ${bianco43IP} "${OPENWRT_BUILD_DIR}/bin/targets/ath79/generic/openwrt-ath79-generic-tplink_tl-wdr4300-v1-squashfs-sysupgrade.bin"
 
 	wait_all
 
 	conf_all
+
+	ssh root@${hlk1Ipll} reboot
+	ssh root@${hlk2Ipll} reboot
+
+	return
+
+
+	ssh root@${dax1Ipll} reboot
+	ssh root@${dax2Ipll} reboot
+
+	return
 
 	ssh root@${verdeIP} reboot
 	ssh root@${neroIP} reboot
@@ -128,33 +271,73 @@ function flash_all()
 	ssh root@${bianco43IP} reboot
 }
 
-function build_hostapd()
+function dev_packages_paths()
 {
-	pushd "$mBuildDir"
+	echo package/network/config/netifd \
+	     package/network/config/wifi-scripts \
+	     package/network/services/hostapd
+}
 
-	make package/network/services/hostapd/clean
-	make package/network/services/hostapd/compile || 
-		make package/network/services/hostapd/compile -j1 V=s
+function clean_packages()
+{
+	pushd "$OPENWRT_BUILD_DIR"
+
+	for mPackagePath in $(dev_packages_paths) ; do
+		make $mPackagePath/clean
+	done
 
 	popd
 }
 
-function upgrade_hostapd()
+function build_packages()
 {
-	dAddress="$1"
-	mHostapdPkgPath="$(ls $mBuildDir/bin/packages/mips_24kc/base/wpad-basic-*.ipk)"
+	clean_packages
 
-	scp -O "$mHostapdPkgPath" root@[${dAddress}]:/tmp/
+	pushd "$OPENWRT_BUILD_DIR"
 
-	ssh root@${dAddress} "opkg install --force-reinstall \"/tmp/$(basename $mHostapdPkgPath)\" && reboot"
+	for mPackagePath in $(dev_packages_paths); do
+		make $mPackagePath/compile ||
+		{
+			make $mPackagePath/compile -j1 V=sc
+			return -1
+		}
+	done
+
+	popd
 }
 
-function upgrade_hostapd_all()
+function upgrade_packages()
 {
-	upgrade_hostapd $verdeIP
-	upgrade_hostapd ${neroIP}
-	upgrade_hostapd $bluIP
-	upgrade_hostapd ${bianco43IP}
+	local dAddress="$1"
+	local dPkgArch="${2:-mipsel_24kc}"
+
+	local mInstalls=""
+
+	for mPackageName in \
+		netifd \
+		hostapd-common wpad-basic-mbedtls wifi-scripts ; do
+
+		local mPkgPath="$(ls "$OPENWRT_BUILD_DIR/bin/packages/$dPkgArch/base/$mPackageName"*.ipk)"
+		scp -O "$mPkgPath" root@[${dAddress}]:/tmp/
+
+		mInstalls="$mInstalls \"/tmp/$(basename $mPkgPath)\""
+	done
+
+	ssh root@${dAddress} "opkg install --force-reinstall $mInstalls && reboot"
+}
+
+function upgrade_packages_all()
+{
+	upgrade_packages ${hlk1Ipll}
+	upgrade_packages ${hlk2Ipll}
+
+#	upgrade_hostapd ${dax1Ipll}
+#	upgrade_hostapd ${dax2Ipll}
+
+#	upgrade_hostapd $verdeIP
+#	upgrade_hostapd ${neroIP}
+#	upgrade_hostapd $bluIP
+#	upgrade_hostapd ${bianco43IP}
 
 	sleep 5s
 
@@ -165,23 +348,58 @@ function errcho() { >&2 echo $@; }
 
 function dTestMulticast()
 {
-	dAddress="$1"
+	local dAddress="$1"
 
 	[ "0$(ssh root@${dAddress} ping6 -c 4 ff02::1%phy0-ap0.sta1 | \
 		grep duplicates | awk '{print $7}')" -gt "1" ] ||
-		{ errcho dTestMulticast $1 Failed ; return -1 ; }
-	errcho dTestMulticast $1 Success
+		{ errcho dTestMulticast $dAddress Failed ; return -1 ; }
+	errcho dTestMulticast $dAddress Success
 }
 
+function dTestIperf3()
+{
+	local clientAddress="$1"
+	local servAddress="$2"
+	local servIfaceAddress="$3"
+
+	ssh root@${servAddress} iperf3 -s
+	ssh root@${clientAddress} iperf3 -c $servIfaceAddress
+}
+
+function dTestUbusDev()
+{
+	local dAddress="$1"
+
+	ssh root@${dAddress} reboot ; sleep 10
+
+	dWait ${dAddress}
+
+	ssh root@${dAddress} << REMOTE_HOST_EOS
+	ubus call network add_dynamic_device '{"name":"nomestru", "type":"8021ad", "ifname":"wlan0.peer1", "vid":"47"}'
+	ubus call network add_dynamic '{"name":"ifstru", "proto":"static", "auto":1, "device":"nomestru", "ipaddr":"169.254.145.20", "netmask":"255.255.255.255"}'
+	ubus call network.interface.ifstru up
+	ubus call network.device status '{"name":"nomestru"}'
+
+	ip address show nomestru
+REMOTE_HOST_EOS
+}
+
+#fBuildDapX
+#fBuildHlk
+
 #flash_all
+
+#build_packages
+#upgrade_packages_all
+
+dTestUbusDev ${hlk1Ipll}
+
 #conf_all
 
-build_hostapd
-conf_all
-upgrade_hostapd_all
+#dTestMulticast ${dax1Ipll}
+#dTestMulticast ${dax2Ipll}
 
-dTestMulticast $bluIP
-dTestMulticast $verdeIP
-dTestMulticast $bianco43IP
-dTestMulticast $neroIP
-
+# dTestMulticast $bluIP
+# dTestMulticast $verdeIP
+# dTestMulticast $bianco43IP
+# dTestMulticast $neroIP

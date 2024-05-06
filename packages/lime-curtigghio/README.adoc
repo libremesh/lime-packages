@@ -4,11 +4,12 @@
 :lang: en
 
 *TL;DR* Fiddling with hostad code I have managed to successfully establish WiFi
-communication between multiple AP configured in WDS, each of them send and
-receive traffic from the other as if the where associated stations, while they
-are all configured in AP WDS mode. This P2P like behavior have multiple
-advantages compared to the usual setup where one of them is configures as AP and
-all the others as station, and also compared to Ad-Hoc mode and 802.11s.
+communication between multiple AP, each of them send and receive traffic from
+the other as if they where associated stations, while they are all configured in
+AP mode. This P2P like behavior have multiple advantages compared to the usual
+setup where one of them is configured as AP and all the others as stations, and
+also compared to Ad-Hoc, WDS, 802.11s, Multi-AP and EasyMesh.
+I have named this operanting mode APuP (Access Point Micro Peering).
 
 
 == A bit of context
@@ -32,10 +33,13 @@ determined it\'s silent demisal. New radios drivers and firmwares doesn\'t
 support 802.11s well. New WiFi standards doesn\'t bring much improvements to
 802.11s mesh mode, while they do improve a lot AP-STA modes. Still our need of
 nodes being able to comunicate to anyone in range is strong. In this context,
-looking for a modern solution I started talking with Felix Fietkau (nbd), in
-this conversation a new idea emerged, if AP mode is what is getting more support
-and improvements, can\'t we just use that on all nodes with some slight
-modification so all AP can talk each other?
+looking for a modern solution I started asking myself, is there an hard to
+resolve problem that impede AP nodes in sight to talk each other?
+Talking about my thinking with Felix Fietkau (nbd), we agreed that it might be
+possible for AP nodes to commuicate directly each other, and because AP mode is
+what is getting more support and improvements, if we can we just use that on
+all nodes with some slight modification so all AP in sight can talk each other,
+we could solve this problem that afflict us since WiFi creation.
 Felix suggested that this should be possible and with a bit of luck should not
 even need kernel and driver modifications, modifing `hostapd` in a way that each
 AP adds the other in sight to its station list could be enough and it is indeed
@@ -184,7 +188,7 @@ additional sources.
 `for mPatch in ~/Builds/openwrt/package/network/services/hostapd/patches/*.patch  ; do patch -p1 < $mPatch ; done`
 
 The modified `hostapd` code I published on my
-https://gitlab.com/g10h4ck/hostap/-/tree/lime_curtigghio[gitlab sandbox] already
+https://gitlab.com/g10h4ck/hostap/-/tree/APuP[gitlab sandbox] already
 includes those so you don't need to reapply them.
 
 To clean and re-build only hostapd package use
@@ -207,8 +211,8 @@ automatically by `hostapd` and potentially creating a loop, I have temporarly
 disabled bridging in `hostapd_set_wds_sta` defined in +src/ap/ap_drv_ops.c+,
 this should become a runtime configuration later.
 
-I have also added a compile time config `CONFIG_NO_LIME_CURTIGGHIO` in
-+hostapd/Makefile+ so this modifications can easly be disabled at compile time.
+I have also added a compile time config `CONFIG_APUP` in +hostapd/Makefile+ so
+this modifications can be easly enabled at compile time.
 
 I have tested the modifications and after a bunch of round of trial and error
 works as expected, with good performances, you can see the +test.sh+ script
@@ -216,7 +220,7 @@ which configures four vanilla OpenWrt routers into a working testbed to see how
 to use this.
 
 The modified `hostapd` code is published on my
-https://gitlab.com/g10h4ck/hostap/-/tree/lime_curtigghio[gitlab sandbox]
+https://gitlab.com/g10h4ck/hostap/-/tree/APuP[gitlab sandbox]
 
 
 == Useful snippets
@@ -455,19 +459,16 @@ Sun Jan  1 22:07:28 2023 daemon.notice hostapd: LIME_CURTIJJO nl80211: Drv Event
 
 http://www.bradgoodman.com/bittool/
 
+
 == WDS Station interface bridging
 
 hostapd add WDS STA interfaces to a bridge either the same of plain station
 passed with the `bridge` option or to another one passed with the `wds_bridge`,
 in our use case this is not ideal as we might want the routing propocols access
 directly to the station interface. Moreover in a mesh setup multiple links could
-easily cause a bridge loop, that linux simple bride will be not able to handle
-as is.
-The fester and temporary workaround seems to be to create a custom bridge with
-pass that via the `wds_bridge` option and disable forwarding between interfaces
-via nftables.
-Later we can create an option for hostapd to disable the WDS station interface
-bridging.
+easily cause a bridge loop, that linux simple bridge will be not able to handle
+as is. To disable automatic bridging set `wds_bridge` to an empty string in the
+hostapd config file.
 
 
 == Interesting conversations
