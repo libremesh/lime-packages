@@ -47,3 +47,20 @@ https://openwrt.org/docs/guide-developer/gdb
 VoCore2: Develop for OpenWrt on Qt Creator
 https://vonger.cn/?p=14657
 
+=== Pulggin related notes
+Pluggins must be resgistered into shared state by using the config file. UCI infrastracture is prefered 
+
+mSc="pluggin_name"
+
+uci set shared-state.${mSc}=dataType
+uci set shared-state.${mSc}.name='pluggin-name'
+uci set shared-state.${mSc}.scope='community'
+uci set shared-state.${mSc}.ttl='1200'
+uci set shared-state.${mSc}.update_interval='120'
+uci commit shared-state
+
+Publishers mus be located at "usr/share/shared-state/publishers"
+All Publishers will be called at least once using shared-state-async-publish-all
+
+Sync is called automatically by shared state acording to upgade interval parameter
+
