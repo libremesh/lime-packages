@@ -47,13 +47,13 @@ https://openwrt.org/docs/guide-developer/gdb
 VoCore2: Develop for OpenWrt on Qt Creator
 https://vonger.cn/?p=14657
 
-=== Pulggin related notes
+=== Plugin related notes
 Plugins must be registered into shared state by using the config file. UCI infrastructure is preferred
 
-mSc="pluggin_name"
+mSc="plugin_name"
 
 uci set shared-state.${mSc}=dataType
-uci set shared-state.${mSc}.name='pluggin-name'
+uci set shared-state.${mSc}.name='plugin-name'
 uci set shared-state.${mSc}.scope='community'
 uci set shared-state.${mSc}.ttl='1200'
 uci set shared-state.${mSc}.update_interval='120'
