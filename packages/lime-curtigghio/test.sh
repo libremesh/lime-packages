@@ -384,6 +384,43 @@ function dTestUbusDev()
 REMOTE_HOST_EOS
 }
 
+function DO_NOT_CALL_prepareHostapdChangesForSubmission()
+{
+	# Just a bunch of commands I used, not a proper function the commands
+	# requires developer interaction
+	# See https://openwrt.org/docs/guide-developer/toolchain/use-patches-with-buildsystem
+
+	pushd "$HOSTAPD_REPO_DIR"
+	# -3 number of commit for which to create patches
+	git format-patch -3 HEAD
+	popd
+
+	pushd "$OPENWRT_REPO_DIR"
+	make package/network/services/hostapd/{clean,prepare} V=s QUILT=1
+
+	pushd "$OPENWRT_REPO_DIR/build_dir/target-mips_24kc_musl/hostapd-wpad-basic-mbedtls/hostapd-2024.03.09~695277a5"
+	quilt push -a
+
+	mLastIndex="$(quilt series | tail -n 1 | awk -F- '{print $1}')"
+	for mPatch in $(ls "$HOSTAPD_REPO_DIR"/*.patch) ; do
+		mLastIndex=$((mLastIndex+10))
+		mNewPatchPath="/tmp/$mLastIndex-$(basename $mPatch | cut -c 6-)"
+		mv "$mPatch" "$mNewPatchPath"
+		quilt import "$mNewPatchPath"
+		quilt push -a
+		quilt refresh
+		rm "$mNewPatchPath"
+	done
+
+	popd
+
+	make package/network/services/hostapd/update V=s
+	make package/network/services/hostapd/refresh V=s
+
+
+	popd
+}
+
 #fBuildDapX
 #fBuildHlk
 
