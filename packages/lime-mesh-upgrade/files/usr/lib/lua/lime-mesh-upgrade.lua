@@ -290,13 +290,7 @@ end
 -- Validate if the upgrade has already started
 function mesh_upgrade.started()
     status = mesh_upgrade.state()
-    if status == mesh_upgrade.upgrade_states.DEFAULT or -- if an error has ocurred then there is no transaction
-     status == mesh_upgrade.upgrade_states.ERROR or
-     status == mesh_upgrade.upgrade_states.ABORTED or 
-     status == mesh_upgrade.upgrade_states.CONFIRMED then
-        return false
-    end
-    return true
+    return mesh_upgrade.is_active(status)
     -- todo(javi): what happens if a mesh_upgrade has started more than an hour ago ? should this node abort it ?
 end
 
@@ -324,14 +318,16 @@ function mesh_upgrade.main_node_state()
     return main_node_state
 end
 
-function mesh_upgrade.mesh_upgrade_abort()
+function mesh_upgrade.mesh_upgrade_abort(silent_abortion)
     if mesh_upgrade.change_state(mesh_upgrade.upgrade_states.ABORTED) then
         -- mesh_upgrade.change_main_node_state(mesh_upgrade.main_node_states.NO)
         local uci = config.get_uci_cursor()
         uci:set('mesh-upgrade', 'main', 'retry_count', 0)
         uci:save('mesh-upgrade')
         uci:commit('mesh-upgrade')
-        mesh_upgrade.trigger_sheredstate_publish()
+        if silent_abortion == nil or silent_abortion == false then
+            mesh_upgrade.trigger_sheredstate_publish()
+        end
         -- todo(javi): stop and delete everything
         --os.execute("rm ".. eupgrade.WORKDIR .."  -r >/dev/null 2>&1")
         -- kill posible safe upgrade command
@@ -410,7 +406,10 @@ end
 -- It will only fetch new information if main node has aborted or main node is
 -- ready for upgraade
 function mesh_upgrade.become_bot_node(main_node_upgrade_data)
-    if main_node_upgrade_data.upgrade_state == mesh_upgrade.upgrade_states.ABORTED then
+    local actual_state = mesh_upgrade.get_node_status()
+    -- only abort if my main node has aborted
+    if main_node_upgrade_data.upgrade_state == mesh_upgrade.upgrade_states.ABORTED and
+        main_node_upgrade_data.timestamp == actual_state.timestamp then
         utils.log("main node has aborted")
         mesh_upgrade.mesh_upgrade_abort()
         return
@@ -420,7 +419,7 @@ function mesh_upgrade.become_bot_node(main_node_upgrade_data)
             return
         else
             utils.log("node has not started")
-            local actual_state = mesh_upgrade.get_node_status()
+            
             if actual_state.timestamp == main_node_upgrade_data.timestamp and actual_state.repo_url ==
                 main_node_upgrade_data.repo_url then
                 main_node_upgrade_data.retry_count = actual_state.retry_count + 1
@@ -437,7 +436,6 @@ function mesh_upgrade.become_bot_node(main_node_upgrade_data)
                 end
             else
                 utils.log("max retry_count has been reached")
-
             end
         end
     end
@@ -612,5 +610,71 @@ function mesh_upgrade.confirm()
         error = "NOT_READY_TO_CONFIRM"
     }
 end
+
+-- An active node is involved in a transaction 
+function mesh_upgrade.is_active(status)
+    if status == mesh_upgrade.upgrade_states.DEFAULT or -- if an error has ocurred then there is no transaction
+    status == mesh_upgrade.upgrade_states.ERROR or
+    status == mesh_upgrade.upgrade_states.ABORTED or 
+    status == mesh_upgrade.upgrade_states.CONFIRMED then
+       return false
+   end
+   return true
+end
+
+function mesh_upgrade.verify_network_consistency (network_state)
+    utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "verifying" ')
+    local actual_status = mesh_upgrade.get_node_status()
+
+    local main_node = ""
+    for node, s_s_data in pairs(network_state) do
+        --if any node has started an upgrade process and start one too?
+        --only fetch the info from the master node publication?
+        if s_s_data.main_node == mesh_upgrade.main_node_states.MAIN_NODE then
+            if mesh_upgrade.is_active(s_s_data.upgrade_state) then
+                if main_node == "" then
+                    main_node = node
+                    utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "there is one main node '..main_node..' , ok"')
+                else
+                    utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "there are two active main nodes '.. node ..' and '..main_node..' , aborting"')
+                    mesh_upgrade.mesh_upgrade_abort()
+                    return
+                end
+            else
+                --there is an inactive main node 
+                utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "there is an inactive main node '.. node ..' "')
+                if mesh_upgrade.started() and network_state[node].timestamp == actual_status.timestamp then
+                    -- i should abort too 
+                    utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "i should abort we share timestamps"')
+                    mesh_upgrade.mesh_upgrade_abort()
+                    utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "i should not abort dont share timestamps"')
+                end
+
+            end
+        end
+    end
+    --there is only one main node
+    if main_node ~= "" then
+        if not mesh_upgrade.started() and main_node ~= utils.hostname() then
+            utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "' ..utils.hostname()'  become' ..main_node..' _bot_node "')
+            mesh_upgrade.become_bot_node(network_state[main_node])
+        else
+            utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "already started a transaction "')
+            if network_state[main_node].timestamp == actual_status.timestamp then
+                --"ok"
+                utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "main node and bot node timestamp are equal"')
+            else
+                --I am in a transaction and main node is in an other
+                utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "main node and bot node timestamp are different"')
+                mesh_upgrade.mesh_upgrade_abort(true)
+                --this will lead to a doble write to shared state.
+                utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "main node and bot node timestamp are different"')
+                utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" " become_bot_node "')
+                mesh_upgrade.become_bot_node(network_state[main_node])
+            end
+        end
+    end
+end
+
 
 return mesh_upgrade
