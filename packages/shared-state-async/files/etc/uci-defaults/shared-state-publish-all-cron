@@ -1,0 +1,10 @@
+#!/bin/sh
+
+unique_append()
+{
+	grep -qF "$1" "$2" || echo "$1" >> "$2"
+}
+
+unique_append \
+	'*/30 * * * * ((sleep $(($RANDOM % 120)); shared-state-async-publish-all &> /dev/null)&)' \
+	/etc/crontabs/root

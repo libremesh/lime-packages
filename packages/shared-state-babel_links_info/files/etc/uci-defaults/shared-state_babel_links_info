@@ -12,6 +12,3 @@ uci set shared-state.babel_links_info.ttl='2400'
 uci set shared-state.babel_links_info.update_interval='30'
 uci commit shared-state
 
-unique_append \
-	'*/30 * * * * ((sleep $(($RANDOM % 120)); shared-state-publish_babel_links_info &> /dev/null)&)' \
-	/etc/crontabs/root
