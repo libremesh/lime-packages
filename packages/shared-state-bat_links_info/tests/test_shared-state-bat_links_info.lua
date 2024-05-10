@@ -189,7 +189,7 @@ describe('Tests bat_links_info #bat_links_info', function ()
         return iwinfo.mocks.wlan1_mesh_mac
     end)
 
-    package.path = package.path .. ";packages/shared-state-bat_links_info/files/usr/bin/?;;"
+    package.path = package.path .. ";packages/shared-state-bat_links_info/files/usr/share/shared-state/publishers/?;;"
     require ("shared-state-publish_bat_links_info")
     
     it('a simple test to get node info and assert requiered fields are present', function()
