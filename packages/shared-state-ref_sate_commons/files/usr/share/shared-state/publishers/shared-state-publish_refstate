@@ -1,0 +1,19 @@
+#!/usr/bin/lua
+
+--! LibreMesh
+--! Copyright (C) 2024  Javier Jorge
+--! Copyright (C) 2024  Asociación Civil Altermundi <info@altermundi.net>
+--! SPDX-License-Identifier: AGPL-3.0-only
+
+local JSON = require("luci.jsonc")
+local utils = require "lime.utils"
+local fs = require("nixio.fs")
+
+
+local ref_file_folder = "/etc/shared-state/ref_state/"
+--get data_type from publisher
+for data_type in fs.dir(ref_file_folder) do
+	local path = ref_file_folder .. data_type
+	local result = { [utils.hostname()] = utils.read_file(path .. data_type) }
+	io.popen("shared-state-async insert " .. data_type, "w"):write(JSON.stringify(result))
+end
