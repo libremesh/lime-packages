@@ -27,7 +27,7 @@ describe('Tests network_nodes #network_nodes', function()
     end)
 
     it('a simple test to get babel info and assert requiered fields are present', function()
-        package.path = package.path .. ";packages/shared-state-babel_links_info/files/usr/bin/?;;"
+        package.path = package.path .. ";packages/shared-state-babel_links_info/files/usr/share/shared-state/publishers/?;;"
         require("shared-state-publish_babel_links_info")
 
         babelinfo = get_babel_links_info()
