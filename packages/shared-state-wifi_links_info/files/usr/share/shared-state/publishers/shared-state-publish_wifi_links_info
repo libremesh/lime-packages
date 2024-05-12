@@ -28,13 +28,17 @@ function get_wifi_links_info()
 	local links = {}
 	for _, station in ipairs(stations) do
 		macparts = network.get_mac(station.iface)
-		src_macaddr = table.concat(macparts,":")
+		src_macaddr = string.lower(table.concat(macparts,":"))
 		local station_stats = node_status.get_station_stats(station)
 		local freq = iwinfo.nl80211.frequency(station.iface)
-		table.insert(links, {src_mac=src_macaddr ,dst_mac=station.station_mac,
+		local chanenel = iwinfo.nl80211.channel(station.iface)
+		local key_table = {string.lower(string.gsub(src_macaddr,":","")),string.lower(string.gsub(station.station_mac,":",""))}
+		table.sort(key_table)
+		links[table.concat(key_table)]= {src_mac=src_macaddr ,dst_mac=string.lower(station.station_mac),
 		signal=station_stats.signal,chains=station_stats.chains,iface=station.iface,
-		rx_rate=station_stats.rx_rate,tx_rate=station_stats.tx_rate,freq=freq } )
+		rx_rate=station_stats.rx_rate,tx_rate=station_stats.tx_rate,freq=freq, channel = chanenel }
 	end
+	utils.printJson(links)
 	return links
 end
 
