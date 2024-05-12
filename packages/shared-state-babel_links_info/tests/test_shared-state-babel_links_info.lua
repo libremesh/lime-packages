@@ -31,9 +31,9 @@ describe('Tests network_nodes #network_nodes', function()
         require("shared-state-publish_babel_links_info")
 
         babelinfo = get_babel_links_info()
-        assert.are.equal('fe80::16cc:20ff:feda:4eac', babelinfo[1].dst_ip)
-        assert.are.equal("wlan1-mesh_17",babelinfo[1].iface)
-        assert.are.equal("fe80::c24a:ff:fefc:3abd",babelinfo[1].src_ip)
+        assert.are.equal('fe80::16cc:20ff:feda:4eac', babelinfo["fe8016cc20fffeda4eacfe80c24afffefc3abd"].dst_ip)
+        assert.are.equal("wlan1-mesh_17",babelinfo["fe8016cc20fffeda4eacfe80c24afffefc3abd"].iface)
+        assert.are.equal("fe80::c24a:ff:fefc:3abd",babelinfo["fe8016cc20fffeda4eacfe80c24afffefc3abd"].src_ip)
     end)
 end)
 
