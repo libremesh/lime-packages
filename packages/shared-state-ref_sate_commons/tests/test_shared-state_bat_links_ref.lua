@@ -6,8 +6,6 @@ local uci = nil
 --package.path = package.path .. ";packages/shared-state-bat_links_info/files/usr/share/shared-state/hooks/bat_links_info_ref/?;;"
 --require ("shared-state-update_refstate")
 
-
-
 describe('bat links ref state tests', function()
 
     it('test obj store', function()
