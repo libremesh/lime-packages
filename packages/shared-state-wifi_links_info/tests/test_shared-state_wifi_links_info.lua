@@ -2,7 +2,7 @@ local utils = require "lime.utils"
 local node_status = require 'lime.node_status'
 local iwinfo = require('iwinfo')
 
-package.path = package.path .. ";packages/shared-state-wifi_links_info/files/usr/bin/?;;"
+package.path = package.path .. ";packages/shared-state-wifi_links_info/files/usr/share/shared-state/publishers/?;;"
 require ("shared-state-publish_wifi_links_info")
 
 it('a simple test to get links info and assert requiered fields are present', function()
