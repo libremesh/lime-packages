@@ -1,0 +1,26 @@
+#!/usr/bin/lua
+
+--! LibreMesh
+--! Copyright (C) 2019-2024  Gioacchino Mazzurco <gio@altermundi.net>
+--! Copyright (C) 2024  Asociación Civil Altermundi <info@altermundi.net>
+--! SPDX-License-Identifier: AGPL-3.0-only
+
+local JSON = require("luci.jsonc")
+local utils = require "lime.utils"
+
+local file_path = "/etc/config/shared-state-async_bat_links_info_ref"
+local input = JSON.parse(io.stdin:read("*all"))
+
+function write_if_diff(path, input)
+	local acutal = JSON.parse(utils.read_file(path))
+	if input[utils.hostname()] then
+		if not(utils.deepcompare(input[utils.hostname()],acutal or {})) then
+			utils.write_file(path,JSON.stringify(input[utils.hostname()]))
+			utils.unsafe_shell("logger -t shared-sate-ref-state bat links ref state changed")
+			return true
+		end
+	end
+	utils.unsafe_shell("logger -t shared-sate-ref-state bat links ref state did't change")
+	return false
+end
+write_if_diff(file_path,input)
