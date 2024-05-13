@@ -13,7 +13,7 @@ define Package/$(PKG_NAME)
 	TITLE:=Batman protocol links information module for shared-state
 	MAINTAINER:= Javier <jjorge@inti.gob.ar>
 	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils \
-		+lime-system +batctl-default shared-state-async   
+		+lime-system +batctl-default +shared-state-ref_sate_commons shared-state-async   
 	PKGARCH:=all
 endef
 
