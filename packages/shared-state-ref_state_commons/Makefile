@@ -10,7 +10,7 @@ include ../../libremesh.mk
 define Package/$(PKG_NAME)
 	SECTION:=lime
 	CATEGORY:=LibreMesh
-	TITLE:=Common components for refference satate datypes
+	TITLE:=Common components for reference satate datypes
 	MAINTAINER:= Javier <jjorge@inti.gob.ar>
 	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils \
 		+lime-system shared-state-async   
@@ -18,7 +18,7 @@ define Package/$(PKG_NAME)
 endef
 
 define Package/$(PKG_NAME)/description
-	Common components for refference satate datypes
+	Common components for reference satate datypes
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
