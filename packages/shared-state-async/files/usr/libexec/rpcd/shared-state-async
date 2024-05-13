@@ -11,15 +11,19 @@ sinc_args=""
  
 case "$1" in 
     list) 
-        echo '{ "sync": { "data_type": "str", "peers_ip": "str" }, "get": { "data_type": "str" },  "publish": { "data_type": "str" }, "publish_all": { } }'
+        echo '{ "sync": { "data_type": "str", "peers_ip": "str" }, "get": { "data_type": "str" },  "publish": { "data_type": "str" }, "publish_all": { },"insert": { "data_type": "str", "json": "str" } }'
     ;; 
     call)
         # source jshn shell library
         . /usr/share/libubox/jshn.sh
         read msg
+        echo "msg $msg"
         json_load $msg
         json_get_vars data_type 
         json_get_vars peers_ip
+        json=$(jsonfilter -s $msg -e "@.json")
+        echo "$json"
+
         case "$2" in 
             get) 
                 if output=$(shared-state-async get $data_type 2>/dev/null) 
@@ -39,6 +43,10 @@ case "$1" in
             ;;
             publish_all)
                 shared-state-async-publish-all > /dev/null 2>&1
+                echo {\"data\": {} , \"error\": $? }
+            ;;
+            insert)
+                printf '%s' "$json" | shared-state-async insert $data_type > /dev/null 2>&1 
                 echo {\"data\": {} , \"error\": $? }
             ;;
             *)
