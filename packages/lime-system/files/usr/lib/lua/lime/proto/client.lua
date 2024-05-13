@@ -25,4 +25,6 @@ function client.setup_interface(ifname, args)
 	end
 end
 
+function client.runOnDevice(linuxDev, args) end
+
 return client

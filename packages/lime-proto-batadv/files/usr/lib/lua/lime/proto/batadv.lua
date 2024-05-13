@@ -99,5 +99,42 @@ function batadv.setup_interface(ifname, args)
 	uci:save("network")
 end
 
+function batadv.runOnDevice(linuxDev, args)
+	args = args or {}
+	local vlanId = args[2] or "%N1"
+	local vlanProto = args[3] or "8021ad"
+
+	utils.log("lime.proto.batadv.runOnDevice(%s, ...)", linuxDev)
+
+
+	local mtu = 1532
+
+	if not tonumber(vlanId) then
+		vlanId = 29 + (utils.applyNetTemplate10(vlanId) - 13) % 256
+	end
+
+	local devName = network.createVlan(linuxDev, vlanId, vlanProto)
+	local ifName = network.limeIfNamePrefix..linuxDev .. "_batadv"
+
+	local ifaceConf = {
+		name   = ifName,
+		proto  = "batadv_hardif",
+		auto   = "1",
+		device = devName,
+		master = "bat0"
+	}
+
+	local libubus = require("ubus");
+	local ubus = libubus.connect()
+	ubus:call('network', 'add_dynamic', ifaceConf)
+	ubus:call('network.interface.'..ifName, 'up', {})
+
+
+--! TODO: as of today ubus silently fails to properly setting up a linux network
+--! device for batman ADV usage dinamycally work around it by using
+--! shell commands instead
+	network.createStatic(devName)
+	utils.unsafe_shell("batctl if add "..devName)
+end
 
 return batadv
