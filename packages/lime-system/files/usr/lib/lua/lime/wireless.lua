@@ -9,7 +9,10 @@ local iwinfo = require("iwinfo")
 wireless = {}
 
 wireless.limeIfNamePrefix="lm_"
-wireless.wifiModeSeparator="-"
+
+function wireless.WIFI_MODE_SEPARATOR()
+	return "-"
+end
 
 function wireless.get_phy_mac(phy)
 	local path = "/sys/class/ieee80211/"..phy.."/macaddress"
@@ -97,13 +100,17 @@ function wireless.get_radio_ifaces(radio)
 	return ifaces
 end
 
+function wireless.calcIfname(radioName, mode, nameSuffix)
+	local phyIndex = tostring(utils.indexFromName(radioName))
+	return "wlan"..phyIndex..wireless.WIFI_MODE_SEPARATOR()..mode..nameSuffix
+end
+
 function wireless.createBaseWirelessIface(radio, mode, nameSuffix, extras)
 --! checks("table", "string", "?string", "?table")
 --! checks(...) come from http://lua-users.org/wiki/LuaTypeChecking -> https://github.com/fab13n/checks
 	nameSuffix = nameSuffix or ""
 	local radioName = radio[".name"]
-	local phyIndex = tostring(utils.indexFromName(radioName))
-	local ifname = "wlan"..phyIndex..wireless.wifiModeSeparator..mode..nameSuffix
+	local ifname = wireless.calcIfname(radioName, mode, nameSuffix)
 	--! sanitize generated ifname for constructing uci section name
 	--! because only alphanumeric and underscores are allowed
 	local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname:gsub("[^%w_]", "_").."_"..radioName
