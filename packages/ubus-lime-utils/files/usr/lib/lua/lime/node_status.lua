@@ -57,8 +57,20 @@ function node_status.get_station_stats(station)
     local signal, chain = string.match(signal_str, "(%-?%d+)%s+%[(.-)%]")
     station.signal = tonumber(signal)
     station.chains = {}
-    for num in string.gmatch(chain, "%-?%d+") do
-        table.insert(station.chains, tonumber(num))
+    --[[
+    succesive calls to this function will lead to an error 
+    /usr/bin/lua: /usr/lib/lua/lime/node_status.lua:60: bad argument #1 to 'gmatch' (string expected, got nil)
+stack traceback:
+	[C]: in function 'gmatch'
+	/usr/lib/lua/lime/node_status.lua:60: in function 'get_station_stats'
+	...tate/publishers/shared-state-publish_wifi_links_info:32: in function 'get_wifi_links_info'
+	...tate/publishers/shared-state-publish_wifi_links_info:45: in main chunk
+	[C]: ?
+    ]]--
+    if chain ~= nil then
+        for num in string.gmatch(chain, "%-?%d+") do
+            table.insert(station.chains, tonumber(num))
+        end
     end
     return station
 end
