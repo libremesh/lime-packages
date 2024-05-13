@@ -21,11 +21,11 @@ local function write_if_diff(data_type, input)
 	if input[utils.hostname()] then
 		if not(utils.deepcompare(input[utils.hostname()],acutal or {})) then
 			utils.write_file(path,JSON.stringify(input[utils.hostname()]))
-			utils.unsafe_shell("logger -t shared-sate-ref-state "..data_type.." state changed")
+			utils.unsafe_shell("logger -t shared-state-ref-state "..data_type.." state changed")
 			return true
 		end
 	end
-	utils.unsafe_shell("logger -t shared-sate-ref-state "..data_type.."  state did not change")
+	utils.unsafe_shell("logger -t shared-state-ref-state "..data_type.."  state did not change")
 	return false
 end
 write_if_diff(data_type,input)

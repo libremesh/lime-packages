@@ -12,7 +12,7 @@ define Package/$(PKG_NAME)
 	TITLE:=Babel links module for shared-state
 	MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils \
-		+libubus-lua +random-numgen +shared-state-ref_sate_commons shared-state-async   
+		+libubus-lua +random-numgen +shared-state-ref_state_commons shared-state-async   
 	PKGARCH:=all
 endef
 

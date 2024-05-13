@@ -12,7 +12,7 @@ define Package/$(PKG_NAME)
 	TITLE:=Node information module for shared-state
 	MAINTAINER:= Javier <jjorge@inti.gob.ar>
 	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils \
-		+lime-system +ubus-lime-location +shared-state-ref_sate_commons shared-state-async   
+		+lime-system +ubus-lime-location +shared-state-ref_state_commons shared-state-async   
 	PKGARCH:=all
 endef
 
