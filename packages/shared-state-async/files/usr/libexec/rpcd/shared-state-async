@@ -11,7 +11,7 @@ sinc_args=""
  
 case "$1" in 
     list) 
-        echo '{ "sync": { "data_type": "str", "peers_ip": "str" }, "get": { "data_type": "str" } }'
+        echo '{ "sync": { "data_type": "str", "peers_ip": "str" }, "get": { "data_type": "str" },  "publish": { "data_type": "str" }, "publish_all": { } }'
     ;; 
     call)
         # source jshn shell library
@@ -33,6 +33,14 @@ case "$1" in
                 shared-state-async sync $data_type ${peers_ip//,/ } > /dev/null 2>&1
                 echo {\"data\": {} , \"error\": $? } 
             ;; 
+            publish) 
+                /usr/share/shared-state/publishers/shared-state-publish_$data_type > /dev/null 2>&1
+                echo {\"data\": {} , \"error\": $? } 
+            ;;
+            publish_all)
+                shared-state-async-publish-all > /dev/null 2>&1
+                echo {\"data\": {} , \"error\": $? }
+            ;;
             *)
                  echo '{\"data\" {} ,\"error\" = "Method not found"}' 
             ;; 
