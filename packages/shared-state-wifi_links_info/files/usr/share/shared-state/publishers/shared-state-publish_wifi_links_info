@@ -38,7 +38,6 @@ function get_wifi_links_info()
 		signal=station_stats.signal,chains=station_stats.chains,iface=station.iface,
 		rx_rate=station_stats.rx_rate,tx_rate=station_stats.tx_rate,freq=freq, channel = chanenel }
 	end
-	utils.printJson(links)
 	return links
 end
 

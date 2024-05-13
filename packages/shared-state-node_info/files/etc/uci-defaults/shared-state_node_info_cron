@@ -11,3 +11,10 @@ uci set shared-state.node_info.scope='community'
 uci set shared-state.node_info.ttl='2400'
 uci set shared-state.node_info.update_interval='33'
 uci commit shared-state
+
+## Refference state data type
+uci set shared-state.node_info_ref=dataType
+uci set shared-state.node_info_ref.name='node_info_ref'
+uci set shared-state.node_info_ref.scope='community'
+uci set shared-state.node_info_ref.ttl='2400'
+uci set shared-state.node_info_ref.update_interval='50'
