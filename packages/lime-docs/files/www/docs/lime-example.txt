@@ -224,9 +224,9 @@ config net wirelessclientbackbone
 #	list protocols 'wan'				# Some of these protocols require the relative package "lime-proto-..."
 #	list protocols 'static'				# Set up a static IP (both IPv4 and IPv6 supported)
 #	option static_ipv4 '192.168.1.2/24'
-#	option static_gateway_ipv4 '192.168.1.1'
+#	option static_gateway_ipv4 '192.168.1.1'	# in the static protocol, setting a gateway is optional
 #	option static_ipv6 '2a00:1508:0a00::1234/64'
-#	option static_gateway_ipv6 'fe80::1'
+#	option static_gateway_ipv6 'fe80::1'		# in the static protocol, setting a gateway is optional
 
 ## (optional) configure lan1 for connection to other nodes, not for users connection:
 config net
