@@ -656,7 +656,7 @@ function mesh_upgrade.verify_network_consistency (network_state)
     --there is only one main node
     if main_node ~= "" then
         if not mesh_upgrade.started() and main_node ~= utils.hostname() then
-            utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "' ..utils.hostname()'  become' ..main_node..' _bot_node "')
+            utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "' ..utils.hostname()..'  become' ..main_node..' _bot_node "')
             mesh_upgrade.become_bot_node(network_state[main_node])
         else
             utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "already started a transaction "')
