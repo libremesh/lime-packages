@@ -14,6 +14,6 @@ local ref_file_folder = "/etc/shared-state/ref_state/"
 --get data_type from file name
 for data_type in fs.dir(ref_file_folder) do
 	local path = ref_file_folder .. data_type
-	local result = { [utils.hostname()] = utils.read_file(path .. data_type) }
+	local result = { [utils.hostname()] =  JSON.parse(utils.read_file(path)) }
 	io.popen("shared-state-async insert " .. data_type, "w"):write(JSON.stringify(result))
 end
