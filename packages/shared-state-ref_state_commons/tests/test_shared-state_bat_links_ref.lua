@@ -98,7 +98,7 @@ describe('bat links ref state tests', function()
         assert.is_true (write_if_diff("mydata",input))
         assert.is.same('[{"dst_mac":"02:ab:46:dd:69:1c","last_seen_msecs":20,"tq":255,"iface":"wlan1-mesh_29","src_mac":"02:ab:46:1f:73:aa"},{"dst_mac":"02:ab:46:43:0b:0c","last_seen_msecs":1300,"tq":251,"iface":"wlan1-mesh_29","src_mac":"02:ab:46:1f:73:aa"},{"dst_mac":"02:cc:4e:43:0b:0c","last_seen_msecs":900,"tq":242,"iface":"wlan2-mesh_29","src_mac":"02:cc:4e:1f:73:aa"},{"dst_mac":"02:58:47:dd:69:1c","last_seen_msecs":1460,"tq":255,"iface":"wlan0-mesh_29","src_mac":"02:58:47:1f:73:aa"},{"dst_mac":"02:58:47:1f:73:f6","last_seen_msecs":520,"tq":255,"iface":"wlan0-mesh_29","src_mac":"02:58:47:1f:73:aa"}]', utils.read_file(testfile))
         assert.is_false (write_if_diff("mydata",input))
-        assert.is_true (write_if_diff("mydata",wifi_links_info_sample  ))
+        assert.is_true (write_if_diff("mydata",JSON.parse(wifi_links_info_sample  )))
 
      end)
 
