@@ -56,7 +56,7 @@ Start an ImageBuilder of your choice, for example ath79-generic if your device i
 
 ```shell
 mkdir ./images/
-docker run -it -v $(pwd)/images:/images/ ghcr.io/openwrt/imagebuilder:ath79-generic-v22.03.5
+docker run -it -v $(pwd)/images:/images/ ghcr.io/openwrt/imagebuilder:ath79-generic-v23.05.3
 ```
 
 If your device is not part of ath79-generic profiles, you can replace it with another &lt;target&gt;-&lt;subtarget&gt; combination. For knowing which target and subtarget is best suited for your router, check out the page about it in the [OpenWrt's Table of Hardware][OpenWrt-ToH].
