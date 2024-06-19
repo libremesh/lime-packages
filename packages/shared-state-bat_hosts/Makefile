@@ -20,7 +20,7 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 	URL:=http://libremesh.org
 	DEPENDS:=+libubus-lua +lime-system +lua +luci-lib-jsonc +luci-lib-nixio \
-	         shared-state-async
+	         +shared-state-async
 	PKGARCH:=all
 endef
 
