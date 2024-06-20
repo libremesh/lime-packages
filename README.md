@@ -65,6 +65,7 @@ Within the container, add the `lime-packages` feeds:
 
 ```shell
 echo "src/gz libremesh https://feed.libremesh.org/master" >> repositories.conf
+echo "src/gz libremesh_profiles https://feed.libremesh.org/profiles" >> repositories.conf
 echo "src/gz libremesh_arch_packages https://feed.libremesh.org/arch_packages/master/mips_24kc" >> repositories.conf
 echo  "untrusted comment: signed by libremesh.org key a71b3c8285abd28b" > keys/a71b3c8285abd28b
 echo "RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8" >> keys/a71b3c8285abd28b
@@ -95,6 +96,7 @@ Go to <https://firmware-selector.openwrt.org/>. Find your device. Click on the f
 
 ```shell
 echo "src/gz libremesh https://feed.libremesh.org/master" >> repositories.conf
+echo "src/gz libremesh_profiles https://feed.libremesh.org/profiles" >> repositories.conf
 echo "src/gz libremesh_arch_packages https://feed.libremesh.org/arch_packages/master/mips_24kc" >> repositories.conf
 echo  "untrusted comment: signed by libremesh.org key a71b3c8285abd28b" > keys/a71b3c8285abd28b
 echo "RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8" >> keys/a71b3c8285abd28b
