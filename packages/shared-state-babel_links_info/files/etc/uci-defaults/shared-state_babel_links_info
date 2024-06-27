@@ -11,7 +11,7 @@ uci set shared-state.babel_links_info.ttl='2400'
 uci set shared-state.babel_links_info.update_interval='30'
 uci commit shared-state
 
-## Refference state data type
+## Reference state data type
 uci set shared-state.babel_links_info_ref=dataType
 uci set shared-state.babel_links_info_ref.name='babel_links_info_ref'
 uci set shared-state.babel_links_info_ref.scope='community'
