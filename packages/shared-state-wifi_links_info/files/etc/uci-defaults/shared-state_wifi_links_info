@@ -12,7 +12,7 @@ uci set shared-state.wifi_links_info.ttl='2400'
 uci set shared-state.wifi_links_info.update_interval='33'
 uci commit shared-state
 
-## Refference state data type
+## Reference state data type
 uci set shared-state.wifi_links_info_ref=dataType
 uci set shared-state.wifi_links_info_ref.name='wifi_links_info_ref'
 uci set shared-state.wifi_links_info_ref.scope='community'
