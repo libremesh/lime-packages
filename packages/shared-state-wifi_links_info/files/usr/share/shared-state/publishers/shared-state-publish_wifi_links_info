@@ -21,7 +21,7 @@ local JSON = require("luci.jsonc")
 local node_status = require ("lime.node_status")
 local network = require ("lime.network")
 local iwinfo = require "iwinfo"
-
+local location = require 'lime.location'
 
 function get_wifi_links_info()
 	local stations = node_status.get_stations()
@@ -34,13 +34,32 @@ function get_wifi_links_info()
 		local chanenel = iwinfo.nl80211.channel(station.iface)
 		local key_table = {string.lower(string.gsub(src_macaddr,":","")),string.lower(string.gsub(station.station_mac,":",""))}
 		table.sort(key_table)
+		local src_loc = location.get_node() or location.get_community() or {lat="FIXME", long="FIXME"}
 		links[table.concat(key_table)]= {src_mac=src_macaddr ,dst_mac=string.lower(station.station_mac),
 		signal=station_stats.signal,chains=station_stats.chains,iface=station.iface,
-		rx_rate=station_stats.rx_rate,tx_rate=station_stats.tx_rate,freq=freq, channel = chanenel }
+		rx_rate=station_stats.rx_rate,tx_rate=station_stats.tx_rate,freq=freq, channel = chanenel,src_loc = src_loc }
 	end
 	return links
 end
 
+function add_dst_loc(links_info,shared_state_sample)
+    for link, l_data in pairs(links_info) do 
+        for node, data in pairs(shared_state_sample) do 
+            if node ~= hostname then
+                local link_data= data[link]
+                if link_data ~= nil then
+                    if link_data.src_mac == l_data.dst_mac then
+                        l_data.dst_loc = link_data.src_loc
+                    end
+                end
+            end            
+        end
+    end 
+end
+
 local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
+local links_info = get_wifi_links_info()
+local shared_state_sample = JSON.parse(io.popen("shared-state-async insert wifi_links_info", "r"):read('*all'))
+add_dst_loc(links_info,shared_state_sample)
 local result = { [hostname] = get_wifi_links_info() }
 io.popen("shared-state-async insert wifi_links_info", "w"):write(JSON.stringify(result))
