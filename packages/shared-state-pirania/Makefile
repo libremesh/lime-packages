@@ -19,7 +19,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LibreMesh
 	MAINTAINER:=Asociación Civil AlterMundi <info@altermundi.net>
 	URL:=http://libremesh.org
-	DEPENDS:=+lua +luci-lib-jsonc +random-numgen shared-state
+	DEPENDS:=+lua +luci-lib-jsonc shared-state
 	PKGARCH:=all
 endef
 
