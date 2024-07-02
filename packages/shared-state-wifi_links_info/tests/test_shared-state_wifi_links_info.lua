@@ -40,7 +40,7 @@ it('a simple test to get links info and assert requiered fields are present', fu
     assert.is.equal("c0:00:00:00:00:00", links_info["c00000000000c04a00be7b09"].src_mac)
 end)
 
-it('a simple test to get links info', function()
+it('a simple test to get location info', function()
     stub(utils, "unsafe_shell", function (cmd) 
         if string.match(cmd, "wlan0") then 
             return iwinfo.mocks.iw_station_get_result_wlan0
@@ -64,15 +64,12 @@ it('a simple test to get links info', function()
     assert.is.equal(nil, links_info["c00000010101c04a00be7b0a"].dst_loc)
     add_dst_loc(links_info,shared_state_sample)
     assert.is.equal("FYI", links_info["c00000010101c04a00be7b0a"].dst_loc.lat)
-    utils.printJson(links_info)
-
     local links_info = {}
 
     links_info = get_wifi_links_info()
     local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
     --asume shared state has just initialized 
     local shared_state_sample = JSON.parse("{}")  
-    utils.printJson()
     assert.is.equal(nil, links_info["c00000010101c04a00be7b0a"].dst_loc)
     add_dst_loc(links_info,shared_state_sample)
     assert.is.equal(nil, links_info["c00000010101c04a00be7b0a"].dst_loc)
