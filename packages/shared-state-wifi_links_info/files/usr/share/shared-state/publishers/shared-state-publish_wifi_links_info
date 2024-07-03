@@ -16,7 +16,6 @@
 -- !
 -- ! You should have received a copy of the GNU Affero General Public License
 -- ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 local JSON = require("luci.jsonc")
 local node_status = require("lime.node_status")
 local network = require("lime.network")
@@ -35,8 +34,6 @@ function get_wifi_links_info()
         local key_table = {string.lower(string.gsub(src_macaddr, ":", "")),
                            string.lower(string.gsub(station.station_mac, ":", ""))}
         table.sort(key_table)
-        local src_loc = location.get_node() or location.get_community() or {
-            lat = "FIXME",long = "FIXME" }
         links[table.concat(key_table)] = {
             src_mac = src_macaddr,
             dst_mac = string.lower(station.station_mac),
@@ -46,21 +43,28 @@ function get_wifi_links_info()
             rx_rate = station_stats.rx_rate,
             tx_rate = station_stats.tx_rate,
             freq = freq,
-            channel = chanenel,
-            src_loc = src_loc
+            channel = chanenel
         }
     end
-    return links
+    return {
+        links = links,
+        src_loc = location.get_node() or location.get_community() or {
+            lat = "FIXME",
+            long = "FIXME"
+        }
+    }
 end
 
 function add_dst_loc(links_info, shared_state_sample, hostname)
-    for link, l_data in pairs(links_info) do
-        for node, data in pairs(shared_state_sample) do
-            if node ~= hostname then
-                local link_data = data[link]
-                if link_data ~= nil then
-                    if link_data.src_mac == l_data.dst_mac then
-                        l_data.dst_loc = link_data.src_loc
+    if shared_state_sample ~= nil then
+        for link, l_data in pairs(links_info.links) do
+            for node, data in pairs(shared_state_sample) do
+                if node ~= hostname and data.links ~= nil then
+                    local link_data = data.links[link]
+                    if link_data ~= nil then
+                        if link_data.src_mac == l_data.dst_mac then
+                            l_data.dst_loc = data.src_loc
+                        end
                     end
                 end
             end
@@ -72,5 +76,7 @@ local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
 local links_info = get_wifi_links_info()
 local shared_state_sample = JSON.parse(io.popen("shared-state-async get wifi_links_info", "r"):read('*all'))
 add_dst_loc(links_info, shared_state_sample, hostname)
-local result = {[hostname] = links_info}
+local result = {
+    [hostname] = links_info
+}
 io.popen("shared-state-async insert wifi_links_info", "w"):write(JSON.stringify(result))
