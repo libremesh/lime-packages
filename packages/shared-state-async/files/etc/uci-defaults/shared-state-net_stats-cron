@@ -15,5 +15,5 @@ uci set shared-state.${mSc}.update_interval='120'
 uci commit shared-state
 
 unique_append \
-	'*/3 * * * * ((sleep $(($RANDOM % 120)); shared-state-async insert net-stats < /tmp/shared-state/network_statistics.json &> /dev/null)&)' \
+	'*/3 * * * * ((sleep $((RANDOM % 120)); shared-state-async insert net-stats < /tmp/shared-state/network_statistics.json &> /dev/null)&)' \
 	/etc/crontabs/root
