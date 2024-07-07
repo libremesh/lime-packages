@@ -3,47 +3,53 @@
 :revdate: May 08, 2023
 :lang: en
 
-*TL;DR* Fiddling with hostad code I have managed to successfully establish WiFi
-communication between multiple AP, each of them send and receive traffic from
-the other as if they where associated stations, while they are all configured in
-AP mode. This P2P like behavior have multiple advantages compared to the usual
+*TL;DR* Fiddling with `hostapd` code I have managed to successfully establish WiFi
+communication between multiple APs. Each of them sends and receives traffic from
+the other as if they were associated _stations_, even though they are all configured in
+AP mode. This P2P-like behavior has multiple advantages compared to the usual
 setup where one of them is configured as AP and all the others as stations, and
 also compared to Ad-Hoc, WDS, 802.11s, Multi-AP and EasyMesh.
-I have named this operanting mode APuP (Access Point Micro Peering).
+I have named this operating mode APuP (Access Point Micro Peering).
 
 
 == A bit of context
 
-In community networks we need to maximize the possible paths of communitacions
+In community networks we need to maximize the possible paths of communications
 between nodes. In a classical AP-STA approach it is not possible to guarantee
-communication between all possible nodes in all scenarios. As an example if we
-have 4 nodes A, B, C and D where A and B sees each other, B and C sees each
-other C and D sees each other. With AP-STA mode each radio must operate either
-as AP or as STA, each STA must connect to only one AP at once, STA need an AP to
-relay communication between thems. In each combination configuring each node
-either as AP or STA you will see that some of them will end up not being able to
-connect. To overcome this issue in the past adhoc mode was used which solved the
-basic connectivity issue, still it\'s implementation wasn\'t high quality and
-it\'s design had important flaws, this resulted it in becoming
-unmaintained after a few years. Luckly while adhoc was growing outdated 802.11s
-emerged, it had a few improvements, still some design choice such as complex
-ways to bridge other networks and routing between nodes fossilized into the
-standard, increased WiFi drivers complexity became problematic and lastly
-determined it\'s silent demisal. New radios drivers and firmwares doesn\'t
-support 802.11s well. New WiFi standards doesn\'t bring much improvements to
-802.11s mesh mode, while they do improve a lot AP-STA modes. Still our need of
-nodes being able to comunicate to anyone in range is strong. In this context,
-looking for a modern solution I started asking myself, is there an hard to
-resolve problem that impede AP nodes in sight to talk each other?
-Talking about my thinking with Felix Fietkau (nbd), we agreed that it might be
-possible for AP nodes to commuicate directly each other, and because AP mode is
-what is getting more support and improvements, if we can we just use that on
-all nodes with some slight modification so all AP in sight can talk each other,
-we could solve this problem that afflict us since WiFi creation.
+communication between all possible nodes in all scenarios. As an example, we might
+have 4 nodes A, B, C and D where A and B see each other, B and C see each
+other, and C and D see each other. With AP-STA mode each radio must operate either
+as AP or as STA, each STA must connect to only one AP at a time, and a STA needs an AP to
+relay communication between them. In each combination, restricting each node
+to be an AP or STA you will see that some of them will end up not being able to
+connect. 
+
+To overcome this issue in the past, adhoc mode was used which solved the
+basic connectivity issue. However, its implementation wasn\'t high quality and
+its design had important flaws, and it became
+unmaintained after a few years. Luckily while adhoc was growing outdated, 802.11s
+emerged with a few improvements. Its design choices such as complex
+ways to bridge other networks and routing between nodes were fossilized into the
+standard. The increased WiFi driver complexity became problematic and ultimately
+determined its silent demise. New radios drivers and firmware don\'t
+support 802.11s well. Nor do the WiFi standards bring much improvement to
+802.11s mesh mode, while they do improve a lot AP-STA modes. Our need for
+nodes to communicate to anyone in range remains strong.
+
+With this as background, I started asking myself: is there some hard-to-resolve
+problem that impedes AP nodes in sight from talking each other?
+Or is there a simple solution?
+
+Talking with Felix Fietkau (nbd), we agreed that it might be
+possible for AP nodes to communicate directly with each other.
+This would be additionally important because AP mode continues to receive
+more support and improvements. If there were some slight modification
+that allowed APs to talk to other "visible" APs,
+we could solve a problem that afflicted us since WiFi creation.
 Felix suggested that this should be possible and with a bit of luck should not
-even need kernel and driver modifications, modifing `hostapd` in a way that each
-AP adds the other in sight to its station list could be enough and it is indeed
-the staring point to start experimenting and see what happens.
+even need kernel and driver modifications: modifying `hostapd` in a way that each
+AP adds other visible APs to its station list could be enough. This was indeed
+the starting point for my experiments.
 
 
 == Deep diving into hostapd
@@ -161,22 +167,22 @@ checks about _overlapping legacy BSS condition_.
 
 == OpenWrt hostapd packaging
 
-`hostapd` openwrt package is shipped toghether with OpenWrt sources, and it is
+`hostapd` openwrt package is shipped together with OpenWrt sources, and it is
 found at +package/network/services/hostapd/+. In this directory we find
-+README.md+ file which show a few interesting methods of the hostapd ubus
-interface and +Makefile+ where all the `hostapd` OpenWrt variants like `wpad`
-are defined. The +Makefile+ is a bit complex because the variants are a lot
+`README.md` file which show a few interesting methods of the hostapd ubus
+interface and `Makefile` where all the `hostapd` OpenWrt variants like `wpad`
+are defined. The `Makefile` is complex because there are many variants
 depending on which subset of `hostapd` features are enabled, on what SSL/TLS
-library is used etc. it is structured to avoid duplicating code and
-common options all around that effectlively reduces the size of the `Makefile`
+library is used, etc. The `Makefile` is structured to avoid duplicating code and
+common options all around that effectively reduces the size of the `Makefile`
 and probably ease the work for the maintainer.
 
-Depending on package variant OpenWrt `hostapd` package +Makefile+ sets multiple
-configs with statments like `DRIVER_MAKEOPTS += CONFIG_AP=y` or
-`DRIVER_MAKEOPTS += CONFIG_TLS=openssl CONFIG_SAE=y` those configurations
-doesn't seems to impact directly in the hostapd C code `#ifdef` but are dealt
-within `hostapd` and `wpa_supplicant` sources +Makefile+ which depending on the
-passed configs set the proper `CFLAGS`, C source files and output objects files.
+Depending on package variant OpenWrt `hostapd` package `Makefile` sets multiple
+configs with statements like `DRIVER_MAKEOPTS += CONFIG_AP=y` or
+`DRIVER_MAKEOPTS += CONFIG_TLS=openssl CONFIG_SAE=y`. Those configurations
+don't seem to impact directly in the hostapd C code `#ifdef` but are handled
+within `hostapd` and `wpa_supplicant` sources `Makefile` which depend on the
+passed configs to set the proper `CFLAGS`, C source files and output objects files.
 
 To use our customized `hostapd` source in OpenWrt we use source tree override
 https://forum.archive.openwrt.org/viewtopic.php?id=46916[as explained by Jow]
@@ -199,23 +205,23 @@ To clean and re-build only hostapd package use
 == hostapd modifications
 
 To enable WDS AP - AP I have modified `handle_beacon(...)` function defined in
-+src/ap/ieee802_11.c+, so when a beacon from another AP is received beside the
-usual processing, it checks if the advertised SSID is the same as one advertised
-by current istance, if so, information from that beacon is extracted and
-adapted to look like station information, and a station entry is populated and
-saved into hostapd station list. This modifications should be put into their own
-function later.
++src/ap/ieee802_11.c+, so when a beacon from another AP is received, `hostapd` also
+checks if the advertised SSID is the same as one advertised
+by current instance. If so, information from that beacon is extracted and
+adapted to look like station information, and a station entry is populated 
+into the hostapd station list. _These modifications should be put into their own
+function later._
 
-To avoid all specific interface created for each AP-AP connection being bridged
-automatically by `hostapd` and potentially creating a loop, I have temporarly
-disabled bridging in `hostapd_set_wds_sta` defined in +src/ap/ap_drv_ops.c+,
-this should become a runtime configuration later.
+To avoid loops from all specific interfaces created for each AP-AP connection
+being bridged automatically by `hostapd`, I have temporarily
+disabled bridging in `hostapd_set_wds_sta` defined in +src/ap/ap_drv_ops.c+.
+_This should become a runtime configuration later._
 
 I have also added a compile time config `CONFIG_APUP` in +hostapd/Makefile+ so
-this modifications can be easly enabled at compile time.
+these modifications can be easly enabled at compile time.
 
-I have tested the modifications and after a bunch of round of trial and error
-works as expected, with good performances, you can see the +test.sh+ script
+I have tested the modifications and after a round of trial and error, it
+works as expected with good performance. You can see the `test.sh` script
 which configures four vanilla OpenWrt routers into a working testbed to see how
 to use this.
 
@@ -462,13 +468,13 @@ http://www.bradgoodman.com/bittool/
 
 == WDS Station interface bridging
 
-hostapd add WDS STA interfaces to a bridge either the same of plain station
-passed with the `bridge` option or to another one passed with the `wds_bridge`,
-in our use case this is not ideal as we might want the routing propocols access
-directly to the station interface. Moreover in a mesh setup multiple links could
-easily cause a bridge loop, that linux simple bridge will be not able to handle
+`hostapd` adds WDS STA interfaces to a bridge either the same of plain station
+passed with the `bridge` option or to another one passed with the `wds_bridge`.
+In our use case this is not ideal as we might want to give routing protocols access
+directly to the station interface. Moreover in a mesh setup, multiple links could
+easily cause a bridge loop: linux simple bridge will not avoid this
 as is. To disable automatic bridging set `wds_bridge` to an empty string in the
-hostapd config file.
+`hostapd` config file.
 
 
 == Interesting conversations
@@ -650,7 +656,7 @@ hostapd config file.
 [11:58] <G10h4ck> Great! thanks f00b4r0
 --------------------------------------------------------------------------------
 
-== Suggested readings
+== Suggested reading
 
-https://wireless.wiki.kernel.org/en/users/Documentation/hostapd
-https://wireless.wiki.kernel.org/en/developers/documentation/glossary
+* https://wireless.wiki.kernel.org/en/users/Documentation/hostapd
+* https://wireless.wiki.kernel.org/en/developers/documentation/glossary
