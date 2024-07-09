@@ -11,6 +11,7 @@ clean_tables () {
 }
 
 clean_sets () {
+	echo "Cleaning ipset lists"
 	ipset flush pirania-auth-macs
 	ipset flush pirania-allowlist-ipv4
 	ipset flush pirania-allowlist-ipv6
@@ -18,7 +19,7 @@ clean_sets () {
 
 set_nftables () {
 	echo "Apply captive-portal rules"
-
+	# Detect wheter add or insert rules
 	append_nft_rules=$(uci get pirania.base_config.append_nft_rules 2> /dev/null)
 	if [ "$append_nft_rules" = "1" ] ; then
 		op="add rule"
@@ -26,6 +27,7 @@ set_nftables () {
 		op="insert rule"
 	fi
 
+	# Create default tables and chains
 	nft add table inet pirania
 	nft add chain inet pirania prerouting { type nat hook prerouting priority 0 \; }
 	nft add chain inet pirania input { type filter hook input priority 0 \; }
