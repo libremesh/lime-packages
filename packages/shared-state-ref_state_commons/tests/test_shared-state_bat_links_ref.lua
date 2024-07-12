@@ -112,5 +112,4 @@ describe('bat links ref state tests', function()
         test_utils.teardown_test_uci(uci)
         test_utils.teardown_test_dir()
     end)
-
 end)
