@@ -2,6 +2,7 @@ local utils = require "lime.utils"
 local node_status = require 'lime.node_status'
 local iwinfo = require('iwinfo')
 local JSON = require("luci.jsonc")
+local shared_state_links_info = require ("shared_state_links_info")
 
 
 local shared_state_output_text = [[
@@ -29,7 +30,7 @@ it('a simple test to get links info and assert requiered fields are present', fu
     end)
     local links_info = {}
 
-    links_info = get_wifi_links_info()
+    links_info = shared_state_links_info.add_own_location_to_links(get_wifi_links_info())
     assert.is.equal(26000, links_info.links["c00000000000c04a00be7b09"].tx_rate)
     assert.is.equal("c0:4a:00:be:7b:09", links_info.links["c00000000000c04a00be7b09"].dst_mac)
     assert.is.same({-17,-18}, links_info.links["c00000000000c04a00be7b09"].chains)
@@ -39,8 +40,6 @@ it('a simple test to get links info and assert requiered fields are present', fu
     assert.is.equal(2400, links_info.links["c00000000000c04a00be7b09"].freq)
     assert.is.equal("c0:00:00:00:00:00", links_info.links["c00000000000c04a00be7b09"].src_mac)
 end)
-
-
 
 it('a simple test to get location info', function()
     stub(utils, "unsafe_shell", function (cmd) 
@@ -58,22 +57,20 @@ it('a simple test to get location info', function()
         end
         return iwinfo.mocks.wlan1_mesh_mac
     end)
-    local links_info = {}
+    local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
 
-    links_info = get_wifi_links_info()
+    local links_info = shared_state_links_info.add_own_location_to_links(get_wifi_links_info())
     local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
     local shared_state_sample_s = JSON.parse(shared_state_output_text)
+    utils.printJson(links_info.links["c00000010101c04a00be7b0a"].dst_loc)
     assert.is.equal(nil, links_info.links["c00000010101c04a00be7b0a"].dst_loc)
-    add_dst_loc(links_info,shared_state_sample_s,"sdfsdf")
+    shared_state_links_info.add_dst_loc(links_info,shared_state_sample_s,hostname)
     assert.is.equal("FYI", links_info.links["c00000010101c04a00be7b0a"].dst_loc.lat)
-    local links_info = {}
-
-    links_info = get_wifi_links_info()
-    local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
+    local links_info = shared_state_links_info.add_own_location_to_links(get_wifi_links_info())
     --asume shared state has just initialized 
     local shared_state_sample = JSON.parse("{}")  
     assert.is.equal(nil, links_info.links["c00000010101c04a00be7b0a"].dst_loc)
-    add_dst_loc(links_info,shared_state_sample)
+    shared_state_links_info.add_dst_loc(links_info,shared_state_sample,hostname)
     assert.is.equal(nil, links_info.links["c00000010101c04a00be7b0a"].dst_loc)
     assert.is.equal("c0:00:00:00:00:00", links_info.links["c00000000000c04a00be7b09"].src_mac)
 

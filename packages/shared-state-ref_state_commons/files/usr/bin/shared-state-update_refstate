@@ -16,7 +16,7 @@ local input = JSON.parse(io.stdin:read("*all"))
 local data_type = arg[0]:match(".*/([^/]+)/[^/]+$")
 
 local function write_if_diff(data_type, input)
-	local path = ref_file_folder .. data_type
+	local path = ref_file_folder .. data_type..".json"
 	local acutal = JSON.parse(utils.read_file(path))
 	if input[utils.hostname()] then
 		if not(utils.deepcompare(input[utils.hostname()],acutal or {})) then

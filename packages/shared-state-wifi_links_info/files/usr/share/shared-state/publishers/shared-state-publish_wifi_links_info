@@ -1,26 +1,18 @@
 #!/usr/bin/lua
 
--- ! LibreMesh
--- ! Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
--- ! Copyright (C) 2024  Javier Jorge <jjorge@inti.gob.ar>
--- !
--- ! This program is free software: you can redistribute it and/or modify
--- ! it under the terms of the GNU Affero General Public License as
--- ! published by the Free Software Foundation, either version 3 of the
--- ! License, or (at your option) any later version.
--- !
--- ! This program is distributed in the hope that it will be useful,
--- ! but WITHOUT ANY WARRANTY; without even the implied warranty of
--- ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
--- ! GNU Affero General Public License for more details.
--- !
--- ! You should have received a copy of the GNU Affero General Public License
--- ! along with this program.  If not, see <http://www.gnu.org/licenses/>.
-local JSON = require("luci.jsonc")
+--! LibreMesh
+--! Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
+--! Copyright (c) 2023  Javier Jorge <jjorge@inti.gob.ar>
+--! Copyright (c) 2023  Instituto Nacional de Tecnología Industrial
+--! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--! SPDX-License-Identifier: AGPL-3.0-only
+
 local node_status = require("lime.node_status")
 local network = require("lime.network")
-local iwinfo = require "iwinfo"
-local location = require 'lime.location'
+local iwinfo = require ("iwinfo")
+local shared_state_links_info = require ("shared_state_links_info")
+
+local data_type_name = "wifi_links_info"
 
 function get_wifi_links_info()
     local stations = node_status.get_stations()
@@ -43,40 +35,11 @@ function get_wifi_links_info()
             rx_rate = station_stats.rx_rate,
             tx_rate = station_stats.tx_rate,
             freq = freq,
-            channel = chanenel
+            channel = chanenel,
+            --dst_loc = {lat="FIXME",long="FIXME"} --if no location is found later no dst location will be informed
         }
     end
-    return {
-        links = links,
-        src_loc = location.get_node() or location.get_community() or {
-            lat = "FIXME",
-            long = "FIXME"
-        }
-    }
+    return links
 end
 
-function add_dst_loc(links_info, shared_state_sample, hostname)
-    if shared_state_sample ~= nil then
-        for link, l_data in pairs(links_info.links) do
-            for node, data in pairs(shared_state_sample) do
-                if node ~= hostname and data.links ~= nil then
-                    local link_data = data.links[link]
-                    if link_data ~= nil then
-                        if link_data.src_mac == l_data.dst_mac then
-                            l_data.dst_loc = data.src_loc
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
-
-local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
-local links_info = get_wifi_links_info()
-local shared_state_sample = JSON.parse(io.popen("shared-state-async get wifi_links_info", "r"):read('*all'))
-add_dst_loc(links_info, shared_state_sample, hostname)
-local result = {
-    [hostname] = links_info
-}
-io.popen("shared-state-async insert wifi_links_info", "w"):write(JSON.stringify(result))
+shared_state_links_info.insert_in_ss_with_location(get_wifi_links_info(),data_type_name)
