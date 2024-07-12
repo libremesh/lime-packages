@@ -2,7 +2,8 @@ build
 luacov.stats.out
 tools/ansible/files/generic-rootfs.tar.gz
 tools/ansible/files/ramfs.bzImage
-
+deploy-pirania.sh
+updatepkg.sh
 # Vim text editor swap files
 **/*~
 

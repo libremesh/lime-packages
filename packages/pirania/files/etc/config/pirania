@@ -16,7 +16,7 @@ config base_config 'base_config'
     list allowlist_ipv6 'fc00::/7'
     list allowlist_ipv6 'fe80::/64'
     list allowlist_ipv6 '2a00:1508:0a00::/40'
-    # list catch_interfaces 'br-lan'
+    list catch_interfaces 'br-lan'
     # list catch_interfaces 'anygw'
     list catch_bridged_interfaces 'wlan0-ap'
     
