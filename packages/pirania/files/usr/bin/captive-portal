@@ -3,11 +3,17 @@
 
 
 clean_tables () {
-	echo "Cleaning captive-portal rules"
-	nft flush chain inet pirania prerouting
-	nft flush chain inet pirania input
-	nft flush chain inet pirania forward
-	nft delete table inet pirania
+	echo "Cleaning captive-portal rules if there's any"
+	if nft list tables inet | grep -q "pirania"; then
+		nft delete table inet pirania
+	fi
+	nft create table inet pirania
+
+	#echo "Flushing rules"
+		#nft flush chain inet pirania prerouting
+		#nft flush chain inet pirania input
+		#nft flush chain inet pirania forward
+	
 }
 
 # Not needed anymore, since we are using nft set
@@ -18,7 +24,7 @@ clean_tables () {
 #	ipset flush pirania-allowlist-ipv6
 #}
 
-set_nftables () {
+set_nftables () { 
 	echo "Apply captive-portal rules"
 	# Detect wheter add or insert rules
 	append_nft_rules=$(uci get pirania.base_config.append_nft_rules 2> /dev/null)
@@ -34,14 +40,19 @@ set_nftables () {
 	nft add chain inet pirania input { type filter hook input priority 0 \; }
 	nft add chain inet pirania forward { type filter hook forward priority 0 \; }
 
-	# Redirect to pirania chain every packet from catch_interfaces
-	for interface in $(uci get pirania.base_config.catch_bridged_interfaces); do
-		nft $op inet pirania prerouting iifname $interface counter jump pirania
-	done
+	# Only accept packets from bridged interfaces - check this out after
+    #for interface in $(uci get pirania.base_config.catch_bridged_interfaces); do
+	#	 nft insert rule inet pirania prerouting iifname $interface accept
+    #done
 
 	# stop processing the chain for authorized macs and allowed ips (so they are accepted)
-	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ip saddr @pirania-allowlist-ipv4 ip6 saddr @pirania-allowlist-ipv6 ether saddr @pirania-auth-macs counter redirect to :59080
-	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ip saddr @pirania-allowlist-ipv4 ip6 saddr @pirania-allowlist-ipv6 ether saddr @pirania-auth-macs counter redirect to :59053
+	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ip saddr @pirania-allowlist-ipv4 redirect to :59080
+	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ip6 saddr @pirania-allowlist-ipv6 counter redirect to :59080
+	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ether saddr @pirania-auth-macs counter redirect to :59080
+
+	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ip saddr @pirania-allowlist-ipv4 counter redirect to :59053
+	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ip6 saddr @pirania-allowlist-ipv6 counter redirect to :59053
+	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ether saddr @pirania-auth-macs counter redirect to :59053
 
 	# And in there let's reject them with the best suited reject reason.
 	# Needed to change its value because of this error:
@@ -54,8 +65,8 @@ set_nftables () {
 
 update_ipsets () {
 
-  # Clear existing entries (optional)
-  nft set del inet pirania pirania-auth-macs
+  # Create tables and sets
+  echo "Updating captive-portal rules"
 
   # Add mac-adress set
   nft add set inet pirania pirania-auth-macs { type ether_addr\; }
@@ -65,9 +76,9 @@ update_ipsets () {
   done
 
   # Create ipv4 set on pirania table
-  nft add set inet pirania pirania-allow-ipv4 { type ipv4_addr \; flags interval \; comment \"allow ipv4 list\" \; }
+  nft add set inet pirania pirania-allowlist-ipv4 { type ipv4_addr \; flags interval \; comment \"allow ipv4 list\" \; }
   # Create ipv6 set on pirania table
-  nft add set inet pirania pirania-allow-ipv6 { type ipv6_addr \; flags interval \; comment \"allow ipv6 list\" \; }
+  nft add set inet pirania pirania-allowlist-ipv6 { type ipv6_addr \; flags interval \; comment \"allow ipv6 list\" \; }
 
   # Update pirania-allowlist sets for ipv4 and ipv6
   for ipvX in ipv4 ipv6 ; do
@@ -83,7 +94,7 @@ update_ipsets () {
 
     # Add allowed IP addresses/prefixes
     for item in $(uci get pirania.base_config.allowlist_$ipvX); do
-      nft add element inet pirania pirania-allowlist-${ipvX} $item
+      nft add element inet pirania pirania-allowlist-${ipvX} {$item}
     done
   done
 }
@@ -130,7 +141,6 @@ elif [ "$1" = "update" ] ; then
 	exit
 elif [ "$1" = "clean" ] || [ "$1" = "stop" ] ; then
 	clean_tables
-	clean_sets
 	exit
 elif [ "$enabled" = "1" ]; then
 	clean_tables
