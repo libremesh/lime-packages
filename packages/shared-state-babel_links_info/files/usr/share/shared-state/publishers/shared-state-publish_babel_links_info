@@ -7,9 +7,9 @@
 -- !
 -- ! SPDX-License-Identifier: AGPL-3.0-only
 
-local JSON = require("luci.jsonc")
 local utils = require('lime.utils')
 local ubus = require "ubus"
+local shared_state_links_info = require ("shared_state_links_info")
 
 local ifaceip = {}
 
@@ -41,6 +41,4 @@ function get_babel_links_info()
     return links
 end
 
-local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
-local result = { [hostname] = get_babel_links_info() }
-io.popen("shared-state-async insert babel_links_info", "w"):write(JSON.stringify(result))
+shared_state_links_info.insert_in_ss_with_location(get_babel_links_info(),"babel_links_info")
