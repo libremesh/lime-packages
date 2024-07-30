@@ -9,8 +9,7 @@
 local JSON = require("luci.jsonc")
 local utils = require('lime.utils')
 local network = require ("lime.network")
-
-local hostname = utils.hostname()
+local shared_state_links_info = require ("shared_state_links_info")
 
 function get_bat_links_info()
 	local bat_neighbors_obj={}
@@ -47,5 +46,4 @@ function get_bat_links_info()
 	return kv_fromlinks
 end
 
-local result = { [hostname] = get_bat_links_info() }
-io.popen("shared-state-async insert bat_links_info", "w"):write(JSON.stringify(result))
+shared_state_links_info.insert_in_ss_with_location(get_bat_links_info(),"bat_links_info")
