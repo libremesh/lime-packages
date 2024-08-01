@@ -6,9 +6,9 @@ wifi_links_info_ref.
 
 Reference state is designed to contain information about the node that will
 persist and that is not changed to often. This is because it is stored in the
-device memory and to many consequent write operations may damage the memory. 
+device persistent memory and to many consequent write operations may damage the persistent memory. 
 
-One thing that is important to note is that no node stores the hole status of
+One thing that is important to note is that no node stores the whole status of
 the network. Every node stores his own information about him and his links. 
 Yo can see the information of the whole network as long as every node makes its
 part. 

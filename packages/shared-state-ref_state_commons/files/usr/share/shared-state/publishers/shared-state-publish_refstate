@@ -1,7 +1,7 @@
 #!/usr/bin/lua
 
 --! LibreMesh
---! Will publish all refference data_type at once
+--! Will publish all reference data_type at once
 --! Copyright (C) 2024  Javier Jorge
 --! Copyright (C) 2024  Asociación Civil Altermundi <info@altermundi.net>
 --! SPDX-License-Identifier: AGPL-3.0-only
