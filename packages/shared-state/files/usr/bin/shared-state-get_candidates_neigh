@@ -20,7 +20,7 @@ lastRunFile="/tmp/shared-state-get_candidates_neigh.lastrun"
 lastRun=$(if [ -s $lastRunFile ]; then echo $(cat $lastRunFile); else  echo -9999; fi)
 currUptime="$(get_uptime)"
 
-[ "$(($currUptime - $lastRun))" -lt "30" ] &&
+[ "$((currUptime - lastRun))" -lt "30" ] &&
 {
 	cat "$cacheFile"
 	exit 0

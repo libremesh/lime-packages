@@ -7,7 +7,7 @@ bw_test() {
   while [ -z "$bw" -a $try -lt $TRIES ]; do
     test=$({ wget -T5 -q $1 -O- | pv -n -b -t >/dev/null; } 2>&1)
     bw=$(echo $test | awk '{printf "%.0f",$NF/$(NF-1)*8}')
-    try=$(($try+1))
+    try=$((try+1))
   done
   echo $bw
 }
