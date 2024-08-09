@@ -1,0 +1,92 @@
+{
+    "LiMe-430b0c": [
+        {
+            "dst_mac": "02:cc:4e:1f:73:aa",
+            "last_seen_msecs": 1560,
+            "tq": 255,
+            "src_mac": "02:cc:4e:43:0b:0c",
+            "iface": "wlan2-mesh_29"
+        },
+        {
+            "dst_mac": "02:ab:46:1f:73:aa",
+            "last_seen_msecs": 1000,
+            "tq": 255,
+            "src_mac": "02:ab:46:43:0b:0c",
+            "iface": "wlan1-mesh_29"
+        },
+        {
+            "dst_mac": "02:ab:46:dd:69:1c",
+            "last_seen_msecs": 1670,
+            "tq": 251,
+            "src_mac": "02:ab:46:43:0b:0c",
+            "iface": "wlan1-mesh_29"
+        }
+    ],
+    "cheche": [
+        {
+            "dst_mac": "02:ab:46:dd:69:1c",
+            "last_seen_msecs": 20,
+            "tq": 255,
+            "src_mac": "02:ab:46:1f:73:aa",
+            "iface": "wlan1-mesh_29"
+        },
+        {
+            "dst_mac": "02:ab:46:43:0b:0c",
+            "last_seen_msecs": 1300,
+            "tq": 251,
+            "src_mac": "02:ab:46:1f:73:aa",
+            "iface": "wlan1-mesh_29"
+        },
+        {
+            "dst_mac": "02:cc:4e:43:0b:0c",
+            "last_seen_msecs": 900,
+            "tq": 242,
+            "src_mac": "02:cc:4e:1f:73:aa",
+            "iface": "wlan2-mesh_29"
+        },
+        {
+            "dst_mac": "02:58:47:dd:69:1c",
+            "last_seen_msecs": 1460,
+            "tq": 255,
+            "src_mac": "02:58:47:1f:73:aa",
+            "iface": "wlan0-mesh_29"
+        },
+        {
+            "dst_mac": "02:58:47:1f:73:f6",
+            "last_seen_msecs": 520,
+            "tq": 255,
+            "src_mac": "02:58:47:1f:73:aa",
+            "iface": "wlan0-mesh_29"
+        }
+    ],
+    "konB-11s": [
+        {
+            "dst_mac": "02:58:47:1f:73:aa",
+            "last_seen_msecs": 1020,
+            "tq": 255,
+            "src_mac": "02:58:47:dd:69:1c",
+            "iface": "wlan0-mesh_29"
+        },
+        {
+            "dst_mac": "02:58:47:1f:73:f6",
+            "last_seen_msecs": 1010,
+            "tq": 255,
+            "src_mac": "02:58:47:dd:69:1c",
+            "iface": "wlan0-mesh_29"
+        },
+        {
+            "dst_mac": "02:ab:46:1f:73:aa",
+            "last_seen_msecs": 540,
+            "tq": 235,
+            "src_mac": "02:ab:46:dd:69:1c",
+            "iface": "wlan1-mesh_29"
+        },
+        {
+            "dst_mac": "02:ab:46:43:0b:0c",
+            "last_seen_msecs": 1140,
+            "tq": 255,
+            "src_mac": "02:ab:46:dd:69:1c",
+            "iface": "wlan1-mesh_29"
+        }
+    ]
+}
