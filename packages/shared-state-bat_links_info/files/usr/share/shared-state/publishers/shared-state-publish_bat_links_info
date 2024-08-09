@@ -23,25 +23,27 @@ function get_bat_links_info()
 	bat_neighbors = string.gsub(bat_neighbors,"hard_ifname","iface")
 	bat_neighbors_obj = JSON.parse(bat_neighbors)
 	local kv_fromlinks = {}
-	for key,neight_value in pairs (bat_neighbors_obj) do
-		local macparts = network.get_mac(neight_value.iface)
-		local src_macaddr = table.concat(macparts,":")
-		neight_value.hard_ifindex=nil
-		neight_value.src_mac=string.lower(src_macaddr)
-		neight_value.dst_mac=string.lower(neight_value.dst_mac)
-		for key,originator_value in pairs (bat_originators_obj) do
-			if originator_value.hard_ifname == neight_value.iface and 
-			originator_value.neigh_address== originator_value.orig_address and  
-			originator_value.neigh_address== neight_value.dst_mac then
-				-- Batman "transmit link quality" (tq) is a byte that describes 
-				-- the probability of a successful transmission towards a
-				-- neighbor node
-				neight_value.tq = originator_value.tq
+	if bat_neighbors_obj then
+		for key,neight_value in pairs (bat_neighbors_obj) do
+			local macparts = network.get_mac(neight_value.iface)
+			local src_macaddr = table.concat(macparts,":")
+			neight_value.hard_ifindex=nil
+			neight_value.src_mac=string.lower(src_macaddr)
+			neight_value.dst_mac=string.lower(neight_value.dst_mac)
+			for key,originator_value in pairs (bat_originators_obj) do
+				if originator_value.hard_ifname == neight_value.iface and 
+				originator_value.neigh_address== originator_value.orig_address and  
+				originator_value.neigh_address== neight_value.dst_mac then
+					-- Batman "transmit link quality" (tq) is a byte that describes 
+					-- the probability of a successful transmission towards a
+					-- neighbor node
+					neight_value.tq = originator_value.tq
+				end
 			end
+			local key_table = {(string.gsub(neight_value.src_mac,":","")),(string.gsub(neight_value.dst_mac,":",""))}
+			table.sort(key_table)
+			kv_fromlinks[table.concat(key_table)]=neight_value
 		end
-		local key_table = {(string.gsub(neight_value.src_mac,":","")),(string.gsub(neight_value.dst_mac,":",""))}
-		table.sort(key_table)
-		kv_fromlinks[table.concat(key_table)]=neight_value
 	end
 	return kv_fromlinks
 end
