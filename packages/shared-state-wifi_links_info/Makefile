@@ -17,8 +17,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
 	TITLE:=WiFI links information module for shared-state
 	CATEGORY:=LibreMesh
-	MAINTAINER:=
-	URL:=http://libremesh.org
+	MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils \
 		+lime-system +libiwinfo-lua +shared-state-ref_state_commons shared-state-async 
 	PKGARCH:=all

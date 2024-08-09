@@ -1,0 +1,4 @@
+#!/bin/sh
+uci set lime-autogen.system.keep_on_upgrade="$(uci get lime-autogen.system.keep_on_upgrade) shared-state-ref-state"
+uci commit lime-autogen
+exit 0
