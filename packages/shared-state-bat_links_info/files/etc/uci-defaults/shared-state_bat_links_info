@@ -1,9 +1,4 @@
 #!/bin/sh
-
-unique_append()
-{
-	grep -qF "$1" "$2" || echo "$1" >> "$2"
-}
 ## information generator datatype
 uci set shared-state.bat_links_info=dataType
 uci set shared-state.bat_links_info.name='bat_links_info'

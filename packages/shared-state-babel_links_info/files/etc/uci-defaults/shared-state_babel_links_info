@@ -1,9 +1,5 @@
 #!/bin/sh
-unique_append()
-{
-	grep -qF "$1" "$2" || echo "$1" >> "$2"
-}
-
+## information generator datatype
 uci set shared-state.babel_links_info=dataType
 uci set shared-state.babel_links_info.name='babel_links_info'
 uci set shared-state.babel_links_info.scope='community'
