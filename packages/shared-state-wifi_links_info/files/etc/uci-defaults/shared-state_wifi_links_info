@@ -1,10 +1,4 @@
 #!/bin/sh
-
-unique_append()
-{
-	grep -qF "$1" "$2" || echo "$1" >> "$2"
-}
-
 uci set shared-state.wifi_links_info=dataType
 uci set shared-state.wifi_links_info.name='wifi_links_info'
 uci set shared-state.wifi_links_info.scope='community'
