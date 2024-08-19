@@ -7,7 +7,6 @@ clean_tables () {
 	if nft list tables inet | grep -q "pirania"; then
 		nft delete table inet pirania
 	fi
-	nft create table inet pirania
 
 	#echo "Flushing rules"
 		#nft flush chain inet pirania prerouting
@@ -34,6 +33,8 @@ set_nftables () {
 		op="insert rule"
 	fi
 
+	# Create pirania tables	
+	nft create table inet pirania
 	# Create default tables and chains
 	nft add table inet pirania
 	nft add chain inet pirania prerouting { type nat hook prerouting priority 0 \; }
