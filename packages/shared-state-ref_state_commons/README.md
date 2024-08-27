@@ -91,7 +91,7 @@ or using the rpcd ubus wraper
 ```
 ## Default initialization 
 Files are in default state as an empty json object... "{}" 
-Ubus call to get method will return empty array. That is a limitation of the
+Ubus call to get method will return empty array "[]". That is a limitation of the
 library. 
 
 ```bash
