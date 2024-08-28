@@ -1,0 +1,31 @@
+#!/usr/bin/lua
+
+--! LibreMesh
+--! Generic hook to be called as a symbolic link for each ref type
+--! Copyright (C) 2024  Javier Jorge 
+--! Copyright (C) 2024  Asociación Civil Altermundi <info@altermundi.net>
+--! SPDX-License-Identifier: AGPL-3.0-only
+
+local JSON = require("luci.jsonc")
+local utils = require "lime.utils"
+
+local ref_file_folder = "/etc/shared-state/ref_state/"
+
+local input = JSON.parse(io.stdin:read("*all"))
+
+local data_type = arg[0]:match(".*/([^/]+)/[^/]+$")
+
+local function write_if_diff(data_type, input)
+	local path = ref_file_folder .. data_type..".json"
+	local acutal = JSON.parse(utils.read_file(path))
+	if input[utils.hostname()] then
+		if not(utils.deepcompare(input[utils.hostname()],acutal or {})) then
+			utils.write_file(path,JSON.stringify(input[utils.hostname()]))
+			utils.unsafe_shell("logger -t shared-state-ref-state "..data_type.." state changed")
+			return true
+		end
+	end
+	utils.unsafe_shell("logger -t shared-state-ref-state "..data_type.."  state did not change")
+	return false
+end
+write_if_diff(data_type,input)

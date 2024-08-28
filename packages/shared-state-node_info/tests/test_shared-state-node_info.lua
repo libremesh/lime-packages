@@ -4,7 +4,7 @@ local utils = require('lime.utils')
 
 local uci = nil
 
-package.path = package.path .. ";packages/shared-state-node_info/files/usr/bin/?;;"
+package.path = package.path .. ";packages/shared-state-node_info/files/usr/share/shared-state/publishers/?;;"
 require ("shared-state-publish_node_info")
 
 describe('Tests network_nodes #network_nodes', function ()

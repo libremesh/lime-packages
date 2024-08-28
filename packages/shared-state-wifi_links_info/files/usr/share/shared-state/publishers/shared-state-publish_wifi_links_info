@@ -1,0 +1,45 @@
+#!/usr/bin/lua
+
+--! LibreMesh
+--! Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
+--! Copyright (c) 2023  Javier Jorge <jjorge@inti.gob.ar>
+--! Copyright (c) 2023  Instituto Nacional de Tecnología Industrial
+--! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--! SPDX-License-Identifier: AGPL-3.0-only
+
+local node_status = require("lime.node_status")
+local network = require("lime.network")
+local iwinfo = require ("iwinfo")
+local shared_state_links_info = require ("shared_state_links_info")
+
+local data_type_name = "wifi_links_info"
+
+function get_wifi_links_info()
+    local stations = node_status.get_stations()
+    local links = {}
+    for _, station in ipairs(stations) do
+        macparts = network.get_mac(station.iface)
+        src_macaddr = string.lower(table.concat(macparts, ":"))
+        local station_stats = node_status.get_station_stats(station)
+        local freq = iwinfo.nl80211.frequency(station.iface)
+        local chanenel = iwinfo.nl80211.channel(station.iface)
+        local key_table = {string.lower(string.gsub(src_macaddr, ":", "")),
+                           string.lower(string.gsub(station.station_mac, ":", ""))}
+        table.sort(key_table)
+        links[table.concat(key_table)] = {
+            src_mac = src_macaddr,
+            dst_mac = string.lower(station.station_mac),
+            signal = station_stats.signal,
+            chains = station_stats.chains,
+            iface = station.iface,
+            rx_rate = station_stats.rx_rate,
+            tx_rate = station_stats.tx_rate,
+            freq = freq,
+            channel = chanenel,
+            --dst_loc = {lat="FIXME",long="FIXME"} --if no location is found later no dst location will be informed
+        }
+    end
+    return links
+end
+
+shared_state_links_info.insert_in_ss_with_location(get_wifi_links_info(),data_type_name)
