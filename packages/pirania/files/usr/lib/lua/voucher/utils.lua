@@ -39,7 +39,7 @@ function utils.getIpv4AndMac(ip_address)
         res.mac = ipv4mac
         return res
     else
-        local ipv6macCommand = "ip neighbor | grep "..ip_address.." | awk -F ' ' '{print $5}' | head -n 1"
+        local ipv6macCommand = "ip neigh | grep "..ip_address.." | awk -F ' ' '{print $5}' | head -n 1"
         fd6 = io.popen(ipv6macCommand, 'r')
         ipv6mac = fd6:read('*l')
         fd6:close()
