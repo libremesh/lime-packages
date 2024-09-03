@@ -39,11 +39,12 @@ function utils.getIpv4AndMac(ip_address)
         res.mac = ipv4mac
         return res
     else
-        local ipv6macCommand = "ip neighbor | grep "..ip_address.." | awk -F ' ' '{print $5}' | head -n 1"
+        # change from neighbor to neigh or n
+        local ipv6macCommand = "ip neigh | grep "..ip_address.." | awk -F ' ' '{print $5}' | head -n 1"
         fd6 = io.popen(ipv6macCommand, 'r')
         ipv6mac = fd6:read('*l')
         fd6:close()
-        local ipv4Command = "cat /proc/net/arp | grep "..ipv6mac.." | awk -F ' ' '{print $1}' | head -n 1"
+        local ipv4cCommand = "cat /proc/net/arp | grep "..ipv6mac.." | awk -F ' ' '{print $1}' | head -n 1"
         fd4 = io.popen(ipv4Command, 'r')
         ipv4 = fd4:read('*l')
         fd4:close()
