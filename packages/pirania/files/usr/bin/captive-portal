@@ -45,6 +45,11 @@ set_nftables () {
     #for interface in $(uci get pirania.base_config.catch_bridged_interfaces); do
 	#	 nft insert rule inet pirania prerouting iifname $interface accept
     #done
+	# Get interfaces where captive-portal will intercept traffic
+	# catch_interfaces=$(uci get pirania.base_config.catch_bridged_interfaces)
+	#  interfaces=$( echo $catch_interfaces | awk '{print $1 "," $2}')
+	define catch_interfaces = $(uci get pirania.base_config.catch_bridged_interfaces)
+	
 	# stop processing the chain for authorized macs and allowed ips (so they are accepted)
 	nft $op inet pirania prerouting ether saddr @pirania-auth-macs accept
 	nft $op inet pirania prerouting ip 	  daddr @pirania-allowlist-ipv4 accept
@@ -145,16 +150,23 @@ if  [ "$1" = "start" ]; then
 	set_nftables
 	exit
 elif [ "$1" = "update" ] ; then
+	echo "Captive-portal updating rules"
 	update_ipsets
 	exit
 elif [ "$1" = "clean" ] || [ "$1" = "stop" ] ; then
 	clean_tables
 	exit
 elif [ "$enabled" = "1" ]; then
+	echo "Captive-portal already enabled, reloading rules"
 	clean_tables
 	update_ipsets
 	set_nftables
 	exit
+elif [ "$1" = "enabled" ]; then
+	uci set pirania.base_config.enabled='1'
+	# i/o error in my device - checkthis out later
+	#uci commit
+	echo "Captive-portal is now enabled"
 else
 	echo "Pirania captive-portal is disabled. Try running captive-portal start"
 	exit
