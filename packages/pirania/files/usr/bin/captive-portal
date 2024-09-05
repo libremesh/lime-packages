@@ -1,5 +1,5 @@
 #!/bin/sh
-# requires nftables, liblucihttp0, liblucihttp-lua, uhttpd and uhttpd-mod-lua
+# requires nftables, liblucihttp0, liblucihttp-lua, uhttpd, uhttpd-mod-lua, uhttpd-mod-ubus
 
 
 clean_tables () {
@@ -45,6 +45,7 @@ set_nftables () {
     #for interface in $(uci get pirania.base_config.catch_bridged_interfaces); do
 	#	 nft insert rule inet pirania prerouting iifname $interface accept
     #done
+<<<<<<< HEAD
 	# stop processing the chain for authorized macs and allowed ips (so they are accepted)
 <<<<<<< HEAD
 	nft $op inet pirania prerouting ether saddr @pirania-auth-macs accept
@@ -71,6 +72,29 @@ set_nftables () {
 	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ip6 saddr @pirania-allowlist-ipv6 counter log prefix "ipv680 request from LAN: " redirect to :59053
 	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ether saddr @pirania-auth-macs counter log prefix "SMAC80 request from LAN: " redirect to :59053
 >>>>>>> 1a87a76d (Add log info)
+=======
+	# Get interfaces where captive-portal will intercept traffic
+	# catch_interfaces=$(uci get pirania.base_config.catch_bridged_interfaces)
+	#  interfaces=$( echo $catch_interfaces | awk '{print $1 "," $2}')
+	define catch_interfaces = $(uci get pirania.base_config.catch_bridged_interfaces)
+	
+	# stop processing the chain for authorized macs and allowed ips (so they are accepted)
+	nft $op inet pirania prerouting ether saddr @pirania-auth-macs accept
+	nft $op inet pirania prerouting ip 	  daddr @pirania-allowlist-ipv4 accept
+	nft $op inet pirania prerouting ip6   daddr @pirania-allowlist-ipv6 accept
+
+
+	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ip saddr @pirania-allowlist-ipv4 counter log prefix "ipv4DNS request from LAN: " redirect to :59053
+	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ip6 saddr @pirania-allowlist-ipv6 counter log prefix "ipv6DNS request from LAN: " redirect to :59053
+	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ether saddr @pirania-auth-macs counter log prefix "SMACDNS request from LAN: " redirect to :59053
+
+
+	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ether saddr != @pirania-auth-macs counter log prefix "SMAC80 request from LAN: " redirect to :59080
+	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ip saddr != @pirania-allowlist-ipv4 counter log prefix "ipv4HTTP request from LAN: " redirect to :59080
+	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ip6 saddr != @pirania-allowlist-ipv6 counter log prefix "ipv6HTTP request from LAN: " redirect to :59080
+
+
+>>>>>>> mohr-patch-nftables-1
 
 	# And in there let's reject them with the best suited reject reason.
 	# Needed to change its value because of this error:
@@ -155,16 +179,23 @@ if  [ "$1" = "start" ]; then
 	set_nftables
 	exit
 elif [ "$1" = "update" ] ; then
+	echo "Captive-portal updating rules"
 	update_ipsets
 	exit
 elif [ "$1" = "clean" ] || [ "$1" = "stop" ] ; then
 	clean_tables
 	exit
 elif [ "$enabled" = "1" ]; then
+	echo "Captive-portal already enabled, reloading rules"
 	clean_tables
 	update_ipsets
 	set_nftables
 	exit
+elif [ "$1" = "enabled" ]; then
+	uci set pirania.base_config.enabled='1'
+	# i/o error in my device - checkthis out later
+	#uci commit
+	echo "Captive-portal is now enabled"
 else
 	echo "Pirania captive-portal is disabled. Try running captive-portal start"
 	exit
