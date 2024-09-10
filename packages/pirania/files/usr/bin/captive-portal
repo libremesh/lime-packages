@@ -8,20 +8,8 @@ clean_tables () {
 		nft delete table inet pirania
 	fi
 
-	#echo "Flushing rules"
-		#nft flush chain inet pirania prerouting
-		#nft flush chain inet pirania input
-		#nft flush chain inet pirania forward
-	
 }
 
-# Not needed anymore, since we are using nft set
-#clean_sets () {
-#	echo "Cleaning ipset lists"
-#	ipset flush pirania-auth-macs
-#	ipset flush pirania-allowlist-ipv4
-#	ipset flush pirania-allowlist-ipv6
-#}
 
 set_nftables () { 
 	echo "Apply captive-portal rules"
@@ -41,69 +29,39 @@ set_nftables () {
 	nft add chain inet pirania input { type filter hook input priority 0 \; }
 	nft add chain inet pirania forward { type filter hook forward priority 0 \; }
 
-	# Only accept packets from bridged interfaces - check this out after
-    #for interface in $(uci get pirania.base_config.catch_bridged_interfaces); do
-	#	 nft insert rule inet pirania prerouting iifname $interface accept
-    #done
-<<<<<<< HEAD
-	# stop processing the chain for authorized macs and allowed ips (so they are accepted)
-<<<<<<< HEAD
-	nft $op inet pirania prerouting ether saddr @pirania-auth-macs accept
-	nft $op inet pirania prerouting ip 	  daddr @pirania-allowlist-ipv4 accept
-	nft $op inet pirania prerouting ip6   daddr @pirania-allowlist-ipv6 accept
+  	# Add mac-adress set
+  	nft add set inet pirania pirania-auth-macs { type ether_addr\; }
 
+	# Create ipv4 set on pirania table
+  	nft add set inet pirania pirania-allowlist-ipv4 { type ipv4_addr \; flags interval \; comment \"allow ipv4 list\" \; }
+  	# Create ipv6 set on pirania table
+  	nft add set inet pirania pirania-allowlist-ipv6 { type ipv6_addr \; flags interval \; comment \"allow ipv6 list\" \; }
 
-	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ip saddr @pirania-allowlist-ipv4 counter log prefix "ipv4DNS request from LAN: " redirect to :59053
-	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ip6 saddr @pirania-allowlist-ipv6 counter log prefix "ipv6DNS request from LAN: " redirect to :59053
-	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ether saddr @pirania-auth-macs counter log prefix "SMACDNS request from LAN: " redirect to :59053
-
-
-	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ether saddr != @pirania-auth-macs counter log prefix "SMAC80 request from LAN: " redirect to :59080
-	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ip saddr != @pirania-allowlist-ipv4 counter log prefix "ipv4HTTP request from LAN: " redirect to :59080
-	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ip6 saddr != @pirania-allowlist-ipv6 counter log prefix "ipv6HTTP request from LAN: " redirect to :59080
-
-
-=======
-	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ip saddr @pirania-allowlist-ipv4 log prefix "ipv4dns request from LAN: " redirect to :59080
-	#nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ip6 saddr @pirania-allowlist-ipv6 counter log prefix "ipv6dns request from LAN: " redirect to :59080
-	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ether saddr @pirania-auth-macs counter log prefix "SMAC53 request from LAN: " redirect to :59080
-
-	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ip saddr @pirania-allowlist-ipv4 counter log prefix "ipv480 request from LAN: " redirect to :59053
-	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ip6 saddr @pirania-allowlist-ipv6 counter log prefix "ipv680 request from LAN: " redirect to :59053
-	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ether saddr @pirania-auth-macs counter log prefix "SMAC80 request from LAN: " redirect to :59053
->>>>>>> 1a87a76d (Add log info)
-=======
-	# Get interfaces where captive-portal will intercept traffic
+	# Only accept packets from interfaces defined in catch_bridged_interfaces
+	catch_interfaces=$(uci get pirania.base_config.catch_bridged_interfaces | sed 's/ /,/g')
+    # Get interfaces where captive-portal will intercept traffic
 	# catch_interfaces=$(uci get pirania.base_config.catch_bridged_interfaces)
 	#  interfaces=$( echo $catch_interfaces | awk '{print $1 "," $2}')
-	define catch_interfaces = $(uci get pirania.base_config.catch_bridged_interfaces)
-	
+	# Test rule bellow
+	# nft add rule inet pirania prerouting iifname {$catch_interfaces} ether saddr @pirania-auth-macs accept
 	# stop processing the chain for authorized macs and allowed ips (so they are accepted)
-	nft $op inet pirania prerouting ether saddr @pirania-auth-macs accept
-	nft $op inet pirania prerouting ip 	  daddr @pirania-allowlist-ipv4 accept
-	nft $op inet pirania prerouting ip6   daddr @pirania-allowlist-ipv6 accept
+	nft $op inet pirania prerouting ether saddr @pirania-auth-macs ct state new,established,related counter accept
+	nft $op inet pirania prerouting ip 	  daddr @pirania-allowlist-ipv4 ct state new,established,related counter accept
+	nft $op inet pirania prerouting ip6   daddr @pirania-allowlist-ipv6 ct state new,established,related counter accept
 
+	#nft $op inet pirania prerouting meta l4proto udp udp dport 53 ip saddr @pirania-allowlist-ipv4 counter redirect to :59053
+	#nft $op inet pirania prerouting meta l4proto udp udp dport 53 ip6 saddr @pirania-allowlist-ipv6 counter redirect to :59053
+	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ether saddr != @pirania-auth-macs counter redirect to :59053
+ 
+	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ether saddr != @pirania-auth-macs counter redirect to :59080
+	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ip saddr != @pirania-allowlist-ipv4 counter redirect to :59080
+	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ip6 saddr != @pirania-allowlist-ipv6 counter redirect to :59080
 
-	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ip saddr @pirania-allowlist-ipv4 counter log prefix "ipv4DNS request from LAN: " redirect to :59053
-	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ip6 saddr @pirania-allowlist-ipv6 counter log prefix "ipv6DNS request from LAN: " redirect to :59053
-	nft $op inet pirania prerouting meta l4proto udp udp dport 53 ether saddr @pirania-auth-macs counter log prefix "SMACDNS request from LAN: " redirect to :59053
-
-
-	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ether saddr != @pirania-auth-macs counter log prefix "SMAC80 request from LAN: " redirect to :59080
-	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ip saddr != @pirania-allowlist-ipv4 counter log prefix "ipv4HTTP request from LAN: " redirect to :59080
-	nft $op inet pirania prerouting meta l4proto tcp tcp dport 80 ip6 saddr != @pirania-allowlist-ipv6 counter log prefix "ipv6HTTP request from LAN: " redirect to :59080
-
-
->>>>>>> mohr-patch-nftables-1
-
-	# And in there let's reject them with the best suited reject reason.
-	# Needed to change its value because of this error:
-	# Error: Prefix length 255 is invalid for type of 32 bits width
-    # add rule inet pirania forward meta mark 0x66/0xff counter reject with tcp reset
 
 	nft $op inet pirania forward meta mark 0x11/0x11 counter reject with tcp reset
 	nft $op inet pirania forward meta mark 0x11/0x11 counter reject
 }
+
 
 update_ipsets () {
 

@@ -21,7 +21,7 @@ This are the currently implemented features:
   * Can be used without vouchers.
 ## Prerequisites
 
-This software assumes that will be running on a OpenWRT/LEDE distribution (because uses uci for config). Needs `ip6tables-mod-nat` and `ipset` packages installed.
+This software assumes that will be running on a OpenWRT/LEDE distribution (because uses uci for config). Needs `nftables` and `ipset` packages installed.
 
 ## Install
 
