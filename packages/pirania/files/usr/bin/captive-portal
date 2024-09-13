@@ -39,6 +39,10 @@ set_nftables () {
 	# Only accept packets from interfaces defined in catch_bridged_interfaces
 	catch_interfaces=$(uci get pirania.base_config.catch_bridged_interfaces | sed 's/ /,/g')
 
+
+	nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ether saddr != @pirania-auth-macs ct state new,established,related counter redirect to :59053
+	nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ether saddr != @pirania-auth-macs ct state new,established,related counter redirect to :59080
+
 	# Allow MACs already registered
 	nft add rule inet pirania prerouting ether saddr @pirania-auth-macs ct state new,established,related counter accept
 	#nft add rule inet pirania prerouting ip daddr @pirania-allowlist-ipv4 ct state new,established,related counter accept
@@ -46,10 +50,8 @@ set_nftables () {
 
 	#nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ip saddr @pirania-allowlist-ipv4 ct state new,established,related counter redirect to :59053
 	#nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ip6 saddr @pirania-allowlist-ipv6 ct state new,established,related counter redirect to :59053
-	nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ether saddr != @pirania-auth-macs ct state new,established,related counter redirect to :59053
  
 	# Redirect unauthorized macs to pirania-uhttp
-	nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ether saddr != @pirania-auth-macs ct state new,established,related counter redirect to :59080
 	#nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ip saddr @pirania-allowlist-ipv4 ct state new,established,related counter redirect to :59080
 	#nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ip6 saddr  @pirania-allowlist-ipv6 ct state new,established,related counter redirect to :59080
 
