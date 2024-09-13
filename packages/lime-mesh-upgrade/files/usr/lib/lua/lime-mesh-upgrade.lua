@@ -355,11 +355,11 @@ end
 -- This line will genereate recursive dependencies like in pirania pakcage
 function mesh_upgrade.trigger_sheredstate_publish()
     utils.execute_daemonized("sleep 1; \
-        /etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state-async sync mesh_wide_upgrade")
+       /usr/share/shared-state/publishers/shared-state-publish_mesh_wide_upgrade")
     -- minimum renewal time is 30s if not able to renew info just wait, if firts fails the seccond success, 
     -- if the first succesds the seccond will fail. Sadly merge will output 0 so both times will make sync.
     utils.execute_daemonized("sleep 30; \
-        /etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state-async sync mesh_wide_upgrade")
+        /usr/share/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state-async sync mesh_wide_upgrade")
 end
 
 function mesh_upgrade.change_main_node_state(newstate)
