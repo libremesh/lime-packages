@@ -34,6 +34,10 @@ describe('general rpc testing', function()
             return boardname
         end)
         lime_mesh_upgrade = require 'lime-mesh-upgrade'
+        stub(lime_mesh_upgrade, 'check_safeupgrade_is_working', function(command)
+            return true
+            end)
+
 
         snapshot = assert:snapshot()
         uci:set('mesh-upgrade', 'main', "mesh-upgrade")

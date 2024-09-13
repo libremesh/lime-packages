@@ -39,8 +39,8 @@ local mesh_upgrade = {
         CONFIRMATION_TIME_OUT = "confirmation_timeout",
         --        ABORTED = "aborted",
         FW_FILE_NOT_FOUND = "firmware_file_not_found",
-        INVALID_FW_FILE = "invalid_firmware_file"
-
+        INVALID_FW_FILE = "invalid_firmware_file",
+        SAFE_UPGRADE_NOT_BOOTSTRAPED= "safe upgrade not working"
     },
     fw_path = "",
     su_confirm_timeout = 600,
@@ -177,6 +177,18 @@ function mesh_upgrade.check_eupgrade_download_failed()
         mesh_upgrade.report_error(mesh_upgrade.errors.DOWNLOAD_FAILED)
     end
     return download_status
+end
+
+
+function mesh_upgrade.check_safeupgrade_is_working()
+    local result = os.execute("safe-upgrade bootstrap")
+    local exit_code = result and (result / 256) or result
+    if exit_code == 121 then 
+        -- this means that safeupgrade has been bootrsaped and is ready to work
+        return true
+    end
+    mesh_upgrade.report_error(mesh_upgrade.errors.SAFE_UPGRADE_NOT_BOOTSTRAPED)
+    return false
 end
 
 function mesh_upgrade.start_firmware_upgrade_transaction()
@@ -478,14 +490,16 @@ end
 
 -- ! Read status from UCI
 function mesh_upgrade.get_node_status()
+    mesh_upgrade.check_safeupgrade_is_working()
     local uci = config.get_uci_cursor()
     local upgrade_data = {}
     upgrade_data.candidate_fw = uci:get('mesh-upgrade', 'main', 'candidate_fw')
     upgrade_data.repo_url = uci:get('mesh-upgrade', 'main', 'repo_url')
     upgrade_data.eupgradestate = mesh_upgrade.check_eupgrade_download_failed()
     upgrade_data.upgrade_state = mesh_upgrade.state()
+    local safe_upgrade_confirm_remaining = tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining"))
     if (upgrade_data.upgrade_state == mesh_upgrade.upgrade_states.UPGRADE_SCHEDULED) then
-        if (tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining")) > 1) then
+        if (safe_upgrade_confirm_remaining and safe_upgrade_confirm_remaining > 1) then
             mesh_upgrade.change_state(mesh_upgrade.upgrade_states.CONFIRMATION_PENDING)
         elseif utils.file_exists(mesh_upgrade.get_fw_path()) == false then
             mesh_upgrade.report_error(mesh_upgrade.errors.FW_FILE_NOT_FOUND)
@@ -510,7 +524,7 @@ function mesh_upgrade.get_node_status()
                                                   (utils.uptime_s() - mesh_upgrade.safeupgrade_start_mark) > 0 and
                                                   mesh_upgrade.su_start_time_out -
                                                   (utils.uptime_s() - mesh_upgrade.safeupgrade_start_mark) or -1)
-    upgrade_data.confirm_remining = tonumber(utils.unsafe_shell("safe-upgrade confirm-remaining"))
+    upgrade_data.confirm_remining = safe_upgrade_confirm_remaining
     return upgrade_data
 end
 
@@ -518,7 +532,8 @@ function mesh_upgrade.start_safe_upgrade(su_start_delay, su_confirm_timeout)
     mesh_upgrade.su_start_time_out = su_start_delay or mesh_upgrade.su_start_time_out
     mesh_upgrade.su_confirm_timeout = su_confirm_timeout or mesh_upgrade.su_confirm_timeout
 
-    if mesh_upgrade.state() == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE then
+    if mesh_upgrade.state() == mesh_upgrade.upgrade_states.READY_FOR_UPGRADE and
+    mesh_upgrade.check_safeupgrade_is_working() then
         if utils.file_exists(mesh_upgrade.get_fw_path()) then
 
             -- veryfy the image before starting

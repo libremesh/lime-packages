@@ -57,6 +57,8 @@ stub(utils, 'unsafe_shell', function(command)
 
 end)
 
+
+
 local utils = require "lime.utils"
 local lime_mesh_upgrade = {}
 local test_utils = require "tests.utils"
@@ -469,6 +471,10 @@ describe('LiMe mesh upgrade', function()
             return "LiMe-8a50aa"
         end)
         lime_mesh_upgrade = require 'lime-mesh-upgrade'
+
+        stub(lime_mesh_upgrade, 'check_safeupgrade_is_working', function(command)
+            return true
+            end)
 
         uci = test_utils.setup_test_uci()
         uci:set('mesh-upgrade', 'main', "mesh-upgrade")
