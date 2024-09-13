@@ -181,7 +181,7 @@ end
 
 
 function mesh_upgrade.check_safeupgrade_is_working()
-    local result = os.execute("safe-upgrade bootstrap")
+    local result = os.execute("safe-upgrade bootstrap >/dev/null 2>&1")
     local exit_code = result and (result / 256) or result
     if exit_code == 121 then 
         -- this means that safeupgrade has been bootrsaped and is ready to work
