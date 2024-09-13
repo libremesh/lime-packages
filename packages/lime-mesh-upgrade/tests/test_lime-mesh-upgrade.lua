@@ -141,7 +141,7 @@ describe('LiMe mesh upgrade', function()
         status = lime_mesh_upgrade.get_node_status()
         assert.is.equal(status.upgrade_state, lime_mesh_upgrade.upgrade_states.ABORTED)
         assert.stub.spy(utils.execute_daemonized).was.called.with("sleep 30; \
-        /etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state-async sync mesh_wide_upgrade")
+        /usr/share/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state-async sync mesh_wide_upgrade")
     end)
 
     it('test set upgrade info and fail NO_LATEST_AVAILABLE', function()
@@ -409,8 +409,8 @@ describe('LiMe mesh upgrade', function()
         status = lime_mesh_upgrade.get_node_status()
 
         assert.stub.spy(utils.execute_daemonized).was.called.with(
-            "sleep 1; \
-        /etc/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state-async sync mesh_wide_upgrade")
+            "sleep 30; \
+        /usr/share/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state-async sync mesh_wide_upgrade")
 
         assert.is.equal(lime_mesh_upgrade.su_confirm_timeout, 600)
         assert.is.equal(status.su_start_time_out, 60)
