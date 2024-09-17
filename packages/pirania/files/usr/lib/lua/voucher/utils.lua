@@ -44,7 +44,7 @@ function utils.getIpv4AndMac(ip_address)
         ipv6mac = fd6:read('*l')
         fd6:close()
         local ipv4cCommand = "cat /proc/net/arp | grep "..ipv6mac.." | awk -F ' ' '{print $1}' | head -n 1"
-        fd4 = io.popen(ipv4Command, 'r')
+        fd4 = io.popen(ipv4cCommand, 'r')
         ipv4 = fd4:read('*l')
         fd4:close()
         local res = {}
