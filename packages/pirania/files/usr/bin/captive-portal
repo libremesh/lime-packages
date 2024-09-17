@@ -39,26 +39,33 @@ set_nftables () {
 	# Only accept packets from interfaces defined in catch_bridged_interfaces
 	catch_interfaces=$(uci get pirania.base_config.catch_bridged_interfaces | sed 's/ /,/g')
 
+	nft add rule inet pirania prerouting meta l4proto tcp tcp dport 22 accept
 
-	nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ether saddr != @pirania-auth-macs ct state new,established,related counter redirect to :59053
-	nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ether saddr != @pirania-auth-macs ct state new,established,related counter redirect to :59080
+
+	nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ether saddr != @pirania-auth-macs ct state new,established,related counter log prefix "SMACDNS"  redirect to :59053
+	#nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ether saddr != @pirania-auth-macs ct state new,established,related counter log prefix "SMACHTTP"  redirect to :59080
+
+	nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ip saddr @pirania-allowlist-ipv4 ct state new,established,related counter log prefix "IPv4HTTP" redirect to :59080
+	#nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ip6 saddr  @pirania-allowlist-ipv6 ct state new,established,related counter log prefix "IPV6HTTP" redirect to :59080
 
 	# Allow MACs already registered
-	nft add rule inet pirania prerouting ether saddr @pirania-auth-macs ct state new,established,related counter accept
-	#nft add rule inet pirania prerouting ip daddr @pirania-allowlist-ipv4 ct state new,established,related counter accept
-	#nft add rule inet pirania prerouting ip6 daddr @pirania-allowlist-ipv6 ct state new,established,related counter accept
+	nft add rule inet pirania prerouting ether saddr @pirania-auth-macs ct state new,established,related counter log prefix "ValidSMAC" accept
+
+
+
+	#nft add rule inet pirania prerouting ip daddr @pirania-allowlist-ipv4 ct state new,established,related counter log prefix "ACCEPT-ipv4" accept
+	#nft add rule inet pirania prerouting ip6 daddr @pirania-allowlist-ipv6 ct state new,established,related counter log prefix "ACCEPT-ipv6" accept
 
 	#nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ip saddr @pirania-allowlist-ipv4 ct state new,established,related counter redirect to :59053
 	#nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ip6 saddr @pirania-allowlist-ipv6 ct state new,established,related counter redirect to :59053
  
-	# Redirect unauthorized macs to pirania-uhttp
-	#nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ip saddr @pirania-allowlist-ipv4 ct state new,established,related counter redirect to :59080
-	#nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ip6 saddr  @pirania-allowlist-ipv6 ct state new,established,related counter redirect to :59080
 
 	# reject
-	nft add rule inet pirania prerouting drop
+	
+	#nft add rule inet pirania prerouting drop
 	#nft add rule inet pirania forward meta mark 0x11/0x11 counter reject with tcp reset
 	#nft add rule inet pirania forward meta mark 0x11/0x11 counter reject
+
 }
 
 update_ipsets () {
