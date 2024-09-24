@@ -211,24 +211,3 @@ The flow without using vouchers (read for access mode) is:
 * Once there if the client has js support then a countdown of 15 seconds is shown and when it reaches 0 the user can click on continue, which sends a GET request to `http://minodo.info/cgi-bin/pirania/authorize_mac?prev=http%3A%2F%2Foriginal.org%2Fbaz%2F%3Ffoo%3Dbar`
 which will trigger a redirection to `prev` url.
 * If there the client has no js support, then the buttonis enabled inmediately, and after clicking in continue a redirection to `url_authenticated` is triggered.
-
-### Common errors
-
-If you flashed an old device (e.g. TP-Link Archer C50 V1) you may need to update some files.
-
-#### 1) opkg update gives error
-when you run `opkg update` and this error occur:
-``` 
-Collected errors:
- * opkg_download: Failed to download http://downloads.openwrt.org/releases/19.07.10/packages/mipsel_24kc/libremesh/Packages.gz, wget returned 8.
- * opkg_download: Failed to download http://downloads.openwrt.org/releases/19.07.10/packages/mipsel_24kc/profiles/Packages.gz, wget returned 8.`
-```
-Do the following:
-```
--> on the router, at the file `/etc/opkg/distfeeds.conf` comment the following lines:
-src/gz libremesh_libremesh http://downloads.openwrt.org/releases/19.07.10/packages/mipsel_24kc/libremesh
-src/gz libremesh_profiles http://downloads.openwrt.org/releases/19.07.10/packages/mipsel_24kc/profiles
-```
-
-#### 2) 
-
