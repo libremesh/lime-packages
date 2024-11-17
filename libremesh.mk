@@ -2,13 +2,21 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME?=$(notdir ${CURDIR})
 
-GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . | sed 's|-|.|g')
-GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
+# from https://github.com/openwrt/luci/blob/master/luci.mk
+# default package version follow this scheme:
+# [year].[day_of_year].[seconds_of_day]~[commit_short_hash] eg. 24.322.80622~a403707
+PKG_VERSION?=$(if $(DUMP),x,$(strip $(shell \
+    if git log -1 >/dev/null 2>/dev/null; then \
+      set -- $$(git log -1 --format="%ct %h" --abbrev=7); \
+        secs="$$(($$1 % 86400))"; \
+        yday="$$(date --utc --date="@$$1" "+%y.%j")"; \
+        printf '%s.%05d~%s' "$$yday" "$$secs" "$$2"; \
+    else \
+      echo "0"; \
+    fi; \
+)))
 
-PKG_SRC_VERSION:=$(GIT_COMMIT_DATE)~$(GIT_COMMIT_TSTAMP)
-PKG_VERSION:=$(if $(PKG_VERSION),$(PKG_VERSION),$(PKG_SRC_VERSION))
-
-PKG_BUILD_DIR:=$(if $(PKG_BUILD_DIR),$(PKG_BUILD_DIR),$(BUILD_DIR)/$(PKG_NAME))
+PKG_BUILD_DIR?=$(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
 
