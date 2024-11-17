@@ -5,21 +5,43 @@
 	exit 0
 }
 
-feeds_file="/etc/opkg/limefeeds.conf"
+repo=$([ -f /etc/opkg/distfeed.conf ] && echo "opkg" \
+	|| ([ -f /etc/apk/repositories.d/distfeeds.list ] && echo "apk" ) ) || {
+		echo "Package manager not found - skipping"
+		exit 0
+	}
 
-[ -f "$feeds_file" ] && {
-  echo "LibreMesh opkg feeds already defined - skipping"
-  exit 0
+feeds_file=$([ $repo == 'opkg' ] && echo "/etc/opkg/limefeeds.conf" \
+	|| ([ $repo == 'apk' ] && echo "/etc/apk/repositories.d/limefeeds.list") )
+
+dist_feeds_file=$([ $repo == 'opkg' ] && echo "/etc/opkg/distfeeds.conf" \
+	|| ([ $repo == 'apk' ] && echo "/etc/apk/repositories.d/distfeeds.list") )
+
+$( ([ $repo == 'opkg' ] && [ -f "$feeds_file" ]) \
+  || ([ $repo == 'apk' ] && $(grep -q '@libremesh' $feeds_file)) ) && 
+{
+  echo "LibreMesh $repo feeds already defined - skipping"
+  exit 0;
 }
 
-arch_packages="$(grep OPENWRT_ARCH /etc/os-release | sed 's/OPENWRT_ARCH=\"\(.*\)\"/\1/')"
+arch="$(grep OPENWRT_ARCH /etc/os-release | sed 's/OPENWRT_ARCH=\"\(.*\)\"/\1/')"
+
+openwrt_branch_ref="$(grep -m 1 "openwrt.org/" $dist_feeds_file | sed 's|.*openwrt.org/\(.*\)|\1|' )"
+openwrt_branch=$(echo $openwrt_branch_ref | grep -q 'snapshots' && echo 'openwrt_main' )
+$(echo $openwrt_branch_ref | grep -q 'releases') && {
+	branch_n="$(echo $openwrt_branch_ref | sed 's/releases\///')"
+	openwrt_branch="openwrt_${branch_n:0:5}"
+}
+
+main_feed_path=$([ $repo == 'opkg' ] && echo "" \
+	|| ([ $repo == 'apk' ] && echo "apk/") )
 
 [ "$LIME_CODENAME" == "development" ] && {
-	packages_url="http://feed.libremesh.org/master";
-	arch_packages_url="http://feed.libremesh.org/arch_packages/master/$arch_packages";
+	packages_url="http://feed.libremesh.org/${main_feed_path}master";
+	arch_packages_url="http://feed.libremesh.org/arch_packages/master/$openwrt_branch/$arch/";
 } || {
-	packages_url="http://feed.libremesh.org/$LIME_RELEASE"
-	arch_packages_url="http://feed.libremesh.org/arch_packages/$LIME_RELEASE/$arch_packages";
+	packages_url="http://feed.libremesh.org/${main_feed_path}$LIME_RELEASE"
+	arch_packages_url="http://feed.libremesh.org/arch_packages/$LIME_RELEASE/$openwrt_branch/$arch/";
 }
 
 profiles_url="http://feed.libremesh.org/profiles"
@@ -27,9 +49,16 @@ profiles_url="http://feed.libremesh.org/profiles"
 key_name="a71b3c8285abd28b"
 key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
 
-echo "Configuring official LibreMesh opkg feeds"
+echo "Configuring official LibreMesh $repo feeds"
+[ $repo == 'opkg' ] && {
 echo "src/gz libremesh $packages_url" > "$feeds_file"
 echo "src/gz libremesh_arch_packages $arch_packages_url" >> "$feeds_file"
 echo "src/gz profiles $profiles_url" >> "$feeds_file"
 echo "untrusted comment: signed by libremesh.org key $key_name" > "/etc/opkg/keys/$key_name"
 echo "$key_content" >> "/etc/opkg/keys/$key_name"
+}
+[ $repo == 'apk' ] && {
+echo "@libremesh $packages_url/packages.adb" >> "$feeds_file"
+echo "@libremesh_arch_packages $arch_packages_url/packages.adb" >> "$feeds_file"
+echo "@profiles $profiles_url/packages.adb" >> "$feeds_file"
+}
