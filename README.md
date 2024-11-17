@@ -56,22 +56,41 @@ Start an ImageBuilder of your choice, for example ath79-generic if your device i
 
 ```shell
 mkdir ./images/
-docker run -it -v $(pwd)/images:/images/ ghcr.io/openwrt/imagebuilder:ath79-generic-v23.05.3
+docker run -it -v $(pwd)/images:/images/ ghcr.io/openwrt/imagebuilder:ath79-generic-v23.05.5
 ```
 
 If your device is not part of ath79-generic profiles, you can replace it with another &lt;target&gt;-&lt;subtarget&gt; combination. For knowing which target and subtarget is best suited for your router, check out the page about it in the [OpenWrt's Table of Hardware][OpenWrt-ToH].
 
 Within the container, add the `lime-packages` feeds:
 
+**opkg on openwrt 24.10.x and previous**
+
 ```shell
 echo "src/gz libremesh https://feed.libremesh.org/master" >> repositories.conf
 echo "src/gz libremesh_profiles https://feed.libremesh.org/profiles" >> repositories.conf
-echo "src/gz libremesh_arch_packages https://feed.libremesh.org/arch_packages/master/mips_24kc" >> repositories.conf
 echo  "untrusted comment: signed by libremesh.org key a71b3c8285abd28b" > keys/a71b3c8285abd28b
 echo "RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8" >> keys/a71b3c8285abd28b
 ```
+To use the new `shared-state-async` add this repo:
+- replace `openwrt-23.05` with the openwrt branch 
+- replace `mips_24kc` with the architecture of your device based on target/subtarget
 
-If your device is not part of ath79-generic replace `mips_24kc` with the architecture of the selected &lt;target&gt;/&lt;subtarget&gt;.
+```shell 
+echo "src/gz libremesh_arch_packages https://feed.libremesh.org/arch_packages/master/openwrt-23.05/mips_24kc" >> repositories.conf
+```
+
+**apk on openwrt main branch**
+```
+echo "https://feed.libremesh.org/apk/master/packages.adb" >> repositories
+echo "https://feed.libremesh.org/apk/profiles/packages.adb" >> repositories
+```
+To use the new `shared-state-async` add this repo: 
+- replace `openwrt-main` with the openwrt branch 
+- replace `mips_24kc` with the architecture of your device based on target/subtarget
+
+```shell 
+echo "https://feed.libremesh.org/arch_packages/master/openwrt-main/mips_24kc/packages.adb" >> repositories
+```
 
 Ideally add your own `lime-community` files within the container in the folder
 `./files/etc/config/`. To find possible options consult the
@@ -94,14 +113,9 @@ Your images should be available outside of the container in the `./images/` fold
 
 Go to <https://firmware-selector.openwrt.org/>. Find your device. Click on the folder symbol right after "Links: ". Alternatively, find your device in [OpenWrt's Table of Hardware][OpenWrt-ToH], find the image download link, remove the filename from the right side of the link and put the result in your browsers address bar. Scroll down and download openwrt-imagebuilder-*. Unpack the file and open a terminal inside the directory. Add the `lime-packages` feed:
 
-```shell
-echo "src/gz libremesh https://feed.libremesh.org/master" >> repositories.conf
-echo "src/gz libremesh_profiles https://feed.libremesh.org/profiles" >> repositories.conf
-echo "src/gz libremesh_arch_packages https://feed.libremesh.org/arch_packages/master/mips_24kc" >> repositories.conf
-echo  "untrusted comment: signed by libremesh.org key a71b3c8285abd28b" > keys/a71b3c8285abd28b
-echo "RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8" >> keys/a71b3c8285abd28b
-```
-If your device is not part of ath79-generic replace `mips_24kc` with the architecture of the selected &lt;target&gt;/&lt;subtarget&gt;.
+Follow the same steps at With Docker
+- **opkg on openwrt 24.10.x and previous**
+- **apk on openwrt main branch**
 
 Create an image with
 ```shell
