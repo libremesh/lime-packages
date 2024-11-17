@@ -4,17 +4,7 @@
 # This is free software, licensed under the GNU General Public License v3.
 #
 
-include $(TOPDIR)/rules.mk
-
-LIME_BUILDDATE:=$(shell date +%Y%m%d_%H%M)
-
-GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
-GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
-
-PKG_NAME:=lime-proto-olsr6
-PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
-
-include $(INCLUDE_DIR)/package.mk
+include ../../libremesh.mk
 
 define Package/$(PKG_NAME)
 	TITLE:=LiMe OLSR proto support (IPv6)
@@ -24,17 +14,6 @@ define Package/$(PKG_NAME)
 	DEPENDS:=+lua +libuci-lua +lime-system +olsrd +olsrd-mod-jsoninfo +luci-lib-ip \
 		 +luci-lib-nixio
 	PKGARCH:=all
-endef
-
-define Build/Compile
-	@rm -rf ./build || true
-	@cp -r ./src ./build
-	@sed -i '/^--!.*/d' build/*.lua
-endef
-
-define Package/$(PKG_NAME)/install
-	@mkdir -p $(1)/usr/lib/lua/lime/proto || true
-	$(CP) ./build/olsr6.lua $(1)/usr/lib/lua/lime/proto/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
