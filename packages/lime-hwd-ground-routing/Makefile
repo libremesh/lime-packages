@@ -4,17 +4,7 @@
 # This is free software, licensed under the GNU General Public License v3.
 #
 
-include $(TOPDIR)/rules.mk
-
-LIME_BUILDDATE:=$(shell date +%Y%m%d_%H%M)
-
-GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
-GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
-
-PKG_NAME:=lime-hwd-ground-routing
-PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
-
-include $(INCLUDE_DIR)/package.mk
+include ../../libremesh.mk
 
 define Package/$(PKG_NAME)
   TITLE:=Manage 802.1q VLANs for ground routing
@@ -32,19 +22,6 @@ define Package/$(PKG_NAME)/description
 	(transparent bridge) Ap/Sta mode. Configuring ground routing you
 	will set up an interface with a different vlan or on a different
 	switch port for each connected device in WDS mode.
-endef
-
-define Build/Compile
-	@rm -rf ./build || true
-	@mkdir ./build
-	$(CP) ./files ./build
-	$(FIND) ./build -name '*.sh' -exec sed -i '/^\s*#\[Doc\]/d' {} +
-	$(FIND) ./build -name '*.lua' -exec sed -i '/^\s*--!.*/d' {} +
-endef
-
-define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/
-	$(CP) ./build/files/* $(1)/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))

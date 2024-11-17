@@ -3,17 +3,14 @@
 #
 # This is free software, licensed under the GNU General Public License v3.
 
-include $(TOPDIR)/rules.mk
+include ../../libremesh.mk
 
-PKG_NAME:=lime-app
-PKG_VERSION:=v0.2.26
+PKG_VERSION:=0.2.26
 PKG_RELEASE:=2
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=$(PKG_NAME)-v$(PKG_VERSION).tar.gz
 PKG_HASH:=afb74137af470f1a07d75870d569776e0eef05cce30682f58fed601e4a457d62
-PKG_SOURCE_URL:=https://github.com/libremesh/lime-app/releases/download/$(PKG_VERSION)
-
-include $(INCLUDE_DIR)/package.mk
+PKG_SOURCE_URL:=https://github.com/libremesh/lime-app/releases/download/v$(PKG_VERSION)
 
 define Package/$(PKG_NAME)
 	CATEGORY:=LibreMesh
@@ -28,17 +25,6 @@ endef
 
 define Package/$(PKG_NAME)/description
 	Light webApp for LibreMesh over uhttpd
-endef
-
-define Build/Compile
-endef
-
-define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/
-	$(CP) ./files/* $(1)/
-	$(INSTALL_DIR) $(1)/www/app/
-	$(CP) $(BUILD_DIR)/build/* $(1)/www/app/
-	$(INSTALL_DIR) $(1)/usr/share/rpcd/acl.d || true
 endef
 
 define Package/$(PKG_NAME)/postinst
