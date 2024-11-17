@@ -9,25 +9,41 @@ on:
       - v*
       - '!v2020*'
     paths:
-      - ".github/workflows/*"
+      - ".github/workflows/build.yml"
       - "libremesh.mk"
       - "packages/**"
+  workflow_dispatch:
 
 jobs:
+# Build all packages for x86_64
+# Use openwrt branches 'main' and 'openwrt-24.10' to produce two feeds:
+# one for 'apk' and one for the older 'opkg'.
+# NOTE: this doesn't sign packages for apk
   build:
-    name: Build ${{ github.ref }}
+    name: Build ${{ matrix.version }} ${{ github.ref }}
     runs-on: ubuntu-latest
-
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - { version: main, output_path: 'apk/'}
+          - { version: openwrt-24.10, output_path: ''}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Build packages
-        uses: openwrt/gh-action-sdk@v5
+        uses: openwrt/gh-action-sdk@v7
         env:
-          ARCH: "x86_64"
+          ARCH: "x86_64-${{ matrix.version }}"
           FEEDNAME: "libremesh"
           IGNORE_ERRORS: "n m y"
-          KEY_BUILD: "${{ secrets.KEY_BUILD }}"
+          KEY_BUILD: "${{ matrix.version != 'main' && secrets.KEY_BUILD || '' }}"
+          INDEX: 1
+          NO_DEFAULT_FEEDS: 1
+          NO_REFRESH_CHECK: 1
+          NO_SHFMT_CHECK: 1
+          # V: sc
 
       - name: Set package destination
         run: |
@@ -36,12 +52,12 @@ jobs:
           echo "DEST_DIR=$TAG" >> $GITHUB_ENV
 
       - name: Upload packages to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           external_repository: libremesh/lime-feed
           publish_dir: bin/packages/x86_64/libremesh/
-          destination_dir: ${{ env.DEST_DIR }}
+          destination_dir: ${{ matrix.output_path }}${{ env.DEST_DIR }}
 
 #     - name: Upload packages to S3
 #       uses: jakejarvis/s3-sync-action@master
