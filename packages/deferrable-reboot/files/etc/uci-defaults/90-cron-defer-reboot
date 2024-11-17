@@ -6,5 +6,5 @@ unique_append()
 }
 
 unique_append \
-	"*/3 * * * * ((sleep $((RANDOM % 120)); /usr/bin/deferable-reboot-check )&)" /etc/crontabs/root
+	"*/3 * * * * ((sleep $((RANDOM % 120)); /usr/bin/deferrable-reboot-check )&)" /etc/crontabs/root
 
