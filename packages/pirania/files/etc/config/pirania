@@ -8,7 +8,7 @@ config base_config 'base_config'
     option url_fail '/portal/fail.html'
     option db_path '/etc/pirania/vouchers/'
     option hooks_path '/etc/pirania/hooks/'
-    option append_ipt_rules '0'  # if set to 1, iptables rules will be Appended instead of Inserted
+    option append_nft_rules '0'  # if set to 1, iptables rules will be Appended instead of Inserted
     option with_vouchers '0'
     list allowlist_ipv4 '10.0.0.0/8'
     list allowlist_ipv4 '172.16.0.0/12'
@@ -16,7 +16,7 @@ config base_config 'base_config'
     list allowlist_ipv6 'fc00::/7'
     list allowlist_ipv6 'fe80::/64'
     list allowlist_ipv6 '2a00:1508:0a00::/40'
-    # list catch_interfaces 'br-lan'
+    list catch_interfaces 'br-lan'
     # list catch_interfaces 'anygw'
     list catch_bridged_interfaces 'wlan0-ap'
     

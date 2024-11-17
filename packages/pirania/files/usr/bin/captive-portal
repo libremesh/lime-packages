@@ -1,139 +1,91 @@
 #!/bin/sh
-# requires ip6tables-mod-nat and ipset
+# requires nftables, liblucihttp0, liblucihttp-lua, uhttpd, uhttpd-mod-lua, uhttpd-mod-ubus
+
 
 clean_tables () {
-	echo "Cleaning captive-portal rules"
-	for iface in $(uci get pirania.base_config.catch_bridged_interfaces); do
-		ebtables -t nat -D PREROUTING -i $iface -j mark --mark-set 0x9124714
-	done
-
-	for ipvX in ipv4 ipv6 ; do
-		if [ "$ipvX" = "ipv4" ] ; then
-			iptables=iptables
-			family=inet
-			ipaddr=ipaddr
-		else
-			iptables=ip6tables
-			family=inet6
-			ipaddr=ip6addr
-		fi
-
-		$iptables -t mangle -D PREROUTING -m mark --mark 0x9124714 -j pirania
-
-		for interface in $(uci get pirania.base_config.catch_interfaces); do
-			$iptables -t mangle -D PREROUTING -i $interface -j pirania
-		done
-
-		$iptables -t nat -D PREROUTING -j pirania
-		$iptables -t filter -D FORWARD -j pirania
-		for table in mangle nat filter; do
-			$iptables -t $table -F pirania
-			$iptables -t $table -X pirania
-		done
-	done
-}
-
-clean_sets () {
-	ipset flush pirania-auth-macs
-	for ipvX in ipv4 ipv6 ; do
-		ipset flush pirania-allowlist-$ipvX
-	done
-}
-
-set_iptables () {
-	echo "Apply captive-portal rules"
-
-	append_ipt_rules=$(uci get pirania.base_config.append_ipt_rules 2> /dev/null)
-	if [ "$append_ipt_rules" = "1" ] ; then
-		AorI="A"
-	else
-		AorI="I"
+	echo "Cleaning captive-portal rules if there's any"
+	if nft list tables inet | grep -q "pirania"; then
+		nft delete table inet pirania
 	fi
-
-	# Mark every packet from catch_bridged_interfaces to be handled later.
-	# bridged interfaces cant be handled by iptables.
-	for iface in $(uci get pirania.base_config.catch_bridged_interfaces); do
-		ebtables -t nat -$AorI PREROUTING -i $iface -j mark --mark-set 0x9124714
-	done
-
-	for ipvX in ipv4 ipv6 ; do
-		if [ "$ipvX" = "ipv4" ] ; then
-			iptables=iptables
-			family=inet
-			anygw=$(uci get network.lm_net_br_lan_anygw_if.ipaddr)
-		else
-			iptables=ip6tables
-			family=inet6
-			anygw=[$(uci get network.lan.ip6addr | cut -d/ -f1)]
-		fi
-
-		### Buildup: create a pirania chain in each table
-		for table in mangle nat filter; do
-			$iptables -t $table -N pirania
-		done
-
-		# Redirect to pirania chain every packet from catch_bridged_interfaces
-		if [ -n "$(uci get pirania.base_config.catch_bridged_interfaces)" ] ; then
-			$iptables -t mangle -$AorI PREROUTING -m mark --mark 0x9124714 -j pirania
-		fi
-
-		# Redirect to pirania chain every packet from catch_interfaces
-		for interface in $(uci get pirania.base_config.catch_interfaces); do
-			$iptables -t mangle -$AorI PREROUTING -i $interface -j pirania
-		done
-
-		# stop processing the chain for authorized macs and allowed ips (so they are accepted)
-		$iptables -t mangle -A pirania -m set --match-set pirania-auth-macs src -j RETURN
-		$iptables -t mangle -A pirania -m set --match-set pirania-allowlist-$ipvX dst -j RETURN
-
-		# mark other packages to be rejected later
-		$iptables -t mangle -A pirania -j MARK --set-mark 0x66/0xff
-		# except their dest port is 80, in this case mark to be redirected later
-		$iptables -t mangle -A pirania -p tcp -m tcp --dport 80 -j MARK --set-mark 0x80/0xff
-
-		# marked packages reach nat-prerouting table, send them to nat-pirania chain.
-		$iptables -t nat -$AorI PREROUTING --jump pirania
 	
-		# in nat-pirania chain do:
-		# send DNS requests, that are not from valid ips or macs, to our own captive portal DNS at 59053
-		$iptables -t nat -A pirania -p udp  -m set ! --match-set pirania-allowlist-$ipvX src -m set ! --match-set pirania-auth-macs src --dport 53 -j DNAT --to-destination $anygw:59053
-		# redirect packets with dest port 80 to port 59080 of this host (the captive portal page).
-		$iptables -t nat -A pirania -p tcp -m tcp -m mark --mark 0x80/0xff -j REDIRECT --to-ports 59080
-		
-		# Other packets, if intended to be forwarded will reach filter-forward chain, send them to filter-pirania chain.  
-		$iptables -t filter -$AorI FORWARD --jump pirania
-		# And in there let's reject them with the best suited reject reason.
-		$iptables -t filter -A pirania -p tcp -m mark --mark 0x66/0xff -j REJECT --reject-with tcp-reset
-		$iptables -t filter -A pirania -m mark --mark 0x66/0xff -j REJECT
-	done
+}
+
+set_nftables () { 
+	echo "Apply captive-portal rules"
+	# Detect wheter add or insert rules
+	#append_nft_rules=$(uci get pirania.base_config.append_nft_rules 2> /dev/null)
+	#if [ "$append_nft_rules" = "1" ] ; then
+	#	op="add rule"
+	#else
+	#	op="insert rule"
+	#fi
+
+	# Create pirania tables	
+	nft create table inet pirania
+	# Create default tables and chains
+	nft add table inet pirania
+	nft add chain inet pirania prerouting { type nat hook prerouting priority 0 \; }
+	nft add chain inet pirania input { type filter hook input priority 0 \; }
+	nft add chain inet pirania forward { type filter hook forward priority 0 \; }
+
+  	# Add mac-adress set
+  	nft add set inet pirania pirania-auth-macs { type ether_addr\; }
+
+	# Create ipv4 set on pirania table
+  	nft add set inet pirania pirania-allowlist-ipv4 { type ipv4_addr \; flags interval \; comment \"allow ipv4 list\" \; }
+  	# Create ipv6 set on pirania table
+  	nft add set inet pirania pirania-allowlist-ipv6 { type ipv6_addr \; flags interval \; comment \"allow ipv6 list\" \; }
+
+	# Only accept packets from interfaces defined in catch_bridged_interfaces
+	catch_interfaces=$(uci get pirania.base_config.catch_bridged_interfaces | sed 's/ /,/g')
+
+	# stop processing the chain for authorized macs and allowed ips (so they are accepted)
+	nft add rule inet pirania prerouting ether saddr @pirania-auth-macs ct state new,established,related counter log prefix "ValidSMAC" accept
+	nft add rule inet pirania prerouting ip daddr @pirania-allowlist-ipv4 ct state new,established,related counter log prefix "ACCEPT-ipv4" accept
+	nft add rule inet pirania prerouting ip6 daddr @pirania-allowlist-ipv6 ct state new,established,related counter log prefix "ACCEPT-ipv6" accept
+
+	# send DNS requests, that are not from valid ips or macs, to our own captive portal DNS at 59053
+	nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ether saddr != @pirania-auth-macs ct state new,established,related counter log prefix "SMACDNS"  redirect to :59053
+	# redirect packets with dest port 80 to port 59080 of this host (the captive portal page).
+	nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ether saddr != @pirania-auth-macs ct state new,established,related counter log prefix "SMACHTTP"  redirect to :59080
+
+	#nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ip saddr @pirania-allowlist-ipv4 ct state new,established,related counter log prefix "IPv4HTTP" redirect to :59080
+	#nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ip6 saddr  @pirania-allowlist-ipv6 ct state new,established,related counter log prefix "IPV6HTTP" redirect to :59080
+
+	#nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ip saddr @pirania-allowlist-ipv4 ct state new,established,related counter redirect to :59053
+	#nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ip6 saddr @pirania-allowlist-ipv6 ct state new,established,related counter redirect to :59053
+ 
+
+	# reject
+	
+	#nft add rule inet pirania prerouting drop
+	#nft add rule inet pirania forward meta mark 0x11/0x11 counter reject with tcp reset
+	#nft add rule inet pirania forward meta mark 0x11/0x11 counter reject
+
 }
 
 update_ipsets () {
-	# using temporary ipset sets and swaping them so the update
-	# implies minimal disturb to the network and a previous clean-up
-	# is not needed
-	ipset -exist create pirania-auth-macs hash:mac timeout 0
-	ipset -exist create pirania-auth-macs-tmp hash:mac timeout 0
-	for mac in $(pirania_authorized_macs) ; do
-		ipset -exist add pirania-auth-macs-tmp $mac
-	done
-	ipset swap pirania-auth-macs-tmp pirania-auth-macs
-	ipset destroy pirania-auth-macs-tmp
 
-	for ipvX in ipv4 ipv6 ; do
-		if [ "$ipvX" = "ipv4" ] ; then
-			family=inet
-		else
-			family=inet6
-		fi
-		ipset -exist create pirania-allowlist-${ipvX} hash:net family $family
-		ipset -exist create pirania-allowlist-${ipvX}-tmp hash:net family $family
-		for item in $(uci get pirania.base_config.allowlist_$ipvX); do
-			ipset -exist add pirania-allowlist-${ipvX}-tmp $item
-		done
-		ipset swap pirania-allowlist-${ipvX}-tmp pirania-allowlist-${ipvX}
-		ipset destroy pirania-allowlist-${ipvX}-tmp
-	done
+  # Create tables and sets
+  echo "Updating captive-portal rules"
+
+  # Add authorized MAC addresses
+  for mac in $(pirania_authorized_macs) ; do
+    nft add element inet pirania pirania-auth-macs {$mac}
+	echo "Adicionando enderecos:" $mac
+  done
+
+  # Update pirania-allowlist sets for ipv4 and ipv6
+  nft flush set inet pirania pirania-allowlist-ipv4
+  nft flush set inet pirania pirania-allowlist-ipv6
+  
+  # Add allowed ip/prefixes
+  # Get values from allowlist_ipvX and add to pirania-allowlist-ipvX set
+  ipv4allowlist=$(uci get pirania.base_config.allowlist_ipv4 | sed 's/ /,/g')
+  nft add element inet pirania pirania-allowlist-ipv4 {$ipv4allowlist}
+
+  ipv6allowlist=$(uci get pirania.base_config.allowlist_ipv6 | sed 's/ /,/g')
+  nft add element inet pirania pirania-allowlist-ipv6 {$ipv6allowlist}
 }
 
 # check if captive-portal is enabled in /etc/config/pirania
@@ -141,24 +93,31 @@ enabled=$(uci get pirania.base_config.enabled)
 
 if  [ "$1" = "start" ]; then
 	echo "Running captive-portal"
+	/etc/init.d/pirania-dnsmasq start
+	/etc/init.d/pirania-uhttpd start
 	clean_tables
+	set_nftables
 	update_ipsets
-	set_iptables
 	exit
 elif [ "$1" = "update" ] ; then
+	echo "Captive-portal updating rules"
 	update_ipsets
 	exit
 elif [ "$1" = "clean" ] || [ "$1" = "stop" ] ; then
 	clean_tables
-	clean_sets
 	exit
 elif [ "$enabled" = "1" ]; then
+	echo "Captive-portal already enabled, reloading rules"
 	clean_tables
+#	set_nftables
 	update_ipsets
-	set_iptables
 	exit
+elif [ "$1" = "enabled" ]; then
+	uci set pirania.base_config.enabled='1'
+	# i/o error in my device - check later
+	#uci commit
+	echo "Captive-portal is now enabled"
 else
 	echo "Pirania captive-portal is disabled. Try running captive-portal start"
 	exit
 fi
-
