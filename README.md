@@ -81,15 +81,15 @@ echo "src/gz libremesh_arch_packages https://feed.libremesh.org/arch_packages/ma
 
 **apk on openwrt main branch**
 ```
-echo "@libremesh https://feed.libremesh.org/apk/master/packages.adb" >> repositories
-echo "@libremesh_profiles https://feed.libremesh.org/apk/profiles/packages.adb" >> repositories
+echo "https://feed.libremesh.org/apk/master/packages.adb" >> repositories
+echo "https://feed.libremesh.org/apk/profiles/packages.adb" >> repositories
 ```
 To use the new `shared-state-async` add this repo: 
 - replace `openwrt_main` with the openwrt branch 
 - replace `mips_24kc` with the architecture of your device based on target/subtarget
 
 ```shell 
-echo "@libremesh_arch_packages https://feed.libremesh.org/arch_packages/master/openwrt_main/mips_24kc/packages.adb" >> repositories
+echo "https://feed.libremesh.org/arch_packages/master/openwrt_main/mips_24kc/packages.adb" >> repositories
 ```
 
 Ideally add your own `lime-community` files within the container in the folder
