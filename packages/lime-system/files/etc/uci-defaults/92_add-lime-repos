@@ -5,21 +5,26 @@
 	exit 0
 }
 
-repo=$([ -f /etc/opkg/distfeed.conf ] && echo "opkg" \
-	|| ([ -f /etc/apk/repositories.d/distfeeds.list ] && echo "apk" ) ) || {
-		echo "Package manager not found - skipping"
-		exit 0
-	}
+[ -f /etc/apk/repositories.d/distfeeds.list ] && {
+	repo='apk'
+	feeds_file='/etc/apk/repositories.d/limefeeds.list'
+	dist_feeds_file='/etc/apk/repositories.d/distfeeds.list'
+	main_feed_path='apk/'
+} || ([ -f /etc/opkg/distfeed.conf ] && {
+	repo='opkg'
+	feeds_file='/etc/opkg/limefeeds.conf'
+	dist_feeds_file='/etc/opkg/distfeeds.conf'
+	main_feed_path=''
+	key_name="a71b3c8285abd28b"
+	key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
+})
 
-feeds_file=$([ $repo == 'opkg' ] && echo "/etc/opkg/limefeeds.conf" \
-	|| ([ $repo == 'apk' ] && echo "/etc/apk/repositories.d/limefeeds.list") )
+[ -z "$repo" ] && {
+	echo "Package manager not found - skipping"
+	exit 0
+}
 
-dist_feeds_file=$([ $repo == 'opkg' ] && echo "/etc/opkg/distfeeds.conf" \
-	|| ([ $repo == 'apk' ] && echo "/etc/apk/repositories.d/distfeeds.list") )
-
-$( ([ $repo == 'opkg' ] && [ -f "$feeds_file" ]) \
-  || ([ $repo == 'apk' ] && $(grep -q '@libremesh' $feeds_file)) ) && 
-{
+[ -f "$feeds_file" ] && {
   echo "LibreMesh $repo feeds already defined - skipping"
   exit 0;
 }
@@ -27,14 +32,18 @@ $( ([ $repo == 'opkg' ] && [ -f "$feeds_file" ]) \
 arch="$(grep OPENWRT_ARCH /etc/os-release | sed 's/OPENWRT_ARCH=\"\(.*\)\"/\1/')"
 
 openwrt_branch_ref="$(grep -m 1 "openwrt.org/" $dist_feeds_file | sed 's|.*openwrt.org/\(.*\)|\1|' )"
-openwrt_branch=$(echo $openwrt_branch_ref | grep -q 'snapshots' && echo 'openwrt_main' )
-$(echo $openwrt_branch_ref | grep -q 'releases') && {
+echo $openwrt_branch_ref
+
+if [ '' != "$openwrt_branch_ref" ]; then
+$(echo $openwrt_branch_ref | grep -q 'snapshots') && {
+	openwrt_branch='openwrt_main'
+} || ($(echo $openwrt_branch_ref | grep -q 'releases') && {
 	branch_n="$(echo $openwrt_branch_ref | sed 's/releases\///')"
 	openwrt_branch="openwrt_${branch_n:0:5}"
-}
-
-main_feed_path=$([ $repo == 'opkg' ] && echo "" \
-	|| ([ $repo == 'apk' ] && echo "apk/") )
+})
+else
+	echo "String not found 'openwrt.org' in default ${repo} feeds, cannot determine openwrt branch"
+fi
 
 [ "$LIME_CODENAME" == "development" ] && {
 	packages_url="http://feed.libremesh.org/${main_feed_path}master";
@@ -44,10 +53,7 @@ main_feed_path=$([ $repo == 'opkg' ] && echo "" \
 	arch_packages_url="http://feed.libremesh.org/arch_packages/$LIME_RELEASE/$openwrt_branch/$arch/";
 }
 
-profiles_url="http://feed.libremesh.org/profiles"
-
-key_name="a71b3c8285abd28b"
-key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
+profiles_url="http://feed.libremesh.org/${main_feed_path}profiles"
 
 echo "Configuring official LibreMesh $repo feeds"
 [ $repo == 'opkg' ] && {
@@ -58,7 +64,8 @@ echo "untrusted comment: signed by libremesh.org key $key_name" > "/etc/opkg/key
 echo "$key_content" >> "/etc/opkg/keys/$key_name"
 }
 [ $repo == 'apk' ] && {
-echo "@libremesh $packages_url/packages.adb" >> "$feeds_file"
-echo "@libremesh_arch_packages $arch_packages_url/packages.adb" >> "$feeds_file"
-echo "@profiles $profiles_url/packages.adb" >> "$feeds_file"
+proto=https
+echo "$packages_url/packages.adb" > "$feeds_file"
+echo "${arch_packages_url}packages.adb" >> "$feeds_file"
+echo "$profiles_url/packages.adb" >> "$feeds_file"
 }
