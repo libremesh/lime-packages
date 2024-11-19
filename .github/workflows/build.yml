@@ -15,10 +15,10 @@ on:
   workflow_dispatch:
 
 jobs:
-# Build all packages for x86_64
-# Use openwrt branches 'main' and 'openwrt-24.10' to produce two feeds:
-# one for 'apk' and one for the older 'opkg'.
-# NOTE: this doesn't sign packages for apk
+  # Build all packages for x86_64 using the openwrt sdk
+  # use latest branch of openwrt with opkg to produce feed at https://feed.libremesh.org/master
+  # use main branch of openwrt with apk to produce feed at https://feed.libremesh.org/apk/master
+  # NOTE: this doesn't sign packages for apk
   build:
     name: Build ${{ matrix.version }} ${{ github.ref }}
     runs-on: ubuntu-latest
@@ -28,7 +28,7 @@ jobs:
       matrix:
         include:
           - { version: main, output_path: 'apk/'}
-          - { version: openwrt-24.10, output_path: ''}
+          - { version: openwrt-23.05, output_path: ''}
     steps:
       - uses: actions/checkout@v4
 
@@ -70,4 +70,3 @@ jobs:
 #         AWS_S3_ENDPOINT: ${{ secrets.AWS_S3_ENDPOINT }}
 #         SOURCE_DIR: bin/packages/x86_64/libremesh/
 #         DEST_DIR: ${{ env.DEST_DIR }}
-
