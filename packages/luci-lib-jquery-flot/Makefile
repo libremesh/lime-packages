@@ -4,13 +4,10 @@
 # This is free software, licensed under the GNU General Public License v3.
 #
 
-include $(TOPDIR)/rules.mk
-
-PKG_NAME:=luci-lib-jquery-flot-0-8
 PKG_VERSION:=0.8.1
 PKG_RELEASE:=1
 
-include $(INCLUDE_DIR)/package.mk
+include ../../libremesh.mk
 
 define Package/$(PKG_NAME)
   SECTION:=luci
@@ -20,14 +17,6 @@ define Package/$(PKG_NAME)
   SUBMENU:=8. Libraries
   TITLE:=jQuery library - Flot chart plotting
   PKGARCH:=all
-endef
-
-define Build/Compile
-endef
-
-define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/www/luci-static/resources/jquery/
-	$(CP) ./files/* $(1)/www/luci-static/resources/jquery/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
