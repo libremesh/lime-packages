@@ -58,9 +58,9 @@ jobs:
               && echo "snapshots/packages" || echo "releases/packages-$version")
             echo $VERSION_PATH
 
-            OUTPUT_PATH=$([ "$version" == "main" ] \
+            OPENWRT_BRANCH_PATH=$([ "$version" == "main" ] \
               && echo "openwrt_main" || echo "openwrt_$version")
-            echo $OUTPUT_PATH
+            echo $OPENWRT_BRANCH_PATH
 
             wget -r -nH --no-parent --level 1 --accept html -P. \
               --directory-prefix=. https://downloads.openwrt.org/$VERSION_PATH/  
@@ -69,7 +69,7 @@ jobs:
               [[ $FIRST_BUILD -ne 1 ]] && JSON="$JSON"','
               FIRST_BUILD=0
 
-              JSON="$JSON"'{"version": "'"$VERSION"'" ,"arch": "'"$arch"'", "output_path": "'"$OUTPUT_PATH"'" }'
+              JSON="$JSON"'{"version": "'"$VERSION"'" ,"arch": "'"$arch"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
               echo $JSON
             done
           done
@@ -87,8 +87,8 @@ jobs:
       matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix_builds) }}
       # matrix:
       #   include:
-      #     - { version: main, arch: x86_64, output_path: 'openwrt_main'}
-      #     - { version: main, arch: arc_archs, output_path: 'openwrt_main'}
+      #     - { version: main, arch: x86_64, openwrt_branch_path: 'openwrt_main'}
+      #     - { version: main, arch: arc_archs, openwrt_branch_path: 'openwrt_main'}
     steps:
       - uses: actions/checkout@v4
 
@@ -123,8 +123,8 @@ jobs:
       matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix_builds) }}
       # matrix:
       #   include:
-      #     - { version: main, arch: x86_64, output_path: 'openwrt_main'}
-      #     - { version: main, arch: arc_archs, output_path: 'openwrt_main'}
+      #     - { version: main, arch: x86_64, openwrt_branch_path: 'openwrt_main'}
+      #     - { version: main, arch: arc_archs, openwrt_branch_path: 'openwrt_main'}
     steps:
       - uses: actions/checkout@v4
 
@@ -139,4 +139,4 @@ jobs:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           external_repository: libremesh/lime-feed
           publish_dir: ./artifacts/
-          destination_dir: arch_packages/${{ env.DEST_DIR }}/${{ matrix.output_path }}/${{ matrix.arch }}/
+          destination_dir: arch_packages/${{ env.DEST_DIR }}/${{ matrix.openwrt_branch_path }}/${{ matrix.arch }}/
