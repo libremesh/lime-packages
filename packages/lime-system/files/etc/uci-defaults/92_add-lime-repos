@@ -10,11 +10,13 @@
 	feeds_file='/etc/apk/repositories.d/limefeeds.list'
 	dist_feeds_file='/etc/apk/repositories.d/distfeeds.list'
 	main_feed_path='apk/'
+	arch="$(cat /etc/apk/arch)"
 } || ([ -f /etc/opkg/distfeed.conf ] && {
 	repo='opkg'
 	feeds_file='/etc/opkg/limefeeds.conf'
 	dist_feeds_file='/etc/opkg/distfeeds.conf'
 	main_feed_path=''
+	arch="$(grep OPENWRT_ARCH /etc/os-release | sed 's/OPENWRT_ARCH=\"\(.*\)\"/\1/')"
 	key_name="a71b3c8285abd28b"
 	key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
 })
@@ -29,10 +31,7 @@
   exit 0;
 }
 
-arch="$(grep OPENWRT_ARCH /etc/os-release | sed 's/OPENWRT_ARCH=\"\(.*\)\"/\1/')"
-
 openwrt_branch_ref="$(grep -m 1 "openwrt.org/" $dist_feeds_file | sed 's|.*openwrt.org/\(.*\)|\1|' )"
-echo $openwrt_branch_ref
 
 if [ '' != "$openwrt_branch_ref" ]; then
 $(echo $openwrt_branch_ref | grep -q 'snapshots') && {
@@ -47,25 +46,24 @@ fi
 
 [ "$LIME_CODENAME" == "development" ] && {
 	packages_url="http://feed.libremesh.org/${main_feed_path}master";
-	arch_packages_url="http://feed.libremesh.org/arch_packages/master/$openwrt_branch/$arch/";
+	arch_packages_url="http://feed.libremesh.org/arch_packages/master/$openwrt_branch/$arch";
 } || {
 	packages_url="http://feed.libremesh.org/${main_feed_path}$LIME_RELEASE"
-	arch_packages_url="http://feed.libremesh.org/arch_packages/$LIME_RELEASE/$openwrt_branch/$arch/";
+	arch_packages_url="http://feed.libremesh.org/arch_packages/$LIME_RELEASE/$openwrt_branch/$arch";
 }
 
 profiles_url="http://feed.libremesh.org/${main_feed_path}profiles"
 
 echo "Configuring official LibreMesh $repo feeds"
+[ $repo == 'apk' ] && {
+echo "$packages_url/packages.adb" > "$feeds_file"
+echo "${arch_packages_url}/packages.adb" >> "$feeds_file"
+echo "$profiles_url/packages.adb" >> "$feeds_file"
+} || ( 
 [ $repo == 'opkg' ] && {
 echo "src/gz libremesh $packages_url" > "$feeds_file"
 echo "src/gz libremesh_arch_packages $arch_packages_url" >> "$feeds_file"
 echo "src/gz profiles $profiles_url" >> "$feeds_file"
 echo "untrusted comment: signed by libremesh.org key $key_name" > "/etc/opkg/keys/$key_name"
 echo "$key_content" >> "/etc/opkg/keys/$key_name"
-}
-[ $repo == 'apk' ] && {
-proto=https
-echo "$packages_url/packages.adb" > "$feeds_file"
-echo "${arch_packages_url}packages.adb" >> "$feeds_file"
-echo "$profiles_url/packages.adb" >> "$feeds_file"
-}
+})
