@@ -1,3 +1,318 @@
+= LibreMesh: Shared State Overview
+:toc:
+:toclevels: 3
+
+== Introduction
+
+LibreMesh is an open-source framework designed to facilitate the creation of community mesh networks. A key component of this framework is the **Shared State**, a Conflict-Free Replicated Data Type (CRDT) daemon. This module enables seamless information exchange between nodes in a decentralized network, ensuring consistency and reliability.
+
+The official repository is: https://github.com/LibreMesh/shared-state-async.
+
+Features:
+
+- **Conflict-Free Synchronization**: Shared State ensures data consistency across nodes without requiring a central authority or lock mechanism.
+- **Decentralized Communication**: Nodes exchange data directly, allowing the network to function even in the absence of a central controller.
+- **Flexible Data Types**: Supports various data types, including Wi-Fi link information, node details, and more.
+
+== Available Commands
+
+Shared State provides several commands to interact with and manage data types. Below is an overview of the most commonly used commands for getting and managing data.
+
+--------------------------------------------------------------------------------
+shared-state-async
+Usage: shared-state-async OPERATION [ARGUMENTS]
+Supported operations: discover, dump, get, insert, peer, register, sync
+--------------------------------------------------------------------------------
+
+
+
+**Get**  
+
+In LibreMesh, shared-state is already included and running so you can run this command. This command allows you to retrieve the current state of a specific data type.
+
+   shared-state-async get <data_type>
+
+Example:
+
+--------------------------------------------------------------------------------
+shared-state-async get net-stats
+--------------------------------------------------------------------------------
+
+**Insert**
+
+This command is used to insert data into Shared State. You can specify the data type and the information you want to insert using std input.
+
+    echo '{}' | shared-state-async insert <data_type>
+
+Example:
+
+--------------------------------------------------------------------------------
+echo '{"cheche":{"src_loc":{"long":"-64.4228178","lat":"-31.8019512"},"links":{"ae40411f73a8c64a00fc3abe":{"freq":2462,"iface":"wlan0-mesh","tx_rate":144400,"dst_mac":"c6:4a:00:fc:3a:be","channel":11,"chains":[-40,-35],"signal":-34,"rx_rate":144400,"src_mac":"ae:40:41:1f:73:a8"}}}}'| shared-state-async insert wifi_links_info_ref
+--------------------------------------------------------------------------------
+
+**Dump**
+
+Is like get but with extended shared state debug info of a datatype. It will report "Author"             and "Ttl"
+
+    shared-state-async dump <data_type>
+
+Example:
+
+--------------------------------------------------------------------------------
+shared-state-async get bat-hosts
+{
+...
+    "ae:40:41:22:55:78": "estela_y_julio_wlan1_mesh_17",
+    "ae:40:41:22:55:7b": "estela_y_julio_wlan2_mesh"
+}
+
+
+shared-state-async dump bat-hosts
+
+...
+
+    {
+        "key": "ae:40:41:22:55:78",
+        "value": {
+            "mAuthor": "estela-y-julio",
+            "mTtl": {
+                "xint64": 1422,
+                "xstr64": "1422"
+            },
+            "mData": "estela_y_julio_wlan1_mesh_17"
+        }
+    },
+    {
+        "key": "ae:40:41:22:55:7b",
+        "value": {
+            "mAuthor": "estela-y-julio",
+            "mTtl": {
+                "xint64": 1422,
+                "xstr64": "1422"
+            },
+            "mData": "estela_y_julio_wlan2_mesh"
+        }
+    }
+...
+
+--------------------------------------------------------------------------------
+
+**sync**
+
+This is used to force synchronization between nodes. It will try to sync with neighbors but you can also specify a specific host to try to sync to.
+In order to get the most accurate and fresh info from a node you must force the publisher of the data type to be executed and then sync your info with that node.   
+
+Example:
+
+--------------------------------------------------------------------------------
+
+    shared-state-async sync bat-hots 8.8.8.8
+
+--------------------------------------------------------------------------------
+
+
+**peer**
+
+Shared state is basically only one binary that has to be called first with the "peer" argument in order to lunch the daemon. Then the same binary can be used as a tool to interact with the daemon.
+
+    shared-state-async peer
+
+
+**discover**  
+
+Discover the nodes able to parte in the Shared State network.
+
+
+   shared-state-async discover
+
+
+**register**
+
+Register a new data type or node in the Shared State system.
+
+
+    shared-state-async register DATA-TYPE TYPE-SCOPE UPDATE-INTERVAL BLEACH-TTL
+
+
+
+== Ubus Wrapper
+
+Shared State also supports using ubus for remote procedure calls (RPC) to interact with the system. Get method returns shared-state "get" json data or reported error in case no json is found. Errors are bubbled up as they come from shared-state inside a json structure with the name "error".
+
+Available commands are:
+
+[source,json]
+----
+{ 
+    "sync": { "data_type": "str", "peers_ip": "str" }, 
+    "get": { "data_type": "str" },  
+    "publish": { "data_type": "str" },
+    "publish_all": { },
+    "insert": { "data_type": "str", "json": "str" } 
+}
+----
+
+=== Get 
+
+Get bat-hosts
+
+--------------------------------------------------------------------------------
+
+# ubus -S call shared-state-async get "{'data_type': 'bat-hosts'}"
+
+{"a8:40:41:1f:73:ab":"lrsegundo_eth1_2","02:95:39:1f:73:aa":"lrsegundo_eth0_250","a8:40:41:1c:85:c3":"lrsegundo_wlan2_mesh","a8:40:41:1c:85:16":"lrsegundo_wlan1_mesh","02:bb:ed:1f:73:aa":"lrsegundo_eth1_250","a8:40:41:1f:73:a8":"lrsegundo_wlan0_ap","aa:40:41:1f:73:a8":"lrsegundo_wlan0_apname","02:db:d6:1f:73:aa":"lrsegundo_eth0_1_250","02:29:0f:1f:73:aa":"lrsegundo_eth1_2_250","c2:10:20:5e:7f:b3":"lrsegundo_bat0","a8:40:41:1f:73:aa":"lrsegundo_eth0"}
+
+--------------------------------------------------------------------------------
+
+Get an invalid data type
+
+--------------------------------------------------------------------------------
+
+# ubus -S call shared-state-async get "{'data_type': 'bat-hosss'}"
+
+{"error":53248}
+
+--------------------------------------------------------------------------------
+
+=== Sync 
+Sync valid data type
+
+--------------------------------------------------------------------------------
+
+# ubus -S call shared-state-async sync "{'data_type': 'bat-hosts'}"
+
+{"error":0}
+
+--------------------------------------------------------------------------------
+
+Sync invalid data type
+
+--------------------------------------------------------------------------------
+
+ubus -S call shared-state-async sync "{'data_type': 'bat-hoss' }"
+
+{"error":53248}
+
+--------------------------------------------------------------------------------
+
+Sync valid data type with unreachable ipv4 addresses
+
+--------------------------------------------------------------------------------
+
+# ubus -S call shared-state-async sync "{'data_type': 'bat-hosts' ,'peers_ip':['10.0.0.1','10.0.0.2']}'"
+
+{"error":32768}
+
+--------------------------------------------------------------------------------
+
+Sync valid data type with invalid ipv4 address
+
+--------------------------------------------------------------------------------
+
+# ubus -S call shared-state-async sync "{'data_type': 'bat-hosts' ,'peers_ip':['10.0.0.1','10.0.2']}'"
+
+{"error":61952}
+
+--------------------------------------------------------------------------------
+
+Sync invalid data type with specified ipv4 address
+
+--------------------------------------------------------------------------------
+
+ubus -S call shared-state-async sync "{'data_type': 'bat-hosts' ,'peers_ip':['127.0.0.1','127.0.0.1']}'"
+
+{"error":53248}
+
+--------------------------------------------------------------------------------
+
+Sync valid data type with reachable ipv4 addresses
+
+--------------------------------------------------------------------------------
+
+# ubus -S call shared-state-async sync "{'data_type': 'bat-hosts' ,'peers_ip':['127.0.0.1','127.0.0.1']}'"
+
+{"error":0}
+
+--------------------------------------------------------------------------------
+
+== Data types
+Each data type in Shared State consists of at least two key components:
+
+1. **Definition**: Specifies the structure and properties of the data type.
+2. **Publisher**: Responsible for generating and updating the data.
+3. **Hook(optional)**: optionally a data type can implement a third component that is a hook. These executes custom actions when the data type is updated or accessed.
+
+all data types are in a separate package in LibreMesh and are named "shared-state-**dataType**". A good example of a package is https://github.com/LibreMesh/lime-packages/tree/08784318f4e9fd4269675bd9dbc8ebf6962ce5da/packages/shared-state-bat_hosts[bat-hosts]
+
+=== Available data types 
+
+Shared State uses data types to support various functions. Each data types is responsible for handling a specific information, ensuring seamless integration and management of that data within the mesh network.
+
+The some of the currently supported data types include:
+
+- **bat-hosts**: Handles information about hosts in the network and helps resolving node's domain name.
+
+- **wifi_links_info**: Handles information about Wi-Fi link status and metrics.
+
+- **node_info**: Manages metadata about individual nodes.
+
+- **babel_links_info**: babel routing protocol-specific link data.
+
+- **bat_links_info**: Manages link information for BATMAN-adv networks.
+
+- **Reference State**: One application of Shared State is maintaining a reference state for troubleshooting, diagnostics, and disaster recovery in mesh networks. Refer to the detailed documentation in https://github.com/LibreMesh/lime-packages/blob/08784318f4e9fd4269675bd9dbc8ebf6962ce5da/packages/shared-state-ref_state_commons/README.md[README.md] for more on Reference State.
+
+=== Data types registration
+
+To add support for a new data type, you can develop a custom new data type tailored to your requirements. Data types must be registered into shared-state-async by using a config file. UCI infrastructure is preferred and here is a sample
+
+[source,bash]
+--------------------------------------------------------------------------------
+mSc="plugin_name"
+
+uci set shared-state.${mSc}=dataType
+uci set shared-state.${mSc}.name='data_type_name'
+uci set shared-state.${mSc}.scope='community'
+uci set shared-state.${mSc}.ttl='1200'
+uci set shared-state.${mSc}.update_interval='120'
+uci commit shared-state
+--------------------------------------------------------------------------------
+
+'name' and 'ttl' are the most important attributes.'name' is the name of the data type and 'ttl' parameter stands for "time to live" and will decrease every second until 0.
+
+=== Datatype publishers
+
+In Shared State, **publishers** are responsible for producing and updating data. Each publisher acts as a source for specific data types, feeding information into the system that is then distributed and replicated across the network.
+
+Publishers must be located at +/usr/share/shared-state/publishers+ 
+All Publishers will be called periodically using shared-state-async-publish-all, this can also be invoked manually.
+
+Sync is called automatically by shared-state daemon every 15s
+"ttl" parameter stands for "time to live" and will decrease every second until 0.
+Data contents will be erased if "ttl" reaches 0. So calling publishers has to be done periodically before that happens.
+
+=== Datatype hooks 
+
+**Datatype hooks** allow custom behavior to be triggered when specific data types are updated or accessed. These hooks enable developers to extend the functionality of Shared State by defining actions that respond to changes in the data.
+
+Examples of hooks in action can be found in the `shared-state-mesh-upgrade` package. This package demonstrates how hooks can be utilized to enhance mesh network functionalities.
+
+=== Adding Hooks
+
+Hooks can be added by defining callback script tied to specific data types. 
+
+hooks scripts must be placed in /usr/share/shared-state/hooks/dataType folder and must read std input as 
+
+[source,lua]
+--------------------------------------------------------------------------------
+local indata = io.stdin:read("*all")
+utils.printJson(JSON.parse(indata))
+--------------------------------------------------------------------------------
+
+
+== Debugging 
+By default shared state async is already installed in LibreMesh, but if you want to debug you can compile the binary with debug flag enabled.
+First you must have a clone of openWRT with LibreMesh feeds installed. Please refer to LibreMesh docs to achieve this.
 
 .Build with debugging enabled
 --------------------------------------------------------------------------------
@@ -38,8 +353,6 @@ while Builds/build-lime-shared-state-async-node-Desktop-Debug/shared-state-async
 while shared-state-async sync bat-hosts fe80::ea94:f6ff:fe68:3364%br-lan; do echo ------------------------------------------------------------------- ;done
 
 --------------------------------------------------------------------------------
-
-
 === Interesting Readings
 
 https://openwrt.org/docs/guide-developer/gdb
@@ -47,24 +360,7 @@ https://openwrt.org/docs/guide-developer/gdb
 VoCore2: Develop for OpenWrt on Qt Creator
 https://vonger.cn/?p=14657
 
-=== Plugin related notes
-Plugins must be registered into shared-state-async by using the config file. UCI infrastructure is preferred
+== Contributing
 
-[source,console]
---------------------------------------------------------------------------------
-mSc="plugin_name"
+We welcome contributions to improve Shared State and its applications. Feel free to open issues or submit pull requests on the [GitHub repository](https://github.com/LibreMesh/lime-packages) 
 
-uci set shared-state.${mSc}=dataType
-uci set shared-state.${mSc}.name='plugin-name'
-uci set shared-state.${mSc}.scope='community'
-uci set shared-state.${mSc}.ttl='1200'
-uci set shared-state.${mSc}.update_interval='120'
-uci commit shared-state
---------------------------------------------------------------------------------
-
-Publishers must be located at +/usr/share/shared-state/publishers+ 
-All Publishers will be called at least once using shared-state-async-publish-all
-
-Sync is called automatically by shared-state-async according to "update_interval" parameter
-"ttl" stands for "time to live" and will decrease until 0.
-Data contents will be erased if "ttl" reaches 0. 
