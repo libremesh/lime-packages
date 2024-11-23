@@ -1,14 +1,17 @@
 setup_hotspot_watchping() {
     ifname="client-wwan"
-    gw=$(ip r show default dev $ifname | while read default via ip rest; do [[ $via == "via" ]] && echo $ip && break; done)
-    if [ -n "$gw" ]; then
-        uci set system.hotspot_watchping=watchping
-        uci set system.hotspot_watchping.interface=$ifname
-        uci set system.hotspot_watchping.timeout=2m
-        uci set system.hotspot_watchping.pinghosts=$gw
-        uci set system.hotspot_watchping.pinginterval=20s
-        uci commit system
-        [ -e /etc/init.d/watchping ] && /etc/init.d/watchping restart
+    # check if interface exists before running the ip command on it
+    if [ -e /sys/class/net/$ifname/type ]; then
+        gw=$(ip r show default dev $ifname | while read default via ip rest; do [[ $via == "via" ]] && echo $ip && break; done)
+        if [ -n "$gw" ]; then
+            uci set system.hotspot_watchping=watchping
+            uci set system.hotspot_watchping.interface=$ifname
+            uci set system.hotspot_watchping.timeout=2m
+            uci set system.hotspot_watchping.pinghosts=$gw
+            uci set system.hotspot_watchping.pinginterval=20s
+            uci commit system
+            [ -e /etc/init.d/watchping ] && /etc/init.d/watchping restart
+        fi
     fi
 }
 
