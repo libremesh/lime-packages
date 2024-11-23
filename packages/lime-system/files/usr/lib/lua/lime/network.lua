@@ -214,7 +214,7 @@ function network.clean()
 end
 
 function network._get_lower(dev)
-    local lower_if_path = utils.unsafe_shell("ls -d /sys/class/net/" .. dev .. "/lower*")
+    local lower_if_path = utils.unsafe_shell("ls /sys/class/net/" .. dev .. "/ | grep ^lower")
     local lower_if_table = utils.split(lower_if_path, "_")
     local lower_if = lower_if_table[#lower_if_table]
     return lower_if and lower_if:gsub("\n", "")
