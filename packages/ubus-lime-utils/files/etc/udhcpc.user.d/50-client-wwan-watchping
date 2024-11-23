@@ -8,7 +8,7 @@ setup_hotspot_watchping() {
         uci set system.hotspot_watchping.pinghosts=$gw
         uci set system.hotspot_watchping.pinginterval=20s
         uci commit system
-        /etc/init.d/watchping restart
+        [ -e /etc/init.d/watchping ] && /etc/init.d/watchping restart
     fi
 }
 
