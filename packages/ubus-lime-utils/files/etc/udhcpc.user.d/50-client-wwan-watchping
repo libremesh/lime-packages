@@ -1,7 +1,7 @@
 setup_hotspot_watchping() {
     ifname="client-wwan"
     gw=$(ip r show default dev $ifname | while read default via ip rest; do [[ $via == "via" ]] && echo $ip && break; done)
-    if [ -n gw ]; then
+    if [ -n "$gw" ]; then
         uci set system.hotspot_watchping=watchping
         uci set system.hotspot_watchping.interface=$ifname
         uci set system.hotspot_watchping.timeout=2m
