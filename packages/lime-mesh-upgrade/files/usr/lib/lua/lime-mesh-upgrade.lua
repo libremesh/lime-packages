@@ -101,7 +101,6 @@ mesh_upgrade.set_workdir("/tmp/mesh_upgrade")
 
 function mesh_upgrade.create_local_latest_json(latest_data)
     for _, im in pairs(latest_data['images']) do
-        -- im['download-urls'] = string.gsub(im['download-urls'], upgrade_url, "test")
         im['download-urls'] = {mesh_upgrade.get_repo_base_url() .. im['name']}
     end
     utils.write_file(mesh_upgrade.LATEST_JSON_PATH, json.stringify(latest_data))
@@ -133,15 +132,13 @@ function mesh_upgrade.start_main_node_repository(latest_data)
     mesh_upgrade.change_state(mesh_upgrade.upgrade_states.DOWNLOADING)
 end
 
---- Function that check if tihs node have all things needed to became a main node
+--- Function that check if this node is able to became a main node
 --- Then, call update shared state with the proper info
 -- @url optional new url to get the firmware for local repo
 function mesh_upgrade.become_main_node(url)
     if url then
         eupgrade.set_custom_api_url(url)
     end
-    -- todo(kon): check if main node is already set or we are on mesh_upgrade status
-    -- todo(kon): dont start again if status is started and eupgrade is downloaded for example
     -- Check if there are a new version available (cached only)
     -- 1. Check if new version is available and download it demonized using eupgrade
     local latest = eupgrade.is_new_version_available(false)
@@ -167,7 +164,7 @@ function mesh_upgrade.become_main_node(url)
     }
 end
 
--- Update the state witth an error if eupgrade download failed
+-- Update the state with an error if eupgrade download failed
 -- It returns the download status
 function mesh_upgrade.check_eupgrade_download_failed()
     local download_status = eupgrade.get_download_status()
@@ -192,9 +189,6 @@ function mesh_upgrade.check_safeupgrade_is_working()
 end
 
 function mesh_upgrade.start_firmware_upgrade_transaction()
-    -- todo(kon): do all needed checks also with the main node state etc..
-    -- Expose eupgrade folder to uhttp (this is the best place to do it since
-    --    all the files are present)
     if mesh_upgrade.main_node_state() ~= mesh_upgrade.main_node_states.STARTING then
         return {
             code = "BAD_NODE_STATE",
@@ -340,8 +334,6 @@ function mesh_upgrade.mesh_upgrade_abort(silent_abortion)
         if silent_abortion == nil or silent_abortion == false then
             mesh_upgrade.trigger_sheredstate_publish()
         end
-        -- todo(javi): stop and delete everything
-        --os.execute("rm ".. eupgrade.WORKDIR .."  -r >/dev/null 2>&1")
         -- kill posible safe upgrade command
         utils.unsafe_shell("kill $(ps| grep 'sh -c (( sleep " .. mesh_upgrade.su_start_time_out ..
                                "; safe-upgrade upgrade'| awk '{print $1}')")
@@ -364,11 +356,6 @@ end
 
 function mesh_upgrade.change_main_node_state(newstate)
     local main_node_state = mesh_upgrade.main_node_state()
-    -- if newstate == main_node_state then return false end
-
-    -- if newstate == mesh_upgrade.main_node_states.STARTING and
-    --     main_node_state ~= mesh_upgrade.main_node_states.NO then
-    --     return false
     if newstate == mesh_upgrade.main_node_states.MAIN_NODE and main_node_state ~= mesh_upgrade.main_node_states.STARTING then
         return false
     end
@@ -405,8 +392,6 @@ function mesh_upgrade.change_state(newstate)
         mesh_upgrade.upgrade_states.CONFIRMATION_PENDING then
         return false
     end
-    -- todo(javi): verify other states and return false if it is not possible
-    -- lets allow all types of state changes.
     local uci = config.get_uci_cursor()
     uci:set('mesh-upgrade', 'main', 'upgrade_state', newstate)
     uci:save('mesh-upgrade')
@@ -414,7 +399,7 @@ function mesh_upgrade.change_state(newstate)
     return true
 end
 
--- this function will retry max_retry_conunt tymes in case of error 
+-- this function will retry max_retry_conunt times in case of error 
 -- It will only fetch new information if main node has aborted or main node is
 -- ready for upgraade
 function mesh_upgrade.become_bot_node(main_node_upgrade_data)
