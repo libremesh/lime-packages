@@ -9,7 +9,7 @@ include ../../libremesh.mk
 
 define Package/$(PKG_NAME)
 	CATEGORY:=LibreMesh
-	TITLE:=Babel links module for shared-state
+	TITLE:=Shared-state mesh upgrade information module
 	MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils \
 		+libubus-lua +random-numgen shared-state-async   
@@ -17,7 +17,7 @@ define Package/$(PKG_NAME)
 endef
 
 define Package/$(PKG_NAME)/description
-	Syncronize node information to achieve mesh wide firmware upgrades
+	Synchronize node information to achieve mesh wide firmware upgrades
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
