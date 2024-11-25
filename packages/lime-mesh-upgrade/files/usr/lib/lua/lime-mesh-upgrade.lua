@@ -8,14 +8,14 @@ local fs = require("nixio.fs")
 local json = require 'luci.jsonc'
 
 local mesh_upgrade = {
-    -- posible transaction states are derived from upgrade states
+    -- possible transaction states are derived from upgrade states
     transaction_states = {
         NO_TRANSACTION = "NO_TRANSACTION",
         STARTED = "STARTED", -- there is a transaction in progress
         ABORTED = "ABORTED",
         FINISHED = "FINISHED"
     },
-    -- posible upgrade states enumeration
+    -- possible upgrade states enumeration
     upgrade_states = {
         DEFAULT = "DEFAULT", -- When no upgrade has started, after reboot
         DOWNLOADING = "DOWNLOADING",
@@ -334,7 +334,7 @@ function mesh_upgrade.mesh_upgrade_abort(silent_abortion)
         if silent_abortion == nil or silent_abortion == false then
             mesh_upgrade.trigger_sheredstate_publish()
         end
-        -- kill posible safe upgrade command
+        -- kill possible safe upgrade command
         utils.unsafe_shell("kill $(ps| grep 'sh -c (( sleep " .. mesh_upgrade.su_start_time_out ..
                                "; safe-upgrade upgrade'| awk '{print $1}')")
     end
@@ -344,12 +344,12 @@ function mesh_upgrade.mesh_upgrade_abort(silent_abortion)
     }
 end
 
--- This line will genereate recursive dependencies like in pirania pakcage
+-- This line will generate recursive dependencies like in pirania package
 function mesh_upgrade.trigger_sheredstate_publish()
     utils.execute_daemonized("sleep 1; \
        /usr/share/shared-state/publishers/shared-state-publish_mesh_wide_upgrade")
-    -- minimum renewal time is 30s if not able to renew info just wait, if firts fails the seccond success, 
-    -- if the first succesds the seccond will fail. Sadly merge will output 0 so both times will make sync.
+    -- minimum renewal time is 30s if not able to renew info just wait, if flirts fails the second success, 
+    -- if the first succeeds the second will fail. Sadly merge will output 0 so both times will make sync.
     utils.execute_daemonized("sleep 30; \
         /usr/share/shared-state/publishers/shared-state-publish_mesh_wide_upgrade && shared-state-async sync mesh_wide_upgrade")
 end
@@ -534,7 +534,7 @@ function mesh_upgrade.start_safe_upgrade(su_start_delay, su_confirm_timeout)
             -- no confirmation is received
 
             -- perform a full config backup including mesh_upgrade config file needed for the next image
-            -- surprisingly this does not presrve nodename
+            -- surprisingly this does not preserve nodename
 
             -- os.execute("sysupgrade -b ".. mesh_upgrade.WORKDIR.."/mesh_upgrade_cfg.tgz")
 
@@ -580,8 +580,8 @@ function mesh_upgrade.start_safe_upgrade(su_start_delay, su_confirm_timeout)
     end
 end
 
--- This command requires that the configuration be preserverd across upgrade,
--- maybe this change achieves this objetive
+-- This command requires that the configuration be preserved across upgrade,
+-- maybe this change achieves this objective
 
 -- diff --git a/packages/lime-system/files/etc/config/lime-defaults b/packages/lime-system/files/etc/config/lime-defaults
 -- index 5f5c4a31..8d55d949 100644
@@ -613,7 +613,7 @@ end
 
 -- An active node is involved in a transaction 
 function mesh_upgrade.is_active(status)
-    if status == mesh_upgrade.upgrade_states.DEFAULT or -- if an error has ocurred then there is no transaction
+    if status == mesh_upgrade.upgrade_states.DEFAULT or -- if an error has occurred then there is no transaction
     status == mesh_upgrade.upgrade_states.ERROR or
     status == mesh_upgrade.upgrade_states.ABORTED or 
     status == mesh_upgrade.upgrade_states.CONFIRMED then
@@ -667,7 +667,7 @@ function mesh_upgrade.verify_network_consistency (network_state)
                 --I am in a transaction and main node is in an other
                 utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "main node and bot node timestamp are different"')
                 mesh_upgrade.mesh_upgrade_abort(true)
-                --this will lead to a doble write to shared state.
+                --this will lead to a double write to shared state.
                 utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" "main node and bot node timestamp are different"')
                 utils.unsafe_shell('logger -p daemon.info -t "async: mesh upgrade" " become_bot_node "')
                 mesh_upgrade.become_bot_node(network_state[main_node])
