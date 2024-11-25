@@ -1,0 +1,13 @@
+#!/bin/sh
+
+internet_gw_ip=8.8.8.8
+
+unique_append()
+{
+	grep -qF "$1" "$2" || echo "$1" >> "$2"
+}
+
+unique_append \
+	"*/3 * * * * ((if ping -c 10 -W 10 $internet_gw_ip &> /dev/null; then awk '{print \$1 + 800}' /proc/uptime > /tmp/deferable-reboot.defer ; fi )&) "\
+	/etc/crontabs/root
+
