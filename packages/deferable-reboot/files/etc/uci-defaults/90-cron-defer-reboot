@@ -1,6 +1,6 @@
 #!/bin/sh
 
-internet_gw_ip=8.8.8.8
+internet_gw_ip=4.2.2.2
 
 unique_append()
 {
