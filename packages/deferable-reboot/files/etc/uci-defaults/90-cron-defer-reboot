@@ -1,13 +1,11 @@
 #!/bin/sh
 
-internet_gw_ip=4.2.2.2
-
 unique_append()
 {
 	grep -qF "$1" "$2" || echo "$1" >> "$2"
 }
 
 unique_append \
-	"*/3 * * * * ((if ping -c 10 -W 10 $internet_gw_ip &> /dev/null; then awk '{print \$1 + 800}' /proc/uptime > /tmp/deferable-reboot.defer ; fi )&) "\
+	"*/3 * * * * ((if ping -c 10 -W 10 \$(uci -q get lime-autogen.system.deferable_reboot_ping_target) &> /dev/null; then awk '{print \$1 + 800}' /proc/uptime > /tmp/deferable-reboot.defer ; fi )&) "\
 	/etc/crontabs/root
 
