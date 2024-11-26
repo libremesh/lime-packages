@@ -11,7 +11,7 @@ local function notifyHooks(evData, evName)
 	for hook in fs.dir(hooksDir) do
 		os.execute(
 			string.format( 'ACTION="%s" SERVICE="%s" %s/%s',
-			               evName, evData.service, hooksDir, hook ) )
+			               evName, evData.service or '', hooksDir, hook ) )
 	end
 end
 
