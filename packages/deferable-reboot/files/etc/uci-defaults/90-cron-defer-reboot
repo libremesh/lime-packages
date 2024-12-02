@@ -6,6 +6,6 @@ unique_append()
 }
 
 unique_append \
-	"*/3 * * * * ((if ping -c 10 -W 10 \$(uci -q get lime-autogen.system.deferable_reboot_ping_target) &> /dev/null; then awk '{print \$1 + 1800}' /proc/uptime > /tmp/deferable-reboot.defer ; fi )&) "\
+	"*/3 * * * * ((sleep $((RANDOM % 120)); if ping -c 10 -W 10 \$(uci -q get lime-autogen.system.deferable_reboot_ping_target) &> /dev/null; then awk '{print \$1 + 1800}' /proc/uptime > /tmp/deferable-reboot.defer ; fi )&) "\
 	/etc/crontabs/root
 
