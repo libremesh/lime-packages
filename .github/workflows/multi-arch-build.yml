@@ -26,7 +26,8 @@ on:
 env:
   BUILD_BRANCHES: "main 24.10 23.05"
 
-# workaround: 'make package/shared-state-async/check' fails with 'Package HASH check failed'
+# workaround: build a package that selects '+shared-state-async'
+# as 'make package/shared-state-async/check' fails with 'Package HASH check failed'
   PACKAGES: "shared-state-bat_hosts"
 
 jobs:
@@ -59,7 +60,7 @@ jobs:
             echo $VERSION_PATH
 
             OPENWRT_BRANCH_PATH=$([ "$version" == "main" ] \
-              && echo "openwrt_main" || echo "openwrt_$version")
+              && echo "openwrt-main" || echo "openwrt-$version")
             echo $OPENWRT_BRANCH_PATH
 
             wget -r -nH --no-parent --level 1 --accept html -P. \
@@ -87,8 +88,8 @@ jobs:
       matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix_builds) }}
       # matrix:
       #   include:
-      #     - { version: main, arch: x86_64, openwrt_branch_path: 'openwrt_main'}
-      #     - { version: main, arch: arc_archs, openwrt_branch_path: 'openwrt_main'}
+      #     - { version: main, arch: x86_64, openwrt_branch_path: 'openwrt-main'}
+      #     - { version: main, arch: arc_archs, openwrt_branch_path: 'openwrt-main'}
     steps:
       - uses: actions/checkout@v4
 
@@ -123,8 +124,8 @@ jobs:
       matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix_builds) }}
       # matrix:
       #   include:
-      #     - { version: main, arch: x86_64, openwrt_branch_path: 'openwrt_main'}
-      #     - { version: main, arch: arc_archs, openwrt_branch_path: 'openwrt_main'}
+      #     - { version: main, arch: x86_64, openwrt_branch_path: 'openwrt-main'}
+      #     - { version: main, arch: arc_archs, openwrt_branch_path: 'openwrt-main'}
     steps:
       - uses: actions/checkout@v4
 

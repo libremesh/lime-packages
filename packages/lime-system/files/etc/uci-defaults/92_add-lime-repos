@@ -35,10 +35,10 @@ openwrt_branch_ref="$(grep -m 1 "openwrt.org/" $dist_feeds_file | sed 's|.*openw
 
 if [ '' != "$openwrt_branch_ref" ]; then
 $(echo $openwrt_branch_ref | grep -q 'snapshots') && {
-	openwrt_branch='openwrt_main'
+	openwrt_branch='openwrt-main'
 } || ($(echo $openwrt_branch_ref | grep -q 'releases') && {
 	branch_n="$(echo $openwrt_branch_ref | sed 's/releases\///')"
-	openwrt_branch="openwrt_${branch_n:0:5}"
+	openwrt_branch="openwrt-${branch_n:0:5}"
 })
 else
 	echo "String not found 'openwrt.org' in default ${repo} feeds, cannot determine openwrt branch"
