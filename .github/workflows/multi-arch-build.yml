@@ -61,7 +61,7 @@ jobs:
       - name: Build packages ${{ matrix.arch }}
         uses: openwrt/gh-action-sdk@v7
         env:
-          ARCH: "${{ matrix.arch }}"
+          ARCH: "${{ matrix.arch }}-openwrt-23.05"
           FEEDNAME: "libremesh"
           IGNORE_ERRORS: "n m y"
           KEY_BUILD: "${{ secrets.KEY_BUILD }}"
