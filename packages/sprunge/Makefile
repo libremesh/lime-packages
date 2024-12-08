@@ -4,15 +4,7 @@
 # This is free software, licensed under the GNU General Public License v3.
 #
 
-include $(TOPDIR)/rules.mk
-
-GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
-GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
-
-PKG_NAME:=sprunge
-PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
-
-include $(INCLUDE_DIR)/package.mk
+include ../../libremesh.mk
 
 define Package/$(PKG_NAME)
   TITLE:=sprunge.us and ix.io pastebin
@@ -25,15 +17,6 @@ endef
 
 define Package/$(PKG_NAME)/description
 	sprunge.us and ix.io command line pastebin
-endef
-
-define Build/Compile
-endef
-
-define Package/$(PKG_NAME)/install
-	@mkdir -p $(1)/usr/bin/ || true
-	$(INSTALL_BIN) ./src/sprunge.sh $(1)/usr/bin/sprunge
-	$(INSTALL_BIN) ./src/ix.sh $(1)/usr/bin/ix
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
