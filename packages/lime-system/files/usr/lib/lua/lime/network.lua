@@ -220,10 +220,16 @@ function network._get_lower(dev)
     return lower_if and lower_if:gsub("\n", "")
 end
 
-function network.scandevices()
+function network._is_dsa_conduit(dev)
+	return "reg" == fs.stat("/sys/class/net/" .. dev .. "/dsa/tagging", "type")
+end
+
+
+function network.scandevices(specificIfaces)
 	local devices = {}
-	local switch_vlan = {}
 	local wireless = require("lime.wireless")
+	local cpu_ports = {}
+	local board = utils.getBoardAsTable()
 
 	function dev_parser(dev)
 		if dev == nil then
@@ -231,50 +237,43 @@ function network.scandevices()
 			return
 		end
 
+		--! Avoid configuration on DSA conduit interfaces.
+		--! See also:
+		--! https://www.kernel.org/doc/html/latest/networking/dsa/dsa.html#common-pitfalls-using-dsa-setups
+		if network._is_dsa_conduit(dev) then
+			utils.log( "network.scandevices.dev_parser ignored DSA conduit " ..
+			           "device %s", dev )
+			return
+		end
+
+		--! Filter out ethernet ports connected to switch in a swconfig device.
+		for cpu_port,_ in pairs(cpu_ports) do
+			if cpu_port == dev then
+				utils.log( "network.scandevices.dev_parser ignored ethernet " ..
+				           "device %s connected to internal switch", dev )
+				return
+			end
+		end
+
 		if dev:match("^eth%d+$") then
-			devices[dev] = devices[dev] or {}
+			--! We only get here with devices not listed in board.json, e.g
+			--! pluggable ethernet dongles.
 			utils.log( "network.scandevices.dev_parser found plain Ethernet " ..
 			           "device %s", dev )
-		end
-
-		if dev:match("^eth%d+%.%d+$") then
-			local rawif = dev:match("^eth%d+")
-			devices[rawif] = { nobridge = true }
-			devices[dev] = {}
-			utils.log( "network.scandevices.dev_parser found vlan device %s " ..
-			           "and marking %s as nobridge", dev, rawif )
-		end
-
-		--! With DSA, the LAN ports are not anymore eth0.1 but lan1, lan2...
-		--! or just lan.
-		if dev:match("^lan%d*$") then
-			local lower_if = network._get_lower(dev)
-			if lower_if then
-				devices[lower_if] = { nobridge = true }
-				devices[dev] = {}
-				utils.log( "network.scandevices.dev_parser found LAN port %s " ..
-				           "and marking %s as nobridge", dev, lower_if )
-			end
-		end
-
-		--! With DSA, the WAN is named wan. Copying the code from the lan case.
-		if dev:match("^wan$") then
-			devices[dev] = {}
-			local lower_if = network._get_lower(dev)
-			if lower_if then
-				devices[lower_if] = { nobridge = true }
-				utils.log( "network.scandevices.dev_parser found WAN port %s " ..
-				           "and marking %s as nobridge", dev, lower_if )
-			else
-				utils.log( "network.scandevices.dev_parser found WAN port %s", dev)
-			end
-		end
-
-		if dev:match("^wlan%d+"..wireless.wifiModeSeparator.."%w+$") then
-			devices[dev] = {}
+		elseif dev:match("^wlan%d+"..wireless.wifiModeSeparator.."%w+$") then
 			utils.log( "network.scandevices.dev_parser found WiFi device %s",
 			           dev )
+		elseif specificIfaces[dev] then
+			utils.log( "network.scandevices.dev_parser found device %s that " ..
+			           "matches the config net section %s", dev,
+			           specificIfaces[dev][".name"])
+		else
+			return
 		end
+
+		local is_dsa = utils.is_dsa(dev)
+		devices[dev] = devices[dev] or {}
+		devices[dev]["dsa"] = is_dsa
 	end
 
 	function owrt_ifname_parser(section)
@@ -286,75 +285,54 @@ function network.scandevices()
 		end
 	end
 
-	function owrt_network_interface_parser(section)
-		local ifn = section["device"]
-		if ( type(ifn) == "string" ) then
-			utils.log( "network.scandevices.owrt_network_interface_parser found ifname %s",
-			           ifn )
-			dev_parser(ifn)
+	function board_port_parser(dev)
+		local is_dsa = utils.is_dsa(dev)
+		devices[dev] = devices[dev] or {}
+		devices[dev]["dsa"] = is_dsa
+		if is_dsa then
+			utils.log( "network.scandevices found DSA-port %s in board.json",
+			           dev )
+		else
+			utils.log( "network.scandevices found device %s in board.json", dev )
 		end
 	end
 
-	function owrt_device_parser(section)
-		local created_device = section["name"]
-		local base_interface = section["ifname"]
-		utils.log( "network.scandevices.owrt_device_parser found base "..
-		           "interface %s and derived device %s", base_interface or "not_found",
-		           created_device or "not_found")
-		dev_parser(created_device)
-		dev_parser(base_interface)
-		--! With DSA switch config, lan* ports are included in br-lan as "ports"
-		local ports = section["ports"]
-		if ports ~= "" and ports ~= nil then
-			for _,port in pairs(ports) do
-				utils.log( "network.scandevices.owrt_device_parser found "..
-					   "interface %s with port %s",
-					   created_device or "not_found", port or "not_found")
-					   dev_parser(port)
+	--! Collect switch facing ethernet ports for swconfig devices from board.json
+	for switch, switch_table in pairs(board["switch"] or {}) do
+		for _,port_table in pairs(switch_table["ports"] or {}) do
+			local dev = port_table["device"]
+			if dev then
+				cpu_ports[dev] = true
 			end
 		end
 	end
 
-	function owrt_switch_vlan_parser(section)
-		--! Gio 2021/10/11: as of today OpenWrt still doesn't provide a way to
-		--! programmatically know if a switch vlan interface is visible to the
-		--! kernel via a tagged vlan, the assumption we made in the past that 0t
-		--! was almost always the switch port connected to the CPU become
-		--! problematic due to LibreRouter being wired differently, so ATM we
-		--! just do not filter switch vlan anymore to avoid elegible interfaces
-		--! like LibreRouter eth1.2 being ignored. Corner cases where an
-		--! interface must be ignored or need special config can still be
-		--! handled via specific config sections.
-		--! local kernel_visible = section["ports"]:match("0t")
-		--! if kernel_visible then !$ end
-		switch_vlan[section["vlan"]] = section["device"] 
+	--! Collect dsa ports and usable ethernet and vlan devices from board.json
+	for role, role_table in pairs(board["network"] or {}) do
+		--! "ports" and "device" fields may be specified at the same time.
+		--! In this case, "ports" must be used.
+		local ports = role_table["ports"]
+		if ports == nil then
+			ports = { role_table["device"] }
+		end
+		local protocol = role_table["protocol"]
+		--! Protocol can be dhcp, static, pppoe, ncm, qmi, mbim.
+		--! Ethernet interfaces usually have protocol "dhcp" or "static",
+		--! depending on their role.
+		if protocol == "dhcp" or protocol == "static" then
+			for _,port in pairs(ports) do
+				board_port_parser(port)
+			end
+		end
 	end
 
 	--! Scrape from uci wireless
 	local uci = config.get_uci_cursor()
 	uci:foreach("wireless", "wifi-iface", owrt_ifname_parser)
 
-	--! Scrape from uci network
-	uci:foreach("network", "interface", owrt_network_interface_parser)
-	uci:foreach("network", "device", owrt_device_parser)
-	uci:foreach("network", "switch_vlan", owrt_switch_vlan_parser)
-
-	--! Scrape DSA switch ports from /sys/class/net/
-	local stdOut = io.popen("ls -1 /sys/class/net/ | grep -x 'lan[0-9]*'")
+	--! Scrape from /sys/class/net/
+	local stdOut = io.popen("ls -1 /sys/class/net/")
 	for dev in stdOut:lines() do dev_parser(dev) end
-	stdOut:close()
-
-	--! Scrape plain ethernet devices from /sys/class/net/
-	local stdOut = io.popen("ls -1 /sys/class/net/ | grep -x 'eth[0-9][0-9]*'")
-	for dev in stdOut:lines() do dev_parser(dev) end
-	stdOut:close()
-
-	--! Scrape switch_vlan devices from /sys/class/net/
-	local stdOut = io.popen( "ls -1 /sys/class/net/ | " ..
-	                         "grep -x 'eth[0-9][0-9]*\.[0-9][0-9]*'" )
-	for dev in stdOut:lines() do
-		if switch_vlan[dev:match("%d+$")] then dev_parser(dev) end
-	end
 	stdOut:close()
 
 	return devices
@@ -369,7 +347,7 @@ function network.configure()
 		end
 	end)
 
-	local fisDevs = network.scandevices()
+	local fisDevs = network.scandevices(specificIfaces)
 
 	network.setup_rp_filter()
 
