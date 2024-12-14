@@ -17,7 +17,10 @@ Estas son las características implementadas hasta ahora:
 
 ## Requisitos previos
 
-Este software corre sobre la distribución OpenWrt (ya que utiliza [UCI](https://openwrt.org/docs/techref/uci) para su configuración). Los paquetes `ip6tables-mod-nat` y `ipset` deben estar instalados.
+Este software corre sobre la distribución OpenWrt (ya que utiliza [UCI](https://openwrt.org/docs/techref/uci) para su configuración). Los paquetes `nftables, liblucihttp0, liblucihttp-lua, uhttpd, uhttpd-mod-lua, uhttpd-mod-ubus` deben estar instalados.
+
+Los dispositivos (Android, iOS, PC) no deben tener habilitada la función MAC aleatoria; de lo contrario, la autenticación de la dirección MAC no funcionará.
+Esta configuración se puede cambiar [al conectarse a la red](https://imgur.com/a/4bjBWJQ) o después de conectarse, [yendo a la configuración de la red wifi](https://imgur.com/a/qGpHS4b).
 
 ## Instalar
 

@@ -23,6 +23,8 @@ This are the currently implemented features:
 
 This software assumes that will be running on a OpenWRT/LEDE distribution (because uses uci for config). Needs `nftables` and `ipset` packages installed.
 
+Devices (Android, iOS, PC) must not have the random MAC feature enabled, otherwise MAC address authentication will not work.
+This setting can be changed [when connecting to the network](https://imgur.com/a/4bjBWJQ) or after being connected, [going to the wifi network settings](https://imgur.com/a/qGpHS4b).
 ## Install
 
   * add the libremesh software feed to opkg

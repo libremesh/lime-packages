@@ -99,11 +99,6 @@ elif [ "$enabled" = "1" ]; then
 #	set_nftables
 	update_ipsets
 	exit
-elif [ "$1" = "enabled" ]; then
-	uci set pirania.base_config.enabled='1'
-	# i/o error in my device - check later
-	#uci commit
-	echo "Captive-portal is now enabled"
 else
 	echo "Pirania captive-portal is disabled. Try running captive-portal start"
 	exit
