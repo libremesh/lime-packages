@@ -56,6 +56,7 @@ generate_status() {
     paste_cmd df
     paste_cmd logread -l 20
     paste_cmd "logread | grep err"
+    paste_cmd iw phy
     paste_cmd iw dev wlan0-mesh station dump
     paste_cmd iw dev wlan1-mesh station dump
     paste_cmd iw dev wlan2-mesh station dump
