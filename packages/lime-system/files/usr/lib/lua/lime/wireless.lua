@@ -85,6 +85,18 @@ function wireless.mesh_ifaces()
 				table.insert(ifaces, entry.ifname)
 			end
 		end)
+	--add apup interfaces 
+	local shell_output = utils.unsafe_shell("ls /sys/class/net/ -R")
+	if shell_output ~= nil then
+		for line in shell_output:gmatch("[^\n]+") do
+			-- Check if the line contains the pattern 'wlanX-peerY'
+			local iface = line:match("wlan(%d+)-peer(%d+)$")
+			if iface then
+			-- Add the matched interface to the table
+				table.insert(ifaces, line)
+			end
+		end
+	end
 	return ifaces
 end
 
