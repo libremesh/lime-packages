@@ -25,4 +25,6 @@ function apbb.setup_interface(ifname, args)
 	end
 end
 
+function apbb.runOnDevice(linuxDev, args) end
+
 return apbb

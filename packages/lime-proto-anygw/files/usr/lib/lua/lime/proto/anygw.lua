@@ -139,4 +139,6 @@ protocol direct {
 	return base_conf
 end
 
+function anygw.runOnDevice(linuxDev, args) end
+
 return anygw
