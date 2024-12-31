@@ -6,5 +6,5 @@ unique_append()
 }
 
 unique_append \
-	'*/1 * * * * ((deferable-reboot &> /dev/null)&)'\
+	'*/1 * * * * ((deferrable-reboot &> /dev/null)&)'\
 	/etc/crontabs/root

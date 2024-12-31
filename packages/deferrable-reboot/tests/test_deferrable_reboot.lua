@@ -1,10 +1,10 @@
 local config = require "lime.config"
 local test_utils = require 'tests.utils'
-local defreboot = require 'deferable_reboot'
+local defreboot = require 'deferrable_reboot'
 
 local uci = nil
 
-describe('Deferable Reboot tests #defreboot', function()
+describe('Deferrable Reboot tests #defreboot', function()
 
     it('test load config from lime.config default value', function()
         defreboot.config()
@@ -13,25 +13,25 @@ describe('Deferable Reboot tests #defreboot', function()
 
     it('test load config from lime.config', function()
         config.set('system', 'lime')
-        config.set('system', 'deferable_reboot_uptime_s', '120')
+        config.set('system', 'deferrable_reboot_uptime_s', '120')
         defreboot.config()
         assert.is.equal(120, defreboot.min_uptime)
     end)
 
-    it('test load config from config/deferable-reboot', function()
-        uci:set('deferable-reboot', 'options', 'deferable-reboot')
-        uci:set('deferable-reboot', 'options', 'deferable_reboot_uptime_s', '99')
-        uci:commit('deferable-reboot')
+    it('test load config from config/deferrable-reboot', function()
+        uci:set('deferrable-reboot', 'options', 'deferrable-reboot')
+        uci:set('deferrable-reboot', 'options', 'deferrable_reboot_uptime_s', '99')
+        uci:commit('deferrable-reboot')
         defreboot.config()
         assert.is.equal(99, defreboot.min_uptime)
     end)
 
-    it('test lime.config has precedence over config/deferable-reboot ', function()
+    it('test lime.config has precedence over config/deferrable-reboot ', function()
         config.set('system', 'lime')
-        config.set('system', 'deferable_reboot_uptime_s', '120')
-        uci:set('deferable-reboot', 'options', 'deferable-reboot')
-        uci:set('deferable-reboot', 'options', 'deferable_reboot_uptime_s', '99')
-        uci:commit('deferable-reboot')
+        config.set('system', 'deferrable_reboot_uptime_s', '120')
+        uci:set('deferrable-reboot', 'options', 'deferrable-reboot')
+        uci:set('deferrable-reboot', 'options', 'deferrable_reboot_uptime_s', '99')
+        uci:commit('deferrable-reboot')
         defreboot.config()
         assert.is.equal(120, defreboot.min_uptime)
     end)

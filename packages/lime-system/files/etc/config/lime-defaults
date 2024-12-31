@@ -11,7 +11,8 @@ config lime system
 	option keep_on_upgrade 'libremesh dropbear minimum-essential /etc/sysupgrade.conf'
 	option root_password_policy 'DO_NOTHING'
 	option root_password_secret ''
-	option deferable_reboot_uptime_s '97200'
+	option deferrable_reboot_uptime_s '97200'
+	option deferrable_reboot_ping_target '4.2.2.2'
 	option firstbootwizard_configured false
 	option firstbootwizard_dismissed false
 
