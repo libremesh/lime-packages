@@ -1,0 +1,10 @@
+#!/usr/bin/lua
+
+local defreboot = require 'deferrable_reboot'
+
+defreboot.config()
+
+if defreboot.should_reboot() then
+    os.execute('logger -t deferrable-reboot -p ALERT Rebooting in 30 seconds!')
+    defreboot.reboot()
+end
