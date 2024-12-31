@@ -21,8 +21,8 @@ config lime system
 	option keep_on_upgrade 'libremesh dropbear minimum-essential /etc/sysupgrade.conf'	# Files defining the list of files and directories to backup when upgrade. Relative to /lib/upgrade/keep.d if no '/' defined.
 	option root_password_policy 'DO_NOTHING'	# When configured to SET_SECRET, the root password secret will be configured as specified in root_password_secret. When set to RANDOM a strong random password will be set if root has no password, use this if your firmware is built with the ssh keys inside. DO_NOTHING does nothing, leaving the root password empty (you will have to set it manually or through FirstBootWizard).
 	option root_password_secret ''			# This is the password hash as stored in /etc/shadow, it is only used when root_password_policy=SET_SECRET. You can generate the secret with 'openssl passwd -1' to be compatible with most openwrt firmwares, use a strong password with at least 10 numbers and letters, the longer the better!. For improved security use "openssl passwd -6" for SHA512 (or -5 for SHA256) but be aware that not all firmwares support this.
-	option deferable_reboot_uptime_s '97200'
-	option deferable_reboot_ping_target '4.2.2.2' # b.resolvers.Level3.net	# the reboot scheduled by deferable_reboot, if installed, will be deferred if the ping to this IP is succesful
+	option deferrable_reboot_uptime_s '97200'
+	option deferrable_reboot_ping_target '4.2.2.2' # b.resolvers.Level3.net	# the reboot scheduled by deferrable_reboot, if installed, will be deferred if the ping to this IP is succesful
 	option firstbootwizard_configured false
 	option firstbootwizard_dismissed false		# When true fbw banner will be hidden.
 
