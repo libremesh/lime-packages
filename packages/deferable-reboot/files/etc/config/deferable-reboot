@@ -1,3 +1,0 @@
-config deferable-reboot 'options'
-	#option deferable_reboot_uptime '97200'
-    
