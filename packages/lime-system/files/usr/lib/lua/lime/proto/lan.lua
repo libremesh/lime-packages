@@ -91,4 +91,6 @@ protocol direct {
 	return base_conf
 end
 
+function lan.runOnDevice(linuxDev, args) end
+
 return lan

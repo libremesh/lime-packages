@@ -329,7 +329,7 @@ function utils.shell_quote(s)
 end
 
 --! Excutes a shell command, waits for completion and returns stdout.
---! Warning! Use this function carefully as it could be exploted if used with
+--! Warning! Use this function carefully as it could be exploited if used with
 --! untrusted input. Always use function utils.shell_quote() to escape untrusted
 --! input.
 function utils.unsafe_shell(command)
@@ -600,6 +600,22 @@ function utils.is_dsa()
         return true
     end
     return false
+end
+
+function utils.dumptable(table, nesting)
+  local nesting = nesting or 1
+  if type(table) ~= "table" then
+    print("dumptable: first argument is expected to be a table but you passed a", type(table), table)
+  else
+    if next(table) == nil then
+      print(table, "empty")
+    else
+      for k,v in pairs(table) do
+        print(string.rep('\t', nesting), k, ' = ', v)
+        if type(v) == 'table' then dumptable(v, nesting+1) end
+      end
+    end
+  end
 end
 
 return utils
