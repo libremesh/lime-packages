@@ -65,6 +65,7 @@ local apupSubscriber = {
 		ubus:subscribe(evPath, peerSubscriber)
 	end
 }
+
 function limed.waitForHostapd()
 	local found = false
 	while not found do
@@ -83,6 +84,7 @@ function limed.waitForHostapd()
 		end
 	end
 end
+
 limed.waitForHostapd()
 uloop.init();
 ubus:subscribe("hostapd", apupSubscriber)
