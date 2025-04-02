@@ -66,6 +66,10 @@ local function change_url(msg)
     utils.printJson({status = 'ok', url = url});
 end
 
+local function get_authorized_macs(msg)
+    local auth_macs = portal.get_authorized_macs()
+    return utils.printJson({ status = 'ok', macs = auth_macs })
+end
 
 local function add_vouchers(msg)
     local vouchers, errmsg = vouchera.create(msg.name, msg.qty, msg.duration_m,
@@ -112,6 +116,7 @@ local methods = {
         link_url = 'value',
         background_color = 'value'
     },
+  get_authorized_macs = { no_params = 0 },
 }
 
 if arg[1] == 'list' then
@@ -132,6 +137,7 @@ if arg[1] == 'call' then
   elseif   arg[2] == 'rename'	        then rename(msg)
   elseif   arg[2] == 'get_portal_page_content'    then get_portal_page_content(msg)
   elseif   arg[2] == 'set_portal_page_content'   then set_portal_page_content(msg)
+  elseif   arg[2] == 'get_authorized_macs'   then get_authorized_macs(msg)
   else     utils.printJson({ error = "Method not found" })
   end
 end
