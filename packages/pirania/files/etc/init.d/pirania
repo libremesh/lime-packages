@@ -7,7 +7,7 @@ PROG=/usr/bin/captive-portal
 start() {
     if  [ $(uci get pirania.base_config.enabled) == 1 ]; then
         logger -t pirania "Running portal captive"
-        $PROG
+        $PROG start
         /usr/lib/lua/voucher/hooks.lua start
     else
         logger -t pirania "Portal captive is disabled"

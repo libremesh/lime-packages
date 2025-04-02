@@ -18,7 +18,7 @@ function handle_request (env)
     redirect_path = uci_cursor:get("pirania", "read_for_access", "url_portal")
   end
   local redirect_url = method .. portal_domain .. redirect_path .. "?prev=" .. origin_url
-  
+
   uhttpd.send("Status: 302 \r\n")
   uhttpd.send("Location: " .. redirect_url .. "\r\n")
   uhttpd.send("\r\n") --! indicate uhttpd to send the response

@@ -1,105 +1,190 @@
 #!/bin/sh
 # requires nftables, liblucihttp0, liblucihttp-lua, uhttpd, uhttpd-mod-lua, uhttpd-mod-ubus
 
-
-clean_tables () {
-	echo "Cleaning captive-portal rules if there's any"
-	if nft list tables inet | grep -q "pirania"; then
-		nft delete table inet pirania
-	fi
-	
+# Get the list of allowed MACs and networks
+get_allowed_macs() {
+    # Get MAC addresses and format them properly for nft
+    ubus call pirania get_authorized_macs | jsonfilter -e '@.macs[]' | sed 's/"//g' ||
+        echo "Error: Failed to get authorized MACs" >&2
 }
 
-set_nftables () { 
-	echo "Apply captive-portal rules"
-	# Detect wheter add or insert rules
-	#append_nft_rules=$(uci get pirania.base_config.append_nft_rules 2> /dev/null)
-	#if [ "$append_nft_rules" = "1" ] ; then
-	#	op="add rule"
-	#else
-	#	op="insert rule"
-	#fi
-
-	# Create pirania tables	
-	nft create table inet pirania
-	# Create default tables and chains
-	nft add table inet pirania
-	nft add chain inet pirania prerouting { type nat hook prerouting priority 0 \; }
-	nft add chain inet pirania input { type filter hook input priority 0 \; }
-	nft add chain inet pirania forward { type filter hook forward priority 0 \; }
-
-  	# Add mac-adress set
-  	nft add set inet pirania pirania-auth-macs { type ether_addr\; }
-
-	# Create ipv4 set on pirania table
-  	nft add set inet pirania pirania-allowlist-ipv4 { type ipv4_addr \; flags interval \; comment \"allow ipv4 list\" \; }
-  	# Create ipv6 set on pirania table
-  	nft add set inet pirania pirania-allowlist-ipv6 { type ipv6_addr \; flags interval \; comment \"allow ipv6 list\" \; }
-
-	# Only accept packets from interfaces defined in catch_bridged_interfaces
-	catch_interfaces=$(uci get pirania.base_config.catch_bridged_interfaces | sed 's/ /,/g')
-
-	# Stop processing the chain for authorized macs and allowed ips (so they are accepted)
-	nft add rule inet pirania prerouting ether saddr @pirania-auth-macs ct state new,established,related counter log prefix "ValidSMAC" accept
-	nft add rule inet pirania prerouting ip daddr @pirania-allowlist-ipv4 ct state new,established,related counter log prefix "ACCEPT-ipv4" accept
-	nft add rule inet pirania prerouting ip6 daddr @pirania-allowlist-ipv6 ct state new,established,related counter log prefix "ACCEPT-ipv6" accept
-
-	# Send DNS requests, that are not from valid ips or macs, to our own captive portal DNS at 59053
-	nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ether saddr != @pirania-auth-macs ct state new limit rate 10/second counter log prefix "SMACDNS"  redirect to :59053
-	# Redirect packets with dest port 80 to port 59080 of this host (the captive portal page).
-	nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ether saddr != @pirania-auth-macs ct state new limit rate 10/second counter log prefix "SMACHTTP"  redirect to :59080
-
+get_allow_list_ipv4() {
+    # Get IPv4 allowlist from UCI
+    uci get pirania.base_config.allowlist_ipv4 ||
+        echo "10.0.0.0/8 172.16.0.0/12 192.168.0.0/16" # Default if not found
 }
 
-update_ipsets () {
-
-  # Create tables and sets
-  echo "Updating captive-portal rules"
-
-  # Add authorized MAC addresses
-  for mac in $(pirania_authorized_macs) ; do
-    nft add element inet pirania pirania-auth-macs {$mac}
-	echo "Adicionando enderecos:" $mac
-  done
-
-  # Update pirania-allowlist sets for ipv4 and ipv6
-  nft flush set inet pirania pirania-allowlist-ipv4
-  nft flush set inet pirania pirania-allowlist-ipv6
-  
-  # Add allowed ip/prefixes
-  # Get values from allowlist_ipvX and add to pirania-allowlist-ipvX set
-  ipv4allowlist=$(uci get pirania.base_config.allowlist_ipv4 | sed 's/ /,/g')
-  nft add element inet pirania pirania-allowlist-ipv4 {$ipv4allowlist}
-
-  ipv6allowlist=$(uci get pirania.base_config.allowlist_ipv6 | sed 's/ /,/g')
-  nft add element inet pirania pirania-allowlist-ipv6 {$ipv6allowlist}
+get_allow_list_ipv6() {
+    # Get IPv6 allowlist from UCI
+    uci get pirania.base_config.allowlist_ipv6 ||
+        echo "fc00::/7 fe80::/64" # Default if not found
 }
 
-# check if captive-portal is enabled in /etc/config/pirania
-enabled=$(uci get pirania.base_config.enabled)
+get_local_networks() {
+    # Get local networks from network config
+    uci show network | grep "ipaddr" | cut -d"'" -f2 ||
+        echo "Error: Failed to get local networks" >&2
+}
 
-if  [ "$1" = "start" ]; then
-	echo "Running captive-portal"
-	/etc/init.d/pirania-dnsmasq start
-	/etc/init.d/pirania-uhttpd start
-	clean_tables
-	set_nftables
-	update_ipsets
-	exit
-elif [ "$1" = "update" ] ; then
-	echo "Captive-portal updating rules"
-	update_ipsets
-	exit
-elif [ "$1" = "clean" ] || [ "$1" = "stop" ] ; then
-	clean_tables
-	exit
-elif [ "$enabled" = "1" ]; then
-	echo "Captive-portal already enabled, reloading rules"
-	clean_tables
-#	set_nftables
-	update_ipsets
-	exit
-else
-	echo "Pirania captive-portal is disabled. Try running captive-portal start"
-	exit
-fi
+setup_nft_rules() {
+    # Flush existing rules
+    nft flush ruleset
+
+    # Create base tables and chains - keeping this close to the original working version
+    nft add table inet pirania
+    nft add chain inet pirania input { type filter hook input priority 0 \; }
+    nft add chain inet pirania forward { type filter hook forward priority 0 \; }
+    nft add chain inet pirania prerouting { type nat hook prerouting priority 0 \; }
+
+    # Create sets for authorized MACs and allowed IPs
+    nft add set inet pirania auth_macs { type ether_addr\; }
+    nft add set inet pirania allow_ipv4 { type ipv4_addr \; flags interval \; }
+    nft add set inet pirania allow_ipv6 { type ipv6_addr \; flags interval \; }
+
+    # Allow established/related connections
+    nft add rule inet pirania input ct state established,related accept
+    nft add rule inet pirania forward ct state established,related accept
+
+    # Process networks carefully to avoid overlaps
+
+    # First add IPv4 allowlist networks that are in CIDR format
+    for allowed in $(get_allow_list_ipv4 | tr ' ' '\n'); do
+        if [ -n "$allowed" ]; then
+            nft add element inet pirania allow_ipv4 { $allowed } ||
+                logger -t "pirania" -p warn "Warning: Failed to add IPv4 network $allowed"
+        fi
+    done
+
+    # Add IPv6 networks to the set
+    for network6 in $(get_allow_list_ipv6 | tr ' ' '\n'); do
+        if [ -n "$network6" ]; then
+            nft add element inet pirania allow_ipv6 { $network6 } ||
+                logger -t "pirania" -p warn "Warning: Failed to add IPv6 network $network6"
+        fi
+    done
+
+    # Add authorized MAC addresses to set
+    for mac in $(get_allowed_macs); do
+        if [ -n "$mac" ]; then
+            nft add element inet pirania auth_macs { $mac } ||
+                logger -t "pirania" -p warn "Warning: Failed to add MAC $mac"
+        fi
+    done
+
+    # Accept traffic from authorized MACs - using original rules that worked
+    nft add rule inet pirania forward ether saddr @auth_macs accept
+    nft add rule inet pirania prerouting ether saddr @auth_macs accept
+
+    # Accept traffic to/from allowed IPv4 addresses
+    nft add rule inet pirania forward ip daddr @allow_ipv4 accept
+    nft add rule inet pirania forward ip saddr @allow_ipv4 accept
+    nft add rule inet pirania prerouting ip daddr @allow_ipv4 accept
+
+    # Accept traffic to/from allowed IPv6 addresses (new)
+    nft add rule inet pirania forward ip6 daddr @allow_ipv6 accept
+    nft add rule inet pirania forward ip6 saddr @allow_ipv6 accept
+    nft add rule inet pirania prerouting ip6 daddr @allow_ipv6 accept
+
+    # Redirect DNS requests to captive portal DNS - using original rules that worked
+    nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ether saddr != @auth_macs ct state new limit rate 10/second redirect to :59053
+
+    # Redirect HTTP requests to captive portal page - using original rules that worked
+    nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ether saddr != @auth_macs ct state new limit rate 10/second redirect to :59080
+
+    # Add IPv6 DNS and HTTP redirects
+    nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ether saddr != @auth_macs ip6 version 6 ct state new limit rate 10/second redirect to :59053
+    nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ether saddr != @auth_macs ip6 version 6 ct state new limit rate 10/second redirect to :59080
+
+    # Default policy: drop all other traffic to internet
+    nft add rule inet pirania forward ct state new 'log prefix "Pirania-Block: "' drop
+
+    logger -t "pirania" -p info "Captive portal firewall rules applied"
+}
+
+update_rules() {
+    # Make sure table exists
+    if ! nft list table inet pirania >/dev/null 2>&1; then
+        logger -t "pirania" -p err "Pirania table doesn't exist, run start instead of update"
+        return 1
+    fi
+
+    # Update authorized MACs
+    nft flush set inet pirania auth_macs
+    for mac in $(get_allowed_macs); do
+        if [ -n "$mac" ]; then
+            nft add element inet pirania auth_macs { $mac } ||
+                logger -t "pirania" -p warn "Warning: Failed to update MAC $mac"
+        fi
+    done
+
+    # Update allowed IPs - IPv4
+    nft flush set inet pirania allow_ipv4
+    for allowed in $(get_allow_list_ipv4 | tr ' ' '\n'); do
+        if [ -n "$allowed" ]; then
+            nft add element inet pirania allow_ipv4 { $allowed } ||
+                logger -t "pirania" -p warn "Warning: Failed to update IPv4 network $allowed"
+        fi
+    done
+
+    # Update IPv6 networks
+    nft flush set inet pirania allow_ipv6
+    for network6 in $(get_allow_list_ipv6 | tr ' ' '\n'); do
+        if [ -n "$network6" ]; then
+            nft add element inet pirania allow_ipv6 { $network6 } ||
+                logger -t "pirania" -p warn "Warning: Failed to update IPv6 network $network6"
+        fi
+    done
+
+    logger -t "pirania" -p info "Captive portal rules updated"
+}
+
+check_services() {
+    # Check if pirania-dnsmasq is listening on port 59053
+    if ! netstat -lnu 2>/dev/null | grep -q ":59053"; then
+        logger -t "pirania" -p warn "Warning: pirania-dnsmasq not detected on port 59053"
+    fi
+
+    # Check if pirania-uhttpd is listening on port 59080
+    if ! netstat -lnt 2>/dev/null | grep -q ":59080"; then
+        logger -t "pirania" -p warn "Warning: pirania-uhttpd not detected on port 59080"
+    fi
+}
+
+case "$1" in
+    "start")
+        # Start captive portal services
+        logger -t "pirania" -p info "Starting captive portal"
+        /etc/init.d/pirania-dnsmasq start
+        /etc/init.d/pirania-uhttpd start
+        setup_nft_rules
+        check_services
+        ;;
+    "stop")
+        logger -t "pirania" -p info "Stopping captive portal"
+        nft flush ruleset
+        /etc/init.d/firewall restart
+        /etc/init.d/pirania-dnsmasq stop
+        /etc/init.d/pirania-uhttpd stop
+        ;;
+    "update")
+        logger -t "pirania" -p info "Updating captive portal rules"
+        update_rules
+        ;;
+    "status")
+        echo "Captive Portal Status:"
+        echo "======================"
+        echo "NFT Rules:"
+        nft list table inet pirania 2>/dev/null || echo "Table not found"
+        echo ""
+        echo "Authorized MACs:"
+        ubus call pirania get_authorized_macs
+        echo ""
+        echo "Services:"
+        echo "  DNS Redirect (59053): $(netstat -lnu 2>/dev/null | grep -q ":59053" && echo "RUNNING" || echo "NOT RUNNING")"
+        echo "  HTTP Redirect (59080): $(netstat -lnt 2>/dev/null | grep -q ":59080" && echo "RUNNING" || echo "NOT RUNNING")"
+        ;;
+    *)
+        echo "Usage: $0 start|stop|update|status"
+        exit 1
+        ;;
+esac
