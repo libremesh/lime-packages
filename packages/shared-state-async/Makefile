@@ -17,15 +17,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>
 #
-# SPDX-License-Identifier: AGPL-3.0-only
+# SPDX-License-Identifier: AGPL-3.0-only 
 
 include $(TOPDIR)/rules.mk
 
-GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
+GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . | sed 's|-|.|g' )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
 PKG_NAME:=shared-state-async
-PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
+PKG_VERSION=$(GIT_COMMIT_DATE)~$(GIT_COMMIT_TSTAMP)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/libremesh/shared-state-async.git
