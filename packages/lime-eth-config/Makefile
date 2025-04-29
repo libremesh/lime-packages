@@ -16,7 +16,7 @@ PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-	TITLE:=Eth configuration for LibreMesh Lime-App
+	TITLE:=Ethernet configuration for LibreMesh Lime-App
 	CATEGORY:=LibreMesh
 	MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 	URL:=http://libremesh.org
@@ -25,7 +25,7 @@ define Package/$(PKG_NAME)
 endef
 
 define Package/$(PKG_NAME)/description
-	Eth port configuration for LibreMesh Lime-App.
+	Ethernet port configuration for LibreMesh Lime-App.
 endef
 
 define Build/Compile
