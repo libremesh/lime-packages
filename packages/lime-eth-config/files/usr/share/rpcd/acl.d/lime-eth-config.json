@@ -1,0 +1,15 @@
+{
+    "lime-app": {
+        "description": "lime-app public access",
+        "read": {
+            "ubus": {
+                    "lime-eth-config": [ "*" ]
+            }
+        },
+        "write": {
+            "ubus": {
+                    "lime-eth-config": [ "*" ]
+            }
+        }
+    }
+}
