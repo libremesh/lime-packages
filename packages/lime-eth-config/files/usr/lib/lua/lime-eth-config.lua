@@ -1,75 +1,117 @@
---! LibreMesh
---! Generic hook to be called as a symbolic link for each ref type
---! Copyright (C) 2025  Javier Jorge 
---! Copyright (C) 2025  Instituto Nacional de Tecnología Industrial (INTI) 
---! Copyright (C) 2025  Asociación Civil Altermundi <info@altermundi.net>
---! SPDX-License-Identifier: AGPL-3.0-
-
+-- ! LibreMesh
+-- ! Generic hook to be called as a symbolic link for each ref type
+-- ! Copyright (C) 2025  Javier Jorge 
+-- ! Copyright (C) 2025  Instituto Nacional de Tecnología Industrial (INTI) 
+-- ! Copyright (C) 2025  Asociación Civil Altermundi <info@altermundi.net>
+-- ! SPDX-License-Identifier: AGPL-3.0-
 local JSON = require("luci.jsonc")
 local utils = require("lime.utils")
 local config = require("lime.config")
 local libuci = require("uci")
-
+local node_status = require 'lime.node_status'
 
 local luci_config = libuci:cursor()
 local eht_config = {}
 
 function eht_config.get_eth_config()
-  interfaces = {}
-  local uci = config.get_uci_cursor()
-  uci:foreach("lime-node", "net", function(entry)
-    print(entry['.name'])
-    print(entry.eth_role)
-    print(entry.linux_name)
-    if entry.eth_role ~= nil then
-      local interface = {}
-      interface.name = entry.linux_name
-      interface.role = entry.eth_role
-      table.insert(interfaces, interface)
+    limenode_interfaces = {}
+    --get configurations from lime-node
+    local uci = config.get_uci_cursor()
+    uci:foreach("lime-node", "net", function(entry)
+        if entry.eth_role ~= nil then
+            local interface = {}
+            interface.name = entry.linux_name
+            interface.eth_role = entry.eth_role
+            table.insert(limenode_interfaces, interface)
+        end
+    end)
+    --get default settings 
+    local switch_status = node_status.switch_status()
+    local interfaces = {}
+    if switch_status ~= nil then
+        for _, status in ipairs(switch_status) do
+            local interface = {
+                device = status.device,
+                num = status.num,
+                role = status.role,
+                link = status.link,
+                eth_role = "default" -- default value
+            }
+            for _, limenode_interface in ipairs(limenode_interfaces) do
+                if limenode_interface.name == status.device then
+                    interface.eth_role = limenode_interface.eth_role
+                    break
+                end
+            end
+            table.insert(interfaces, interface)
+        end
     end
-  end)
-  return interfaces
+    return interfaces
 end
 
-function eht_config.delete_eth_config(device)
-  local uci = config.get_uci_cursor()
-  config.uci:delete("lime-node", "lime_app_eth_cfg_" .. device)
-  config.uci:save("lime-node")
-  uci:commit("lime-node")
+function eht_config.delete_eth_config(tag_value)
+    local uci = config.get_uci_cursor()
+    config.uci:delete("lime-node", tag_value)
+    config.uci:save("lime-node")
+    uci:commit("lime-node")
 end
 
 function eht_config.set_eth_config(device, role)
-  local uci = config.get_uci_cursor()
-  local eth_role = uci:get("lime-node", "lime_app_eth_cfg_" .. device, "eth_role")
-  if eth_role ~= nil then
-    if eth_role == role then
-      -- No changes needed, the role is already set
-      return true
-    else
-      eht_config.delete_eth_config(device)
+    local tag_value = "lime_app_eth_cfg_" .. device:gsub("%.", "_")
+    local uci = config.get_uci_cursor()
+    local eth_role = uci:get("lime-node", tag_value, "eth_role")
+    -- verify previous config
+    if eth_role ~= nil then
+        if eth_role == role then
+            -- No changes needed, the role is already set
+            return true
+        else
+            eht_config.delete_eth_config(tag_value)
+        end
     end
-  end
-  
-  uci:set("lime-node", "lime_app_eth_cfg_" ..device, "net")
-  uci:set("lime-node", "lime_app_eth_cfg_" ..device, "eth_role", role)
-  if role == "default" then
-    eht_config.delete_eth_config(device)
-  elseif role == "wan" then
-    uci:set("lime-node", "lime_app_eth_cfg_" .. device, "linux_name", device)
-    uci:set("lime-node", "lime_app_eth_cfg_" .. device, "protocols", {"wan","dynamic"})
-  elseif role == "lan" then
-    uci:set("lime-node", "lime_app_eth_cfg_" .. device, "linux_name", device)
-    uci:set("lime-node", "lime_app_eth_cfg_" .. device, "protocols", {"lan"})
-  elseif role == "mesh" then
-    uci:set("lime-node", "lime_app_eth_cfg_" .. device, "linux_name", device)
-    uci:set("lime-node", "lime_app_eth_cfg_" .. device, "protocols", {"batadv:%N1","babeld:17"})
-  else
-    return false
-  end
-  uci:commit("lime-node")
-  config.uci:save("lime-node")
-  os.execute("lime-config && /etc/init.d/network restart")
-  return true
+
+    -- handle lm_hwd_openwrt_wan
+    if role ~= "wan" then
+        -- if the port was automatically configured as a wan port, we need to remove the
+        -- wan protocol. If we returtn to default we need to enable auto detection.
+        local switch_status = node_status.switch_status()
+        if switch_status ~= nil then
+            for _, status in ipairs(switch_status) do
+                if status.device == device and status.role == "wan" then
+                    if role == "lan" or role == "mesh" then
+                        uci:set("lime-node", "lm_hwd_openwrt_wan", "net")
+                        uci:set("lime-node", "lm_hwd_openwrt_wan", "autogenerated", "false")
+
+                    elseif role == "default" then
+                        uci:delete("lime-node", "lm_hwd_openwrt_wan")
+                    end
+                    break
+                end
+            end
+        end
+    end
+
+    if role == "default" then
+        eht_config.delete_eth_config(tag_value)
+    else
+        uci:set("lime-node", tag_value, "net")
+        uci:set("lime-node", tag_value, "eth_role", role)
+        uci:set("lime-node", tag_value, "linux_name", device)
+
+        if role == "wan" then
+            uci:set("lime-node", tag_value, "protocols", {"wan", "dynamic"})
+        elseif role == "lan" then
+            uci:set("lime-node", tag_value, "protocols", {"lan"})
+        elseif role == "mesh" then
+            uci:set("lime-node", tag_value, "protocols", {"batadv:%N1", "babeld:17"})
+        else
+            return false
+        end
+    end
+    uci:commit("lime-node")
+    config.uci:save("lime-node")
+    os.execute("lime-config && /etc/init.d/network restart")
+    return true
 end
 
 return eht_config

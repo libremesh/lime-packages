@@ -1,4 +1,4 @@
-#!/usr/bin/lua
+#!/usr/bin/env lua
 
 --! LibreMesh
 --! Generic hook to be called as a symbolic link for each ref type
@@ -40,7 +40,7 @@ function set_eth_config(msg)
   if success then
     utils.printJson({ status = "ok" })
   else
-    utils.printJson({ status = "error", "Failed to set eth "+ msg.device+ " as "+msg.role  })
+    utils.printJson({ status = "error", error = "Failed to set eth ".. msg.device .. " as " .. msg.role  })
   end
 
 end
