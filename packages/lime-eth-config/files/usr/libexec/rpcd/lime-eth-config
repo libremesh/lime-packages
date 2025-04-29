@@ -1,0 +1,65 @@
+#!/usr/bin/lua
+
+--! LibreMesh
+--! Generic hook to be called as a symbolic link for each ref type
+--! Copyright (C) 2025  Javier Jorge 
+--! Copyright (C) 2025  Instituto Nacional de Tecnología Industrial (INTI) 
+--! Copyright (C) 2025  Asociación Civil Altermundi <info@altermundi.net>
+--! SPDX-License-Identifier: AGPL-3.0-
+
+
+local json = require 'luci.jsonc'
+local utils = require 'lime.utils'
+local eth_config = require("lime-eth-config")
+
+
+local function get_eth_config(msg)
+    
+    interfaces = eth_config.get_eth_config()
+
+    result = {}
+    if interfaces and #interfaces > 0 then
+      result.status = "ok"
+      result.interfaces = interfaces
+    else
+      result.status = "error"  
+      result.interfaces = {}
+      result.error = "No interface configuration found"
+    end
+    utils.printJson(result)
+end
+
+function set_eth_config(msg)
+  local device, role = msg.device, msg.role
+
+  if not device or not role then
+    return utils.printJson({ status = "error", error = "Missing parameters" })
+  end
+
+  local success = eth_config.set_eth_config(device, role)
+  if success then
+    utils.printJson({ status = "ok" })
+  else
+    utils.printJson({ status = "error", "Failed to set eth "+ msg.device+ " as "+msg.role  })
+  end
+
+end
+
+local methods = {
+  get_eth_config = { no_params = 0 },
+  set_eth_config = { device = 'value', role = 'value'}
+}
+
+
+if arg[1] == 'list' then
+    utils.printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = utils.rpcd_readline() or '{}'
+    msg = json.parse(msg)
+    if  arg[2] == 'get_eth_config' then get_eth_config(msg)
+    elseif arg[2] == 'set_eth_config' then set_eth_config(msg)
+    else utils.printJson({ error = "Method not found" })
+    end
+end
