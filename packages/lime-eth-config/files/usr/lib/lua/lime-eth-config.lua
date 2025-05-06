@@ -17,7 +17,7 @@ function eht_config.get_eth_config()
     limenode_interfaces = {}
     --get configurations from lime-node
     local uci = config.get_uci_cursor()
-    uci:foreach("lime-node", "net", function(entry)
+    uci:foreach("lime-autogen", "net", function(entry)
         if entry.eth_role ~= nil then
             local interface = {}
             interface.name = entry.linux_name
