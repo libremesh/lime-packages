@@ -1,5 +1,12 @@
 #!/usr/bin/lua
 
+--! LibreMesh community mesh networks meta-firmware
+--!
+--! Copyright (C) 2013-2023  Gioacchino Mazzurco <gio@eigenlab.org>
+--! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--!
+--! SPDX-License-Identifier: AGPL-3.0-only
+
 network = {}
 
 local ip = require("luci.ip")
@@ -53,7 +60,7 @@ function network.primary_interface()
 	local ifname = config.get("network", "primary_interface", "eth0")
 	if ifname == "auto" then
 		local board = utils.getBoardAsTable()
-		ifname = board['network']['lan']['ifname']
+		ifname = board['network']['lan']['device']
 	end
 	network.assert_interface_exists(ifname)
 	return ifname
@@ -153,12 +160,14 @@ function network.setup_dns()
 			uci:set("dhcp", s[".name"], "local", "/"..cloudDomain.."/")
 			uci:set("dhcp", s[".name"], "expandhosts", "1")
 			uci:set("dhcp", s[".name"], "domainneeded", "1")
+			--! allow queries from non-local ips (i.e. from other clouds)
+			uci:set("dhcp", s[".name"], "localservice", "0")
 			uci:set("dhcp", s[".name"], "server", resolvers)
+			uci:set("dhcp", s[".name"], "confdir", "/etc/dnsmasq.d")
 		end
 	)
 	uci:save("dhcp")
 
-	fs.writefile("/etc/dnsmasq.conf", "conf-dir=/etc/dnsmasq.d\n")
 	fs.mkdir("/etc/dnsmasq.d")
 end
 
@@ -189,11 +198,11 @@ function network.clean()
 	if config.get_bool("network", "use_odhcpd", false) then
 		utils.log("Use odhcpd as dhcp server")
 		uci:set("dhcp", "odchpd", "maindhcp", 1)
-		os.execute("/etc/init.d/odhcpd enable")
+		os.execute("[ -e /etc/init.d/odhcpd ] && /etc/init.d/odhcpd enable")
 	else
 		utils.log("Disabling odhcpd")
 		uci:set("dhcp", "odchpd", "maindhcp", 0)
-		os.execute("/etc/init.d/odhcpd disable")
+		os.execute("[ -e /etc/init.d/odhcpd ] && /etc/init.d/odhcpd disable")
 	end
 
 	utils.log("Cleaning dnsmasq")
@@ -204,62 +213,126 @@ function network.clean()
 	fs.writefile("/etc/config/6relayd", "")
 end
 
-function network.scandevices()
+function network._get_lower(dev)
+    local lower_if_path = utils.unsafe_shell("ls /sys/class/net/" .. dev .. "/ | grep ^lower")
+    local lower_if_table = utils.split(lower_if_path, "_")
+    local lower_if = lower_if_table[#lower_if_table]
+    return lower_if and lower_if:gsub("\n", "")
+end
+
+function network._is_dsa_conduit(dev)
+	return "reg" == fs.stat("/sys/class/net/" .. dev .. "/dsa/tagging", "type")
+end
+
+
+function network.scandevices(specificIfaces)
 	local devices = {}
-	local switch_vlan = {}
 	local wireless = require("lime.wireless")
+	local cpu_ports = {}
+	local board = utils.getBoardAsTable()
 
 	function dev_parser(dev)
-		if dev == nil then return end
+		if dev == nil then
+			utils.log("network.scandevices.dev_parser got nil device")
+			return
+		end
+
+		--! Avoid configuration on DSA conduit interfaces.
+		--! See also:
+		--! https://www.kernel.org/doc/html/latest/networking/dsa/dsa.html#common-pitfalls-using-dsa-setups
+		if network._is_dsa_conduit(dev) then
+			utils.log( "network.scandevices.dev_parser ignored DSA conduit " ..
+			           "device %s", dev )
+			return
+		end
+
+		--! Filter out ethernet ports connected to switch in a swconfig device.
+		for cpu_port,_ in pairs(cpu_ports) do
+			if cpu_port == dev then
+				utils.log( "network.scandevices.dev_parser ignored ethernet " ..
+				           "device %s connected to internal switch", dev )
+				return
+			end
+		end
 
 		if dev:match("^eth%d+$") then
-			devices[dev] = devices[dev] or {}
+			--! We only get here with devices not listed in board.json, e.g
+			--! pluggable ethernet dongles.
+			utils.log( "network.scandevices.dev_parser found plain Ethernet " ..
+			           "device %s", dev )
+		elseif dev:match("^wlan%d+"..wireless.wifiModeSeparator.."%w+$") then
+			utils.log( "network.scandevices.dev_parser found WiFi device %s",
+			           dev )
+		elseif specificIfaces[dev] then
+			utils.log( "network.scandevices.dev_parser found device %s that " ..
+			           "matches the config net section %s", dev,
+			           specificIfaces[dev][".name"])
+		else
+			return
 		end
 
-		if dev:match("^eth%d+%.%d+$") then
-			local rawif = dev:match("^eth%d+")
-			devices[rawif] = { nobridge = true }
-			devices[dev] = {}
-		end
-
-		if dev:match("^wlan%d+"..wireless.wifiModeSeparator.."%w+$") then
-			devices[dev] = {}
-		end
+		local is_dsa = utils.is_dsa(dev)
+		devices[dev] = devices[dev] or {}
+		devices[dev]["dsa"] = is_dsa
 	end
 
 	function owrt_ifname_parser(section)
 		local ifn = section["ifname"]
-		if ( type(ifn) == "string" ) then dev_parser(ifn) end
-		if ( type(ifn) == "table" ) then for _,v in pairs(ifn) do dev_parser(v) end end
+		if ( type(ifn) == "string" ) then
+			utils.log( "network.scandevices.owrt_ifname_parser found ifname %s",
+			           ifn )
+			dev_parser(ifn)
+		end
 	end
 
-	function owrt_device_parser(section)
-		dev_parser(section["name"])
-		dev_parser(section["ifname"])
+	function board_port_parser(dev)
+		local is_dsa = utils.is_dsa(dev)
+		devices[dev] = devices[dev] or {}
+		devices[dev]["dsa"] = is_dsa
+		if is_dsa then
+			utils.log( "network.scandevices found DSA-port %s in board.json",
+			           dev )
+		else
+			utils.log( "network.scandevices found device %s in board.json", dev )
+		end
 	end
 
-	function owrt_switch_vlan_parser(section)
-		local kernel_visible = section["ports"]:match("0t")
-		if kernel_visible then switch_vlan[section["vlan"]] = section["device"] end
+	--! Collect switch facing ethernet ports for swconfig devices from board.json
+	for switch, switch_table in pairs(board["switch"] or {}) do
+		for _,port_table in pairs(switch_table["ports"] or {}) do
+			local dev = port_table["device"]
+			if dev then
+				cpu_ports[dev] = true
+			end
+		end
+	end
+
+	--! Collect dsa ports and usable ethernet and vlan devices from board.json
+	for role, role_table in pairs(board["network"] or {}) do
+		--! "ports" and "device" fields may be specified at the same time.
+		--! In this case, "ports" must be used.
+		local ports = role_table["ports"]
+		if ports == nil then
+			ports = { role_table["device"] }
+		end
+		local protocol = role_table["protocol"]
+		--! Protocol can be dhcp, static, pppoe, ncm, qmi, mbim.
+		--! Ethernet interfaces usually have protocol "dhcp" or "static",
+		--! depending on their role.
+		if protocol == "dhcp" or protocol == "static" then
+			for _,port in pairs(ports) do
+				board_port_parser(port)
+			end
+		end
 	end
 
 	--! Scrape from uci wireless
 	local uci = config.get_uci_cursor()
 	uci:foreach("wireless", "wifi-iface", owrt_ifname_parser)
 
-	--! Scrape from uci network
-	uci:foreach("network", "interface", owrt_ifname_parser)
-	uci:foreach("network", "device", owrt_device_parser)
-	uci:foreach("network", "switch_vlan", owrt_switch_vlan_parser)
-
-	--! Scrape plain ethernet devices from /sys/class/net/
-	local stdOut = io.popen("ls -1 /sys/class/net/ | grep -x 'eth[0-9][0-9]*'")
+	--! Scrape from /sys/class/net/
+	local stdOut = io.popen("ls -1 /sys/class/net/")
 	for dev in stdOut:lines() do dev_parser(dev) end
-	stdOut:close()
-
-	--! Scrape switch_vlan devices from /sys/class/net/
-	local stdOut = io.popen("ls -1 /sys/class/net/ | grep -x 'eth[0-9][0-9]*\.[0-9][0-9]*'")
-	for dev in stdOut:lines() do if switch_vlan[dev:match("%d+$")] then dev_parser(dev) end end
 	stdOut:close()
 
 	return devices
@@ -274,7 +347,7 @@ function network.configure()
 		end
 	end)
 
-	local fisDevs = network.scandevices()
+	local fisDevs = network.scandevices(specificIfaces)
 
 	network.setup_rp_filter()
 
@@ -302,10 +375,18 @@ function network.configure()
 
 		for _,protoParams in pairs(deviceProtos) do
 			local args = utils.split(protoParams, network.protoParamsSeparator)
-			if args[1] == "manual" then break end -- If manual is specified do not configure interface
-			local protoModule = "lime.proto."..args[1]
-			for k,v in pairs(flags) do args[k] = v end
-			if utils.isModuleAvailable(protoModule) then
+			local protoName = args[1]
+			if protoName == "manual" then break end -- If manual is specified do not configure interface
+			local protoModule = "lime.proto."..protoName
+			local needsConfig = utils.isModuleAvailable(protoModule)
+			if protoName ~= 'lan' and not flags["specific"] then
+				--! Work around issue 1121. Do not configure any other
+				--! protocols than lime.proto.lan on dsa devices unless there
+				--! is a config net section for the device.
+				needsConfig = needsConfig and not utils.is_dsa(device)
+			end
+			if needsConfig then
+				for k,v in pairs(flags) do args[k] = v end
 				local proto = require(protoModule)
 				xpcall(function() proto.configure(args) ; proto.setup_interface(device, args) end,
 					   function(errmsg) print(errmsg) ; print(debug.traceback()) end)
@@ -385,6 +466,7 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 		uci:set("network", owrtDeviceName, "device")
 		uci:set("network", owrtDeviceName, "type", vlanProtocol)
 		uci:set("network", owrtDeviceName, "name", linux802adIfName)
+		--! This is ifname also on current OpenWrt
 		uci:set("network", owrtDeviceName, "ifname", linuxBaseIfname)
 		uci:set("network", owrtDeviceName, "vid", vlanId)
 	end
@@ -401,7 +483,7 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 	--! ifname in network because it is already set in wireless, because
 	--! setting ifname on both places cause a netifd race condition
 	if vid ~= 0 or not linux802adIfName:match("^wlan") then
-		uci:set("network", owrtInterfaceName, "ifname", linux802adIfName)
+		uci:set("network", owrtInterfaceName, "device", linux802adIfName)
 	end
 
 	uci:save("network")
@@ -428,14 +510,16 @@ function network.createMacvlanIface(baseIfname, linuxName, argsDev, argsIf)
 
 	local owrtDeviceName = network.limeIfNamePrefix..baseIfname.."_"..linuxName.."_dev"
 	local owrtInterfaceName = network.limeIfNamePrefix..baseIfname.."_"..linuxName.."_if"
-	owrtDeviceName = owrtDeviceName:gsub("[^%w_]", "_") -- sanitize uci section name
-	owrtInterfaceName = owrtInterfaceName:gsub("[^%w_]", "_") -- sanitize uci section name
+	--! sanitize uci sections name
+	owrtDeviceName = owrtDeviceName:gsub("[^%w_]", "_")
+	owrtInterfaceName = owrtInterfaceName:gsub("[^%w_]", "_")
 
 	local uci = config.get_uci_cursor()
 
 	uci:set("network", owrtDeviceName, "device")
 	uci:set("network", owrtDeviceName, "type", "macvlan")
 	uci:set("network", owrtDeviceName, "name", linuxName)
+	--! This is ifname also on current OpenWrt
 	uci:set("network", owrtDeviceName, "ifname", baseIfname)
 	for k,v in pairs(argsDev) do
 		uci:set("network", owrtDeviceName, k, v)
@@ -443,7 +527,7 @@ function network.createMacvlanIface(baseIfname, linuxName, argsDev, argsIf)
 
 	uci:set("network", owrtInterfaceName, "interface")
 	uci:set("network", owrtInterfaceName, "proto", "none")
-	uci:set("network", owrtInterfaceName, "ifname", linuxName)
+	uci:set("network", owrtInterfaceName, "device", linuxName)
 	uci:set("network", owrtInterfaceName, "auto", "1")
 	for k,v in pairs(argsIf) do
 		uci:set("network", owrtInterfaceName, k, v)

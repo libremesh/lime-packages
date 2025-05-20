@@ -27,7 +27,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=LibreMesh
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libremesh.org
-  DEPENDS:=+libiwinfo-lua +lua +libuci-lua +luci-lib-ip +luci-lib-nixio
+  DEPENDS:=+firewall4 +libiwinfo-lua +lua +libuci-lua +luci-lib-ip +luci-lib-nixio +luci-lib-jsonc
   PKGARCH:=all
 endef
 
@@ -57,7 +57,8 @@ endef
 
 define Package/$(PKG_NAME)/postinst
 #!/bin/sh
-[ -n "$${IPKG_INSTROOT}" ] || /etc/init.d/firewall-lime enable || true
+#[ -n "$${IPKG_INSTROOT}" ] || /etc/init.d/firewall-lime enable || true
+# Add here stuff to be executed after installation at image creation time
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))

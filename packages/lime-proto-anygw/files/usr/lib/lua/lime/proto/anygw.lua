@@ -4,6 +4,7 @@ local fs = require("nixio.fs")
 local network = require("lime.network")
 local config = require("lime.config")
 local system = require("lime.system")
+local utils = require("lime.utils")
 
 
 anygw = {}
@@ -11,7 +12,7 @@ anygw = {}
 anygw.configured = false
 
 anygw.SAFE_CLIENT_MTU = 1350
-anygw.FQDN = {"thisnode.info", "minodo.info"}
+anygw.FQDN = {"thisnode.info", "minodo.info", "meuno.info"}
 
 function anygw.configure(args)
 	if anygw.configured then return end
@@ -33,7 +34,12 @@ function anygw.configure(args)
 	anygw_ipv4:prefix(ipv4:prefix())
 	local baseIfname = "br-lan"
 	local argsDev = { macaddr = anygw_mac }
-	local argsIf = { proto = "static" }
+	local argsIf = {
+		proto = "static",
+		-- Set high metric for anygw prefix route, so that br-lan is chosen for
+		-- communication with hosts in the same mesh cloud.
+		metric = '2147483647'
+	}
 	argsIf.ip6addr = anygw_ipv6:string()
 	argsIf.ipaddr = anygw_ipv4:host():string()
 	argsIf.netmask = anygw_ipv4:mask():string()
@@ -65,24 +71,7 @@ function anygw.configure(args)
 
 	uci:save("network")
 
-	fs.mkdir("/etc/firewall.lime.d")
-	fs.writefile(
-		"/etc/firewall.lime.d/20-anygw-ebtables",
-		"\n" ..
-		"ebtables -D FORWARD -j DROP -d " .. anygw_mac .. "/" .. anygw_mac_mask .. "\n" ..
-		"ebtables -A FORWARD -j DROP -d " .. anygw_mac .. "/" .. anygw_mac_mask .. "\n" ..
-		"ebtables -t nat -D POSTROUTING -o bat0 -j DROP -s " .. anygw_mac .. "/" .. anygw_mac_mask .. "\n" ..
-		"ebtables -t nat -A POSTROUTING -o bat0 -j DROP -s " .. anygw_mac .. "/" .. anygw_mac_mask .. "\n" ..
-		"# Filter IPv6 Router Solicitation\n" ..
-		"ebtables -t nat -D POSTROUTING -o bat0 --protocol ipv6 --ip6-protocol ipv6-icmp --ip6-icmp-type router-solicitation -j DROP\n" ..
-		"ebtables -t nat -A POSTROUTING -o bat0 --protocol ipv6 --ip6-protocol ipv6-icmp --ip6-icmp-type router-solicitation -j DROP\n" ..
-		"# Filter rogue IPv6 Router advertisement\n" ..
-		"ebtables -t nat -D POSTROUTING -o bat0 --protocol ipv6 --ip6-protocol ipv6-icmp --ip6-icmp-type router-advertisement -j DROP\n" ..
-		"ebtables -t nat -A POSTROUTING -o bat0 --protocol ipv6 --ip6-protocol ipv6-icmp --ip6-icmp-type router-advertisement -j DROP\n"
-	)
-
 	uci:set("dhcp", "lan", "ignore", "1")
-
 	uci:set("dhcp", owrtInterfaceName.."_dhcp", "dhcp")
 	uci:set("dhcp", owrtInterfaceName.."_dhcp", "interface", owrtInterfaceName)
 	anygw_dhcp_start = config.get("network", "anygw_dhcp_start")
@@ -104,6 +93,7 @@ function anygw.configure(args)
 	uci:foreach("dhcp", "dnsmasq",
 		function(s)
 			uci:set("dhcp", s[".name"], "add_local_fqdn", "0")
+			uci:set("dhcp", s[".name"], "add_local_hostname", "0")
 		end
 	)
 
@@ -121,6 +111,13 @@ function anygw.configure(args)
 
 	uci:save("dhcp")
 
+	--! Let firewall4 append a table of family 'bridge' with chains that hook
+	--! into forward and postrouting.
+	local includeDir = "/usr/share/nftables.d/ruleset-post/"
+	local nftFileName = "lime-proto-anygw_anycast-rules.nft"
+	fs.mkdirr(includeDir)
+	fs.symlink("/usr/share/lime/"..nftFileName, includeDir..nftFileName)
+
 	local content = { }
 	table.insert(content, "enable-ra")
 	table.insert(content, "ra-param=anygw,mtu:"..anygw.SAFE_CLIENT_MTU..",120")
@@ -128,7 +125,7 @@ function anygw.configure(args)
 	table.insert(content, "dhcp-option=tag:anygw,option6:domain-search,"..cloudDomain)
 	fs.writefile("/etc/dnsmasq.d/lime-proto-anygw-20-ipv6.conf", table.concat(content, "\n").."\n")
 
-	io.popen("/etc/init.d/dnsmasq enable || true"):close()
+	utils.unsafe_shell("/etc/init.d/dnsmasq enable || true")
 end
 
 function anygw.setup_interface(ifname, args) end

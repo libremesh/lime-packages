@@ -5,6 +5,10 @@ unique_append()
 	grep -qF "$1" "$2" || echo "$1" >> "$2"
 }
 
-unique_append \
-	'*/5 * * * * ((sleep $(($RANDOM % 120)); shared-state sync bat-hosts &> /dev/null)&)'\
-	/etc/crontabs/root
+uci set shared-state.bat_hosts=dataType
+uci set shared-state.bat_hosts.name='bat-hosts'
+uci set shared-state.bat_hosts.scope='community'
+uci set shared-state.bat_hosts.ttl='2400'
+uci set shared-state.bat_hosts.update_interval='30'
+uci commit shared-state
+

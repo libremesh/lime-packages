@@ -28,7 +28,7 @@ describe('LiMe Wireless tests #wireless', function()
 
     it('test scandevices() one dev', function()
         uci:set('wireless', 'radio0', 'wifi-device')
-        uci:set('wireless', 'radio0', 'hwmode', '11a')
+        uci:set('wireless', 'radio0', 'band', '5g')
         uci:commit('wireless')
         iwinfo.fake.load_from_uci(uci)
 
@@ -41,9 +41,9 @@ describe('LiMe Wireless tests #wireless', function()
 
     it('test scandevices() two devs same band', function()
 		uci:set('wireless', 'radio0', 'wifi-device')
-        uci:set('wireless', 'radio0', 'hwmode', '11a')
+        uci:set('wireless', 'radio0', 'band', '5g')
 		uci:set('wireless', 'radio1', 'wifi-device')
-        uci:set('wireless', 'radio1', 'hwmode', '11a')
+        uci:set('wireless', 'radio1', 'band', '5g')
 
         uci:commit('wireless')
         iwinfo.fake.load_from_uci(uci)
@@ -58,9 +58,9 @@ describe('LiMe Wireless tests #wireless', function()
 
     it('test scandevices() two devs same band inverted order', function()
 		uci:set('wireless', 'radio1', 'wifi-device')
-        uci:set('wireless', 'radio1', 'hwmode', '11a')
+        uci:set('wireless', 'radio1', 'band', '5g')
 		uci:set('wireless', 'radio0', 'wifi-device')
-        uci:set('wireless', 'radio0', 'hwmode', '11a')
+        uci:set('wireless', 'radio0', 'band', '5g')
 
         uci:commit('wireless')
         iwinfo.fake.load_from_uci(uci)
@@ -75,11 +75,11 @@ describe('LiMe Wireless tests #wireless', function()
 
     it('test scandevices() tho devs 5ghz, 1 dev 2ghz', function()
 		uci:set('wireless', 'radio0', 'wifi-device')
-        uci:set('wireless', 'radio0', 'hwmode', '11g')
+        uci:set('wireless', 'radio0', 'band', '2g')
 		uci:set('wireless', 'radio1', 'wifi-device')
-        uci:set('wireless', 'radio1', 'hwmode', '11a')
+        uci:set('wireless', 'radio1', 'band', '5g')
 		uci:set('wireless', 'radio2', 'wifi-device')
-        uci:set('wireless', 'radio2', 'hwmode', '11a')
+        uci:set('wireless', 'radio2', 'band', '5g')
 
         uci:commit('wireless')
         iwinfo.fake.load_from_uci(uci)
@@ -123,7 +123,7 @@ describe('LiMe Wireless tests #wireless', function()
 
     it('test configure() with distance', function()
         uci:set('wireless', 'radio0', 'wifi-device')
-        uci:set('wireless', 'radio0', 'hwmode', '11a')
+        uci:set('wireless', 'radio0', 'band', '5g')
         uci:commit('wireless')
         iwinfo.fake.load_from_uci(uci)
 
@@ -148,7 +148,7 @@ describe('LiMe Wireless tests #wireless', function()
         -- a specific radio config has precedence over the non specifc radio configs
         -- specific radio distance_5ghz > specific radio distance > generic distance_5ghz > generic distance
         uci:set('wireless', 'radio0', 'wifi-device')
-        uci:set('wireless', 'radio0', 'hwmode', '11a')
+        uci:set('wireless', 'radio0', 'band', '5g')
         uci:commit('wireless')
         iwinfo.fake.load_from_uci(uci)
 
@@ -168,9 +168,9 @@ describe('LiMe Wireless tests #wireless', function()
 
     it('test configure() some options', function()
         uci:set('wireless', 'radio0', 'wifi-device')
-        uci:set('wireless', 'radio0', 'hwmode', '11a')
+        uci:set('wireless', 'radio0', 'band', '5g')
         uci:set('wireless', 'radio1', 'wifi-device')
-        uci:set('wireless', 'radio1', 'hwmode', '11a')
+        uci:set('wireless', 'radio1', 'band', '5g')
         uci:commit('wireless')
         iwinfo.fake.load_from_uci(uci)
 
@@ -192,7 +192,7 @@ describe('LiMe Wireless tests #wireless', function()
 
     it('test configure() specific radio as client', function()
         uci:set('wireless', 'radio0', 'wifi-device')
-        uci:set('wireless', 'radio0', 'hwmode', '11a')
+        uci:set('wireless', 'radio0', 'band', '5g')
         uci:commit('wireless')
         iwinfo.fake.load_from_uci(uci)
 

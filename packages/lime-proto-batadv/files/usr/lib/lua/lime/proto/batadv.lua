@@ -9,49 +9,37 @@ local config = require("lime.config")
 batadv = {}
 
 batadv.configured = false
-batadv.old_cfg_api = false
-batadv.type_option = 'master'
-batadv.ifc_proto = 'batadv_hardif'
-
-function batadv.detect_old_cfg_api()
-    return not fs.lstat("/lib/netifd/proto/batadv_hardif.sh")
-end
 
 function batadv.configure(args)
 	if batadv.configured then return end
 	batadv.configured = true
 
-	--! Detect batman config API until 2019.0-2/OpenWrt 18.06.x
-	local cfg_file = 'network'
-	if batadv.detect_old_cfg_api() then
-		batadv.old_cfg_api = true
-		cfg_file = 'batman-adv'
-		batadv.ifc_proto = 'batadv'
-		batadv.type_option = 'mesh'
-	end
-
 	local uci = config.get_uci_cursor()
 
-	if not batadv.old_cfg_api then
-		uci:set(cfg_file, "bat0", "interface")
-		uci:set(cfg_file, "bat0", "proto", "batadv")
-	else
-		uci:set(cfg_file, "bat0", "mesh")
-	end
-
-	uci:set(cfg_file, "bat0", "bridge_loop_avoidance", "1")
-	uci:set(cfg_file, "bat0", "multicast_mode", "0")
+	uci:set("network", "bat0", "interface")
+	uci:set("network", "bat0", "proto", "batadv")
+	-- BATMAN_V uses throughput rather than packet loss (as in BATMAN_IV) for evaluating
+	-- the quality of a link. Still, by default we continue selecting BATMAN_IV
+	local routing_algo = config.get("network", "batadv_routing_algo", "BATMAN_IV")
+	uci:set("network", "bat0", "routing_algo", routing_algo)
+	uci:set("network", "bat0", "bridge_loop_avoidance", "1")
+	uci:set("network", "bat0", "multicast_mode", "0")
+	-- by default, BATMAN-adv sends out one Originator Message (OGM) every second (orig_interval=1000)
+	-- in a network with static nodes, a larger interval between OGM packets can be used (e.g. 2000)
+	-- see https://github.com/libremesh/lime-packages/issues/1010
+	local orig_interval = config.get("network", "batadv_orig_interval", "2000")
+        uci:set("network", "bat0", "orig_interval", orig_interval)
 
 	-- if anygw enabled disable DAT that doesn't play well with it
 	-- and set gw_mode=client everywhere. Since there's no gw_mode=server, this makes bat0 never forward requests
 	-- so a rogue DHCP server doesn't affect whole network (DHCP requests are always answered locally)
 	for _,proto in pairs(config.get("network", "protocols")) do
 		if proto == "anygw" then
-			uci:set(cfg_file, "bat0", "distributed_arp_table", "0")
-			uci:set(cfg_file, "bat0", "gw_mode", "client")
+			uci:set("network", "bat0", "distributed_arp_table", "0")
+			uci:set("network", "bat0", "gw_mode", "client")
 		end
 	end
-	uci:save(cfg_file)
+	uci:save("network")
 	lan.setup_interface("bat0", nil)
 
 	-- enable alfred on bat0 if installed
@@ -63,8 +51,14 @@ end
 
 function batadv.setup_interface(ifname, args)
 	if not args["specific"] then
-		if ifname:match("^wlan%d+.ap") then return end
+		if ifname:match("^wlan%d+.ap") then
+			utils.log( "lime.proto.batadv.setup_interface(%s, ...) ignored",
+			           ifname )
+			return
+		end
 	end
+
+	utils.log("lime.proto.batadv.setup_interface(%s, ...)", ifname)
 
 	local vlanId = args[2] or "%N1"
 	local vlanProto = args[3] or "8021ad"
@@ -80,8 +74,8 @@ function batadv.setup_interface(ifname, args)
 	local owrtInterfaceName, _, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 
 	local uci = config.get_uci_cursor()
-	uci:set("network", owrtInterfaceName, "proto", batadv.ifc_proto)
-	uci:set("network", owrtInterfaceName, batadv.type_option, "bat0")
+	uci:set("network", owrtInterfaceName, "proto", "batadv_hardif")
+	uci:set("network", owrtInterfaceName, "master", "bat0")
 
 	if ifname:match("^eth") then
 		--! TODO: Use DSA to check if ethernet device is capable of bigger MTU

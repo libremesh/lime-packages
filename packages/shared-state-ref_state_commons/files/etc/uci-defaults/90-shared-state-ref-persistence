@@ -1,0 +1,6 @@
+#!/bin/sh
+#safe upgrade looks for lime-autogen, wich is generated from defaults 
+uci set lime-defaults.system.keep_on_upgrade="$(uci get lime-defaults.system.keep_on_upgrade) shared-state-ref-state"
+uci commit lime-defaults
+touch /tmp/done
+exit 0

@@ -18,7 +18,6 @@ run_hooks () {
 watchping_ping() {
 	local ifname="$1"; local timeout="$2"; local pinghosts="$3"; local pinginterval="$4"; local hookname="$5"
 	local last_hooks_run="undefined"
-	local pingexec="ping"
 
 	if [ ! -r "/sys/class/net/$ifname/ifindex" ] ; then
 		echo "Interface $ifname unsupported or not found!"
@@ -46,13 +45,8 @@ watchping_ping() {
 		time_now="${time_now%%.*}"
 		time_lastcheck="$time_now"
 
-		case "$host" in
-			*":"*)
-				[ "$(which ping6 2>/dev/null)" ] && pingexec="ping6"
-				;;
-		esac
 		for host in "$pinghosts" ; do
-			if $pingexec -I "$ifname" -c 1 "$host" &> /dev/null ; then
+			if ping -I "$ifname" -c 1 "$host" &> /dev/null ; then
 				time_lastcheck_withinternet="$time_now"
 			else
 				time_diff="$((time_now-time_lastcheck_withinternet))"

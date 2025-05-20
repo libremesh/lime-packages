@@ -19,13 +19,10 @@
 local JSON = require("luci.jsonc")
 
 local outputTable = {}
-local localHostname = io.input("/proc/sys/kernel/hostname"):read("*line")
 
 for key,value in pairs(
 	JSON.parse(io.stdin:read("*all")) ) do
-	if value.data and value.author ~= localHostname then
 		table.insert(outputTable, key)
-	end
 end
 
 local outputFile = io.open("/var/hosts/shared-state-dnsmasq_hosts", "w")

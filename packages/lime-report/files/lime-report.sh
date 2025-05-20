@@ -43,6 +43,10 @@ generate_status() {
     paste_cmd bmx6 -c show=status show=interfaces show=links show=originators show=tunnels
     paste_cmd bmx7 -c show=status show=interfaces show=links show=originators show=tunnels
     paste_cmd "echo dump | nc ::1 30003"
+    paste_cmd ubus call babeld get_info
+    paste_cmd ubus call babeld get_neighbours
+    paste_cmd ubus call babeld get_xroutes
+    paste_cmd ubus call babeld get_routes
     paste_cmd free
     paste_cmd ps
     paste_cmd ip address show
@@ -51,19 +55,19 @@ generate_status() {
     paste_cmd ip link show
     paste_cmd df
     paste_cmd logread -l 20
+    paste_cmd "logread | grep err"
+    paste_cmd iw phy
     paste_cmd iw dev wlan0-mesh station dump
     paste_cmd iw dev wlan1-mesh station dump
+    paste_cmd iw dev wlan2-mesh station dump
     paste_cmd iw dev wlan0-mesh mpath dump
     paste_cmd iw dev wlan1-mesh mpath dump
+    paste_cmd iw dev wlan2-mesh mpath dump
     paste_cmd iwinfo
     paste_cmd wifi status
     paste_cmd swconfig dev switch0 show
-    paste_cmd iptables -vnL -t filter
-    paste_cmd iptables -vnL -t nat
-    paste_cmd iptables -vnL -t mangle
-    paste_cmd ebtables -t filter -L --Lc
-    paste_cmd ebtables -t nat -L --Lc
-    paste_cmd ebtables -t broute -L --Lc
+    paste_cmd fw4 print
+    paste_cmd nft list ruleset
     paste_cmd opkg list-installed
 }
 

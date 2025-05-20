@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# dnsmasq upon SIGHUP will re-read this file containing "server=/example.com/1.2.3.4" lines
+uci set dhcp.@dnsmasq[0].serversfile=/var/shared-state/dnsmasq_servers
+uci commit dhcp
+
+unique_append()
+{
+	grep -qF "$1" "$2" || echo "$1" >> "$2"
+}
+
+unique_append \
+	'*/5 * * * * ((sleep $((RANDOM % 120)); shared-state sync dnsmasq-servers &> /dev/null)&)'\
+	/etc/crontabs/root

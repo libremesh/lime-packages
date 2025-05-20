@@ -1,0 +1,26 @@
+#!/usr/bin/lua
+
+--! LibreMesh
+--! Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
+--! SPDX-License-Identifier: AGPL-3.0-only
+
+local fs = require("nixio.fs")
+local JSON = require("luci.jsonc")
+
+local ifacesPath = "/sys/class/net/"
+local hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
+
+local batHostTable = {}
+
+local ignoredIf = { lo=true, anygw=true }
+
+for ifname in fs.dir(ifacesPath) do
+	if not ignoredIf[ifname] then
+		local macaddr = io.input(ifacesPath..ifname.."/address"):read("*line")
+		if type(macaddr) == "string" and macaddr:len() == 17 then
+			batHostTable[macaddr] = string.gsub(hostname.."_"..ifname, "%W", "_")
+		end
+	end
+end
+
+io.popen("shared-state-async insert bat-hosts", "w"):write(JSON.stringify(batHostTable))

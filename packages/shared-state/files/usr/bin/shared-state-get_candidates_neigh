@@ -3,20 +3,10 @@
 << COPYRIGHT
 
  LibreMesh
- Copyright (C) 2019-2020  Gioacchino Mazzurco <gio@altermundi.net>
+ Copyright (C) 2019-2023  Gioacchino Mazzurco <gio@altermundi.net>
+ Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
 
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Affero General Public License as
- published by the Free Software Foundation, either version 3 of the
- License, or (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Affero General Public License for more details.
-
- You should have received a copy of the GNU Affero General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ SPDX-License-Identifier: AGPL-3.0-only
 
 COPYRIGHT
 
@@ -30,7 +20,7 @@ lastRunFile="/tmp/shared-state-get_candidates_neigh.lastrun"
 lastRun=$(if [ -s $lastRunFile ]; then echo $(cat $lastRunFile); else  echo -9999; fi)
 currUptime="$(get_uptime)"
 
-[ "$(($currUptime - $lastRun))" -lt "30" ] &&
+[ "$((currUptime - lastRun))" -lt "30" ] &&
 {
 	cat "$cacheFile"
 	exit 0
@@ -43,13 +33,13 @@ for iface in $(ls /sys/class/net/) ; do
 	echo "${iface}" | grep -E "mesh|adhoc" &> /dev/null && continue
 
 #[Doc] ping6 from busybox doesn't support float intervals iputils-ping does
-	ping6 -i 0.1 -c 2 ff02::1%${iface} 2> /dev/null | \
+	ping -i 0.1 -c 2 ff02::1%${iface} 2> /dev/null | \
 		awk '{if ($3 == "from") print substr($4, 1, length($4)-1)'"\"%${iface}\""'}'
 done | sort -u -r)"
 
-babelCandidateAddresses="$(
+babelCandidateAddresses="$([ -e /var/etc/babeld.conf ] &&
 for iface in $(grep interface /var/etc/babeld.conf | awk '{print $2}'); do
-	ping6 -i 0.1 -c 2 ff02::1%${iface} 2> /dev/null | \
+	ping -i 0.1 -c 2 ff02::1%${iface} 2> /dev/null | \
 		awk '{if ($3 == "from") print substr($4, 1, length($4)-1)'"\"%${iface}\""'}'
 done | sort -u -r)"
 
@@ -72,7 +62,7 @@ wirelessCandidateAddresses=$(echo "$wifi_get_macs" | lua -  | sort -u -r)
 candidateAddresses="$batmanNonMeshCandidateAddresses
 $babelCandidateAddresses
 $wirelessCandidateAddresses
-$(ping6 -i 0.1 -c 2 ff02::1%br-lan | \
+$(ping -i 0.1 -c 2 ff02::1%br-lan | \
 	awk '{if ($3 == "from" && substr($7,6)+0 < 2) print substr($4, 1, length($4)-1)"%br-lan" }' | sort -u)"
 
 for ownAddr in $(ip -6 address show | awk '{if ($1 == "inet6") print $2}' | awk -F/ '{print $1}') ; do
@@ -91,5 +81,5 @@ $(echo "$candidateAddresses" | grep -v "$cIp")"
 
 done
 
-echo "$candidateAddresses" | tee "$cacheFile"
+echo "$candidateAddresses" | grep -v "^$" | tee "$cacheFile"
 get_uptime > "$lastRunFile"

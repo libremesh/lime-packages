@@ -6,11 +6,11 @@
 include ../../libremesh.mk
 
 define Package/$(PKG_NAME)
-  SECTION:=utils
-  CATEGORY:=Utilities
+  SECTION:=lime
+  CATEGORY:=LibreMesh
   TITLE:=Babel auto Internet gateway module.
   MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
-  DEPENDS:=+libubus-lua +watchping +lime-proto-babeld
+  DEPENDS:=+libubus-lua +watchping +lime-proto-babeld +lime-system
   PKGARCH:=all
 endef
 

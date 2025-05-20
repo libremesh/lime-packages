@@ -1,0 +1,18 @@
+#!/usr/sbin/nft -f
+
+# port 6270 is compiled into bmx7 (see ip.h)
+define bmx7_port = 6270
+
+# delete if exists, do not fail if not
+add table bridge nat
+add chain bridge nat postrouting_bmx7_not_over_batadv
+delete chain bridge nat postrouting_bmx7_not_over_batadv
+
+table bridge nat {
+        chain postrouting_bmx7_not_over_batadv {
+                type filter hook postrouting priority srcnat; policy accept;
+
+                # Do not let bmx7 communicate over bat0
+                oifname bat0 ether type ip6 udp sport $bmx7_port udp dport $bmx7_port counter drop
+        }
+}

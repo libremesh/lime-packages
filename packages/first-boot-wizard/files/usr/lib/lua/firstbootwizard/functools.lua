@@ -142,10 +142,11 @@ function functools.splitBy(option)
     end
 end
 
-function functools.sortBy(option)
+function functools.sortBy(option, reverse)
     return function(tab)
         table.sort(tab, function (left, right)
-            return left[option] < right[option]
+            order = left[option] < right[option]
+            return (not reverse and order) or not order
         end)
         return tab
     end

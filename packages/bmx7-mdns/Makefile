@@ -40,7 +40,7 @@ define Package/$(PKG_NAME)
   URL:=http://bmx6.net
   MAINTAINER:=Pau Escrich <p4u@dabax.net>
   PKGARCH:=all
-  DEPENDS:=+bmx7 +bmx7-sms
+  DEPENDS:=+bmx7 +bmx7-sms +luci-lib-nixio
 endef
 
 define Package/$(PKG_NAME)/config

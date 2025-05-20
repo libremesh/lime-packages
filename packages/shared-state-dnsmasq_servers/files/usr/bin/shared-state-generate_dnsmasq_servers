@@ -1,0 +1,46 @@
+#!/usr/bin/lua
+
+--! LibreMesh
+--! Copyright (C) 2020 Gui iribarren <gui@altermundi.net>
+--!
+--! This program is free software: you can redistribute it and/or modify
+--! it under the terms of the GNU Affero General Public License as
+--! published by the Free Software Foundation, either version 3 of the
+--! License, or (at your option) any later version.
+--!
+--! This program is distributed in the hope that it will be useful,
+--! but WITHOUT ANY WARRANTY; without even the implied warranty of
+--! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--! GNU Affero General Public License for more details.
+--!
+--! You should have received a copy of the GNU Affero General Public License
+--! along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+local JSON = require("luci.jsonc")
+
+local uci = require("uci"):cursor()
+
+uci:foreach("dhcp", "dnsmasq",
+  function(s)
+    localDomain = uci:get("dhcp", s[".name"], "local"):gsub("/","")
+  end
+)
+
+local localHostname = io.input("/proc/sys/kernel/hostname"):read("*line")
+
+local content = {}
+
+--! example key="cloud1.mesh", example value.data="fd0d:fe46:8ce8::ab:cd00"
+for key,value in pairs(
+ JSON.parse(io.stdin:read("*all")) ) do
+ if value.data and value.author ~= localHostname and key ~= localDomain then
+   table.insert(content, "server=/" .. key .. "/" .. value.data)
+ end
+end
+
+local outputFile = io.open("/var/shared-state/dnsmasq_servers", "w")
+if outputFile then
+	outputFile:write(table.concat(content,"\n").."\n")
+	outputFile:close()
+	os.execute("killall -HUP dnsmasq 2>/dev/null")
+end
