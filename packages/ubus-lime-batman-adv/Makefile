@@ -13,7 +13,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
   SUBMENU:=3. Applications
   TITLE:=B.A.T.M.A.N.-Adv ubus status module
-  DEPENDS:= +batctl +lua +libubox-lua +libubus-lua +luci-lib-nixio +lime-system
+  DEPENDS:= +batctl +lua +libubox-lua +libubus-lua +luci-lib-nixio +lime-system +luci-lib-jsonc
   PKGARCH:=all
 endef
 

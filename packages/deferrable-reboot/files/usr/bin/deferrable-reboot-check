@@ -1,0 +1,17 @@
+#!/bin/sh
+
+uci_config_path="lime-autogen.system.deferrable_reboot_ping_target"
+target=$(uci -q get $uci_config_path &> /dev/null)
+
+if [ -n "$target" ]; then
+    if ping -c 10 -W 10 $target; then
+        action=defer
+    fi
+else
+    echo "deferrable-reboot: Could not get the ping target from UCI $uci_config_path, deferring anyway"
+    action=defer
+fi
+
+if [ "$action" == "defer" ]; then
+    awk '{print $1 + 1800}' /proc/uptime > /tmp/deferrable-reboot.defer
+fi

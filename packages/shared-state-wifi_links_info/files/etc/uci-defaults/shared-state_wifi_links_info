@@ -1,0 +1,15 @@
+#!/bin/sh
+uci set shared-state.wifi_links_info=dataType
+uci set shared-state.wifi_links_info.name='wifi_links_info'
+uci set shared-state.wifi_links_info.scope='community'
+uci set shared-state.wifi_links_info.ttl='2400'
+uci set shared-state.wifi_links_info.update_interval='33'
+
+## Reference state data type
+uci set shared-state.wifi_links_info_ref=dataType
+uci set shared-state.wifi_links_info_ref.name='wifi_links_info_ref'
+uci set shared-state.wifi_links_info_ref.scope='community'
+uci set shared-state.wifi_links_info_ref.ttl='2400'
+uci set shared-state.wifi_links_info_ref.update_interval='50'
+
+uci commit shared-state

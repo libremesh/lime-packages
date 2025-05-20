@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2019 Gioacchino Mazzurco <gio@altermundi.net>
+# Copyright (C) 2019-2024 Gioacchino Mazzurco <gio@altermundi.net>
 #
 # This is free software, licensed under the GNU Affero General Public License v3.
 #
@@ -17,10 +17,10 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
 	TITLE:=bat-hosts module for shared-state
 	CATEGORY:=LibreMesh
-	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
+	MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 	URL:=http://libremesh.org
-	DEPENDS:=+@BUSYBOX_CONFIG_ASH_RANDOM_SUPPORT +lua +luci-lib-jsonc \
-		shared-state
+	DEPENDS:=+libubus-lua +lime-system +lua +luci-lib-jsonc +luci-lib-nixio \
+	         +shared-state-async
 	PKGARCH:=all
 endef
 

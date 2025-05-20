@@ -6,11 +6,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lime-app
-PKG_VERSION:=v0.2.25
+PKG_VERSION:=v0.2.26
 PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_HASH:=7804eb39686d94c50347170cf01b2d4d810e8cae33b7c1ed2787c19f4a4c2046
+PKG_HASH:=afb74137af470f1a07d75870d569776e0eef05cce30682f58fed601e4a457d62
 PKG_SOURCE_URL:=https://github.com/libremesh/lime-app/releases/download/$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
@@ -22,7 +22,7 @@ define Package/$(PKG_NAME)
 	URL:=http://github.com/libremesh/lime-app
 	DEPENDS:=+rpcd +uhttpd +uhttpd-mod-ubus +uhttpd-mod-lua \
 		+ubus-lime-location +ubus-lime-metrics +ubus-lime-utils \
-		+rpcd-mod-iwinfo +ubus-lime-grondrouting
+		+rpcd-mod-iwinfo +ubus-lime-groundrouting
 	PKGARCH:=all
 endef
 

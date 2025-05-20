@@ -11,7 +11,8 @@ config lime system
 	option keep_on_upgrade 'libremesh dropbear minimum-essential /etc/sysupgrade.conf'
 	option root_password_policy 'DO_NOTHING'
 	option root_password_secret ''
-	option deferable_reboot_uptime_s '97200'
+	option deferrable_reboot_uptime_s '97200'
+	option deferrable_reboot_ping_target '4.2.2.2'
 	option firstbootwizard_configured false
 	option firstbootwizard_dismissed false
 
@@ -45,6 +46,8 @@ config lime network
 	option bmx7_pref_gw none
 	option bmx7_wifi_rate_max 'auto'
 	option bmx7_enable_pki false
+	option batadv_orig_interval '2000'
+	option batadv_routing_algo 'BATMAN_IV'
 	option anygw_mac "aa:aa:aa:%N1:%N2:aa"
 	option use_odhcpd false
 
@@ -58,11 +61,13 @@ config lime wifi
 	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
 	option ieee80211s_mesh_fwding '0'
 	option ieee80211s_mesh_id 'LiMe'
+	option unstuck_interval '10'
+	option unstuck_timeout '300'
 
 config lime-wifi-band '2ghz'
 	option channel '11'
 	option htmode 'HT20'
-	option distance '100'
+	option distance '1000'
 	option adhoc_mcast_rate '24000'
 	option ieee80211s_mcast_rate '24000'
 
@@ -70,7 +75,7 @@ config lime-wifi-band '5ghz'
 	list channel '48'
 	list channel '157'
 	option htmode 'HT40'
-	option distance '1000'
+	option distance '10000'
 	option adhoc_mcast_rate '6000'
 	option ieee80211s_mcast_rate '6000'
 

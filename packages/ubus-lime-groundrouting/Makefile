@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=ubus-lime-grondrouting
+PKG_NAME:=ubus-lime-groundrouting
 PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
@@ -13,7 +13,7 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Marcos Gutierrez <gmarcos87@gmail.com>
   SUBMENU:=3. Applications
   TITLE:=Libremap ubus ground routing module
-  DEPENDS:= +lua +libubox-lua +libubus-lua +libuci-lua +lime-system
+  DEPENDS:= +lua +libubox-lua +libubus-lua +libuci-lua +lime-system +luci-lib-jsonc +luci-compat
   PKGARCH:=all
 endef
 

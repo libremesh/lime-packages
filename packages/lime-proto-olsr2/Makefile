@@ -21,7 +21,8 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LibreMesh
 	MAINTAINER:=Gabriel <gabriel@autistici.org>
 	URL:=http://libremesh.org
-	DEPENDS:=+lua +libuci-lua +lime-system +oonf-olsrd2
+	DEPENDS:=+lua +libuci-lua +lime-system +oonf-olsrd2 +luci-lib-ip \
+		 +luci-lib-nixio
 	PKGARCH:=all
 endef
 

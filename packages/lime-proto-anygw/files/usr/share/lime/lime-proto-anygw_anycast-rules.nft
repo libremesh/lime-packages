@@ -1,0 +1,37 @@
+#!/usr/sbin/nft -f
+
+define anygw_macs = aa:aa:aa:00:00:00/24
+
+# delete if exists, do not fail if not
+add table bridge filter
+add chain bridge filter forward_anygw
+delete chain bridge filter forward_anygw
+
+table bridge filter {
+        chain forward_anygw {
+                type filter hook forward priority filter; policy accept;
+
+                # Do not forward frames directed to anygw macs
+                ether daddr $anygw_macs counter drop
+        }
+}
+
+# delete if exists, do not fail if not
+add table bridge nat
+add chain bridge nat postrouting_anygw
+delete chain bridge nat postrouting_anygw
+
+table bridge nat {
+        chain postrouting_anygw {
+                type filter hook postrouting priority srcnat; policy accept;
+
+                # Do not send frames from anygw into bat0 meshing interface
+                oifname bat0 ether saddr $anygw_macs counter drop
+
+                # Filter IPv6 router solicitation
+                oifname bat0 ether type ip6 icmpv6 type nd-router-solicit counter drop
+
+                # Filter rogue IPv6 router advertisement
+                oifname bat0 ether type ip6 icmpv6 type nd-router-advert counter drop
+        }
+}

@@ -7,6 +7,11 @@ on:
     branches: [master]
     tags:
       - v*
+      - '!v2020*'
+    paths:
+      - ".github/workflows/*"
+      - "libremesh.mk"
+      - "packages/**"
 
 jobs:
   build:
@@ -17,9 +22,9 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Build packages
-        uses: openwrt/gh-action-sdk@v1
+        uses: openwrt/gh-action-sdk@v7
         env:
-          ARCH: "x86_64"
+          ARCH: "x86_64-openwrt-23.05"
           FEEDNAME: "libremesh"
           IGNORE_ERRORS: "n m y"
           KEY_BUILD: "${{ secrets.KEY_BUILD }}"

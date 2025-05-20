@@ -12,11 +12,11 @@ local BOARD = {
     },
     ["network"] = {
         ["lan"] = {
-            ["ifname"] = "lo",
+            ["device"] = "lo",
             ["protocol"] = "static",
         },
         ["wan"] = {
-            ["ifname"] = "eth0",
+            ["device"] = "wan",
             ["protocol"] = "dhcp",
         },
     }
@@ -93,11 +93,16 @@ describe('LiMe Network tests', function()
         stub(utils, "getBoardAsTable", function () return BOARD end)
         stub(network, "assert_interface_exists", function () return true end)
 
+        bridge_section = uci:add("network", "device")
+        uci:set("network", bridge_section, "type", "bridge")
+        uci:set("network", bridge_section, "name", "br-lan")
+        uci:commit("network")
+
         network.configure()
 
         assert.is.equal("1500", uci:get("network", "lan", "mtu"))
         assert.is.equal("static", uci:get("network", "lan", "proto"))
-        assert.is.equal(ifname, uci:get("network", "lan", "ifname")[1])
+        assert.is.equal(ifname, uci:get("network", "@device[0]", "ports")[1])
         network.get_mac:revert()
         network.scandevices:revert()
     end)
@@ -113,7 +118,7 @@ describe('LiMe Network tests', function()
         assert.is.equal(tostring(vid), uci:get("network", "lm_net_eth99_fooproto_dev", "vid"))
 
         -- the interface
-        assert.is.equal('eth99_15', uci:get("network", "lm_net_eth99_fooproto_if", "ifname"))
+        assert.is.equal('eth99_15', uci:get("network", "lm_net_eth99_fooproto_if", "device"))
         assert.is.equal('1', uci:get("network", "lm_net_eth99_fooproto_if", "auto"))
         assert.is.equal('none', uci:get("network", "lm_net_eth99_fooproto_if", "proto"))
     end)
@@ -127,7 +132,7 @@ describe('LiMe Network tests', function()
         assert.is_nil(uci:get("network", "lm_net_eth99_fooproto_dev", "name"))
 
         -- the interface uses static protocol
-        assert.is.equal('eth99', uci:get("network", "lm_net_eth99_fooproto_if", "ifname"))
+        assert.is.equal('eth99', uci:get("network", "lm_net_eth99_fooproto_if", "device"))
         assert.is.equal('1', uci:get("network", "lm_net_eth99_fooproto_if", "auto"))
         assert.is.equal('static', uci:get("network", "lm_net_eth99_fooproto_if", "proto"))
     end)
@@ -144,7 +149,7 @@ describe('LiMe Network tests', function()
         assert.is.equal('@lm_net_wlan85', uci:get("network", "lm_net_wlan85_fooproto_dev", "ifname"))
 
         -- the interface
-        assert.is.equal('wlan85_15', uci:get("network", "lm_net_wlan85_fooproto_if", "ifname"))
+        assert.is.equal('wlan85_15', uci:get("network", "lm_net_wlan85_fooproto_if", "device"))
         assert.is.equal('1', uci:get("network", "lm_net_wlan85_fooproto_if", "auto"))
         assert.is.equal('none', uci:get("network", "lm_net_wlan85_fooproto_if", "proto"))
     end)

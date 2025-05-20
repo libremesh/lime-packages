@@ -1,0 +1,81 @@
+#!/usr/bin/env lua
+
+--! Shared State
+--! Copyright (c) 2023  Javier Jorge <jjorge@inti.gob.ar>
+--! Copyright (c) 2023  Instituto Nacional de Tecnología Industrial
+--! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--! SPDX-License-Identifier: AGPL-3.0-only
+
+local ubus = require "ubus"
+local utils = require('lime.utils')
+local shared_state = require("shared-state")
+local json = require 'luci.jsonc'
+
+require("nixio.util")
+
+local response_template = {data = {}, error = 500}
+
+local function showData(sharedState)
+    local resultTable = sharedState:get()
+    if next(resultTable) == nill then
+        response_template.error = 404
+    else
+        for k, v in pairs(resultTable) do
+            response_template.data[k] = v.data
+        end
+        response_template.error = 0
+    end
+    utils.printJson(response_template)
+end
+
+local function getFromSharedState(msg)
+    local sharedState = shared_state.SharedState:new(msg.data_type,
+        nixio.syslog)
+    showData(sharedState)
+end
+
+local function getFromSharedStateMultiWriter(msg)
+    local sharedState = shared_state.SharedStateMultiWriter:new(msg.data_type,
+        nixio.syslog)
+    showData(sharedState)
+end
+
+local function insertIntoSharedStateMultiWriter(msg)
+    local sharedState = shared_state.SharedStateMultiWriter:new(msg.data_type,
+        nixio.syslog)
+    local inputTable = msg.json or {}
+    sharedState:insert(inputTable)
+end
+
+local methods = {
+    getFromSharedState = {
+        data_type = 'value'
+    },
+    getFromSharedStateMultiWriter = {
+        data_type = 'value'
+    },
+    insertIntoSharedStateMultiWriter = {
+        data_type = 'value',
+        json = 'value'
+    }
+}
+
+if arg[1] == 'list' then
+    utils.printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = utils.rpcd_readline()
+    msg = json.parse(msg)
+    if arg[2] == 'getFromSharedState' then
+        getFromSharedState(msg)
+    elseif arg[2] == 'getFromSharedStateMultiWriter' then
+        getFromSharedStateMultiWriter(msg)
+    elseif arg[2] == 'insertIntoSharedStateMultiWriter' then
+        insertIntoSharedStateMultiWriter(msg)
+    else
+        utils.printJson({
+            error = "Method not found"
+        })
+    end
+end

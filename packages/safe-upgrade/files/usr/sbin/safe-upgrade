@@ -24,8 +24,10 @@ local su = {}
 
 su.version = '1.0'
 local firmware_size_bytes = 7936*1024
-local fw1_addr = 0x9f050000
-local fw2_addr = 0x9f050000 + firmware_size_bytes
+-- Keep the fw addresses as strings beacause of https://gitlab.com/librerouter/librerouteros/-/issues/61
+local fw1_addr = '0x9f050000'
+local fw2_addr = '0x9f810000' -- fw1_addr + firmware_size_bytes
+
 su._supported_devices = {'librerouter-v1'}
 su._mtd_partitions_desc = '/proc/mtd'
 
@@ -96,7 +98,7 @@ function su.get_uboot_env(key)
 end
 
 local function set_uboot_env(key, value)
-    print("DEBUG: seting key:" .. key)
+    print("DEBUG: setting key:" .. key)
     print("DEBUG: value:" .. value)
     utils.unsafe_shell("fw_setenv " .. key .. " '" .. value .. "'")
 end
@@ -262,11 +264,14 @@ function su.preserve_files_to_new_partition(args)
 end
 
 local function bootstrap(args)
-    --TODO: add --force option to upgrade SU
     if is_su_installed() then
-        print(string.format("safe-upgrade version '%s' is already installed, aborting",
-                            get_su_version()))
-        os.exit(su.EXIT_STATUS_ALREADY_INSTALLED)
+        if args.force then
+            print("Forcing the bootstrap.")
+        else
+            print(string.format("safe-upgrade version '%s' is already installed, aborting",
+                                get_su_version()))
+            os.exit(su.EXIT_STATUS_ALREADY_INSTALLED)
+        end
     end
 
 
@@ -277,8 +282,8 @@ local function bootstrap(args)
 
     set_stable_partition(1)
     set_testing_partition(0)
-    set_uboot_env('fw1_addr', string.format("0x%x", fw1_addr))
-    set_uboot_env('fw2_addr', string.format("0x%x", fw2_addr))
+    set_uboot_env('fw1_addr', fw1_addr)
+    set_uboot_env('fw2_addr', fw2_addr)
 
     -- configure cmdline using the current cmdline config to not force
     -- us to know here the correct cmdline bootargs of the running kernel
@@ -322,7 +327,7 @@ local function upgrade(args)
     su.preserve_files_to_new_partition(args)
 
     -- postpone 10m defarable-reboot
-    os.execute("awk '{print $1 + 600}' /proc/uptime > /tmp/deferable-reboot.defer")
+    os.execute("awk '{print $1 + 600}' /proc/uptime > /tmp/deferrable-reboot.defer")
 
     print(string.format("erasing partition %d", partitions.other))
     os.execute(string.format("mtd erase fw%d", partitions.other))
@@ -341,7 +346,7 @@ local function upgrade(args)
     else
         fw_mtd_str = '7936k(firmware),7936k(fw2)'
     end
-    local boot_script_tpl = 'set bootargs console=ttyS0,115200 board=LIBREROUTERV1 mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),%s,128k(res),64k(ART); echo booting part %d; bootm ${fw_addr};'
+    local boot_script_tpl = 'set bootargs console=ttyS0,115200 board=LIBREROUTERV1 mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),%s,128k(res),64k(art); echo booting part %d; bootm ${fw_addr};'
     local boot_script = string.format(boot_script_tpl, fw_mtd_str, partitions.other)
     set_uboot_env(string.format('boot_%d', partitions.other), boot_script)
     set_testing_partition(partitions.other)
@@ -421,8 +426,8 @@ local function parse_args()
     parser:command('confirm', ('Confirm the current partition. Use when after an upgrade ' ..
                                'or after running "test-other-partition".'))
 
-    parser:command('bootstrap', 'Install the safe-upgrade mechanism')
-
+    local bootstrap = parser:command('bootstrap', 'Install the safe-upgrade mechanism')
+    bootstrap:flag("--force", "Install even it is already installed.")
     parser:command('test-other-partition', 'Mark the other partition as testing partition.')
 
     parser:command('board-supported', 'Exits with 0 if board is supported')

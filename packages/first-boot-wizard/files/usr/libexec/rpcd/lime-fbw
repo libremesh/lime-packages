@@ -13,22 +13,32 @@ if not conn then
 	error("Failed to connect to ubus")
 end
 
-local function search_networks (msg)
-    return utils.printJson(fbw.start_search_networks(msg.scan))
+local function start ()
+    local result = fbw.start_search_networks()
+    utils.printJson({status = result})
+end
+
+local function stop ()
+    local result = fbw.stop_search_networks()
+    utils.printJson({status = result})
 end
 
 local function status ()
-    return utils.printJson(fbw.check_scan_status())
+    local result = fbw.status_search_networks()
+    utils.printJson(result)
+end
+
+local function restart ()
+    local result = fbw.restart_search_networks()
+    utils.printJson({status = result})
 end
 
 local function set_network(msg)
     if (msg.file == nil or msg.hostname == nil) then
         return utils.printJson({ status = 'error', msg = "File and hostname are required" })
     end
-    local file = msg.file
-    local hostname = msg.hostname
     utils.printJson({ status = 'configuring'})
-    fbw.apply_file_config(file, hostname)
+    fbw.set_network(msg.file, msg.hostname)
 end
 
 local function create_network(msg)
@@ -47,8 +57,11 @@ local function dismiss()
 end
 
 local methods = {
-    search_networks = { scan = 'bool' },
-    status = {no_params = 0},
+    start =     {no_params = 0},
+    stop =      {no_params = 0},
+    status =    {no_params = 0},
+    restart =   {no_params = 0},
+    
     set_network = { file = 'str', hostname = 'str' },
     create_network = {
         network =   'str',
@@ -66,8 +79,10 @@ end
 if arg[1] == 'call' then
     local msg = utils.rpcd_readline()
     msg = json.parse(msg)
-    if      arg[2] == 'search_networks'	then search_networks(msg)
-    elseif  arg[2] == 'status'	        then status(msg)
+    if      arg[2] == 'start'	        then start(msg)
+    elseif  arg[2] == 'stop'        	then stop(msg)
+    elseif  arg[2] == 'status'      	then status(msg)
+    elseif  arg[2] == 'restart'     	then restart(msg)
     elseif  arg[2] == 'set_network'     then set_network(msg)
     elseif  arg[2] == 'create_network'  then create_network(msg)
     elseif  arg[2] == 'dismiss'         then dismiss(msg)

@@ -1,0 +1,44 @@
+#!/usr/bin/lua
+
+-- ! LibreMesh
+-- ! Copyright (c) 2023  Javier Jorge <jjorge@inti.gob.ar>
+-- ! Copyright (c) 2023  Instituto Nacional de Tecnología Industrial
+-- ! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+-- !
+-- ! SPDX-License-Identifier: AGPL-3.0-only
+
+local utils = require('lime.utils')
+local ubus = require "ubus"
+local shared_state_links_info = require ("shared_state_links_info")
+
+local ifaceip = {}
+
+function get_interface_ip(ifname)
+    if ifaceip[ifname] == nil then
+        ifaceip[ifname] = string.gsub(utils.unsafe_shell("ip -6 address show "
+                .. ifname ..
+                " | awk '{if ($1 == \"inet6\") print $2}' | grep fe80 | awk -F/ '{print $1}'"),
+            "\n", "")
+    end
+    return ifaceip[ifname]
+end
+
+function get_babel_links_info()
+    local conn = ubus.connect()
+    local links = {}
+    babelneigt_obj = ubus.call(conn, "babeld", "get_neighbours", {})
+    if babelneigt_obj ~= nil then
+        for key, value in pairs(babelneigt_obj.IPv6) do
+            local key_table = {(string.gsub(get_interface_ip(value.dev),":","")),(string.gsub(key,":",""))}
+		    table.sort(key_table)
+		    links[table.concat(key_table)]= {
+                src_ip = get_interface_ip(value.dev),
+                dst_ip = key,
+                iface = value.dev
+            }
+        end
+    end
+    return links
+end
+
+shared_state_links_info.insert_in_ss_with_location(get_babel_links_info(),"babel_links_info")

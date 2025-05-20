@@ -1,5 +1,12 @@
 #!/usr/bin/lua
 
+--! LibreMesh community mesh networks meta-firmware
+--!
+--! Copyright (C) 2014-2023  Gioacchino Mazzurco <gio@eigenlab.org>
+--! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--!
+--! SPDX-License-Identifier: AGPL-3.0-only
+
 utils = {}
 
 local config = require("lime.config")
@@ -10,6 +17,22 @@ local nixio = require("nixio")
 utils.BOARD_JSON_PATH = "/etc/board.json"
 utils.SHADOW_FILENAME = "/etc/shadow"
 utils.KEEP_ON_UPGRADE_FILES_BASE_PATH = '/lib/upgrade/keep.d/'
+
+function utils.dbg(...)
+	local ofd = io.stderr
+
+	ofd:write( debug.getinfo(2, 'S').source, ":",
+	           debug.getinfo(2, 'l').currentline, " ",
+	           debug.getinfo(2, 'n').name )
+
+	for n=1, select('#', ...) do
+		--! Assigantion needed to take only the Nth element discarding the rest
+		local nE = select(n, ...)
+		ofd:write(" ", nE)
+	end
+
+	ofd:write("\n")
+end
 
 function utils.log(...)
 	if DISABLE_LOGGING ~= nil then return end
@@ -551,6 +574,8 @@ function utils.is_valid_mac(string)
     end
 end
 
+--! TODO: Better having a C strcmp/memcmp like behavior so the output can be
+--! used for sorting beyond determining equality
 function utils.deepcompare(t1,t2)
     if t1 == t2 then return true end
     local ty1 = type(t1)
@@ -566,6 +591,12 @@ function utils.deepcompare(t1,t2)
         if v1 == nil or not utils.deepcompare(v1, v2) then return false end
     end
     return true
+end
+
+function utils.is_dsa(port)
+    --! Code adapted from Jow https://forum.openwrt.org/t/how-to-detect-dsa/111868/4
+    port = port or "*"
+    return 0 == os.execute("grep -sq DEVTYPE=dsa /sys/class/net/"..port.."/uevent")
 end
 
 return utils

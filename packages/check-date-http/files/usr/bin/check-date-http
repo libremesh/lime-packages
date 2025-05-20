@@ -44,6 +44,9 @@ local success, response, algo = pcall(http.request_raw, url, httpOptions)
 if(not success) then
 	print(arg[0], "HTTP request failed", url, success, response, algo)
 	os.exit(42)
+elseif response == nil then
+	print(arg[0], "The server cannot be reached", url)
+	os.exit(43)
 end
 
 local s = algo['headers']['Date']
