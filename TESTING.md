@@ -191,7 +191,7 @@ $ sudo ./tools/qemu_dev_start  path/to/openwrt-x86-64-generic-rootfs.tar.gz path
 #### Stop it
 
 ```
-$ ./tools/qemu_dev_stop
+$ ./tools/qemu_dev_stop [NODE_ID]
 ```
 
 #### Run 12 nodes simultaneously, with arbitrary complex topology of clouds and links
