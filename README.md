@@ -205,6 +205,6 @@ sponsor](https://opencollective.com/libremesh#sponsor)]
 [9]: https://libremesh.org/communication.html
 [10]: https://github.com/libremesh/network-profiles/
 [12]: https://opencollective.com/libremesh
-[14]: https://github.com/irina556/lime-packages/blob/easing-libremesh-virtualization/VIRTUALIZING.md
+[13]: ./VIRTUALIZING.md
 [development_page]: https://libremesh.org/development.html
 [lime-example]: https://github.com/libremesh/lime-packages/blob/master/packages/lime-docs/files/www/docs/lime-example.txt
