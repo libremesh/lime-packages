@@ -151,7 +151,7 @@ testing and how to add tests to LibreMesh.
 
 ## Virtualization
 LibreMesh allows you to test it without having to deal with routers since they can be lifted libremesh instances on virtual machines using QEMU.
-Please read [VIRTUALIZING.md][14] for more details on node virtualization.
+Please read [14] for more details on node virtualization.
 
 ## Get in Touch with LibreMesh Community
 
@@ -205,6 +205,6 @@ sponsor](https://opencollective.com/libremesh#sponsor)]
 [9]: https://libremesh.org/communication.html
 [10]: https://github.com/libremesh/network-profiles/
 [12]: https://opencollective.com/libremesh
-[13]: ./VIRTUALIZING.md
+[14]: ./VIRTUALIZING.md
 [development_page]: https://libremesh.org/development.html
 [lime-example]: https://github.com/libremesh/lime-packages/blob/master/packages/lime-docs/files/www/docs/lime-example.txt
