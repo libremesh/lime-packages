@@ -1,180 +1,364 @@
 All notable changes to this project will be documented in this file.    
-Logs are shown from newest to oldest.
 
-## Unreleased: branch master (2024-12-07)
+## Unreleased: branch master (2025-05-20)
 https://github.com/libremesh/lime-packages/compare/v2024.1-rc1...master
 
-### Full changelog since 2024.1-rc1
-
-  - [`35471b0`](https://github.com/libremesh/lime-packages/commit/35471b0f046132e1848836521900e74f1ed7d9e5)
+### Full changelog since 2024.1
+  - [`8aea25a`](https://github.com/libremesh/lime-packages/commit/8aea25a23871d6c13f85425ad8d511a50ab929d2) - 
+      2025-05-22 - 
+      Follow-up to #938: Fix README link and improve clusterssh command
+      (merge [#1173](https://github.com/libremesh/lime-packages/pull/1173))
+  - [`75d1386`](https://github.com/libremesh/lime-packages/commit/75d1386e5022b41cc1c114d96e5c3af3047624d8) - 
+      2025-05-20 - 
+      Easing libremesh virtualization
+      (merge [#938](https://github.com/libremesh/lime-packages/pull/938))
+  - [`ca63283`](https://github.com/libremesh/lime-packages/commit/ca6328347b97728b796fa28d243e02f95f7c6616) - 
+      2025-01-22 - 
+      Scrape device names from board.json
+      (merge [#1154](https://github.com/libremesh/lime-packages/pull/1154))
+  - [`a1618d0`](https://github.com/libremesh/lime-packages/commit/a1618d0f18e9ca04d32eb419c330aa0361521d2c) - 
+      2025-01-22 - 
+      Watchping: increase wait time for interface to get up
+      (merge [#1158](https://github.com/libremesh/lime-packages/pull/1158))
+  - [`5e43aa2`](https://github.com/libremesh/lime-packages/commit/5e43aa248c3f079f2ca316fd61a0b8c1c473c547) - 
+      2025-01-22 - 
+      network: Do not configure protocols on DSA switch port network devices by default.
+      (merge [#1161](https://github.com/libremesh/lime-packages/pull/1161))
+  - [`7345673`](https://github.com/libremesh/lime-packages/commit/7345673cef523ad2c8d5787ff1373800dc1a1d7f) - 
+      2024-12-31 - 
+      Automatically postpone automated reboots by deferable-reboot
+      (merge [#1147](https://github.com/libremesh/lime-packages/pull/1147))
+  - [`6f307bb`](https://github.com/libremesh/lime-packages/commit/6f307bb6fb2ee09a13080419004f1ed3dcc2345c) - 
+      2024-12-27 - 
+      network._get_lower do not cause "ls" error when there is no lower
+      (merge [#1145](https://github.com/libremesh/lime-packages/pull/1145))
+  - [`477ee4b`](https://github.com/libremesh/lime-packages/commit/477ee4b77c9c3741afe45a8af7edf5f10dab4e50) - 
+      2024-12-27 - 
+      Fixes on ubus-lime-utils
+      (merge [#1143](https://github.com/libremesh/lime-packages/pull/1143))
+  - [`e65b7f1`](https://github.com/libremesh/lime-packages/commit/e65b7f178eae0012977b8ebcf62e8bae8a652d62) - 
+      2024-12-27 - 
+      hotplug-initd-observer: Avoid format error when evData.service is empty
+      (merge [#1148](https://github.com/libremesh/lime-packages/pull/1148))
+  - [`29b5f66`](https://github.com/libremesh/lime-packages/commit/29b5f6663c40b78fe2af922d1af294a1b7d39978) - 
+      2024-12-27 - 
+      Fix get node status to work with busybox ip command
+      (merge [#1159](https://github.com/libremesh/lime-packages/pull/1159))
+  - [`51294cc`](https://github.com/libremesh/lime-packages/commit/51294cc806b9237ffd07090b2b76ea1e9dcad72f) - 
+      2024-12-27 - 
+      Adding "iw phy" to lime-report
+      (merge [#1160](https://github.com/libremesh/lime-packages/pull/1160))
+  - [`50a4a09`](https://github.com/libremesh/lime-packages/commit/50a4a097ebcfaeb13f04d1a1a5df401ca7892919) - 
+      2024-12-08 - 
+      fix: typo of ubus-lime-groundrouting; fix multi-arch-build
+      (merge [#1153](https://github.com/libremesh/lime-packages/pull/1153))
+  - [`e3fedb1`](https://github.com/libremesh/lime-packages/commit/e3fedb1785b5632d110f4539c1b594ec00b08321) - 
+      2024-12-08 - 
+      changelog: update
+      (merge [#1152](https://github.com/libremesh/lime-packages/pull/1152))
+  - [`35471b0`](https://github.com/libremesh/lime-packages/commit/35471b0f046132e1848836521900e74f1ed7d9e5) - 
+      2024-11-23 - 
       New full documentation for shared-state
       (merge [#1142](https://github.com/libremesh/lime-packages/pull/1142),
       fix [#492](https://github.com/libremesh/lime-packages/issues/492))
-  - [`0878431`](https://github.com/libremesh/lime-packages/commit/08784318f4e9fd4269675bd9dbc8ebf6962ce5da)
+  - [`0878431`](https://github.com/libremesh/lime-packages/commit/08784318f4e9fd4269675bd9dbc8ebf6962ce5da) - 
+      2024-11-19 - 
       fixed typo ubus-lime-groundrouting in lime-app's Makefile
       (merge [#1141](https://github.com/libremesh/lime-packages/pull/1141))
-  - [`4781491`](https://github.com/libremesh/lime-packages/commit/4781491d2cad47177229291f838f776cec1af5cd)
+  - [`88b0846`](https://github.com/libremesh/lime-packages/commit/88b0846b850cfffedd4be76ffa13357a7298cdcc) - 
+      2024-11-19 - 
       fix: ci build packages failed
       (merge [#1140](https://github.com/libremesh/lime-packages/pull/1140))
-  - [`06609f6`](https://github.com/libremesh/lime-packages/commit/06609f685af2fbf14e6366cce12ce7af27202b9d)
+  - [`06609f6`](https://github.com/libremesh/lime-packages/commit/06609f685af2fbf14e6366cce12ce7af27202b9d) - 
+      2024-11-17 - 
       Pirania New Release - Issue/1077
       (merge [#1133](https://github.com/libremesh/lime-packages/pull/1133))
-  - [`08a3948`](https://github.com/libremesh/lime-packages/commit/08a3948a5a80f6e26318c96227e02466bd09345e)
-      Ensure that wan interface gets configured on DSA devices, where wan could be the name of the interface 
+  - [`08a3948`](https://github.com/libremesh/lime-packages/commit/08a3948a5a80f6e26318c96227e02466bd09345e) - 
+      2024-09-24 - 
+      Ensure that wan interface gets configured on DSA devices, where wan could be the name of the interface
       (merge [#1131](https://github.com/libremesh/lime-packages/pull/1131))
-  - [`527c1eb`](https://github.com/libremesh/lime-packages/commit/527c1ebc44dcd3bd6edf44087ca645e5989aedeb)
-      Shared-state mesh information packages async implmentation and reference state
+  - [`527c1eb`](https://github.com/libremesh/lime-packages/commit/527c1ebc44dcd3bd6edf44087ca645e5989aedeb) - 
+      2024-08-28 - 
+      Shared-state mesh information packages async implmentation and reference state 
       (merge [#1112](https://github.com/libremesh/lime-packages/pull/1112))
-  - [`a3d751c`](https://github.com/libremesh/lime-packages/commit/a3d751c1d3a5842b2104ef9b801c5d47e46440b0)
+  - [`a3d751c`](https://github.com/libremesh/lime-packages/commit/a3d751c1d3a5842b2104ef9b801c5d47e46440b0) - 
+      2024-08-01 - 
       Stop using random-numgen, not needed in recent OpenWrt
       (merge [#1117](https://github.com/libremesh/lime-packages/pull/1117),
       fix [#800](https://github.com/libremesh/lime-packages/issues/800) [#1075](https://github.com/libremesh/lime-packages/issues/1075))
-  - [`4bdd010`](https://github.com/libremesh/lime-packages/commit/4bdd010ef8d7182467bb86035e83f922b70d83d5)
+  - [`4bdd010`](https://github.com/libremesh/lime-packages/commit/4bdd010ef8d7182467bb86035e83f922b70d83d5) - 
+      2024-06-20 - 
       readme: added network-profiles repository to ImageBuilder instructions
       (merge [#1113](https://github.com/libremesh/lime-packages/pull/1113))
-  - [`3ef0a4a`](https://github.com/libremesh/lime-packages/commit/3ef0a4ac2988a6013ed7b7364ff9c94d9c910367)
+  - [`3ef0a4a`](https://github.com/libremesh/lime-packages/commit/3ef0a4ac2988a6013ed7b7364ff9c94d9c910367) - 
+      2024-06-20 - 
       Readme: update OpenWrt version in Docker instructions
       (merge [#1116](https://github.com/libremesh/lime-packages/pull/1116))
-  - [`070d518`](https://github.com/libremesh/lime-packages/commit/070d5182b184702030335f17125cf5b18389df34)
+  - [`070d518`](https://github.com/libremesh/lime-packages/commit/070d5182b184702030335f17125cf5b18389df34) - 
+      2024-06-20 - 
       lime-example: specify that the gateway line in the static proto is optional
       (merge [#1114](https://github.com/libremesh/lime-packages/pull/1114))
-  - [`88b4fdd`](https://github.com/libremesh/lime-packages/commit/88b4fdde3e758fafd26bbc60f06a8a63b83b4bdb)
+  - [`88b4fdd`](https://github.com/libremesh/lime-packages/commit/88b4fdde3e758fafd26bbc60f06a8a63b83b4bdb) - 
+      2024-05-30 - 
       shared-state-async bump for late bleach fixup
       (merge [#1111](https://github.com/libremesh/lime-packages/pull/1111))
-  - [`cc6af11`](https://github.com/libremesh/lime-packages/commit/cc6af1119bd72d9eea91845046d5aafc1d6b716d)
-      shared-state-async: expose publish all
-      (merge [#1108](https://github.com/libremesh/lime-packages/pull/1108))
-  - [`58bbd4d`](https://github.com/libremesh/lime-packages/commit/58bbd4debaa9dd9f3e2e42b1196348c207f97e7c)
+  - [`58bbd4d`](https://github.com/libremesh/lime-packages/commit/58bbd4debaa9dd9f3e2e42b1196348c207f97e7c) - 
+      2024-05-29 - 
       fix broken profiles
       (merge [#1115](https://github.com/libremesh/lime-packages/pull/1115))
-  - [`727af91`](https://github.com/libremesh/lime-packages/commit/727af91f23d7fb8d7a598605f2b6e012c0b11c2d)
+  - [`727af91`](https://github.com/libremesh/lime-packages/commit/727af91f23d7fb8d7a598605f2b6e012c0b11c2d) - 
+      2024-05-10 - 
       Shared state async intial publish
       (merge [#1104](https://github.com/libremesh/lime-packages/pull/1104))
-  - [`f326ad8`](https://github.com/libremesh/lime-packages/commit/f326ad84cddda7f399145e790676e94e2e2fbc32)
+  - [`f326ad8`](https://github.com/libremesh/lime-packages/commit/f326ad84cddda7f399145e790676e94e2e2fbc32) - 
+      2024-04-24 - 
       A few cleanups to packages
-      (merge [#1097](https://github.com/libremesh/lime-packages/pull/1097))  
-  - [`70b08a6`](https://github.com/libremesh/lime-packages/commit/70b08a691c860b55f47f4c0913fa2b472b0d99b5)
+      (merge [#1097](https://github.com/libremesh/lime-packages/pull/1097))
+  - [`70b08a6`](https://github.com/libremesh/lime-packages/commit/70b08a691c860b55f47f4c0913fa2b472b0d99b5) - 
+      2024-04-24 - 
       safe-upgrade: update calibration data partition name
-      (merge [#1098](https://github.com/libremesh/lime-packages/pull/1098))  
-  - [`75f5d50`](https://github.com/libremesh/lime-packages/commit/75f5d508e8308e1ae7a8af047276600e94ded1d1)
-      Adds shared-state rpcd data,error output format and shared-state-async rpcd reimplementation
-      (merge [#1103](https://github.com/libremesh/lime-packages/pull/1103))  
+      (merge [#1098](https://github.com/libremesh/lime-packages/pull/1098))
+  - [`75f5d50`](https://github.com/libremesh/lime-packages/commit/75f5d508e8308e1ae7a8af047276600e94ded1d1) - 
+      2024-04-24 - 
+      Adds shared-state rpcd data,error output format and shared-state-async rpcd reimplementation 
+      (merge [#1103](https://github.com/libremesh/lime-packages/pull/1103))
 
 
-## Unreleased: branch 2024.1 (2024-12-07)
-These merge requests with different hashes were also ported from branch master to 2024.1    
-https://github.com/libremesh/lime-packages/compare/v2024.1-rc1...2024.1
+## 2024.1 Fantastic Fordwarer (2025-01-22)
+https://github.com/libremesh/lime-packages/compare/2024.1...v2024.1    
+Release notes: https://libremesh.org/news.html#2025_05_04_libremesh_2024_1_release    
+List of commits cherry picked from the branch master
 
-  - [`06609f6`](https://github.com/libremesh/lime-packages/commit/06609f685af2fbf14e6366cce12ce7af27202b9d)
-      Pirania New Release - Issue/1077
-      (merge [#1133](https://github.com/libremesh/lime-packages/pull/1133))
-  - [`08a3948`](https://github.com/libremesh/lime-packages/commit/08a3948a5a80f6e26318c96227e02466bd09345e)
-      Ensure that wan interface gets configured on DSA devices, where wan could be the name of the interface 
-      (merge [#1131](https://github.com/libremesh/lime-packages/pull/1131))
-  - [`a3d751c`](https://github.com/libremesh/lime-packages/commit/a3d751c1d3a5842b2104ef9b801c5d47e46440b0)
-      Stop using random-numgen, not needed in recent OpenWrt
-      (merge [#1117](https://github.com/libremesh/lime-packages/pull/1117),
-      fix [#800](https://github.com/libremesh/lime-packages/issues/800) [#1075](https://github.com/libremesh/lime-packages/issues/1075))
-  - [`88b4fdd`](https://github.com/libremesh/lime-packages/commit/88b4fdde3e758fafd26bbc60f06a8a63b83b4bdb)
-      shared-state-async bump for late bleach fixup
-      (merge [#1111](https://github.com/libremesh/lime-packages/pull/1111))
-  - [`f326ad8`](https://github.com/libremesh/lime-packages/commit/f326ad84cddda7f399145e790676e94e2e2fbc32)
-      A few cleanups to packages
-      (merge [#1097](https://github.com/libremesh/lime-packages/pull/1097))  
-  - [`58bbd4d`](https://github.com/libremesh/lime-packages/commit/58bbd4debaa9dd9f3e2e42b1196348c207f97e7c)
+  - [`a9488ae`](https://github.com/libremesh/lime-packages/commit/a9488aeb11b8b0dbee960203278783fac074c99e) - 
+      2024-12-10 - 
+      network: Get device names from board.json
+  - [`c77abb3`](https://github.com/libremesh/lime-packages/commit/c77abb354906250809ebe1b3f4bc4f01f6d2fbfb) - 
+      2025-01-05 - 
+      network: Do not configure protos on DSA ports...
+  - [`0628c9e`](https://github.com/libremesh/lime-packages/commit/0628c9ecb86cc9a380c40f3d17ffd97755478daf) - 
+      2024-12-10 - 
+      utils: Add optional parameter 'port' to is_dsa()
+  - [`5086f13`](https://github.com/libremesh/lime-packages/commit/5086f13624e0a34f2ec5bdede617a8abf540ea18) - 
+      2024-12-18 - 
+      watchping increase wait time for interface to get up
+  - [`b2b3c43`](https://github.com/libremesh/lime-packages/commit/b2b3c43b99ba3a97db3182a0b7e2980282a63403) - 
+      2025-01-03 - 
+      set 2024.1 release name
+  - [`c9a7686`](https://github.com/libremesh/lime-packages/commit/c9a7686766cbace00e2e2080f45f243d74ac3c48) - 
+      2024-12-31 - 
+      fix typo in package name deferable-reboot -> deferrable-reboot
+  - [`bd233d5`](https://github.com/libremesh/lime-packages/commit/bd233d5d239c5c7e690111982770d610565de4e7) - 
+      2024-12-31 - 
+      deferable-reboot move cron command to file
+  - [`8e7e17d`](https://github.com/libremesh/lime-packages/commit/8e7e17d5d78f8e605bc939a84aa7846668da2582) - 
+      2024-12-02 - 
+      cron deferable-reboot execute at random times
+  - [`0225faf`](https://github.com/libremesh/lime-packages/commit/0225faf2433f01cf6e03f6a29c112d35ed83d37d) - 
+      2024-12-02 - 
+      cron deferable-reboot increase time to delay reboot
+  - [`6c67158`](https://github.com/libremesh/lime-packages/commit/6c6715835ac9c726d16752663cbf34c916e42cb4) - 
+      2024-11-25 - 
+      de-hardcoded the ping target: moved to lime's system section
+  - [`46858ad`](https://github.com/libremesh/lime-packages/commit/46858adc24b480cdaf2f6040230d2166e39e9c84) - 
+      2024-11-25 - 
+      avoid using Google IP, use the one from DNS in lime-defaults
+  - [`6ad3870`](https://github.com/libremesh/lime-packages/commit/6ad38700a884118a3f6121860ec1534d51b835ec) - 
+      2024-11-25 - 
+      file from LibreRouterOS for checking internet connection ...
+  - [`3faa223`](https://github.com/libremesh/lime-packages/commit/3faa2235aa8c0ad218801094c27a03e2a9bca79c) - 
+      2024-11-23 - 
+      network._get_lower do not cause ls error when there is no lower
+  - [`a56200d`](https://github.com/libremesh/lime-packages/commit/a56200d462bba0f71835df5813c99e16957c7508) - 
+      2024-11-23 - 
+      check if client-wwan interface exists before using it
+  - [`fd5265c`](https://github.com/libremesh/lime-packages/commit/fd5265c3e8a70f0fc3f1fd1a0c344355075e2ab7) - 
+      2024-11-23 - 
+      fix if check for non-empty variable
+  - [`c663032`](https://github.com/libremesh/lime-packages/commit/c6630322034483659a397b947cfa3ee9612c4c2e) - 
+      2024-11-23 - 
+      check if watchping exists before using it
+  - [`3d90a9b`](https://github.com/libremesh/lime-packages/commit/3d90a9b78148aef535d9a0c96b799a639684a6db) - 
+      2024-11-26 - 
+      avoid format error when evData.service is empty
+  - [`a7aa9d9`](https://github.com/libremesh/lime-packages/commit/a7aa9d9ebd5dfdf850669a5a2d827ecbcb2a484e) - 
+      2024-12-23 - 
+      fix get node status to work with busybox ip
+  - [`71ffb60`](https://github.com/libremesh/lime-packages/commit/71ffb60a48346f131a2ea08c41f160d09ed4dc19) - 
+      2024-12-24 - 
+      added "iw phy" to lime-report
+  - [`ddd5f0a`](https://github.com/libremesh/lime-packages/commit/ddd5f0ae207c7dd9dac818c0f7a6b515144b6f34) - 
+      2024-11-19 - 
+      fixed typo ubus-lime-groundrouting in lime-app's Makefile
+  - [`f066704`](https://github.com/libremesh/lime-packages/commit/f066704bd9e757da6595faccad505ca1c592a7a7) - 
+      2024-12-07 - 
+      fix: typo of ubus-lime-groundrouting; fix multi-arch-build
+  - [`e431fef`](https://github.com/libremesh/lime-packages/commit/e431fef442f4d9fefb255d1046e8cb4ecdb173c0) - 
+      2024-11-19 - 
+      fix: ci build packages failed
+  - [`7b0ea4b`](https://github.com/libremesh/lime-packages/commit/7b0ea4bca6d165e9d4f6d0cc868464fcc0bdfee3) - 
+      2024-11-17 - 
+      henmohr GSoC Pirania New Release
+  - [`aa9161a`](https://github.com/libremesh/lime-packages/commit/aa9161aa35d603df4ab014f4e2b06ad7a6446f87) - 
+      2024-09-20 - 
+      lime-system ensure that wan interface gets configured
+  - [`eb19470`](https://github.com/libremesh/lime-packages/commit/eb19470172ded3be25437ec38fd32ec58b5171e5) - 
+      2024-07-05 - 
+      removed more unneeded $
+  - [`ceefb65`](https://github.com/libremesh/lime-packages/commit/ceefb6558d9777760510afb9b43213f83da51981) - 
+      2024-07-05 - 
+      removed unneeded $
+  - [`787497a`](https://github.com/libremesh/lime-packages/commit/787497aa37753416773bc3c112bceb230c70165f) - 
+      2024-06-30 - 
+      stop using random-numgen, not needed in recent OpenWrt
+  - [`d67326a`](https://github.com/libremesh/lime-packages/commit/d67326a6ed1311955b469a81b875eca4381c5fbc) - 
+      2024-03-19 - 
+      Fix pirania circular dependencies
+  - [`a8ff01d`](https://github.com/libremesh/lime-packages/commit/a8ff01d4d2e570066adc02eb730e0b5c711dd80b) - 
+      2024-03-19 - 
+      Remove unmaintained broken packages
+  - [`5cd8833`](https://github.com/libremesh/lime-packages/commit/5cd8833b84499e484512153eeed407e442cc6de5) - 
+      2024-05-13 - 
+      shared-state-async version bump
+  - [`b58b01f`](https://github.com/libremesh/lime-packages/commit/b58b01f95a89313d5d9940669ccfd03167ca3023) - 
+      2024-05-17 - 
       fix broken profiles
-      (merge [#1115](https://github.com/libremesh/lime-packages/pull/1115))
+  - [`4bc20ed`](https://github.com/libremesh/lime-packages/commit/4bc20ed270e6de1b09a62563b7bb00de6f88b580) - 
+      2024-04-03 - 
+      update changelog
 
 ## 2024.1-rc1 - Release candidate 1 (2024-04-03)
 
 ### Full changelog since 2023.1-rc2
 
-  - [`3b2ccf5`](https://github.com/libremesh/lime-packages/commit/3b2ccf5944f10eeefef6d12f005e67b53de01be2)
+  - [`3b2ccf5`](https://github.com/libremesh/lime-packages/commit/3b2ccf5944f10eeefef6d12f005e67b53de01be2) - 
+      2024-04-03 - 
       lime-app: update to v0.2.26
       (merge [#1101](https://github.com/libremesh/lime-packages/pull/1101))
-  - [`f7ff091`](https://github.com/libremesh/lime-packages/commit/f7ff091a6e5ec908b34ae3f2bdfa157830ca7afe)
+  - [`f7ff091`](https://github.com/libremesh/lime-packages/commit/f7ff091a6e5ec908b34ae3f2bdfa157830ca7afe) - 
+      2024-03-28 - 
       ci: multi-arch-build: use a different output path
       (merge [#1100](https://github.com/libremesh/lime-packages/pull/1100))
-  - [`4be8f34`](https://github.com/libremesh/lime-packages/commit/4be8f3416579c8590d29b010eb6dcb6103046593)
+  - [`f5c5285`](https://github.com/libremesh/lime-packages/commit/f5c5285347e4b887d614d7921eeba8f0e0a4ab82) - 
+      2024-03-24 - 
+      ci: multi-arch-build: run one job at a time
+      (merge [#1099](https://github.com/libremesh/lime-packages/pull/1099))
+  - [`4be8f34`](https://github.com/libremesh/lime-packages/commit/4be8f3416579c8590d29b010eb6dcb6103046593) - 
+      2024-03-19 - 
       lime-utils: implement DSA support for node status
       (merge [#1096](https://github.com/libremesh/lime-packages/pull/1096))
-  - [`d3d2086`](https://github.com/libremesh/lime-packages/commit/d3d20863306ac8a6e3fefa7051ab63a5554b1890)
-      Shared state Async ubus interface 
+  - [`7bfa124`](https://github.com/libremesh/lime-packages/commit/7bfa124b71addbbd0c59c85d344ec0febdc0775e) - 
+      2024-03-19 - 
+      ci: multi-arch-build: enable the build of package index + various fixes
+      (merge [#1095](https://github.com/libremesh/lime-packages/pull/1095))
+  - [`d3d2086`](https://github.com/libremesh/lime-packages/commit/d3d20863306ac8a6e3fefa7051ab63a5554b1890) - 
+      2024-03-15 - 
+      Shrared state Async ubus interface 
       (merge [#1086](https://github.com/libremesh/lime-packages/pull/1086))
-  - [`8d5d7de`](https://github.com/libremesh/lime-packages/commit/8d5d7de7d20cf88c05a7f27c2c45adb523fb70a6)
+  - [`8d5d7de`](https://github.com/libremesh/lime-packages/commit/8d5d7de7d20cf88c05a7f27c2c45adb523fb70a6) - 
+      2024-03-15 - 
       bat_hosts: fixes rpcd error
-      (merge [#1094](https://github.com/libremesh/lime-packages/pull/1094), 
-      partial fix [#1093](https://github.com/libremesh/lime-packages/issues/1093))      
-  - [`069ac1a`](https://github.com/libremesh/lime-packages/commit/069ac1a8a187a4de00a78734f9527c9caa1cb7c3)
+      (merge [#1094](https://github.com/libremesh/lime-packages/pull/1094),
+      partial fix [#1093](https://github.com/libremesh/lime-packages/issues/1093))
+  - [`069ac1a`](https://github.com/libremesh/lime-packages/commit/069ac1a8a187a4de00a78734f9527c9caa1cb7c3) - 
+      2024-03-12 - 
       links information according to batman protocol
       (merge [#1055](https://github.com/libremesh/lime-packages/pull/1055))
-  - [`7b7fcd7`](https://github.com/libremesh/lime-packages/commit/7b7fcd7600b2faafa352e8915c03f5c903cee09f)
-      Links information module for shared state according to babeld
+  - [`7b7fcd7`](https://github.com/libremesh/lime-packages/commit/7b7fcd7600b2faafa352e8915c03f5c903cee09f) - 
+      2024-03-12 - 
+      Links information module for shared state according to babeld 
       (merge [#1056](https://github.com/libremesh/lime-packages/pull/1056))
-  - [`f7d279e`](https://github.com/libremesh/lime-packages/commit/f7d279e097a103169bd3caae586b9c7550b3a707)
-      ci: add multi-arch-build.yml
+  - [`f7d279e`](https://github.com/libremesh/lime-packages/commit/f7d279e097a103169bd3caae586b9c7550b3a707) - 
+      2024-03-04 - 
+      ci: add multi-arch-build.yml;
       (merge [#1091](https://github.com/libremesh/lime-packages/pull/1091))
-  - [`90e3301`](https://github.com/libremesh/lime-packages/commit/90e330188543b9f671660eeca9bbb664a69a0e55)
+  - [`90e3301`](https://github.com/libremesh/lime-packages/commit/90e330188543b9f671660eeca9bbb664a69a0e55) - 
+      2024-03-04 - 
       ci: rebuild packages via sdk only when a package changes
       (merge [#1089](https://github.com/libremesh/lime-packages/pull/1089))
-  - [`4dc7f98`](https://github.com/libremesh/lime-packages/commit/4dc7f984bb46e0d153f53d5764e06d3e29f69e7a)
+  - [`4dc7f98`](https://github.com/libremesh/lime-packages/commit/4dc7f984bb46e0d153f53d5764e06d3e29f69e7a) - 
+      2024-02-29 - 
       lime-system: rename /lib/upgrade/keep.d/dropbear to /lib/upgrade/keep.d/dropbear-full
       (merge [#1090](https://github.com/libremesh/lime-packages/pull/1090))
-  - [`6992335`](https://github.com/libremesh/lime-packages/commit/699233525486def1c3ac9e7a698eb9d180a7b43f)
+  - [`fe00acb`](https://github.com/libremesh/lime-packages/commit/fe00acb5cb96ad433a90ac0d6575a8fa650ec40b) - 
+      2024-02-27 - 
+      Draft: update changelog
+      (merge [#1088](https://github.com/libremesh/lime-packages/pull/1088))
+  - [`6992335`](https://github.com/libremesh/lime-packages/commit/699233525486def1c3ac9e7a698eb9d180a7b43f) - 
+      2024-02-26 - 
       Add shared-state-async network statistics sharing
       (merge [#1087](https://github.com/libremesh/lime-packages/pull/1087))
-  - [`ebf4b7b`](https://github.com/libremesh/lime-packages/commit/ebf4b7be97866644a16e5b73edf48a6d8d2b5210)
+  - [`ebf4b7b`](https://github.com/libremesh/lime-packages/commit/ebf4b7be97866644a16e5b73edf48a6d8d2b5210) - 
+      2024-02-21 - 
       Fix removing ports from br-lan
       (merge [#1084](https://github.com/libremesh/lime-packages/pull/1084),
       fix [#1083](https://github.com/libremesh/lime-packages/issues/1083))
-  - [`63242c2`](https://github.com/libremesh/lime-packages/commit/63242c2fec24d629ac27e705e55e6788465d4ddb)
+  - [`63242c2`](https://github.com/libremesh/lime-packages/commit/63242c2fec24d629ac27e705e55e6788465d4ddb) - 
+      2024-02-14 - 
       Document how to set ethernet interfaces for mesh only or clients only.
       (merge [#1085](https://github.com/libremesh/lime-packages/pull/1085))
-  - [`3aa8c1c`](https://github.com/libremesh/lime-packages/commit/3aa8c1c6adee3ab838850887565b1365c898888e)
+  - [`3aa8c1c`](https://github.com/libremesh/lime-packages/commit/3aa8c1c6adee3ab838850887565b1365c898888e) - 
+      2024-02-14 - 
       shared-state-async fix log pollution
       (merge [#1082](https://github.com/libremesh/lime-packages/pull/1082),
       fix [#1081](https://github.com/libremesh/lime-packages/issues/1081))
-  - [`8b577bf`](https://github.com/libremesh/lime-packages/commit/8b577bf3d0ffc8974144f00005adb6f327733109)
+  - [`8b577bf`](https://github.com/libremesh/lime-packages/commit/8b577bf3d0ffc8974144f00005adb6f327733109) - 
+      2024-02-12 - 
       Fix lime-config fail when there is no lower iface
       (merge [#1080](https://github.com/libremesh/lime-packages/pull/1080))
-  - [`0c8a915`](https://github.com/libremesh/lime-packages/commit/0c8a915e95c2d5bbf6a7c9225bd012888bdd72b9)
+  - [`0c8a915`](https://github.com/libremesh/lime-packages/commit/0c8a915e95c2d5bbf6a7c9225bd012888bdd72b9) - 
+      2024-02-08 - 
       Set high metric on anygw prefix route
       (merge [#1079](https://github.com/libremesh/lime-packages/pull/1079),
       fix [#1078](https://github.com/libremesh/lime-packages/issues/1078))
-  - [`e322985`](https://github.com/libremesh/lime-packages/commit/e3229857362dced31657dd5c94dd4f46a6221b29)
-      re-implement shared-state from scratch in modern C++
+  - [`e322985`](https://github.com/libremesh/lime-packages/commit/e3229857362dced31657dd5c94dd4f46a6221b29) - 
+      2024-02-06 - 
+      re-implement shared-state from scratch in modern C++ 
       (merge [#1067](https://github.com/libremesh/lime-packages/pull/1067))
-  - [`a5eb7d8`](https://github.com/libremesh/lime-packages/commit/a5eb7d888b681e4cab81289949d809ee0e968880)
+  - [`a5eb7d8`](https://github.com/libremesh/lime-packages/commit/a5eb7d888b681e4cab81289949d809ee0e968880) - 
+      2024-02-05 - 
       lime-unstuck-wa: Fix module path
       (merge [#1076](https://github.com/libremesh/lime-packages/pull/1076))
-  - [`c98578e`](https://github.com/libremesh/lime-packages/commit/c98578e81e338408c8fb62e3a413ff1e807196af)
+  - [`c98578e`](https://github.com/libremesh/lime-packages/commit/c98578e81e338408c8fb62e3a413ff1e807196af) - 
+      2024-02-05 - 
       Prevent unnecessary options in wifi-iface
       (merge [#1073](https://github.com/libremesh/lime-packages/pull/1073))
-  - [`5053cf0`](https://github.com/libremesh/lime-packages/commit/5053cf0cb46b7f865d9c3917c3b08232c88b66d1)
+  - [`5053cf0`](https://github.com/libremesh/lime-packages/commit/5053cf0cb46b7f865d9c3917c3b08232c88b66d1) - 
+      2024-02-02 - 
       README.md: add info about how to add package feed
       (merge [#1074](https://github.com/libremesh/lime-packages/pull/1074))
-  - [`f8d54f2`](https://github.com/libremesh/lime-packages/commit/f8d54f25d5fd005f72c18efbc8f1859f3d1d215f)
+  - [`f8d54f2`](https://github.com/libremesh/lime-packages/commit/f8d54f25d5fd005f72c18efbc8f1859f3d1d215f) - 
+      2024-01-31 - 
       Readme.md: improve imagebuilder instructions
       (merge [#1072](https://github.com/libremesh/lime-packages/pull/1072))
-  - [`0d30e2c`](https://github.com/libremesh/lime-packages/commit/0d30e2c47bc0b989bd8d9c442ed91255b1224756)
-      lime.wireless: Fix wireless.is5Ghz 
+  - [`0d30e2c`](https://github.com/libremesh/lime-packages/commit/0d30e2c47bc0b989bd8d9c442ed91255b1224756) - 
+      2024-01-25 - 
+      lime.wireless: Fix wireless.is5Ghz
       (merge [#1071](https://github.com/libremesh/lime-packages/pull/1071),
       fix [#1063](https://github.com/libremesh/lime-packages/issues/1063))
-  - [`5a50b6f`](https://github.com/libremesh/lime-packages/commit/5a50b6f8571ec94f171214fc43add787fee0a6fc)
+  - [`5a50b6f`](https://github.com/libremesh/lime-packages/commit/5a50b6f8571ec94f171214fc43add787fee0a6fc) - 
+      2024-01-10 - 
       lime-docs: update PKG_SOURCE_URL
       (merge [#1053](https://github.com/libremesh/lime-packages/pull/1053))
-  - [`d0c498f`](https://github.com/libremesh/lime-packages/commit/d0c498f7fec2512cece194c2da2b4d481a3aec6c)
+  - [`361645e`](https://github.com/libremesh/lime-packages/commit/361645ee5c8ca19a0a60cbea5246708049b582cd) - 
+      2023-11-01 - 
+      Changelog
+      (merge [#1062](https://github.com/libremesh/lime-packages/pull/1062))
+  - [`d0c498f`](https://github.com/libremesh/lime-packages/commit/d0c498f7fec2512cece194c2da2b4d481a3aec6c) - 
+      2023-10-22 - 
       Fix bridge device section confusion
-      (merge [#1061](https://github.com/libremesh/lime-packages/pull/1061), 
+      (merge [#1061](https://github.com/libremesh/lime-packages/pull/1061),
       fix [#1060](https://github.com/libremesh/lime-packages/issues/1060))
-  - [`4c51c7e`](https://github.com/libremesh/lime-packages/commit/4c51c7e062c3dff6c5218ee797d5a79c2ad6bc3d)
+  - [`4c51c7e`](https://github.com/libremesh/lime-packages/commit/4c51c7e062c3dff6c5218ee797d5a79c2ad6bc3d) - 
+      2023-10-07 - 
       Use SPDX License Identifier to shrink size
       (merge [#1018](https://github.com/libremesh/lime-packages/pull/1018))
-  - [`9f8754b`](https://github.com/libremesh/lime-packages/commit/9f8754bc5392393a9c8c40b240b814f5f49c9413)
-      Small cleaning 
+  - [`9f8754b`](https://github.com/libremesh/lime-packages/commit/9f8754bc5392393a9c8c40b240b814f5f49c9413) - 
+      2023-10-04 - 
+      Small cleaning
       (merge [#1037](https://github.com/libremesh/lime-packages/pull/1037))
-  - [`4569fec`](https://github.com/libremesh/lime-packages/commit/4569fecca32f06012ce48065ccc7631a0d52a11f)
-      Add new reference state data types to shared state 
+  - [`4569fec`](https://github.com/libremesh/lime-packages/commit/4569fecca32f06012ce48065ccc7631a0d52a11f) - 
+      2023-10-04 - 
+      Add new reference state data types to shared state
       (merge [#1042](https://github.com/libremesh/lime-packages/pull/1042))
 
 
