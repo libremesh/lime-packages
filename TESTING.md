@@ -4,7 +4,7 @@ LibreMesh has unit tests that help us add new features while keeping maintenance
 
 We encourage contributors to write tests when adding new functionality and also while fixing regressions.
 
-LibreMesh unit testing is based in the powerful [busted](https://olivinelabs.com/busted/) library which has a very good documentation.
+LibreMesh unit testing is based in the powerful [busted](https://lunarmodules.github.io/busted/) library which has a very good documentation.
 
 Tests are run inside a x86_64 Docker image with some lua and openwrt libraries avaible.
 
