@@ -4,7 +4,7 @@ LibreMesh has unit tests that help us add new features while keeping maintenance
 
 We encourage contributors to write tests when adding new functionality and also while fixing regressions.
 
-LibreMesh unit testing is based in the powerful [busted](https://olivinelabs.com/busted/) library which has a very good documentation.
+LibreMesh unit testing is based in the powerful [busted](https://lunarmodules.github.io/busted/) library which has a very good documentation.
 
 Tests are run inside a x86_64 Docker image with some lua and openwrt libraries avaible.
 
@@ -171,8 +171,8 @@ You will need a rootfs and ramfs LibreMesh files. To generate one you can use a 
 and select x86_64 target and select the option to generate an initramfs.
 
 Prebuilt development images can be downloaded from here:
-* http://repo.libremesh.org/tmp/openwrt-18.06-x86-64-generic-rootfs.tar.gz
-* http://repo.libremesh.org/tmp/openwrt-18.06-x86-64-ramfs.bzImage
+* https://firmware-libremesh.antennine.org/releases/2024.1-ow23.05.5/targets/x86/64/default/libremesh-2024.1-ow23.05.5-default-x86-64-generic-squashfs-rootfs.img.gz
+* https://firmware-libremesh.antennine.org/releases/2024.1-ow23.05.5/targets/x86/64/default/libremesh-2024.1-ow23.05.5-default-x86-64-generic-initramfs-kernel.bin
 
 Install the package `qemu-system-x86_64` if you don't have already installed.
 
@@ -191,7 +191,7 @@ $ sudo ./tools/qemu_dev_start  path/to/openwrt-x86-64-generic-rootfs.tar.gz path
 #### Stop it
 
 ```
-$ ./tools/qemu_dev_stop
+$ ./tools/qemu_dev_stop [NODE_ID]
 ```
 
 #### Run 12 nodes simultaneously, with arbitrary complex topology of clouds and links
