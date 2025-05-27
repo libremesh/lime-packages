@@ -19,7 +19,7 @@ config base_config 'base_config'
     list catch_interfaces 'br-lan'
     # list catch_interfaces 'anygw'
     list catch_bridged_interfaces 'wlan0-ap'
-    
+
 config access_mode 'read_for_access'
     option url_portal '/portal/read_for_access.html'
     option duration_m '15'
