@@ -265,3 +265,15 @@ config net
 #config bgp_peer peer2
 #	option remoteIP '2001:db8::c001'
 #	option remoteAS '65549'
+
+#########################################################
+### Watchcat specific sections
+### One section for each ping-watchdog rule you want to define.
+
+# Ping-reboot the device if gateway (or any IP) is unreachable
+config hwd_watchcat default
+    option mode       'ping_reboot'
+    option pinghosts  '4.2.2.2'    # default Level3 resolver
+    option pingperiod '30s'        # send one ping every 30 seconds
+    option period     '6h'         # reboot if 6h continuously failing
+    option forcedelay '1m'         # wait up to 1m for a soft-reboot
