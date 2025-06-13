@@ -14,7 +14,11 @@ function watchcat.clean()
         local uci = config.get_uci_cursor()
 
         local function clear_watchcat_section(section)
-                if utils.stringStarts(section[".name"], watchcat.sectionNamePrefix) then
+                local is_ours = utils.stringStarts(section[".name"], watchcat.sectionNamePrefix)
+                
+                local is_anon = section[".anonymous"]
+
+                if is_ours or is_anon then
                         uci:delete("watchcat", section[".name"])
                 end
         end
