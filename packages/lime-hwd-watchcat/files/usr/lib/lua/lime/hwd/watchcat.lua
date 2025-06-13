@@ -8,10 +8,13 @@ local watchcat = {}
 
 watchcat.sectionNamePrefix = hardware_detection.sectionNamePrefix.."watchcat_"
 
-
+local function reload_watchcat()
+        os.execute("/etc/init.d/watchcat reload")
+end
 
 function watchcat.clean()
         local uci = config.get_uci_cursor()
+        local modified = false
 
         local function clear_watchcat_section(section)
                 local is_ours = utils.stringStarts(section[".name"], watchcat.sectionNamePrefix)
@@ -20,11 +23,15 @@ function watchcat.clean()
 
                 if is_ours or is_anon then
                         uci:delete("watchcat", section[".name"])
+                        modified = true
                 end
         end
 
         uci:foreach("watchcat", "watchcat", clear_watchcat_section)
-        uci:save("watchcat")
+        if modified then
+                uci:save("watchcat")
+                reload_watchcat()
+        end
 end
 
 function watchcat.detect_hardware()
@@ -48,6 +55,7 @@ function watchcat.detect_hardware()
         -- only saved if we actually aplied any user section
         if user_defined then
                 uci:save("watchcat")
+                reload_watchcat()
         end
 end
 
