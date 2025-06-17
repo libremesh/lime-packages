@@ -58,9 +58,11 @@ jobs:
               && echo "snapshots/packages" || echo "releases/packages-$version")
             echo $VERSION_PATH
 
-            OPENWRT_BRANCH_PATH=$([ "$version" == "main" ] \
-              && echo "openwrt-main" || echo "openwrt-$version")
+            OPENWRT_BRANCH_PATH="openwrt-$version"
             echo $OPENWRT_BRANCH_PATH
+
+            PKG_MANAGER=$([ "$version" == "main" || "${version:0:2}" -gt 24 ] \
+              && echo "apk" || echo "opkg")
 
             wget -r -nH --no-parent --level 1 --accept html -P. \
               --directory-prefix=. https://downloads.openwrt.org/$VERSION_PATH/  
@@ -69,8 +71,9 @@ jobs:
               [[ $FIRST_BUILD -ne 1 ]] && JSON="$JSON"','
               FIRST_BUILD=0
 
-              JSON="$JSON"'{"version": "'"$VERSION"'" ,"arch": "'"$arch"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
+              JSON="$JSON"'{"version": "'"$VERSION"'" ,"arch": "'"$arch"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'", "pkg_manager": "'"$PKG_MANAGER"'" }'
               echo $JSON
+
             done
           done
 
@@ -78,7 +81,7 @@ jobs:
           echo "matrix_builds=${matrix_include}" >> "$GITHUB_OUTPUT"
           
   build:
-    name: build ${{ matrix.arch }}-${{ matrix.version }}
+    name: build ${{ matrix.openwrt_branch_path }} ${{ matrix.arch }}
     runs-on: ubuntu-latest
     needs: generate_matrix
     strategy:
@@ -87,18 +90,18 @@ jobs:
       matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix_builds) }}
       # matrix:
       #   include:
-      #     - { version: main, arch: x86_64, openwrt_branch_path: 'openwrt-main'}
-      #     - { version: main, arch: mips_24kc, openwrt_branch_path: 'openwrt-main'}
+      #     - { version: main, arch: x86_64, openwrt_branch_path: 'openwrt-main', pkg_manager: 'apk'}
+      #     - { version: main, arch: mips_24kc, openwrt_branch_path: 'openwrt-main', pkg_manager: 'apk'}
     steps:
       - uses: actions/checkout@v4
 
       - name: Build packages ${{ matrix.arch }}-${{ matrix.version }}
-        uses: openwrt/gh-action-sdk@v7
+        uses: openwrt/gh-action-sdk@v9
         env:
           ARCH: "${{ matrix.arch }}-${{ matrix.version }}"
           FEEDNAME: "libremesh"
           IGNORE_ERRORS: "n m y"
-          KEY_BUILD: "${{ matrix.version != 'main' && secrets.KEY_BUILD || '' }}"
+          KEY_BUILD: "${{ matrix.pkg_manager == 'apk' && secrets.PRIVATE_KEY || secrets.KEY_BUILD }}"
           PACKAGES: "${{ env.PACKAGES }}"
           INDEX: 1
           NO_DEFAULT_FEEDS: 1
@@ -109,11 +112,11 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.arch }}-${{ matrix.version }}
+          name: ${{ matrix.openwrt_branch_path }}-${{ matrix.arch }}
           path: bin/packages/${{ matrix.arch }}/libremesh/
 
   publish:
-    name: publish ${{ github.ref }}
+    name: publish ${{ matrix.openwrt_branch_path }} ${{ matrix.arch }}
     runs-on: ubuntu-latest
     if: ${{ always() }}
     needs: [generate_matrix, build]
@@ -123,14 +126,14 @@ jobs:
       matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix_builds) }}
       # matrix:
       #   include:
-      #     - { version: main, arch: x86_64, openwrt_branch_path: 'openwrt-main'}
-      #     - { version: main, arch: mips_24kc, openwrt_branch_path: 'openwrt-main'}
+      #     - { version: main, arch: x86_64, openwrt_branch_path: 'openwrt-main', pkg_manager: 'apk'}
+      #     - { version: main, arch: mips_24kc, openwrt_branch_path: 'openwrt-main', pkg_manager: 'apk'}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/download-artifact@v4
         with:
-          name: "${{ matrix.arch }}-${{ matrix.version }}"
+          name: "${{ matrix.openwrt_branch_path }}-${{ matrix.arch }}"
           path: artifacts
 
       - name: Upload packages to GitHub Pages

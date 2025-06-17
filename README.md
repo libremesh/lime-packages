@@ -64,32 +64,25 @@ If your device is not part of ath79-generic profiles, you can replace it with an
 Within the container, add the `lime-packages` feeds:
 
 **opkg on openwrt 24.10.x and previous**
+- replace `openwrt-23.05` with the openwrt branch you are using (i.e `openwrt-24.10`)
+- replace `mips_24kc` with the architecture of your device based on target/subtarget
 
 ```shell
-echo "src/gz libremesh https://feed.libremesh.org/master" >> repositories.conf
+echo "src/gz libremesh https://feed.libremesh.org/master/openwrt-23.05" >> repositories.conf
 echo "src/gz libremesh_profiles https://feed.libremesh.org/profiles" >> repositories.conf
+echo "src/gz libremesh_arch_packages https://feed.libremesh.org/arch_packages/master/openwrt-23.05/mips_24kc" >> repositories.conf
 echo  "untrusted comment: signed by libremesh.org key a71b3c8285abd28b" > keys/a71b3c8285abd28b
 echo "RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8" >> keys/a71b3c8285abd28b
 ```
-To use the new `shared-state-async` add this repo:
-- replace `openwrt-23.05` with the openwrt branch 
-- replace `mips_24kc` with the architecture of your device based on target/subtarget
-
-```shell 
-echo "src/gz libremesh_arch_packages https://feed.libremesh.org/arch_packages/master/openwrt-23.05/mips_24kc" >> repositories.conf
-```
 
 **apk on openwrt main branch**
-```
-echo "https://feed.libremesh.org/apk/master/packages.adb" >> repositories
-echo "https://feed.libremesh.org/apk/profiles/packages.adb" >> repositories
-```
-To use the new `shared-state-async` add this repo: 
-- replace `openwrt-main` with the openwrt branch 
+- replace `openwrt-main` with the openwrt branch you are using (i.e `openwrt-24.10`)
 - replace `mips_24kc` with the architecture of your device based on target/subtarget
 
-```shell 
+```shell
+echo "https://feed.libremesh.org/apk/master/openwrt-main/packages.adb" >> repositories
 echo "https://feed.libremesh.org/arch_packages/master/openwrt-main/mips_24kc/packages.adb" >> repositories
+echo "https://feed.libremesh.org/apk/profiles/packages.adb" >> repositories
 ```
 
 Ideally add your own `lime-community` files within the container in the folder
