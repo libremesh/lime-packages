@@ -12,6 +12,7 @@ define Package/$(PKG_NAME)
   TITLE:=$(PKG_NAME) allows AlterMundi to provide remote support through SSH root access
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
   DEPENDS:= +zerotier +auto-usb-wwan +kmod-ath9k-htc +ath9k-htc-firmware
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

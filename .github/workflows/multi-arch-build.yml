@@ -14,15 +14,17 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      arch:
+        description: "Architecture to build (empty for all)"
+        required: false
+      branches:
+        description: "Branches to build (empty for main stable oldstable)"
+        required: false
 
 # Build packages using the openwrt sdk
 # for each architecture supported
-# in openwrt branches 'main', 'stable', 'old-stable'
-env:
-# NOTE:
-# workaround: build a package that selects '+shared-state-async'
-# as 'make package/shared-state-async/check' fails with 'Package HASH check failed'
-  PACKAGES: "shared-state-bat_hosts"
+# in openwrt branches 'main', 'stable', 'oldstable'
 
 jobs:
   generate_matrix:
@@ -30,8 +32,19 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix_builds: ${{ steps.define_matrix.outputs.matrix_builds }}
-      dest_dir: ${{ steps.set_package_destination.outputs.DEST_DIR }}
+      versions_list: ${{ steps.define_matrix.outputs.versions_list }}
+      dest_dir: ${{ steps.set_package_destination.outputs.dest_dir }}
+      packages: ${{ steps.define_packages_list.outputs.packages }}
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Define list of packages without PKGARCH:=all
+        id: define_packages_list
+        run: |
+          packages_list=$(grep -L PKGARCH:=all packages/*/Makefile | sed 's|\(.*\)/\(.*\)/Makefile|\2|g')
+          echo $packages_list
+          echo "packages=$packages_list" >> $GITHUB_OUTPUT
+
       - name: Set package destination
         id: set_package_destination
         run: |
@@ -43,12 +56,21 @@ jobs:
         id: define_matrix
         run: |
           JSON='['
+          VERSIONS='['
           FIRST_BUILD=1
+          FIRST_VERSION=1
           versions=$(curl https://downloads.openwrt.org/.versions.json)
           stable=$(echo $versions | jq | grep \"stable_ | sed 's|.*\"stable_version\": \"\(.*\)\",|\1|')
           oldstable=$(echo $versions | jq | grep oldstable_ | sed 's|.*\"oldstable_version\": \"\(.*\)\",|\1|')
+          arch_filter="${{ github.event.inputs.arch }}"
+          branches_filter="${{ github.event.inputs.branches }}"
+          branches_list=$([ $branches_filter != "" ] && echo "$branches_filter" \
+            || echo "main" "${stable:0:5}" "${oldstable:0:5}")
 
-          for version in "main" "${stable:0:5}" "${oldstable:0:5}"; do
+          # branches_list=main
+          # arch_filter=mips_24kc
+
+          for version in $branches_list; do
 
             VERSION=$([ "$version" == "main" ] \
               && echo "main" || echo "openwrt-$version")
@@ -58,27 +80,38 @@ jobs:
               && echo "snapshots/packages" || echo "releases/packages-$version")
             echo $VERSION_PATH
 
-            OPENWRT_BRANCH_PATH=$([ "$version" == "main" ] \
-              && echo "openwrt-main" || echo "openwrt-$version")
+            OPENWRT_BRANCH_PATH="openwrt-$version"
             echo $OPENWRT_BRANCH_PATH
 
             wget -r -nH --no-parent --level 1 --accept html -P. \
-              --directory-prefix=. https://downloads.openwrt.org/$VERSION_PATH/  
+              --directory-prefix=. https://downloads.openwrt.org/$VERSION_PATH/
 
-            for arch in $(ls ./$VERSION_PATH/ | grep -v html); do
-              [[ $FIRST_BUILD -ne 1 ]] && JSON="$JSON"','
-              FIRST_BUILD=0
+            if [ $arch_filter != "" ]; then
+              JSON="$JSON"'{"version": "'"$VERSION"'", "arch": "'"$arch_filter"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
+            else
+              for arch in $(ls ./$VERSION_PATH/ | grep -v html | grep -v x86_64); do
+                [[ $FIRST_BUILD -ne 1 ]] && JSON="$JSON"','
+                FIRST_BUILD=0
 
-              JSON="$JSON"'{"version": "'"$VERSION"'" ,"arch": "'"$arch"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
-              echo $JSON
-            done
+                JSON="$JSON"'{"version": "'"$VERSION"'", "arch": "'"$arch"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
+              done
+            fi
+
+            [[ $FIRST_VERSION -ne 1 ]] && VERSIONS="$VERSIONS"','
+            FIRST_VERSION=0
+            VERSIONS="$VERSIONS"'{"version": "'"$VERSION"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
           done
+
+          echo $JSON
+          echo $VERSIONS
 
           matrix_include='{"include": '"$JSON"']}'
           echo "matrix_builds=${matrix_include}" >> "$GITHUB_OUTPUT"
+          versions_list_include='{"include": '"$VERSIONS"']}'
+          echo "versions_list=${versions_list_include}" >> "$GITHUB_OUTPUT"
           
   build:
-    name: build ${{ matrix.arch }}-${{ matrix.version }}
+    name: Build ${{ matrix.openwrt_branch_path }} ${{ matrix.arch }}
     runs-on: ubuntu-latest
     needs: generate_matrix
     strategy:
@@ -86,57 +119,87 @@ jobs:
       max-parallel: 10
       matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix_builds) }}
       # matrix:
-      #   include:
-      #     - { version: main, arch: x86_64, openwrt_branch_path: 'openwrt-main'}
+      # include:
+      #   - { version: main, arch: x86_64, openwrt_branch_path: 'openwrt-main'}
       #     - { version: main, arch: mips_24kc, openwrt_branch_path: 'openwrt-main'}
     steps:
       - uses: actions/checkout@v4
 
       - name: Build packages ${{ matrix.arch }}-${{ matrix.version }}
-        uses: openwrt/gh-action-sdk@v7
+        uses: openwrt/gh-action-sdk@v9
         env:
           ARCH: "${{ matrix.arch }}-${{ matrix.version }}"
           FEEDNAME: "libremesh"
           IGNORE_ERRORS: "n m y"
-          KEY_BUILD: "${{ matrix.version != 'main' && secrets.KEY_BUILD || '' }}"
-          PACKAGES: "${{ env.PACKAGES }}"
+          KEY_BUILD: "${{ secrets.KEY_BUILD }}"
+          PRIVATE_KEY: "${{ secrets.PRIVATE_KEY }}"
+          PACKAGES: "${{ needs.generate_matrix.outputs.packages }}"
           INDEX: 1
           NO_DEFAULT_FEEDS: 1
           NO_REFRESH_CHECK: 1
           NO_SHFMT_CHECK: 1
+          # V: sc
+      
+      - name: Reorder binaries by arch
+        run: |
+          mkdir -p bin_dir/${{ matrix.arch }}
+          mv bin/packages/${{ matrix.arch }}/libremesh/* bin_dir/${{ matrix.arch }}
 
-      - name: upload artifact
-        if: ${{ always() }}
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.arch }}-${{ matrix.version }}
-          path: bin/packages/${{ matrix.arch }}/libremesh/
+          name: ${{ matrix.openwrt_branch_path }}-${{ matrix.arch }}
+          path: bin_dir/
 
-  publish:
-    name: publish ${{ github.ref }}
+  merge_artifacts:
+    name: Merge artifacts ${{ matrix.openwrt_branch_path }}
     runs-on: ubuntu-latest
     if: ${{ always() }}
     needs: [generate_matrix, build]
     strategy:
       fail-fast: false
-      max-parallel: 1
-      matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix_builds) }}
-      # matrix:
-      #   include:
-      #     - { version: main, arch: x86_64, openwrt_branch_path: 'openwrt-main'}
-      #     - { version: main, arch: mips_24kc, openwrt_branch_path: 'openwrt-main'}
+      matrix: ${{ fromJson(needs.generate_matrix.outputs.versions_list) }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: ${{ matrix.openwrt_branch_path }}
+          pattern: ${{ matrix.openwrt_branch_path }}-*
+          delete-merged: true
+
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: [generate_matrix, merge_artifacts]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout lime-feed
+        uses: actions/checkout@v4
+        with:
+          repository: libremesh/lime-feed
+          path: lime-feed
+      
       - uses: actions/download-artifact@v4
         with:
-          name: "${{ matrix.arch }}-${{ matrix.version }}"
-          path: artifacts
+          path: artifacts/${{ needs.generate_matrix.outputs.dest_dir }}/
+
+      - name: Replace packages
+        run: |
+          for branch in $(ls artifacts/${{ needs.generate_matrix.outputs.dest_dir }}/); do
+            for arch in $(ls artifacts/${{ needs.generate_matrix.outputs.dest_dir }}/$branch/); do
+              rm -rf lime-feed/${{ needs.generate_matrix.outputs.dest_dir }}/$branch/$arch
+            done;
+          done;
+          cp -r artifacts/${{ needs.generate_matrix.outputs.dest_dir }}/* lime-feed/${{ needs.generate_matrix.outputs.dest_dir }}/
 
       - name: Upload packages to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           external_repository: libremesh/lime-feed
-          publish_dir: ./artifacts/
-          destination_dir: arch_packages/${{ needs.generate_matrix.outputs.dest_dir }}/${{ matrix.openwrt_branch_path }}/${{ matrix.arch }}/
+          publish_dir: ./lime-feed/${{ needs.generate_matrix.outputs.dest_dir }}/
+          destination_dir: ${{ needs.generate_matrix.outputs.dest_dir }}/

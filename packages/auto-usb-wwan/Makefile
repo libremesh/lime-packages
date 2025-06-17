@@ -11,6 +11,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=Utilities
   TITLE:=$(PKG_NAME) configures any USB WiFi device as WWAN upon plugging in.
   MAINTAINER:=Gui Iribarren <gui@altermundi.net>
+  PKGARCH:=all
 endef
 
 define Package/$(PKG_NAME)/description

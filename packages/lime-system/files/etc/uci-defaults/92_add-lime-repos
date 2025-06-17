@@ -9,13 +9,18 @@
 	repo='apk'
 	feeds_file='/etc/apk/repositories.d/limefeeds.list'
 	dist_feeds_file='/etc/apk/repositories.d/distfeeds.list'
-	main_feed_path='apk/'
+	pkg_manager_path='apk/'
 	arch="$(cat /etc/apk/arch)"
+	key_name=libremesh.pem
+	key_content="-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEdFJZ2qVti49Ol8LJZYuxgOCLowBS
+8bI86a7zqhSbs5yon3JON7Yee7CQOgqwPOX5eMALGOu8iFGAqIRx5YjfYA==
+-----END PUBLIC KEY-----"
 } || ([ -f /etc/opkg/distfeed.conf ] && {
 	repo='opkg'
 	feeds_file='/etc/opkg/limefeeds.conf'
 	dist_feeds_file='/etc/opkg/distfeeds.conf'
-	main_feed_path=''
+	pkg_manager_path=''
 	arch="$(grep OPENWRT_ARCH /etc/os-release | sed 's/OPENWRT_ARCH=\"\(.*\)\"/\1/')"
 	key_name="a71b3c8285abd28b"
 	key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
@@ -44,21 +49,18 @@ else
 	echo "String not found 'openwrt.org' in default ${repo} feeds, cannot determine openwrt branch"
 fi
 
-[ "$LIME_CODENAME" == "development" ] && {
-	packages_url="http://feed.libremesh.org/${main_feed_path}master";
-	arch_packages_url="http://feed.libremesh.org/arch_packages/master/$openwrt_branch/$arch";
-} || {
-	packages_url="http://feed.libremesh.org/${main_feed_path}$LIME_RELEASE"
-	arch_packages_url="http://feed.libremesh.org/arch_packages/$LIME_RELEASE/$openwrt_branch/$arch";
-}
+branch_release_path=$([ "$LIME_CODENAME" == "development" ] && echo "master" || echo "$LIME_RELEASE" )
 
-profiles_url="http://feed.libremesh.org/${main_feed_path}profiles"
+packages_url="http://feed.libremesh.org/${branch_release_path}/$openwrt_branch/x86_64";
+arch_packages_url="http://feed.libremesh.org/${branch_release_path}/$openwrt_branch/$arch";
+profiles_url="http://feed.libremesh.org/profiles/$openwrt_branch/x86_64";
 
 echo "Configuring official LibreMesh $repo feeds"
 [ $repo == 'apk' ] && {
 echo "$packages_url/packages.adb" > "$feeds_file"
 echo "${arch_packages_url}/packages.adb" >> "$feeds_file"
 echo "$profiles_url/packages.adb" >> "$feeds_file"
+echo "$key_content" >> "/etc/apk/keys/$key_name"
 } || ( 
 [ $repo == 'opkg' ] && {
 echo "src/gz libremesh $packages_url" > "$feeds_file"
