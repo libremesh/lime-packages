@@ -13,7 +13,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=Network
   MAINTAINER:=Asociación Civil AlterMundi <info@altermundi.net>
   TITLE:=Captive portal with vouchers.
-  DEPENDS:=+nftables +liblucihttp0 +uhttpd +uhttpd-mod-ubus +shared-state +shared-state-pirania \
+  DEPENDS:=+nftables +uhttpd +uhttpd-mod-ubus +shared-state +shared-state-pirania \
 	+uhttpd-mod-lua +lime-system +luci-lib-jsonc \
 	+liblucihttp-lua +luci-lib-nixio +libubus-lua +libuci-lua
   PKGARCH:=all
