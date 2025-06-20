@@ -73,6 +73,7 @@ config lime network
 config lime wifi					# Settings in this section applies to all radios. 
 	list modes 'ap'					# This mode setup an Access Point, with the same ssid in each node for roaming purposes.
 	list modes 'apname'				# This mode setup an Access Point, with specific ssid for each node.
+	list modes 'apup'				# This mode setup radio for APuP operation.
 	list modes 'ieee80211s'				# Used for mesh links between nodes.
 #	list modes 'adhoc'				# See below for adhoc configuration
 #	list modes 'client'				# See below for client configuration
@@ -83,6 +84,7 @@ config lime wifi					# Settings in this section applies to all radios.
 	option apname_ssid 'LibreMesh.org/%H'		# SSID specific to each AP. A user can connect to the named AP to avoid roaming
 #	option apname_key 'SomeWPA2PskKey'
 #	option apname_encryption 'psk2'
+	option apup_ssid 'LibreMesh.org'                # set here your APuP based network name
 	option adhoc_ssid 'LiMe'			# SSID of the APs (nodes) when meshing in ad-hoc mode, i.e., the nodes form an IBSS. Not used when meshing in 802.11s (the default)
 	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
 	option ieee80211s_mesh_fwding '0'		# Settings needed only for 802.11s

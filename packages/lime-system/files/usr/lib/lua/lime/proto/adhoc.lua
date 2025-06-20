@@ -26,4 +26,6 @@ function adhoc.setup_interface(ifname, args)
 	end
 end
 
+function adhoc.runOnDevice(linuxDev, args) end
+
 return adhoc
