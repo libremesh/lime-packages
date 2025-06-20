@@ -13,6 +13,9 @@ local ubus_lime_loc = test_utils.load_lua_file_as_function(test_file_name)
 local rpcd_call = test_utils.rpcd_call
 local uci
 
+local snapshot -- to revert luassert stubs and spies
+
+
 describe('ubus-lime-utils tests #ubuslimelocation', function()
     it('test list methods', function()
         local response  = rpcd_call(ubus_lime_loc, {'list'})
@@ -57,9 +60,12 @@ describe('ubus-lime-utils tests #ubuslimelocation', function()
 
     it('test set location', function()
         local f = io.open("/tmp/lime_location_testing", "w")
+        local snapshot_small = assert:snapshot()
         stub(network, "get_own_macs", function () return {"00:11:7f:13:36:16", "02:ce:16:aa:83:52"} end)
         stub(io, "popen", function () return f end)
         stub(system, "get_hostname", function() return 'my-hostname' end)
+        stub(wireless,"mesh_ifaces", function() return {} end)
+
         uci:set("location", "settings", "location")
         lat = uci:set("location", "settings", "node_latitude", "15.123")
         lon = uci:set("location", "settings", "node_longitude", "-5")
@@ -71,6 +77,8 @@ describe('ubus-lime-utils tests #ubuslimelocation', function()
         assert.is.equal("3.14", response.lon)
         assert.is.equal("1", uci:get("location", "settings", "node_latitude"))
         assert.is.equal("3.14", uci:get("location", "settings", "node_longitude"))
+        snapshot_small:revert()
+        f:close()
     end)
 
     it('test nodes_and_links', function()
@@ -160,9 +168,13 @@ describe('ubus-lime-utils tests #liblocation', function()
 
     before_each('', function()
         uci = test_utils.setup_test_uci()
+        snapshot = assert:snapshot()
+        stub(wireless,"mesh_ifaces", function() return {} end)
     end)
 
     after_each('', function()
         test_utils.teardown_test_uci(uci)
+        snapshot:revert()
+
     end)
 end)

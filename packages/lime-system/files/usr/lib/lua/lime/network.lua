@@ -2,8 +2,8 @@
 
 --! LibreMesh community mesh networks meta-firmware
 --!
---! Copyright (C) 2013-2023  Gioacchino Mazzurco <gio@eigenlab.org>
---! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--! Copyright (C) 2013-2024  Gioacchino Mazzurco <gio@polymathes.cc>
+--! Copyright (C) 2023-2024  Asociación Civil Altermundi <info@altermundi.net>
 --!
 --! SPDX-License-Identifier: AGPL-3.0-only
 
@@ -15,12 +15,20 @@ local fs = require("nixio.fs")
 local config = require("lime.config")
 local utils = require("lime.utils")
 
-network.limeIfNamePrefix="lm_net_"
-network.protoParamsSeparator=":"
-network.protoVlanSeparator="_"
+
+function network.PROTO_PARAM_SEPARATOR() return ":" end
+function network.PROTO_VLAN_SEPARATOR() return "_" end
+function network.LIME_UCI_IFNAME_PREFIX() return "lm_net_" end
+
 
 network.MTU_ETH = 1500
 network.MTU_ETH_WITH_VLAN = network.MTU_ETH - 4
+
+-- Deprecated use corresponding functions instead
+network.protoParamsSeparator=":"
+network.protoVlanSeparator="_"
+network.limeIfNamePrefix="lm_net_"
+
 
 function network.get_mac(ifname)
 	local _, macaddr = next(network.get_own_macs(ifname))
@@ -260,7 +268,7 @@ function network.scandevices(specificIfaces)
 			--! pluggable ethernet dongles.
 			utils.log( "network.scandevices.dev_parser found plain Ethernet " ..
 			           "device %s", dev )
-		elseif dev:match("^wlan%d+"..wireless.wifiModeSeparator.."%w+$") then
+		elseif dev:match("^wlan%d+"..wireless.WIFI_MODE_SEPARATOR().."%w+$") then
 			utils.log( "network.scandevices.dev_parser found WiFi device %s",
 			           dev )
 		elseif specificIfaces[dev] then
@@ -536,6 +544,93 @@ function network.createMacvlanIface(baseIfname, linuxName, argsDev, argsIf)
 	uci:save("network")
 
 	return owrtInterfaceName, linuxName, owrtDeviceName
+end
+
+--! Create a static interface at runtime via ubus
+function network.createStatic(linuxBaseIfname)
+	local ipv4, ipv6 = network.primary_address()
+	local ubusIfaceName = network.sanitizeIfaceName(
+		network.LIME_UCI_IFNAME_PREFIX()..linuxBaseIfname.."_static")
+	local ifaceConf = {
+		name    = ubusIfaceName,
+		proto   = "static",
+		auto    = "1",
+		ifname  = linuxBaseIfname,
+		ipaddr  = ipv4:host():string(),
+		netmask = "255.255.255.255"
+	}
+
+	local libubus = require("ubus")
+	local ubus = libubus.connect()
+	ubus:call('network', 'add_dynamic', ifaceConf)
+	ubus:call('network.interface.'..ifaceConf.name, 'up', {})
+
+--! TODO: As of today ubus silently fails to properly setup the interface,
+--! subsequent status query return NO_DEVICE error
+--!  ubus -v call network.interface.lm_net_lm_net_wlan0_peer1_static status
+--!  {
+--!          "up": false,
+--!          "pending": false,
+--!          "available": false,
+--!          "autostart": true,
+--!          "dynamic": true,
+--!          "proto": "static",
+--!          "data": {
+--!
+--!          },
+--!          "errors": [
+--!                  {
+--!                          "subsystem": "interface",
+--!                          "code": "NO_DEVICE"
+--!                  }
+--!          ]
+--!  }
+--!
+--! ATM work around the problem configuring IP addresses via ip command
+
+	utils.unsafe_shell("ip link set up dev "..ifaceConf.ifname)
+	utils.unsafe_shell("ip address add "..ifaceConf.ipaddr.."/32 dev "..ifaceConf.ifname)
+
+	return ifaceConf.name
+end
+
+--! Create a vlan at runtime via ubus
+function network.createVlan(linuxBaseIfname, vid, vlanProtocol)
+	local vlanConf = {
+		name   = linuxBaseIfname .. network.PROTO_VLAN_SEPARATOR() .. vid,
+		type   = vlanProtocol or "8021ad",
+		ifname = linuxBaseIfname,
+		vid    = vid
+	}
+
+	utils.log("lime.network.createVlan(%s, ...)", linuxBaseIfname)
+	utils.dumptable(vlanConf)
+
+	local libubus = require("ubus")
+	local ubus = libubus.connect()
+	ubus:call('network', 'add_dynamic_device', vlanConf)
+
+--! TODO: as of today ubus silently fails to properly creating a device
+--! dinamycally work around it by using ip command instead
+	utils.unsafe_shell("ip link add name "..vlanConf.name.." link "..vlanConf.ifname.." type vlan proto 802.1ad id "..vlanConf.vid)
+
+	return vlanConf.name
+end
+
+--! Run protocols at runtime on top of linux network devices
+-- TODO: probably some code between here and configure might be deduplicaded
+function network.runProtocols(linuxBaseIfname)
+	utils.log("lime.network.runProtocols(%s, ...)", linuxBaseIfname)
+	local protoConfs = config.get("network", "protocols")
+	for _,protoConf in pairs(protoConfs) do
+		local args = utils.split(protoConf, network.PROTO_PARAM_SEPARATOR())
+		local protoModule = "lime.proto."..args[1]
+		if utils.isModuleAvailable(protoModule) then
+			local proto = require(protoModule)
+			xpcall(function() proto.runOnDevice(linuxBaseIfname, args) end,
+				   function(errmsg) print(errmsg) ; print(debug.traceback()) end)
+		end
+	end
 end
 
 return network

@@ -25,4 +25,6 @@ function ieee80211s.setup_interface(ifname, args)
 	end
 end
 
+function ieee80211s.runOnDevice(linuxDev, args) end
+
 return ieee80211s
