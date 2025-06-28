@@ -15,6 +15,7 @@ REPO_PATH=$(printf "%q\n" "`git rev-parse --show-toplevel`")
 
 DOCKER_CMD="docker run \
     -v ${HOME}:${HOME} \
+    -v ${REPO_PATH}:${REPO_PATH} \
     -v /etc/passwd:/etc/passwd:ro \
     -v /etc/shadow:/etc/shadow:ro \
     -v /etc/group:/etc/group:ro \
@@ -22,7 +23,7 @@ DOCKER_CMD="docker run \
     -v ${DOCKER_BASHRC}:${HOME}/.bashrc \
     -v /usr/share/git/completion:/usr/share/git/completion \
     --net=host \
-    -i -w $PWD -t -u $(id -u):$(id -g) --rm \
+    -i -w $REPO_PATH -t -u $(id -u):$(id -g) --rm \
     -e DISPLAY=$DISPLAY \
     -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 \
     $DOCKER_IMAGE \

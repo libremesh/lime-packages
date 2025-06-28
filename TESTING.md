@@ -17,8 +17,21 @@ Just execute `./run_tests`:
 ![run_tests](https://i.imgur.com/TBIE7Gp.png)
 
 
-This will build the testing Docker image automaticaly in the first run and then execute the tests and create the coverage report.
-Note: you must have Docker installed and running.
+This will build the testing Docker image automatically in the first run and then execute the tests and create the coverage report.    
+Note: you must have Docker installed and running.   
+Note: you must run tests as `non-root user`: to run docker without root add your user in the group docker, then restart the docker.service, and log in again as your own user.
+```
+su root
+/sbin/groupadd docker
+/sbin/usermod -aG docker $USER
+systemctl restart docker
+su - $USER
+```
+Check that docker is working, it should return no errors and an output like the one below:
+```
+user@machine: docker ps -a
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+```
 
 Use `LUA_ENABLE_LOGGING=1 ./run_tests` if you want to send the logging to stdout.
 
