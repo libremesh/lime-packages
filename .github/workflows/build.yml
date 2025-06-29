@@ -9,39 +9,131 @@ on:
       - v*
       - '!v2020*'
     paths:
-      - ".github/workflows/*"
+      - ".github/workflows/build.yml"
       - "libremesh.mk"
       - "packages/**"
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: "Packages to build (empty for all)"
+        required: false
 
 jobs:
-  build:
-    name: Build ${{ github.ref }}
+  # Build all packages for x86_64 using the openwrt sdk
+  # for the branches 'main', 'stable', 'oldstable' of openwrt
+  generate_matrix:
+    name: 'Generate matrix'
     runs-on: ubuntu-latest
-
+    outputs:
+      matrix_builds: ${{ steps.define_matrix.outputs.matrix_builds }}
+      dest_dir: ${{ steps.set_package_destination.outputs.dest_dir }}
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Build packages
-        uses: openwrt/gh-action-sdk@v7
-        env:
-          ARCH: "x86_64-openwrt-23.05"
-          FEEDNAME: "libremesh"
-          IGNORE_ERRORS: "n m y"
-          KEY_BUILD: "${{ secrets.KEY_BUILD }}"
-
       - name: Set package destination
+        id: set_package_destination
         run: |
           export TAG=$(echo "${{ github.ref }}" | cut -d '/' -f 3- | perl -pe 's/v([0-9])/$1/')
           echo "$TAG"
-          echo "DEST_DIR=$TAG" >> $GITHUB_ENV
+          echo "DEST_DIR=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Define matrix of branches and archs
+        id: define_matrix
+        run: |
+          JSON='['
+          FIRST_BUILD=1
+          versions=$(curl https://downloads.openwrt.org/.versions.json)
+          stable=$(echo $versions | jq | grep \"stable_ | sed 's|.*\"stable_version\": \"\(.*\)\",|\1|')
+          oldstable=$(echo $versions | jq | grep oldstable_ | sed 's|.*\"oldstable_version\": \"\(.*\)\",|\1|')
+
+          for version in "main" "${stable:0:5}" "${oldstable:0:5}"; do
+
+            VERSION=$([ "$version" == "main" ] \
+              && echo "main" || echo "openwrt-$version")
+            echo $VERSION
+
+            OPENWRT_BRANCH_PATH="openwrt-$version"
+            echo $OPENWRT_BRANCH_PATH
+            
+            [[ $FIRST_BUILD -ne 1 ]] && JSON="$JSON"','
+            FIRST_BUILD=0
+
+            JSON="$JSON"'{"version": "'"$VERSION"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
+          done
+
+          echo $JSON
+
+          matrix_include='{"include": '"$JSON"']}'
+          echo "matrix_builds=${matrix_include}" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.openwrt_branch_path }} x86_64
+    runs-on: ubuntu-latest
+    needs: generate_matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix_builds) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build packages
+        uses: openwrt/gh-action-sdk@v9
+        env:
+          ARCH: x86_64-${{ matrix.version }}
+          FEEDNAME: "libremesh"
+          IGNORE_ERRORS: "n m y"
+          KEY_BUILD: "${{ secrets.KEY_BUILD }}"
+          PRIVATE_KEY: "${{ secrets.PRIVATE_KEY }}"
+          INDEX: 1
+          NO_DEFAULT_FEEDS: 1
+          NO_REFRESH_CHECK: 1
+          NO_SHFMT_CHECK: 1
+          PACKAGES: ${{ github.event.inputs.packages }}
+          # V: sc
+
+      - name: Prepare artifacts paths
+        run: |
+          bin_path="bin_dir/${{ matrix.openwrt_branch_path }}/x86_64"
+          mkdir -p "$bin_path"
+          mv bin/packages/x86_64/libremesh/* "$bin_path"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.openwrt_branch_path }}
+          path: bin_dir/
+
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: [generate_matrix, build]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout lime-feed
+        uses: actions/checkout@v4
+        with:
+          repository: libremesh/lime-feed
+          path: lime-feed
+
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: artifacts/${{ needs.generate_matrix.outputs.dest_dir }}/
+
+      - name: Replace packages
+        run: |
+          for branch in $(ls artifacts/${{ needs.generate_matrix.outputs.dest_dir }}/); do
+              rm -rf lime-feed/${{ needs.generate_matrix.outputs.dest_dir }}/$branch/x86_64
+          done;
+          cp -r artifacts/${{ needs.generate_matrix.outputs.dest_dir }}/* lime-feed/${{ needs.generate_matrix.outputs.dest_dir }}/
 
       - name: Upload packages to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           external_repository: libremesh/lime-feed
-          publish_dir: bin/packages/x86_64/libremesh/
-          destination_dir: ${{ env.DEST_DIR }}
+          publish_dir: ./lime-feed/${{ needs.generate_matrix.outputs.dest_dir }}/
+          destination_dir: "${{ needs.generate_matrix.outputs.dest_dir }}"
 
 #     - name: Upload packages to S3
 #       uses: jakejarvis/s3-sync-action@master
@@ -54,4 +146,3 @@ jobs:
 #         AWS_S3_ENDPOINT: ${{ secrets.AWS_S3_ENDPOINT }}
 #         SOURCE_DIR: bin/packages/x86_64/libremesh/
 #         DEST_DIR: ${{ env.DEST_DIR }}
-

@@ -21,16 +21,11 @@
 #	Pau Escrich <p4u@dabax.net>
 #
 
-include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/kernel.mk
+include ../../libremesh.mk
 
-PKG_NAME:=bmx7-mdns
-PKG_VERSION:=0.1
+PKG_VERSION:=0.0.1
 PKG_RELEASE:=1
 PKG_LICENSE:=GPL-2.0+
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
-
-include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
   SECTION:=net
@@ -52,26 +47,4 @@ define Package/$(PKG_NAME)/description
  Distributed DNS system using bmx7 sms plugin
 endef
 
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-endef
-
-define Build/Configure
-endef
-
-define Build/Compile
-endef
-
-define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/
-	$(INSTALL_DIR) $(1)/etc
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_DIR) $(1)/etc/config
-	$(CP) ./files/etc/init.d/bmx7-mdns $(1)/etc/init.d/bmx7-mdns
-	chmod 755 $(1)/etc/init.d/bmx7-mdns
-	$(CP) ./files/etc/config/bmx7-mdns $(1)/etc/config/bmx7-mdns
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/model/cbi/
-	$(CP) ./files/luci/bmx7-mdns.lua $(1)/usr/lib/lua/luci/model/cbi/bmx7-mdns.lua
-endef
-
-$(eval $(call BuildPackage,bmx7-mdns))
+$(eval $(call BuildPackage,$(PKG_NAME)))
