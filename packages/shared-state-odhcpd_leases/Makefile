@@ -11,7 +11,7 @@ endef
 define Package/$(PKG_NAME)/description
 Synchronize external DHCP leases between LibreMesh nodes by
 watching odhcpd’s lease file, publishing updates over shared-state-async
-and injecting remote leases locally via “ubus call dhcp add_lease”.
+and injecting remote leases locally.
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
