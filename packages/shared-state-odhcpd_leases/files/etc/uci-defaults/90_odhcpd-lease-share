@@ -1,0 +1,16 @@
+#!/bin/sh
+CRDT='odhcpd-leases'
+LEASEFILE='/tmp/ethers.mesh'
+
+shared-state-async register $CRDT community 120 1200 2>/dev/null
+
+uci -q set dhcp.odhcpd.leasetrigger='/usr/bin/shared-state-publish_odhcpd_leases'
+uci -q set dhcp.odhcpd.maindhcp='1'
+uci commit dhcp
+
+[ -e /etc/ethers ] || ln -s "$LEASEFILE" /etc/ethers
+grep -q 'sync odhcpd-leases' /etc/crontabs/root || \
+  echo '*/5 * * * * shared-state-async sync odhcpd-leases >/dev/null 2>&1' >> /etc/crontabs/root
+
+/etc/init.d/cron restart
+/etc/init.d/odhcpd reload
