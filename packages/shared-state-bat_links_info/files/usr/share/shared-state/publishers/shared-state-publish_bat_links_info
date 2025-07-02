@@ -34,9 +34,9 @@ function get_bat_links_info()
 				if originator_value.hard_ifname == neight_value.iface and 
 				originator_value.neigh_address== originator_value.orig_address and  
 				originator_value.neigh_address== neight_value.dst_mac then
-					-- Batman "transmit link quality" (tq) is a byte that describes 
-					-- the probability of a successful transmission towards a
-					-- neighbor node
+					--! Batman "transmit link quality" (tq) is a byte that describes 
+					--! the probability of a successful transmission towards a
+					--! neighbor node
 					neight_value.tq = originator_value.tq
 				end
 			end

@@ -4,11 +4,11 @@ local iwinfo = require "iwinfo"
 local nixio = require 'nixio'
 local wu = {}
 
--- so we always scan in at least one different frequency
+--! so we always scan in at least one different frequency
 wu.FREQ_2GHZ_LIST = "2412 2462"
 wu.FREQ_5GHZ_LIST = "5180 5240"
 
--- if iw runs for 5 min, it is likely hanging
+--! if iw runs for 5 min, it is likely hanging
 wu.TIMEOUT = tonumber( config.get("wifi", "unstuck_timeout", 300 ))
 
 function wu.get_stickable_ifaces()
@@ -39,10 +39,10 @@ function wu.wait_and_kill_on_timeout(pid_time_started)
 	end
 
 	repeat
-		-- wait for 100ms
+		--! wait for 100ms
 		nixio.nanosleep(0,100e6)
 
-		-- see if something changed
+		--! see if something changed
 		while true do
 			pid,state,code = nixio.waitpid(nil,"nohang")
 			if not pid then break end
@@ -50,19 +50,19 @@ function wu.wait_and_kill_on_timeout(pid_time_started)
 			pid_done[pid] = true
 		end
 
-		-- see if time is up
+		--! see if time is up
 		now = os.time()
 		for pid,time_started in pairs(pid_time_started) do
 			time_is_up = now - time_started > wu.TIMEOUT
 			if not pid_done[pid] and time_is_up then
-				-- time is up. send SIGTERM
+				--! time is up. send SIGTERM
 				nixio.kill(pid,15)
-				-- we don't care any longer about processes we signaled
+				--! we don't care any longer about processes we signaled
 				pid_done[pid] = true
 			end
 		end
 
-		-- see if there are remaining processes
+		--! see if there are remaining processes
 		all_done = true
 		for pid,done in pairs(pid_done) do
 			all_done = all_done and done
@@ -86,8 +86,8 @@ function wu.do_workaround()
 			end
 			utils.log(cmd)
 
-			-- we can not use os.popen here, because it does not give us the
-			-- pid
+			--! we can not use os.popen here, because it does not give us the
+			--! pid
 			pid = nixio.fork()
 			if pid == 0 then
 				nixio.exec('/bin/sh','-c',cmd..' >/dev/null')
@@ -115,7 +115,7 @@ function wu.configure()
 end
 
 function wu.clean()
-    -- nothing to clean, but needs to be declared to comply with the API
+    --! nothing to clean, but needs to be declared to comply with the API
 end
 
 return wu

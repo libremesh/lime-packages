@@ -76,13 +76,13 @@ function babeld.configure(args)
 	uci:set("babeld", "default4", "le", "0")
 	uci:set("babeld", "default4", "action", "allow")
 
-	-- Avoid redistributing extra local addesses
+	--! Avoid redistributing extra local addesses
 	uci:set("babeld", "localdeny", "filter")
 	uci:set("babeld", "localdeny", "type", "redistribute")
 	uci:set("babeld", "localdeny", "local", "true")
 	uci:set("babeld", "localdeny", "action", "deny")
 
-	-- Avoid redistributing enything else
+	--! Avoid redistributing enything else
 	uci:set("babeld", "denyany", "filter")
 	uci:set("babeld", "denyany", "type", "redistribute")
 	uci:set("babeld", "denyany", "action", "deny")

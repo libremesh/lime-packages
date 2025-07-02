@@ -46,13 +46,13 @@ function watchcat.detect_hardware()
                 uci:set("watchcat", section_name, "watchcat")
 
                 for option_key, option_value in pairs(user_section) do
-                        -- discards .name, .type keys and id name sections
+                        --! discards .name, .type keys and id name sections
                         if option_key:sub(1,1) ~= "." and option_key ~= "id" then
                                 uci:set("watchcat", section_name, option_key, option_value)
                         end
                 end 
         end)
-        -- only saved if we actually aplied any user section
+        --! only saved if we actually aplied any user section
         if user_defined then
                 uci:save("watchcat")
                 reload_watchcat()

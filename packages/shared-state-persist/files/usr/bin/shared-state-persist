@@ -82,12 +82,12 @@ local function runPersist()
 	local selectedOption = NON_DEVICE
 
 	for mntPath in getDevices() do
-		-- Setup first device as valid
+		--! Setup first device as valid
 		if selectedPath == nil and selectedOption == NON_DEVICE and isWritable(mntPath) then
 			selectedOption = NEW_DEVICE
 			selectedPath = mntPath
 		end
-		-- Check for previus shared-state folder in the device
+		--! Check for previus shared-state folder in the device
 		local folders = fs.dir(mntPath)
 		for folder in folders do
 			if selectedOption == NEW_DEVICE and folder == 'shared-state' then 

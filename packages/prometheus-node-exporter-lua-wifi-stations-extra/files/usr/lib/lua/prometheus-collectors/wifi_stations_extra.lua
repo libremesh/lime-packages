@@ -18,7 +18,7 @@ end
 
 local function scrape()
 
--- Agregamos signal en promedio para obtener solo la métrica de signal avg y agregamos medición para cada antena.
+--! Agregamos signal en promedio para obtener solo la métrica de signal avg y agregamos medición para cada antena.
   local metric_wifi_station_signal_iwavg = metric("wifi_station_signal_iwavg","gauge")
   local metric_wifi_station_signal_iwchain0 = metric("wifi_station_signal_iwchain0", "gauge")
   local metric_wifi_station_signal_iwchain1 = metric("wifi_station_signal_iwchain1", "gauge")

@@ -140,7 +140,7 @@ function eup.download_firmware(latest_data)
 
     local image, message
 
-    -- Select the image type, discarding unknown types. Prefer image installer over sysupgrade
+    --! Select the image type, discarding unknown types. Prefer image installer over sysupgrade
     for _, im in pairs(latest_data['images']) do
         if im['type'] == 'installer' then
             image = im
