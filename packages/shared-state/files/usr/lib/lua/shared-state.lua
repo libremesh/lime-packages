@@ -191,7 +191,7 @@ function createSharedStateBase(dataType, logger, dataFile)
 		storage={},
 		--! true if self_storage has changed after loading
 		changed=false,
-		-- File descriptor of the persistent file storage
+		--! File descriptor of the persistent file storage
 		storageFD=nil,
 		--! true when persistent storage file is locked by this instance
 		locked=false,

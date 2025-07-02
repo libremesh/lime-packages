@@ -16,7 +16,7 @@ local function printJson (obj)
 end
 
 local function shell(command)
-    -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
+    --! TODO(nicoechaniz): sanitize or evaluate if this is a security risk
     local handle = io.popen(command)
     local result = handle:read("*a")
     handle:close()
@@ -35,7 +35,7 @@ local function get_gateways(msg)
 	}
 	fd = io.popen("batctl gwl")
 	if fd then
-		-- skip header line
+		--! skip header line
 		fd:read("*l")
 
 		repeat

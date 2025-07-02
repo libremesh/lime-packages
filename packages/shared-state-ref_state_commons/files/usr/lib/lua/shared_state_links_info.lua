@@ -31,7 +31,7 @@ end
 function shared_state_links_info.add_own_location_to_links(links)
 return {
     links = links,
-    -- we are not interested in the community location.
+    --! we are not interested in the community location.
     src_loc = location.get_node() or { 
         lat = "FIXME",
         long = "FIXME"
