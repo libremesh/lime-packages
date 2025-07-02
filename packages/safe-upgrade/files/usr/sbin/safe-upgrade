@@ -24,14 +24,14 @@ local su = {}
 
 su.version = '1.0'
 local firmware_size_bytes = 7936*1024
--- Keep the fw addresses as strings beacause of https://gitlab.com/librerouter/librerouteros/-/issues/61
+--! Keep the fw addresses as strings beacause of https://gitlab.com/librerouter/librerouteros/-/issues/61
 local fw1_addr = '0x9f050000'
 local fw2_addr = '0x9f810000' -- fw1_addr + firmware_size_bytes
 
 su._supported_devices = {'librerouter-v1'}
 su._mtd_partitions_desc = '/proc/mtd'
 
--- safe upgrade script, generated with bootscript.py, DO NOT edit here!
+--! safe upgrade script, generated with bootscript.py, DO NOT edit here!
 local bootcmd = 'run preboot; boot_part=${stable_part}; if test ${testing_part} -ne 0; then echo Testing part ${testing_part}; boot_part=${testing_part}; set testing_part 0; saveenv; fi; if test ${boot_part} -eq 2; then fw_addr=${fw2_addr}; run boot_2; else fw_addr=${fw1_addr}; run boot_1; fi; run boot_1; bootm ${fw1_addr};'
 
 su.STABLE_PARTITION_NAME = 'stable_part'
@@ -89,7 +89,7 @@ function su.get_uboot_env(key)
     local value = utils.unsafe_shell("fw_printenv -n " .. key .. " 2>&1")
 
     if value:find('## Error:') == nil then
-        -- remove EOL
+        --! remove EOL
         local value = value:sub(1, -2)
         return value
     else
@@ -285,13 +285,13 @@ local function bootstrap(args)
     set_uboot_env('fw1_addr', fw1_addr)
     set_uboot_env('fw2_addr', fw2_addr)
 
-    -- configure cmdline using the current cmdline config to not force
-    -- us to know here the correct cmdline bootargs of the running kernel
+    --! configure cmdline using the current cmdline config to not force
+    --! us to know here the correct cmdline bootargs of the running kernel
     local boot_1 = 'set bootargs ' .. get_current_cmdline() .. '; echo booting part 1; bootm ${fw_addr};'
     set_uboot_env('boot_1', boot_1)
     set_uboot_env('su_version', su.version)
 
-    -- installing the script. Everything must be installed before this!
+    --! installing the script. Everything must be installed before this!
     set_uboot_env('bootcmd', bootcmd)
     print('succesfully bootstraped safe-upgrade')
 end
@@ -326,20 +326,20 @@ local function upgrade(args)
 
     su.preserve_files_to_new_partition(args)
 
-    -- postpone 10m defarable-reboot
+    --! postpone 10m defarable-reboot
     os.execute("awk '{print $1 + 600}' /proc/uptime > /tmp/deferrable-reboot.defer")
 
     print(string.format("erasing partition %d", partitions.other))
     os.execute(string.format("mtd erase fw%d", partitions.other))
 
-    -- It is important that the mtd -j option to preserve a file is used
-    -- with the file /tmp/sysupgrade.tgz because there are hooks in place
-    -- to unpack this tar and install the files at boot
+    --! It is important that the mtd -j option to preserve a file is used
+    --! with the file /tmp/sysupgrade.tgz because there are hooks in place
+    --! to unpack this tar and install the files at boot
     print(string.format("writing partition %d", partitions.other))
     os.execute(string.format("mtd -j /tmp/sysupgrade.tgz write '%s' fw%d",
                              args.firmware, partitions.other))
 
-    -- TODO: load bootargs from acompaning image, here is hardcoded!!
+    --! TODO: load bootargs from acompaning image, here is hardcoded!!
     local fw_mtd_str = ''
     if partitions.other == 2 then
         fw_mtd_str = '7936k(fw1),7936k(firmware)'
@@ -440,12 +440,12 @@ local function parse_args()
     return args
 end
 
--- detect if this module is run as a library or as a script
+--! detect if this module is run as a library or as a script
 if pcall(debug.getlocal, 4, 1) then
-    -- Library mode
+    --! Library mode
     return su
 else
-    -- Main script mode
+    --! Main script mode
 
     local args = parse_args()
     assert_fw_env_configured()
@@ -481,7 +481,7 @@ else
         assert_su_installed()
         print('safe-upgrade version: ' .. get_su_version())
         local partitions = su.get_partitions()
-        --TODO show labels of partitions (maybe store them when flashing from a metadata file)
+        --! TODO show labels of partitions (maybe store them when flashing from a metadata file)
         print(string.format('current partition: %d', partitions.current))
         print(string.format('stable partition: %d', partitions.stable))
         print(string.format('testing partition: %d', partitions.testing))

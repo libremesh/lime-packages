@@ -36,8 +36,8 @@ function anygw.configure(args)
 	local argsDev = { macaddr = anygw_mac }
 	local argsIf = {
 		proto = "static",
-		-- Set high metric for anygw prefix route, so that br-lan is chosen for
-		-- communication with hosts in the same mesh cloud.
+		--! Set high metric for anygw prefix route, so that br-lan is chosen for
+		--! communication with hosts in the same mesh cloud.
 		metric = '2147483647'
 	}
 	argsIf.ip6addr = anygw_ipv6:string()

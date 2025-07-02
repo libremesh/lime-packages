@@ -10,7 +10,7 @@ function bat_hosts.bathost_deserialize(hostname_plus_iface)
         local serialized_ifname = string.gsub(ifname, "%W", "_")
         serialized_ifname = utils.literalize(serialized_ifname)
         local replaced_hostname = hostname_plus_iface:gsub("_" .. serialized_ifname, "")
-        -- hostname don't have underscores see utils.is_valid_hostname
+        --! hostname don't have underscores see utils.is_valid_hostname
         replaced_hostname = replaced_hostname:gsub("_", "-")
         if #replaced_hostname < #partial_hostname then
             partial_hostname = replaced_hostname

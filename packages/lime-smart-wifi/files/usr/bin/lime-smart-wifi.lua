@@ -20,7 +20,7 @@ function smart_wifi.get_channels(dev)
     local iw = iwinfo[iwinfo.type(dev)]
     local ch = {}
 
-    -- if there are not wireless cards, returning a dummy value
+    --! if there are not wireless cards, returning a dummy value
     if iw == nil then
         ch.channel=0
         ch.adhoc=false
@@ -47,7 +47,7 @@ function smart_wifi.get_channels(dev)
         if not f.restricted then ch.adhoc = true
             else ch.adhoc = false end
 
-        -- 2.4Ghz band
+        --! 2.4Ghz band
         if c < 15 then
             if c < 4 then
                 ch.ht40p = true
@@ -58,7 +58,7 @@ function smart_wifi.get_channels(dev)
                 ch.ht40m = true
             end
 
-        -- 5Ghz band
+        --! 5Ghz band
         elseif c > 14 then
             if #freqs == i then
                 nc = nil
@@ -66,7 +66,7 @@ function smart_wifi.get_channels(dev)
                 nc = freqs[i+1].channel
             end
 
-            -- Channels 36 to 140
+            --! Channels 36 to 140
             if c <= 140 then
                 if c % 8 == 0 then
                     ch.ht40m = true
@@ -74,7 +74,7 @@ function smart_wifi.get_channels(dev)
                     ch.ht40p = true
             end
 
-            -- Channels 149 to 165
+            --! Channels 149 to 165
             elseif c >=149 then
                 if (c-1) % 8 == 0 then
                     ch.ht40m = true
@@ -84,7 +84,7 @@ function smart_wifi.get_channels(dev)
             end
         end
 
-        -- If the device does not support ht40, both vars (+/-) are false
+        --! If the device does not support ht40, both vars (+/-) are false
         if not ht40_support then
             ch.ht40p = false
             ch.ht40m = false

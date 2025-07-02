@@ -53,7 +53,7 @@ local function spectral_scan(msg)
 
 	samples = json.parse( samples )
 
-	-- Convert values to string (avoid ubus bug)
+	--! Convert values to string (avoid ubus bug)
 	for _, dev in pairs(samples[1].data) do
 		samples[1].data[_][1] = tostring(samples[1].data[_][1])
 		samples[1].data[_][2] = tostring(samples[1].data[_][2])
@@ -69,12 +69,12 @@ local function spectral_scan(msg)
 end
 
 function sample_current_channel(path_ath9k)
-    -- sample current channel only, no freq hopping
-    -- grab only one sample per trigger
+    --! sample current channel only, no freq hopping
+    --! grab only one sample per trigger
     nixio.fs.writefile(path_ath9k .. "spectral_count", "1")
-    -- empty buffer
+    --! empty buffer
     nixio.fs.readfile(path_ath9k .. "spectral_scan0")
-    -- trigger sampling
+    --! trigger sampling
     nixio.fs.writefile(path_ath9k .. "spectral_scan_ctl", "manual")
     nixio.fs.writefile(path_ath9k .. "spectral_scan_ctl", "trigger")
 	print("fft_eval " .. path_ath9k .. "spectral_scan0")
@@ -85,12 +85,12 @@ function sample_current_channel(path_ath9k)
 end
 
 function sample_whole_spectrum(device, path_ath9k, freqs)
-    -- grab samples over the whole spectrum
-    -- grab only one sample per trigger
+    --! grab samples over the whole spectrum
+    --! grab only one sample per trigger
     nixio.fs.writefile(path_ath9k .. "spectral_count", "1")
-    -- empty buffer
+    --! empty buffer
     nixio.fs.readfile(path_ath9k .. "spectral_scan0")
-    -- trigger sampling hopping channels
+    --! trigger sampling hopping channels
     nixio.fs.writefile(path_ath9k .. "spectral_scan_ctl", "chanscan")
 
     local cmd = "iw dev " .. device .. " scan"

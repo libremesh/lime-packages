@@ -15,7 +15,7 @@ local ntm = require "luci.model.network".init()
 local libuci = require "uci"
 
 local function shell(command)
-    -- TODO(nicoechaniz): sanitize or evaluate if this is a security risk
+    --! TODO(nicoechaniz): sanitize or evaluate if this is a security risk
     local handle = io.popen(command)
     local result = handle:read("*a")
     handle:close()

@@ -1,20 +1,20 @@
 #!/usr/bin/lua
 
--- Metrics web server
+--! Metrics web server
 
--- Copyright (c) 2016 Jeff Schornick <jeff@schornick.org>
--- Copyright (c) 2015 Kevin Lyda
--- Licensed under the Apache License, Version 2.0
+--! Copyright (c) 2016 Jeff Schornick <jeff@schornick.org>
+--! Copyright (c) 2015 Kevin Lyda
+--! Licensed under the Apache License, Version 2.0
 
 socket = require("socket")
 
--- load LiMe config ap_ssid only if it exists. don't fail otherwise
+--! load LiMe config ap_ssid only if it exists. don't fail otherwise
 local status, lime_config = pcall(require, 'lime.config')
 if status then
   ap_ssid = lime_config.get("wifi", "ap_ssid")
 end
 
--- common labels
+--! common labels
 
 local ubus = require "ubus"
 local u = ubus.connect()
@@ -28,7 +28,7 @@ function debug(...)
   print(socket.gettime(), unpack(arg))
 end
 
--- Parsing
+--! Parsing
 
 function space_split(s)
   local elements = {}
@@ -49,7 +49,7 @@ function get_contents(filename)
   return contents
 end
 
--- Metric printing
+--! Metric printing
 
 function print_metric(metric, labels, value)
   local label_string = ""
@@ -154,7 +154,7 @@ function push_loop()
   tcp:close()
 end
 
--- Main program
+--! Main program
 
 for k,v in ipairs(arg) do
   if (v == "-s") or (v == "--server") then
