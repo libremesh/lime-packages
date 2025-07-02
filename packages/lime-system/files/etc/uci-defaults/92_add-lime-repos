@@ -5,7 +5,7 @@
 	exit 0
 }
 
-[ -f /etc/apk/repositories.d/distfeeds.list ] && {
+if [ -f /etc/apk/repositories.d/distfeeds.list ]; then
 	repo='apk'
 	feeds_file='/etc/apk/repositories.d/limefeeds.list'
 	dist_feeds_file='/etc/apk/repositories.d/distfeeds.list'
@@ -16,7 +16,8 @@
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEdFJZ2qVti49Ol8LJZYuxgOCLowBS
 8bI86a7zqhSbs5yon3JON7Yee7CQOgqwPOX5eMALGOu8iFGAqIRx5YjfYA==
 -----END PUBLIC KEY-----"
-} || ([ -f /etc/opkg/distfeed.conf ] && {
+fi
+if [ -f /etc/opkg/distfeeds.conf ]; then
 	repo='opkg'
 	feeds_file='/etc/opkg/limefeeds.conf'
 	dist_feeds_file='/etc/opkg/distfeeds.conf'
@@ -24,7 +25,7 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEdFJZ2qVti49Ol8LJZYuxgOCLowBS
 	arch="$(grep OPENWRT_ARCH /etc/os-release | sed 's/OPENWRT_ARCH=\"\(.*\)\"/\1/')"
 	key_name="a71b3c8285abd28b"
 	key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
-})
+fi
 
 [ -z "$repo" ] && {
 	echo "Package manager not found - skipping"
@@ -39,12 +40,13 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEdFJZ2qVti49Ol8LJZYuxgOCLowBS
 openwrt_branch_ref="$(grep -m 1 "openwrt.org/" $dist_feeds_file | sed 's|.*openwrt.org/\(.*\)|\1|' )"
 
 if [ '' != "$openwrt_branch_ref" ]; then
-$(echo $openwrt_branch_ref | grep -q 'snapshots') && {
+	if $(echo $openwrt_branch_ref | grep -q 'snapshots'); then
 	openwrt_branch='openwrt-main'
-} || ($(echo $openwrt_branch_ref | grep -q 'releases') && {
+	fi
+	if $(echo $openwrt_branch_ref | grep -q 'releases'); then
 	branch_n="$(echo $openwrt_branch_ref | sed 's/releases\///')"
 	openwrt_branch="openwrt-${branch_n:0:5}"
-})
+	fi
 else
 	echo "String not found 'openwrt.org' in default ${repo} feeds, cannot determine openwrt branch"
 fi
