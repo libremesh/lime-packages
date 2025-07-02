@@ -36,7 +36,7 @@ function get_wifi_links_info()
             tx_rate = station_stats.tx_rate,
             freq = freq,
             channel = chanenel,
-            --dst_loc = {lat="FIXME",long="FIXME"} --if no location is found later no dst location will be informed
+            --! dst_loc = {lat="FIXME",long="FIXME"} --if no location is found later no dst location will be informed
         }
     end
     return links

@@ -13,7 +13,7 @@ gen_cfg.RUN_ASSET_AT_FIRSTBOOT = 'ATFIRSTBOOT'
 gen_cfg.RUN_ASSET_AT_CONFIG = 'ATCONFIG'
 
 function gen_cfg.clean()
-    -- nothing to clean, but needs to be declared to comply with the API
+    --! nothing to clean, but needs to be declared to comply with the API
 end
 
 function gen_cfg.configure()

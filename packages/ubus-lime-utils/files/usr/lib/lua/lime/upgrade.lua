@@ -111,7 +111,7 @@ function pkg.firmware_upgrade(fw_path, preserve_config, metadata, fw_type)
 
     metadata['config_preserved'] = preserve_config or false
 
-    -- store info of the current firmware
+    --! store info of the current firmware
     local current_fw_description = utils.release_info()["DISTRIB_DESCRIPTION"]
     if current_fw_description then
         metadata['old_release_description'] = current_fw_description

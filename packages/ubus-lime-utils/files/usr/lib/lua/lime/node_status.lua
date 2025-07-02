@@ -4,7 +4,7 @@ local utils = require 'lime.utils'
 local json = require("luci.jsonc")
 
 
--- Functions used by get_node_status
+--! Functions used by get_node_status
 local node_status = {}
 
 function node_status.get_ips()
@@ -135,7 +135,7 @@ end
 function node_status.dsa_get_link_status(ports)
     for _, port in ipairs(ports) do
         local dsa = utils.unsafe_shell("ip link show " .. port['num'])
-        -- Match ifindex, ifname, link (optional), and operstate                                    
+        --! Match ifindex, ifname, link (optional), and operstate                                    
         local ifindex, ifname, link, operstate = dsa:match("^(%d+): ([^:@]+)@?([^:]*):.-state (%S+)")             
         if ifindex and ifname and operstate then                                                                              
             port['device'] = port['num']                             

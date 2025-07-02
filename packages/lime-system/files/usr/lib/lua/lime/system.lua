@@ -49,7 +49,7 @@ function system.setup_root_password()
 end
 
 function system.clean()
-    -- nothing to clean
+    --! nothing to clean
 end
 
 function system.configure()
@@ -68,7 +68,7 @@ function system.configure()
 end
 
 function system.apply()
-    -- apply hostname
+    --! apply hostname
     local hostname
     local uci = config.get_uci_cursor()
     uci:foreach("system", "system", function(s)
@@ -76,7 +76,7 @@ function system.apply()
     end)
     fs.writefile("/proc/sys/kernel/hostname", hostname)
 
-    -- apply uhttpd settings
+    --! apply uhttpd settings
     os.execute("/etc/init.d/uhttpd reload")
 end
 
