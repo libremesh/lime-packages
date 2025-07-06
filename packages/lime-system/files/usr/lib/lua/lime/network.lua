@@ -232,6 +232,72 @@ function network._is_dsa_conduit(dev)
 	return "reg" == fs.stat("/sys/class/net/" .. dev .. "/dsa/tagging", "type")
 end
 
+--! Create a bridge for each dsa_cpu port: i.e. eth0 -> br0
+function network.create_dsa_bridge(dsa_cpu, board)
+	local uci = config.get_uci_cursor()
+	local ports
+	br_name = "br" .. string.match(dsa_cpu, "%d+")
+
+	--! Get br-lan section name
+	local br_lan_section = utils.find_br_lan()
+
+	--! Get brX section name if exist
+	local br_section = utils.find_bridge_cfgid(br_name)
+
+	--! Add all dsa user ports in brX by default
+	for role, role_table in pairs(board["network"] or {}) do
+		--! "ports" and "device" fields may be specified at the same time.
+		--! In this case, "ports" must be used.
+		ports = role_table["ports"]
+		if ports == nil then
+			ports = { role_table["device"] }
+		end
+	end
+
+	--! Create brX if not exist
+	if br_section == nil then
+		br_section = uci:add("network", "device")
+		utils.log('Create non existing bridge: ' .. br_name )
+		uci:set("network", br_section, "name", br_name)
+		uci:set("network", br_section, "type", "bridge")
+		uci:save("network")
+ 	end
+
+	for _,port in pairs(ports) do 
+		utils.log('Evaluating port' .. port)
+		utils.log('Bridge lan section: ' .. br_lan_section)
+
+		local br_lan_ports = uci:get('network', br_lan_section, 'ports')
+		local brX_ports = uci:get('network', br_section, 'ports')
+
+		if brX_ports == nil then
+			utils.unsafe_shell('uci add_list network.' .. br_section .. '.ports=' .. port)
+		else
+			--! Remove the ports from br-lan and add it to brX
+			for _, br_port in pairs(brX_ports) do
+				utils.log('Add ' .. br_port .. ' to the bridge ' .. br_name .. ' if not present' )
+				if not br_port == port then
+					utils.log('Add port ' .. port .. 'to the bridge	' .. br_name)
+					utils.unsafe_shell('uci add_list network.' .. br_section .. '.ports=' .. port)
+				end
+			end
+		end
+
+		--! Readd the ports br-lan
+		for _,br_lan_port in pairs(br_lan_ports) do
+			utils.log('Bridge lan port: ' .. br_lan_port)
+			if not br_lan_port == port then
+				utils.log('Add port ' .. port .. 'to br-lan	')
+				uci:add("network", br_lan_section, "ports", br_lan_port)
+			end
+		end
+
+	end
+
+	uci:save("network")
+	--! utils.log(utils.unsafe_shell('uci show network'))
+
+end
 
 function network.scandevices(specificIfaces)
 	local devices = {}
@@ -251,6 +317,8 @@ function network.scandevices(specificIfaces)
 		if network._is_dsa_conduit(dev) then
 			utils.log( "network.scandevices.dev_parser ignored DSA conduit " ..
 			           "device %s", dev )
+			network.create_dsa_bridge(dev, board)
+			devices["br0"] = devices["br0"] or {}
 			return
 		end
 
@@ -387,7 +455,7 @@ function network.configure()
 			if protoName == "manual" then break end -- If manual is specified do not configure interface
 			local protoModule = "lime.proto."..protoName
 			local needsConfig = utils.isModuleAvailable(protoModule)
-			if protoName ~= 'lan' and not flags["specific"] then
+			if not flags["specific"] then
 				--! Work around issue 1121. Do not configure any other
 				--! protocols than lime.proto.lan on dsa devices unless there
 				--! is a config net section for the device.
@@ -634,3 +702,4 @@ function network.runProtocols(linuxBaseIfname)
 end
 
 return network
+
