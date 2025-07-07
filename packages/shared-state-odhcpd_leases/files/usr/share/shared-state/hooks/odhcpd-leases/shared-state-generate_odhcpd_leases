@@ -1,1 +1,25 @@
-../../../../usr/bin/shared-state-generate_odhcpd_leases
+#!/usr/bin/lua
+
+local JSON = require('luci.jsonc')
+
+local OUTPUT_FILE = '/tmp/ethers.mesh'
+local TMP_FILE = OUTPUT_FILE .. '.new' 
+
+local leases = JSON.parse(io.stdin:read('*a')) or {}
+
+local hostname_file = io.open('/proc/sys/kernel/hostname')
+local node_hostname = hostname_file:read('*l')
+hostname_file:close()
+
+local out_handle = io.open(TMP_FILE, 'w')
+
+for ip, data in pairs(leases) do
+
+  if data and data.mData and data.mData.mac and data.mAuthor ~= node_hostname then
+    out_handle:write(string.format('%s %s\n', data.mData.mac, ip)) -- Format: MAC IP
+  end
+end
+out_handle:close() 
+os.execute('mv "' .. TMP_FILE .. '" "' .. OUTPUT_FILE .. '"')
+
+os.execute('/etc/init.d/odhcpd reload')
