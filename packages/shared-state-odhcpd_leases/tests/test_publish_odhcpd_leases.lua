@@ -63,10 +63,10 @@ describe("shared-state-odhcpd_leases publisher #odhcpd-leases", function()
 
   after_each(function()
     revert_system_stubs()
-    package.preload["luci.jsonc"] = nil 
+    package.preload["luci.jsonc"] = nil
   end)
 
-  it("#happy_path publica todas las leases", function()
+  it("#happy_path publishes every lease", function()
     ubus_reply = {
       device = {
         eth0 = {
@@ -80,20 +80,20 @@ describe("shared-state-odhcpd_leases publisher #odhcpd-leases", function()
 
     run_publisher()
 
-    assert.is_string(captured_json, "Se esperaba JSON")
+    assert.is_string(captured_json, "Expected JSON")
     assert.matches('"10%.0%.0%.5"%s*:%s*{[^}]-"mac"%s*:%s*"aa:bb"', captured_json)
     assert.matches('"10%.0%.0%.6"%s*:%s*{[^}]-"mac"%s*:%s*"cc:dd"', captured_json)
     assert.matches('"hostname"%s*:%s*"h1"', captured_json)
     assert.matches('"hostname"%s*:%s*"h2"', captured_json)
   end)
 
-  it("#empty ante cero leases publica '[]'", function()
+  it("#empty with zero leases publishes '[]'", function()
     ubus_reply = {}
     run_publisher()
     assert.equals("[]", captured_json)
   end)
 
-  it("#malformed ante parse nil publica '[]'", function()
+  it("#malformed when parse returns nil publishes '[]'", function()
     ubus_reply = nil
     run_publisher()
     assert.equals("[]", captured_json)
