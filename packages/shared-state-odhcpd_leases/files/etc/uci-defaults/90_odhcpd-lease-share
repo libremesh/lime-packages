@@ -16,8 +16,5 @@ uci -q set dhcp.odhcpd.maindhcp='1'
 uci commit dhcp
 
 [ -e /etc/ethers ] || ln -s "$LEASEFILE" /etc/ethers
-grep -q 'sync odhcpd-leases' /etc/crontabs/root || \
-  echo '*/5 * * * * shared-state-async sync odhcpd-leases >/dev/null 2>&1' >> /etc/crontabs/root
 
-/etc/init.d/cron restart
 /etc/init.d/odhcpd reload
