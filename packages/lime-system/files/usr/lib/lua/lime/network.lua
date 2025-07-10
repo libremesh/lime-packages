@@ -551,6 +551,23 @@ function network.createStatic(linuxBaseIfname)
 	local ipv4, ipv6 = network.primary_address()
 	local ubusIfaceName = network.sanitizeIfaceName(
 		network.LIME_UCI_IFNAME_PREFIX()..linuxBaseIfname.."_static")
+
+	-- Batman requires diferent MAC address for each of the interfaces
+	local ifname = linuxBaseIfname
+	local id = utils.get_id(ifname)
+	local vMacaddr = { }
+	local original_mac = network.get_mac(ifname) 
+
+	-- Set first byte to 02 (locally administered unicast)
+	vMacaddr[1] = "02"
+	-- Use id[2] and id[3] from interface name for next bytes
+	vMacaddr[2] = id[2]
+	vMacaddr[3] = id[3]
+	-- Use last 3 bytes from main interface MAC
+	vMacaddr[4] = original_mac[4]
+	vMacaddr[5] = original_mac[5]
+	vMacaddr[6] = original_mac[6]
+
 	local ifaceConf = {
 		name    = ubusIfaceName,
 		proto   = "static",
@@ -559,7 +576,8 @@ function network.createStatic(linuxBaseIfname)
 		ipaddr  = ipv4:host():string(),
 		netmask = "255.255.255.255"
 	}
-
+	utils.log("lime.network.createStatic (%s) , with mac %s", linuxBaseIfname,ifaceConf.macaddr)
+	
 	local libubus = require("ubus")
 	local ubus = libubus.connect()
 	ubus:call('network', 'add_dynamic', ifaceConf)
@@ -587,7 +605,7 @@ function network.createStatic(linuxBaseIfname)
 --!  }
 --!
 --! ATM work around the problem configuring IP addresses via ip command
-
+	utils.unsafe_shell("ip link set dev "..ifaceConf.ifname.." address "..ifaceConf.macaddr)
 	utils.unsafe_shell("ip link set up dev "..ifaceConf.ifname)
 	utils.unsafe_shell("ip address add "..ifaceConf.ipaddr.."/32 dev "..ifaceConf.ifname)
 
