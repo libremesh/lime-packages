@@ -5,31 +5,69 @@
 	exit 0
 }
 
-feeds_file="/etc/opkg/limefeeds.conf"
+if [ -f /etc/apk/repositories.d/distfeeds.list ]; then
+	repo='apk'
+	feeds_file='/etc/apk/repositories.d/limefeeds.list'
+	dist_feeds_file='/etc/apk/repositories.d/distfeeds.list'
+	pkg_manager_path='apk/'
+	arch="$(cat /etc/apk/arch)"
+	key_name=libremesh.pem
+	key_content="-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEdFJZ2qVti49Ol8LJZYuxgOCLowBS
+8bI86a7zqhSbs5yon3JON7Yee7CQOgqwPOX5eMALGOu8iFGAqIRx5YjfYA==
+-----END PUBLIC KEY-----"
+fi
+if [ -f /etc/opkg/distfeeds.conf ]; then
+	repo='opkg'
+	feeds_file='/etc/opkg/limefeeds.conf'
+	dist_feeds_file='/etc/opkg/distfeeds.conf'
+	pkg_manager_path=''
+	arch="$(grep OPENWRT_ARCH /etc/os-release | sed 's/OPENWRT_ARCH=\"\(.*\)\"/\1/')"
+	key_name="a71b3c8285abd28b"
+	key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
+fi
+
+[ -z "$repo" ] && {
+	echo "Package manager not found - skipping"
+	exit 0
+}
 
 [ -f "$feeds_file" ] && {
-  echo "LibreMesh opkg feeds already defined - skipping"
-  exit 0
+  echo "LibreMesh $repo feeds already defined - skipping"
+  exit 0;
 }
 
-arch_packages="$(grep OPENWRT_ARCH /etc/os-release | sed 's/OPENWRT_ARCH=\"\(.*\)\"/\1/')"
+openwrt_branch_ref="$(grep -m 1 "openwrt.org/" $dist_feeds_file | sed 's|.*openwrt.org/\(.*\)|\1|' )"
 
-[ "$LIME_CODENAME" == "development" ] && {
-	packages_url="http://feed.libremesh.org/master";
-	arch_packages_url="http://feed.libremesh.org/arch_packages/master/$arch_packages";
-} || {
-	packages_url="http://feed.libremesh.org/$LIME_RELEASE"
-	arch_packages_url="http://feed.libremesh.org/arch_packages/$LIME_RELEASE/$arch_packages";
-}
+if [ '' != "$openwrt_branch_ref" ]; then
+	if $(echo $openwrt_branch_ref | grep -q 'snapshots'); then
+	openwrt_branch='openwrt-main'
+	fi
+	if $(echo $openwrt_branch_ref | grep -q 'releases'); then
+	branch_n="$(echo $openwrt_branch_ref | sed 's/releases\///')"
+	openwrt_branch="openwrt-${branch_n:0:5}"
+	fi
+else
+	echo "String not found 'openwrt.org' in default ${repo} feeds, cannot determine openwrt branch"
+fi
 
-profiles_url="http://feed.libremesh.org/profiles"
+branch_release_path=$([ "$LIME_CODENAME" == "development" ] && echo "master" || echo "$LIME_RELEASE" )
 
-key_name="a71b3c8285abd28b"
-key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
+packages_url="http://feed.libremesh.org/${branch_release_path}/$openwrt_branch/x86_64";
+arch_packages_url="http://feed.libremesh.org/${branch_release_path}/$openwrt_branch/$arch";
+profiles_url="http://feed.libremesh.org/profiles/$openwrt_branch/x86_64";
 
-echo "Configuring official LibreMesh opkg feeds"
+echo "Configuring official LibreMesh $repo feeds"
+[ $repo == 'apk' ] && {
+echo "$packages_url/packages.adb" > "$feeds_file"
+echo "${arch_packages_url}/packages.adb" >> "$feeds_file"
+echo "$profiles_url/packages.adb" >> "$feeds_file"
+echo "$key_content" >> "/etc/apk/keys/$key_name"
+} || ( 
+[ $repo == 'opkg' ] && {
 echo "src/gz libremesh $packages_url" > "$feeds_file"
 echo "src/gz libremesh_arch_packages $arch_packages_url" >> "$feeds_file"
 echo "src/gz profiles $profiles_url" >> "$feeds_file"
 echo "untrusted comment: signed by libremesh.org key $key_name" > "/etc/opkg/keys/$key_name"
 echo "$key_content" >> "/etc/opkg/keys/$key_name"
+})

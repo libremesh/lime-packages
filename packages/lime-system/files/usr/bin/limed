@@ -1,0 +1,91 @@
+#!/usr/bin/lua
+
+--! LibreMesh community mesh networks meta-firmware
+--!
+--! Copyright (C) 2024  Gioacchino Mazzurco <gio@polymathes.cc>
+--! Copyright (C) 2024  Asociación Civil Altermundi <info@altermundi.net>
+--!
+--! SPDX-License-Identifier: AGPL-3.0-only
+
+local config = require("lime.config")
+local utils = require("lime.utils")
+
+local limed = {};
+
+limed.__PRIVATE_APUP_ENABLED = nil
+
+function limed.APUP_ENABLED()
+	if limed.__PRIVATE_APUP_ENABLED ~= nil then
+		return limed.__PRIVATE_APUP_ENABLED
+	end
+
+	function check_apup_mode_cb(section)
+		if(section['modes'] == null) then return end
+
+		for _,mode in pairs(section['modes']) do
+			if(mode == 'apup') then
+				limed.__PRIVATE_APUP_ENABLED = true;
+				return limed.__PRIVATE_APUP_ENABLED;
+			end
+		end
+	end
+
+	config.foreach(nil, check_apup_mode_cb)
+	return limed.__PRIVATE_APUP_ENABLED
+end
+
+-- No need to run if APuP is not enabled in configuration
+if not limed.APUP_ENABLED() then os.exit(0) end;
+
+local uloop = require("uloop");
+local network = require("lime.network")
+local libubus = require("ubus")
+local ubus = libubus.connect()
+
+local peerSubscriber = {
+	notify = function(nData, nType)
+		if nType ~= "apup-newpeer" then return end
+
+		utils.log("peerSubscriber:", nType, nData.ifname)
+		network.createStatic(nData.ifname)
+		network.runProtocols(nData.ifname)
+	end
+}
+
+local apupSubscriber = {
+	notify = function(nData, nType)
+		if nType ~= "bss.add" then return end
+
+		local apupDev = string.match(nData["name"], "wlan%d+%-apup");
+		if not apupDev then return end
+
+		local evPath = "hostapd." .. apupDev
+
+		utils.log("Subscribing:", evPath)
+		ubus:subscribe(evPath, peerSubscriber)
+	end
+}
+
+function limed.waitForHostapd()
+	local found = false
+	while not found do
+		local namespaces = ubus:objects()
+		for _, namespace in ipairs(namespaces) do
+			if namespace == "hostapd" then
+				found = true
+				break
+			end
+		end
+		if not found then
+			utils.log("Waiting for 'hostapd' namespace...")
+			os.execute("sleep 1") -- Wait for 1 second before retrying
+			else
+				utils.log(" 'hostapd' namespace exists...")
+		end
+	end
+end
+
+limed.waitForHostapd()
+uloop.init();
+ubus:subscribe("hostapd", apupSubscriber)
+uloop.run();

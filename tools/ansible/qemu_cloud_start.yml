@@ -4,8 +4,9 @@
 #  you can use --limit regexp to start just two clouds, for example:
 #  sudo ansible-playbook qemu_cloud_start.yml -l *cloud[AB]*
 
-- name: create bridges for qemu nodes
+- import_playbook: cloud_and_node_packages.yml
 
+- name: create bridges for qemu nodes
   hosts: all
   connection: local
   gather_facts: no
@@ -34,7 +35,7 @@
     ramfs_url: http://repo.libremesh.org/tmp/openwrt-18.06-x86-64-ramfs.bzImage
     rootfs: files/generic-rootfs.tar.gz
     ramfs: files/ramfs.bzImage
-
+    enable_wan_param: "{{ ('--enable-wan ' + enable_wan ) if enable_wan is defined else '' }}"
   tasks:
     - name: download rootfs if not found locally
       tags: download
@@ -78,11 +79,11 @@
         src: lime-node
 
     - name: run qemu
-      shell: (../qemu_dev_start --node-id {{ node_id }} --eth0 {{ lm_ifname }}_0 --eth2 {{ lm_ifname }}_2 {{ rootfs }} {{ ramfs }} &)
+      shell: (../qemu_dev_start --node-id {{ node_id }} --eth0 {{ lm_ifname }}_0 --eth2 {{ lm_ifname }}_2 {{ enable_wan_param }} {{ rootfs }} {{ ramfs }} &)
 
     - name: set_fact
       set_fact:
-        linklocal: "fe80::5000:ff:feab:c0{{ node_id }}%lm_cloud{{cloud}}"
+        linklocal: "root@fe80::5000:ff:feab:c0{{ node_id }}%lm_cloud{{cloud}}"
 
 - name: useful info for doing clusterssh
   hosts: all
@@ -102,7 +103,7 @@
         prompt: |
           ===================================
           now to manage the cloud you can do:
-
-          clusterssh {{ linklocals | join(' ') }}
+          
+          clusterssh --options "-o 'StrictHostKeyChecking=no' -o 'HostKeyAlgorithms=+ssh-rsa'" {{ linklocals | join(' ') }}
 
           ===================================

@@ -129,4 +129,18 @@ function babeld.setup_interface(ifname, args)
 	uci:save("babeld")
 end
 
+function babeld.runOnDevice(linuxDev, args)
+	utils.log("lime.proto.babeld.runOnDevice(%s, ...)", linuxDev)
+
+	local vlanId = args[2] or 17
+	local vlanProto = args[3] or "8021ad"
+
+	local vlanDev = network.createVlan(linuxDev, vlanId, vlanProto)
+	network.createStatic(vlanDev)
+
+	local libubus = require("ubus")
+	local ubus = libubus.connect()
+	ubus:call('babeld', 'add_interface', { ifname = vlanDev })
+end
+
 return babeld

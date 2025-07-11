@@ -61,7 +61,6 @@ function lan.configure(args)
 end
 
 function lan.setup_interface(ifname, args)
-	if args and args["nobridge"] then return end
 	if ifname:match("^wlan") then return end
 	if ifname:match(network.protoVlanSeparator.."%d+$") then return end
 
@@ -90,5 +89,7 @@ protocol direct {
 ]]
 	return base_conf
 end
+
+function lan.runOnDevice(linuxDev, args) end
 
 return lan

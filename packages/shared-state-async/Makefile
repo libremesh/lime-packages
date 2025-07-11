@@ -21,17 +21,27 @@
 
 include $(TOPDIR)/rules.mk
 
-GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
-GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
-
 PKG_NAME:=shared-state-async
-PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/libremesh/shared-state-async.git
+PKG_SOURCE_DATE:=2024-05-13
 PKG_SOURCE_VERSION:=db58e3d16e8658417956f9bb42e7e87f6aadcd4d
 PKG_MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 PKG_LICENSE:=AGPL-3.0
+
+# tar.xz or tar.zst
+PKG_XZ=$(shell top="$(TOPDIR)" && grep -q openwrt-23.05 $${top}/feeds.conf.default && echo true)
+ifeq ($(PKG_XZ),true)
+PKG_MIRROR_HASH:=35884a57e26058c6534b25c50b9aef14df81da501be1d153a9bb7923a47154dd
+else
+PKG_MIRROR_HASH:=649c977e5d32fe232c8d0cb617ec04c6e4bd767dfac40ebcdb1630ab990fcd8f
+endif
+
+GIT_COMMIT_DATE:=$(shell psd="$(PKG_SOURCE_DATE)" && echo $${psd} | sed 's|-|.|g' )
+GIT_COMMIT_SHORTHASH:=$(shell psv="$(PKG_SOURCE_VERSION)" && echo $${psv:0:7} )
+PKG_VERSION:=$(GIT_COMMIT_DATE)~$(GIT_COMMIT_SHORTHASH)
+PKG_RELEASE:=1
 
 HOST_BUILD_PREFIX:=$(STAGING_DIR_HOST)
 

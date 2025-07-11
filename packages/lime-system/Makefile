@@ -6,11 +6,11 @@
 
 include $(TOPDIR)/rules.mk
 
-GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . )
+GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . | sed 's|-|.|g' )
 GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
 
 PKG_NAME:=lime-system
-PKG_VERSION=$(GIT_COMMIT_DATE)-$(GIT_COMMIT_TSTAMP)
+PKG_VERSION=$(GIT_COMMIT_DATE)~$(GIT_COMMIT_TSTAMP)
 
 LIME_ID:=LiMe
 LIME_RELEASE:=$(shell git branch | sed -n '/\* /s///p')
@@ -23,7 +23,7 @@ LIME_DESCRIPTION:=$(LIME_ID) $(LIME_RELEASE) $(LIME_CODENAME) ($(LIME_BRANCH) re
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
-  TITLE:=libremesh system files
+  TITLE:=LibreMesh system core
   CATEGORY:=LibreMesh
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libremesh.org
@@ -32,7 +32,8 @@ define Package/$(PKG_NAME)
 endef
 
 define Package/$(PKG_NAME)/description
-	Basic system files for LiMe node
+	LibreMesh is a modular meta-firmare this package provide the core of it
+	which articulates all LiMe modules around it
 endef
 
 define Build/Compile

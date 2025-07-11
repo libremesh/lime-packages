@@ -37,8 +37,8 @@ load_watchping() {
 	ifname="$(uci_get_state network "$interface" ifname)"
 
 	[ -z "$ifname" ] && {
-		logger -p user.info -t "watchping" "interface $interface does not exist (yet?) waiting 10 seconds to try again"
-		sleep 10
+		logger -p user.info -t "watchping" "interface $interface does not exist (yet?) waiting 30 seconds to try again"
+		sleep 30
 		ifname="$(uci_get_state network "$interface" ifname)"
 		[ -z "$ifname" ] && {
 			logger -p user.info -t "watchping" "interface $interface does not exist in openwrt but continuing..."
