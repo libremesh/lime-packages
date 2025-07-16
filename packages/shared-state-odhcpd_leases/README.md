@@ -28,7 +28,7 @@ cat /tmp/ethers.mesh                    # should see "MAC IP"
 ## 2 Mesh test (two nodes)
 
 1. Connect client to **Node A** and ensure its lease appears in `dump` on **Node B**.
-2. Roam client to **Node B**; `ubus call dhcp ipv4leases '{}'` should show the **same IP**.
+2. Roam client to **Node B**; `shared-state-async dump odhcpd-leases` and `cat /tmp/ethers.mesh` should show the **same IP**.
 3. Connect a second client; confirm addresses never collide.
 
 ## Contributing
