@@ -67,6 +67,29 @@ function wireless.is5Ghz(radio)
 	return devModes and (devModes.a or devModes.ac)
 end
 
+function wireless.is6Ghz(radio)
+	local config = require("lime.config")
+	local uci = config.get_uci_cursor()
+	wifi_band = uci:get('wireless', radio, 'band')
+	if wifi_band then return wifi_band=='6g' end
+	return false
+end
+
+function wireless.getRadioBand(radioName)
+	if wireless.is5Ghz(radioName) then
+		return '5ghz'
+	end
+	if wireless.is6Ghz(radioName) then
+		--! currently untested and reserved for indoor use
+		-- let's default to 5ghz for now
+		-- TODO: test 6g band and decide a path forward with
+		local uci = config.get_uci_cursor()
+		uci:set("wireless", radioName, "band", "5g") 
+		return '5ghz'
+	end
+	return '2ghz'
+end
+
 wireless.availableModes = { adhoc=true, ap=true, apname=true, apbb=true, ieee80211s=true }
 function wireless.isMode(m)
 	return wireless.availableModes[m]
@@ -165,7 +188,7 @@ function wireless.configure()
 	local allRadios = wireless.scandevices()
 	for _,radio in pairs(allRadios) do
 		local radioName = radio[".name"]
-		local radioBand = wireless.is5Ghz(radioName) and '5ghz' or '2ghz'
+		local radioBand = wireless.getRadioBand(radioName) 
 		local radioOptions = specificRadios[radioName] or {}
 		local bandOptions = config.get_all(radioBand) or {}
 		local options = config.get_all("wifi")
