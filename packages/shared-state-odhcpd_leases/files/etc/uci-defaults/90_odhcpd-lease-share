@@ -15,6 +15,6 @@ uci -q set dhcp.odhcpd.leasetrigger="$TRIGGERFILE"
 uci -q set dhcp.odhcpd.maindhcp='1'
 uci commit dhcp
 
-[ -e /etc/ethers ] || ln -s "$LEASEFILE" /etc/ethers
+[ -L /etc/ethers ] || ln -sf "$LEASEFILE" /etc/ethers
 
 /etc/init.d/odhcpd reload
