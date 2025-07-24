@@ -1,7 +1,7 @@
 #!/bin/sh
 CRDT='odhcpd-leases'
 LEASEFILE='/tmp/ethers.mesh'
-TRIGGERFILE='usr/share/shared-state/publishers/shared-state-publish_odhcpd_leases'
+TRIGGERFILE='/usr/share/shared-state/publishers/shared-state-publish_odhcpd_leases'
 mSc='odhcpd_leases'
 
 uci -q set shared-state.$mSc=dataType          
