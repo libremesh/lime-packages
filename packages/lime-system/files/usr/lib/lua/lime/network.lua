@@ -574,7 +574,8 @@ function network.createStatic(linuxBaseIfname)
 		auto    = "1",
 		ifname  = linuxBaseIfname,
 		ipaddr  = ipv4:host():string(),
-		netmask = "255.255.255.255"
+		netmask = "255.255.255.255",
+		macaddr =  table.concat(vMacaddr, ":")
 	}
 	utils.log("lime.network.createStatic (%s) , with mac %s", linuxBaseIfname,ifaceConf.macaddr)
 	
