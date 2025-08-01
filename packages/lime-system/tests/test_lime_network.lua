@@ -176,9 +176,24 @@ describe("LiMe Network tests", function()
 		assert.are.Not.same(network.get_own_macs("wlan0"), network.get_own_macs("lo"))
 	end)
 
-	before_each("", function()
-		uci = test_utils.setup_test_uci()
-	end)
+    it('test get_own_macs', function()
+        assert.are.same({"00:00:00:00:00:00"}, network.get_own_macs("lo"))
+        assert.are.same(network.get_own_macs(), network.get_own_macs("*"))
+        assert.are.Not.same(network.get_own_macs("wlan0"), network.get_own_macs("*"))
+        assert.are.Not.same(network.get_own_macs("wlan0"), network.get_own_macs("lo"))
+    end)
+
+    it('test device_exists returns true for existing device', function()
+        assert.is_true(network.device_exists('lo'))
+    end)
+
+    it('test device_exists returns false for non-existing device', function()
+        assert.is_false(network.device_exists('definitelynotadevicename'))
+    end)
+
+    before_each('', function()
+        uci = test_utils.setup_test_uci()
+    end)
 
 	after_each("", function()
 		test_utils.teardown_test_uci(uci)
