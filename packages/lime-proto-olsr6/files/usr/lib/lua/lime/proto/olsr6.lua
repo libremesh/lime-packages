@@ -41,6 +41,9 @@ function olsr.setup_interface(ifname, args)
 		if ifname:match("^wlan%d+.ap") then return end
 	end
 
+	--! ...e-proto-olsr6/files/usr/lib/lua/lime/proto/olsr6.lua:55: attempt to index global 'ipv6' (a nil value)
+	local _, ipv6 = network.primary_address()
+
 	vlanId = tonumber(args[2]) or 15
 	vlanProto = args[3] or "8021ad"
 	nameSuffix = args[4] or "_olsr6"
