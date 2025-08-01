@@ -149,7 +149,7 @@ function batadv.runOnDevice(linuxDev, args)
 
 	utils.unsafe_shell("ip link set dev "..devName.." address "..macaddr)
 	local ifnames = network.createStatic(devName)
-	utils.log("batadv created"..devName.." with address:".. macaddr .." and static ".. ifnames)
+	utils.log("batadv created vlan "..devName.." with address:".. macaddr .." and static ".. ifnames)
 	--this seems not to be needed
 	--utils.unsafe_shell("batctl if add "..devName)
 end

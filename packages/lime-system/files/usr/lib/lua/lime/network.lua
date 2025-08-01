@@ -594,6 +594,14 @@ function network.createStatic(linuxBaseIfname)
 	return ifaceConf.name
 end
 
+--! Check if a device exists in the system
+function network.device_exists(dev)
+    local handle = io.popen("ip link show " .. dev .. " 2>/dev/null")
+    local result = handle:read("*a")
+    handle:close()
+    return result ~= nil and result ~= ""
+end
+
 --! Create a vlan at runtime via ubus
 function network.createVlan(linuxBaseIfname, vid, vlanProtocol)
 	local vlanConf = {
