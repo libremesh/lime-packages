@@ -11,6 +11,10 @@ SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
 ssh $SSH_OPTS "$SSH_USER@$NODE_IP" <<EOF
 
+echo "[0/4] Killing any running limed processes..."
+service limed stop
+killall limed
+
 echo "[1/4] Bringing Wi-Fi down..."
 wifi down
 
