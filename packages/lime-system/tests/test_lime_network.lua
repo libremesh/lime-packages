@@ -28,6 +28,10 @@ describe('LiMe Network tests', function()
         assert.are.same({'00', '00', '00', '00', '00', '00'}, network.get_mac('lo'))
     end)
 
+    it('test get_mac for ethernet', function()
+        assert.is_nil (network.get_mac('nonexistent-interface'))
+    end)
+
     it('test primary_interface configured interface', function()
         config.set('network', 'lime')
         config.set('network', 'primary_interface', 'test0')
