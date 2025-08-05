@@ -34,9 +34,14 @@ network.MACVLAN_HACK_FW4_INCLUDE_PREFIX = "/usr/share/nftables.d/ruleset-post/50
 network.protoParamsSeparator = ":"
 network.protoVlanSeparator = "_"
 network.limeIfNamePrefix = "lm_net_"
-
+--! Retuns the mac address of the interface or nill if it does not exist
 function network.get_mac(ifname)
 	local _, macaddr = next(network.get_own_macs(ifname))
+	--! this is to avoid the error:
+	--! ...ackages/lime-system/files/usr/lib/lua/lime/utils.lua:53: attempt to index local 'string' (a nil value)
+	if macaddr == nil then
+		return nil
+	end
 	return utils.split(macaddr, ":")
 end
 
