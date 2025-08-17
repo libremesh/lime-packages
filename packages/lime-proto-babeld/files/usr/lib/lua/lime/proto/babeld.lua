@@ -87,6 +87,10 @@ function babeld.configure(args)
 	uci:set("babeld", "denyany", "type", "redistribute")
 	uci:set("babeld", "denyany", "action", "deny")
 
+	uci:set("babeld", "br_lan_interface", "interface") 
+	uci:set("babeld", "br_lan_interface", "ifname", "br-lan")
+	uci:set("babeld", "br_lan_interface", "type", "wired")
+
 	uci:save("babeld")
 
 end
