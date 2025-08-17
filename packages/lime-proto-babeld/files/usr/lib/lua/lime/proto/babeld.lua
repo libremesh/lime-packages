@@ -127,11 +127,6 @@ function babeld.setup_interface(ifname, args)
 
 	utils.log("lime.proto.babeld.setup_interface(%s, ...)", ifname)
 
-	local owrtInterfaceName, linuxVlanIfName, owrtDeviceName =
-	  network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto) --revisar
-
-	local ipv4, _ = network.primary_address()
-
 	local uci = config.get_uci_cursor()
 
   local section_name = "babeld_" .. ifname:gsub("[.-]", "_")
