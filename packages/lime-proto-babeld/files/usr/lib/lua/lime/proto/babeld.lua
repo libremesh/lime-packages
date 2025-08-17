@@ -103,48 +103,31 @@ function babeld.setup_interface(ifname, args)
 
 	utils.log("lime.proto.babeld.setup_interface(%s, ...)", ifname)
 
-	local vlanId = args[2] or 17
-	local vlanProto = args[3] or "8021ad"
-	local nameSuffix = args[4] or "_babeld"
-
 	local owrtInterfaceName, linuxVlanIfName, owrtDeviceName =
-	  network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
+	  network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto) --revisar
 
 	local ipv4, _ = network.primary_address()
 
 	local uci = config.get_uci_cursor()
 
-	if(vlanId ~= 0 and (ifname:match("^eth") or ifname:match("^lan"))) then
-		uci:set("network", owrtDeviceName, "mtu", tostring(network.MTU_ETH_WITH_VLAN))
-	end
+  local section_name = "babeld_" .. ifname:gsub("[.-]", "_")
 
-	uci:set("network", owrtInterfaceName, "proto", "static")
-	uci:set("network", owrtInterfaceName, "ipaddr", ipv4:host():string())
-	uci:set("network", owrtInterfaceName, "netmask", "255.255.255.255")
-	uci:save("network")
+  uci:set("babeld", section_name, "interface")
+  uci:set("babeld", section_name, "ifname", ifname)
 
-	uci:set("babeld", owrtInterfaceName, "interface")
-	uci:set("babeld", owrtInterfaceName, "ifname", linuxVlanIfName)
-	--! It is quite common to have dummy radio device attached via ethernet so
-	--! disable wired optimization always as it would consider the link down at
-	--! first packet lost
-	uci:set("babeld", owrtInterfaceName, "type", "wireless")
+  if ifname:match("^wlan") then
+      uci:set("babeld", section_name, "type", "wireless")
+  else
+      uci:set("babeld", section_name, "type", "wired")
+  end
 
 	uci:save("babeld")
 end
 
 function babeld.runOnDevice(linuxDev, args)
 	utils.log("lime.proto.babeld.runOnDevice(%s, ...)", linuxDev)
-
-	local vlanId = args[2] or 17
-	local vlanProto = args[3] or "8021ad"
-
-	local vlanDev = network.createVlan(linuxDev, vlanId, vlanProto)
-	network.createStatic(vlanDev)
-
 	local libubus = require("ubus")
 	local ubus = libubus.connect()
-	ubus:call('babeld', 'add_interface', { ifname = vlanDev })
+	ubus:call('babeld', 'add_interface', { ifname = linuxDev })
 end
-
 return babeld
