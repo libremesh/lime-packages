@@ -4,7 +4,7 @@ define Package/$(PKG_NAME)
   SECTION:=lime
   CATEGORY:=LibreMesh
   TITLE:=LiMe babeld proto support
-  DEPENDS:=+babeld +lime-system +luci-lib-nixio +kmod-nft-netdev
+  DEPENDS:=+babeld +lime-system +luci-lib-nixio 
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   VERSION:=$(if $(PKG_VERSION),$(PKG_VERSION),$(PKG_SRC_VERSION))
   PKGARCH:=all
