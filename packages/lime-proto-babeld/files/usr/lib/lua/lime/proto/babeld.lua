@@ -93,30 +93,33 @@ function babeld.configure(args)
 
 	uci:save("babeld")
 
-	if utils.is_installed("kmod-batman-adv") then
-		if not fs.stat("/etc/nft-lime") then fs.mkdir("/etc/nft-lime") end
-		if not fs.stat("/etc/nft-lime/20-lime-babel-filter.nft") then
-			fs.writefile("/etc/nft-lime/20-lime-babel-filter.nft", [[
-table netdev lime_babel_filter {
+  if utils.is_installed("kmod-batman-adv") then
+    local dir  = "/usr/share/nftables.d/ruleset-post"
+    local path = dir .. "/20-lime-babel-filter.nft"
+
+    if not fs.stat(dir) then fs.mkdir(dir) end
+
+    if not fs.stat(path) then
+      fs.writefile(path, [[
+#!/usr/sbin/nft -f
+add table inet lime_babel_filter
+add chain inet lime_babel_filter prevent_babel_leak_from_bat0
+delete chain inet lime_babel_filter prevent_babel_leak_from_bat0
+
+table inet lime_babel_filter {
   chain prevent_babel_leak_from_bat0 {
     type filter hook ingress device "bat0" priority 0; policy accept;
-    ether daddr 33:33:00:00:01:06 counter drop
-    ether daddr 01:00:5e:00:00:6f counter drop
+
+    ip6 daddr ff02::1:6   udp dport 6696 counter drop   
+    ip  daddr 224.0.0.111 udp dport 6696 counter drop   
+
     ip6 nexthdr udp udp dport 6696 counter drop
     ip  protocol udp udp dport 6696 counter drop
   }
 }
 ]])
-
-			uci:set("firewall", "lime_babel_filter_include", "include")
-			uci:set("firewall", "lime_babel_filter_include", "path", "/etc/nft-lime/20-lime-babel-filter.nft")
-			uci:set("firewall", "lime_babel_filter_include", "type", "nftables")
-			uci:set("firewall", "lime_babel_filter_include", "position", "ruleset-post")
-			uci:set("firewall", "lime_babel_filter_include", "enabled", "1")
-
-			uci:save("firewall")
-		end
-	end
+    end
+  end
 end
 
 function babeld.setup_interface(ifname, args)
