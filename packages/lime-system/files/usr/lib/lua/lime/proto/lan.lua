@@ -8,24 +8,6 @@ local utils = require("lime.utils")
 
 lan.configured = false
 
---! Find a device section in network with
---! option name 'br-lan'
---! option type 'bridge'
-local function find_br_lan(uci)
-	local br_lan_section = nil
-	uci:foreach("network", "device",
-		function(s)
-			if br_lan_section then return end
-			local dev_type = uci:get("network", s[".name"], "type")
-			local dev_name = uci:get("network", s[".name"], "name")
-			if not (dev_type == 'bridge') then return end
-			if not (dev_name == 'br-lan') then return end
-			br_lan_section = s[".name"]
-		end
-	)
-	return br_lan_section
-end
-
 function lan.configure(args)
 	if lan.configured then return end
 	lan.configured = true
@@ -38,7 +20,7 @@ function lan.configure(args)
 	uci:set("network", "lan", "netmask", ipv4:mask():string())
 	uci:set("network", "lan", "proto", "static")
 	uci:set("network", "lan", "mtu", "1500")
-	local br_lan_section = find_br_lan(uci)
+	local br_lan_section = utils.find_br_lan()
 	if br_lan_section then uci:delete("network", br_lan_section, "ports") end
 	uci:save("network")
 
@@ -66,7 +48,7 @@ function lan.setup_interface(ifname, args)
 
 	local uci = config.get_uci_cursor()
 	local bridgedIfs = {}
-	local br_lan_section = find_br_lan(uci)
+	local br_lan_section = utils.find_br_lan()
 	if not br_lan_section then return end
 	local oldIfs = uci:get("network", br_lan_section, "ports") or {}
 	--! it should be a table, it was a string in old OpenWrt releases

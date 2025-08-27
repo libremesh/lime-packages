@@ -12,7 +12,7 @@ define Package/$(PKG_NAME)
 	DEPENDS:=+dnsmasq-dhcpv6 +kmod-nft-bridge +libuci-lua \
 		+lime-system +lua +kmod-macvlan \
 		+shared-state +shared-state-dnsmasq_leases \
-		+luci-lib-nixio +firewall4
+		+luci-lib-nixio +firewall4 +ip-bridge
   PKGARCH:=all
 endef
 
