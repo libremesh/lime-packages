@@ -385,12 +385,6 @@ function network.configure()
 			if protoName == "manual" then break end -- If manual is specified do not configure interface
 			local protoModule = "lime.proto."..protoName
 			local needsConfig = utils.isModuleAvailable(protoModule)
-			if protoName ~= 'lan' and not flags["specific"] then
-				--! Work around issue 1121. Do not configure any other
-				--! protocols than lime.proto.lan on dsa devices unless there
-				--! is a config net section for the device.
-				needsConfig = needsConfig and not utils.is_dsa(device)
-			end
 			if needsConfig then
 				for k,v in pairs(flags) do args[k] = v end
 				local proto = require(protoModule)
