@@ -1,0 +1,56 @@
+#!/bin/sh
+
+feed_host="http://feed.libremesh.org"
+openwrt_branch_ref="$(grep -m 1 "openwrt.org/" /etc/*/distfeeds* | sed 's|.*openwrt.org/\(.*\)|\1|' )"
+arch="$(grep OPENWRT_ARCH /etc/os-release | sed 's|OPENWRT_ARCH="\(.*\)"|\1|')"
+
+if [ -n "$openwrt_branch_ref" ]; then
+	if $(echo $openwrt_branch_ref | grep -q 'snapshots'); then
+		openwrt_branch='openwrt-main'
+	fi
+	if $(echo $openwrt_branch_ref | grep -q 'releases'); then
+		branch_n="$(echo $openwrt_branch_ref | sed 's|releases/||')"
+		openwrt_branch="openwrt-${branch_n:0:5}"
+	fi
+else
+	echo "String not found 'openwrt.org' in default ${repo} feeds, cannot determine openwrt branch"
+fi
+
+feed_packages_path=$feed_host/master/$openwrt_branch
+feed_profiles_path=$feed_host/profiles/$openwrt_branch
+
+# Add libremesh 'repositories' and 'repository_keys' to owut's build requests
+cat > /tmp/owut_repos << EOF
+		repositories: {
+			'libremesh': '$feed_packages_path/x86_64',
+			'libremesh_arch_packages': '$feed_packages_path/$arch',
+			'profiles': '$feed_profiles_path/x86_64'},
+		repository_keys: [ 
+			"RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8", 
+			"-----BEGIN PUBLIC KEY-----\n\
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEdFJZ2qVti49Ol8LJZYuxgOCLowBS\n\
+8bI86a7zqhSbs5yon3JON7Yee7CQOgqwPOX5eMALGOu8iFGAqIRx5YjfYA==\n\
+-----END PUBLIC KEY-----" ],
+EOF
+sed -ie '/target:.*device.target/r /tmp/owut_repos' /usr/bin/owut
+
+# Add libremesh repositories to packages, arch_packages and profiles. Used by 'owut check'
+cat > /tmp/owut_repos << EOF
+	let lime = dl_json("$feed_packages_path/x86_64/index.json", 
+		"/tmp/owut-packages-lime.json", true);
+
+	let lime_arch_packages = dl_json("$feed_packages_path/$arch/index.json", 
+		"/tmp/owut-packages-lime_arch_packages.json", true);
+
+	let profiles = dl_json("$feed_profiles_path/x86_64/index.json", 
+		"/tmp/owut-packages-profiles.json", true);
+
+	return sort({ ...(arch ?? []), ...(plat?.packages ?? []), 
+		...(lime?.packages ?? []), ...(lime_arch_packages?.packages ?? []), ...(profiles?.packages ?? []) });
+EOF
+sed -i -e "/return\ sort({\ ...(arch/r /tmp/owut_repos" -e "//d" /usr/bin/owut
+rm /tmp/owut_repos
+
+# Set a default server
+uci set attendedsysupgrade.server.url='https://sysupgrade.antennine.org'
+uci commit attendedsysupgrade
