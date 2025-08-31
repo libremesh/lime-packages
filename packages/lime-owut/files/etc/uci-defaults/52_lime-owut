@@ -1,0 +1,11 @@
+uci batch <<EOF
+set attendedsysupgrade.server.url="https://sysupgrade.libremesh.org"
+set attendedsysupgrade.owut=owut
+set attendedsysupgrade.owut.repositories_mode="append"
+add_list attendedsysupgrade.owut.repository_aliases="SNAPSHOT main"
+add_list attendedsysupgrade.owut.ignored_defaults="odhcpd-ipv6only"
+add_list attendedsysupgrade.owut.ignored_defaults="ppp"
+add_list attendedsysupgrade.owut.ignored_defaults="ppp-mod-pppoe"
+commit attendedsysupgrade
+EOF
+exit 0
