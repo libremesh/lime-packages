@@ -4,7 +4,7 @@ on:
   release:
     types: [published]
   push:
-    branches: [master]
+    branches: [master, "dev**"]
     tags:
       - v*
       - '!v2020*'
@@ -189,6 +189,7 @@ jobs:
 
       - name: Replace packages
         run: |
+          mkdir -p lime-feed/${{ needs.generate_matrix.outputs.dest_dir }}
           for branch in $(ls artifacts/${{ needs.generate_matrix.outputs.dest_dir }}/); do
             for arch in $(ls artifacts/${{ needs.generate_matrix.outputs.dest_dir }}/$branch/); do
               rm -rf lime-feed/${{ needs.generate_matrix.outputs.dest_dir }}/$branch/$arch
