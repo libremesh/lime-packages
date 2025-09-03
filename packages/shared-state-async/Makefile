@@ -1,23 +1,9 @@
-# Shared State
+# SPDX-License-Identifier: AGPL-3.0-only
 #
 # Copyright (C) 2023-2024  Gioacchino Mazzurco <gio@eigenlab.org>
 # Copyright (c) 2023  Javier Jorge <jjorge@inti.gob.ar>
 # Copyright (c) 2023  Instituto Nacional de Tecnología Industrial
 # Copyright (C) 2023-2024  Asociación Civil Altermundi <info@altermundi.net>
-#
-# This program is free software: you can redistribute it and/or modify it under
-# the terms of the GNU Affero General Public License as published by the
-# Free Software Foundation, version 3.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE.
-# See the GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program. If not, see <https://www.gnu.org/licenses/>
-#
-# SPDX-License-Identifier: AGPL-3.0-only
 
 include $(TOPDIR)/rules.mk
 
@@ -28,7 +14,7 @@ PKG_SOURCE_URL:=https://github.com/libremesh/shared-state-async.git
 PKG_SOURCE_DATE:=2024-05-13
 PKG_SOURCE_VERSION:=db58e3d16e8658417956f9bb42e7e87f6aadcd4d
 PKG_MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
-PKG_LICENSE:=AGPL-3.0
+PKG_LICENSE:=AGPL-3.0-only
 
 # tar.xz or tar.zst
 PKG_XZ=$(shell top="$(TOPDIR)" && grep -q openwrt-23.05 $${top}/feeds.conf.default && echo true)

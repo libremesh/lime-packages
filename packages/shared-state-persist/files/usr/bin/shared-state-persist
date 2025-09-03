@@ -1,29 +1,16 @@
 #!/usr/bin/lua
+--! SPDX-License-Identifier: GPL-3.0-or-later
+--!
+--! Copyright (C) 2019 Luandro <luandro@gmail.com>
+--! Copyright (C) 2019 Marcos Gutierrez <gmarcos@altermundi.net>
 
---[[
-	
-	Copyright (C) 2019 Luandro <luandro@gmail.com>
-	Copyright (C) 2019 Marcos Gutierrez <gmarcos@altermundi.net>
-
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-	GNU General Public License for more details.
-	You should have received a copy of the GNU General Public License
-	along with this file. If not, see <http://www.gnu.org/licenses/>.
-
-	Documentation: 
-		Searches the mounted devices according to the following logic:
-			- The mounted storage device has no shared-state folder (creates the directory and uses it after copy actua /var/shared-state)
-			- The mounted device has the folder shred-state (uses it as is)
-			- If not devices found use the defautl /var/shared-state
-		Info: Shared-state-persist use the first result founded.
-
-]]--
+--!	Documentation: 
+--!	Searches the mounted devices according to the following logic:
+--!	- The mounted storage device has no shared-state folder (creates 
+--!   the directory and uses it after copy actual /var/shared-state)
+--!	- The mounted device has the folder shred-state (uses it as is)
+--!	- If not devices found use the defautl /var/shared-state
+--!	Info: Shared-state-persist use the first result founded.
 
 local nixio = require('nixio')
 local fs = nixio.fs

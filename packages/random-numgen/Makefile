@@ -1,6 +1,4 @@
-# This is free software, licensed under the GNU General Public License v3.
-# See /LICENSES for more information.
-#
+# SPDX-License-Identifier: GPL-3.0-only
 
 include ../../libremesh.mk
 

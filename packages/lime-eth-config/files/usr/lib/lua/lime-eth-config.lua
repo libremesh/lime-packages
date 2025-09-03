@@ -1,9 +1,9 @@
--- ! LibreMesh
--- ! Generic hook to be called as a symbolic link for each ref type
--- ! Copyright (C) 2025  Javier Jorge 
--- ! Copyright (C) 2025  Instituto Nacional de Tecnología Industrial (INTI) 
--- ! Copyright (C) 2025  Asociación Civil Altermundi <info@altermundi.net>
--- ! SPDX-License-Identifier: AGPL-3.0-
+--! LibreMesh
+--! Generic hook to be called as a symbolic link for each ref type
+--! Copyright (C) 2025  Javier Jorge 
+--! Copyright (C) 2025  Instituto Nacional de Tecnología Industrial (INTI) 
+--! Copyright (C) 2025  Asociación Civil Altermundi <info@altermundi.net>
+--! SPDX-License-Identifier: AGPL-3.0-only
 local JSON = require("luci.jsonc")
 local utils = require("lime.utils")
 local config = require("lime.config")

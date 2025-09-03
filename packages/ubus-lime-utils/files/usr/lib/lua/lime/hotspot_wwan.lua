@@ -1,10 +1,8 @@
 #!/usr/bin/env lua
---[[
-  Copyright (C) 2021 LibreMesh.org
-  This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
-
-  Copyright 2021 Santiago Piccinini <spiccinini@altermindi.net>
-]]--
+--! SPDX-License-Identifier: AGPL-3.0-only
+--!
+--! Copyright (C) 2021 LibreMesh.org
+--! Copyright 2021 Santiago Piccinini <spiccinini@altermindi.net>
 
 local utils = require 'lime.utils'
 local config = require 'lime.config'
