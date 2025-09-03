@@ -1,8 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 #
 # Copyright (C) 2019 Gioacchino Mazzurco <gio@altermundi.net>
-#
-# This is free software, licensed under the GNU Affero General Public License v3.
-#
 
 include ../../libremesh.mk
 

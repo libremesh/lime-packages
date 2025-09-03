@@ -1,9 +1,8 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 #
 # Copyright (c) 2023  Javier Jorge <jjorge@inti.gob.ar>
 # Copyright (c) 2023  Instituto Nacional de Tecnología Industrial
 # Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
-# This is free software, licensed under the GNU Affero General Public License v3.
-#
 
 include ../../libremesh.mk
 

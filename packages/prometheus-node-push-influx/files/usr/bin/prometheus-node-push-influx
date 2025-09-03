@@ -1,10 +1,10 @@
 #!/usr/bin/lua
-
---! Metrics web server
-
+--! SPDX-License-Identifier: Apache-2.0
+--!
 --! Copyright (c) 2016 Jeff Schornick <jeff@schornick.org>
 --! Copyright (c) 2015 Kevin Lyda
---! Licensed under the Apache License, Version 2.0
+
+--! Metrics web server
 
 socket = require("socket")
 
