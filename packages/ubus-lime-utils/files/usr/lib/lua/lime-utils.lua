@@ -1,6 +1,6 @@
 #!/usr/bin/env lua
 
--- Used on lime-utils ubus script
+--! Used on lime-utils ubus script
 local limewireless = require 'lime.wireless'
 local utils = require 'lime.utils'
 local upgrade = require 'lime.upgrade'
@@ -59,7 +59,7 @@ function limeutils.get_community_settings()
     local config = conn:call("uci", "get", {config = "lime-app"}).values
     if config ~= nil then
         for name, value in pairs(config) do
-            -- TODO: Find a best way to remove uci keys
+            --! TODO: Find a best way to remove uci keys
             function table.removekey(table, key)
                 local element = table[key]
                 table[key] = nil
@@ -76,7 +76,7 @@ function limeutils.get_community_settings()
     end
 end
 
--- todo(kon): move to utility class?? 
+--! todo(kon): move to utility class?? 
 function limeutils.get_channels()
     local devices = limewireless.scandevices()
     local phys = {}

@@ -1,20 +1,7 @@
 #!/usr/bin/lua
-
---! LiMe Proto Babeld
+--! SPDX-License-Identifier: AGPL-3.0-or-later
+--! 
 --! Copyright (C) 2018  Gioacchino Mazzurco <gio@altermundi.net>
---!
---! This program is free software: you can redistribute it and/or modify
---! it under the terms of the GNU Affero General Public License as
---! published by the Free Software Foundation, either version 3 of the
---! License, or (at your option) any later version.
---!
---! This program is distributed in the hope that it will be useful,
---! but WITHOUT ANY WARRANTY; without even the implied warranty of
---! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
---! GNU Affero General Public License for more details.
---!
---! You should have received a copy of the GNU Affero General Public License
---! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local network = require("lime.network")
 local config = require("lime.config")
@@ -76,13 +63,13 @@ function babeld.configure(args)
 	uci:set("babeld", "default4", "le", "0")
 	uci:set("babeld", "default4", "action", "allow")
 
-	-- Avoid redistributing extra local addesses
+	--! Avoid redistributing extra local addesses
 	uci:set("babeld", "localdeny", "filter")
 	uci:set("babeld", "localdeny", "type", "redistribute")
 	uci:set("babeld", "localdeny", "local", "true")
 	uci:set("babeld", "localdeny", "action", "deny")
 
-	-- Avoid redistributing enything else
+	--! Avoid redistributing enything else
 	uci:set("babeld", "denyany", "filter")
 	uci:set("babeld", "denyany", "type", "redistribute")
 	uci:set("babeld", "denyany", "action", "deny")

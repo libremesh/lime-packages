@@ -11,10 +11,10 @@ local utils = require "lime.utils"
 local fs = require("nixio.fs")
 
 local ref_file_folder = "/etc/shared-state/ref_state/"
---get data_type from file name
+--! get data_type from file name
 for data_type in fs.dir(ref_file_folder) do
 	local path = ref_file_folder .. data_type
 	local result = { [utils.hostname()] =  JSON.parse(utils.read_file(path)) }
-	--filename is a json file so .json has to be removed
+	--! filename is a json file so .json has to be removed
 	io.popen("shared-state-async insert " .. string.gsub(data_type, "%.json$", ""), "w"):write(JSON.stringify(result))
 end

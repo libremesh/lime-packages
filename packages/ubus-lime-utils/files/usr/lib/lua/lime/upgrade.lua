@@ -1,10 +1,8 @@
 #!/usr/bin/env lua
---[[
-  Copyright (C) 2020 LibreMesh.org
-  This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
-
-  Copyright 2020 Santiago Piccinini <spiccinini@altermindi.net>
-]]--
+--! SPDX-License-Identifier: AGPL-3.0-only
+--!
+--! Copyright (C) 2020 LibreMesh.org
+--! Copyright 2020 Santiago Piccinini <spiccinini@altermindi.net>
 
 local json = require 'luci.jsonc'
 local utils = require 'lime.utils'
@@ -111,7 +109,7 @@ function pkg.firmware_upgrade(fw_path, preserve_config, metadata, fw_type)
 
     metadata['config_preserved'] = preserve_config or false
 
-    -- store info of the current firmware
+    --! store info of the current firmware
     local current_fw_description = utils.release_info()["DISTRIB_DESCRIPTION"]
     if current_fw_description then
         metadata['old_release_description'] = current_fw_description
