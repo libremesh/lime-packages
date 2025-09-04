@@ -18,21 +18,21 @@ function batadv.configure(args)
 
 	uci:set("network", "bat0", "interface")
 	uci:set("network", "bat0", "proto", "batadv")
-	-- BATMAN_V uses throughput rather than packet loss (as in BATMAN_IV) for evaluating
-	-- the quality of a link. Still, by default we continue selecting BATMAN_IV
+	--! BATMAN_V uses throughput rather than packet loss (as in BATMAN_IV) for evaluating
+	--! the quality of a link. Still, by default we continue selecting BATMAN_IV
 	local routing_algo = config.get("network", "batadv_routing_algo", "BATMAN_IV")
 	uci:set("network", "bat0", "routing_algo", routing_algo)
 	uci:set("network", "bat0", "bridge_loop_avoidance", "1")
 	uci:set("network", "bat0", "multicast_mode", "0")
-	-- by default, BATMAN-adv sends out one Originator Message (OGM) every second (orig_interval=1000)
-	-- in a network with static nodes, a larger interval between OGM packets can be used (e.g. 2000)
-	-- see https://github.com/libremesh/lime-packages/issues/1010
+	--! by default, BATMAN-adv sends out one Originator Message (OGM) every second (orig_interval=1000)
+	--! in a network with static nodes, a larger interval between OGM packets can be used (e.g. 2000)
+	--! see https://github.com/libremesh/lime-packages/issues/1010
 	local orig_interval = config.get("network", "batadv_orig_interval", "2000")
         uci:set("network", "bat0", "orig_interval", orig_interval)
 
-	-- if anygw enabled disable DAT that doesn't play well with it
-	-- and set gw_mode=client everywhere. Since there's no gw_mode=server, this makes bat0 never forward requests
-	-- so a rogue DHCP server doesn't affect whole network (DHCP requests are always answered locally)
+	--! if anygw enabled disable DAT that doesn't play well with it
+	--! and set gw_mode=client everywhere. Since there's no gw_mode=server, this makes bat0 never forward requests
+	--! so a rogue DHCP server doesn't affect whole network (DHCP requests are always answered locally)
 	for _,proto in pairs(config.get("network", "protocols")) do
 		if proto == "anygw" then
 			uci:set("network", "bat0", "distributed_arp_table", "0")
@@ -42,7 +42,7 @@ function batadv.configure(args)
 	uci:save("network")
 	lan.setup_interface("bat0", nil)
 
-	-- enable alfred on bat0 if installed
+	--! enable alfred on bat0 if installed
 	if utils.is_installed("alfred") then
 		uci:set("alfred", "alfred", "batmanif", "bat0")
 		uci:save("alfred")

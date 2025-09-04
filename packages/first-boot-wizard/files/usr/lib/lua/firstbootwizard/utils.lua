@@ -60,7 +60,7 @@ function utils.split(str, sep)
     return split(str, sep)
 end
 
--- splits a multiline string in a list of strings, one per line
+--! splits a multiline string in a list of strings, one per line
 function lsplit(mlstring)
     return split(mlstring, "\n")
 end

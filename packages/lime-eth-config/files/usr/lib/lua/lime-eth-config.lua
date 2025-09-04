@@ -1,9 +1,9 @@
--- ! LibreMesh
--- ! Generic hook to be called as a symbolic link for each ref type
--- ! Copyright (C) 2025  Javier Jorge 
--- ! Copyright (C) 2025  Instituto Nacional de Tecnología Industrial (INTI) 
--- ! Copyright (C) 2025  Asociación Civil Altermundi <info@altermundi.net>
--- ! SPDX-License-Identifier: AGPL-3.0-
+--! LibreMesh
+--! Generic hook to be called as a symbolic link for each ref type
+--! Copyright (C) 2025  Javier Jorge 
+--! Copyright (C) 2025  Instituto Nacional de Tecnología Industrial (INTI) 
+--! Copyright (C) 2025  Asociación Civil Altermundi <info@altermundi.net>
+--! SPDX-License-Identifier: AGPL-3.0-only
 local JSON = require("luci.jsonc")
 local utils = require("lime.utils")
 local config = require("lime.config")
@@ -15,7 +15,7 @@ local eht_config = {}
 
 function eht_config.get_eth_config()
     limenode_interfaces = {}
-    --get configurations from lime-node
+    --! get configurations from lime-node
     local uci = config.get_uci_cursor()
     uci:foreach("lime-autogen", "net", function(entry)
         if entry.eth_role ~= nil then
@@ -25,7 +25,7 @@ function eht_config.get_eth_config()
             table.insert(limenode_interfaces, interface)
         end
     end)
-    --get default settings 
+    --! get default settings 
     local switch_status = node_status.switch_status()
     local interfaces = {}
     if switch_status ~= nil then
@@ -60,20 +60,20 @@ function eht_config.set_eth_config(device, role)
     local tag_value = "lime_app_eth_cfg_" .. device:gsub("%.", "_")
     local uci = config.get_uci_cursor()
     local eth_role = uci:get("lime-node", tag_value, "eth_role")
-    -- verify previous config
+    --! verify previous config
     if eth_role ~= nil then
         if eth_role == role then
-            -- No changes needed, the role is already set
+            --! No changes needed, the role is already set
             return true
         else
             eht_config.delete_eth_config(tag_value)
         end
     end
 
-    -- handle lm_hwd_openwrt_wan
+    --! handle lm_hwd_openwrt_wan
     if role ~= "wan" then
-        -- if the port was automatically configured as a wan port, we need to remove the
-        -- wan protocol. If we returtn to default we need to enable auto detection.
+        --! if the port was automatically configured as a wan port, we need to remove the
+        --! wan protocol. If we returtn to default we need to enable auto detection.
         local switch_status = node_status.switch_status()
         if switch_status ~= nil then
             for _, status in ipairs(switch_status) do

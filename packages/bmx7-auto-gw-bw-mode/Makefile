@@ -1,8 +1,6 @@
-# 
+# SPDX-License-Identifier: GPL-3.0-only
+#
 # Copyright (C) 2018 Pau Escrich
-#
-# This is free software, licensed under the GNU General Public License v3.
-#
 
 include ../../libremesh.mk
 

@@ -1,10 +1,8 @@
 #!/usr/bin/env lua
---[[
-  Copyright (C) 2021 LibreMesh.org
-  This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
-
-  Copyright 2021 Santiago Piccinini <spiccinini@altermindi.net>
-]]--
+--! SPDX-License-Identifier: AGPL-3.0-only
+--!
+--! Copyright (C) 2021 LibreMesh.org
+--! Copyright 2021 Santiago Piccinini <spiccinini@altermindi.net>
 
 local utils = require 'lime.utils'
 local config = require 'lime.config'
@@ -13,7 +11,7 @@ local wireless = require "lime.wireless"
 
 local pkg = {}
 
--- checkout ap_match_encryption for supported encryptions
+--! checkout ap_match_encryption for supported encryptions
 pkg.DEFAULT_ENCRYPTION = 'psk2'
 pkg.DEFAULT_SSID = 'internet'
 pkg.DEFAULT_PASSWORD = 'internet'
@@ -88,8 +86,8 @@ function pkg._is_safe(ssid, encryption, radio)
 end
 
 function pkg.safe_enable(ssid, password, encryption, radio)
-    -- Enables the hotpost client only if the hotpost is already available
-    -- in order to avoid clients from ap interfaces to be kicked out.
+    --! Enables the hotpost client only if the hotpost is already available
+    --! in order to avoid clients from ap interfaces to be kicked out.
     local encryption = encryption or pkg.DEFAULT_ENCRYPTION
     local ssid = ssid or pkg.DEFAULT_SSID
     local radio = radio or pkg.DEFAULT_RADIO

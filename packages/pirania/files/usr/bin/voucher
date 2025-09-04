@@ -24,7 +24,7 @@ captive_portal.activate = function(code, mac)
     end
 end
 
--- Checks if the mac of the given context is allowed to browse.
+--! Checks if the mac of the given context is allowed to browse.
 captive_portal.is_mac_authorized = function(mac)
     if vouchera.is_mac_authorized(mac) then
         print('true')
@@ -56,7 +56,7 @@ captive_portal.list_expired = function()
     return _list_by_status('expired')
 end
 
--- List all vouchers
+--! List all vouchers
 captive_portal.list = function()
     for _, voucher in pairs(vouchera.vouchers) do
         print(voucher.tostring())
@@ -97,7 +97,7 @@ captive_portal.show_authorized_macs = function()
     return true
 end
 
--- if is main
+--! if is main
 if debug.getinfo(2).name == nil then
     local arguments = { ... }
     local action = table.remove(arguments, 1)

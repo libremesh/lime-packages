@@ -1,11 +1,8 @@
 #!/usr/bin/env lua
---[[
-  Copyright (C) 2020 LibreMesh.org
-  This is free software, licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3
-
-  Copyright 2020 Santiago Piccinini <spiccinini@altermindi.net>
-]]--
-
+--! SPDX-License-Identifier: AGPL-3.0-only
+--!
+--! Copyright (C) 2020 LibreMesh.org
+--! Copyright 2020 Santiago Piccinini <spiccinini@altermindi.net>
 
 local utils = require 'lime.utils'
 local config = require 'lime.config'
@@ -111,11 +108,11 @@ function limeutilsadmin.safe_reboot(msg)
         return f ~= nil
     end
 
-    -- Get safe-reboot status
+    --! Get safe-reboot status
     if msg.action == nil then return {error = true} end
     if msg.action == 'status' then result.status = getStatus() end
 
-    --  Start safe-reboot
+    --! Start safe-reboot
     if msg.action == 'start' then
         local args = ''
         if msg.value ~= nil then
@@ -132,14 +129,14 @@ function limeutilsadmin.safe_reboot(msg)
         if result.status == true then result.started = true end
     end
 
-    -- Rreboot now and wait for fallback timeout
+    --! Rreboot now and wait for fallback timeout
     if msg.action == 'now' then
         local sr = assert(io.popen('safe-reboot now'))
         result.status = getStatus()
         result.now = result.status
     end
 
-    -- Keep changes and stop safe-reboot
+    --! Keep changes and stop safe-reboot
     if msg.action == 'cancel' then
         result.status = true
         result.canceled = false
@@ -151,7 +148,7 @@ function limeutilsadmin.safe_reboot(msg)
         end
     end
 
-    --  Discard changes - Restore previous state and reboot
+    --! Discard changes - Restore previous state and reboot
     if msg.action == 'discard' then
         local sr = assert(io.popen('safe-reboot discard'))
         sr:close()

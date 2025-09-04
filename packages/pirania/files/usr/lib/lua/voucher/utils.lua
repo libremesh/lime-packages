@@ -12,7 +12,7 @@ local function checkIfIpv4(ip)
     if ip == nil or type(ip) ~= "string" then
         return 0
     end
-    -- check for format 1.11.111.111 for ipv4
+    --! check for format 1.11.111.111 for ipv4
     local chunks = {ip:match("(%d+)%.(%d+)%.(%d+)%.(%d+)")}
     if (#chunks == 4) then
         for _,v in pairs(chunks) do
