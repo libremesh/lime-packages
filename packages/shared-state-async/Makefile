@@ -10,19 +10,12 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=shared-state-async
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/libremesh/shared-state-async.git
-PKG_SOURCE_DATE:=2024-05-13
-PKG_SOURCE_VERSION:=db58e3d16e8658417956f9bb42e7e87f6aadcd4d
+PKG_SOURCE_URL:=https://github.com/javierbrk/shared-state-async.git
+PKG_SOURCE_VERSION:=use-statically-linked-stdlib
 PKG_MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 PKG_LICENSE:=AGPL-3.0-only
 
-# tar.xz or tar.zst
-PKG_XZ=$(shell top="$(TOPDIR)" && grep -q openwrt-23.05 $${top}/feeds.conf.default && echo true)
-ifeq ($(PKG_XZ),true)
-PKG_MIRROR_HASH:=35884a57e26058c6534b25c50b9aef14df81da501be1d153a9bb7923a47154dd
-else
-PKG_MIRROR_HASH:=649c977e5d32fe232c8d0cb617ec04c6e4bd767dfac40ebcdb1630ab990fcd8f
-endif
+
 
 GIT_COMMIT_DATE:=$(shell psd="$(PKG_SOURCE_DATE)" && echo $${psd} | sed 's|-|.|g' )
 GIT_COMMIT_SHORTHASH:=$(shell psv="$(PKG_SOURCE_VERSION)" && echo $${psv:0:7} )
@@ -41,7 +34,7 @@ define Package/$(PKG_NAME)
 	# TODO: Statically linking libstdcpp instead of depending on it and then
 	# stripping unused symbols might reduce space usage, until this is the
 	# only package to use it
-	DEPENDS:=+libstdcpp
+	# DEPENDS:=+libstdcpp
 endef
 
 define Package/$(PKG_NAME)/description
@@ -59,7 +52,9 @@ CMAKE_OPTIONS += -DCMAKE_VERBOSE_MAKEFILE=ON
 # #0 0x00000000
 # #1 0x00000000
 # #2 0x00000000
-CMAKE_OPTIONS += -DSS_CPPTRACE_STACKTRACE=OFF
+CMAKE_OPTIONS += -DSS_CPPTRACE_STACKTRACE=OFF 
+CMAKE_OPTIONS += -DSS_STATIC_LIBSTDCPP=ON 
+CMAKE_OPTIONS += -DSS_STRIP_SYMBOLS=ON
 
 
 define Package/$(PKG_NAME)/install
