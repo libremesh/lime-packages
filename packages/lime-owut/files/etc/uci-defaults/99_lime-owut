@@ -1,0 +1,43 @@
+#!/bin/sh
+
+openwrt_branch_ref="$(grep -m 1 "openwrt.org/" /etc/*/distfeeds* | sed 's|.*openwrt.org/\(.*\)|\1|' )"
+arch="$(grep OPENWRT_ARCH /etc/os-release | sed 's/OPENWRT_ARCH=\"\(.*\)\"/\1/')"
+
+if [ '' != "$openwrt_branch_ref" ]; then
+	if $(echo $openwrt_branch_ref | grep -q 'snapshots'); then
+	openwrt_branch='openwrt-main'
+	fi
+	if $(echo $openwrt_branch_ref | grep -q 'releases'); then
+	branch_n="$(echo $openwrt_branch_ref | sed 's/releases\///')"
+	openwrt_branch="openwrt-${branch_n:0:5}"
+	fi
+else
+	echo "String not found 'openwrt.org' in default ${repo} feeds, cannot determine openwrt branch"
+fi
+
+cat > /tmp/owut_repos << EOF
+		repositories: {
+			'libremesh': 'http://feed.libremesh.org/master/$openwrt_branch/x86_64',
+			'libremesh_arch_packages': 'http://feed.libremesh.org/master/$openwrt_branch/$arch',
+			'profiles': 'http://feed.libremesh.org/profiles/$openwrt_branch/x86_64'},
+		repository_keys: [ 
+			"RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8", 
+			"-----BEGIN PUBLIC KEY-----\n\
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEdFJZ2qVti49Ol8LJZYuxgOCLowBS\n\
+8bI86a7zqhSbs5yon3JON7Yee7CQOgqwPOX5eMALGOu8iFGAqIRx5YjfYA==\n\
+-----END PUBLIC KEY-----" ],
+EOF
+sed -ie '/target:.*device.target/r /tmp/owut_repos' /usr/bin/owut
+
+cat > /tmp/owut_repos << EOF
+let lime = dl_json("http://feed.libremesh.org/master/$openwrt_branch/x86_64/index.json", "/tmp/owut-packages-lime.json", true);
+let lime_arch_packages = dl_json("http://feed.libremesh.org/master/$openwrt_branch/$arch/index.json", "/tmp/owut-packages-lime_arch_packages.json", true);
+let profiles = dl_json("http://feed.libremesh.org/master/$openwrt_branch/x86_64/index.json", "/tmp/owut-packages-profiles.json", true);
+return sort({ ...(arch ?? []), ...(plat?.packages ?? []), 
+	...(lime?.packages ?? []), ...(lime_arch_packages?.packages ?? []), ...(profiles?.packages ?? []) });
+EOF
+sed -i -e "/return\ sort/r /tmp/owut_repos" -e "//d" /usr/bin/owut
+rm /tmp/owut_repos
+
+uci set attendedsysupgrade.server.url='https://sysupgrade.antennine.org'
+uci commit attendedsysupgrade
