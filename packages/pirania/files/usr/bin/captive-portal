@@ -48,6 +48,9 @@ set_nftables () {
 	nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ether saddr != @pirania-auth-macs ct state new,established,related counter log prefix "SMACDNS"  redirect to :59053
 	# redirect packets with dest port 80 to port 59080 of this host (the captive portal page).
 	nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ether saddr != @pirania-auth-macs ct state new,established,related counter log prefix "SMACHTTP"  redirect to :59080
+	# drop packets with dest port 443 for unauthorized macs (block HTTPS) 
+	nft add rule inet pirania prerouting meta l4proto tcp tcp dport 443 ether saddr != @pirania-auth-macs ct state new,established,related counter log prefix "SMACHTTPS" drop
+
 
 	#nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ip saddr @pirania-allowlist-ipv4 ct state new,established,related counter log prefix "IPv4HTTP" redirect to :59080
 	#nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ip6 saddr  @pirania-allowlist-ipv6 ct state new,established,related counter log prefix "IPV6HTTP" redirect to :59080
@@ -109,7 +112,7 @@ elif [ "$1" = "clean" ] || [ "$1" = "stop" ] ; then
 elif [ "$enabled" = "1" ]; then
 	echo "Captive-portal already enabled, reloading rules"
 	clean_tables
-#	set_nftables
+	set_nftables # required for "/etc/init.d/pirania start|restart|reload" if "uci get pirania.base_config.enabled" is "1"
 	update_ipsets
 	exit
 elif [ "$1" = "enabled" ]; then
