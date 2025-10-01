@@ -25,6 +25,8 @@ const int = {
   }
 }
 
+// 'en' fallback if user language is not available
+int[lang] = int[lang] || int['en'];
 Object.keys(int[lang]).map(text => {
   Array.from(document.getElementsByClassName(`int-${text}`)).map(
     element => {
