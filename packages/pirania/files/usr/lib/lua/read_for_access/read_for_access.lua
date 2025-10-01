@@ -42,7 +42,8 @@ function read_for_access.authorize_mac(mac)
         content = content:gsub("(" .. mac .. ") %d+", "%1 " .. timestamp)
         utils.write_file(read_for_access.AUTH_MACS_FILE, content)
     end
-    os.execute('/usr/bin/captive-portal update')
+    -- redirects stdout and stderr to /dev/null to not trigger 502 Bad Gateway after read for access portal
+    os.execute('/usr/bin/captive-portal update > /dev/null 2>&1')
 end
 
 function read_for_access.get_authorized_macs()
