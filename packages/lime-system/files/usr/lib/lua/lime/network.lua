@@ -266,9 +266,6 @@ function network.scandevices(specificIfaces)
 		if dev:match("^eth%d+$") then
 			utils.log( "network.scandevices.dev_parser found plain Ethernet " ..
 			           "device %s", dev )
-		elseif dev:match("^wlan%d+"..wireless.WIFI_MODE_SEPARATOR().."%w+$") then
-			utils.log( "network.scandevices.dev_parser found WiFi device %s",
-			           dev )
 		elseif specificIfaces[dev] then
 			utils.log( "network.scandevices.dev_parser found device %s that " ..
 			           "matches the config net section %s", dev,
@@ -283,11 +280,13 @@ function network.scandevices(specificIfaces)
 	end
 
 	function owrt_ifname_parser(section)
-		local ifn = section["ifname"]
-		if ( type(ifn) == "string" ) then
+		local dev = section["ifname"]
+		if ( type(dev) == "string" ) then
+			local is_dsa = utils.is_dsa(dev)
+			devices[dev] = devices[dev] or {}
+			devices[dev]["dsa"] = is_dsa
 			utils.log( "network.scandevices.owrt_ifname_parser found ifname %s",
-			           ifn )
-			dev_parser(ifn)
+			           dev )
 		end
 	end
 
