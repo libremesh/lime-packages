@@ -295,10 +295,11 @@ function network.scandevices(specificIfaces)
 		devices[dev] = devices[dev] or {}
 		devices[dev]["dsa"] = is_dsa
 		if is_dsa then
-			utils.log( "network.scandevices found DSA-port %s in board.json",
-			           dev )
+			utils.log( "network.scandevices.board_port_parser found " ..
+			           "DSA-port %s in board.json", dev )
 		else
-			utils.log( "network.scandevices found device %s in board.json", dev )
+			utils.log( "network.scandevices.board_port_parser found " ..
+			           "device %s in board.json", dev )
 		end
 	end
 
