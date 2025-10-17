@@ -264,8 +264,6 @@ function network.scandevices(specificIfaces)
 		end
 
 		if dev:match("^eth%d+$") then
-			--! We only get here with devices not listed in board.json, e.g
-			--! pluggable ethernet dongles.
 			utils.log( "network.scandevices.dev_parser found plain Ethernet " ..
 			           "device %s", dev )
 		elseif dev:match("^wlan%d+"..wireless.WIFI_MODE_SEPARATOR().."%w+$") then
