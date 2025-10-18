@@ -19,7 +19,7 @@ describe('Pirania redirect request handler #portalredirect', function()
         local url_auth = uci:get('pirania', 'base_config', 'url_auth')
         handle_request(FAKE_ENV)
         assert.stub(uhttpd.send).was_called_with(
-            'Location: http://thisnode.info' .. url_auth ..
+            'Location: http://gateway.info' .. url_auth ..
             '?prev=http%3A%2F%2Fdetectportal.firefox.com%2Fsuccess.txt' ..
             '\r\n'
         )
@@ -31,7 +31,7 @@ describe('Pirania redirect request handler #portalredirect', function()
         local url_portal = uci:get('pirania', 'read_for_access', 'url_portal')
         handle_request(FAKE_ENV)
         assert.stub(uhttpd.send).was_called_with(
-            'Location: http://thisnode.info' .. url_portal ..
+            'Location: http://gateway.info' .. url_portal ..
             '?prev=http%3A%2F%2Fdetectportal.firefox.com%2Fsuccess.txt' ..
             '\r\n'
         )
