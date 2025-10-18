@@ -11,60 +11,51 @@ clean_tables () {
 }
 
 set_nftables () { 
-	echo "Apply captive-portal rules"
-	# Detect wheter add or insert rules
-	#append_nft_rules=$(uci get pirania.base_config.append_nft_rules 2> /dev/null)
-	#if [ "$append_nft_rules" = "1" ] ; then
-	#	op="add rule"
-	#else
-	#	op="insert rule"
-	#fi
+    echo "Apply captive-portal rules"
 
-	# Create pirania tables	
-	nft create table inet pirania
-	# Create default tables and chains
-	nft add table inet pirania
-	nft add chain inet pirania prerouting { type nat hook prerouting priority 0 \; }
-	nft add chain inet pirania input { type filter hook input priority 0 \; }
-	nft add chain inet pirania forward { type filter hook forward priority 0 \; }
+    # Previous cleanup
+    nft delete table inet pirania 2>/dev/null
 
-  	# Add mac-adress set
-  	nft add set inet pirania pirania-auth-macs { type ether_addr\; }
+    # Create the main table
+    nft add table inet pirania
 
-	# Create ipv4 set on pirania table
-  	nft add set inet pirania pirania-allowlist-ipv4 { type ipv4_addr \; flags interval \; comment \"allow ipv4 list\" \; }
-  	# Create ipv6 set on pirania table
-  	nft add set inet pirania pirania-allowlist-ipv6 { type ipv6_addr \; flags interval \; comment \"allow ipv6 list\" \; }
+    # Chains
+    nft add chain inet pirania prerouting \{ type nat hook prerouting priority -100\; \}
+    nft add chain inet pirania forward \{ type filter hook forward priority 0\; policy accept\; \}
 
-	# Only accept packets from interfaces defined in catch_bridged_interfaces
-	catch_interfaces=$(uci get pirania.base_config.catch_bridged_interfaces | sed 's/ /,/g')
+    # Sets
+    nft add set inet pirania pirania-auth-macs \{ type ether_addr\; \}
+    nft add set inet pirania pirania-auth-ips \{ type ipv4_addr\; \}
+    nft add set inet pirania pirania-allowlist-ipv4 \{ type ipv4_addr\; flags interval\; comment \"allow ipv4 list\"\; \}
+    nft add set inet pirania pirania-allowlist-ipv6 \{ type ipv6_addr\; flags interval\; comment \"allow ipv6 list\"\; \}
 
-	# stop processing the chain for authorized macs and allowed ips (so they are accepted)
-	nft add rule inet pirania prerouting ether saddr @pirania-auth-macs ct state new,established,related counter log prefix "ValidSMAC" accept
-	nft add rule inet pirania prerouting ip daddr @pirania-allowlist-ipv4 ct state new,established,related counter log prefix "ACCEPT-ipv4" accept
-	nft add rule inet pirania prerouting ip6 daddr @pirania-allowlist-ipv6 ct state new,established,related counter log prefix "ACCEPT-ipv6" accept
+    # Allowlist
+    nft add rule inet pirania prerouting ip daddr @pirania-allowlist-ipv4 accept
+    nft add rule inet pirania prerouting ip6 daddr @pirania-allowlist-ipv6 accept
 
-	# send DNS requests, that are not from valid ips or macs, to our own captive portal DNS at 59053
-	nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ether saddr != @pirania-auth-macs ct state new,established,related counter log prefix "SMACDNS"  redirect to :59053
-	# redirect packets with dest port 80 to port 59080 of this host (the captive portal page).
-	nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ether saddr != @pirania-auth-macs ct state new,established,related counter log prefix "SMACHTTP"  redirect to :59080
-	# drop packets with dest port 443 for unauthorized macs (block HTTPS) 
-	nft add rule inet pirania prerouting meta l4proto tcp tcp dport 443 ether saddr != @pirania-auth-macs ct state new,established,related counter log prefix "SMACHTTPS" drop
+    # --- Forward rules ---
+    # Allow traffic only if both IP and MAC are authorized
+    nft add rule inet pirania forward ether saddr @pirania-auth-macs ip saddr @pirania-auth-ips accept
+
+    # DNS always allowed for redirect
+    nft add rule inet pirania forward udp dport 53 accept
+
+    # --- NAT redirect for unauthorized traffic ---
+    # HTTP redirect
+    nft add rule inet pirania prerouting tcp dport 80 ip saddr != @pirania-auth-ips redirect to :59080
+    nft add rule inet pirania prerouting tcp dport 80 ether saddr != @pirania-auth-macs redirect to :59080
+
+    # DNS redirect
+    nft add rule inet pirania prerouting udp dport 53 ip saddr != @pirania-auth-ips redirect to :59053
+    nft add rule inet pirania prerouting udp dport 53 ether saddr != @pirania-auth-macs redirect to :59053
+
+    # HTTPS block
+    nft add rule inet pirania forward tcp dport 443 ip saddr != @pirania-auth-ips log prefix "BLOCK_HTTPS" drop
+    nft add rule inet pirania forward tcp dport 443 ether saddr != @pirania-auth-macs log prefix "BLOCK_HTTPS" drop
 
 
-	#nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ip saddr @pirania-allowlist-ipv4 ct state new,established,related counter log prefix "IPv4HTTP" redirect to :59080
-	#nft add rule inet pirania prerouting meta l4proto tcp tcp dport 80 ip6 saddr  @pirania-allowlist-ipv6 ct state new,established,related counter log prefix "IPV6HTTP" redirect to :59080
 
-	#nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ip saddr @pirania-allowlist-ipv4 ct state new,established,related counter redirect to :59053
-	#nft add rule inet pirania prerouting meta l4proto udp udp dport 53 ip6 saddr @pirania-allowlist-ipv6 ct state new,established,related counter redirect to :59053
- 
-
-	# reject
-	
-	#nft add rule inet pirania prerouting drop
-	#nft add rule inet pirania forward meta mark 0x11/0x11 counter reject with tcp reset
-	#nft add rule inet pirania forward meta mark 0x11/0x11 counter reject
-
+    echo "Captive-portal rules applied successfully"
 }
 
 update_ipsets () {
@@ -76,6 +67,11 @@ update_ipsets () {
   for mac in $(pirania_authorized_macs) ; do
     nft add element inet pirania pirania-auth-macs {$mac}
 	echo "Adicionando enderecos:" $mac
+  done
+  # Add authorized IP addresses
+  for ip in $(pirania_authorized_ips) ; do
+    nft add element inet pirania pirania-auth-ips {$ip}
+	echo "Adicionando enderecos:" $ip
   done
 
   # Update pirania-allowlist sets for ipv4 and ipv6
