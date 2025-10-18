@@ -12,7 +12,7 @@ function handlers.authorize_mac()
         return uci:get("pirania", "base_config", "url_auth")
     end
     local client_data = utils.getIpv4AndMac(os.getenv('REMOTE_ADDR'))
-    read_for_access.authorize_mac(client_data.mac)
+    read_for_access.authorize_mac(client_data.mac, client_data.ip)
     local params = utils.urldecode_params(os.getenv("QUERY_STRING"))
     local url_prev = utils.urldecode(params['prev'])
     local url_authenticated = uci:get("pirania", "base_config", "url_authenticated")

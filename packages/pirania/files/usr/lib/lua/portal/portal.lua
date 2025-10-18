@@ -60,11 +60,24 @@ function portal.get_authorized_macs()
     return auth_macs
 end
 
+function portal.get_authorized_ips()
+    local auth_ips = {}
+    local with_vouchers = portal.get_config().with_vouchers
+    if with_vouchers then
+        local vouchera = require("voucher.vouchera")
+        vouchera.init()
+        auth_ips = vouchera.get_authorized_ips()
+    else
+        auth_ips = read_for_access.get_authorized_ips()
+    end
+    return auth_ips
+end
+
 function portal.update_captive_portal(daemonized)
     if daemonized then
         utils.execute_daemonized('captive-portal update')
     else
-	-- redirects stdout and stderr to /dev/null to not trigger 502 Bad Gateway after voucher portal auth
+	    -- redirects stdout and stderr to /dev/null to not trigger 502 Bad Gateway after voucher portal auth
         os.execute('captive-portal update > /dev/null 2>&1')
     end
 end
