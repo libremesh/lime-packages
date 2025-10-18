@@ -1,0 +1,71 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+start() {
+    (
+        TIMEOUT=60
+        INTERVAL=2  
+        ELAPSED=0
+        ntpd -q -p pool.ntp.org
+        while [ $ELAPSED -lt $TIMEOUT ]; do
+            WAN_IF=$(ifstatus wan | jsonfilter -e '@.l3_device')
+            DEFAULT_ROUTE=$(ip route | awk '/^default/ {print $3" "$5; exit}')
+            BR_LAN_IP=$(ip -4 -o addr show dev br-lan | awk '{print $4}' | cut -d/ -f1)
+            GATEWAY=$(echo "$DEFAULT_ROUTE" | awk '{print $1}')
+            DEV=$(echo "$DEFAULT_ROUTE" | awk '{print $2}')
+            WLAN_MESH_MAC=$(ip link show "$DEV" | awk '/link\/ether/ {print $2}')
+            echo "DEBUG: WAN_IF=$WAN_IF"
+            echo "DEBUG: DEFAULT_ROUTE=$DEFAULT_ROUTE"
+            echo "DEBUG: BR_LAN_IP=$BR_LAN_IP"
+            echo "DEBUG: GATEWAY=$GATEWAY"
+            echo "DEBUG: DEV=$DEV"
+            echo "DEBUG: WLAN_MESH_MAC=$WLAN_MESH_MAC"
+            if [ -n "$DEV" ] && [ -n "$BR_LAN_IP" ]  && [ -n "$WLAN_MESH_MAC" ] && [ -n "$GATEWAY" ] && [ "$DEV" != "$WAN_IF" ]; then
+                echo "DEBUG: SECONDARY"
+                if ! /usr/bin/voucher show_authorized_macs | grep -iq "$WLAN_MESH_MAC" && ! /usr/bin/voucher show_authorized_ips | grep -iq "$BR_LAN_IP"; then
+                    CODE=$(/usr/bin/voucher add '# whitelist-secondary-node' | awk '{print $4}')
+                    /usr/bin/voucher activate "$CODE" "$WLAN_MESH_MAC" "$BR_LAN_IP"
+                fi
+                for f in /etc/pirania/hooks/db_change/*; do
+                    [ -x "$f" ] && "$f"
+                done
+                uci set dhcp.pirania="hostrecord"
+                uci set dhcp.pirania.name="gateway.info"
+                uci set dhcp.pirania.ip="$GATEWAY"
+                uci commit dhcp
+                /etc/init.d/dnsmasq reload
+                exit 0
+            elif [ -n "$DEV" ] && [ -n "$BR_LAN_IP" ] && [ "$DEV" = "$WAN_IF" ]; then
+                echo "DEBUG: PRIMARY"
+                if [ "$1" != "skip" ]; then
+                    sleep 300
+                fi
+                for f in /etc/pirania/vouchers/*.json; do
+                    if grep -q '"name"[[:space:]]*:[[:space:]]*"# whitelist-secondary-node"' "$f"; then
+                        MAC=$(grep -o '"mac"[[:space:]]*:[[:space:]]*"[^"]*"' "$f" | awk -F'"' '{print $4}')
+                        IP=$(grep -o '"ip"[[:space:]]*:[[:space:]]*"[^"]*"' "$f" | awk -F'"' '{print $4}')
+                        if [ -n "$MAC" ] && [ -n "$IP" ]; then
+                        lua -e "require('read_for_access.read_for_access').authorize_mac('$MAC', '$IP')"
+                        fi
+                    fi
+                done
+                uci set dhcp.pirania="hostrecord"
+                uci set dhcp.pirania.name="gateway.info"
+                uci set dhcp.pirania.ip="$BR_LAN_IP"
+                uci commit dhcp
+                /etc/init.d/dnsmasq reload
+                exit 0
+            fi
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+        done
+        echo "DEBUG: VARIABLES NOT FOUND"
+        uci set dhcp.pirania="hostrecord"
+        uci set dhcp.pirania.name="gateway.info"
+        uci set dhcp.pirania.ip="$BR_LAN_IP"
+        uci commit dhcp
+        /etc/init.d/dnsmasq reload
+        exit 1
+    ) &
+}
