@@ -38,7 +38,7 @@ function read_for_access.authorize_mac(mac, ip)
     end
 
     update_or_append(read_for_access.AUTH_MACS_FILE, mac, timestamp)
-    update_or_append(read_for_access.AUTH_IPS_FILE, ip, timestamp
+    update_or_append(read_for_access.AUTH_IPS_FILE, ip, timestamp)
     -- redirects stdout and stderr to /dev/null to not trigger 502 Bad Gateway after read for access portal
     os.execute('/usr/bin/captive-portal update > /dev/null 2>&1')
 end
