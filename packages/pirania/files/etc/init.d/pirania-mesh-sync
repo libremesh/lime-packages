@@ -23,7 +23,7 @@ start() {
             echo "DEBUG: WLAN_MESH_MAC=$WLAN_MESH_MAC"
             if [ -n "$DEV" ] && [ -n "$BR_LAN_IP" ]  && [ -n "$WLAN_MESH_MAC" ] && [ -n "$GATEWAY" ] && [ "$DEV" != "$WAN_IF" ]; then
                 echo "DEBUG: SECONDARY"
-                if ! /usr/bin/voucher show_authorized_macs | grep -iq "$WLAN_MESH_MAC" && ! /usr/bin/voucher show_authorized_ips | grep -iq "$BR_LAN_IP"; then
+                if ! /usr/bin/voucher show_authorized_macs | grep -iq "$WLAN_MESH_MAC" || ! /usr/bin/voucher show_authorized_ips | grep -iq "$BR_LAN_IP"; then
                     CODE=$(/usr/bin/voucher add '# whitelist-secondary-node' | awk '{print $4}')
                     /usr/bin/voucher activate "$CODE" "$WLAN_MESH_MAC" "$BR_LAN_IP"
                 fi
