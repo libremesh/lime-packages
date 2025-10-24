@@ -30,11 +30,25 @@ end
 function wireless.scandevices()
 	local devices = {}
 	local uci = config.get_uci_cursor()
-	uci:foreach("wireless", "wifi-device", function(dev) devices[dev[".name"]] = dev end)
+
+	uci:foreach("wireless", "wifi-device", function(dev)
+		local path = dev.path
+		if path then
+			local _, numberOfMatches = fs.glob("/sys/devices/"..path.."/ieee80211/phy*")
+			if numberOfMatches > 0 then
+				devices[dev[".name"]] = dev
+			else
+				utils.log("Skipping radio "..dev[".name"].." - hardware not found")
+			end
+		else
+			devices[dev[".name"]] = dev
+		end
+	end)
 
 	local sorted_devices = {}
 	for _, dev in pairs(devices) do
-		table.insert(sorted_devices, utils.indexFromName(dev[".name"])+1, dev)
+		local index = utils.indexFromName(dev[".name"]) or #sorted_devices
+		table.insert(sorted_devices, index+1, dev)
 	end
 
 	local band_2ghz_index = 0
