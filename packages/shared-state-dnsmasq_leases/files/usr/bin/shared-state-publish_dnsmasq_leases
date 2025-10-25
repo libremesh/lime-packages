@@ -1,20 +1,8 @@
 #!/usr/bin/lua
-
+--! SPDX-License-Identifier: AGPL-3.0-or-later
+--!
 --! LibreMesh
 --! Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
---!
---! This program is free software: you can redistribute it and/or modify
---! it under the terms of the GNU Affero General Public License as
---! published by the Free Software Foundation, either version 3 of the
---! License, or (at your option) any later version.
---!
---! This program is distributed in the hope that it will be useful,
---! but WITHOUT ANY WARRANTY; without even the implied warranty of
---! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
---! GNU Affero General Public License for more details.
---!
---! You should have received a copy of the GNU Affero General Public License
---! along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 local JSON = require("luci.jsonc")
 local uci = require("uci")
@@ -45,18 +33,18 @@ function add_dhcp_leases_from_files()
 
 	for line in io.lines("/tmp/dhcp.leases") do
 		_, client_mac, client_ip, client_hostname, client_id = unpack(line:split(" "))
-		-- client_ip will be nil in duid lines
-		-- https://dnsmasq-discuss.thekelleys.org.narkive.com/ia9YNLmE/dnsmasq-leases-file-format-specification
+		--! client_ip will be nil in duid lines
+		--! https://dnsmasq-discuss.thekelleys.org.narkive.com/ia9YNLmE/dnsmasq-leases-file-format-specification
 		if client_ip and type(client_hostname) == "string" then
-			-- The dhcp.leases file can contain lines with hostname "*"
-			-- avoiding to add these in hostTable
+			--! The dhcp.leases file can contain lines with hostname "*"
+			--! avoiding to add these in hostTable
 			if client_hostname:len() > 1 then
 				hostTable[client_ip.." "..client_hostname] = true
 			end
-			-- avoid adding IPv6 as collisions are very unlikely
-			-- if we were going to include it, we should remember that
-			-- IPv6 lines have a number here instead of the MAC address
-			-- https://github.com/libremesh/lime-packages/issues/969
+			--! avoid adding IPv6 as collisions are very unlikely
+			--! if we were going to include it, we should remember that
+			--! IPv6 lines have a number here instead of the MAC address
+			--! https://github.com/libremesh/lime-packages/issues/969
 			if client_ip:match('^%d+%.%d+%.%d+%.%d+$') then
 				leasesTable[client_ip] = { hostname=client_hostname, mac=client_mac }
 			end
@@ -74,9 +62,9 @@ end
 
 function add_lease(client_mac, client_ip, client_hostname)
 	if type(client_hostname) == "string" then
-		-- avoid adding IPv6 as collisions are very unlikely
-		-- if we were going to include it, we should prepend "id:" to the duid received as first argument
-		-- see https://github.com/libremesh/lime-packages/pull/975#issuecomment-1413984349
+		--! avoid adding IPv6 as collisions are very unlikely
+		--! if we were going to include it, we should prepend "id:" to the duid received as first argument
+		--! see https://github.com/libremesh/lime-packages/pull/975#issuecomment-1413984349
 		if client_ip:match('^%d+%.%d+%.%d+%.%d+$') then
 			local leaseData = {}
 			leaseData[client_ip] = { hostname=client_hostname, mac=client_mac }

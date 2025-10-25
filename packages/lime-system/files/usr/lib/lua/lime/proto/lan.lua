@@ -42,7 +42,7 @@ function lan.configure(args)
 	if br_lan_section then uci:delete("network", br_lan_section, "ports") end
 	uci:save("network")
 
-	-- disable bat0 on alfred if batadv not enabled
+	--! disable bat0 on alfred if batadv not enabled
 	if utils.is_installed("alfred") then
 		local is_batadv_enabled = false
 		local generalProtocols = config.get("network", "protocols")
@@ -69,7 +69,7 @@ function lan.setup_interface(ifname, args)
 	local br_lan_section = find_br_lan(uci)
 	if not br_lan_section then return end
 	local oldIfs = uci:get("network", br_lan_section, "ports") or {}
-	-- it should be a table, it was a string in old OpenWrt releases
+	--! it should be a table, it was a string in old OpenWrt releases
 	if type(oldIfs) == "string" then oldIfs = utils.split(oldIfs, " ") end
 	for _,iface in pairs(oldIfs) do
 		if iface ~= ifname then

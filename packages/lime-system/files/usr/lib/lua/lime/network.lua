@@ -24,7 +24,7 @@ function network.LIME_UCI_IFNAME_PREFIX() return "lm_net_" end
 network.MTU_ETH = 1500
 network.MTU_ETH_WITH_VLAN = network.MTU_ETH - 4
 
--- Deprecated use corresponding functions instead
+--! Deprecated use corresponding functions instead
 network.protoParamsSeparator=":"
 network.protoVlanSeparator="_"
 network.limeIfNamePrefix="lm_net_"
@@ -85,7 +85,7 @@ end
 
 function network.generate_host(ipprefix, hexsuffix)
 	local num = 0
-	-- If it's a network prefix calculate offset to add
+	--! If it's a network prefix calculate offset to add
 	if ipprefix:equal(ipprefix:network()) then
 		local addr_len = ipprefix:is4() and 32 or ipprefix:is6() and 128
 		num = tonumber(hexsuffix,16) % 2^(addr_len - ipprefix:prefix())
@@ -412,9 +412,9 @@ function network.sanitizeIfaceName(ifName)
 	return network.limeIfNamePrefix..ifName:gsub("[^%w_]", "_")
 end
 
--- Creates a network Interface with static protocol
--- ipAddr can be IPv4 or IPv6
--- the function can be called twice to set both IPv4 and IPv6
+--! Creates a network Interface with static protocol
+--! ipAddr can be IPv4 or IPv6
+--! the function can be called twice to set both IPv4 and IPv6
 function network.createStaticIface(linuxBaseIfname, openwrtNameSuffix, ipAddr, gwAddr)
 	local openwrtNameSuffix = openwrtNameSuffix or ""
 	local owrtInterfaceName = network.sanitizeIfaceName(linuxBaseIfname) .. openwrtNameSuffix
@@ -631,7 +631,7 @@ function network.createVlan(linuxBaseIfname, vid, vlanProtocol)
 end
 
 --! Run protocols at runtime on top of linux network devices
--- TODO: probably some code between here and configure might be deduplicaded
+--! TODO: probably some code between here and configure might be deduplicaded
 function network.runProtocols(linuxBaseIfname)
 	utils.log("lime.network.runProtocols(%s, ...)", linuxBaseIfname)
 	local protoConfs = config.get("network", "protocols")

@@ -108,16 +108,16 @@ function wireless.mesh_ifaces()
 				table.insert(ifaces, entry.ifname)
 			end
 		end)
-	--add apup interfaces 
-	--this are not listed in uci 
+	--! add apup interfaces 
+	--! this are not listed in uci 
 	local shell_output = utils.unsafe_shell("ls /sys/class/net/ -R")
 	if shell_output ~= nil then
 		for line in shell_output:gmatch("[^\n]+") do
-			-- Check if the line contains the pattern 'wlanX-peerY'
+			--! Check if the line contains the pattern 'wlanX-peerY'
 			local apup = require("lime.mode.apup")
 			local iface = line:match("wlan(%d+)-"..apup.PEER_SUFFIX().."(%d+)$")
 			if iface then
-			-- Add the matched interface to the table
+			--! Add the matched interface to the table
 				table.insert(ifaces, line)
 			end
 		end
@@ -225,7 +225,7 @@ function wireless.configure()
 				local args = {}
 				local mode = require("lime.mode."..modeName)
 
-				-- gather mode specific configs (eg ieee80211s_mcast_rate_5ghz)
+				--! gather mode specific configs (eg ieee80211s_mcast_rate_5ghz)
 				for key,value in pairs(options) do
 					local keyPrefix = utils.split(key, "_")[1]
 					local isGoodOption = ( (key ~= "modes")

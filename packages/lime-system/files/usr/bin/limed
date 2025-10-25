@@ -34,7 +34,7 @@ function limed.APUP_ENABLED()
 	return limed.__PRIVATE_APUP_ENABLED
 end
 
--- No need to run if APuP is not enabled in configuration
+--! No need to run if APuP is not enabled in configuration
 if not limed.APUP_ENABLED() then os.exit(0) end;
 
 local uloop = require("uloop");

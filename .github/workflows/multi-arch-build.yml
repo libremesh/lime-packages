@@ -4,7 +4,7 @@ on:
   release:
     types: [published]
   push:
-    branches: [master]
+    branches: [master, "dev**"]
     tags:
       - v*
       - '!v2020*'
@@ -36,7 +36,7 @@ jobs:
       dest_dir: ${{ steps.set_package_destination.outputs.dest_dir }}
       packages: ${{ steps.define_packages_list.outputs.packages }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Define list of packages without PKGARCH:=all
         id: define_packages_list
@@ -62,38 +62,41 @@ jobs:
           versions=$(curl https://downloads.openwrt.org/.versions.json)
           stable=$(echo $versions | jq | grep \"stable_ | sed 's|.*\"stable_version\": \"\(.*\)\",|\1|')
           oldstable=$(echo $versions | jq | grep oldstable_ | sed 's|.*\"oldstable_version\": \"\(.*\)\",|\1|')
-          arch_filter="${{ github.event.inputs.arch }}"
-          branches_filter="${{ github.event.inputs.branches }}"
-          branches_list=$([ $branches_filter != "" ] && echo "$branches_filter" \
+          ARCH_FILTER="${{ github.event.inputs.arch }}"
+          BRANCHES_FILTER="${{ github.event.inputs.branches }}"
+          BRANCHES_LIST=$([ "$BRANCHES_FILTER" != "" ] && echo "$BRANCHES_FILTER" \
             || echo "main" "${stable:0:5}" "${oldstable:0:5}")
 
-          # branches_list=main
-          # arch_filter=mips_24kc
+          # BRANCHES_LIST=main
+          # ARCH_FILTER=mips_24kc
 
-          for version in $branches_list; do
+          for version in $BRANCHES_LIST; do
 
             VERSION=$([ "$version" == "main" ] \
               && echo "main" || echo "openwrt-$version")
             echo $VERSION
 
             VERSION_PATH=$([ "$version" == "main" ] \
-              && echo "snapshots/packages" || echo "releases/packages-$version")
+              && echo "snapshots" || echo "releases/$version-SNAPSHOT")
             echo $VERSION_PATH
 
             OPENWRT_BRANCH_PATH="openwrt-$version"
             echo $OPENWRT_BRANCH_PATH
 
-            wget -r -nH --no-parent --level 1 --accept html -P. \
-              --directory-prefix=. https://downloads.openwrt.org/$VERSION_PATH/
-
-            if [ $arch_filter != "" ]; then
-              JSON="$JSON"'{"version": "'"$VERSION"'", "arch": "'"$arch_filter"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
+            if [ "$ARCH_FILTER" != "" ]; then
+              JSON="$JSON"'{"version": "'"$VERSION"'", "arch": "'"$ARCH_FILTER"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
             else
-              for arch in $(ls ./$VERSION_PATH/ | grep -v html | grep -v x86_64); do
-                [[ $FIRST_BUILD -ne 1 ]] && JSON="$JSON"','
-                FIRST_BUILD=0
+              archs=$(curl https://downloads.openwrt.org/$VERSION_PATH/.targets.json | jq .[] | sort -u | sed 's|"||g')
 
-                JSON="$JSON"'{"version": "'"$VERSION"'", "arch": "'"$arch"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
+              for ARCH in $archs; do
+                # skip x86_64 as it should be built only by .github/workflows/build.yml
+                if [ "$ARCH" != "x86_64" ]; then
+
+                  [[ $FIRST_BUILD -ne 1 ]] && JSON="$JSON"','
+                  FIRST_BUILD=0
+
+                  JSON="$JSON"'{"version": "'"$VERSION"'", "arch": "'"$ARCH"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
+                fi
               done
             fi
 
@@ -123,7 +126,7 @@ jobs:
       #   - { version: main, arch: x86_64, openwrt_branch_path: 'openwrt-main'}
       #     - { version: main, arch: mips_24kc, openwrt_branch_path: 'openwrt-main'}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Build packages ${{ matrix.arch }}-${{ matrix.version }}
         uses: openwrt/gh-action-sdk@v9
@@ -160,7 +163,7 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJson(needs.generate_matrix.outputs.versions_list) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v4
@@ -175,20 +178,21 @@ jobs:
     if: ${{ always() }}
     needs: [generate_matrix, merge_artifacts]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Checkout lime-feed
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: libremesh/lime-feed
           path: lime-feed
       
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           path: artifacts/${{ needs.generate_matrix.outputs.dest_dir }}/
 
       - name: Replace packages
         run: |
+          mkdir -p lime-feed/${{ needs.generate_matrix.outputs.dest_dir }}
           for branch in $(ls artifacts/${{ needs.generate_matrix.outputs.dest_dir }}/); do
             for arch in $(ls artifacts/${{ needs.generate_matrix.outputs.dest_dir }}/$branch/); do
               rm -rf lime-feed/${{ needs.generate_matrix.outputs.dest_dir }}/$branch/$arch

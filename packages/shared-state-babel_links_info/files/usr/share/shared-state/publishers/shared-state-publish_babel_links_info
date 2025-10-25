@@ -1,11 +1,11 @@
 #!/usr/bin/lua
 
--- ! LibreMesh
--- ! Copyright (c) 2023  Javier Jorge <jjorge@inti.gob.ar>
--- ! Copyright (c) 2023  Instituto Nacional de Tecnología Industrial
--- ! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
--- !
--- ! SPDX-License-Identifier: AGPL-3.0-only
+--! LibreMesh
+--! Copyright (c) 2023  Javier Jorge <jjorge@inti.gob.ar>
+--! Copyright (c) 2023  Instituto Nacional de Tecnología Industrial
+--! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
+--!
+--! SPDX-License-Identifier: AGPL-3.0-only
 
 local utils = require('lime.utils')
 local ubus = require "ubus"
