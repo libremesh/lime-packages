@@ -381,7 +381,6 @@ function utils.set_shared_root_password(password)
     utils.set_password('root', password) -- this takes 1 second, it may be replaced with nixio.crypt(password, '$1$vv44cu1H')
     uci:set("lime-community", 'system', 'root_password_policy', 'SET_SECRET')
     uci:set("lime-community", 'system', 'root_password_secret', utils.get_root_secret())
-    uci:commit("lime-community")
 end
 
 --! returns a random string. filter is an optional function to reduce the possible characters.
