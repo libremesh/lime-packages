@@ -121,6 +121,108 @@ describe('LiMe Wireless tests #wireless', function()
 
     end)
 
+    it('test mesh_ifaces() includes APUP peer interfaces', function()
+        uci:set('wireless', 'wlan0_mesh_foo', 'wifi-iface')
+        uci:set('wireless', 'wlan0_mesh_foo', 'mode', 'mesh')
+        uci:set('wireless', 'wlan0_mesh_foo', 'ifname', 'wlan0-mesh')
+
+        uci:set('wireless', 'lm_wlan0_apup_radio0', 'wifi-iface')
+        uci:set('wireless', 'lm_wlan0_apup_radio0', 'mode', 'ap')
+        uci:set('wireless', 'lm_wlan0_apup_radio0', 'device', 'radio0')
+        uci:set('wireless', 'lm_wlan0_apup_radio0', 'ifname', 'wlan0-apup')
+        uci:set('wireless', 'lm_wlan0_apup_radio0', 'apup', '1')
+        uci:set('wireless', 'lm_wlan0_apup_radio0', 'apup_peer_ifname_prefix', 'wlan0-peer')
+
+        stub(utils, "unsafe_shell", function(cmd)
+            if cmd:match("ls /sys/class/net/") then
+                return "wlan0-apup\nwlan0-peer0\nwlan0-peer1\nwlan0-mesh\n"
+            end
+            return ""
+        end)
+
+        local ifaces = wireless.mesh_ifaces()
+        assert.is.equal(3, #ifaces)
+
+        local function contains(tbl, val)
+            for _, v in ipairs(tbl) do
+                if v == val then return true end
+            end
+            return false
+        end
+
+        assert.is_true(contains(ifaces, 'wlan0-mesh'))
+        assert.is_true(contains(ifaces, 'wlan0-peer0'))
+        assert.is_true(contains(ifaces, 'wlan0-peer1'))
+
+        utils.unsafe_shell:revert()
+    end)
+
+    it('test scandevices() skips radio with missing hardware', function()
+        local fs = require 'nixio.fs'
+        stub(fs, "glob", function(_)
+            return {}, 0
+        end)
+
+        uci:set('wireless', 'radio0', 'wifi-device')
+        uci:set('wireless', 'radio0', 'band', '5g')
+        uci:set('wireless', 'radio0', 'path', 'pci0000:01/0000:01:00.0')
+        uci:commit('wireless')
+
+        local devices = wireless.scandevices()
+        assert.is.equal(0, utils.tableLength(devices))
+
+        fs.glob:revert()
+    end)
+
+    it('test scandevices() includes radio without path', function()
+        uci:set('wireless', 'radio0', 'wifi-device')
+        uci:set('wireless', 'radio0', 'band', '5g')
+        uci:commit('wireless')
+        iwinfo.fake.load_from_uci(uci)
+
+        local devices = wireless.scandevices()
+        assert.is.equal(1, utils.tableLength(devices))
+        assert.is.equal(0, devices['radio0']['.index'])
+        assert.is.equal('radio0', devices['radio0']['.name'])
+    end)
+
+    it('test scandevices() includes radio with APUP interface configured', function()
+        local fs = require 'nixio.fs'
+        stub(fs, "glob", function(pattern)
+            if pattern:match("platform/ahb/18100000%.wmac/ieee80211/phy%*") then
+                return {"/sys/devices/platform/ahb/18100000.wmac/ieee80211/phy0"}, 1
+            end
+            return {}, 0
+        end)
+
+        uci:set('wireless', 'radio0', 'wifi-device')
+        uci:set('wireless', 'radio0', 'type', 'mac80211')
+        uci:set('wireless', 'radio0', 'path', 'platform/ahb/18100000.wmac')
+        uci:set('wireless', 'radio0', 'band', '2g')
+        uci:set('wireless', 'radio0', 'channel', '11')
+        uci:set('wireless', 'radio0', 'htmode', 'HT20')
+        uci:set('wireless', 'radio0', 'disabled', '0')
+
+        uci:set('wireless', 'lm_wlan0_apup_radio0', 'wifi-iface')
+        uci:set('wireless', 'lm_wlan0_apup_radio0', 'mode', 'ap')
+        uci:set('wireless', 'lm_wlan0_apup_radio0', 'device', 'radio0')
+        uci:set('wireless', 'lm_wlan0_apup_radio0', 'ifname', 'wlan0-apup')
+        uci:set('wireless', 'lm_wlan0_apup_radio0', 'apup', '1')
+        uci:set('wireless', 'lm_wlan0_apup_radio0', 'apup_peer_ifname_prefix', 'wlan0-peer')
+
+        uci:commit('wireless')
+        iwinfo.fake.load_from_uci(uci)
+
+        local devices = wireless.scandevices()
+        assert.is.equal(1, utils.tableLength(devices))
+        assert.is.equal('radio0', devices['radio0']['.name'])
+        assert.is.equal('platform/ahb/18100000.wmac', devices['radio0'].path)
+        assert.is.equal(0, devices['radio0']['.index'])
+        assert.is.equal(0, devices['radio0'].per_band_index)
+
+        fs.glob:revert()
+    end)
+
     it('test configure() with distance', function()
         uci:set('wireless', 'radio0', 'wifi-device')
         uci:set('wireless', 'radio0', 'band', '5g')
