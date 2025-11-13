@@ -205,11 +205,11 @@ function network.clean()
 
 	if config.get_bool("network", "use_odhcpd", false) then
 		utils.log("Use odhcpd as dhcp server")
-		uci:set("dhcp", "odchpd", "maindhcp", 1)
+		uci:set("dhcp", "odhcpd", "maindhcp", 1)
 		os.execute("[ -e /etc/init.d/odhcpd ] && /etc/init.d/odhcpd enable")
 	else
 		utils.log("Disabling odhcpd")
-		uci:set("dhcp", "odchpd", "maindhcp", 0)
+		uci:set("dhcp", "odhcpd", "maindhcp", 0)
 		os.execute("[ -e /etc/init.d/odhcpd ] && /etc/init.d/odhcpd disable")
 	end
 
