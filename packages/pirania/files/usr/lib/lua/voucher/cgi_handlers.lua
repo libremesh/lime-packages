@@ -32,7 +32,7 @@ function handlers.preactivate_voucher()
         local prevUrl = params['prev']
         --! if client does not have javascript then activate right away without going to the INFO portal
         if params['nojs'] == 'true' then
-            if vouchera.activate(code, client_data.mac) then
+            if vouchera.activate(code, client_data.mac, client_data.ip) then
                 url = url_authenticated
             else
                 url = url_fail
@@ -72,7 +72,7 @@ function handlers.activate_voucher()
     local url = url_fail .. (prevUrl and '?prev=' .. prevUrl or '')
 
     if code and client_data.mac then
-        if vouchera.activate(code, client_data.mac) then
+        if vouchera.activate(code, client_data.mac, client_data.ip) then
             if prevUrl ~= nil then
                 url = prevUrl
             else
