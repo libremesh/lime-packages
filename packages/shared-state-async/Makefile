@@ -28,17 +28,36 @@ include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 include $(INCLUDE_DIR)/host-build.mk
 
-define Package/$(PKG_NAME)
-	TITLE:=shared-state C++ async re-implementation
-	CATEGORY:=LibreMesh
-	# TODO: Statically linking libstdcpp instead of depending on it and then
-	# stripping unused symbols might reduce space usage, until this is the
-	# only package to use it
-	# DEPENDS:=+libstdcpp
+define Package/shared-state-async/Default
+  TITLE:=shared-state C++ async 
+  CATEGORY:=LibreMesh
+  URL:=https://github.com/libremesh/shared-state-async
 endef
 
-define Package/$(PKG_NAME)/description
-	shared-state re-written in C++20 and corotuines to handle information exchange between network nodes more efficiently.
+define Package/shared-state-async
+  $(call Package/shared-state-async/Default)
+  TITLE+= (dynamic linking)
+  DEPENDS:=+libstdcpp
+  VARIANT:=dynamic
+  DEFAULT_VARIANT:=1
+  CONFLICTS:=shared-state-async-static
+endef
+
+define Package/shared-state-async-static
+  $(call Package/shared-state-async/Default)
+  TITLE+= (static linking)
+  VARIANT:=static
+  PROVIDES:=shared-state-async
+  CONFLICTS:=shared-state-async
+endef
+
+define Package/shared-state-async/description
+	shared-state re-written in C++20 and coroutines to handle information exchange between network nodes more efficiently.
+endef
+
+define Package/shared-state-async-static/description
+	shared-state re-written in C++20 and coroutines to handle information exchange between network nodes more efficiently.
+	This variant is statically linked against the C++ standard library.
 endef
 
 # Otherwise OpenWrt's CPPFLAGS are ignored
@@ -53,11 +72,17 @@ CMAKE_OPTIONS += -DCMAKE_VERBOSE_MAKEFILE=ON
 # #1 0x00000000
 # #2 0x00000000
 CMAKE_OPTIONS += -DSS_CPPTRACE_STACKTRACE=OFF 
-CMAKE_OPTIONS += -DSS_STATIC_LIBSTDCPP=ON 
-CMAKE_OPTIONS += -DSS_STRIP_SYMBOLS=ON
 
+# Build configuration según variante
+ifeq ($(BUILD_VARIANT),static)
+  CMAKE_OPTIONS += -DSS_STATIC_LIBSTDCPP=ON
+  CMAKE_OPTIONS += -DSS_STRIP_SYMBOLS=ON
+else
+  CMAKE_OPTIONS += -DSS_STATIC_LIBSTDCPP=OFF
+  CMAKE_OPTIONS += -DSS_STRIP_SYMBOLS=OFF
+endif
 
-define Package/$(PKG_NAME)/install
+define Package/shared-state-async/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/shared-state-async $(1)/usr/bin/
 	$(CP) ./files/* $(1)/
@@ -66,4 +91,7 @@ define Package/$(PKG_NAME)/install
 	$(CP) ../shared-state/files/usr/bin/shared-state-get_candidates_neigh $(1)/usr/bin/shared-state-async-discover
 endef
 
-$(eval $(call BuildPackage,$(PKG_NAME)))
+Package/shared-state-async-static/install = $(Package/shared-state-async/install)
+
+$(eval $(call BuildPackage,shared-state-async))
+$(eval $(call BuildPackage,shared-state-async-static))
