@@ -3,15 +3,31 @@ local iwinfo = require "iwinfo"
 
 local function mac2name_init()
   local mac2name = {}
+  local f = ""
+
   filename = "/etc/bat-hosts"
-  for line in io.lines(filename) do
-    local mac, name = line:match("(..:..:..:..:..:..)%s+([^%s]+)")
-    if mac then mac2name[mac:lower()] = name end
+  f = io.open(filename, "r")
+  if(f == nil) then
+    filename = "/etc/babeld-hosts"
+    f = io.open(filename, "r")
   end
+  if(f ~= nil) then
+    for line in io.lines(filename) do
+      if (string.match(filename, "babeld")) then
+        line = string.gsub(line, "ff:fe:", "")
+      end
+      local mac, name = line:match("(..:..:..:..:..:..)%s+([^%s]+)")
+      if mac then mac2name[mac:lower()] = name end
+    end
+  end
+
   filename = "/tmp/dhcp.leases"
-  for line in io.lines(filename) do
-    local mac, ip, name = line:match("(..:..:..:..:..:..)%s+([^%s]+)%s+([^%s]+)")
-    if mac then mac2name[mac:lower()] = name end
+  f = io.open(filename, "r")
+  if(f ~= nil) then
+    for line in io.lines(filename) do
+      local mac, ip, name = line:match("(..:..:..:..:..:..)%s+([^%s]+)%s+([^%s]+)")
+      if mac then mac2name[mac:lower()] = name end
+    end
   end
   return mac2name
 end
