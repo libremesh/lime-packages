@@ -326,7 +326,7 @@ function vouchera.list()
 end
 
 function vouchera.get_authorized_macs()
-    local auth_macs = {} 
+    local auth_macs = {}
     for _, voucher in pairs(vouchera.vouchers) do
         if voucher.is_active() then
             table.insert(auth_macs, voucher.mac)
