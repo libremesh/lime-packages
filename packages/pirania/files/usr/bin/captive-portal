@@ -63,6 +63,10 @@ update_ipsets () {
   # Create tables and sets
   echo "Updating captive-portal rules"
 
+  # Flush macs and ips auth lists to exclude invalidated addresses
+  nft flush set inet pirania pirania-auth-macs
+  nft flush set inet pirania pirania-auth-ips
+
   # Add authorized MAC addresses
   for mac in $(pirania_authorized_macs) ; do
     nft add element inet pirania pirania-auth-macs {$mac}
