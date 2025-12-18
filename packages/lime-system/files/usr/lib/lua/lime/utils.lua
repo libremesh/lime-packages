@@ -50,6 +50,12 @@ end
 
 function utils.split(string, sep)
 	local ret = {}
+    if sep == nil or sep == '' then
+        sep = '%s' --! default to whitespace
+    end
+    if string == nil or string == '' then
+        return ret
+    end
 	for token in string.gmatch(string, "[^"..sep.."]+") do table.insert(ret, token) end
 	return ret
 end
