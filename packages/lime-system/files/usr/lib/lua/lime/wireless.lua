@@ -212,7 +212,7 @@ function wireless.configure()
 
 			local uci = config.get_uci_cursor()
 			uci:set("wireless", radioName, "disabled", 0)
-			uci:set("wireless", radioName, "distance", options["distance"])
+			uci:set("wireless", radioName, "distance", wireless.get_distance(radioName, options))
 			uci:set("wireless", radioName, "noscan", 1)
 			uci:set("wireless", radioName, "channel", channel)
 			if options["country"] then uci:set("wireless", radioName, "country", options["country"]) end
@@ -320,6 +320,52 @@ function wireless.set_band_config(band, cfg)
 	end
 	uci:commit(config.UCI_NODE_NAME)
 	utils.unsafe_shell('lime-config')
+end
+
+--! Check if driver supports distance 'auto' setting
+--! At firstboot run 'iw phyX set distance auto' relying on the iw error i.e. 'command failed: Not supported (-95)'
+--! and saving the result in a file to check on next runs of lime-config 
+--! i.e. "/etc/config/.cfg_wifi_distance_auto.phy0.aa:aa:aa:aa:aa:aa"
+--! Re run on the same phy when the macaddress has changed i.e. in case of plugging a different usb wireless adapter
+function wireless.is_distance_auto_available(radioName)
+	--! lua tests
+	local confdir = config.uci:get_confdir()
+	if fs.stat(confdir,"type") ~= "dir" then return end
+
+	local phy = "phy" .. tostring(utils.indexFromName(radioName))
+	local res_file_phy = confdir .. "/.cfg_wifi_distance_auto." .. phy
+	local phy_mac =  utils.unsafe_shell("cat /sys/class/ieee80211/"..phy.."/macaddress 2>/dev/null"):gsub("\n","")
+	local res_file = res_file_phy .. "." .. phy_mac
+
+	local f = io.open(res_file)
+	if f ~= nil then return f:read() end
+	
+	utils.unsafe_shell("rm " .. res_file_phy .. ".* 2>/dev/null; F=" .. res_file .. 
+		" && iw " .. phy .. " set distance auto 2> $F; [ -z \"$(cat $F)\" ] && echo 1 > $F || echo 0 > $F")
+	f = io.open(res_file)
+	return f:read()
+end
+
+--! If distance 'auto' is requested for a driver that does not support it,
+--! use the lime-defaults value as safer option than allowing to set "auto" 
+--! which could lead to the minimum being applied at next reboot
+--! potentially compromising long distance wireless links.
+function wireless.apply_distance_auto_fallback(radioName,options)
+	if options["distance"] ~= "auto" then return options["distance"] end
+	local uci = config.get_uci_cursor()
+	local distance_default = uci:get(config.UCI_DEFAULTS_NAME, options[".name"], "distance")
+	print('WARNING: wireless.get_distance: invalid "option distance \'auto\'" for '.. options[".name"] .. ' ' .. radioName ..
+		'. Fallback to lime-defaults value: ' .. distance_default)
+	return distance_default
+end
+
+function wireless.get_distance(radioName, options)
+	--! distance auto requested or enforced
+	if not (options["distance_use_auto_if_available"] == 'false' and options["distance"] ~= "auto") then
+		if wireless.is_distance_auto_available(radioName) == '1' then return "auto"
+		else return wireless.apply_distance_auto_fallback(radioName,options) end
+	--! distance set
+	else return options["distance"] end
 end
 
 return wireless
