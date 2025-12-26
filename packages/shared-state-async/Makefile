@@ -11,10 +11,10 @@ PKG_NAME:=shared-state-async
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/javierbrk/shared-state-async.git
+PKG_MIRROR_HASH:=b35c673486a3619b40255439b8b669dadc78a9a06fdd4b05abe87d0c74e2165e
 PKG_SOURCE_VERSION:=use-statically-linked-stdlib
 PKG_MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 PKG_LICENSE:=AGPL-3.0-only
-
 
 
 GIT_COMMIT_DATE:=$(shell psd="$(PKG_SOURCE_DATE)" && echo $${psd} | sed 's|-|.|g' )
@@ -39,6 +39,7 @@ define Package/shared-state-async
   TITLE+= (dynamic linking)
   DEPENDS:=+libstdcpp
   VARIANT:=dynamic
+  PROVIDES:=shared-state-async
   CONFLICTS:=shared-state-async-static
 endef
 
@@ -47,7 +48,6 @@ define Package/shared-state-async-static
   TITLE+= (static linking)
   VARIANT:=static
   PROVIDES:=shared-state-async
-  CONFLICTS:=shared-state-async
 endef
 
 define Package/shared-state-async/description
