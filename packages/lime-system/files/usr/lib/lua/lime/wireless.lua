@@ -212,7 +212,7 @@ function wireless.configure()
 
 			local uci = config.get_uci_cursor()
 			uci:set("wireless", radioName, "disabled", 0)
-			uci:set("wireless", radioName, "distance", options["distance"])
+			uci:set("wireless", radioName, "distance", wireless.get_distance(radioName, options))
 			uci:set("wireless", radioName, "noscan", 1)
 			uci:set("wireless", radioName, "channel", channel)
 			if options["country"] then uci:set("wireless", radioName, "country", options["country"]) end
@@ -320,6 +320,36 @@ function wireless.set_band_config(band, cfg)
 	end
 	uci:commit(config.UCI_NODE_NAME)
 	utils.unsafe_shell('lime-config')
+end
+
+
+--! Check if driver supports auto setting
+--! To verify the applied coverage run: "iw phy phyX info | grep Coverage"
+function wireless.is_distance_auto_available(radioName)
+	local phyIndex = tostring(utils.indexFromName(radioName))
+	local res_file = "/tmp/.cfg_wifi_distance_auto.phy" .. phyIndex
+	local res = utils.unsafe_shell('iw phy phy' .. phyIndex .. ' set distance auto 2> ' .. res_file .. '; cat ' .. res_file .. ' && rm ' .. res_file)
+	if res == "" then return true else return false end
+end
+
+--! If the value "auto" is requested for a driver that does not support it,
+--! use the lime-defaults value as a safer option than "auto" which could lead to the minimum being applied,
+--! potentially compromising long-range outdoor links.
+function wireless.get_distance(radioName, options)
+	local distance_auto_available = wireless.is_distance_auto_available(radioName)
+
+	if options["distance"] == "auto" then
+		if not distance_auto_available then
+			local uci = config.get_uci_cursor()
+			local distance_default = uci:get(config.UCI_DEFAULTS_NAME, options[".name"], "distance")
+			print('WARNING: wireless.get_distance: invalid "option distance \'auto\'" for ' .. options[".name"] .. ' ' .. radioName ..
+				'. Fallback to lime-defaults value: ' .. distance_default)
+			return distance_default
+		else return "auto" end
+	else
+		if options["distance_use_auto_if_available"] ~= 'false' and distance_auto_available then return "auto" end
+		return options["distance"]
+	end
 end
 
 return wireless
