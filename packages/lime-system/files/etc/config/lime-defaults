@@ -64,6 +64,7 @@ config lime wifi
 	option ieee80211s_mesh_id 'LiMe'
 	option unstuck_interval '10'
 	option unstuck_timeout '300'
+	option distance_use_auto_if_available true
 
 config lime-wifi-band '2ghz'
 	option channel '11'
