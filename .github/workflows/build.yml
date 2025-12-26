@@ -87,7 +87,7 @@ jobs:
           NO_REFRESH_CHECK: 1
           NO_SHFMT_CHECK: 1
           PACKAGES: ${{ github.event.inputs.packages }}
-          # V: sc
+          V: sc
 
       - name: Prepare artifacts paths
         run: |

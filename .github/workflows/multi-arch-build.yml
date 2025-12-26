@@ -141,7 +141,7 @@ jobs:
           NO_DEFAULT_FEEDS: 1
           NO_REFRESH_CHECK: 1
           NO_SHFMT_CHECK: 1
-          # V: sc
+          V: sc
       
       - name: Reorder binaries by arch
         run: |
