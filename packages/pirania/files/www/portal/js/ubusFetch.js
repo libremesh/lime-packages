@@ -1,4 +1,4 @@
-const url = 'http://thisnode.info/ubus'
+const url = 'http://gateway.info/ubus'
 let ubusError = false
 
 function parseJSON(response) {
@@ -21,7 +21,7 @@ const ubusFetch = (call, action, params, session) => new Promise ((resolve, reje
     method: 'POST',
     body: JSON.stringify(form),
     headers: {
-      'Access-Control-Allow-Origin': 'http://thisnode.info'
+      'Access-Control-Allow-Origin': 'http://gateway.info'
     },
   })
   .then(parseJSON)

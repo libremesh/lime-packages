@@ -15,7 +15,7 @@ start_service() {
 		--no-resolv \
 		--server=/$(uci get dhcp.@dnsmasq[0].domain)/$(uci get network.lm_net_br_lan_anygw_if.ipaddr) \
 		--addn-hosts=/var/hosts/shared-state-dnsmasq_hosts \
-		--address=/thisnode.info/$(uci get network.lm_net_br_lan_anygw_if.ipaddr) \
+		--address=/gateway.info/$(uci get network.lm_net_br_lan_anygw_if.ipaddr) \
 		--address=/\#/1.2.3.4
 
 	# respawn automatically if something died, be careful if you have an alternative process supervisor
