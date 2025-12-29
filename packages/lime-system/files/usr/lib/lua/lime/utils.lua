@@ -615,4 +615,27 @@ function utils.dumptable(table, nesting)
   end
 end
 
+--! Find a device section in network with i.e.
+--! option name 'br-lan'
+--! option type 'bridge'
+function utils.find_bridge_cfgid(bridge_name)
+    local uci = config.get_uci_cursor()
+	local br_section = nil
+	uci:foreach("network", "device",
+		function(s)
+			if br_section then return end
+			local dev_type = uci:get("network", s[".name"], "type")
+			local dev_name = uci:get("network", s[".name"], "name")
+			if not (dev_type == 'bridge') then return end
+			if not (dev_name == bridge_name) then return end
+			br_section = s[".name"]
+		end
+	)
+	return br_section
+end
+
+function utils.find_br_lan()
+    return utils.find_bridge_cfgid("br-lan")
+end
+
 return utils
