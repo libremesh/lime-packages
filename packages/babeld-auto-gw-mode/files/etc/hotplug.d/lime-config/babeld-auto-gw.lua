@@ -1,5 +1,9 @@
 #!/usr/bin/lua
 
+if os.getenv("ACTION") ~= "post" then
+	return
+end
+
 local config = require("lime.config")
 local uci = config.get_uci_cursor()
 
