@@ -9,6 +9,7 @@
 
 utils = {}
 
+local modules = require("lime.modules")
 local config = require("lime.config")
 local json = require("luci.jsonc")
 local fs = require("nixio.fs")
@@ -78,18 +79,7 @@ function utils.literalize(str)
 end
 
 function utils.isModuleAvailable(name)
-	if package.loaded[name] then
-		return true
-	else
-		for _, searcher in ipairs(package.searchers or package.loaders) do
-			local loader = searcher(name)
-			if type(loader) == 'function' then
-				package.preload[name] = loader
-				return true
-			end
-		end
-		return false
-	end
+	return modules.is_available(name)
 end
 
 function utils.applyMacTemplate16(template, mac)

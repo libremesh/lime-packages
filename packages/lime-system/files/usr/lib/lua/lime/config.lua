@@ -8,6 +8,7 @@
 local fs = require("nixio.fs")
 local libuci = require("uci")
 local nixio = require "nixio"
+local modules = require "lime.modules"
 
 config = {}
 
@@ -195,11 +196,14 @@ function config.main()
 	local utils = require("lime.utils")
 
 	--! Check whether this is the first ever run
-	if not utils.file_exists(config.uci:get_confdir() .. "/" .. config.UCI_AUTOGEN_NAME) then
+	local init = not utils.file_exists(config.uci:get_confdir() .. "/" .. config.UCI_AUTOGEN_NAME)
+	if init then
 		config.execute_hooks("init")
+		modules.execute("init")
 	end
 
 	config.execute_hooks("pre")
+	modules.execute("pre")
 
 	--! Get mac address and set mac-based configuration file name
 	config.UCI_MAC_NAME = "lime-" .. table.concat(network.primary_mac(),"")
@@ -217,23 +221,8 @@ function config.main()
 
 	config.execute_hooks("merged")
 
-	local modules_name = { "hardware_detection", "wireless", "network", "firewall", "system",
-                           "generic_config" }
-
-	if utils.isModuleAvailable("lime.wifi_unstuck_wa") then
-		table.insert(modules_name, "wifi_unstuck_wa")
-	end
-
-	local modules = {}
-
-	for i, name in pairs(modules_name) do modules[i] = require("lime."..name) end
-	for _,module in pairs(modules) do
-		xpcall(module.clean, function(errmsg) print(errmsg) ; print(debug.traceback()) end)
-	end
-
-	for _,module in pairs(modules) do
-		xpcall(module.configure, function(errmsg) print(errmsg) ; print(debug.traceback()) end)
-	end
+	modules.execute("clean")
+	modules.execute("configure")
 
 	config.execute_hooks("configured")
 
