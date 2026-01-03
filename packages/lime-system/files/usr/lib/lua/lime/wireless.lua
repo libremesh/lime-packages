@@ -20,10 +20,31 @@ function wireless.get_phy_mac(phy)
 	return utils.split(mac, ":")
 end
 
+function wireless.init()
+	local uci = config.get_uci_cursor()
+
+	local function disable_default(s)
+		if s[".name"] == "default_" .. s["device"] then
+			print("Disabling default wireless interface '" .. s[".name"] .. "'")
+			uci:set("wireless", s[".name"], "disabled", "1")
+		end
+	end
+	uci:foreach("wireless", "wifi-iface", disable_default)
+
+	uci:save("wireless")
+end
+
 function wireless.clean()
 	utils.log("Clearing wireless config...")
 	local uci = config.get_uci_cursor()
-	uci:foreach("wireless", "wifi-iface", function(s) uci:delete("wireless", s[".name"]) end)
+
+	local function delete_lime_section(s)
+		if utils.stringStarts(s[".name"], wireless.limeIfNamePrefix) then
+			uci:delete("wireless", s[".name"])
+		end
+	end
+	uci:foreach("wireless", "wifi-iface", delete_lime_section)
+
 	uci:save("wireless")
 end
 
