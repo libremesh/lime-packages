@@ -203,7 +203,8 @@ end
 
 function config.main()
 	--! Check whether this is the first ever run
-	if not config.file_exists(config.uci:get_confdir() .. "/" .. config.UCI_AUTOGEN_NAME) then
+	local init = not config.file_exists(config.uci:get_confdir() .. "/" .. config.UCI_AUTOGEN_NAME)
+	if init then
 		config.execute_hooks("init")
 	end
 
@@ -238,6 +239,15 @@ function config.main()
 	local modules = {}
 
 	for i, name in pairs(modules_name) do modules[i] = require("lime."..name) end
+
+	if init then
+		for _,module in pairs(modules) do
+			if module.init ~= nil then
+				xpcall(module.init, function(errmsg) print(errmsg) ; print(debug.traceback()) end)
+			end
+		end
+	end
+
 	for _,module in pairs(modules) do
 		xpcall(module.clean, function(errmsg) print(errmsg) ; print(debug.traceback()) end)
 	end
