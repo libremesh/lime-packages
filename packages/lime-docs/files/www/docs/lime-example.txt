@@ -145,6 +145,7 @@ config lime wifi
     option adhoc_ssid 'LiMe'                            # SSID of the APs (nodes) when meshing in ad-hoc mode, i.e., the nodes form an IBSS. Not used when meshing in 802.11s (the default)
     option adhoc_bssid 'ca:fe:00:c0:ff:ee'
     option ieee80211s_mesh_fwding '0'                   # Settings needed only for 802.11s
+    option ieee80211s_mesh_nolearn '1'                  # Disable multi-hop mesh routing capabilities of 802.11s
     option ieee80211s_mesh_id 'LiMe'                    # Mesh cloud identifier (close to SSID in concept). Used by the nodes to join and participate in the mesh network.
 #   option ieee80211s_encryption 'psk2/aes'             # In order to use encrypted mesh, the wpad-mini package have to be replaced with wpad-mesh-wolfssl package 
                                                         # either manually or by the selected network-profile
