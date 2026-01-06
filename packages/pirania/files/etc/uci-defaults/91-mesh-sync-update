@@ -1,0 +1,12 @@
+#!/bin/sh
+/etc/init.d/pirania-mesh-sync enable
+/etc/init.d/pirania-mesh-sync start
+
+unique_append()
+{
+	grep -qF "$1" "$2" || echo "$1" >> "$2"
+}
+
+unique_append \
+	'*/10 * * * * /etc/init.d/pirania-mesh-sync restart &> /dev/null' \
+	/etc/crontabs/root
