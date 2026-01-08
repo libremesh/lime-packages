@@ -1,0 +1,13 @@
+config mesh-upgrade 'main'
+	option firmware_ver ''
+	option candidate_fw ''
+	option fw_path ''
+	option repo_url ''
+	option upgrade_state ''
+	option error '0'
+	option timestamp '0'
+	option main_node 'NO'
+	option retry_count '0'
+	option safeupgrade_start_mark  '0'
+	option su_start_time_out  '0'
+	
