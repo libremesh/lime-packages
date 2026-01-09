@@ -11,11 +11,19 @@ PKG_NAME:=shared-state-async
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/javierbrk/shared-state-async.git
-PKG_SOURCE_VERSION:=use-statically-linked-stdlib
+PKG_MIRROR_HASH:=2f49d6a1879eaf1ce277cdf527e9e475176f55d9780ae7de6bfcd61fffe7b88c
+PKG_SOURCE_VERSION:=a3e4603caacdfe9cc0f6a429859e28b233255402
+PKG_SOURCE_DATE:=2025-09-10
 PKG_MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 PKG_LICENSE:=AGPL-3.0-only
 
-
+# openwrt-23.05 use xz
+OW_BRANCH:=$(shell echo $$(grep -m1 -o "releases/.*" $(TOPDIR)/include/version.mk || echo "main") | cut -d"/" -f2 | cut -d"." -f1,2 )
+ifneq ($(OW_BRANCH),main)
+  ifeq ($(shell test $$(echo $(OW_BRANCH) | cut -d"." -f1) -lt 24; echo $$?),0)
+    PKG_MIRROR_HASH:=699622a927ba908d2c5c5729b365cc8d7181799b196682f1a9861f542344dd80
+  endif
+endif
 
 GIT_COMMIT_DATE:=$(shell psd="$(PKG_SOURCE_DATE)" && echo $${psd} | sed 's|-|.|g' )
 GIT_COMMIT_SHORTHASH:=$(shell psv="$(PKG_SOURCE_VERSION)" && echo $${psv:0:7} )
