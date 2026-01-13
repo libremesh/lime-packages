@@ -405,6 +405,28 @@ function network.sanitizeIfaceName(ifName)
 	return network.limeIfNamePrefix..ifName:gsub("[^%w_]", "_")
 end
 
+function network.createDevice(owrtDeviceName, baseIfname, linuxName, devType, args)
+	--! baseIfname can be a linux interface name like eth0 or an openwrt
+	--! interface name like @lan of the base interface;
+	--! linuxName is the linux name of the new interface;
+	--! args optional additional arguments for device like
+	--! { macaddr="aa:aa:aa:aa:aa:aa", mode="vepa" };
+
+	args = args or {}
+
+	local uci = config.get_uci_cursor()
+
+	uci:set("network", owrtDeviceName, "device")
+	uci:set("network", owrtDeviceName, "type", devType)
+	uci:set("network", owrtDeviceName, "name", linuxName)
+	uci:set("network", owrtDeviceName, "ifname", baseIfname)
+	for k,v in pairs(args) do
+		uci:set("network", owrtDeviceName, k, v)
+	end
+
+	uci:save("network")
+end
+
 --! Creates a network Interface with static protocol
 --! ipAddr can be IPv4 or IPv6
 --! the function can be called twice to set both IPv4 and IPv6
