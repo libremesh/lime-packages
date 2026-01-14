@@ -318,6 +318,8 @@ config net wirelessclientbackbone
 config net port5                                        # Do not put any "." in the section name
     option linux_name 'eth1.5'                          # Put here the actual name of the interface
 #   list protocols 'wan'                                # Use 'wan' instead of 'static' to get Internet connectivity via DHCP
+                                                        # If a VLAN is needed on the WAN interface for connecting to the gateway, it can be specified with wan:ID, like "wan:20" or "wan:20:8021q"
+
     list protocols 'static'                             # Set up a static IP (both IPv4 and IPv6 supported)
     option static_ipv4 '192.168.1.2/24'
     option static_gateway_ipv4 '192.168.1.1'            # In static protocol, specifying an IP for the gateway is optional. Skip this line if no default route should be added on this interface.
