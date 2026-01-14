@@ -533,25 +533,17 @@ function network.createMacvlanIface(baseIfname, linuxName, argsDev, argsIf)
 	--! lime.proto which want to use macvlan so this function should depend
 	--! on its own on kmod-macvlan as needed.
 
-	argsDev = argsDev or {}
 	argsIf = argsIf or {}
 
-	local owrtDeviceName = network.limeIfNamePrefix..baseIfname.."_"..linuxName.."_dev"
+	local owrtDeviceName = network.sanitizeIfaceName(baseIfname.."_"..linuxName.."_dev")
+
 	local owrtInterfaceName = network.limeIfNamePrefix..baseIfname.."_"..linuxName.."_if"
-	--! sanitize uci sections name
-	owrtDeviceName = owrtDeviceName:gsub("[^%w_]", "_")
+	--! sanitize uci section name
 	owrtInterfaceName = owrtInterfaceName:gsub("[^%w_]", "_")
 
-	local uci = config.get_uci_cursor()
+	network.createDevice(owrtDeviceName, baseIfname, linuxName, "macvlan", argsDev)
 
-	uci:set("network", owrtDeviceName, "device")
-	uci:set("network", owrtDeviceName, "type", "macvlan")
-	uci:set("network", owrtDeviceName, "name", linuxName)
-	--! This is ifname also on current OpenWrt
-	uci:set("network", owrtDeviceName, "ifname", baseIfname)
-	for k,v in pairs(argsDev) do
-		uci:set("network", owrtDeviceName, k, v)
-	end
+	local uci = config.get_uci_cursor()
 
 	uci:set("network", owrtInterfaceName, "interface")
 	uci:set("network", owrtInterfaceName, "proto", "none")
