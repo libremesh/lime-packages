@@ -490,13 +490,8 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 		--! Do not use . as separator as this will make netifd create an 802.1q interface anyway
 		--! and sanitize linuxBaseIfName because it can contain dots as well (i.e. switch ports)
 		linux802adIfName = linux802adIfName:gsub("[^%w-]", "-")..network.protoVlanSeparator..vlanId
-		
-		uci:set("network", owrtDeviceName, "device")
-		uci:set("network", owrtDeviceName, "type", vlanProtocol)
-		uci:set("network", owrtDeviceName, "name", linux802adIfName)
-		--! This is ifname also on current OpenWrt
-		uci:set("network", owrtDeviceName, "ifname", linuxBaseIfname)
-		uci:set("network", owrtDeviceName, "vid", vlanId)
+
+		network.createDevice(owrtDeviceName, linuxBaseIfname, linux802adIfName, vlanProtocol, { vid=vlanId })
 	end
 
 	uci:set("network", owrtInterfaceName, "interface")
