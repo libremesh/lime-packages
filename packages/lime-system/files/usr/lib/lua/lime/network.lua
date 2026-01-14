@@ -471,7 +471,7 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 	--! because only alphanumeric and underscores are allowed
 	local owrtInterfaceName = network.sanitizeIfaceName(linuxBaseIfname)
 	local owrtDeviceName = owrtInterfaceName
-	local linux802adIfName = linuxBaseIfname
+	local linuxVlanIfName = linuxBaseIfname
 
 	local uci = config.get_uci_cursor()
 
@@ -489,9 +489,9 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 
 		--! Do not use . as separator as this will make netifd create an 802.1q interface anyway
 		--! and sanitize linuxBaseIfName because it can contain dots as well (i.e. switch ports)
-		linux802adIfName = linux802adIfName:gsub("[^%w-]", "-")..network.protoVlanSeparator..vlanId
+		linuxVlanIfName = linuxVlanIfName:gsub("[^%w-]", "-")..network.protoVlanSeparator..vlanId
 
-		network.createDevice(owrtDeviceName, linuxBaseIfname, linux802adIfName, vlanProtocol, { vid=vlanId })
+		network.createDevice(owrtDeviceName, linuxBaseIfname, linuxVlanIfName, vlanProtocol, { vid=vlanId })
 	end
 
 	uci:set("network", owrtInterfaceName, "interface")
@@ -505,13 +505,13 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 	--! In case of wifi interface not using vlan (vid == 0) avoid to set
 	--! ifname in network because it is already set in wireless, because
 	--! setting ifname on both places cause a netifd race condition
-	if vid ~= 0 or not linux802adIfName:match("^wlan") then
-		uci:set("network", owrtInterfaceName, "device", linux802adIfName)
+	if vid ~= 0 or not linuxVlanIfName:match("^wlan") then
+		uci:set("network", owrtInterfaceName, "device", linuxVlanIfName)
 	end
 
 	uci:save("network")
 
-	return owrtInterfaceName, linux802adIfName, owrtDeviceName
+	return owrtInterfaceName, linuxVlanIfName, owrtDeviceName
 end
 
 function network.createMacvlanIface(baseIfname, linuxName, argsDev, argsIf)
