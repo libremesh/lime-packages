@@ -531,10 +531,7 @@ function network.createMacvlanIface(baseIfname, linuxName, argsDev, argsIf)
 	argsIf = argsIf or {}
 
 	local owrtDeviceName = network.sanitizeIfaceName(baseIfname.."_"..linuxName.."_dev")
-
-	local owrtInterfaceName = network.limeIfNamePrefix..baseIfname.."_"..linuxName.."_if"
-	--! sanitize uci section name
-	owrtInterfaceName = owrtInterfaceName:gsub("[^%w_]", "_")
+	local owrtInterfaceName = network.sanitizeIfaceName(baseIfname.."_"..linuxName.."_if")
 
 	network.createDevice(owrtDeviceName, baseIfname, linuxName, "macvlan", argsDev)
 
