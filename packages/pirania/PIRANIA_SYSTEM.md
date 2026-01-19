@@ -45,6 +45,9 @@ Key options in `base_config`:
 - `db_path`: voucher database directory (JSON files)
 - `hooks_path`: directory for hook scripts (e.g., shared-state sync)
 - `allowlist_ipv4`, `allowlist_ipv6`: ranges that bypass the captive portal
+- `allowlist_ipv4_source`, `allowlist_ipv6_source`: external IP list sources (http(s)://, `file:/path`, or local path)
+- `blocklist_ipv4`, `blocklist_ipv6`: ranges that are always blocked (even for authorized MACs)
+- `blocklist_ipv4_source`, `blocklist_ipv6_source`: external blocklist sources (http(s)://, `file:/path`, or local path)
 
 Access-mode options live in `config access_mode 'read_for_access'`:
 
@@ -62,7 +65,8 @@ Access-mode options live in `config access_mode 'read_for_access'`:
 
 `packages/pirania/files/usr/bin/captive-portal` sets up nftables rules in the `inet pirania` table:
 
-- Creates sets for authorized MACs (`pirania-auth-macs`) and allowlisted IPv4/IPv6 ranges.
+- Creates sets for authorized MACs (`pirania-auth-macs`), allowlists, and blocklists.
+- Drops traffic to blocklisted destinations before any allowlist/auth checks.
 - Redirects DNS (UDP/53) to port 59053 for unauthorized MACs.
 - Redirects HTTP (TCP/80) to port 59080 for unauthorized MACs.
 - Drops HTTPS (TCP/443) for unauthorized MACs.
