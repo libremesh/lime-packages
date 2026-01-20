@@ -26,7 +26,7 @@ set_nftables () {
 	nft add table inet pirania
 	nft add chain inet pirania prerouting { type nat hook prerouting priority 0 \; }
 	nft add chain inet pirania input { type filter hook input priority 0 \; }
-	nft add chain inet pireania forward { type filter hook forward priority 0 \; }
+	nft add chain inet pirania forward { type filter hook forward priority 0 \; }
 
   	# Add mac-adress set
   	nft add set inet pirania pirania-auth-macs { type ether_addr\; }
@@ -51,8 +51,8 @@ set_nftables () {
 	# drop packets with dest port 443 for unauthorized macs (block HTTPS)
 	nft add rule inet pirania prerouting meta l4proto tcp tcp dport 443 ether saddr != @pirania-auth-macs ct state new,established,related counter log prefix "SMACHTTPS" drop
 
-	# reject
-	nft add rule inet pirania prerouting ether saddr != @pirania-auth-macs drop
+	# drop all other traffic from unauthorized macs
+	nft add rule inet pirania prerouting ether saddr != @pirania-auth-macs counter log prefix "DROP-UNAUTH" drop
 }
 
 update_ipsets () {
