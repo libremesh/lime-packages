@@ -4,6 +4,9 @@ NTP daemon shipped with busybox is not capable to gracefully handle cases of ext
 
 Check local time against a list of HTTP(s) services, if the time skew is more then 15 minutes, restart sysntpd to force time syncronization, or reset trought date command depending on configuration.
 
+Remember to set your time zone in /etc/TZ. For argentina "echo 'UTC3' > /etc/TZ"
+will do the job
+
 ## Configurations
 You can change the behavior and the list of servers in ```/etc/config/check-date```
 
