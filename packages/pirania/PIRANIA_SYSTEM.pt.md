@@ -62,11 +62,11 @@ Opcoes do modo de acesso ficam em `config access_mode 'read_for_access'`:
 
 `packages/pirania/files/usr/bin/captive-portal` configura regras nftables na tabela `inet pirania`:
 
-- Cria sets para MACs autorizados (`pirania-auth-macs`) e faixas IPv4/IPv6 na allowlist.
+- Cria sets para MACs autorizados (`pirania-auth-macs`) e faixas IPv4/IPv6 de destino na allowlist.
 - Redireciona DNS (UDP/53) para a porta 59053 para MACs nao autorizados.
 - Redireciona HTTP (TCP/80) para a porta 59080 para MACs nao autorizados.
 - Bloqueia HTTPS (TCP/443) para MACs nao autorizados.
-- Libera trafego para MACs em `pirania-auth-macs` e destinos nas allowlists.
+- Libera trafego para MACs em `pirania-auth-macs`, e permite destinos na allowlist bypassarem redirecionamentos e o bloqueio de HTTPS.
 
 Os MACs autorizados vem de `packages/pirania/files/usr/bin/pirania_authorized_macs`, que delega para a biblioteca Lua do portal e retorna MACs do modo voucher ou do modo ler-para-acesso.
 
