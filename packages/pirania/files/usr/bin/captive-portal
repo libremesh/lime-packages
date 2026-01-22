@@ -67,7 +67,7 @@ set_nftables () {
         nft add rule inet pirania forward ether saddr @pirania-auth-macs ip daddr @pirania-tranca-allowlist-ipv4 accept
 
         # 5. Block authorized MACs from other destinations (limited to categories during Tranca)
-        nft add rule inet pirania forward ether saddr @pirania-auth-macs log prefix \"TRANCA_BLOCK_AUTH_MAC\" drop
+        nft add rule inet pirania forward ether saddr @pirania-auth-macs drop
     else
         # --- Normal mode: Standard Pirania behavior ---
 
@@ -90,14 +90,14 @@ set_nftables () {
     nft add rule inet pirania prerouting udp dport 53 ether saddr != @pirania-auth-macs redirect to :59053
 
     # Allow DHCP
-    nft add rule inet pirania prerouting udp dport { 67, 68 } log prefix "ALLOW_DHCP" accept
-    nft add rule inet pirania prerouting udp dport { 546, 547  } log prefix "ALLOW_DHCPv6" accept
+    nft add rule inet pirania prerouting udp dport { 67, 68 } accept
+    nft add rule inet pirania prerouting udp dport { 546, 547  } accept
 
     # Block non-authorized macs
-    nft add rule inet pirania prerouting ether saddr != @pirania-auth-macs log prefix "BLOCK_MAC_IN_FORWARD_CHAIN" drop
+    nft add rule inet pirania prerouting ether saddr != @pirania-auth-macs drop
 
-    # HTTPS block
-    nft add rule inet pirania forward tcp dport 443 ether saddr != @pirania-auth-macs log prefix "BLOCK_HTTPS" drop
+    # HTTPS block (keep behavior but avoid per-packet logging to reduce CPU/IO load)
+    nft add rule inet pirania forward tcp dport 443 ether saddr != @pirania-auth-macs drop
 
     echo "Captive-portal rules applied successfully"
 }
