@@ -72,12 +72,13 @@ captive_portal.invalidate = function(id)
     return vouchera.invalidate(id)
 end
 
-captive_portal.add = function(name, duration_m, activation_deadline)
+captive_portal.add = function(name, duration_m, activation_deadline, unrestricted)
     if type(duration_m) == "string" then
         duration_m = tonumber(duration_m)
     end
     local qty = 1
-    res, msg = vouchera.create(name, qty, tonumber(duration_m), tonumber(activation_deadline))
+    local is_unrestricted = (unrestricted == true or unrestricted == "true" or unrestricted == "1")
+    res, msg = vouchera.create(name, qty, tonumber(duration_m), tonumber(activation_deadline), is_unrestricted)
     if res ~= nil then
         local voucher = vouchera.get_by_id(res[1].id)
         print(voucher.tostring())
@@ -97,14 +98,46 @@ captive_portal.show_authorized_macs = function()
     return true
 end
 
+--! Parse command line flags
+local function parse_flags(arguments)
+    local flags = {}
+    local positional = {}
+    local i = 1
+    while i <= #arguments do
+        local arg = arguments[i]
+        if arg == "--unrestricted" or arg == "-u" then
+            flags.unrestricted = true
+        elseif arg == "--duration" or arg == "-d" then
+            i = i + 1
+            flags.duration = arguments[i]
+        elseif arg == "--deadline" then
+            i = i + 1
+            flags.deadline = arguments[i]
+        elseif arg:sub(1, 2) ~= "--" and arg:sub(1, 1) ~= "-" then
+            table.insert(positional, arg)
+        end
+        i = i + 1
+    end
+    return positional, flags
+end
+
 --! if is main
 if debug.getinfo(2).name == nil then
     local arguments = { ... }
     local action = table.remove(arguments, 1)
-    local context = arguments
+    local positional, flags = parse_flags(arguments)
     local f = captive_portal[action]
     if f ~= nil then
-        res, msg = f(unpack(context))
+        local res, msg
+        if action == "add" then
+            -- Special handling for add command with flag support
+            local name = positional[1]
+            local duration_m = flags.duration or positional[2]
+            local deadline = flags.deadline or positional[3]
+            res, msg = f(name, duration_m, deadline, flags.unrestricted)
+        else
+            res, msg = f(unpack(positional))
+        end
         if not res then
             print(msg or 'error')
             os.exit(1)

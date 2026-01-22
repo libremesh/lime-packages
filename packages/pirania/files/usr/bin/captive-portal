@@ -1,6 +1,15 @@
 #!/bin/sh
 # requires nftables, liblucihttp0, liblucihttp-lua, uhttpd, uhttpd-mod-lua, uhttpd-mod-ubus
 
+LOG_TAG="captive-portal"
+
+log_info() {
+    logger -t "$LOG_TAG" "$1"
+}
+
+log_warn() {
+    logger -t "$LOG_TAG" -p user.warning "WARNING: $1"
+}
 
 clean_tables () {
 	echo "Cleaning captive-portal rules if there's any"
@@ -28,20 +37,50 @@ set_nftables () {
     nft add set inet pirania pirania-allowlist-ipv4 \{ type ipv4_addr\; flags interval\; comment \"allow ipv4 list\"\; \}
     nft add set inet pirania pirania-allowlist-ipv6 \{ type ipv6_addr\; flags interval\; comment \"allow ipv6 list\"\; \}
 
+    # Tranca Redes sets (always created, populated only when active)
+    nft add set inet pirania pirania-tranca-allowlist-ipv4 \{ type ipv4_addr\; flags interval\; comment \"tranca redes category allowlist\"\; \}
+    nft add set inet pirania pirania-unrestricted-macs \{ type ether_addr\; comment \"unrestricted voucher MACs\"\; \}
+
     # Allowlist
     nft add rule inet pirania prerouting ip daddr @pirania-allowlist-ipv4 accept
     nft add rule inet pirania prerouting ip6 daddr @pirania-allowlist-ipv6 accept
 
     # --- Forward rules ---
-    # Allow traffic only if MAC is authorized
-    nft add rule inet pirania forward ether saddr @pirania-auth-macs accept
 
-    # DNS always allowed for redirect
-    nft add rule inet pirania forward udp dport 53 accept
+    # Check if Tranca Redes is active
+    tranca_active=$(uci -q get pirania.tranca_redes.active)
 
-    # Allow allowlisted destinations in forward (e.g. HTTPS)
-    nft add rule inet pirania forward ip daddr @pirania-allowlist-ipv4 accept
-    nft add rule inet pirania forward ip6 daddr @pirania-allowlist-ipv6 accept
+    if [ "$tranca_active" = "1" ]; then
+        # --- Tranca Redes mode: Restricted internet access ---
+
+        # 1. Allow base allowlist (private/local ranges) for everyone
+        nft add rule inet pirania forward ip daddr @pirania-allowlist-ipv4 accept
+        nft add rule inet pirania forward ip6 daddr @pirania-allowlist-ipv6 accept
+
+        # 2. DNS always allowed for redirect
+        nft add rule inet pirania forward udp dport 53 accept
+
+        # 3. Unrestricted MACs bypass all Tranca restrictions
+        nft add rule inet pirania forward ether saddr @pirania-unrestricted-macs accept
+
+        # 4. Authorized MACs can only reach Tranca category allowlist
+        nft add rule inet pirania forward ether saddr @pirania-auth-macs ip daddr @pirania-tranca-allowlist-ipv4 accept
+
+        # 5. Block authorized MACs from other destinations (limited to categories during Tranca)
+        nft add rule inet pirania forward ether saddr @pirania-auth-macs log prefix \"TRANCA_BLOCK_AUTH_MAC\" drop
+    else
+        # --- Normal mode: Standard Pirania behavior ---
+
+        # Allow traffic if MAC is authorized
+        nft add rule inet pirania forward ether saddr @pirania-auth-macs accept
+
+        # DNS always allowed for redirect
+        nft add rule inet pirania forward udp dport 53 accept
+
+        # Allow allowlisted destinations in forward (e.g. HTTPS)
+        nft add rule inet pirania forward ip daddr @pirania-allowlist-ipv4 accept
+        nft add rule inet pirania forward ip6 daddr @pirania-allowlist-ipv6 accept
+    fi
 
     # --- NAT redirect for unauthorized traffic ---
     # HTTP redirect
@@ -63,15 +102,169 @@ set_nftables () {
     echo "Captive-portal rules applied successfully"
 }
 
+download_allowlist_ipv4 () {
+  allowlist_urls=$(uci -q get pirania.base_config.allowlist_ipv4_url)
+  if [ -z "$allowlist_urls" ]; then
+    return
+  fi
+  allowlist_insecure=$(uci -q get pirania.base_config.allowlist_ipv4_url_insecure)
+
+  tmpfile="/tmp/messengers_allowlist.txt"
+  echo "Downloading IPv4 allowlist URLs to $tmpfile"
+  : > "$tmpfile"
+
+  for url in $allowlist_urls ; do
+    if ! wget -q -O - "$url" >> "$tmpfile" ; then
+      if [ "$allowlist_insecure" = "1" ]; then
+        echo "Retrying IPv4 allowlist download without certificate check: $url"
+        if ! wget --no-check-certificate -q -O - "$url" >> "$tmpfile" ; then
+          echo "Failed to download IPv4 allowlist from $url"
+        fi
+      else
+        echo "Failed to download IPv4 allowlist from $url"
+      fi
+    else
+      echo "" >> "$tmpfile"
+    fi
+  done
+  echo "IPv4 allowlist downloads completed"
+}
+
+# Download Tranca Redes category allowlists
+download_tranca_allowlist_ipv4 () {
+    log_info "Starting Tranca Redes category allowlist download"
+    local tmpfile="/tmp/tranca_allowlist_ipv4.txt"
+    : > "$tmpfile"
+
+    local allowlist_insecure
+    allowlist_insecure=$(uci -q get pirania.base_config.allowlist_ipv4_url_insecure)
+
+    # Get list of enabled categories
+    local categories
+    categories=$(uci -q show pirania.tranca_redes.allowlist_category 2>/dev/null | grep -oE "'[^']+'" | tr -d "'")
+
+    if [ -z "$categories" ]; then
+        log_warn "No allowlist categories configured for Tranca Redes"
+        return
+    fi
+
+    local total_entries=0
+
+    for category in $categories; do
+        echo "Processing category: $category"
+        log_info "Downloading allowlist for category: $category"
+
+        # Get URLs for this category
+        local urls
+        urls=$(uci -q show "pirania.$category.ipv4_url" 2>/dev/null | grep -oE "'[^']+'" | tr -d "'")
+
+        if [ -z "$urls" ]; then
+            log_warn "No URLs configured for category: $category"
+            continue
+        fi
+
+        for url in $urls; do
+            echo "  Downloading: $url"
+            if ! wget -q -O - "$url" >> "$tmpfile" 2>/dev/null; then
+                if [ "$allowlist_insecure" = "1" ]; then
+                    echo "  Retrying without certificate check: $url"
+                    if ! wget --no-check-certificate -q -O - "$url" >> "$tmpfile" 2>/dev/null; then
+                        log_warn "Failed to download Tranca allowlist: $url"
+                    fi
+                else
+                    log_warn "Failed to download Tranca allowlist: $url"
+                fi
+            else
+                echo "" >> "$tmpfile"
+            fi
+        done
+    done
+
+    # Count entries for logging
+    if [ -f "$tmpfile" ]; then
+        total_entries=$(grep -cE '([0-9]{1,3}\.){3}[0-9]{1,3}' "$tmpfile" 2>/dev/null || echo "0")
+    fi
+
+    log_info "Tranca Redes allowlist download completed: $total_entries entries"
+}
+
+# Get Tranca allowlist tokens for nftables
+get_tranca_allowlist_ipv4_tokens () {
+    if [ -f /tmp/tranca_allowlist_ipv4.txt ]; then
+        tr -d '\r' < /tmp/tranca_allowlist_ipv4.txt | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}(/([0-9]|[12][0-9]|3[0-2]))?'
+    fi
+}
+
+# Add Tranca allowlist elements to nftables set (batched)
+add_tranca_allowlist_elements () {
+    local batch=""
+    local count=0
+
+    while read -r token; do
+        if [ -z "$token" ]; then
+            continue
+        fi
+        if [ -z "$batch" ]; then
+            batch="$token"
+        else
+            batch="$batch,$token"
+        fi
+        count=$((count + 1))
+        if [ "$count" -ge 200 ]; then
+            nft add element inet pirania pirania-tranca-allowlist-ipv4 {$batch}
+            batch=""
+            count=0
+        fi
+    done
+
+    if [ -n "$batch" ]; then
+        nft add element inet pirania pirania-tranca-allowlist-ipv4 {$batch}
+    fi
+}
+
+add_allowlist_ipv4_elements () {
+  batch=""
+  count=0
+
+  while read -r token; do
+    if [ -z "$token" ]; then
+      continue
+    fi
+    if [ -z "$batch" ]; then
+      batch="$token"
+    else
+      batch="$batch,$token"
+    fi
+    count=$((count + 1))
+    if [ "$count" -ge 200 ]; then
+      nft add element inet pirania pirania-allowlist-ipv4 {$batch}
+      batch=""
+      count=0
+    fi
+  done
+
+  if [ -n "$batch" ]; then
+    nft add element inet pirania pirania-allowlist-ipv4 {$batch}
+  fi
+}
+
+get_allowlist_ipv4_tokens () {
+  uci -q get pirania.base_config.allowlist_ipv4 | tr ' ' '\n'
+  if [ -f /tmp/messengers_allowlist.txt ]; then
+    tr -d '\r' < /tmp/messengers_allowlist.txt | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}(/([0-9]|[12][0-9]|3[0-2]))?'
+  fi
+}
+
 update_ipsets () {
 
   # Create tables and sets
   echo "Updating captive-portal rules"
 
   # Add authorized MAC addresses
+  nft flush set inet pirania pirania-auth-macs
   for mac in $(pirania_authorized_macs) ; do
     nft add element inet pirania pirania-auth-macs {$mac}
-	echo "Adicionando enderecos:" $mac
+    echo "Adding authorized MAC: $mac"
   done
 
   # Update pirania-allowlist sets for ipv4 and ipv6
@@ -79,11 +272,33 @@ update_ipsets () {
   nft flush set inet pirania pirania-allowlist-ipv6
   # Add allowed ip/prefixes
   # Get values from allowlist_ipvX and add to pirania-allowlist-ipvX set
-  ipv4allowlist=$(uci get pirania.base_config.allowlist_ipv4 | sed 's/ /,/g')
-  nft add element inet pirania pirania-allowlist-ipv4 {$ipv4allowlist}
+  get_allowlist_ipv4_tokens | add_allowlist_ipv4_elements
 
   ipv6allowlist=$(uci get pirania.base_config.allowlist_ipv6 | sed 's/ /,/g')
   nft add element inet pirania pirania-allowlist-ipv6 {$ipv6allowlist}
+
+  # --- Tranca Redes handling ---
+  tranca_active=$(uci -q get pirania.tranca_redes.active)
+
+  # Always flush Tranca sets first
+  nft flush set inet pirania pirania-tranca-allowlist-ipv4 2>/dev/null
+  nft flush set inet pirania pirania-unrestricted-macs 2>/dev/null
+
+  if [ "$tranca_active" = "1" ]; then
+    log_info "Tranca Redes is active, updating category allowlists"
+
+    # Download and populate Tranca category allowlists
+    download_tranca_allowlist_ipv4
+    get_tranca_allowlist_ipv4_tokens | add_tranca_allowlist_elements
+
+    # Update unrestricted MACs
+    for mac in $(pirania_authorized_macs --unrestricted) ; do
+      nft add element inet pirania pirania-unrestricted-macs {$mac}
+      echo "Adding unrestricted MAC: $mac"
+    done
+
+    log_info "Tranca Redes ipsets updated"
+  fi
 }
 
 # check if captive-portal is enabled in /etc/config/pirania
@@ -95,10 +310,34 @@ if  [ "$1" = "start" ]; then
 	/etc/init.d/pirania-uhttpd start
 	clean_tables
 	set_nftables
+	echo "Starting IPv4 allowlist download"
+	download_allowlist_ipv4
+	echo "IPv4 allowlist download finished"
 	update_ipsets
 	exit
 elif [ "$1" = "update" ] ; then
 	echo "Captive-portal updating rules"
+	# Check if nftables rules need rebuilding due to Tranca state change
+	# Rules are conditional on Tranca active state
+	tranca_active=$(uci -q get pirania.tranca_redes.active)
+	tranca_rules_present=$(nft list chain inet pirania forward 2>/dev/null | grep -c "TRANCA_BLOCK_AUTH_MAC" || echo "0")
+
+	needs_rebuild=0
+	if [ "$tranca_active" = "1" ] && [ "$tranca_rules_present" = "0" ]; then
+		# Tranca is active but rules are not present - need rebuild
+		needs_rebuild=1
+		log_info "Tranca Redes activated, rebuilding nftables rules"
+	elif [ "$tranca_active" != "1" ] && [ "$tranca_rules_present" != "0" ]; then
+		# Tranca is inactive but rules are still present - need rebuild
+		needs_rebuild=1
+		log_info "Tranca Redes deactivated, rebuilding nftables rules"
+	fi
+
+	if [ "$needs_rebuild" = "1" ]; then
+		clean_tables
+		set_nftables
+		download_allowlist_ipv4
+	fi
 	update_ipsets
 	exit
 elif [ "$1" = "clean" ] || [ "$1" = "stop" ] ; then
@@ -108,6 +347,7 @@ elif [ "$enabled" = "1" ]; then
 	echo "Captive-portal already enabled, reloading rules"
 	clean_tables
 	set_nftables # required for "/etc/init.d/pirania start|restart|reload" if "uci get pirania.base_config.enabled" is "1"
+	download_allowlist_ipv4
 	update_ipsets
 	exit
 elif [ "$1" = "enabled" ]; then

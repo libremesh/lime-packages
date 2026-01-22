@@ -70,6 +70,12 @@ function voucher_init(obj)
 
     voucher.mod_counter = obj.mod_counter or 1
 
+    -- Unrestricted voucher flag (bypasses Tranca Redes restrictions)
+    if not (type(obj.unrestricted) == "nil" or type(obj.unrestricted) == "boolean") then
+        return nil, "invalid unrestricted type"
+    end
+    voucher.unrestricted = obj.unrestricted or false
+
     --! tostring must reflect all the state of a voucher (so vouchers can be compared reliably using tostring)
     voucher.tostring = function()
         local v = voucher
@@ -78,8 +84,9 @@ function voucher_init(obj)
         if v.expiration_date() then
             expiration = os.date("%c", v.expiration_date())
         end
-        return(string.format('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s', v.id, v.name, v.code, v.mac or 'xx:xx:xx:xx:xx:xx',
-                             creation, v.duration_m or 'perm', expiration, v.mod_counter))
+        local unrestricted_str = v.unrestricted and 'unrestricted' or 'normal'
+        return(string.format('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s', v.id, v.name, v.code, v.mac or 'xx:xx:xx:xx:xx:xx',
+                             creation, v.duration_m or 'perm', expiration, v.mod_counter, unrestricted_str))
     end
 
     voucher.expiration_date = function()
@@ -167,7 +174,7 @@ function vouchera.get_by_id(id)
     return vouchera.vouchers[id]
 end
 
-function vouchera.create(basename, qty, duration_m, activation_deadline)
+function vouchera.create(basename, qty, duration_m, activation_deadline, unrestricted)
     local vouchers = {}
     for n=1, qty do
         local name
@@ -177,7 +184,7 @@ function vouchera.create(basename, qty, duration_m, activation_deadline)
             name = basename .. "-" .. tostring(n)
         end
         local v = {name=name, code=vouchera.gen_code(), duration_m=duration_m,
-                   activation_deadline=activation_deadline}
+                   activation_deadline=activation_deadline, unrestricted=unrestricted}
         local voucher, msg = vouchera.add(v)
         if voucher == nil then
             return nil, msg
@@ -320,19 +327,32 @@ function vouchera.list()
             activation_deadline=v.activation_deadline,
             author_node=v.author_node,
             status=v.status(),
+            unrestricted=v.unrestricted,
             })
     end
     return vouchers
 end
 
 function vouchera.get_authorized_macs()
-    local auth_macs = {} 
+    local auth_macs = {}
     for _, voucher in pairs(vouchera.vouchers) do
         if voucher.is_active() then
             table.insert(auth_macs, voucher.mac)
         end
     end
     return auth_macs
+end
+
+--! Returns MACs with active vouchers that have unrestricted flag set
+--! These MACs bypass Tranca Redes restrictions
+function vouchera.get_unrestricted_macs()
+    local unrestricted_macs = {}
+    for _, voucher in pairs(vouchera.vouchers) do
+        if voucher.is_active() and voucher.unrestricted then
+            table.insert(unrestricted_macs, voucher.mac)
+        end
+    end
+    return unrestricted_macs
 end
 
 vouchera.voucher = voucher_init

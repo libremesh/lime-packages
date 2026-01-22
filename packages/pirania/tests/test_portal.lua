@@ -52,6 +52,15 @@ describe('Pirania portal tests #portal', function()
 
     end)
 
+    it('get_unrestricted_macs returns empty when not in voucher mode', function()
+        local default_cfg = io.open('./packages/pirania/files/etc/config/pirania'):read("*all")
+        test_utils.write_uci_file(uci, 'pirania', default_cfg)
+
+        -- Default config has with_vouchers='0'
+        local macs = portal.get_unrestricted_macs()
+        assert.is.equal(0, #macs)
+    end)
+
     before_each('', function()
         snapshot = assert:snapshot()
         test_dir = test_utils.setup_test_dir()
