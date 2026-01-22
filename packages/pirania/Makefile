@@ -8,7 +8,7 @@ define Package/$(PKG_NAME)
   TITLE:=Captive portal with vouchers.
   DEPENDS:=+ip6tables-mod-nat +ipset +shared-state +shared-state-pirania \
 	+uhttpd-mod-lua +lime-system +luci-lib-jsonc \
-	+liblucihttp-lua +luci-lib-nixio +libubus-lua +libuci-lua
+	+luci-lib-nixio +libubus-lua +libuci-lua
   PKGARCH:=all
 endef
 

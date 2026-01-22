@@ -1,11 +1,23 @@
 #!/bin/lua
 local nixio = require('nixio')
-local lhttp = require('lucihttp')
 
 local utils = {}
 
 function utils.log(...)
     nixio.syslog(...)
+end
+
+--! Pure Lua URL encoding/decoding utilities
+--! Replaces lucihttp dependency for OpenWrt compatibility
+
+--! Convert a character to its percent-encoded hex representation
+local function char_to_hex(c)
+    return string.format("%%%02X", string.byte(c))
+end
+
+--! Convert a percent-encoded hex pair back to its character
+local function hex_to_char(x)
+    return string.char(tonumber(x, 16))
 end
 
 local function checkIfIpv4(ip)
@@ -54,48 +66,70 @@ function utils.getIpv4AndMac(ip_address)
     end
 end
 
---! from given url or string. Returns a table with urldecoded values.
+--! URL-encode a string value
+--! Encodes all characters except alphanumeric, hyphen, underscore, period, and tilde
+--! Spaces are encoded as %20 (not +) for broader compatibility
+function utils.urlencode(value)
+    if value == nil then
+        return nil
+    end
+    local str = tostring(value)
+    --! Encode all characters except unreserved ones (RFC 3986)
+    --! Unreserved: A-Z a-z 0-9 - _ . ~
+    str = str:gsub("([^%w%-_%.~])", char_to_hex)
+    return str
+end
+
+--! URL-decode a string value
+--! Decodes percent-encoded sequences and optionally converts + to space
+function utils.urldecode(value)
+    if value == nil then
+        return nil
+    end
+    local str = tostring(value)
+    --! Convert + to space (common in query strings)
+    str = str:gsub("+", " ")
+    --! Decode percent-encoded sequences
+    str = str:gsub("%%(%x%x)", hex_to_char)
+    return str
+end
+
+--! Parse URL-encoded query string into a table
+--! From given url or string. Returns a table with urldecoded values.
 --! Simple parameters are stored as string values associated with the parameter
 --! name within the table. Parameters with multiple values are stored as array
 --! containing the corresponding values.
 function utils.urldecode_params(url, tbl)
-    local parser, name
-    local params = tbl or { }
+    local params = tbl or {}
 
-    parser = lhttp.urlencoded_parser(function (what, buffer, length)
-        if what == parser.TUPLE then
-            name, value = nil, nil
-        elseif what == parser.NAME then
-            name = lhttp.urldecode(buffer)
-        elseif what == parser.VALUE and name then
-            params[name] = lhttp.urldecode(buffer) or ""
+    if url == nil then
+        return params
+    end
+
+    --! Extract query string part (after ?)
+    local query = url:match("[^?]*$") or ""
+
+    --! Parse key=value pairs separated by & or ;
+    for pair in query:gmatch("[^&;]+") do
+        local key, value = pair:match("^([^=]+)=?(.*)")
+        if key then
+            key = utils.urldecode(key)
+            value = utils.urldecode(value) or ""
+
+            --! Handle multiple values for same key
+            if params[key] then
+                --! Convert to array if not already
+                if type(params[key]) ~= "table" then
+                    params[key] = { params[key] }
+                end
+                table.insert(params[key], value)
+            else
+                params[key] = value
+            end
         end
-
-        return true
-    end)
-
-    if parser then
-        parser:parse((url or ""):match("[^?]*$"))
-        parser:parse(nil)
     end
 
     return params
-end
-
-function utils.urlencode(value)
-    if value ~= nil then
-        local str = tostring(value)
-        return lhttp.urlencode(str, lhttp.ENCODE_IF_NEEDED + lhttp.ENCODE_FULL) or str
-    end
-    return nil
-end
-
-function utils.urldecode(value)
-    if value ~= nil then
-        local str = tostring(value)
-        return lhttp.urldecode(str, lhttp.DECODE_IF_NEEDED) or str
-    end
-    return nil
 end
 
 return utils
