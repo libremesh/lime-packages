@@ -812,12 +812,12 @@ pirania (rpcd)
 ## Dependencias do Pacote (Makefile)
 
 ```makefile
-DEPENDS:=+ip6tables-mod-nat +ipset +shared-state +shared-state-pirania \
+DEPENDS:=+nftables +shared-state +shared-state-pirania \
     +uhttpd-mod-lua +lime-system +luci-lib-jsonc \
     +liblucihttp-lua +luci-lib-nixio +libubus-lua +libuci-lua
 ```
 
-**Nota:** As dependencias `ip6tables-mod-nat` e `ipset` ainda estao listadas mas nao sao mais usadas na versao nftables. Podem ser removidas.
+**Nota:** A versao nftables depende do pacote `nftables`; `ip6tables-mod-nat` e `ipset` nao sao mais necessarios.
 
 ---
 

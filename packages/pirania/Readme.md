@@ -21,7 +21,7 @@ This are the currently implemented features:
   * Can be used without vouchers.
 ## Prerequisites
 
-This software assumes that will be running on a OpenWRT/LEDE distribution (because uses uci for config). Needs `nftables` and `ipset` packages installed.
+This software assumes that will be running on a OpenWRT/LEDE distribution (because uses uci for config). Needs the `nftables` package installed (provides the `nft` command and kernel modules).
 
 ## Install
 
@@ -118,7 +118,7 @@ Ex.: `voucher renew_voucher Qzt3WF 1619126965`
 
 # How it works
 
-It uses iptables rules to filter inbound connections outside the mesh network.
+It uses nftables rules to filter inbound connections outside the mesh network.
 
 ## General overview of file hierarchy and function
 
@@ -130,7 +130,7 @@ files/
 
     /usr/lib/lua/voucher/ contains lua libraries used by /usr/bin/voucher
     /usr/bin/voucher is a CLI to manage the db (has functions list, list_active, show_authorized_macs, add, activate, deactivate and is_mac_authorized)
-    /usr/bin/captive-portal sets up iptables rules to capture traffic
+    /usr/bin/captive-portal sets up nftables rules to capture traffic
 
     /usr/libexec/rpcd/pirania ubus pirania API (this is used by the web frontend)
     /usr/share/rpcd/acl.d/pirania.json ACL for the ubus pirania API
@@ -177,8 +177,8 @@ Q3TJZS	san-notebook	ZRJUXN	xx:xx:xx:xx:xx:xx	Wed Sep  8 23:47:40 2021	60	       
 ## Under the hood
 
 ### Trafic capture
-`/usr/bin/captive-portal` sets up iptables rules to capture traffic.
-It creates a set of rules that apply to 3 allowed "ipsets":
+`/usr/bin/captive-portal` sets up nftables rules to capture traffic.
+It creates a set of rules and native nft sets:
 * pirania-auth-macs: authorized macs go into this rule. starts empty.
 * pirania-allowlist-ipv4: with the members of the allowlist in the config file (10.0.0.0/8, 192.168.0.0/16, 172.16.0.0/12)
 * pirania-allowlist-ipv6: same as ipv4 but for ipv6
