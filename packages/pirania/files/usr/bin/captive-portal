@@ -316,6 +316,10 @@ if  [ "$1" = "start" ]; then
 	update_ipsets
 	exit
 elif [ "$1" = "update" ] ; then
+	if [ "$enabled" != "1" ]; then
+		echo "Captive-portal disabled, skipping update"
+		exit
+	fi
 	echo "Captive-portal updating rules"
 	# Check if nftables rules need rebuilding due to Tranca state change
 	# Rules are conditional on Tranca active state

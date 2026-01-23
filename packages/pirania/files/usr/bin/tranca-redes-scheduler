@@ -237,6 +237,13 @@ evaluate_schedule() {
 
 # Main entry point
 main() {
+    # Skip entirely if Pirania itself is disabled
+    local pirania_enabled
+    pirania_enabled=$(uci -q get "$PIRANIA_CFG.base_config.enabled")
+    if [ "$pirania_enabled" != "1" ]; then
+        exit 0
+    fi
+
     # Prevent concurrent execution
     if ! acquire_lock; then
         exit 0
