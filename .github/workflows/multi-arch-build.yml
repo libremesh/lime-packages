@@ -59,50 +59,50 @@ jobs:
           VERSIONS='['
           FIRST_BUILD=1
           FIRST_VERSION=1
-          versions=$(curl https://downloads.openwrt.org/.versions.json)
-          stable=$(echo $versions | jq | grep \"stable_ | sed 's|.*\"stable_version\": \"\(.*\)\",|\1|')
-          oldstable=$(echo $versions | jq | grep oldstable_ | sed 's|.*\"oldstable_version\": \"\(.*\)\",|\1|')
+          versions_json=$(curl -s https://downloads.openwrt.org/.versions.json)
+          stable_version=$(echo "$versions_json" | jq -r '.stable_version')
+          oldstable_version=$(echo "$versions_json" | jq -r '.oldstable_version')
+          upcoming_version=$(echo "$versions_json" | jq -r '.upcoming_version')
+
           ARCH_FILTER="${{ github.event.inputs.arch }}"
           BRANCHES_FILTER="${{ github.event.inputs.branches }}"
           BRANCHES_LIST=$([ "$BRANCHES_FILTER" != "" ] && echo "$BRANCHES_FILTER" \
-            || echo "main" "${stable:0:5}" "${oldstable:0:5}")
+            || echo "main" "${stable_version:0:5}" "${oldstable_version:0:5}" ${upcoming_version:0:5})
 
           # BRANCHES_LIST=main
           # ARCH_FILTER=mips_24kc
 
-          for version in $BRANCHES_LIST; do
+          for branch in $BRANCHES_LIST; do
+            if [ ! -z "$branch" ] && [ -n "$branch" ]; then
+              VERSION=$([ "$branch" == "main" ] && echo "main" || echo "openwrt-$branch")
+              VERSION_PATH=$([ "$branch" == "main" ] && echo "snapshots" || echo "releases/$branch-SNAPSHOT")
+              OPENWRT_BRANCH_PATH="openwrt-$branch"
 
-            VERSION=$([ "$version" == "main" ] \
-              && echo "main" || echo "openwrt-$version")
-            echo $VERSION
+              # skip x86_64 as it should be built only by .github/workflows/build.yml
+              if [ "$ARCH_FILTER" != "" ] && [ "$ARCH_FILTER" != "x86_64" ]; then
+                JSON="$JSON"'{"version": "'"$VERSION"'", "arch": "'"$ARCH_FILTER"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
+              else
 
-            VERSION_PATH=$([ "$version" == "main" ] \
-              && echo "snapshots" || echo "releases/$version-SNAPSHOT")
-            echo $VERSION_PATH
+                archs=$(curl -s https://downloads.openwrt.org/$VERSION_PATH/.targets.json)
+                if [[ "$archs" == *"html"* ]]; then
+                  echo "Cannot retrieve archs - skipping"
+                  continue
+                else
+                  
+                  archs=$(echo $archs | jq -r '.[]' | sort -u | grep -v x86_64)
+                  for ARCH in $archs; do
+                    [[ $FIRST_BUILD -ne 1 ]] && JSON="$JSON"','
+                    FIRST_BUILD=0
 
-            OPENWRT_BRANCH_PATH="openwrt-$version"
-            echo $OPENWRT_BRANCH_PATH
-
-            if [ "$ARCH_FILTER" != "" ]; then
-              JSON="$JSON"'{"version": "'"$VERSION"'", "arch": "'"$ARCH_FILTER"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
-            else
-              archs=$(curl https://downloads.openwrt.org/$VERSION_PATH/.targets.json | jq .[] | sort -u | sed 's|"||g')
-
-              for ARCH in $archs; do
-                # skip x86_64 as it should be built only by .github/workflows/build.yml
-                if [ "$ARCH" != "x86_64" ]; then
-
-                  [[ $FIRST_BUILD -ne 1 ]] && JSON="$JSON"','
-                  FIRST_BUILD=0
-
-                  JSON="$JSON"'{"version": "'"$VERSION"'", "arch": "'"$ARCH"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
+                    JSON="$JSON"'{"version": "'"$VERSION"'", "arch": "'"$ARCH"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
+                  done
                 fi
-              done
-            fi
+              fi
 
-            [[ $FIRST_VERSION -ne 1 ]] && VERSIONS="$VERSIONS"','
-            FIRST_VERSION=0
-            VERSIONS="$VERSIONS"'{"version": "'"$VERSION"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
+              [[ $FIRST_VERSION -ne 1 ]] && VERSIONS="$VERSIONS"','
+              FIRST_VERSION=0
+              VERSIONS="$VERSIONS"'{"version": "'"$VERSION"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
+            fi
           done
 
           echo $JSON
