@@ -4,7 +4,7 @@
 
 # [LibreMesh][5] packages
 
-[![LibreMesh logo](https://raw.githubusercontent.com/libremesh/lime-web/master/logo/logo.png)](https://libremesh.org)
+[![LibreMesh logo](https://raw.githubusercontent.com/libremesh/lime-web/master/assets/logo/logo.png)](https://libremesh.org)
 
 [LibreMesh project][5] includes the development of several tools used for
 deploying libre/free mesh networks.
