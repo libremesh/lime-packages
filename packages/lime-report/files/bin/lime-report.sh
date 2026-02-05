@@ -80,9 +80,22 @@ generate_shared_state() {
             shared-state-async dump "$datatype" 2>&1
         fi
     done
+
     paste_file /tmp/shared-state/shared-state-async.conf
     paste_file /tmp/shared-state-get_candidates_neigh.cache
     paste_file /tmp/shared-state-get_candidates_neigh.lastrun
+
+    echo -e "\n### Old shared-state data files\n"
+    for datafile in /var/shared-state/data/*.json ; do
+        [ -e "$datafile" ] && paste_file "$datafile"
+    done
+
+    echo -e "\n### Persistent shared-state-multiwriter data\n"
+    for datafile in /etc/shared-state/persistent-data/*.json ; do
+        [ -e "$datafile" ] && paste_file "$datafile"
+    done
+
+    paste_file /etc/config/shared-state
 }
 
 generate_all() {
