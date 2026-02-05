@@ -71,10 +71,25 @@ generate_status() {
     paste_cmd opkg list-installed
 }
 
+generate_shared_state() {
+    echo -e "\n### shared-state-async registered datatypes\n"
+    for section in $(uci show shared-state 2>/dev/null | grep '=dataType' | cut -d'.' -f2 | cut -d'=' -f1); do
+        datatype=$(uci -q get shared-state.$section.name)
+        if [ -n "$datatype" ]; then
+            echo -e "\n### CMD shared-state-async dump $datatype\n"
+            shared-state-async dump "$datatype" 2>&1
+        fi
+    done
+    paste_file /tmp/shared-state/shared-state-async.conf
+    paste_file /tmp/shared-state-get_candidates_neigh.cache
+    paste_file /tmp/shared-state-get_candidates_neigh.lastrun
+}
+
 generate_all() {
     generate_deviceinfo
     generate_config
     generate_status
+    generate_shared_state
 }
 
 [ "$1" = "--help" ] || [ "$1" = "-h" ] && {
@@ -83,9 +98,11 @@ generate_all() {
     echo "-h    for help" && \
     echo "-d    print only device info" && \
     echo "-c    print only main configuration" && \
-    echo "-s    print only current status"
+    echo "-s    print only current status" && \
+    echo "-ss   print only shared-state-async data (publish all and dump all datatypes)"
 }
 [ "$1" = "" ] && header && generate_all
 [ "$1" = "-d" ] && header && generate_deviceinfo
 [ "$1" = "-c" ] && header && generate_config
 [ "$1" = "-s" ] && header && generate_status
+[ "$1" = "-ss" ] && header && generate_shared_state
