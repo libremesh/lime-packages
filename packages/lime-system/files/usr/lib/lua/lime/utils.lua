@@ -635,7 +635,9 @@ function utils.find_bridge_cfgid(bridge_name)
 end
 
 function utils.find_br_lan()
-    return utils.find_bridge_cfgid("br-lan")
+    local dev = config.uci:get('network', 'lan_vlan', 'device')
+    if dev == nil then dev = 'br-lan' end
+    return utils.find_bridge_cfgid(dev)
 end
 
 return utils
