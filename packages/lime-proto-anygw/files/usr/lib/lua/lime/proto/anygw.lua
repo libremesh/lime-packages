@@ -32,7 +32,7 @@ function anygw.configure(args)
 	local anygw_ipv4 = ipv4:minhost()
 	anygw_ipv6:prefix(64) -- SLAAC only works with a /64, per RFC
 	anygw_ipv4:prefix(ipv4:prefix())
-	local baseIfname = "br-lan"
+	local baseIfname = config.uci:get('network', 'lan', 'device')
 	local argsDev = { macaddr = anygw_mac }
 	local argsIf = {
 		proto = "static",
