@@ -43,8 +43,6 @@ minimum-essential /etc/sysupgrade.conf'               	# Files defining the list
                                                         # use a strong password with at least 10 numbers and letters, the longer the better!. 
                                                         # For improved security use "openssl passwd -6" for SHA512 (or -5 for SHA256) but be aware that not all firmwares support this.
 
-    option deferrable_reboot_uptime_s '97200'
-    option deferrable_reboot_ping_target '4.2.2.2'      # Reboot scheduled by deferrable_reboot, if installed, will be deferred if the ping to this IP is succesful
     option firstbootwizard_configured false
     option firstbootwizard_dismissed false              # When true fbw banner will be hidden.
 
@@ -383,3 +381,10 @@ config hwd_watchcat default
     option pingperiod '30s'                             # Send one ping every 30 seconds
     option period     '6h'                              # Reboot if 6h continuously failing
     option forcedelay '1m'                              # Wait up to 1m for a soft-reboot
+
+# Periodic-reboot the device after a certain uptime
+
+config hwd_watchcat periodic_reboot
+	option mode 'periodic_reboot'
+	option period '27h'
+	option forcedelay '1m'
