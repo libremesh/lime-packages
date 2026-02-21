@@ -1,73 +1,52 @@
-#!/bin/sh
-
-[ -f /etc/lime_release ] && . /etc/lime_release || {
-	echo "LibreMesh version not found in /etc/lime_release - skipping"
-	exit 0
+[ ! -f /etc/lime_release ] && {
+	echo "LibreMesh version not found in /etc/lime_release - skipping" && exit 0
 }
 
-if [ -f /etc/apk/repositories.d/distfeeds.list ]; then
-	repo='apk'
-	feeds_file='/etc/apk/repositories.d/limefeeds.list'
-	dist_feeds_file='/etc/apk/repositories.d/distfeeds.list'
-	pkg_manager_path='apk/'
-	arch="$(cat /etc/apk/arch)"
-	key_name=libremesh.pem
-	key_content="-----BEGIN PUBLIC KEY-----
+[ ! -f /bin/apk ] && [ ! -f /bin/opkg ] &&
+	echo "No package manager found - skipping" && exit 0
+
+. /etc/os-release
+. /etc/lime_release
+
+feed_host='http://feed.libremesh.org'
+feed_ref=$([ $LIME_CODENAME == "development" ] &&
+	echo "master" || echo "$LIME_RELEASE")
+ow_branch=$( [ $VERSION == 'SNAPSHOT' ] &&
+	echo "openwrt-main" || echo openwrt-${VERSION:0:5})
+
+pkg_manager=apk
+pkg_index=/packages.adb
+feed_lime=/etc/apk/repositories.d/limefeeds.list
+feed_keyname=libremesh.pem
+feed_key="-----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEdFJZ2qVti49Ol8LJZYuxgOCLowBS
 8bI86a7zqhSbs5yon3JON7Yee7CQOgqwPOX5eMALGOu8iFGAqIRx5YjfYA==
 -----END PUBLIC KEY-----"
-fi
-if [ -f /etc/opkg/distfeeds.conf ]; then
-	repo='opkg'
-	feeds_file='/etc/opkg/limefeeds.conf'
-	dist_feeds_file='/etc/opkg/distfeeds.conf'
-	pkg_manager_path=''
-	arch="$(grep OPENWRT_ARCH /etc/os-release | sed 's/OPENWRT_ARCH=\"\(.*\)\"/\1/')"
-	key_name="a71b3c8285abd28b"
-	key_content="RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
+
+if [ -f /bin/opkg ]; then
+	pkg_manager=opkg
+	pkg_index=''
+	feed_lime=/etc/opkg/limefeeds.conf
+	feed_keyname=a71b3c8285abd28b
+	feed_key="untrusted comment: signed by libremesh.org key a71b3c8285abd28b
+RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8"
+	feed_prefix="src/gz "
 fi
 
-[ -z "$repo" ] && {
-	echo "Package manager not found - skipping"
-	exit 0
+packages_url="$feed_host/$feed_ref/$ow_branch/x86_64$pkg_index";
+arch_packages_url="$feed_host/$feed_ref/$ow_branch/${OPENWRT_ARCH}$pkg_index";
+profiles_url="$feed_host/profiles/$ow_branch/x86_64$pkg_index";
+
+[ $feed_prefix ] && {
+	packages_url="${feed_prefix}libremesh $packages_url"
+	arch_packages_url="${feed_prefix}libremesh_arch_packages $arch_packages_url"
+	profiles_url="${feed_prefix}profiles $profiles_url"
 }
 
-[ -f "$feeds_file" ] && {
-  echo "LibreMesh $repo feeds already defined - skipping"
-  exit 0;
-}
-
-openwrt_branch_ref="$(grep -m 1 "openwrt.org/" $dist_feeds_file | sed 's|.*openwrt.org/\(.*\)|\1|' )"
-
-if [ '' != "$openwrt_branch_ref" ]; then
-	if $(echo $openwrt_branch_ref | grep -q 'snapshots'); then
-	openwrt_branch='openwrt-main'
-	fi
-	if $(echo $openwrt_branch_ref | grep -q 'releases'); then
-	branch_n="$(echo $openwrt_branch_ref | sed 's/releases\///')"
-	openwrt_branch="openwrt-${branch_n:0:5}"
-	fi
-else
-	echo "String not found 'openwrt.org' in default ${repo} feeds, cannot determine openwrt branch"
-fi
-
-branch_release_path=$([ "$LIME_CODENAME" == "development" ] && echo "master" || echo "$LIME_RELEASE" )
-
-packages_url="http://feed.libremesh.org/${branch_release_path}/$openwrt_branch/x86_64";
-arch_packages_url="http://feed.libremesh.org/${branch_release_path}/$openwrt_branch/$arch";
-profiles_url="http://feed.libremesh.org/profiles/$openwrt_branch/x86_64";
-
-echo "Configuring official LibreMesh $repo feeds"
-[ $repo == 'apk' ] && {
-echo "$packages_url/packages.adb" > "$feeds_file"
-echo "${arch_packages_url}/packages.adb" >> "$feeds_file"
-echo "$profiles_url/packages.adb" >> "$feeds_file"
-echo "$key_content" >> "/etc/apk/keys/$key_name"
-} || ( 
-[ $repo == 'opkg' ] && {
-echo "src/gz libremesh $packages_url" > "$feeds_file"
-echo "src/gz libremesh_arch_packages $arch_packages_url" >> "$feeds_file"
-echo "src/gz profiles $profiles_url" >> "$feeds_file"
-echo "untrusted comment: signed by libremesh.org key $key_name" > "/etc/opkg/keys/$key_name"
-echo "$key_content" >> "/etc/opkg/keys/$key_name"
-})
+echo "Configuring official LibreMesh $pkg_manager feeds"
+cat << EOF > $feed_lime
+$packages_url
+$arch_packages_url
+$profiles_url
+EOF
+echo "$feed_key" > "/etc/$pkg_manager/keys/$feed_keyname"
