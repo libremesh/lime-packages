@@ -182,7 +182,27 @@ function config.uci_commit_all()
     end
 end
 
+function config.execute_hooks(action)
+	for hook in fs.dir(config.hooksDir) do
+		local hookCmd = config.hooksDir.."/"..hook
+		local shCmd = "sh -c 'ACTION="..action.." "..hookCmd.."'"
+		print("Executed hook:", shCmd, os.execute(shCmd))
+	end
+end
+
+--! FIXME: This should be somewhere more appropriate
+function config.file_exists(name)
+	return fs.stat(name, "type") == "reg"
+end
+
 function config.main()
+	--! Check whether this is the first ever run
+	if not config.file_exists(config.uci:get_confdir() .. "/" .. config.UCI_AUTOGEN_NAME) then
+		config.execute_hooks("init")
+	end
+
+	config.execute_hooks("pre")
+
 	--! Get mac address and set mac-based configuration file name
 	local network = require("lime.network")
 	local utils = require("lime.utils")
@@ -193,15 +213,14 @@ function config.main()
 	--! Populate the default template configs if lime-node and lime-community
 	--! are not found in /etc/config
 	for _, cfg_name in pairs({config.UCI_COMMUNITY_NAME, config.UCI_NODE_NAME}) do
-        local lime_path = config.uci:get_confdir() .. "/" .. cfg_name
-		local cf = io.open(lime_path)
-		if not cf then
+		local lime_path = config.uci:get_confdir() .. "/" .. cfg_name
+		if not config.file_exists(lime_path) then
 			config.initialize_config_file(cfg_name)
-		else
-			cf:close()
 		end
 	end
 	config.uci_autogen()
+
+	config.execute_hooks("merged")
 
 	local modules_name = { "hardware_detection", "wireless", "network", "firewall", "system",
                            "generic_config" }
@@ -221,10 +240,7 @@ function config.main()
 		xpcall(module.configure, function(errmsg) print(errmsg) ; print(debug.traceback()) end)
 	end
 
-	for hook in fs.dir(config.hooksDir) do
-		local hookCmd = config.hooksDir.."/"..hook.." after"
-		print("executed hook:", hookCmd, os.execute(hookCmd))
-	end
+	config.execute_hooks("configured")
 
 	local cfgpath = config.get_config_path()
 	--! flush all config changes
@@ -235,6 +251,8 @@ function config.main()
 						'# Instead please edit /etc/config/lime-node and/or /etc/config/lime-community files\n' ..
 						'# and then regenerate this file executing lime-config\n\n')
 	utils.write_file(cfgpath, notice_message .. autogen_content)
+
+	config.execute_hooks("post")
 end
 
 return config
