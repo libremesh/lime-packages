@@ -9,7 +9,7 @@
 result=''
 # if 8.8.8.8 is accessible, print internet path
 if check-internet; then
-    if [[ -f '/usr/lib/opkg/info/lime-proto-babeld.control' ]]; then
+    if [[ -f '/etc/init.d/babeld' ]]; then
         path=''
         for ip in `mtr -4 -r --no-dns -c1 8.8.8.8 | grep "\.|" |  awk '{ print $2}' | grep '^10\.'`; do
             name=$(nslookup $ip | grep name | cut -d '=' -f 2 | sed "s/ //" | cut -d '.' -f 1)
