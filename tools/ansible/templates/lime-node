@@ -15,7 +15,6 @@ config net 'eth0'
 	list protocols lan
 	list protocols anygw
 	list protocols batadv:%N1
-	list protocols bmx6:13
 	list protocols olsr:14
 	list protocols olsr6:15
 	list protocols olsr2:16
@@ -28,7 +27,6 @@ config net 'eth2'
         list protocols 'ieee80211s'
         list protocols 'anygw'
         list protocols 'batadv:%N1'
-        list protocols 'bmx6:13'
         list protocols 'olsr:14'
         list protocols 'olsr6:15'
         list protocols 'olsr2:16'
