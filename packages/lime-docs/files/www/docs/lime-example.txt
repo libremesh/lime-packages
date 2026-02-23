@@ -80,7 +80,6 @@ config lime network
     list protocols anygw
     list protocols batadv:%N1                           # Parametrizable with %Nn (which depends from ap_ssid), note that this will range between 29 and 284
 #   list protocols batadv:0                             # If 0 VLAN tags are disabled and the routing is done on the raw interface
-    list protocols bmx6:13                              # The VLAN type can be provided as a third argument, for example bmx6:13:8021q for using VLAN 802.1q instead of the default 802.1ad
     list protocols olsr:14                              # Do not use a VLAN ID between 29 and 284 as this range is reserved for batadv:%N1 parameterization, maximum ID is 4095
     list protocols olsr6:15
     list protocols olsr2:16
@@ -93,11 +92,6 @@ config lime network
     list resolvers 141.1.1.1                            # cns1.cw.net 
     list resolvers 2001:470:20::2                       # ordns.he.net
 
-    option bmx6_mtu '1500'                              # Set MTU for bmx6 tunnel interfaces
-    option bmx6_publish_ownip false                     # Announce also a /32 route about each node
-    option bmx6_over_batman false                       # Disables Bmx6 meshing on top of batman
-    option bmx6_pref_gw none                            # Force bmx6 to use a specific gateway to Internet (hostname must be used as identifier)
-    option bmx6_wifi_rate_max 54000000
     option bmx7_mtu '1500'                              # Set MTU for bmx7 tunnel interfaces
     option bmx7_publish_ownip false                     # Announce also a /32 route about each node
     option bmx7_over_batman false
@@ -306,9 +300,9 @@ config net wirelessclientbackbone
 #########################################################
 ### Network interface specific options (edit lime-node or lime-MAC) override network general options
 
-# Available protocols: bmx6, bmx7, batadv, olsr, olsr6, olsr2, bgp, wan, lan, manual, static, babeld, apbb, client
-# proto:vlan_number - define the VLAN number i.e. bmx6:13
-# proto:vlan_number:vlan_type - define the VLAN type (default is 8021ad) i.e. bmx6:13:8021q
+# Available protocols: bmx7, batadv, olsr, olsr6, olsr2, bgp, wan, lan, manual, static, babeld, apbb, client
+# proto:vlan_number - define the VLAN number i.e. bmx7:18
+# proto:vlan_number:vlan_type - define the VLAN type (default is 8021ad) i.e. bmx7:18:8021q
 # If you use the protocol 'manual' do not specify other protocols, may result in an unpredictable behavior/configuration (likely you loose connection to the node)
 
 ## configure the ethernet port eth1.5 as WAN with static ipv4 and ipv6 addresses 
