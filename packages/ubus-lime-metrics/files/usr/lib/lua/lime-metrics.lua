@@ -16,14 +16,11 @@ function metrics.get_metrics(target)
     local loss = nil
     local shell_output = ""
 
-    if lutils.is_installed("lime-proto-bmx6") then
-        loss = utils.get_loss(node..".mesh")
-        shell_output = lutils.unsafe_shell("netperf -6 -l 10 -H "..node..".mesh| tail -n1| awk '{ print $5 }'")
-    elseif lutils.is_installed("lime-proto-babeld") then
+    if lutils.is_installed("lime-proto-babeld") then
         loss = utils.get_loss(node)
         shell_output = lutils.unsafe_shell("netperf -l 10 -H "..node.."| tail -n1| awk '{ print $5 }'")
     else
-        return {status="error", error={msg="No lime-proto-bmx6 or lime-proto-babeld found", code="1"}}
+        return {status="error", error={msg="No lime-proto-babeld found", code="1"}}
     end
     local bw = 0
     if shell_output ~= "" and shell_output ~= nil then

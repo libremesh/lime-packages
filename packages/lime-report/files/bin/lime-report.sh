@@ -40,7 +40,6 @@ generate_status() {
     paste_cmd dmesg
     paste_cmd batctl if
     paste_cmd batctl o
-    paste_cmd bmx6 -c show=status show=interfaces show=links show=originators show=tunnels
     paste_cmd bmx7 -c show=status show=interfaces show=links show=originators show=tunnels
     paste_cmd "echo dump | nc ::1 30003"
     paste_cmd ubus call babeld get_info
