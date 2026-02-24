@@ -405,6 +405,28 @@ function network.sanitizeIfaceName(ifName)
 	return network.limeIfNamePrefix..ifName:gsub("[^%w_]", "_")
 end
 
+function network.createDevice(owrtDeviceName, baseIfname, linuxName, devType, args)
+	--! baseIfname can be a linux interface name like eth0 or an openwrt
+	--! interface name like @lan of the base interface;
+	--! linuxName is the linux name of the new interface;
+	--! args optional additional arguments for device like
+	--! { macaddr="aa:aa:aa:aa:aa:aa", mode="vepa" };
+
+	args = args or {}
+
+	local uci = config.get_uci_cursor()
+
+	uci:set("network", owrtDeviceName, "device")
+	uci:set("network", owrtDeviceName, "type", devType)
+	uci:set("network", owrtDeviceName, "name", linuxName)
+	uci:set("network", owrtDeviceName, "ifname", baseIfname)
+	for k,v in pairs(args) do
+		uci:set("network", owrtDeviceName, k, v)
+	end
+
+	uci:save("network")
+end
+
 --! Creates a network Interface with static protocol
 --! ipAddr can be IPv4 or IPv6
 --! the function can be called twice to set both IPv4 and IPv6
@@ -449,7 +471,7 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 	--! because only alphanumeric and underscores are allowed
 	local owrtInterfaceName = network.sanitizeIfaceName(linuxBaseIfname)
 	local owrtDeviceName = owrtInterfaceName
-	local linux802adIfName = linuxBaseIfname
+	local linuxVlanIfName = linuxBaseIfname
 
 	local uci = config.get_uci_cursor()
 
@@ -467,14 +489,9 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 
 		--! Do not use . as separator as this will make netifd create an 802.1q interface anyway
 		--! and sanitize linuxBaseIfName because it can contain dots as well (i.e. switch ports)
-		linux802adIfName = linux802adIfName:gsub("[^%w-]", "-")..network.protoVlanSeparator..vlanId
-		
-		uci:set("network", owrtDeviceName, "device")
-		uci:set("network", owrtDeviceName, "type", vlanProtocol)
-		uci:set("network", owrtDeviceName, "name", linux802adIfName)
-		--! This is ifname also on current OpenWrt
-		uci:set("network", owrtDeviceName, "ifname", linuxBaseIfname)
-		uci:set("network", owrtDeviceName, "vid", vlanId)
+		linuxVlanIfName = linuxVlanIfName:gsub("[^%w-]", "-")..network.protoVlanSeparator..vlanId
+
+		network.createDevice(owrtDeviceName, linuxBaseIfname, linuxVlanIfName, vlanProtocol, { vid=vlanId })
 	end
 
 	uci:set("network", owrtInterfaceName, "interface")
@@ -488,13 +505,13 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 	--! In case of wifi interface not using vlan (vid == 0) avoid to set
 	--! ifname in network because it is already set in wireless, because
 	--! setting ifname on both places cause a netifd race condition
-	if vid ~= 0 or not linux802adIfName:match("^wlan") then
-		uci:set("network", owrtInterfaceName, "device", linux802adIfName)
+	if vid ~= 0 or not linuxVlanIfName:match("^wlan") then
+		uci:set("network", owrtInterfaceName, "device", linuxVlanIfName)
 	end
 
 	uci:save("network")
 
-	return owrtInterfaceName, linux802adIfName, owrtDeviceName
+	return owrtInterfaceName, linuxVlanIfName, owrtDeviceName
 end
 
 function network.createMacvlanIface(baseIfname, linuxName, argsDev, argsIf)
@@ -511,25 +528,14 @@ function network.createMacvlanIface(baseIfname, linuxName, argsDev, argsIf)
 	--! lime.proto which want to use macvlan so this function should depend
 	--! on its own on kmod-macvlan as needed.
 
-	argsDev = argsDev or {}
 	argsIf = argsIf or {}
 
-	local owrtDeviceName = network.limeIfNamePrefix..baseIfname.."_"..linuxName.."_dev"
-	local owrtInterfaceName = network.limeIfNamePrefix..baseIfname.."_"..linuxName.."_if"
-	--! sanitize uci sections name
-	owrtDeviceName = owrtDeviceName:gsub("[^%w_]", "_")
-	owrtInterfaceName = owrtInterfaceName:gsub("[^%w_]", "_")
+	local owrtDeviceName = network.sanitizeIfaceName(baseIfname.."_"..linuxName.."_dev")
+	local owrtInterfaceName = network.sanitizeIfaceName(baseIfname.."_"..linuxName.."_if")
+
+	network.createDevice(owrtDeviceName, baseIfname, linuxName, "macvlan", argsDev)
 
 	local uci = config.get_uci_cursor()
-
-	uci:set("network", owrtDeviceName, "device")
-	uci:set("network", owrtDeviceName, "type", "macvlan")
-	uci:set("network", owrtDeviceName, "name", linuxName)
-	--! This is ifname also on current OpenWrt
-	uci:set("network", owrtDeviceName, "ifname", baseIfname)
-	for k,v in pairs(argsDev) do
-		uci:set("network", owrtDeviceName, k, v)
-	end
 
 	uci:set("network", owrtInterfaceName, "interface")
 	uci:set("network", owrtInterfaceName, "proto", "none")
