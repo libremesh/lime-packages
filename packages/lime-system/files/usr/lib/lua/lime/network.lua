@@ -29,9 +29,14 @@ network.protoParamsSeparator=":"
 network.protoVlanSeparator="_"
 network.limeIfNamePrefix="lm_net_"
 
-
+--! Retuns the mac address of the interface or nill if it does not exist
 function network.get_mac(ifname)
 	local _, macaddr = next(network.get_own_macs(ifname))
+	--! this is to avoid the error:
+	--! ...ackages/lime-system/files/usr/lib/lua/lime/utils.lua:53: attempt to index local 'string' (a nil value)
+	if macaddr == nil then
+		return nil
+	end
 	return utils.split(macaddr, ":")
 end
 
@@ -596,6 +601,14 @@ function network.createStatic(linuxBaseIfname)
 	utils.unsafe_shell("ip address add "..ifaceConf.ipaddr.."/32 dev "..ifaceConf.ifname)
 
 	return ifaceConf.name
+end
+
+--! Check if a device exists in the system
+function network.device_exists(dev)
+    local handle = io.popen("ip link show " .. dev .. " 2>/dev/null")
+    local result = handle:read("*a")
+    handle:close()
+    return result ~= nil and result ~= ""
 end
 
 --! Create a vlan at runtime via ubus
