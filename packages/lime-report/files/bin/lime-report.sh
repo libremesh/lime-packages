@@ -1,25 +1,60 @@
 #!/bin/sh
 
+FORMAT="${FORMAT:-text}"
+
 paste_file() {
-    echo -ne "\n### FILE $1"
-    [ -e "$1" ] && (
-        echo -e "\n" &&
-        cat "$1" | grep -v key | grep -v pass
-    ) || echo -e " NOT FOUND\n"
+    if [ "$FORMAT" = "md" ]; then
+        echo -e "\n### FILE $1\n"
+        [ -e "$1" ] && (
+            echo '```'
+            cat "$1" | grep -v key | grep -v pass
+            echo '```'
+        ) || echo "_NOT FOUND_"
+    else
+        echo -ne "\n### FILE $1"
+        [ -e "$1" ] && (
+            echo -e "\n" &&
+            cat "$1" | grep -v key | grep -v pass
+        ) || echo -e " NOT FOUND\n"
+    fi
 }
 
 paste_cmd() {
-    echo -e "\n### CMD $@\n"
-    eval $@ 2>&1 | grep -v key | grep -v pass
+    if [ "$FORMAT" = "md" ]; then
+        echo -e "\n### CMD $@\n"
+        echo '```'
+        eval $@ 2>&1 | grep -v key | grep -v pass
+        echo '```'
+    else
+        echo -e "\n### CMD $@\n"
+        eval $@ 2>&1 | grep -v key | grep -v pass
+    fi
 }
 
 header() {
-    paste_cmd echo hostname $HOSTNAME
-    paste_cmd date \'+%Y-%m-%d %H:%M:%S\'
-    paste_cmd uptime
+    if [ "$FORMAT" = "md" ]; then
+        echo "# LibreMesh Report"
+        echo ""
+        echo "**Hostname:** $(cat /proc/sys/kernel/hostname)"
+        echo "**Date:** $(date '+%Y-%m-%d %H:%M:%S')"
+        echo "**Uptime:** $(uptime)"
+        echo ""
+        echo "## Table of Contents"
+        echo "- [Device Info](#device-info)"
+        echo "- [Configuration](#configuration)"
+        echo "- [Status](#status)"
+        echo "- [Shared State](#shared-state)"
+        echo ""
+        echo "---"
+    else
+        paste_cmd echo hostname $HOSTNAME
+        paste_cmd date \'+%Y-%m-%d %H:%M:%S\'
+        paste_cmd uptime
+    fi
 }
 
 generate_deviceinfo() {
+    [ "$FORMAT" = "md" ] && echo -e "\n## Device Info\n"
     paste_file /etc/board.json
     paste_file /proc/cpuinfo
     paste_file /etc/lime_release
@@ -28,6 +63,7 @@ generate_deviceinfo() {
 }
 
 generate_config() {
+    [ "$FORMAT" = "md" ] && echo -e "\n## Configuration\n"
     paste_file /etc/config/lime-node
     paste_file /etc/config/lime-community
     paste_file /etc/config/lime-defaults
@@ -37,6 +73,7 @@ generate_config() {
 }
 
 generate_status() {
+    [ "$FORMAT" = "md" ] && echo -e "\n## Status\n"
     paste_cmd dmesg
     paste_cmd batctl if
     paste_cmd batctl o
@@ -70,10 +107,47 @@ generate_status() {
     paste_cmd opkg list-installed
 }
 
+generate_shared_state() {
+    [ "$FORMAT" = "md" ] && echo -e "\n## Shared State\n"
+    
+    echo -e "\n### shared-state-async registered datatypes\n"
+    for section in $(uci show shared-state 2>/dev/null | grep '=dataType' | cut -d'.' -f2 | cut -d'=' -f1); do
+        datatype=$(uci -q get shared-state.$section.name)
+        if [ -n "$datatype" ]; then
+            if [ "$FORMAT" = "md" ]; then
+                echo -e "\n#### $datatype\n"
+                echo '```json'
+                shared-state-async dump "$datatype" 2>&1
+                echo '```'
+            else
+                echo -e "\n### CMD shared-state-async dump $datatype\n"
+                shared-state-async dump "$datatype" 2>&1
+            fi
+        fi
+    done
+
+    paste_file /tmp/shared-state/shared-state-async.conf
+    paste_file /tmp/shared-state-get_candidates_neigh.cache
+    paste_file /tmp/shared-state-get_candidates_neigh.lastrun
+
+    echo -e "\n### Old shared-state data files\n"
+    for datafile in /var/shared-state/data/*.json ; do
+        [ -e "$datafile" ] && paste_file "$datafile"
+    done
+
+    echo -e "\n### Persistent shared-state-multiwriter data\n"
+    for datafile in /etc/shared-state/persistent-data/*.json ; do
+        [ -e "$datafile" ] && paste_file "$datafile"
+    done
+
+    paste_file /etc/config/shared-state
+}
+
 generate_all() {
     generate_deviceinfo
     generate_config
     generate_status
+    generate_shared_state
 }
 
 [ "$1" = "--help" ] || [ "$1" = "-h" ] && {
@@ -82,9 +156,13 @@ generate_all() {
     echo "-h    for help" && \
     echo "-d    print only device info" && \
     echo "-c    print only main configuration" && \
-    echo "-s    print only current status"
+    echo "-s    print only current status" && \
+    echo "-ss   print only shared-state-async data (publish all and dump all datatypes)" && \
+    echo "-m    output in markdown format with table of contents"
 }
 [ "$1" = "" ] && header && generate_all
 [ "$1" = "-d" ] && header && generate_deviceinfo
 [ "$1" = "-c" ] && header && generate_config
 [ "$1" = "-s" ] && header && generate_status
+[ "$1" = "-ss" ] && header && generate_shared_state
+[ "$1" = "-m" ] && FORMAT=md && header && generate_all
