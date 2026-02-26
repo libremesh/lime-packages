@@ -6,7 +6,7 @@ unique_append()
 }
 
 unique_append \
-	'*/10 * * * * ((captive-portal update &> /dev/null)&)'\
+	'*/10 * * * * [ "$(uci -q get pirania.base_config.enabled)" = "1" ] && ((captive-portal update &> /dev/null)&)'\
 	/etc/crontabs/root
 
 exit 0

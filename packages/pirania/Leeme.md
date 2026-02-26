@@ -17,7 +17,7 @@ Estas son las características implementadas hasta ahora:
 
 ## Requisitos previos
 
-Este software corre sobre la distribución OpenWrt (ya que utiliza [UCI](https://openwrt.org/docs/techref/uci) para su configuración). Los paquetes `ip6tables-mod-nat` y `ipset` deben estar instalados.
+Este software corre sobre la distribución OpenWrt (ya que utiliza [UCI](https://openwrt.org/docs/techref/uci) para su configuración). Debe estar instalado el paquete `nftables` (provee el comando `nft` y los módulos del kernel necesarios).
 
 ## Instalar
 
@@ -26,7 +26,7 @@ Este software corre sobre la distribución OpenWrt (ya que utiliza [UCI](https:/
 
 # Cómo funciona
 
-Utiliza las reglas de iptables para filtrar el tráfico hacia fuera de la red mesh.
+Utiliza las reglas de nftables para filtrar el tráfico hacia fuera de la red mesh.
 
 ## Vista general de la jerarquía y funciones de los archivos
 
@@ -40,7 +40,7 @@ La siguiente lista tiene como objetivo explicar qué funcionalidad de Pirania es
 
 * `/usr/lib/lua/voucher/` contiene bibliotecas lua que son utilizadas por /usr/bin/voucher
 * `/usr/bin/voucher``/usr/bin/voucher` es una interfaz de línea de comandos (CLI) que maneja una base de datos (que incluye funciones de muestra como `show_active, show_authorized_macs, add, activate, deactivate e is_mac_authorized)`
-* `/usr/bin/captive-portal` configura las reglas de iptables para la captura de tráfico
+* `/usr/bin/captive-portal` configura las reglas de nftables para la captura de tráfico
 
 * `/usr/libexec/rpcd/pirania` ubus de pirania (utilizada por el frontend web)
 * `/usr/share/rpcd/acl.d/pirania.json` Lista de control de accesos (ACL) para la API de pirania
@@ -49,8 +49,8 @@ La siguiente lista tiene como objetivo explicar qué funcionalidad de Pirania es
 * `/usr/lib/lua/read_for_access` contiene la librería que usa `/usr/lib/lua/portal` para manejar el modo "leer para acceder" (es decir, sin vouchers)
 ### Captura de tráfico
 
-`/usr/bin/captive-portal` configura las reglas de iptables para captura de tráfico.
-Crea un grupo de reglas que se aplican a tres grupos de direcciones IPs (usando el módulo ipset de iptables) habilitados:
+`/usr/bin/captive-portal` configura las reglas de nftables para captura de tráfico.
+Crea un grupo de reglas que se aplican a tres conjuntos nativos de nftables habilitados:
 * `pirania-auth-macs`: la lista de mac autorizadas. comienza vacía.
 * `pirania-allowlist-ipv4`: contiene los miembros de clientes permitidos `allowlist` en el archivo de configuración (`10.0.0.0/8`, `192.168.0.0/16`, `172.16.0.0/12``172.16.0.0/12`)
 * `pirania-allowlist-ipv6`: lo mismo que la lista anterior pero para ipv6

@@ -1,0 +1,261 @@
+#!/bin/sh
+# Tranca Redes Scheduler
+# Evaluates schedule every minute and toggles active state
+# Run via cron: * * * * * /usr/bin/tranca-redes-scheduler
+
+PIRANIA_CFG="pirania"
+TRANCA_SECTION="tranca_redes"
+LOG_TAG="tranca-redes"
+LOCK_FILE="/tmp/tranca-redes-scheduler.lock"
+
+log_info() {
+    logger -t "$LOG_TAG" "$1"
+}
+
+# Prevent concurrent execution
+acquire_lock() {
+    if [ -f "$LOCK_FILE" ]; then
+        # Check if the process is still running
+        local pid
+        pid=$(cat "$LOCK_FILE" 2>/dev/null)
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            # Previous instance still running
+            return 1
+        fi
+        # Stale lock file, remove it
+        rm -f "$LOCK_FILE"
+    fi
+    echo $$ > "$LOCK_FILE"
+    return 0
+}
+
+release_lock() {
+    rm -f "$LOCK_FILE"
+}
+
+log_warn() {
+    logger -t "$LOG_TAG" -p user.warning "WARNING: $1"
+}
+
+# Check if system time is valid (year >= 2020)
+# Prevents misfire during boot before NTP sync
+check_valid_time() {
+    current_year=$(date +%Y)
+    if [ "$current_year" -lt 2020 ]; then
+        log_warn "System time invalid (year=$current_year), skipping evaluation"
+        return 1
+    fi
+    return 0
+}
+
+# Validate time format (HH:MM)
+validate_time_format() {
+    local time="$1"
+    echo "$time" | grep -qE '^[0-2]?[0-9]:[0-5][0-9]$'
+}
+
+# Convert HH:MM to minutes since midnight
+time_to_minutes() {
+    local time="$1"
+    local hours="${time%%:*}"
+    local minutes="${time##*:}"
+    # Remove leading zeros to avoid octal interpretation
+    hours=$(echo "$hours" | sed 's/^0*//' | sed 's/^$/0/')
+    minutes=$(echo "$minutes" | sed 's/^0*//' | sed 's/^$/0/')
+    echo $((hours * 60 + minutes))
+}
+
+# Get current weekday abbreviation (mon, tue, wed, thu, fri, sat, sun)
+# Uses LANG=C to ensure English day names regardless of system locale
+get_current_day() {
+    LANG=C date +%a | tr '[:upper:]' '[:lower:]'
+}
+
+# Check if current day is in the configured days list
+is_day_active() {
+    local current_day="$1"
+    local days
+    days=$(uci -q get "$PIRANIA_CFG.$TRANCA_SECTION.days")
+
+    if [ -z "$days" ]; then
+        return 1
+    fi
+
+    # Iterate through configured days
+    local idx=0
+    while true; do
+        local day
+        day=$(uci -q get "$PIRANIA_CFG.$TRANCA_SECTION.days" 2>/dev/null | awk -v i=$idx '{print $(i+1)}')
+        if [ -z "$day" ]; then
+            # Try alternative method using list index
+            day=$(uci -q get "$PIRANIA_CFG.$TRANCA_SECTION.days.$idx" 2>/dev/null)
+        fi
+
+        if [ -z "$day" ]; then
+            break
+        fi
+
+        if [ "$day" = "$current_day" ]; then
+            return 0
+        fi
+
+        idx=$((idx + 1))
+    done
+
+    # Alternative: check using show
+    for day in $(uci -q show "$PIRANIA_CFG.$TRANCA_SECTION.days" 2>/dev/null | grep -oE "'[^']+'" | tr -d "'"); do
+        if [ "$day" = "$current_day" ]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# Check if current time is within schedule
+# Handles overnight wrap (e.g., 20:00 to 07:00)
+is_time_in_schedule() {
+    local start_time="$1"
+    local end_time="$2"
+    local current_time="$3"
+
+    local start_min end_min current_min
+    start_min=$(time_to_minutes "$start_time")
+    end_min=$(time_to_minutes "$end_time")
+    current_min=$(time_to_minutes "$current_time")
+
+    if [ "$end_min" -gt "$start_min" ]; then
+        # Same-day schedule (e.g., 09:00 to 17:00)
+        [ "$current_min" -ge "$start_min" ] && [ "$current_min" -lt "$end_min" ]
+    else
+        # Overnight schedule (e.g., 20:00 to 07:00)
+        # Active if: (now >= start) OR (now < end)
+        [ "$current_min" -ge "$start_min" ] || [ "$current_min" -lt "$end_min" ]
+    fi
+}
+
+# Main evaluation logic
+evaluate_schedule() {
+    # Check if Tranca Redes is enabled
+    local enabled
+    enabled=$(uci -q get "$PIRANIA_CFG.$TRANCA_SECTION.enabled")
+
+    if [ "$enabled" != "1" ]; then
+        # Not enabled, ensure active is 0
+        local current_active
+        current_active=$(uci -q get "$PIRANIA_CFG.$TRANCA_SECTION.active")
+        if [ "$current_active" = "1" ]; then
+            uci set "$PIRANIA_CFG.$TRANCA_SECTION.active=0"
+            uci commit "$PIRANIA_CFG"
+            log_info "Tranca Redes disabled, deactivating"
+            captive-portal update &>/dev/null &
+        fi
+        return 0
+    fi
+
+    # Get schedule configuration
+    local start_time end_time
+    start_time=$(uci -q get "$PIRANIA_CFG.$TRANCA_SECTION.start_time")
+    end_time=$(uci -q get "$PIRANIA_CFG.$TRANCA_SECTION.end_time")
+
+    if [ -z "$start_time" ] || [ -z "$end_time" ]; then
+        log_warn "Schedule not configured (start_time or end_time missing)"
+        return 1
+    fi
+
+    # Validate time format
+    if ! validate_time_format "$start_time"; then
+        log_warn "Invalid start_time format: $start_time (expected HH:MM)"
+        return 1
+    fi
+    if ! validate_time_format "$end_time"; then
+        log_warn "Invalid end_time format: $end_time (expected HH:MM)"
+        return 1
+    fi
+
+    # Get current time and day
+    local current_time current_day
+    current_time=$(date +%H:%M)
+    current_day=$(get_current_day)
+
+    # Determine if Tranca should be active
+    local should_be_active=0
+
+    if is_day_active "$current_day"; then
+        if is_time_in_schedule "$start_time" "$end_time" "$current_time"; then
+            should_be_active=1
+        fi
+    fi
+
+    # Handle overnight schedule that spans into next day
+    # If schedule wraps midnight (end < start), check if we're in the "morning" portion
+    local start_min end_min
+    start_min=$(time_to_minutes "$start_time")
+    end_min=$(time_to_minutes "$end_time")
+
+    if [ "$end_min" -lt "$start_min" ]; then
+        # Overnight schedule - also check previous day
+        local current_min
+        current_min=$(time_to_minutes "$current_time")
+
+        if [ "$current_min" -lt "$end_min" ]; then
+            # We're in the "morning" portion after midnight
+            # Check if yesterday was an active day
+            local yesterday
+            yesterday=$(LANG=C date -d "yesterday" +%a 2>/dev/null | tr '[:upper:]' '[:lower:]')
+            # Fallback for busybox date without -d support
+            if [ -z "$yesterday" ]; then
+                yesterday=$(LANG=C date -D %s -d $(($(date +%s) - 86400)) +%a 2>/dev/null | tr '[:upper:]' '[:lower:]')
+            fi
+
+            if [ -n "$yesterday" ] && is_day_active "$yesterday"; then
+                should_be_active=1
+            fi
+        fi
+    fi
+
+    # Get current active state
+    local current_active
+    current_active=$(uci -q get "$PIRANIA_CFG.$TRANCA_SECTION.active")
+    [ -z "$current_active" ] && current_active=0
+
+    # Update state if changed
+    if [ "$should_be_active" != "$current_active" ]; then
+        uci set "$PIRANIA_CFG.$TRANCA_SECTION.active=$should_be_active"
+        uci commit "$PIRANIA_CFG"
+
+        if [ "$should_be_active" = "1" ]; then
+            log_info "Tranca Redes ACTIVATED (day=$current_day, time=$current_time, schedule=$start_time-$end_time)"
+        else
+            log_info "Tranca Redes DEACTIVATED (day=$current_day, time=$current_time, schedule=$start_time-$end_time)"
+        fi
+
+        # Trigger captive-portal update in background
+        captive-portal update &>/dev/null &
+    fi
+}
+
+# Main entry point
+main() {
+    # Skip entirely if Pirania itself is disabled
+    local pirania_enabled
+    pirania_enabled=$(uci -q get "$PIRANIA_CFG.base_config.enabled")
+    if [ "$pirania_enabled" != "1" ]; then
+        exit 0
+    fi
+
+    # Prevent concurrent execution
+    if ! acquire_lock; then
+        exit 0
+    fi
+    trap release_lock EXIT
+
+    # Validate system time first
+    if ! check_valid_time; then
+        return 0
+    fi
+
+    evaluate_schedule
+}
+
+main "$@"

@@ -13,13 +13,49 @@ config base_config 'base_config'
     list allowlist_ipv4 '10.0.0.0/8'
     list allowlist_ipv4 '172.16.0.0/12'
     list allowlist_ipv4 '192.168.0.0/16'
+    list allowlist_ipv4_url 'https://raw.githubusercontent.com/HybridNetworks/whatsapp-cidr/refs/heads/main/WhatsApp/whatsapp_cidr_ipv4.txt'
+    option allowlist_ipv4_url_insecure '1'
     list allowlist_ipv6 'fc00::/7'
     list allowlist_ipv6 'fe80::/64'
     list allowlist_ipv6 '2a00:1508:0a00::/40'
-    list catch_interfaces 'br-lan'
-    # list catch_interfaces 'anygw'
+    # Interface catch lists (ifnames, not UCI network names)
+    # catch_interfaces: L3 interfaces for direct nftables matching
+    # catch_bridged_interfaces: L2 bridged interfaces for bridge-family marking
+    #
+    # MESH-SAFE DEFAULT: Only catch Wi-Fi AP interfaces, not br-lan.
+    # br-lan typically includes bat0 (mesh backbone) which must NOT be caught.
+    # Uncomment catch_interfaces only if you explicitly want to portal wired LAN
+    # or understand that br-lan may include mesh interfaces.
+    #
+    # list catch_interfaces 'br-lan'
     list catch_bridged_interfaces 'wlan0-ap'
     
 config access_mode 'read_for_access'
     option url_portal '/portal/read_for_access.html'
     option duration_m '15'
+
+# Tranca Redes - Second-layer access control mode
+# When enabled and active (during scheduled hours), restricts internet access:
+# - Authorized MACs can only reach allowlist_category destinations
+# - Unrestricted voucher holders bypass Tranca restrictions entirely
+# - Unauthorized MACs remain blocked as usual
+config tranca_redes 'tranca_redes'
+    option enabled '0'
+    option active '0'
+    # Schedule: start_time and end_time in 24h format (HH:MM)
+    # If end_time < start_time, schedule wraps across midnight
+    option start_time '20:00'
+    option end_time '07:00'
+    # Days when Tranca Redes is active (mon, tue, wed, thu, fri, sat, sun)
+    list days 'mon'
+    list days 'tue'
+    list days 'wed'
+    list days 'thu'
+    list days 'fri'
+    # Categories to allow during Tranca Redes (references allowlist_category sections)
+    list allowlist_category 'messenger'
+
+# Allowlist category definitions for Tranca Redes
+# Each category can have multiple ipv4_url sources
+config allowlist_category 'messenger'
+    list ipv4_url 'https://raw.githubusercontent.com/nickoppen/libremesh-whatsapp-ipv4-allowlist/refs/heads/main/whatsapp_ipv4_cidr.txt'
