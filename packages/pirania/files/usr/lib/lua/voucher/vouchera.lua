@@ -40,6 +40,11 @@ function voucher_init(obj)
     end
     voucher.code = obj.code
 
+    if type(obj.ip) == "string" and not obj.ip:match("^%d+%.%d+%.%d+%.%d+$") then
+        return nil, "invalid ip"
+    end
+    voucher.ip = obj.ip
+
     if type(obj.mac) == "string" and #obj.mac ~= 17 then
         return nil, "invalid mac"
     end
@@ -78,7 +83,7 @@ function voucher_init(obj)
         if v.expiration_date() then
             expiration = os.date("%c", v.expiration_date())
         end
-        return(string.format('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s', v.id, v.name, v.code, v.mac or 'xx:xx:xx:xx:xx:xx',
+        return(string.format('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s', v.id, v.name, v.code, v.ip or 'xx.xx.xx.xx', v.mac or 'xx:xx:xx:xx:xx:xx',
                              creation, v.duration_m or 'perm', expiration, v.mod_counter))
     end
 
@@ -232,11 +237,12 @@ function vouchera.invalidate(id)
 end
 
 --! Activate a voucher returning true or false depending on the status of the operation.
-function vouchera.activate(code, mac)
+function vouchera.activate(code, mac, ip)
     local voucher = vouchera.is_activable(code)
     if voucher then
         function _update(v)
             v.mac = mac
+            v.ip = ip
             v.activation_date = os.time()
         end
         modify_voucher_with_func(voucher.id, _update)
@@ -333,6 +339,16 @@ function vouchera.get_authorized_macs()
         end
     end
     return auth_macs
+end
+
+function vouchera.get_authorized_ips()
+    local auth_ips = {} 
+    for _, voucher in pairs(vouchera.vouchers) do
+        if voucher.is_active() then
+            table.insert(auth_ips, voucher.ip)
+        end
+    end
+    return auth_ips
 end
 
 vouchera.voucher = voucher_init
