@@ -32,7 +32,7 @@ function anygw.configure(args)
 	local anygw_ipv4 = ipv4:minhost()
 	anygw_ipv6:prefix(64) -- SLAAC only works with a /64, per RFC
 	anygw_ipv4:prefix(ipv4:prefix())
-	local baseIfname = "br-lan"
+	local baseIfname = config.uci:get('network', 'lan', 'device')
 	local argsDev = { macaddr = anygw_mac }
 	local argsIf = {
 		proto = "static",
@@ -126,6 +126,41 @@ function anygw.configure(args)
 	fs.writefile("/etc/dnsmasq.d/lime-proto-anygw-20-ipv6.conf", table.concat(content, "\n").."\n")
 
 	utils.unsafe_shell("/etc/init.d/dnsmasq enable || true")
+
+	if utils.is_dsa then
+		local nftDsaGuardFileName = includeDir.."lime-proto-anygw_dsa-mac-rules.nft"
+		local nftDsaGuard = "#!/usr/sbin/nft -f\
+define dsa_user_ports = {}\
+add table inet filter_anygw_ingress\
+add chain inet filter_anygw_ingress ingress_dsa\
+delete chain inet filter_anygw_ingress ingress_dsa\
+\
+table inet filter_anygw_ingress {\
+	chain ingress_dsa {\
+		type filter hook ingress devices = $dsa_user_ports priority 0; policy accept\
+		ether saddr $anygw_macs counter drop\
+	}\
+}\n"
+		fs.writefile(nftDsaGuardFileName, nftDsaGuard)
+
+		local br_lan_cfgid = utils.find_br_lan()
+		local dsaPortsList = "#!/bin/sh\
+ports=$(uci get network."..br_lan_cfgid..".ports)\
+dsa_ports={\
+for i in $ports; do\
+	echo $i | grep -qv bat && dsa_ports=$dsa_ports$i,\
+done\
+dsa_ports=${dsa_ports::-1}}\
+sed -i \"s|\\(define dsa_user_ports = \\).*|\\1$dsa_ports|\" "..nftDsaGuardFileName.."\
+nft flush ruleset; fw4 reload\n"
+		fs.writefile("/etc/hotplug.d/lime-config/10-anygw-mac-dsa", dsaPortsList)
+		utils.unsafe_shell("chmod +x /etc/hotplug.d/lime-config/10-anygw-mac-dsa")
+
+		local bridgeFdbFixes = "#!/bin/sh\
+bridge fdb flush dev br-lan\
+bridge fdb add " .. anygw_mac .. " dev br-lan\n"
+		fs.writefile("/etc/hotplug.d/net/10-anygw-mac-dsa", bridgeFdbFixes)
+	end
 end
 
 function anygw.setup_interface(ifname, args) end
