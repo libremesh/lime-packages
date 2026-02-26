@@ -1,0 +1,15 @@
+{
+    "lime-app": {
+        "description": "lime-mesh-upgrade public access",
+        "read": {
+            "ubus": {
+                    "lime-mesh-upgrade": [ "*" ]
+            }
+        },
+        "write": {
+            "ubus": {
+                    "lime-mesh-upgrade": [ "*" ]
+            }
+        }
+    }
+}

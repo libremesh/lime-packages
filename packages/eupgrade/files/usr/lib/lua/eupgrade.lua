@@ -2,6 +2,7 @@ local utils = require "lime.utils"
 local json = require "luci.jsonc"
 local libuci = require "uci"
 local fs = require("nixio.fs")
+local config = require "lime.config"
 
 local eup = {}
 
@@ -32,8 +33,30 @@ function eup.is_enabled()
     return uci:get('eupgrade', 'main', 'enabled') == '1'
 end
 
+function eup.is_meshupgrade_enabled()
+    if uci:get('eupgrade', 'main', 'custom_api_url') == nil then
+        return false
+    else
+        return true
+    end
+end
+
 function eup.get_upgrade_api_url()
-    return uci:get('eupgrade', 'main', 'api_url') or ''
+        return uci:get('eupgrade', 'main', 'custom_api_url') or uci:get('eupgrade', 'main', 'api_url') or  ''
+end
+
+function eup.set_custom_api_url(url)
+    status = uci:set('eupgrade', 'main', 'custom_api_url',url)
+    uci:save('eupgrade')
+    uci:commit('eupgrade')
+    return status
+end
+
+function eup.remove_custom_api_url()
+    status = uci:delete('eupgrade', 'main', 'custom_api_url')
+    uci:save('eupgrade')
+    uci:commit('eupgrade')
+    return status
 end
 
 function eup._check_signature(file_path, signature_path)
@@ -61,7 +84,7 @@ end
 function eup.is_new_version_available(cached_only)
     --! if 'latest' files are present is because there is a new version
     if utils.file_exists(eup.FIRMWARE_LATEST_JSON) and utils.file_exists(eup.FIRMWARE_LATEST_JSON_SIGNATURE) then
-        if eup._check_signature(eup.FIRMWARE_LATEST_JSON, eup.FIRMWARE_LATEST_JSON_SIGNATURE) then
+        if eup._check_signature(eup.FIRMWARE_LATEST_JSON, eup.FIRMWARE_LATEST_JSON_SIGNATURE) or eup.is_meshupgrade_enabled() then
             return json.parse(utils.read_file(eup.FIRMWARE_LATEST_JSON))
         end
     end
@@ -84,15 +107,12 @@ function eup.is_new_version_available(cached_only)
             local sig_url = url .. ".sig"
             if not utils.http_client_get(sig_url, 10, eup.FIRMWARE_LATEST_JSON_SIGNATURE) then
                 message = "Can't download signature " .. sig_url
-                utils.log(message)
             end
-
-            if eup._check_signature(eup.FIRMWARE_LATEST_JSON, eup.FIRMWARE_LATEST_JSON_SIGNATURE) then
-                utils.log("Good signature of firmware_latest.json")
+            -- this will skip json signature verification when altenative url is set
+            if eup._check_signature(eup.FIRMWARE_LATEST_JSON, eup.FIRMWARE_LATEST_JSON_SIGNATURE) or eup.is_meshupgrade_enabled() then
                 return latest_data
             else
                 message = "Bad signature of firmware_latest.json"
-                utils.log(message)
             end
         end
     end
