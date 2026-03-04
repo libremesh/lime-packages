@@ -145,6 +145,7 @@ table inet filter_anygw_ingress {\
 
 		local br_lan_cfgid = utils.find_br_lan()
 		local dsaPortsList = "#!/bin/sh\
+[ \"$ACTION\" = \"post\" ] || exit 0\
 ports=$(uci get network."..br_lan_cfgid..".ports)\
 dsa_ports={\
 for i in $ports; do\
