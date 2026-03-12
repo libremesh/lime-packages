@@ -127,7 +127,7 @@ function anygw.configure(args)
 
 	utils.unsafe_shell("/etc/init.d/dnsmasq enable || true")
 
-	if utils.is_dsa then
+	if utils.is_dsa() then
 		local nftDsaGuardFileName = includeDir.."lime-proto-anygw_dsa-mac-rules.nft"
 		local nftDsaGuard = "#!/usr/sbin/nft -f\
 define dsa_user_ports = {}\
