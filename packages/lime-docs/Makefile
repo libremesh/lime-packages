@@ -20,17 +20,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)
   CATEGORY:=LibreMesh
-  TITLE:=LibreMesh English documentation
-  DEPENDS:=+$(PKG_NAME)-minimal
-  MAINTAINER:=Ilario Gelmetti <iochesonome@gmail.com>
-  URL:=https://libremesh.org/docs/
-  SUBMENU:=Offline Documentation
-  PKGARCH:=all
-endef
-
-define Package/$(PKG_NAME)-it
-  CATEGORY:=LibreMesh
-  TITLE:=LibreMesh Italian documentation
+  TITLE:=LibreMesh documentation
   DEPENDS:=+$(PKG_NAME)-minimal
   MAINTAINER:=Ilario Gelmetti <iochesonome@gmail.com>
   URL:=https://libremesh.org/docs/
@@ -48,15 +38,11 @@ define Package/$(PKG_NAME)-minimal
 endef
 
 define Package/$(PKG_NAME)/description
-Offline English documentation for LibreMesh firmware
-endef
-
-define Package/$(PKG_NAME)-it/description
-Offline Italian documentation for LibreMesh firmware
+Offline documentation for LibreMesh firmware
 endef
 
 define Package/$(PKG_NAME)-minimal/description
-Minimal offline English documentation for LibreMesh firmware containing
+Minimal offline documentation for LibreMesh firmware containing
 just a commented example of the main config file.
 endef
 
@@ -69,12 +55,6 @@ define Package/$(PKG_NAME)/install
 	@ln -s /www/docs $(1)/docs
 endef
 
-define Package/$(PKG_NAME)-it/install
-	$(INSTALL_DIR) $(1)/www/docs/
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/docs/it_*.txt $(1)/www/docs/
-	@ln -s /www/docs $(1)/docs
-endef
-
 define Package/$(PKG_NAME)-minimal/install
 	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
@@ -82,6 +62,5 @@ define Package/$(PKG_NAME)-minimal/install
 endef
 
 $(eval $(call BuildPackage,lime-docs))
-$(eval $(call BuildPackage,lime-docs-it))
 $(eval $(call BuildPackage,lime-docs-minimal))
 
