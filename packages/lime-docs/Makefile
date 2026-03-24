@@ -51,7 +51,8 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/www/docs/
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/docs/en_*.txt $(1)/www/docs/
+	$(CP) $(PKG_BUILD_DIR)/docs/reference $(1)/www/docs/
+	$(CP) $(PKG_BUILD_DIR)/docs/guide $(1)/www/docs/
 	@ln -s /www/docs $(1)/docs
 endef
 
