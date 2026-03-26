@@ -48,10 +48,10 @@ check_valid_time() {
     return 0
 }
 
-# Validate time format (HH:MM)
+# Validate time format (HH:MM) with hour range restricted to 00-23
 validate_time_format() {
     local time="$1"
-    echo "$time" | grep -qE '^[0-2]?[0-9]:[0-5][0-9]$'
+    echo "$time" | grep -qE '^(0?[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$'
 }
 
 # Convert HH:MM to minutes since midnight
