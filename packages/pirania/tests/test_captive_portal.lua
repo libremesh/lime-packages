@@ -213,4 +213,15 @@ exit 0
         assert.is_not_nil(string.find(nft_log, 'delete table inet pirania', 1, true))
         assert.is_nil(string.find(nft_log, 'TRANCA_BLOCK_AUTH_MAC', 1, true))
     end)
+
+    it('lets HTTPS bypass prerouting drop and rejects it in input and forward with tcp reset', function()
+        local ok, code, output = run_update(true, false)
+        assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
+
+        local nft_log = read_file(test_dir .. "nft.log") or ""
+
+        assert.is_not_nil(string.find(nft_log, 'add rule inet pirania pirania_prerouting tcp dport 443 return', 1, true))
+        assert.is_not_nil(string.find(nft_log, 'add rule inet pirania pirania_input tcp dport 443 ether saddr != @pirania-auth-macs reject with tcp reset', 1, true))
+        assert.is_not_nil(string.find(nft_log, 'add rule inet pirania pirania_forward tcp dport 443 ether saddr != @pirania-auth-macs reject with tcp reset', 1, true))
+    end)
 end)

@@ -72,12 +72,18 @@ set_nftables () {
 
     # --- Regular chains (MUST be created BEFORE base chains that jump to them) ---
     nft add chain inet pirania pirania_prerouting
+    nft add chain inet pirania pirania_input
     nft add chain inet pirania pirania_forward
 
     # --- Base chains with gating logic ---
     nft add chain inet pirania prerouting \{ type nat hook prerouting priority -100\; \}
     nft add rule inet pirania prerouting iifname @pirania-catch-ifaces jump pirania_prerouting
     nft add rule inet pirania prerouting meta mark $PIRANIA_MARK jump pirania_prerouting
+
+    nft add chain inet pirania input \{ type filter hook input priority 0\; policy accept\; \}
+    nft add rule inet pirania input iifname @pirania-catch-ifaces jump pirania_input
+    nft add rule inet pirania input meta mark $PIRANIA_MARK jump pirania_input
+    nft add rule inet pirania input meta mark $PIRANIA_MARK meta mark set 0
 
     nft add chain inet pirania forward \{ type filter hook forward priority 0\; policy accept\; \}
     nft add rule inet pirania forward iifname @pirania-catch-ifaces jump pirania_forward
@@ -92,7 +98,11 @@ set_nftables () {
     nft add rule inet pirania pirania_prerouting ether saddr @pirania-auth-macs accept
     nft add rule inet pirania pirania_prerouting tcp dport 80 redirect to :59080
     nft add rule inet pirania pirania_prerouting udp dport 53 redirect to :59053
+    nft add rule inet pirania pirania_prerouting tcp dport 443 return
     nft add rule inet pirania pirania_prerouting drop
+
+    # Router-local HTTPS must be rejected in input; forwarded HTTPS is handled below.
+    nft add rule inet pirania pirania_input tcp dport 443 ether saddr != @pirania-auth-macs reject with tcp reset
 
     # --- Forward rules ---
     tranca_active=$(uci -q get pirania.tranca_redes.active)
@@ -111,7 +121,7 @@ set_nftables () {
         nft add rule inet pirania pirania_forward ip6 daddr @pirania-allowlist-ipv6 return
     fi
 
-    nft add rule inet pirania pirania_forward tcp dport 443 ether saddr != @pirania-auth-macs drop
+    nft add rule inet pirania pirania_forward tcp dport 443 ether saddr != @pirania-auth-macs reject with tcp reset
 
     echo "Captive-portal rules applied successfully"
 }
