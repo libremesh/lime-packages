@@ -656,6 +656,7 @@ config base_config 'base_config'
     list allowlist_ipv4 '10.0.0.0/8'      # IPs sempre permitidos
     list allowlist_ipv4 '172.16.0.0/12'
     list allowlist_ipv4 '192.168.0.0/16'
+    option allowlist_ipv4_url_insecure '1' # Fallback de compatibilidade para retry sem validacao TLS
     list allowlist_ipv6 'fc00::/7'
     list allowlist_ipv6 'fe80::/64'
     list allowlist_ipv6 '2a00:1508:0a00::/40'

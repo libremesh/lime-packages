@@ -45,6 +45,7 @@ Key options in `base_config`:
 - `db_path`: voucher database directory (JSON files)
 - `hooks_path`: directory for hook scripts (e.g., shared-state sync)
 - `allowlist_ipv4`, `allowlist_ipv6`: ranges that bypass the captive portal
+- `allowlist_ipv4_url_insecure`: escape hatch to retry downloaded IPv4 allowlists without TLS certificate validation; currently enabled by default for compatibility, but should only be used where TLS validation is known to be broken
 
 Access-mode options live in `config access_mode 'read_for_access'`:
 
