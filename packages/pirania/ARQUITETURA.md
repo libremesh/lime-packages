@@ -217,7 +217,7 @@ Script **Shell** que configura regras **nftables** para interceptar trafego.
 3. Destino em allowlist IPv6 (`@pirania-allowlist-ipv6`) → ACCEPT
 4. DNS (porta 53) de MACs nao autorizados → redirect para porta 59053
 5. HTTP (porta 80) de MACs nao autorizados → redirect para porta 59080
-6. HTTPS (porta 443) de MACs nao autorizados → DROP
+6. HTTPS (porta 443) de MACs nao autorizados passa pelo prerouting e e rejeitado no caminho de filtro input/forward com TCP reset
 
 ### 2. Servidor HTTP do Portal (`pirania-uhttpd`)
 
@@ -393,7 +393,7 @@ shared-state-pirania/
 3. Cria sets: pirania-auth-macs, pirania-allowlist-ipv4, pirania-allowlist-ipv6
 4. Adiciona regras de ACCEPT para MACs/IPs autorizados
 5. Adiciona regras de redirect para DNS (59053) e HTTP (59080)
-6. Adiciona regra de DROP para HTTPS (443)
+6. Deixa HTTPS (443) seguir no prerouting e o rejeita no caminho input/forward com TCP reset
 ```
 
 **Fluxo de `update_ipsets()`:**
@@ -791,7 +791,7 @@ pirania (rpcd)
 | Firewall | iptables, ip6tables, ebtables | nftables |
 | Sets | ipset | nft sets nativos |
 | Tabelas | Multiplas (mangle, nat, filter) | Tabela unica `inet pirania` |
-| HTTPS | Rejeitado | Dropped (bloqueado) |
+| HTTPS | Rejeitado | Rejeitado com TCP reset no caminho input/forward |
 | Dependencias | ip6tables-mod-nat, ipset | nftables |
 | Init start | Nao iniciava servicos | Inicia pirania-dnsmasq e pirania-uhttpd |
 | Bug 502 | Presente | Corrigido (redirect stdout/stderr) |
@@ -805,7 +805,7 @@ pirania (rpcd)
 | 59053 | DNS (dnsmasq) | DNS que resolve tudo para portal |
 | 59080 | HTTP (uhttpd) | Redireciona para pagina de autenticacao |
 | 80 | HTTP (uhttpd principal) | Serve paginas do portal |
-| 443 | HTTPS | Bloqueado para MACs nao autorizados |
+| 443 | HTTPS | Rejeitado com TCP reset para MACs nao autorizados no caminho input/forward |
 
 ---
 
