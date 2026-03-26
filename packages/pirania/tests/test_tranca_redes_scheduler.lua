@@ -279,6 +279,32 @@ exit 0
         assert.is_nil(string.find(captive_log, 'update', 1, true))
     end)
 
+    it('warns and fails when start_time hour is out of range', function()
+        write_state("start_time", "24:00\n")
+
+        local ok, code, output = run_scheduler()
+        assert.is_false(ok, output .. "\nexit code: " .. tostring(code))
+
+        local logger_log = read_file(test_dir .. "logger.log") or ""
+        local captive_log = read_file(test_dir .. "captive.log") or ""
+
+        assert.is_not_nil(string.find(logger_log, 'Invalid start_time format: 24:00 (expected HH:MM)', 1, true))
+        assert.is_nil(string.find(captive_log, 'update', 1, true))
+    end)
+
+    it('warns and fails when end_time hour is out of range', function()
+        write_state("end_time", "29:59\n")
+
+        local ok, code, output = run_scheduler()
+        assert.is_false(ok, output .. "\nexit code: " .. tostring(code))
+
+        local logger_log = read_file(test_dir .. "logger.log") or ""
+        local captive_log = read_file(test_dir .. "captive.log") or ""
+
+        assert.is_not_nil(string.find(logger_log, 'Invalid end_time format: 29:59 (expected HH:MM)', 1, true))
+        assert.is_nil(string.find(captive_log, 'update', 1, true))
+    end)
+
     it('does nothing when active state already matches the evaluated schedule', function()
         write_state("tranca_active", "1\n")
 
