@@ -139,6 +139,7 @@ download_allowlist_ipv4 () {
   for url in $allowlist_urls ; do
     if ! wget -q -O - "$url" >> "$tmpfile" ; then
       if [ "$allowlist_insecure" = "1" ]; then
+        log_warn "Retrying IPv4 allowlist download without certificate validation: $url"
         echo "Retrying IPv4 allowlist download without certificate check: $url"
         if ! wget --no-check-certificate -q -O - "$url" >> "$tmpfile" ; then
           echo "Failed to download IPv4 allowlist from $url"
@@ -190,6 +191,7 @@ download_tranca_allowlist_ipv4 () {
             echo "  Downloading: $url"
             if ! wget -q -O - "$url" >> "$tmpfile" 2>/dev/null; then
                 if [ "$allowlist_insecure" = "1" ]; then
+                    log_warn "Retrying Tranca allowlist download without certificate validation: $url"
                     echo "  Retrying without certificate check: $url"
                     if ! wget --no-check-certificate -q -O - "$url" >> "$tmpfile" 2>/dev/null; then
                         log_warn "Failed to download Tranca allowlist: $url"

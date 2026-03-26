@@ -45,6 +45,7 @@ Opcoes principais em `base_config`:
 - `db_path`: diretorio do banco de vouchers (arquivos JSON)
 - `hooks_path`: diretorio de scripts de hook (ex.: sincronizacao shared-state)
 - `allowlist_ipv4`, `allowlist_ipv6`: faixas que bypassam o portal cativo
+- `allowlist_ipv4_url_insecure`: escape hatch para tentar novamente downloads de allowlist IPv4 sem validacao TLS; por compatibilidade vem habilitado por padrao, mas deve ser usado apenas em ambientes com TLS quebrado
 
 Opcoes do modo de acesso ficam em `config access_mode 'read_for_access'`:
 

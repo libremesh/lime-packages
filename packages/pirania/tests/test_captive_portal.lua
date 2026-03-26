@@ -37,6 +37,17 @@ local function write_state(name, content)
     write_file(test_dir .. name, content)
 end
 
+local function wait_for_file_contains(path, pattern)
+    for _ = 1, 20 do
+        local content = read_file(path) or ""
+        if string.find(content, pattern, 1, true) ~= nil then
+            return content
+        end
+        os.execute("sleep 0.05")
+    end
+    return read_file(path) or ""
+end
+
 command_succeeds = function(cmd)
     local ok, _, code = os.execute(cmd)
     if type(ok) == "number" then
@@ -80,6 +91,8 @@ describe('Pirania captive-portal shell tests #captiveportal', function()
         bin_dir = test_dir .. "bin/"
         local ok = command_succeeds("mkdir -p " .. bin_dir)
         assert.is_true(ok)
+        write_state("allowlist_url", "")
+        write_state("allowlist_insecure", "0\n")
 
         local uci_script = string.format([[#!/bin/sh
 if [ "$1" = "-q" ]; then
@@ -97,8 +110,8 @@ get)
         pirania.base_config.catch_interfaces) echo "wlan0-ap" ;;
         pirania.base_config.catch_bridged_interfaces) echo "" ;;
         pirania.base_config.allowlist_ipv4) echo "10.0.0.0/8 172.16.0.0/12 192.168.0.0/16" ;;
-        pirania.base_config.allowlist_ipv4_url) echo "" ;;
-        pirania.base_config.allowlist_ipv4_url_insecure) echo "0" ;;
+        pirania.base_config.allowlist_ipv4_url) cat "$test_root/allowlist_url" ;;
+        pirania.base_config.allowlist_ipv4_url_insecure) cat "$test_root/allowlist_insecure" ;;
         pirania.base_config.allowlist_ipv6) echo "fc00::/7 fe80::/64 2a00:1508:0a00::/40" ;;
         pirania.tranca_redes.active) cat "$test_root/tranca_active" ;;
         *) exit 1 ;;
@@ -133,11 +146,10 @@ exit 0
 ]])
 
         write_executable("wget", [[#!/bin/sh
-url=""
-for arg in "$@"; do
-    url="$arg"
-done
-printf '%s\n' "$url" >> "$TEST_ROOT/wget.log"
+printf '%s\n' "$*" >> "$TEST_ROOT/wget.log"
+if [ -f "$TEST_ROOT/wget_fail" ]; then
+    exit 1
+fi
 printf '203.0.113.0/24\n'
 exit 0
 ]])
@@ -166,6 +178,13 @@ exit 0
         local config = file:read("*all")
         file:close()
         assert.is_nil(string.find(config, GLOBAL_ALLOWLIST_URL, 1, true))
+    end)
+
+    it('ships allowlist insecure retry enabled by default for compatibility', function()
+        local file = assert(io.open(CONFIG_PATH))
+        local config = file:read("*all")
+        file:close()
+        assert.is_not_nil(string.find(config, "option allowlist_ipv4_url_insecure '1'", 1, true))
     end)
 
     it('ignores stale global allowlist cache when no allowlist URL is configured', function()
@@ -223,5 +242,37 @@ exit 0
         assert.is_not_nil(string.find(nft_log, 'add rule inet pirania pirania_prerouting tcp dport 443 return', 1, true))
         assert.is_not_nil(string.find(nft_log, 'add rule inet pirania pirania_input tcp dport 443 ether saddr != @pirania-auth-macs reject with tcp reset', 1, true))
         assert.is_not_nil(string.find(nft_log, 'add rule inet pirania pirania_forward tcp dport 443 ether saddr != @pirania-auth-macs reject with tcp reset', 1, true))
+    end)
+
+    it('logs a warning before retrying insecure allowlist downloads', function()
+        write_state("allowlist_url", "https://example.test/allowlist.txt\n")
+        write_state("allowlist_insecure", "1\n")
+        write_state("wget_fail", "1\n")
+
+        local ok, code, output = run_update(false, true)
+        assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
+
+        local logger_log = read_file(test_dir .. "logger.log") or ""
+        local wget_log = read_file(test_dir .. "wget.log") or ""
+
+        assert.is_not_nil(string.find(logger_log, 'WARNING: Retrying IPv4 allowlist download without certificate validation: https://example.test/allowlist.txt', 1, true))
+        assert.is_not_nil(string.find(wget_log, '--no-check-certificate -q -O - https://example.test/allowlist.txt', 1, true))
+    end)
+
+    it('logs a warning before retrying insecure Tranca allowlist downloads', function()
+        write_state("allowlist_insecure", "1\n")
+        write_state("wget_fail", "1\n")
+
+        local ok, code, output = run_update(true, false)
+        assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
+
+        local logger_log = wait_for_file_contains(
+            test_dir .. "logger.log",
+            'WARNING: Retrying Tranca allowlist download without certificate validation: ' .. TRANCA_ALLOWLIST_URL
+        )
+        local wget_log = read_file(test_dir .. "wget.log") or ""
+
+        assert.is_not_nil(string.find(logger_log, 'WARNING: Retrying Tranca allowlist download without certificate validation: ' .. TRANCA_ALLOWLIST_URL, 1, true))
+        assert.is_not_nil(string.find(wget_log, '--no-check-certificate -q -O - ' .. TRANCA_ALLOWLIST_URL, 1, true))
     end)
 end)
