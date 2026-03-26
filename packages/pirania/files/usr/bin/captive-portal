@@ -103,7 +103,7 @@ set_nftables () {
         nft add rule inet pirania pirania_forward udp dport 53 return
         nft add rule inet pirania pirania_forward ether saddr @pirania-unrestricted-macs return
         nft add rule inet pirania pirania_forward ether saddr @pirania-auth-macs ip daddr @pirania-tranca-allowlist-ipv4 return
-        nft add rule inet pirania pirania_forward ether saddr @pirania-auth-macs drop
+        nft add rule inet pirania pirania_forward ether saddr @pirania-auth-macs drop comment \"TRANCA_BLOCK_AUTH_MAC\"
     else
         nft add rule inet pirania pirania_forward ether saddr @pirania-auth-macs return
         nft add rule inet pirania pirania_forward udp dport 53 return
@@ -117,15 +117,14 @@ set_nftables () {
 }
 
 download_allowlist_ipv4 () {
+  tmpfile="/tmp/allowlist_ipv4_urls.txt"
   allowlist_urls=$(uci -q get pirania.base_config.allowlist_ipv4_url)
+  : > "$tmpfile"
   if [ -z "$allowlist_urls" ]; then
     return
   fi
   allowlist_insecure=$(uci -q get pirania.base_config.allowlist_ipv4_url_insecure)
-
-  tmpfile="/tmp/messengers_allowlist.txt"
   echo "Downloading IPv4 allowlist URLs to $tmpfile"
-  : > "$tmpfile"
 
   for url in $allowlist_urls ; do
     if ! wget -q -O - "$url" >> "$tmpfile" ; then
@@ -264,8 +263,9 @@ add_allowlist_ipv4_elements () {
 
 get_allowlist_ipv4_tokens () {
   uci -q get pirania.base_config.allowlist_ipv4 | tr ' ' '\n'
-  if [ -f /tmp/messengers_allowlist.txt ]; then
-    tr -d '\r' < /tmp/messengers_allowlist.txt | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}(/([0-9]|[12][0-9]|3[0-2]))?'
+  allowlist_urls=$(uci -q get pirania.base_config.allowlist_ipv4_url)
+  if [ -n "$allowlist_urls" ] && [ -f /tmp/allowlist_ipv4_urls.txt ]; then
+    tr -d '\r' < /tmp/allowlist_ipv4_urls.txt | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}(/([0-9]|[12][0-9]|3[0-2]))?'
   fi
 }
 
@@ -355,7 +355,11 @@ elif [ "$1" = "update" ] ; then
 	# Check if nftables rules need rebuilding due to Tranca state change
 	# Rules are conditional on Tranca active state
 	tranca_active=$(uci -q get pirania.tranca_redes.active)
-	tranca_rules_present=$(nft list chain inet pirania forward 2>/dev/null | grep -c "TRANCA_BLOCK_AUTH_MAC" || echo "0")
+	if nft list chain inet pirania pirania_forward 2>/dev/null | grep -q "TRANCA_BLOCK_AUTH_MAC"; then
+		tranca_rules_present=1
+	else
+		tranca_rules_present=0
+	fi
 
 	needs_rebuild=0
 	if [ "$tranca_active" = "1" ] && [ "$tranca_rules_present" = "0" ]; then
