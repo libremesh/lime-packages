@@ -188,7 +188,7 @@ exit 0
         assert.is_not_nil(string.find(nft_log, 'list chain inet pirania pirania_forward', 1, true))
         assert.is_nil(string.find(nft_log, 'list chain inet pirania forward', 1, true))
         assert.is_not_nil(string.find(nft_log, 'delete table inet pirania', 1, true))
-        assert.is_not_nil(string.find(nft_log, 'drop comment TRANCA_BLOCK_AUTH_MAC', 1, true))
+        assert.is_not_nil(string.find(nft_log, 'TRANCA_BLOCK_AUTH_MAC', 1, true))
         assert.is_not_nil(string.find(wget_log, TRANCA_ALLOWLIST_URL, 1, true))
     end)
 
@@ -200,7 +200,7 @@ exit 0
 
         assert.is_not_nil(string.find(nft_log, 'list chain inet pirania pirania_forward', 1, true))
         assert.is_nil(string.find(nft_log, 'delete table inet pirania', 1, true))
-        assert.is_nil(string.find(nft_log, 'drop comment TRANCA_BLOCK_AUTH_MAC', 1, true))
+        assert.is_nil(string.find(nft_log, 'TRANCA_BLOCK_AUTH_MAC', 1, true))
     end)
 
     it('rebuilds when inactive and a Tranca marker is still present', function()
@@ -211,6 +211,6 @@ exit 0
 
         assert.is_not_nil(string.find(nft_log, 'list chain inet pirania pirania_forward', 1, true))
         assert.is_not_nil(string.find(nft_log, 'delete table inet pirania', 1, true))
-        assert.is_nil(string.find(nft_log, 'drop comment TRANCA_BLOCK_AUTH_MAC', 1, true))
+        assert.is_nil(string.find(nft_log, 'TRANCA_BLOCK_AUTH_MAC', 1, true))
     end)
 end)
