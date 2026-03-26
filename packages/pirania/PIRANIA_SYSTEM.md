@@ -65,7 +65,7 @@ Access-mode options live in `config access_mode 'read_for_access'`:
 - Creates sets for authorized MACs (`pirania-auth-macs`) and allowlisted IPv4/IPv6 destination ranges.
 - Redirects DNS (UDP/53) to port 59053 for unauthorized MACs.
 - Redirects HTTP (TCP/80) to port 59080 for unauthorized MACs.
-- Drops HTTPS (TCP/443) for unauthorized MACs.
+- Lets HTTPS (TCP/443) pass prerouting and rejects unauthorized traffic with a TCP reset in the input/forward filter path.
 - Allows traffic for MACs in `pirania-auth-macs`, and allows allowlisted destinations to bypass redirects and HTTPS blocking.
 
 Authorized MACs come from `packages/pirania/files/usr/bin/pirania_authorized_macs`, which delegates to the Lua portal library and returns either voucher-based or read-for-access MACs.
