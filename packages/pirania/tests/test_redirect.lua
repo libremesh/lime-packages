@@ -62,8 +62,8 @@ describe('Pirania redirect request handler #portalredirect', function()
         file:close()
 
         assert.is_nil(string.find(script, "thisnode.info", 1, true))
-        assert.is_not_nil(string.find(script, "window.location.host", 1, true))
-        assert.is_not_nil(string.find(script, "window.location.origin", 1, true))
+        assert.is_not_nil(string.find(script, "const url = '/ubus'", 1, true))
+        assert.is_nil(string.find(script, "Access-Control-Allow-Origin", 1, true))
     end)
 
     it('configures dnsmasq from portal_domain instead of a hardcoded hostname', function()
@@ -71,9 +71,9 @@ describe('Pirania redirect request handler #portalredirect', function()
         local script = file:read("*all")
         file:close()
 
-        assert.is_nil(string.find(script, "thisnode.info", 1, true))
         assert.is_not_nil(string.find(script, 'uci -q get pirania.base_config.portal_domain', 1, true))
         assert.is_not_nil(string.find(script, '--address=/$PORTAL_DOMAIN/', 1, true))
+        assert.is_nil(string.find(script, '--address=/thisnode.info/', 1, true))
     end)
 
     before_each('', function()
