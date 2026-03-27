@@ -51,8 +51,8 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/www/docs/
-	$(CP) $(PKG_BUILD_DIR)/docs/reference $(1)/www/docs/
-	$(CP) $(PKG_BUILD_DIR)/docs/guide $(1)/www/docs/
+	$(FIND) $(PKG_BUILD_DIR)/docs/reference -name "*md" -print0 -printf '$(1)/www/docs/%f.txt\000' | $(XARGS) -0 -n 2 $(INSTALL_DATA)
+	$(FIND) $(PKG_BUILD_DIR)/docs/guide -name "*md" -print0 -printf '$(1)/www/docs/%f.txt\000' | $(XARGS) -0 -n 2 $(INSTALL_DATA)
 	@ln -s /www/docs $(1)/docs
 endef
 
