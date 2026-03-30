@@ -61,6 +61,48 @@ describe('Pirania portal tests #portal', function()
         assert.is.equal(0, #macs)
     end)
 
+    it('get_authorized_macs returns active voucher MACs in voucher mode', function()
+        local default_cfg = io.open('./packages/pirania/files/etc/config/pirania'):read("*all")
+        test_utils.write_uci_file(uci, 'pirania', default_cfg)
+        uci:set('pirania', 'base_config', 'with_vouchers', '1')
+
+        stub(portal, "update_captive_portal", function() end)
+        local vouchera = require('voucher.vouchera')
+        local test_utils_pirania = require('packages/pirania/tests/pirania_test_utils')
+        test_utils_pirania.fake_for_tests()
+        vouchera.init()
+        vouchera.add({name='test', code='code1', duration_m=100})
+        vouchera.activate('code1', 'AA:BB:CC:DD:EE:FF')
+
+        local macs = portal.get_authorized_macs()
+        assert.is.equal(1, #macs)
+        assert.is.equal('AA:BB:CC:DD:EE:FF', macs[1])
+    end)
+
+    it('get_unrestricted_macs returns only unrestricted MACs in voucher mode', function()
+        local default_cfg = io.open('./packages/pirania/files/etc/config/pirania'):read("*all")
+        test_utils.write_uci_file(uci, 'pirania', default_cfg)
+        uci:set('pirania', 'base_config', 'with_vouchers', '1')
+
+        stub(portal, "update_captive_portal", function() end)
+        local vouchera = require('voucher.vouchera')
+        local test_utils_pirania = require('packages/pirania/tests/pirania_test_utils')
+        test_utils_pirania.fake_for_tests()
+        vouchera.init()
+
+        -- Normal voucher
+        vouchera.add({name='normal', code='code1', duration_m=100})
+        vouchera.activate('code1', 'AA:BB:CC:DD:EE:FF')
+
+        -- Unrestricted voucher
+        vouchera.add({name='unrestricted', code='code2', duration_m=100, unrestricted=true})
+        vouchera.activate('code2', '11:22:33:44:55:66')
+
+        local macs = portal.get_unrestricted_macs()
+        assert.is.equal(1, #macs)
+        assert.is.equal('11:22:33:44:55:66', macs[1])
+    end)
+
     before_each('', function()
         snapshot = assert:snapshot()
         test_dir = test_utils.setup_test_dir()
