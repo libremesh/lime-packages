@@ -31,7 +31,7 @@ function read_for_access.authorize_mac(mac)
             end
         end
     end
-    local duration = uci:get("pirania", "read_for_access", "duration_m")
+    local duration = uci:get("pirania", "read_for_access", "duration_m") or '15'
     local timestamp = uptime_s() + tonumber(duration) * 60
     if not found then
         local ofile = io.open(read_for_access.AUTH_MACS_FILE, 'a')

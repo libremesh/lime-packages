@@ -143,7 +143,7 @@ function vouchera.init(cfg)
         config = cfg
     end
     vouchera.config = config
-    vouchera.PRUNE_OLDER_THAN_S = tonumber(config.prune_expired_for_days) * 60 * 60 * 24
+    vouchera.PRUNE_OLDER_THAN_S = tonumber(config.prune_expired_for_days or '30') * 60 * 60 * 24
     vouchera.vouchers = store.load_db(config.db_path, voucher_init)
 
     --! Automatic voucher pruning
