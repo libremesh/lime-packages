@@ -178,7 +178,6 @@ Read-for-access mode:
 4. User is redirected to the original URL or `authenticated.html`.
 
 ## 15. Notes and caveats
-## 15. Notes and caveats
 
 - The current implementation uses **nftables** (not iptables) via `captive-portal`.
 - `catch_interfaces` and `catch_bridged_interfaces` are applied to nftables rules: L3 interfaces via `iifname` matching in the inet table, L2 bridged interfaces via bridge-family marking.
