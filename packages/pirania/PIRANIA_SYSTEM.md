@@ -178,11 +178,12 @@ Read-for-access mode:
 4. User is redirected to the original URL or `authenticated.html`.
 
 ## 15. Notes and caveats
+## 15. Notes and caveats
 
 - The current implementation uses **nftables** (not iptables) via `captive-portal`.
-- `catch_interfaces`/`catch_bridged_interfaces` are present in UCI config but are not currently applied to nftables rules.
-- The `client_ip` CGI script appears to depend on legacy modules (`voucher.logic`, `voucher.db`).
+- `catch_interfaces` and `catch_bridged_interfaces` are applied to nftables rules: L3 interfaces via `iifname` matching in the inet table, L2 bridged interfaces via bridge-family marking.
+- The `client_ip` CGI script depends on legacy modules (`voucher.logic`, `voucher.db`) and is non-functional (see #1249).
 
 ---
 
-If you want, I can add a short “operator guide” section (common commands, troubleshooting, or a flow diagram) based on how you deploy Pirania.
+This document describes the current state of the code. For CLI usage and examples, see `Readme.md`.
