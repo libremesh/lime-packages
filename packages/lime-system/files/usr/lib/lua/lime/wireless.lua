@@ -212,7 +212,7 @@ function wireless.configure()
 
 			local uci = config.get_uci_cursor()
 			uci:set("wireless", radioName, "disabled", 0)
-			uci:set("wireless", radioName, "distance", options["distance"])
+			uci:set("wireless", radioName, "distance", wireless.get_distance(radioName, options))
 			uci:set("wireless", radioName, "noscan", 1)
 			uci:set("wireless", radioName, "channel", channel)
 			if options["country"] then uci:set("wireless", radioName, "country", options["country"]) end
@@ -238,6 +238,8 @@ function wireless.configure()
 					                and (not key:match("distance"))
 					                and (not key:match("unstuck_interval"))
 					                and (not key:match("unstuck_timeout"))
+					                and (not key:match("dynack"))
+					                and (not key:match("phy_macaddr"))
 					                and (not (wireless.isMode(keyPrefix) and keyPrefix ~= modeName)))
 					if isGoodOption then
 						local nk = key:gsub("^"..modeName.."_", "")
@@ -320,6 +322,53 @@ function wireless.set_band_config(band, cfg)
 	end
 	uci:commit(config.UCI_NODE_NAME)
 	utils.unsafe_shell('lime-config')
+end
+
+--! Check if the driver supports dynack.
+--! At firstboot run 'iw phyX set distance auto'. Rely on the iw error i.e. 'command failed: Not supported (-95)'
+--! and save the result in lime-autogen i.e. lime-autogen.radio0.dynack=0
+--! Re run on the same phy when the macaddress has changed i.e. in case of plugging a different usb wireless adapter
+function wireless.is_distance_auto_available(radioName)
+	local phy = "phy"..utils.indexFromName(radioName)
+	local phy_mac =  utils.unsafe_shell("cat /sys/class/ieee80211/"..phy.."/macaddress 2>/dev/null"):gsub("\n","")
+	local uci = config.get_uci_cursor()
+
+	uci:set(config.UCI_AUTOGEN_NAME, radioName, "wifi")
+	--! mac unchanged
+	if (phy_mac == uci:get(config.UCI_AUTOGEN_NAME, radioName, "phy_macaddr")) then
+		if uci:get(config.UCI_AUTOGEN_NAME, radioName, "dynack") ~= nil then
+			return uci:get(config.UCI_AUTOGEN_NAME, radioName, "dynack")
+		end
+	end
+
+	local iw_cmd = utils.unsafe_shell("iw "..phy.." set distance auto 2>/dev/null; echo $(( $? == 0 ))"):gsub("\n","")
+	uci:set(config.UCI_AUTOGEN_NAME, radioName, "phy_macaddr", phy_mac)
+	uci:set(config.UCI_AUTOGEN_NAME, radioName, "dynack", iw_cmd)
+	uci:commit(config.UCI_AUTOGEN_NAME)
+	return iw_cmd
+end
+
+--! If distance 'auto' is requested for a driver that does not support it,
+--! use the lime-defaults value as safer option than allowing to set "auto" 
+--! which could lead to the minimum being applied at next reboot
+--! potentially compromising long distance wireless links.
+function wireless.apply_distance_auto_fallback(radioName,options)
+	if options["distance"] ~= "auto" then return options["distance"] end
+	local uci = config.get_uci_cursor()
+	local band = wireless.getRadioBand(radioName)
+	local distance_default = uci:get(config.UCI_DEFAULTS_NAME, band, "distance")
+	print('WARNING: wireless.get_distance: invalid "option distance \'auto\'" for '..band..' '..radioName..
+		'. Fallback to lime-defaults value: '.. distance_default)
+	return distance_default
+end
+
+function wireless.get_distance(radioName, options)
+	--! distance auto requested or enforced
+	if (options["distance"] == "auto" or options["distance_use_auto_if_available"] == 'true') then 
+		if wireless.is_distance_auto_available(radioName) == '1' then return "auto"
+		else return wireless.apply_distance_auto_fallback(radioName,options) end
+	--! distance set
+	else return options["distance"] end
 end
 
 return wireless
