@@ -190,23 +190,18 @@ function config.execute_hooks(action)
 	end
 end
 
---! FIXME: This should be somewhere more appropriate
-function config.file_exists(name)
-	return fs.stat(name, "type") == "reg"
-end
-
 function config.main()
+	local network = require("lime.network")
+	local utils = require("lime.utils")
+
 	--! Check whether this is the first ever run
-	if not config.file_exists(config.uci:get_confdir() .. "/" .. config.UCI_AUTOGEN_NAME) then
+	if not utils.file_exists(config.uci:get_confdir() .. "/" .. config.UCI_AUTOGEN_NAME) then
 		config.execute_hooks("init")
 	end
 
 	config.execute_hooks("pre")
 
 	--! Get mac address and set mac-based configuration file name
-	local network = require("lime.network")
-	local utils = require("lime.utils")
-
 	config.UCI_MAC_NAME = "lime-" .. table.concat(network.primary_mac(),"")
 	print("Mac-config: " .. config.UCI_MAC_NAME)
 
@@ -214,7 +209,7 @@ function config.main()
 	--! are not found in /etc/config
 	for _, cfg_name in pairs({config.UCI_COMMUNITY_NAME, config.UCI_NODE_NAME}) do
 		local lime_path = config.uci:get_confdir() .. "/" .. cfg_name
-		if not config.file_exists(lime_path) then
+		if not utils.file_exists(lime_path) then
 			config.initialize_config_file(cfg_name)
 		end
 	end
