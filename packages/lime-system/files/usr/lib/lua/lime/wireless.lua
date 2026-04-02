@@ -90,7 +90,7 @@ function wireless.getRadioBand(radioName)
 	return '2ghz'
 end
 
-wireless.availableModes = { adhoc=true, ap=true, apname=true, apbb=true, ieee80211s=true }
+wireless.availableModes = { adhoc=true, ap=true, apname=true, apbb=true, apup=true, ieee80211s=true }
 function wireless.isMode(m)
 	return wireless.availableModes[m]
 end
