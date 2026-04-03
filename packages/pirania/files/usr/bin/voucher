@@ -14,8 +14,8 @@ captive_portal = {}
 
 vouchera.init()
 
-captive_portal.activate = function(code, mac)
-    local res = vouchera.activate(code, mac)
+captive_portal.activate = function(code, mac, ip)
+    local res = vouchera.activate(code, mac, ip)
     if res then
         print('Voucher activated!')
         return true
@@ -92,6 +92,15 @@ captive_portal.show_authorized_macs = function()
     for _, voucher in pairs(vouchera.vouchers) do
         if voucher.is_active() then
             print(voucher.mac)
+        end
+    end
+    return true
+end
+
+captive_portal.show_authorized_ips = function()
+    for _, voucher in pairs(vouchera.vouchers) do
+        if voucher.is_active() then
+            print(voucher.ip)
         end
     end
     return true

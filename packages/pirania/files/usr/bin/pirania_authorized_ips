@@ -1,0 +1,7 @@
+#!/usr/bin/lua
+
+local portal = require('portal.portal')
+
+for _, ip in pairs(portal.get_authorized_ips()) do
+    print(ip)
+end

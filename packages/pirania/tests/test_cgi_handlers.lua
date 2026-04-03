@@ -149,7 +149,8 @@ describe('read_for_access cgi_handler authorize_mac #readforaccess', function()
     it('calls authorize_mac with the mac from the arp table for the client IP', function()
         rfa_handlers.authorize_mac()
         assert.stub(read_for_access.authorize_mac).was_called_with(
-            'AA:BB:CC:DD:EE:FF'
+            'AA:BB:CC:DD:EE:FF',
+            '10.1.1.1'
         )
     end)
     
