@@ -65,8 +65,13 @@ end
 
 
 local function add_vouchers(msg)
-    local vouchers, errmsg = vouchera.create(msg.name, msg.qty, msg.duration_m,
-                                             msg.activation_deadline, msg.permanent)
+    -- Handle permanent vouchers (nil duration_m means permanent)
+    local duration_m = msg.duration_m
+    if msg.permanent then
+        duration_m = nil
+    end
+    local vouchers, errmsg = vouchera.create(msg.name, msg.qty, duration_m,
+                                             msg.activation_deadline, msg.unrestricted)
     if vouchers then
         return utils.printJson({ status = 'ok', vouchers = vouchers})
     else
@@ -96,7 +101,7 @@ local methods = {
   disable = { no_params = 0 },
   show_url = { no_params = 0 },
   change_url = { url = 'value' },
-  add_vouchers = { name='str', qty='int', duration_m='int', activation_deadline='timestamp', permanent='bool'},
+  add_vouchers = { name='str', qty='int', duration_m='int', activation_deadline='timestamp', permanent='bool', unrestricted='bool'},
   list_vouchers = { no_params = 0 },
   rename = { id = 'str', name = 'str' },
   invalidate = { id = 'str' },
