@@ -1,0 +1,49 @@
+. /etc/os-release
+
+feed_host="http://feed.libremesh.org"
+asu_url="https://sysupgrade.antennine.org"
+
+ow_branch=$( [ $VERSION == 'SNAPSHOT' ] &&
+	echo "openwrt-main" || echo openwrt-${VERSION:0:5})
+
+feed_packages=$feed_host/master/$ow_branch
+feed_profiles=$feed_host/profiles/$ow_branch
+
+grep -q "let lime" /usr/bin/owut && exit 0
+
+# Add libremesh 'repositories' and 'repository_keys' to owut's build requests
+cat << EOF > /tmp/owut_repos 
+		repositories: {
+			'libremesh': '$feed_packages/x86_64',
+			'libremesh_arch_packages': '$feed_packages/$OPENWRT_ARCH',
+			'profiles': '$feed_profiles/x86_64'},
+		repository_keys: [ 
+			"RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8",
+			"-----BEGIN PUBLIC KEY-----\n\
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEdFJZ2qVti49Ol8LJZYuxgOCLowBS\n\
+8bI86a7zqhSbs5yon3JON7Yee7CQOgqwPOX5eMALGOu8iFGAqIRx5YjfYA==\n\
+-----END PUBLIC KEY-----" ],
+EOF
+sed -ie '/target:.*device.target/r /tmp/owut_repos' /usr/bin/owut
+
+# Add libremesh repositories to packages, arch_packages and profiles
+cat << EOF > /tmp/owut_repos 
+	let lime = dl_json("$feed_packages/x86_64/index.json",
+		"/tmp/owut-packages-lime.json", true);
+
+	let lime_arch_packages = dl_json("$feed_packages/$OPENWRT_ARCH/index.json",
+		"/tmp/owut-packages-lime_arch_packages.json", true);
+
+	let profiles = dl_json("$feed_profiles/x86_64/index.json", 
+		"/tmp/owut-packages-profiles.json", true);
+
+	return sort({ ...(arch ?? []), ...(plat?.packages ?? []), 
+		...(lime?.packages ?? []), ...(lime_arch_packages?.packages ?? []),
+		...(profiles?.packages ?? []) });
+EOF
+sed -i -e "/return\ sort({\ ...(arch/r /tmp/owut_repos" -e "//d" /usr/bin/owut
+rm /tmp/owut_repos
+
+# Set a default server
+uci set attendedsysupgrade.server.url="$asu_url"
+uci commit attendedsysupgrade
