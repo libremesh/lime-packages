@@ -181,6 +181,7 @@ Read-for-access mode:
 
 - The current implementation uses **nftables** (not iptables) via `captive-portal`.
 - `catch_interfaces` and `catch_bridged_interfaces` are applied to nftables rules: L3 interfaces via `iifname` matching in the inet table, L2 bridged interfaces via bridge-family marking.
+- **Enforcement is per-node.** Each node applies its own nftables rules independently. The voucher database is shared across the mesh via `shared-state-pirania`, but traffic capture and filtering happen only on nodes where Pirania is enabled. Clients connecting to a node with Pirania disabled will bypass voucher enforcement entirely, even if other nodes in the mesh have it active. For consistent mesh-wide access control, ensure Pirania is enabled on **all** client-facing nodes.
 - The `client_ip` CGI script depends on legacy modules (`voucher.logic`, `voucher.db`) and is non-functional (see #1249).
 
 ---
