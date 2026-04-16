@@ -36,6 +36,10 @@ local function set_portal_config(msg)
     end
 end
 
+local function disable(msg)
+    set_portal_config({activated = false})
+end
+
 local function get_portal_page_content(msg)
     utils.printJson(portal.get_page_content())
 end
