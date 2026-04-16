@@ -38,13 +38,33 @@ local function checkIfIpv4(ip)
     end
 end
 
+--! Validate that an IP address contains only safe characters
+--! Prevents shell injection via crafted REMOTE_ADDR values
+local function validate_ip(ip)
+    if ip == nil or type(ip) ~= "string" then
+        return false
+    end
+    -- IPv4: digits and dots only
+    if ip:match("^[0-9%.]+$") then
+        return true
+    end
+    -- IPv6: hex, colons, brackets (for [::1] format)
+    if ip:match("^[0-9a-fA-F:%[%]]+$") then
+        return true
+    end
+    return false
+end
+
 --! get ipv4 and MAC from a ip_address that could be ipv4 or ipv6
 function utils.getIpv4AndMac(ip_address)
+    if not validate_ip(ip_address) then
+        return { ip = nil, mac = nil }
+    end
     local isIpv4 = checkIfIpv4(ip_address)
     if (isIpv4) then
         local ipv4macCommand = "cat /proc/net/arp | grep "..ip_address.." | awk -F ' ' '{print $4}' | head -n 1"
-        fd = io.popen(ipv4macCommand, 'r')
-        ipv4mac = fd:read('*l')
+        local fd = io.popen(ipv4macCommand, 'r')
+        local ipv4mac = fd:read('*l')
         fd:close()
         local res = {}
         res.ip = ip_address
@@ -52,12 +72,12 @@ function utils.getIpv4AndMac(ip_address)
         return res
     else
         local ipv6macCommand = "ip neigh | grep "..ip_address.." | awk -F ' ' '{print $5}' | head -n 1"
-        fd6 = io.popen(ipv6macCommand, 'r')
-        ipv6mac = fd6:read('*l')
+        local fd6 = io.popen(ipv6macCommand, 'r')
+        local ipv6mac = fd6:read('*l')
         fd6:close()
         local ipv4cCommand = "cat /proc/net/arp | grep "..ipv6mac.." | awk -F ' ' '{print $1}' | head -n 1"
-        fd4 = io.popen(ipv4cCommand, 'r')
-        ipv4 = fd4:read('*l')
+        local fd4 = io.popen(ipv4cCommand, 'r')
+        local ipv4 = fd4:read('*l')
         fd4:close()
         local res = {}
         res.ip = ipv4
