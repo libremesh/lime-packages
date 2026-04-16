@@ -60,11 +60,25 @@ function portal.get_authorized_macs()
     return auth_macs
 end
 
+--! Returns MACs with active unrestricted vouchers
+--! Only works in voucher mode; read_for_access doesn't support unrestricted flag
+function portal.get_unrestricted_macs()
+    local unrestricted_macs = {}
+    local with_vouchers = portal.get_config().with_vouchers
+    if with_vouchers then
+        local vouchera = require("voucher.vouchera")
+        vouchera.init()
+        unrestricted_macs = vouchera.get_unrestricted_macs()
+    end
+    return unrestricted_macs
+end
+
 function portal.update_captive_portal(daemonized)
     if daemonized then
         utils.execute_daemonized('captive-portal update')
     else
-        os.execute('captive-portal update')
+	-- redirects stdout and stderr to /dev/null to not trigger 502 Bad Gateway after voucher portal auth
+        os.execute('captive-portal update > /dev/null 2>&1')
     end
 end
 

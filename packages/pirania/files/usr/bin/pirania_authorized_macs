@@ -2,6 +2,22 @@
 
 local portal = require('portal.portal')
 
-for _, mac in pairs(portal.get_authorized_macs()) do
+-- Check for --unrestricted flag
+local unrestricted_only = false
+for i, arg in ipairs(arg) do
+    if arg == "--unrestricted" or arg == "-u" then
+        unrestricted_only = true
+        break
+    end
+end
+
+local macs
+if unrestricted_only then
+    macs = portal.get_unrestricted_macs()
+else
+    macs = portal.get_authorized_macs()
+end
+
+for _, mac in pairs(macs) do
     print(mac)
 end
