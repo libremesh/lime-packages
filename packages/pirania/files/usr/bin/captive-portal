@@ -281,10 +281,10 @@ get_allowlist_ipv4_tokens () {
   fi
 }
 
-update_ipsets () {
+update_nft_sets () {
 
   # Create tables and sets
-  echo "Updating captive-portal rules"
+  echo "Updating captive-portal nft sets"
 
   # --- Update interface catch sets ---
   nft flush set inet pirania pirania-catch-ifaces
@@ -340,7 +340,7 @@ update_ipsets () {
       echo "Adding unrestricted MAC: $mac"
     done
 
-    log_info "Tranca Redes ipsets updated"
+    log_info "Tranca Redes nft sets updated"
   fi
 }
 
@@ -356,7 +356,7 @@ if  [ "$1" = "start" ]; then
 	echo "Starting IPv4 allowlist download"
 	download_allowlist_ipv4
 	echo "IPv4 allowlist download finished"
-	update_ipsets
+	update_nft_sets
 	exit
 elif [ "$1" = "update" ] ; then
 	if [ "$enabled" != "1" ]; then
@@ -389,7 +389,7 @@ elif [ "$1" = "update" ] ; then
 		set_nftables
 		download_allowlist_ipv4
 	fi
-	update_ipsets
+	update_nft_sets
 	exit
 elif [ "$1" = "clean" ] || [ "$1" = "stop" ] ; then
 	clean_tables
@@ -399,7 +399,7 @@ elif [ "$enabled" = "1" ]; then
 	clean_tables
 	set_nftables # required for "/etc/init.d/pirania start|restart|reload" if "uci get pirania.base_config.enabled" is "1"
 	download_allowlist_ipv4
-	update_ipsets
+	update_nft_sets
 	exit
 elif [ "$1" = "enabled" ]; then
 	uci set pirania.base_config.enabled='1'
