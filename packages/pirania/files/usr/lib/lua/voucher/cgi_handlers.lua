@@ -1,7 +1,7 @@
 local vouchera = require('voucher.vouchera')
 local utils = require('voucher.utils')
 
-handlers = {}
+local handlers = {}
 
 local TESTING_URL_INFO = '/info'
 local TESTING_URL_FAIL = '/fail'
