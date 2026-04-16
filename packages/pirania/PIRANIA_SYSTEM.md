@@ -150,7 +150,8 @@ The ubus service is implemented in `packages/pirania/files/usr/libexec/rpcd/pira
 
 Supported calls include:
 
-- `get_portal_config`, `set_portal_config`
+- `get_portal_config`, `set_portal_config`, `disable`
+- `show_url`, `change_url`
 - `add_vouchers`, `list_vouchers`, `invalidate`, `rename`
 - `get_portal_page_content`, `set_portal_page_content`
 
