@@ -10,7 +10,7 @@ local arguments
 local action
 local context
 
-captive_portal = {}
+local captive_portal = {}
 
 vouchera.init()
 
@@ -78,7 +78,7 @@ captive_portal.add = function(name, duration_m, activation_deadline, unrestricte
     end
     local qty = 1
     local is_unrestricted = (unrestricted == true or unrestricted == "true" or unrestricted == "1")
-    res, msg = vouchera.create(name, qty, tonumber(duration_m), tonumber(activation_deadline), is_unrestricted)
+    local res, msg = vouchera.create(name, qty, tonumber(duration_m), tonumber(activation_deadline), is_unrestricted)
     if res ~= nil then
         local voucher = vouchera.get_by_id(res[1].id)
         print(voucher.tostring())
