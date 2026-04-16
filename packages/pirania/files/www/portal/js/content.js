@@ -30,7 +30,7 @@ let content = {
   main_text: '',
   logo: '',
   link_title: '',
-  link_URL: ''
+  link_url: ''
 }
 
 function getContent () {
@@ -60,7 +60,8 @@ function getContent () {
       }
     })
     .catch(err => {
-      document.getElementById('error').innerHTML = int[lang].error
+      var errorElem = document.getElementsByClassName('error')[0]
+      if (errorElem) errorElem.innerHTML = int[lang].error
     })
 }
 
