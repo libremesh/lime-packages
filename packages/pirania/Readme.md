@@ -179,6 +179,9 @@ files/
 
 * `get_portal_config` -> returns portal configuration (activated, with_vouchers)
 * `set_portal_config(activated, with_vouchers)` -> configures and starts/stops the portal
+* `disable` -> disables the portal and stops captive-portal
+* `show_url` -> returns the configured portal URL
+* `change_url(url)` -> changes the portal URL
 * `add_vouchers(name, qty, duration_m, activation_deadline, permanent, unrestricted)` -> creates vouchers
 * `list_vouchers` -> lists all vouchers
 * `rename(id, name)` -> renames a voucher

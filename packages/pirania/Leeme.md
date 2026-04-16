@@ -175,6 +175,9 @@ files/
 
 * `get_portal_config` -> devuelve la configuración del portal (activated, with_vouchers)
 * `set_portal_config(activated, with_vouchers)` -> configura e inicia/detiene el portal
+* `disable` -> deshabilita el portal y detiene captive-portal
+* `show_url` -> devuelve la URL configurada del portal
+* `change_url(url)` -> cambia la URL del portal
 * `add_vouchers(name, qty, duration_m, activation_deadline, permanent, unrestricted)` -> crea pines
 * `list_vouchers` -> lista todos los pines
 * `rename(id, name)` -> renombra un pin
