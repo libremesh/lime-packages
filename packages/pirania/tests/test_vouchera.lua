@@ -375,6 +375,105 @@ describe('Vouchera tests #vouchera', function()
         assert.is.equal('available', listed[1].status)
     end)
 
+    -- Tranca Redes: Unrestricted voucher tests
+    it('test create unrestricted voucher', function()
+        vouchera.init()
+        local voucher = vouchera.add({name='unrestricted_voucher', code='unrestricted_code', unrestricted=true})
+        assert.is.equal(true, voucher.unrestricted)
+    end)
+
+    it('test create normal voucher has unrestricted false', function()
+        vouchera.init()
+        local voucher = vouchera.add({name='normal_voucher', code='normal_code'})
+        assert.is.equal(false, voucher.unrestricted)
+    end)
+
+    it('test create batch with unrestricted flag', function()
+        vouchera.init()
+        local created_vouchers = vouchera.create('unrestricted', 3, 60, nil, true)
+        assert.is.equal(3, #created_vouchers)
+        for _, created in ipairs(created_vouchers) do
+            local v = vouchera.get_by_id(created.id)
+            assert.is.equal(true, v.unrestricted)
+        end
+    end)
+
+    it('test create batch without unrestricted flag', function()
+        vouchera.init()
+        local created_vouchers = vouchera.create('normal', 3, 60)
+        assert.is.equal(3, #created_vouchers)
+        for _, created in ipairs(created_vouchers) do
+            local v = vouchera.get_by_id(created.id)
+            assert.is.equal(false, v.unrestricted)
+        end
+    end)
+
+    it('test get_unrestricted_macs returns only unrestricted active MACs', function()
+        vouchera.init()
+
+        -- Create normal voucher
+        local normal = vouchera.add({name='normal', code='normal_code', duration_m=100})
+        vouchera.activate('normal_code', "aa:bb:cc:dd:ee:ff")
+
+        -- Create unrestricted voucher
+        local unrestricted = vouchera.add({name='unrestricted', code='unrestricted_code', duration_m=100, unrestricted=true})
+        vouchera.activate('unrestricted_code', "11:22:33:44:55:66")
+
+        -- get_authorized_macs should return both
+        local auth_macs = vouchera.get_authorized_macs()
+        assert.is.equal(2, #auth_macs)
+
+        -- get_unrestricted_macs should return only unrestricted
+        local unrestricted_macs = vouchera.get_unrestricted_macs()
+        assert.is.equal(1, #unrestricted_macs)
+        assert.is.equal("11:22:33:44:55:66", unrestricted_macs[1])
+    end)
+
+    it('test get_unrestricted_macs returns empty for inactive unrestricted voucher', function()
+        vouchera.init()
+
+        -- Create unrestricted voucher but don't activate
+        local unrestricted = vouchera.add({name='unrestricted', code='unrestricted_code', duration_m=100, unrestricted=true})
+
+        local unrestricted_macs = vouchera.get_unrestricted_macs()
+        assert.is.equal(0, #unrestricted_macs)
+    end)
+
+    it('test list includes unrestricted field', function()
+        vouchera.init()
+        vouchera.add({name='normal', code='normal_code'})
+        vouchera.add({name='unrestricted', code='unrestricted_code', unrestricted=true})
+
+        local listed = vouchera.list()
+        assert.is.equal(2, #listed)
+
+        local has_normal = false
+        local has_unrestricted = false
+        for _, v in ipairs(listed) do
+            if v.name == 'normal' then
+                has_normal = true
+                assert.is.equal(false, v.unrestricted)
+            elseif v.name == 'unrestricted' then
+                has_unrestricted = true
+                assert.is.equal(true, v.unrestricted)
+            end
+        end
+        assert.is_true(has_normal)
+        assert.is_true(has_unrestricted)
+    end)
+
+    it('test unrestricted voucher persists after reload', function()
+        vouchera.init()
+        local voucher = vouchera.add({id='unrestricted_voucher', name='unrestricted', code='unrestricted_code', unrestricted=true})
+        assert.is.equal(true, voucher.unrestricted)
+
+        -- Reload database
+        vouchera.init()
+        local reloaded = vouchera.get_by_id('unrestricted_voucher')
+        assert.is.not_nil(reloaded)
+        assert.is.equal(true, reloaded.unrestricted)
+    end)
+
     before_each('', function()
         test_utils_pirania.fake_for_tests()
         snapshot = assert:snapshot()

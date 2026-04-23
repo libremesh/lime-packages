@@ -1,0 +1,14 @@
+#!/bin/sh
+# Install Tranca Redes scheduler cron entry
+# Runs every minute to evaluate schedule and toggle active state
+
+unique_append()
+{
+	grep -qF "$1" "$2" || echo "$1" >> "$2"
+}
+
+unique_append \
+	'* * * * * /usr/bin/tranca-redes-scheduler'\
+	/etc/crontabs/root
+
+exit 0

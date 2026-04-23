@@ -40,7 +40,6 @@ generate_status() {
     paste_cmd dmesg
     paste_cmd batctl if
     paste_cmd batctl o
-    paste_cmd bmx6 -c show=status show=interfaces show=links show=originators show=tunnels
     paste_cmd bmx7 -c show=status show=interfaces show=links show=originators show=tunnels
     paste_cmd "echo dump | nc ::1 30003"
     paste_cmd ubus call babeld get_info
@@ -68,7 +67,8 @@ generate_status() {
     paste_cmd swconfig dev switch0 show
     paste_cmd fw4 print
     paste_cmd nft list ruleset
-    paste_cmd opkg list-installed
+    paste_cmd "ubus call rpc-sys packagelist
+        '{\"all\":true}' | jq -S '.packages'"
 }
 
 generate_all() {
