@@ -11,8 +11,6 @@ config lime system
 	option keep_on_upgrade 'libremesh dropbear minimum-essential /etc/sysupgrade.conf'
 	option root_password_policy 'DO_NOTHING'
 	option root_password_secret ''
-	option deferrable_reboot_uptime_s '97200'
-	option deferrable_reboot_ping_target '4.2.2.2'
 	option firstbootwizard_configured false
 	option firstbootwizard_dismissed false
 
@@ -26,7 +24,6 @@ config lime network
 	list protocols lan
 	list protocols anygw
 	list protocols batadv:%N1
-	list protocols bmx6:13
 	list protocols olsr:14
 	list protocols olsr6:15
 	list protocols olsr2:16
@@ -35,11 +32,6 @@ config lime network
 	list resolvers 4.2.2.2   # b.resolvers.Level3.net
 	list resolvers 141.1.1.1 # cns1.cw.net
 	list resolvers 2001:470:20::2 # ordns.he.net
-	option bmx6_mtu '1500'
-	option bmx6_publish_ownip false
-	option bmx6_over_batman false
-	option bmx6_pref_gw none
-	option bmx6_wifi_rate_max 54000000
 	option bmx7_mtu '1500'
 	option bmx7_publish_ownip false
 	option bmx7_over_batman false
@@ -61,6 +53,7 @@ config lime wifi
 	option adhoc_bssid 'ca:fe:00:c0:ff:ee'
 	option apup_ssid 'LibreMesh.org'
 	option ieee80211s_mesh_fwding '0'
+	option ieee80211s_mesh_nolearn '1'
 	option ieee80211s_mesh_id 'LiMe'
 	option unstuck_interval '10'
 	option unstuck_timeout '300'

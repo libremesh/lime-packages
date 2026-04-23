@@ -25,7 +25,7 @@ describe('read_for_access tests #readforaccess', function()
     it('calls captive-portal-update on authorize_mac', function()
         stub(os, 'execute', function() end)
         read_for_access.authorize_mac('AA:BB:CC:DD:EE:FF')
-        assert.stub(os.execute).was_called_with('/usr/bin/captive-portal update')
+        assert.stub(os.execute).was_called_with('/usr/bin/captive-portal update > /dev/null 2>&1')
     end)
     
     it('let us re-authorize a mac', function()

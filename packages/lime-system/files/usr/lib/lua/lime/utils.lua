@@ -255,7 +255,8 @@ function utils.write_file(name, content)
 end
 
 function utils.is_installed(pkg)
-	return utils.file_exists('/usr/lib/opkg/info/'..pkg..'.control')
+    return utils.unsafe_shell("ubus call rpc-sys packagelist '{\"all\":true}' | \
+        jq -r .packages | jq -e 'has(\""..pkg.."\")'")
 end
 
 function utils.has_value(tab, val)
