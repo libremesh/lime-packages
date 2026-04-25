@@ -144,6 +144,8 @@ jobs:
           chmod -R a+rwX feed-artifact/lime_packages
           docker run --rm \
             --user root \
+            -e MKHASH=/builder/staging_dir/host/bin/mkhash \
+            -e PATH=/builder/staging_dir/host/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
             -v "$(pwd)/feed-artifact/lime_packages:/work" \
             "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}" \
             sh -lc '/builder/scripts/ipkg-make-index.sh /work > /work/Packages && gzip -9nc /work/Packages > /work/Packages.gz'
