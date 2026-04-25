@@ -106,7 +106,9 @@ jobs:
           FEEDNAME: lime_packages
           PACKAGES: lime-system
           INDEX: "1"
-          NO_DEFAULT_FEEDS: "1"
+          # lime-system DEPENDS on packages from OpenWrt feeds (firewall4, lua,
+          # luci-*, jq, …). NO_DEFAULT_FEEDS=1 leaves only lime_packages and
+          # breaks feed resolution / package/index (see PR build logs).
           IGNORE_ERRORS: "n m y"
 
       - name: Upload local feed artifact
