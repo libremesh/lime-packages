@@ -40,7 +40,7 @@ docker run --rm \
   --env BUILD_LOG="${BUILD_LOG:-1}" \
   --env FEEDNAME="${FEEDNAME}" \
   --env IGNORE_ERRORS="n m y" \
-  --env INDEX=1 \
+  --env INDEX="${INDEX:-0}" \
   --env "NO_REFRESH_CHECK=${NO_REFRESH_CHECK:-}" \
   --env "NO_SHFMT_CHECK=${NO_SHFMT_CHECK:-}" \
   --env PACKAGES="${PACKAGES}" \

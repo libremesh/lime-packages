@@ -76,7 +76,7 @@ jobs:
             jq -c --arg release "$openwrt_release" '
               {
                 include: (
-                  [.[] | {arch, sdk_arch}]
+                  [.[] | {arch, sdk_arch, index_imagebuilder}]
                   | unique_by(.arch)
                   | map(. + {openwrt_release: $release})
                 )
@@ -105,17 +105,52 @@ jobs:
           ARCH: ${{ matrix.sdk_arch }}
           FEEDNAME: lime_packages
           PACKAGES: lime-system
-          INDEX: "1"
+          # SDK-side `make package/index` is brittle in CI (fails after a
+          # successful compile with no useful stderr unless V=sc). We generate
+          # Packages/Packages.gz ourselves using ImageBuilder's ipkg-make-index.
+          INDEX: "0"
           # lime-system DEPENDS on packages from OpenWrt feeds (firewall4, lua,
           # luci-*, jq, …). NO_DEFAULT_FEEDS=1 leaves only lime_packages and
           # breaks feed resolution / package/index (see PR build logs).
           IGNORE_ERRORS: "n m y"
 
+      - name: Assemble lime_packages feed artifact (index with ImageBuilder)
+        env:
+          OPENWRT_RELEASE: ${{ matrix.openwrt_release }}
+        run: |
+          set -euo pipefail
+          rm -rf feed-artifact
+          mkdir -p feed-artifact/lime_packages
+
+          arch_dir="bin/packages/${{ matrix.arch }}/lime_packages"
+          all_dir="bin/packages/all/lime_packages"
+
+          if [[ -d "$arch_dir" ]]; then
+            cp -a "$arch_dir"/. feed-artifact/lime_packages/
+          fi
+          if [[ -d "$all_dir" ]]; then
+            cp -a "$all_dir"/. feed-artifact/lime_packages/
+          fi
+
+          shopt -s nullglob
+          ipk_count=(feed-artifact/lime_packages/*.ipk)
+          if [[ ${#ipk_count[@]} -eq 0 ]]; then
+            echo "ERROR: No .ipk files found under feed-artifact/lime_packages" >&2
+            echo "Expected sources: $arch_dir and/or $all_dir" >&2
+            exit 1
+          fi
+
+          docker pull "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}"
+          docker run --rm \
+            -v "$(pwd)/feed-artifact/lime_packages:/work" \
+            "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}" \
+            sh -lc '/builder/scripts/ipkg-make-index.sh /work > /work/Packages && gzip -9nc /work/Packages > /work/Packages.gz'
+
       - name: Upload local feed artifact
         uses: actions/upload-artifact@v4
         with:
           name: lime-feed-${{ matrix.arch }}
-          path: bin/packages/${{ matrix.arch }}/lime_packages/
+          path: feed-artifact/lime_packages/
           retention-days: 7
 
       - name: Upload feed debug logs

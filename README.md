@@ -135,7 +135,7 @@ If you get a `opkg_download: Check your network settings and connectivity.` erro
 The repository includes a prototype CI workflow at `.github/workflows/build-firmware.yml` to build one LibreMesh image per target for pull requests and manual runs.
 
 Flow:
-- Stage 1 (`build-feed`): `uses: openwrt/gh-action-sdk@v9` (same pattern as `.github/workflows/build.yml`) compiles selected packages from this repo into `bin/packages/<arch>/lime_packages/`, then uploads that directory as artifact `lime-feed-<arch>`.
+- Stage 1 (`build-feed`): `uses: openwrt/gh-action-sdk@v9` (same pattern as `.github/workflows/build.yml`) compiles selected packages from this repo. The SDK-side `make package/index` step is disabled (`INDEX=0`) because it can fail in CI without actionable logs; instead CI merges `bin/packages/<arch>/lime_packages/` and `bin/packages/all/lime_packages/` (needed for `PKGARCH:=all` packages like `lime-system`) and generates `Packages` / `Packages.gz` using `ghcr.io/openwrt/imagebuilder` + `/builder/scripts/ipkg-make-index.sh`. The resulting directory is uploaded as `lime-feed-<arch>`.
 - Stage 2 (`build-image`): `docker run ghcr.io/openwrt/imagebuilder` per target; `tools/ci/build_image.sh` prepends a `file://` local feed, then `feed.libremesh.org` as fallback.
 
 This two-stage approach is intentional:
@@ -145,17 +145,25 @@ This two-stage approach is intentional:
 The target matrix is data-driven in `.github/ci/targets.yml`:
 - add a target by appending one entry under `targets`,
 - keep `arch` aligned with the OpenWrt package architecture for that device,
-- set `sdk_arch` to `<arch>-openwrt-<branch>` (e.g. `aarch64_cortex-a53-openwrt-24.10`) for the SDK image tag consumed by `gh-action-sdk`.
+- set `sdk_arch` to `<arch>-openwrt-<branch>` (e.g. `aarch64_cortex-a53-openwrt-24.10`) for the SDK image tag consumed by `gh-action-sdk`,
+- set `index_imagebuilder` to any ImageBuilder tag for the same OpenWrt release whose architecture matches `arch` (CI uses it only to run `ipkg-make-index.sh`).
 
 Local reproduction (optional): `tools/ci/build_feed.sh` clones `openwrt/gh-action-sdk` at tag `v9`, runs `docker build` with `ARCH=$SDK_ARCH`, then `docker run` with the same env vars as CI. Cross-arch SDK images may require QEMU/binfmt on the host.
 
 ```shell
-mkdir -p ./out-feed
+mkdir -p ./out-feed ./feed-merged/lime_packages
 tools/ci/build_feed.sh aarch64_cortex-a53 ./out-feed
+# Merge arch-specific + all feed output (lime-system is PKGARCH:=all)
+cp -a ./out-feed/bin/packages/aarch64_cortex-a53/lime_packages/. ./feed-merged/lime_packages/ 2>/dev/null || true
+cp -a ./out-feed/bin/packages/all/lime_packages/. ./feed-merged/lime_packages/ 2>/dev/null || true
+docker run --rm \
+  -v "$(pwd)/feed-merged/lime_packages:/work" \
+  ghcr.io/openwrt/imagebuilder:mediatek-filogic-v24.10.6 \
+  sh -lc '/builder/scripts/ipkg-make-index.sh /work > /work/Packages && gzip -9nc /work/Packages > /work/Packages.gz'
 PACKAGES="profile-libremesh-suggested-packages -dnsmasq -odhcpd-ipv6only" \
 ARCH=aarch64_cortex-a53 FEED_BRANCH=openwrt-24.10 DEVICE_NAME=linksys_e8450 \
 tools/ci/build_image.sh mediatek-mt7622 linksys_e8450 24.10.6 \
-  ./out-feed/bin/packages/aarch64_cortex-a53 ./out
+  ./feed-merged ./out
 ```
 
 The workflow produces firmware artifacts with stable names: `firmware-<device>.<ext>`.
