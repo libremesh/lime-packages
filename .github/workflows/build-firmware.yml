@@ -30,6 +30,7 @@ jobs:
     outputs:
       targets_matrix: ${{ steps.prepare.outputs.targets_matrix }}
       archs_matrix: ${{ steps.prepare.outputs.archs_matrix }}
+      lime_packages_list: ${{ steps.prepare.outputs.lime_packages_list }}
     steps:
       - uses: actions/checkout@v5
 
@@ -84,8 +85,19 @@ jobs:
             ' <<< "$selected_targets"
           )"
 
+          # Explicit list of every package directory under packages/. We pass
+          # this as PACKAGES to openwrt/gh-action-sdk because empty PACKAGES
+          # only builds what `make defconfig` enables (which is nothing for
+          # this repo: lime-* packages have no `default y`/`default m`).
+          lime_packages_list="$(
+            ls -1 packages/ | sort | tr '\n' ' ' | sed 's/[[:space:]]*$//'
+          )"
+          echo "Computed package list ($(echo "$lime_packages_list" | wc -w) packages):"
+          echo "$lime_packages_list" | tr ' ' '\n'
+
           echo "targets_matrix=$targets_matrix" >> "$GITHUB_OUTPUT"
           echo "archs_matrix=$archs_matrix" >> "$GITHUB_OUTPUT"
+          echo "lime_packages_list=$lime_packages_list" >> "$GITHUB_OUTPUT"
 
   build-feed:
     runs-on: ubuntu-latest
@@ -104,19 +116,40 @@ jobs:
         env:
           ARCH: ${{ matrix.sdk_arch }}
           FEEDNAME: lime_packages
-          # Empty PACKAGES makes gh-action-sdk install the whole lime_packages
-          # feed (`feeds install -p lime_packages -f -a`) and `make -j$(nproc)`
-          # everything. We need the full set because feed.libremesh.org is
-          # essentially empty for openwrt-24.10 and the image install list
-          # references every lime-* / shared-state-* package.
-          PACKAGES: ""
+          # Explicit package list (computed in prepare-matrix from `packages/`).
+          # Empty PACKAGES only builds what `make defconfig` enables and lime-*
+          # packages have no `default y/m`, so nothing would be produced. With
+          # an explicit list, gh-action-sdk does
+          # `feeds install -p lime_packages -f $PKG && make package/$PKG/compile`
+          # for each entry, guaranteeing every IPK lands in
+          # bin/packages/<arch>/lime_packages/.
+          PACKAGES: ${{ needs.prepare-matrix.outputs.lime_packages_list }}
+          # No `patches/` dir in any package -> refresh check is a no-op anyway,
+          # but we still skip it to keep logs short and avoid spurious diffs.
+          NO_REFRESH_CHECK: "1"
+          # Disable shfmt formatting check: lime-* ships init scripts whose
+          # current formatting predates the action's shfmt rules.
+          NO_SHFMT_CHECK: "1"
+          # Keep default feeds enabled: lime-* DEPENDS on firewall4, lua,
+          # luci-*, jq, … which only resolve through the upstream OpenWrt feeds.
           # SDK-side `make package/index` is brittle in CI (fails after a
           # successful compile with no useful stderr unless V=sc). We generate
           # Packages/Packages.gz ourselves using ImageBuilder's ipkg-make-index.
           INDEX: "0"
-          # Keep default feeds enabled: lime-* DEPENDS on firewall4, lua,
-          # luci-*, jq, … which only resolve through the upstream OpenWrt feeds.
           IGNORE_ERRORS: "n m y"
+
+      - name: Diagnose feed build output
+        run: |
+          set -euo pipefail
+          echo "=== bin/packages tree ==="
+          find bin/packages -maxdepth 4 -type d 2>/dev/null | sort || true
+          echo "=== IPKs in bin/packages/${{ matrix.arch }}/lime_packages/ ==="
+          ls -la "bin/packages/${{ matrix.arch }}/lime_packages/" 2>/dev/null || echo "(missing)"
+          echo "=== IPKs in bin/packages/all/lime_packages/ ==="
+          ls -la "bin/packages/all/lime_packages/" 2>/dev/null || echo "(missing)"
+          arch_count=$(find "bin/packages/${{ matrix.arch }}/lime_packages/" -maxdepth 1 -name '*.ipk' 2>/dev/null | wc -l)
+          all_count=$(find "bin/packages/all/lime_packages/" -maxdepth 1 -name '*.ipk' 2>/dev/null | wc -l)
+          echo "Arch IPKs: ${arch_count} | All IPKs: ${all_count}"
 
       - name: Assemble lime_packages feed artifact (index with ImageBuilder)
         env:
@@ -154,6 +187,13 @@ jobs:
             "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}" \
             sh -lc '/builder/scripts/ipkg-make-index.sh /work > /work/Packages && gzip -9nc /work/Packages > /work/Packages.gz'
 
+          echo "=== Final feed-artifact/lime_packages/ contents ==="
+          ls -la feed-artifact/lime_packages/
+          echo "=== Packages index summary (first 60 lines + count) ==="
+          head -n 60 feed-artifact/lime_packages/Packages || true
+          pkg_count=$(grep -c '^Package:' feed-artifact/lime_packages/Packages || echo 0)
+          echo "Total Package: entries in index: ${pkg_count}"
+
       - name: Upload local feed artifact
         uses: actions/upload-artifact@v4
         with:
@@ -189,6 +229,17 @@ jobs:
         with:
           name: lime-feed-${{ matrix.arch }}
           path: ./feed-in/lime_packages/
+
+      - name: Diagnose downloaded feed
+        run: |
+          set -euo pipefail
+          echo "=== feed-in/lime_packages/ contents ==="
+          ls -la ./feed-in/lime_packages/
+          echo "=== Packages index head ==="
+          head -n 80 ./feed-in/lime_packages/Packages || echo "(no Packages file)"
+          ipk_count=$(find ./feed-in/lime_packages -maxdepth 1 -name '*.ipk' | wc -l)
+          pkg_idx_count=$(grep -c '^Package:' ./feed-in/lime_packages/Packages 2>/dev/null || echo 0)
+          echo "IPK files: ${ipk_count} | Packages index entries: ${pkg_idx_count}"
 
       - name: Pull ImageBuilder image
         run: docker pull ghcr.io/openwrt/imagebuilder:${{ matrix.imagebuilder }}-v${{ matrix.openwrt_release }}
