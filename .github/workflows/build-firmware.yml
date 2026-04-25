@@ -85,12 +85,18 @@ jobs:
             ' <<< "$selected_targets"
           )"
 
-          # Explicit list of every package directory under packages/. We pass
-          # this as PACKAGES to openwrt/gh-action-sdk because empty PACKAGES
-          # only builds what `make defconfig` enables (which is nothing for
-          # this repo: lime-* packages have no `default y`/`default m`).
+          # Explicit list of every package directory under packages/ that
+          # actually has a Makefile (the repo has placeholder dirs like
+          # `cotonete/`, `lime-curtigghio/`, `test-packet-franco/` with only a
+          # README that would crash `make package/$name/download`).
+          # We pass this as PACKAGES to openwrt/gh-action-sdk because empty
+          # PACKAGES only builds what `make defconfig` enables (which is
+          # nothing for this repo: lime-* packages have no `default y/m`).
           lime_packages_list="$(
-            ls -1 packages/ | sort | tr '\n' ' ' | sed 's/[[:space:]]*$//'
+            find packages -mindepth 2 -maxdepth 2 -name Makefile -printf '%h\n' \
+              | xargs -n1 basename \
+              | sort -u \
+              | tr '\n' ' ' | sed 's/[[:space:]]*$//'
           )"
           echo "Computed package list ($(echo "$lime_packages_list" | wc -w) packages):"
           echo "$lime_packages_list" | tr ' ' '\n'
