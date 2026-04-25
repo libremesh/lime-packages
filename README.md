@@ -135,8 +135,8 @@ If you get a `opkg_download: Check your network settings and connectivity.` erro
 The repository includes a prototype CI workflow at `.github/workflows/build-firmware.yml` to build one LibreMesh image per target for pull requests and manual runs.
 
 Flow:
-- Stage 1 (`build-feed`): `uses: openwrt/gh-action-sdk@v9` (same pattern as `.github/workflows/build.yml`) compiles selected packages from this repo. The SDK-side `make package/index` step is disabled (`INDEX=0`) because it can fail in CI without actionable logs; instead CI merges `bin/packages/<arch>/lime_packages/` and `bin/packages/all/lime_packages/` (needed for `PKGARCH:=all` packages like `lime-system`) and generates `Packages` / `Packages.gz` using `ghcr.io/openwrt/imagebuilder` + `/builder/scripts/ipkg-make-index.sh`. The resulting directory is uploaded as `lime-feed-<arch>`.
-- Stage 2 (`build-image`): `docker run ghcr.io/openwrt/imagebuilder` per target; `tools/ci/build_image.sh` prepends a `file://` local feed, then `feed.libremesh.org` as fallback.
+- Stage 1 (`build-feed`): `uses: openwrt/gh-action-sdk@v9` with `PACKAGES=""` so the SDK installs and compiles **the whole `lime_packages` feed** in one shot (`feeds install -p lime_packages -f -a` + `make -j$(nproc)`). This is required because `feed.libremesh.org` for openwrt-24.10 is essentially empty (only `shared-state-async`), so every `lime-*` / `shared-state-*` package referenced by the install list must be produced locally. The SDK-side `make package/index` step is disabled (`INDEX=0`) because it is brittle in CI; instead CI merges `bin/packages/<arch>/lime_packages/` and `bin/packages/all/lime_packages/` (needed for `PKGARCH:=all` packages like `lime-system`) and generates `Packages` / `Packages.gz` using `ghcr.io/openwrt/imagebuilder` + `/builder/scripts/ipkg-make-index.sh` (with `MKHASH` and `PATH` pointed at `staging_dir/host/bin`). The resulting directory is uploaded as `lime-feed-<arch>`.
+- Stage 2 (`build-image`): `docker run ghcr.io/openwrt/imagebuilder` per target; `tools/ci/build_image.sh` prepends a `file://` local feed, then `feed.libremesh.org` as fallback. The script also rewrites the existing `option check_signature` line in `repositories.conf` to `option check_signature 0` (appending a second line is silently ignored by opkg as a duplicate, which would leave verification enabled and break unsigned local feed installs).
 
 This two-stage approach is intentional:
 - catches file-only changes and package metadata changes (`Makefile`, dependencies, new packages),
@@ -152,15 +152,19 @@ Local reproduction (optional): `tools/ci/build_feed.sh` clones `openwrt/gh-actio
 
 ```shell
 mkdir -p ./out-feed ./feed-merged/lime_packages
+# PACKAGES="" -> compile every package in the lime_packages feed (default).
 tools/ci/build_feed.sh aarch64_cortex-a53 ./out-feed
 # Merge arch-specific + all feed output (lime-system is PKGARCH:=all)
 cp -a ./out-feed/bin/packages/aarch64_cortex-a53/lime_packages/. ./feed-merged/lime_packages/ 2>/dev/null || true
 cp -a ./out-feed/bin/packages/all/lime_packages/. ./feed-merged/lime_packages/ 2>/dev/null || true
 docker run --rm \
+  --user root \
+  -e MKHASH=/builder/staging_dir/host/bin/mkhash \
+  -e PATH=/builder/staging_dir/host/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
   -v "$(pwd)/feed-merged/lime_packages:/work" \
   ghcr.io/openwrt/imagebuilder:mediatek-filogic-v24.10.6 \
   sh -lc '/builder/scripts/ipkg-make-index.sh /work > /work/Packages && gzip -9nc /work/Packages > /work/Packages.gz'
-PACKAGES="profile-libremesh-suggested-packages -dnsmasq -odhcpd-ipv6only" \
+PACKAGES="lime-system lime-proto-babeld lime-proto-batadv lime-proto-anygw lime-hwd-openwrt-wan lime-hwd-ground-routing lime-app lime-debug lime-docs lime-docs-minimal shared-state-babeld_hosts shared-state-bat_hosts shared-state-dnsmasq_hosts shared-state-nodes_and_links babeld-auto-gw-mode check-date-http batctl-default -dnsmasq -odhcpd-ipv6only" \
 ARCH=aarch64_cortex-a53 FEED_BRANCH=openwrt-24.10 DEVICE_NAME=linksys_e8450 \
 tools/ci/build_image.sh mediatek-mt7622 linksys_e8450 24.10.6 \
   ./feed-merged ./out

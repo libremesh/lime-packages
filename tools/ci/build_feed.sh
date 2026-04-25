@@ -8,7 +8,7 @@ usage() {
   echo "  opkg_arch: OpenWrt package arch, e.g. aarch64_cortex-a53 or mips_24kc" >&2
   echo "  artifacts_dir: empty or writable directory; receives bin/packages/<arch>/<feed>/" >&2
   echo "Optional env: SDK_ARCH (default: <opkg_arch>-openwrt-24.10), FEEDNAME (default: lime_packages)," >&2
-  echo "  SDK_PACKAGES or PACKAGES (default: lime-system), BUILD, BUILD_LOG, V" >&2
+  echo "  SDK_PACKAGES or PACKAGES (default: empty -> compile whole feed), BUILD, BUILD_LOG, V" >&2
   exit 1
 }
 
@@ -19,7 +19,7 @@ fi
 ARCH_OPKG="$1"
 ARTIFACTS_DIR="$(realpath -m "$2")"
 FEEDNAME="${FEEDNAME:-lime_packages}"
-PACKAGES="${SDK_PACKAGES:-${PACKAGES:-lime-system}}"
+PACKAGES="${SDK_PACKAGES:-${PACKAGES:-}}"
 SDK_ARCH="${SDK_ARCH:-${ARCH_OPKG}-openwrt-24.10}"
 
 mkdir -p "${ARTIFACTS_DIR}"

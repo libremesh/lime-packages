@@ -31,7 +31,6 @@ cat > "${WORK_DIR}/repositories.snippet" <<EOF
 src/gz lime_packages_local file:///feed/lime_packages
 src/gz libremesh https://feed.libremesh.org/master/${FEED_BRANCH}/${ARCH}
 src/gz libremesh_profiles https://feed.libremesh.org/profiles/${FEED_BRANCH}/${ARCH}
-option check_signature 0
 EOF
 
 cat > "${WORK_DIR}/keys/a71b3c8285abd28b" <<'EOF'
@@ -51,9 +50,17 @@ docker run --rm \
   -v "${WORK_DIR}:/work" \
   -v "${FEED_DIR}:/feed:ro" \
   "${IMAGE_TAG}" \
-  sh -lc "cat /work/repositories.snippet >> repositories.conf \
-    && cp /work/keys/* keys/ \
-    && make image PROFILE=${PROFILE} BIN_DIR=/work/out PACKAGES=\"${PACKAGES}\""
+  sh -lc "
+    set -e
+    # Disable signature checking for our local unsigned feed. Appending
+    # 'option check_signature 0' would clash with the line shipped in
+    # repositories.conf and opkg keeps verification on (\"Duplicate boolean
+    # option check_signature, leaving this option on\").
+    sed -i 's/^option check_signature.*/option check_signature 0/' repositories.conf
+    cat /work/repositories.snippet >> repositories.conf
+    cp /work/keys/* keys/ 2>/dev/null || true
+    make image PROFILE=${PROFILE} BIN_DIR=/work/out PACKAGES=\"${PACKAGES}\"
+  "
 
 SOURCE_FILE="$(
   find "${WORK_DIR}/out" -type f -name "*${PROFILE}*initramfs*" 2>/dev/null | head -n 1 || true
