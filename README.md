@@ -150,6 +150,33 @@ The target matrix is data-driven in `.github/ci/targets.yml`:
 
 Local reproduction (optional): `tools/ci/build_feed.sh` clones `openwrt/gh-action-sdk` at tag `v9`, runs `docker build` with `ARCH=$SDK_ARCH`, then `docker run` with the same env vars as CI. Cross-arch SDK images may require QEMU/binfmt on the host.
 
+###### Updating `lime-docs` source pin
+
+`packages/lime-docs/Makefile` pins `libremesh/libremesh.github.io` with `PKG_SOURCE_VERSION` (full SHA) and `PKG_MIRROR_HASH` (sha256 of the reproducible `.tar.zst` OpenWrt generates). OpenWrt 24.10 rejects `PKG_MIRROR_HASH:=skip`, and `gh-action-sdk` runs `make package/lime-docs/check`, so both values must stay correct.
+
+When bumping to newer documentation:
+
+1. Choose the upstream commit SHA (e.g. `git ls-remote https://github.com/libremesh/libremesh.github.io refs/heads/main`).
+2. Set `PKG_SOURCE_VERSION` to that full SHA.
+3. Set `PKG_VERSION` to `YYYY.MM.DD~shortsha`, where `YYYY.MM.DD` comes from the docs repo (`git -C <docs-clone> show -s --format=%ad --date=short HEAD | sed 's|-|.|g'`) and `shortsha` is the first 7 hex digits of `PKG_SOURCE_VERSION`.
+4. Recompute `PKG_MIRROR_HASH`: clone that commit, copy the tree into a directory named exactly `lime-docs-$(PKG_VERSION)`, then pack with the same flags as OpenWrt `scripts/dl_github_archive.py` (OpenWrt 24.10). Use `TS=$(git -C <docs-clone> show -s --format=%ct HEAD)` so `--mtime=@$TS` matches the commit timestamp OpenWrt uses when verifying the mirror tarball, then:
+
+```shell
+SUB="lime-docs-<PKG_VERSION>"
+TS=<unix_timestamp_of_that_commit>
+PARENT=/tmp/lime-docs-repack
+rm -rf "$PARENT" /tmp/lime-docs-repack.tar.zst
+mkdir -p "$PARENT"
+cp -a /path/to/libremesh.github.io-checkout "$PARENT/$SUB"
+tar --numeric-owner --owner=0 --group=0 --sort=name --mode=a-s \
+  -C "$PARENT" -cf /tmp/lime-docs-repack.tar.zst "$SUB" \
+  --mtime="@$TS" \
+  -I "zstd -T0 --ultra -20"
+sha256sum /tmp/lime-docs-repack.tar.zst
+```
+
+5. Put the printed sha256 (lowercase hex) into `PKG_MIRROR_HASH` in the Makefile.
+
 ```shell
 mkdir -p ./out-feed ./feed-merged/lime_packages
 # PACKAGES="" -> compile every package in the lime_packages feed (default).
