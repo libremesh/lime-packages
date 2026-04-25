@@ -41,7 +41,6 @@ docker run --rm \
   --env FEEDNAME="${FEEDNAME}" \
   --env IGNORE_ERRORS="n m y" \
   --env INDEX=1 \
-  --env NO_DEFAULT_FEEDS=1 \
   --env "NO_REFRESH_CHECK=${NO_REFRESH_CHECK:-}" \
   --env "NO_SHFMT_CHECK=${NO_SHFMT_CHECK:-}" \
   --env PACKAGES="${PACKAGES}" \
