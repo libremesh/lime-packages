@@ -59,6 +59,15 @@ docker run --rm \
     sed -i 's/^option check_signature.*/option check_signature 0/' repositories.conf
     cat /work/repositories.snippet >> repositories.conf
     cp /work/keys/* keys/ 2>/dev/null || true
+
+    echo '=== final repositories.conf ==='
+    cat repositories.conf
+    echo '=== mounted feed contents (/feed/lime_packages) ==='
+    ls -la /feed/lime_packages/ | head -40
+    feed_ipks=\$(find /feed/lime_packages -maxdepth 1 -name '*.ipk' | wc -l)
+    feed_pkgs=\$(grep -c '^Package:' /feed/lime_packages/Packages 2>/dev/null || echo 0)
+    echo \"Feed has \${feed_ipks} IPKs and \${feed_pkgs} Packages entries\"
+
     make image PROFILE=${PROFILE} BIN_DIR=/work/out PACKAGES=\"${PACKAGES}\"
   "
 
