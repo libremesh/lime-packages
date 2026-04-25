@@ -42,6 +42,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if grep -RIn '^PKG_MIRROR_HASH:=skip' packages/; then
+            echo "PKG_MIRROR_HASH:=skip is deprecated on OpenWrt 24.10; pin PKG_SOURCE_VERSION and set a real sha256." >&2
+            exit 1
+          fi
           TARGETS_INPUT="${{ github.event.inputs.targets || 'all' }}"
           RELEASE_OVERRIDE="${{ github.event.inputs.openwrt_release || '' }}"
 

@@ -4,18 +4,20 @@
 
 include $(TOPDIR)/rules.mk
 
-GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . | sed 's|-|.|g' )
-GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
-
+# Pinned upstream docs content. Do not derive PKG_VERSION from *this*
+# repository's git history for packages/lime-docs: every Makefile commit would
+# change PKG_SOURCE_SUBDIR and invalidate PKG_MIRROR_HASH under OpenWrt 24.10
+# reproducible tarball rules (and gh-action-sdk runs `make package/.../check`).
 PKG_NAME:=lime-docs
-PKG_VERSION=$(GIT_COMMIT_DATE)~$(GIT_COMMIT_TSTAMP)
+PKG_SOURCE_VERSION:=3b580071fde1a817837a596fd41ae4bf7797ab1d
+# Commit date of PKG_SOURCE_VERSION on libremesh.github.io + short sha suffix.
+PKG_VERSION:=2026.04.07~3b58007
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=https://github.com/libremesh/libremesh.github.io/
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=HEAD
 PKG_SOURCE_SUBMODULES:=skip
-PKG_MIRROR_HASH:=skip
+PKG_MIRROR_HASH:=7d4f01eb1773f1c7bc8605b1d3411d65e80be0e8cfe8c5861cabab09be27b496
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
