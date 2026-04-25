@@ -130,6 +130,36 @@ If you get a `docker: Cannot connect to the Docker daemon at unix:///var/run/doc
 
 If you get a `opkg_download: Check your network settings and connectivity.` error, both check the connectivity and make sure that the firewall rules of your computer allow the container to reach the internet.
 
+##### FCEFyN CI: per-target image build
+
+The repository includes a prototype CI workflow at `.github/workflows/build-firmware.yml` to build one LibreMesh image per target for pull requests and manual runs.
+
+Flow:
+- Stage 1 (`build-feed`): `uses: openwrt/gh-action-sdk@v9` (same pattern as `.github/workflows/build.yml`) compiles selected packages from this repo into `bin/packages/<arch>/lime_packages/`, then uploads that directory as artifact `lime-feed-<arch>`.
+- Stage 2 (`build-image`): `docker run ghcr.io/openwrt/imagebuilder` per target; `tools/ci/build_image.sh` prepends a `file://` local feed, then `feed.libremesh.org` as fallback.
+
+This two-stage approach is intentional:
+- catches file-only changes and package metadata changes (`Makefile`, dependencies, new packages),
+- keeps image generation fast by using ImageBuilder instead of full Buildroot.
+
+The target matrix is data-driven in `.github/ci/targets.yml`:
+- add a target by appending one entry under `targets`,
+- keep `arch` aligned with the OpenWrt package architecture for that device,
+- set `sdk_arch` to `<arch>-openwrt-<branch>` (e.g. `aarch64_cortex-a53-openwrt-24.10`) for the SDK image tag consumed by `gh-action-sdk`.
+
+Local reproduction (optional): `tools/ci/build_feed.sh` clones `openwrt/gh-action-sdk` at tag `v9`, runs `docker build` with `ARCH=$SDK_ARCH`, then `docker run` with the same env vars as CI. Cross-arch SDK images may require QEMU/binfmt on the host.
+
+```shell
+mkdir -p ./out-feed
+tools/ci/build_feed.sh aarch64_cortex-a53 ./out-feed
+PACKAGES="profile-libremesh-suggested-packages -dnsmasq -odhcpd-ipv6only" \
+ARCH=aarch64_cortex-a53 FEED_BRANCH=openwrt-24.10 DEVICE_NAME=linksys_e8450 \
+tools/ci/build_image.sh mediatek-mt7622 linksys_e8450 24.10.6 \
+  ./out-feed/bin/packages/aarch64_cortex-a53 ./out
+```
+
+The workflow produces firmware artifacts with stable names: `firmware-<device>.<ext>`.
+
 ##### Package selection
 
 With the `PACKAGES=` argument, you can specify which packages should be preinstalled inside the image. All packages and packages they depend on will be included in the image. This list of packes will produce an image close to the official ones:

@@ -1,0 +1,26 @@
+openwrt_release: "24.10.6"
+feed_branch: "openwrt-24.10"
+packages: >-
+  profile-libremesh-suggested-packages
+  -dnsmasq -odhcpd-ipv6only
+targets:
+  - device: linksys_e8450
+    imagebuilder: mediatek-mt7622
+    profile: linksys_e8450
+    arch: aarch64_cortex-a53
+    sdk_arch: aarch64_cortex-a53-openwrt-24.10
+  - device: openwrt_one
+    imagebuilder: mediatek-filogic
+    profile: openwrt_one
+    arch: aarch64_cortex-a53
+    sdk_arch: aarch64_cortex-a53-openwrt-24.10
+  - device: bananapi_bpi-r4
+    imagebuilder: mediatek-filogic
+    profile: bananapi_bpi-r4
+    arch: aarch64_cortex-a53
+    sdk_arch: aarch64_cortex-a53-openwrt-24.10
+  - device: librerouter_librerouter-v1
+    imagebuilder: ath79-generic
+    profile: librerouter_librerouter-v1
+    arch: mips_24kc
+    sdk_arch: mips_24kc-openwrt-24.10

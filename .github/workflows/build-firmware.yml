@@ -1,0 +1,198 @@
+name: Build firmware
+
+on:
+  pull_request:
+    branches: [master, main]
+    paths:
+      - ".github/workflows/build-firmware.yml"
+      - ".github/ci/targets.yml"
+      - "tools/ci/build_feed.sh"
+      - "tools/ci/build_image.sh"
+      - "packages/**"
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: "Comma-separated devices from .github/ci/targets.yml or 'all'"
+        required: false
+        default: "all"
+      openwrt_release:
+        description: "Override OpenWrt release (defaults to targets.yml)"
+        required: false
+        default: ""
+
+concurrency:
+  group: build-firmware-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      targets_matrix: ${{ steps.prepare.outputs.targets_matrix }}
+      archs_matrix: ${{ steps.prepare.outputs.archs_matrix }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install yq
+        run: sudo apt-get update && sudo apt-get install -y yq jq
+
+      - name: Prepare matrices
+        id: prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGETS_INPUT="${{ github.event.inputs.targets || 'all' }}"
+          RELEASE_OVERRIDE="${{ github.event.inputs.openwrt_release || '' }}"
+
+          all_targets_json="$(yq -r '.targets | tojson' .github/ci/targets.yml)"
+          default_release="$(yq -r '.openwrt_release' .github/ci/targets.yml)"
+          feed_branch="$(yq -r '.feed_branch' .github/ci/targets.yml)"
+          packages="$(yq -r '.packages' .github/ci/targets.yml)"
+          openwrt_release="${RELEASE_OVERRIDE:-$default_release}"
+
+          if [[ "$TARGETS_INPUT" == "all" ]]; then
+            selected_targets="$all_targets_json"
+          else
+            selected_targets="$(
+              jq -c --arg list "$TARGETS_INPUT" '
+                ($list | split(",") | map(gsub("^\\s+|\\s+$"; ""))) as $wanted
+                | map(select((.device as $d | any($wanted[]; . == $d))))
+              ' <<< "$all_targets_json"
+            )"
+          fi
+
+          if [[ "$(jq 'length' <<< "$selected_targets")" -eq 0 ]]; then
+            echo "No targets selected after filtering input: $TARGETS_INPUT" >&2
+            exit 1
+          fi
+
+          targets_matrix="$(
+            jq -c --arg release "$openwrt_release" --arg feed "$feed_branch" --arg pkg "$packages" '
+              {include: map(. + {openwrt_release: $release, feed_branch: $feed, packages: $pkg})}
+            ' <<< "$selected_targets"
+          )"
+
+          archs_matrix="$(
+            jq -c --arg release "$openwrt_release" '
+              {
+                include: (
+                  [.[] | {arch, sdk_arch}]
+                  | unique_by(.arch)
+                  | map(. + {openwrt_release: $release})
+                )
+              }
+            ' <<< "$selected_targets"
+          )"
+
+          echo "targets_matrix=$targets_matrix" >> "$GITHUB_OUTPUT"
+          echo "archs_matrix=$archs_matrix" >> "$GITHUB_OUTPUT"
+
+  build-feed:
+    runs-on: ubuntu-latest
+    needs: prepare-matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.archs_matrix) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Free disk
+        run: sudo rm -rf /opt/hostedtoolcache /usr/share/dotnet /usr/local/lib/android
+
+      - name: Build packages with openwrt/gh-action-sdk
+        uses: openwrt/gh-action-sdk@v9
+        env:
+          ARCH: ${{ matrix.sdk_arch }}
+          FEEDNAME: lime_packages
+          PACKAGES: lime-system
+          INDEX: "1"
+          NO_DEFAULT_FEEDS: "1"
+          IGNORE_ERRORS: "n m y"
+
+      - name: Upload local feed artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lime-feed-${{ matrix.arch }}
+          path: bin/packages/${{ matrix.arch }}/lime_packages/
+          retention-days: 7
+
+      - name: Upload feed debug logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-debug-feed-${{ matrix.arch }}
+          path: |
+            bin/packages/${{ matrix.arch }}/
+            logs/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  build-image:
+    runs-on: ubuntu-latest
+    needs: [prepare-matrix, build-feed]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.targets_matrix) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Free disk
+        run: sudo rm -rf /opt/hostedtoolcache /usr/share/dotnet /usr/local/lib/android
+
+      - name: Download matching local feed
+        uses: actions/download-artifact@v5
+        with:
+          name: lime-feed-${{ matrix.arch }}
+          path: ./feed-in/lime_packages/
+
+      - name: Pull ImageBuilder image
+        run: docker pull ghcr.io/openwrt/imagebuilder:${{ matrix.imagebuilder }}-v${{ matrix.openwrt_release }}
+
+      - name: Build firmware image
+        env:
+          DEVICE_NAME: ${{ matrix.device }}
+          ARCH: ${{ matrix.arch }}
+          FEED_BRANCH: ${{ matrix.feed_branch }}
+          PACKAGES: ${{ matrix.packages }}
+        run: |
+          chmod +x tools/ci/build_image.sh
+          tools/ci/build_image.sh \
+            "${{ matrix.imagebuilder }}" \
+            "${{ matrix.profile }}" \
+            "${{ matrix.openwrt_release }}" \
+            "./feed-in" \
+            "./out"
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.device }}
+          path: ./out/firmware-${{ matrix.device }}.*
+          retention-days: 7
+
+      - name: Upload image debug files
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-debug-image-${{ matrix.device }}
+          path: |
+            ./out/
+            ./feed-in/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  summary:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [prepare-matrix, build-feed, build-image]
+    steps:
+      - name: Build summary
+        run: |
+          {
+            echo "## Firmware build summary"
+            echo
+            echo "- Targets matrix: \`${{ needs.prepare-matrix.outputs.targets_matrix }}\`"
+            echo "- Arch matrix: \`${{ needs.prepare-matrix.outputs.archs_matrix }}\`"
+            echo "- Feed stage result: \`${{ needs.build-feed.result }}\`"
+            echo "- Image stage result: \`${{ needs.build-image.result }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
