@@ -141,7 +141,9 @@ jobs:
           fi
 
           docker pull "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}"
+          chmod -R a+rwX feed-artifact/lime_packages
           docker run --rm \
+            --user root \
             -v "$(pwd)/feed-artifact/lime_packages:/work" \
             "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}" \
             sh -lc '/builder/scripts/ipkg-make-index.sh /work > /work/Packages && gzip -9nc /work/Packages > /work/Packages.gz'
