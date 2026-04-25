@@ -104,14 +104,18 @@ jobs:
         env:
           ARCH: ${{ matrix.sdk_arch }}
           FEEDNAME: lime_packages
-          PACKAGES: lime-system
+          # Empty PACKAGES makes gh-action-sdk install the whole lime_packages
+          # feed (`feeds install -p lime_packages -f -a`) and `make -j$(nproc)`
+          # everything. We need the full set because feed.libremesh.org is
+          # essentially empty for openwrt-24.10 and the image install list
+          # references every lime-* / shared-state-* package.
+          PACKAGES: ""
           # SDK-side `make package/index` is brittle in CI (fails after a
           # successful compile with no useful stderr unless V=sc). We generate
           # Packages/Packages.gz ourselves using ImageBuilder's ipkg-make-index.
           INDEX: "0"
-          # lime-system DEPENDS on packages from OpenWrt feeds (firewall4, lua,
-          # luci-*, jq, …). NO_DEFAULT_FEEDS=1 leaves only lime_packages and
-          # breaks feed resolution / package/index (see PR build logs).
+          # Keep default feeds enabled: lime-* DEPENDS on firewall4, lua,
+          # luci-*, jq, … which only resolve through the upstream OpenWrt feeds.
           IGNORE_ERRORS: "n m y"
 
       - name: Assemble lime_packages feed artifact (index with ImageBuilder)

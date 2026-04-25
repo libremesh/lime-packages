@@ -1,7 +1,15 @@
 openwrt_release: "24.10.6"
 feed_branch: "openwrt-24.10"
+# Mirrors the official LibreMesh README "Package selection" list; all lime-*
+# and shared-state-* packages must be provided by our local feed (the upstream
+# feed.libremesh.org publishes only `shared-state-async` for openwrt-24.10).
 packages: >-
-  profile-libremesh-suggested-packages
+  lime-system lime-proto-babeld lime-proto-batadv lime-proto-anygw
+  lime-hwd-openwrt-wan lime-hwd-ground-routing lime-app
+  lime-debug lime-docs lime-docs-minimal
+  shared-state-babeld_hosts shared-state-bat_hosts
+  shared-state-dnsmasq_hosts shared-state-nodes_and_links
+  babeld-auto-gw-mode check-date-http batctl-default
   -dnsmasq -odhcpd-ipv6only
 targets:
   - device: linksys_e8450
