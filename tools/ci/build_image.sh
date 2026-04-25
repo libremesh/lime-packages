@@ -25,6 +25,7 @@ WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
 mkdir -p "${WORK_DIR}/out" "${WORK_DIR}/keys" "${OUTPUT_DIR}"
+chmod 0755 "${WORK_DIR}"
 
 cat > "${WORK_DIR}/repositories.snippet" <<EOF
 src/gz lime_packages_local file:///feed/lime_packages
@@ -41,9 +42,14 @@ EOF
 IMAGE_TAG="ghcr.io/openwrt/imagebuilder:${IMAGEBUILDER}-v${OPENWRT_RELEASE}"
 echo ">>> Building ${PROFILE} with ${IMAGE_TAG}"
 
+# Make sure container 'buildbot' user (uid 1000) can read the bind-mounted files.
+chmod -R a+rX "${WORK_DIR}" "${FEED_DIR}"
+chmod a+w "${WORK_DIR}/out"
+
 docker run --rm \
+  --user root \
   -v "${WORK_DIR}:/work" \
-  -v "${FEED_DIR}:/feed" \
+  -v "${FEED_DIR}:/feed:ro" \
   "${IMAGE_TAG}" \
   sh -lc "cat /work/repositories.snippet >> repositories.conf \
     && cp /work/keys/* keys/ \
