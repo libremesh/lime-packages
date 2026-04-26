@@ -121,7 +121,24 @@ jobs:
       - name: Free disk
         run: sudo rm -rf /opt/hostedtoolcache /usr/share/dotnet /usr/local/lib/android
 
+      # Skip the ~50-min SDK compile when nothing that affects the produced
+      # IPKs has changed. The cache key is invalidated on:
+      #   - any package source change (`packages/**`)
+      #   - target/feed/release changes (`.github/ci/targets.yml`)
+      #   - SDK invocation changes (`tools/ci/build_feed.sh`,
+      #     `.github/workflows/build-firmware.yml`)
+      #   - arch / OpenWrt release variations across the matrix
+      # On hit, all build steps below are skipped and the cached
+      # `feed-artifact/lime_packages/` is uploaded as-is for `build-image`.
+      - name: Restore feed cache
+        id: cache-feed
+        uses: actions/cache@v4
+        with:
+          path: feed-artifact/lime_packages
+          key: lime-feed-v1-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ hashFiles('packages/**', '.github/ci/targets.yml', '.github/workflows/build-firmware.yml', 'tools/ci/build_feed.sh') }}
+
       - name: Build packages with openwrt/gh-action-sdk
+        if: steps.cache-feed.outputs.cache-hit != 'true'
         uses: openwrt/gh-action-sdk@v9
         env:
           ARCH: ${{ matrix.sdk_arch }}
@@ -149,6 +166,7 @@ jobs:
           IGNORE_ERRORS: "n m y"
 
       - name: Diagnose feed build output
+        if: steps.cache-feed.outputs.cache-hit != 'true'
         # `set -e` plus a missing `bin/packages/all/lime_packages/` (which is
         # the normal case here: the SDK puts every PKGARCH:=all IPK into the
         # arch dir, not into `all/`) used to abort the whole job at `find ... |
@@ -173,6 +191,7 @@ jobs:
           fi
 
       - name: Assemble lime_packages feed artifact (index with ImageBuilder)
+        if: steps.cache-feed.outputs.cache-hit != 'true'
         env:
           OPENWRT_RELEASE: ${{ matrix.openwrt_release }}
         run: |
@@ -229,6 +248,15 @@ jobs:
             exit 1
           fi
           grep -m 3 '^Filename:' feed-artifact/lime_packages/Packages
+
+      - name: Diagnose cached feed (cache hit)
+        if: steps.cache-feed.outputs.cache-hit == 'true'
+        run: |
+          set -euo pipefail
+          echo "=== Cache hit: feed-artifact/lime_packages/ ==="
+          ls -la feed-artifact/lime_packages/
+          pkg_count=$(grep -c '^Package:' feed-artifact/lime_packages/Packages || echo 0)
+          echo "Cached index has ${pkg_count} packages"
 
       - name: Upload local feed artifact
         uses: actions/upload-artifact@v4
