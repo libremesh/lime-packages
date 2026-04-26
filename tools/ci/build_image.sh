@@ -120,6 +120,43 @@ docker run --rm \
 echo "=== Selecting firmware artifact for ${PROFILE} ==="
 ls -la "${WORK_DIR}/out/" || true
 
+# Hard-fail if the produced image is not actually a LibreMesh build.
+#
+# ImageBuilder writes a `*.manifest` file alongside each image with the full
+# list of installed packages (one `<name> <version>` per line). When PACKAGES
+# resolution fails silently (DEPENDS conflict, opkg error swallowed by SDK,
+# etc.) make image can still emit a vanilla OpenWrt initramfs and the test
+# job ends up booting that, producing the elusive `root@OpenWrt`/`root@(none)`
+# prompt instead of `root@LiMe-XXXXXX`. We detect that here, before the
+# initramfs leaves this job, by grepping the manifest for the LibreMesh core
+# packages we explicitly listed in PACKAGES.
+MANIFEST_FILE="$(compgen -G "${WORK_DIR}/out/*${PROFILE}*.manifest" 2>/dev/null | head -n 1 || true)"
+if [[ -z "${MANIFEST_FILE}" || ! -f "${MANIFEST_FILE}" ]]; then
+  echo "::error::ImageBuilder produced no .manifest for ${PROFILE} — cannot verify LibreMesh content" >&2
+  find "${WORK_DIR}/out" -maxdepth 1 -type f -printf '  %p (%s bytes)\n' >&2 || true
+  exit 1
+fi
+echo "=== Manifest: ${MANIFEST_FILE} ==="
+echo "Total packages in manifest: $(wc -l < "${MANIFEST_FILE}")"
+required_pkgs=(lime-system lime-proto-batadv lime-proto-anygw batctl-default)
+missing=()
+for pkg in "${required_pkgs[@]}"; do
+  if ! grep -qE "^${pkg} " "${MANIFEST_FILE}"; then
+    missing+=("${pkg}")
+  fi
+done
+if (( ${#missing[@]} > 0 )); then
+  echo "::error::Image manifest is missing required LibreMesh packages: ${missing[*]}" >&2
+  echo "This means make image silently dropped them despite the opkg pre-flight pass." >&2
+  echo "=== Manifest contents (lime/shared-state/batctl entries) ===" >&2
+  grep -E '^(lime|shared-state|batctl|babeld|firewall)' "${MANIFEST_FILE}" >&2 || true
+  echo "=== First 40 manifest lines ===" >&2
+  head -n 40 "${MANIFEST_FILE}" >&2 || true
+  exit 1
+fi
+echo ">>> Manifest validation OK: lime-system + lime-proto-batadv + lime-proto-anygw + batctl-default present"
+grep -E '^(lime-|shared-state-|batctl|babeld|firewall4)' "${MANIFEST_FILE}" || true
+
 # Prefer the in-RAM image we use to TFTP-boot the testbed nodes (initramfs),
 # fall back to sysupgrade artifacts when the device only ships sysupgrade in
 # the imagebuilder output (e.g. profiles whose target has
@@ -159,4 +196,12 @@ DEVICE_NAME="${DEVICE_NAME:-${PROFILE}}"
 TARGET_FILE="${OUTPUT_DIR}/firmware-${DEVICE_NAME}.${EXTENSION}"
 cp "${SOURCE_FILE}" "${TARGET_FILE}"
 
+# Ship the manifest with the firmware so test-firmware (and downstream
+# debugging) can answer "what packages are inside this image?" without
+# rerunning the whole build. Same basename, .manifest extension.
+MANIFEST_TARGET="${OUTPUT_DIR}/firmware-${DEVICE_NAME}.manifest"
+cp "${MANIFEST_FILE}" "${MANIFEST_TARGET}"
+
 echo ">>> Firmware output: ${TARGET_FILE} ($(stat -c%s "${TARGET_FILE}") bytes)"
+echo ">>> Manifest output: ${MANIFEST_TARGET} ($(wc -l < "${MANIFEST_TARGET}") packages)"
+echo ">>> Firmware sha256: $(sha256sum "${TARGET_FILE}" | cut -d' ' -f1)"
