@@ -110,6 +110,43 @@ docker run --rm \
     fi
     echo '=== Pre-flight OK: local feed is visible to opkg ==='
 
+    # Force ImageBuilder to also emit the initramfs FIT (kernel + embedded
+    # CPIO rootfs) on top of the default squashfs-sysupgrade FIT.
+    #
+    # Why: testbed nodes are TFTP-booted from RAM and never sysupgraded
+    # in CI. The sysupgrade FIT is a *staged* image — its rootfs is a
+    # 'Filesystem Image' (squashfs) packed as a FIT 'loadables' entry,
+    # which bootm does NOT pass to the kernel as initramfs. A kernel
+    # booted with that FIT comes up with an empty 'root=' cmdline; the
+    # in-tree fitblk driver then walks UBI, finds the on-flash 'fit'
+    # volume from whatever was previously sysupgraded onto the device
+    # (vanilla OpenWrt 24.10.5 from 2025-12-17 in our lab), maps its
+    # squashfs sub-image as /dev/fit0 and mounts that as /. We end up
+    # running our fresh kernel against the old userspace, so lime-config
+    # never executes and the DUT presents 'root@OpenWrt:~#' instead of
+    # 'root@LiMe-XXXXXX:~#'.
+    #
+    # Setting CONFIG_TARGET_ROOTFS_INITRAMFS=y instructs make image to
+    # also build the kernel-with-initramfs variant, which produces
+    # *-initramfs-recovery.itb (filogic) / *-initramfs-kernel.bin (ath79)
+    # — true RAM-only images whose rootfs lives inside kernel-1 and
+    # therefore survive bootm without any flash dependency. The
+    # downstream pattern selection in build_image.sh prefers those over
+    # the sysupgrade FIT, so this single config tweak is what flips
+    # test-firmware from 'tests on-flash 24.10.5' to 'tests today's PR'.
+    #
+    # Note: filogic 24.10 imagebuilders ship CONFIG_TARGET_ROOTFS_INITRAMFS=n
+    # by default (initramfs is opt-in for production sysupgrades).
+    sed -i '/^CONFIG_TARGET_ROOTFS_INITRAMFS\b/d' .config
+    sed -i '/^CONFIG_TARGET_INITRAMFS_COMPRESSION_/d' .config
+    {
+      echo 'CONFIG_TARGET_ROOTFS_INITRAMFS=y'
+      echo 'CONFIG_TARGET_INITRAMFS_COMPRESSION_NONE=n'
+      echo 'CONFIG_TARGET_INITRAMFS_COMPRESSION_GZIP=y'
+    } >> .config
+    echo '=== Effective .config initramfs flags ==='
+    grep -E '^CONFIG_TARGET_(ROOTFS_INITRAMFS|INITRAMFS_COMPRESSION_)' .config || true
+
     make image PROFILE=${PROFILE} BIN_DIR=/work/out PACKAGES=\"${PACKAGES}\"
 
     echo '=== /work/out contents (post make image) ==='
@@ -157,24 +194,25 @@ fi
 echo ">>> Manifest validation OK: lime-system + lime-proto-batadv + lime-proto-anygw + batctl-default present"
 grep -E '^(lime-|shared-state-|batctl|babeld|firewall4)' "${MANIFEST_FILE}" || true
 
-# Prefer the in-RAM image we use to TFTP-boot the testbed nodes (initramfs),
-# fall back to sysupgrade artifacts when the device only ships sysupgrade in
-# the imagebuilder output (e.g. profiles whose target has
-# CONFIG_TARGET_ROOTFS_INITRAMFS=n in OpenWrt 24.10). Selection order is
-# deliberate: initramfs.itb (filogic single-file) → ubi-initramfs-recovery.itb
-# (mt7622 ubi devices like e8450) → initramfs-kernel.bin (ath79) →
-# squashfs-sysupgrade.itb / .bin as a last resort. We pick by suffix rather
-# than substring so a stray *-initramfs* embedded in another filename can't
-# false-match.
+# Initramfs-only patterns: these are the artifacts whose rootfs lives
+# inside the kernel image (initramfs CPIO embedded in `kernel-1` of the
+# FIT, or a flat kernel.bin with appended initramfs on ath79). They boot
+# self-contained from RAM, which is exactly what the testbed strategy
+# relies on. We deliberately ignore *-squashfs-sysupgrade.itb and
+# *-squashfs-sysupgrade.bin here because their FIT rootfs is a
+# `Filesystem Image` loadable that bootm does NOT hand to the kernel,
+# making the DUT fall back to fitblk + on-flash UBI (vanilla OpenWrt
+# leftover) instead of testing today's build. The earlier
+# `CONFIG_TARGET_ROOTFS_INITRAMFS=y` tweak ensures these are produced;
+# this guard turns "silently shipped sysupgrade" into a hard build-image
+# failure with full /work/out listing for triage.
 SOURCE_FILE=""
 for pattern in \
   "*${PROFILE}-initramfs.itb" \
   "*${PROFILE}*initramfs-recovery.itb" \
   "*${PROFILE}*initramfs-kernel.bin" \
   "*${PROFILE}*initramfs*.itb" \
-  "*${PROFILE}*initramfs*.bin" \
-  "*${PROFILE}*squashfs-sysupgrade.itb" \
-  "*${PROFILE}*squashfs-sysupgrade.bin"; do
+  "*${PROFILE}*initramfs*.bin"; do
   match="$(compgen -G "${WORK_DIR}/out/${pattern}" 2>/dev/null | head -n 1 || true)"
   if [[ -n "${match}" && -f "${match}" ]]; then
     SOURCE_FILE="${match}"
@@ -184,9 +222,20 @@ for pattern in \
 done
 
 if [[ -z "${SOURCE_FILE}" || ! -f "${SOURCE_FILE}" ]]; then
-  echo "ERROR: Could not locate any usable built image for profile ${PROFILE}" >&2
-  echo "Searched ${WORK_DIR}/out for: initramfs.itb, *initramfs-recovery.itb, *initramfs-kernel.bin, *initramfs*.itb, *initramfs*.bin, *squashfs-sysupgrade.{itb,bin}" >&2
-  echo "Actual contents:" >&2
+  echo "::error::No initramfs image produced by ImageBuilder for profile ${PROFILE}." >&2
+  echo "Searched ${WORK_DIR}/out for: *${PROFILE}-initramfs.itb, *${PROFILE}*initramfs-recovery.itb, *${PROFILE}*initramfs-kernel.bin, *${PROFILE}*initramfs*.{itb,bin}" >&2
+  echo "" >&2
+  echo "This usually means CONFIG_TARGET_ROOTFS_INITRAMFS=y was not honored by" >&2
+  echo "the imagebuilder (.config rewrite skipped, or the device profile in" >&2
+  echo "this OpenWrt release does not define a KERNEL_INITRAMFS recipe). The" >&2
+  echo "testbed strategy TFTP-boots from RAM and cannot use a sysupgrade FIT," >&2
+  echo "whose rootfs is a 'Filesystem Image' loadable that bootm does not" >&2
+  echo "pass to the kernel as initramfs — the DUT would silently boot the" >&2
+  echo "previously-flashed userspace via fitblk and tests would run against" >&2
+  echo "the wrong firmware. Failing now so the regression surfaces here," >&2
+  echo "instead of as a TIMEOUT in test-firmware." >&2
+  echo "" >&2
+  echo "Actual /work/out contents:" >&2
   find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
   exit 1
 fi
