@@ -116,20 +116,21 @@ jobs:
           echo "Computed package list ($(echo "$lime_packages_list" | wc -w) packages):"
           echo "$lime_packages_list" | tr ' ' '\n'
 
-          # Compute a single sha256 over every input that affects the
-          # produced lime_packages IPKs. We do this in bash (instead of the
-          # workflow expression `hashFiles(...)`) because the runner-side
-          # hashFiles glob has been flaky for `packages/**` style patterns
-          # and renders an opaque "Fail to hash files under directory ..."
-          # error that aborts the whole job. Bash sort | sha256sum is
-          # deterministic and identical across runs/platforms as long as
-          # the source tree is identical.
+          # Compute a single sha256 over inputs that affect the *compiled* IPKs
+          # only: package Makefiles / files / patches / src plus
+          # tools/ci/build_feed.sh. We intentionally exclude `.github/ci/targets.yml`
+          # and this workflow file — they affect ImageBuilder package selection and
+          # CI orchestration, not which `.ipk` files the SDK produces. Including them
+          # caused a full ~50 min SDK rebuild on every workflow or per-target
+          # `packages:` tweak despite unchanged package sources.
+          #
+          # OpenWrt release + arch remain in the actions/cache key separately.
           feed_hash="$(
             {
               find packages -type f \( -name 'Makefile' -o -path 'packages/*/files/*' -o -path 'packages/*/patches/*' -o -path 'packages/*/src/*' \) -print0 \
                 | LC_ALL=C sort -z \
                 | xargs -0 sha256sum
-              sha256sum .github/ci/targets.yml .github/workflows/build-firmware.yml tools/ci/build_feed.sh
+              sha256sum tools/ci/build_feed.sh
             } | sha256sum | cut -d' ' -f1
           )"
           echo "Computed feed_hash=$feed_hash"
@@ -153,20 +154,21 @@ jobs:
 
       # Skip the ~50-min SDK compile when nothing that affects the produced
       # IPKs has changed. `feed_hash` is computed in `prepare-matrix` over
-      # every relevant source file (Makefiles, patches/, files/, src/ under
-      # each package, plus targets.yml / build-firmware.yml /
-      # build_feed.sh). We avoid the `hashFiles(...)` workflow expression
-      # because the runner-side glob has been flaky for `packages/**`
-      # patterns ("Fail to hash files under directory '...'" aborts the
-      # whole job before any debug step runs). On hit, all build steps
-      # below are skipped and the cached `feed-artifact/lime_packages/` is
-      # uploaded as-is for `build-image`.
+      # package sources (Makefiles, patches/, files/, src/) and
+      # `tools/ci/build_feed.sh` only — not targets.yml / this workflow, so
+      # image-only or CI-only edits reuse the feed. `restore-keys` allows a
+      # partial match on the same arch+release when the exact hash is new
+      # (first push after a package change still gets a warm-ish cache).
+      # We avoid the `hashFiles(...)` workflow expression because the runner-side
+      # glob has been flaky for `packages/**` patterns.
       - name: Restore feed cache
         id: cache-feed
         uses: actions/cache@v4
         with:
           path: feed-artifact/lime_packages
-          key: lime-feed-v1-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}
+          key: lime-feed-v2-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}
+          restore-keys: |
+            lime-feed-v2-${{ matrix.arch }}-${{ matrix.openwrt_release }}-
 
       - name: Build packages with openwrt/gh-action-sdk
         if: steps.cache-feed.outputs.cache-hit != 'true'
@@ -372,10 +374,227 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # Self-hosted hardware tests: do not run for fork PRs (no lab access / abuse).
+  test-firmware:
+    name: test-firmware (${{ matrix.device }})
+    needs: [prepare-matrix, build-image]
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, testbed-fcefyn]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.targets_matrix) }}
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTEST_ADDOPTS: "--color=yes"
+      LG_CONSOLE: internal
+    steps:
+      # Fresh workspace on self-hosted runner (artifact download expects ./fw).
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: firmware-${{ matrix.device }}
+          path: fw
+
+      - uses: actions/checkout@v6
+        with:
+          repository: fcefyn-testbed/libremesh-tests
+          ref: staging
+          path: libremesh-tests
+
+      - uses: actions/checkout@v6
+        with:
+          repository: aparcar/openwrt-tests
+          ref: main
+          path: openwrt-tests
+
+      - name: Set OPENWRT_TESTS_DIR for pytest
+        run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Sync libremesh-tests environment
+        run: cd libremesh-tests && uv sync
+
+      - name: Stage firmware on TFTP
+        run: |
+          set -euo pipefail
+          STAGE="/srv/tftp/firmwares/ci/${{ github.run_id }}/${{ matrix.device }}"
+          mkdir -p "$STAGE"
+          shopt -s nullglob
+          files=(fw/firmware-${{ matrix.device }}.*)
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "::error::No firmware-${{ matrix.device }}.* under fw/"
+            ls -la fw/ || true
+            exit 1
+          fi
+          cp -a "${files[@]}" "$STAGE/"
+          LG_IMAGE=$(ls -1 "$STAGE"/firmware-${{ matrix.device }}.* | head -1)
+          echo "LG_IMAGE=$LG_IMAGE" >> "$GITHUB_ENV"
+          echo "Staged LG_IMAGE=$LG_IMAGE"
+
+      - name: Wait for free device and lock
+        working-directory: libremesh-tests
+        run: |
+          set -euo pipefail
+          echo "LG_PROXY=labgrid-fcefyn" >> "$GITHUB_ENV"
+          if [ "${{ matrix.device }}" = "linksys_e8450" ]; then
+            PLACE="labgrid-fcefyn-belkin_rt3200_2"
+            LOCK_OUT=$(uv run labgrid-client -v -p "$PLACE" lock 2>&1) || {
+              echo "$LOCK_OUT"
+              echo "::error::labgrid lock failed for $PLACE"
+              exit 1
+            }
+            echo "LG_PLACE=$PLACE" >> "$GITHUB_ENV"
+            echo "Locked $PLACE (Belkin RT3200 pool)"
+          else
+            eval "$(uv run labgrid-client reserve --shell device=${{ matrix.device }})"
+            echo "LG_TOKEN=$LG_TOKEN" >> "$GITHUB_ENV"
+            echo "LG_PLACE=+" >> "$GITHUB_ENV"
+            timeout 180 uv run labgrid-client wait || {
+              echo "::error::labgrid reserve timed out after 3 min"
+              exit 1
+            }
+            LOCK_OUT=$(uv run labgrid-client -v -p "+$LG_TOKEN" lock 2>&1) || {
+              echo "$LOCK_OUT"
+              echo "::error::labgrid lock failed"
+              exit 1
+            }
+            echo "$LOCK_OUT"
+            PLACE=$(echo "$LOCK_OUT" | sed -n 's/.*acquired place \([^ ]*\).*/\1/p')
+            if [ -n "$PLACE" ]; then
+              echo "LG_PLACE=$PLACE" >> "$GITHUB_ENV"
+              echo "Resolved LG_PLACE=$PLACE"
+            fi
+          fi
+          echo "LG_ENV=targets/${{ matrix.device }}.yaml" >> "$GITHUB_ENV"
+
+      - name: Run single-node LibreMesh tests
+        working-directory: libremesh-tests
+        env:
+          LG_PROXY: labgrid-fcefyn
+          LG_IMAGE: ${{ env.LG_IMAGE }}
+          LG_PLACE: ${{ env.LG_PLACE }}
+          LG_ENV: ${{ env.LG_ENV }}
+          LG_TOKEN: ${{ env.LG_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/logs/${{ matrix.device }}"
+          uv run pytest tests/test_libremesh.py \
+            --lg-log "$GITHUB_WORKSPACE/logs/${{ matrix.device }}/" \
+            --junitxml="$GITHUB_WORKSPACE/logs/${{ matrix.device }}/report.xml" \
+            --lg-colored-steps \
+            --log-cli-level=CONSOLE
+
+      - name: Poweroff and unlock device
+        if: always()
+        working-directory: libremesh-tests
+        env:
+          LG_TOKEN: ${{ env.LG_TOKEN }}
+          LG_PLACE: ${{ env.LG_PLACE }}
+        run: |
+          set +e
+          uv run labgrid-client power off || true
+          if [ -n "${LG_TOKEN:-}" ]; then
+            uv run labgrid-client -p "+$LG_TOKEN" unlock || true
+          elif [ -n "${LG_PLACE:-}" ] && [ "$LG_PLACE" != "+" ]; then
+            uv run labgrid-client -p "$LG_PLACE" unlock || true
+          fi
+          rm -rf "/srv/tftp/firmwares/ci/${{ github.run_id }}/${{ matrix.device }}"
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.device }}
+          path: ${{ github.workspace }}/logs/${{ matrix.device }}/*
+          if-no-files-found: ignore
+          retention-days: 14
+
+  test-mesh:
+    name: test-mesh (openwrt_one + bananapi_bpi-r4)
+    needs: test-firmware
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, testbed-fcefyn]
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTEST_ADDOPTS: "--color=yes"
+      LG_CONSOLE: internal
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/checkout@v6
+        with:
+          repository: fcefyn-testbed/libremesh-tests
+          ref: staging
+          path: libremesh-tests
+
+      - uses: actions/checkout@v6
+        with:
+          repository: aparcar/openwrt-tests
+          ref: main
+          path: openwrt-tests
+
+      - name: Set OPENWRT_TESTS_DIR for pytest
+        run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Sync libremesh-tests environment
+        run: cd libremesh-tests && uv sync
+
+      - name: Download firmware (openwrt_one)
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-openwrt_one
+          path: fw-openwrt_one
+
+      - name: Download firmware (bananapi_bpi-r4)
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-bananapi_bpi-r4
+          path: fw-bananapi_bpi-r4
+
+      - name: Stage firmware and run mesh tests
+        run: |
+          set -euo pipefail
+          BASE="/srv/tftp/firmwares/ci/${{ github.run_id }}/mesh"
+          mkdir -p "$BASE/openwrt_one" "$BASE/bananapi_bpi-r4"
+          cp "$GITHUB_WORKSPACE/fw-openwrt_one"/firmware-openwrt_one.* "$BASE/openwrt_one/"
+          cp "$GITHUB_WORKSPACE/fw-bananapi_bpi-r4"/firmware-bananapi_bpi-r4.* "$BASE/bananapi_bpi-r4/"
+          IMG1=$(ls -1 "$BASE/openwrt_one"/firmware-openwrt_one.* | head -1)
+          IMG2=$(ls -1 "$BASE/bananapi_bpi-r4"/firmware-bananapi_bpi-r4.* | head -1)
+          export LG_PROXY=labgrid-fcefyn
+          export LG_MESH_PLACES="labgrid-fcefyn-openwrt_one,labgrid-fcefyn-bananapi_bpi-r4"
+          export LG_IMAGE_MAP="labgrid-fcefyn-openwrt_one=$IMG1,labgrid-fcefyn-bananapi_bpi-r4=$IMG2"
+          mkdir -p "$GITHUB_WORKSPACE/mesh-logs"
+          echo "LG_IMAGE_MAP=$LG_IMAGE_MAP"
+          cd libremesh-tests
+          uv run pytest tests/test_mesh.py \
+            --lg-log "$GITHUB_WORKSPACE/mesh-logs/" \
+            --junitxml="$GITHUB_WORKSPACE/mesh-logs/report.xml" \
+            --log-cli-level=INFO -v
+          rm -rf "/srv/tftp/firmwares/ci/${{ github.run_id }}/mesh"
+
+      - name: Cleanup TFTP on failure
+        if: failure()
+        run: rm -rf "/srv/tftp/firmwares/ci/${{ github.run_id }}/mesh" || true
+
+      - name: Upload mesh test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-mesh
+          path: mesh-logs/*
+          if-no-files-found: ignore
+          retention-days: 14
+
   summary:
     runs-on: ubuntu-latest
     if: always()
-    needs: [prepare-matrix, build-feed, build-image]
+    needs: [prepare-matrix, build-feed, build-image, test-firmware, test-mesh]
     steps:
       - name: Build summary
         run: |
@@ -386,4 +605,6 @@ jobs:
             echo "- Arch matrix: \`${{ needs.prepare-matrix.outputs.archs_matrix }}\`"
             echo "- Feed stage result: \`${{ needs.build-feed.result }}\`"
             echo "- Image stage result: \`${{ needs.build-image.result }}\`"
+            echo "- test-firmware result: \`${{ needs.test-firmware.result }}\`"
+            echo "- test-mesh result: \`${{ needs.test-mesh.result }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
