@@ -420,8 +420,15 @@ jobs:
       - name: Stage firmware on TFTP
         run: |
           set -euo pipefail
-          STAGE="/srv/tftp/firmwares/ci/${{ github.run_id }}/${{ matrix.device }}"
-          mkdir -p "$STAGE"
+          BASE="/srv/tftp/firmwares/ci"
+          if ! mkdir -p "$BASE/${{ github.run_id }}/${{ matrix.device }}" 2>/tmp/mkdir.err; then
+            echo "::error::Cannot create $BASE/...: $(cat /tmp/mkdir.err)"
+            echo "Fix on the lab host (one-time):"
+            echo "  sudo install -d -o \$RUNNER_USER -g \$RUNNER_USER -m 0775 $BASE"
+            ls -ld /srv/tftp /srv/tftp/firmwares "$BASE" 2>/dev/null || true
+            exit 1
+          fi
+          STAGE="$BASE/${{ github.run_id }}/${{ matrix.device }}"
           shopt -s nullglob
           files=(fw/firmware-${{ matrix.device }}.*)
           if [[ ${#files[@]} -eq 0 ]]; then
@@ -495,13 +502,22 @@ jobs:
           LG_PLACE: ${{ env.LG_PLACE }}
         run: |
           set +e
-          uv run labgrid-client power off || true
+          # Only act on the place/token we actually acquired. Calling
+          # `labgrid-client power off`/`unlock` without -p falls back to the
+          # env's default which is empty here, and labgrid then matches all
+          # registered places ("pattern matches multiple places ..."). When an
+          # earlier step (e.g. TFTP staging) fails before we lock anything,
+          # both vars are unset and there is simply nothing to release.
           if [ -n "${LG_TOKEN:-}" ]; then
+            uv run labgrid-client -p "+$LG_TOKEN" power off || true
             uv run labgrid-client -p "+$LG_TOKEN" unlock || true
           elif [ -n "${LG_PLACE:-}" ] && [ "$LG_PLACE" != "+" ]; then
+            uv run labgrid-client -p "$LG_PLACE" power off || true
             uv run labgrid-client -p "$LG_PLACE" unlock || true
+          else
+            echo "No labgrid lock acquired by this job; skipping power off / unlock."
           fi
-          rm -rf "/srv/tftp/firmwares/ci/${{ github.run_id }}/${{ matrix.device }}"
+          rm -rf "/srv/tftp/firmwares/ci/${{ github.run_id }}/${{ matrix.device }}" 2>/dev/null || true
 
       - name: Upload test logs
         if: always()
@@ -561,7 +577,13 @@ jobs:
         run: |
           set -euo pipefail
           BASE="/srv/tftp/firmwares/ci/${{ github.run_id }}/mesh"
-          mkdir -p "$BASE/openwrt_one" "$BASE/bananapi_bpi-r4"
+          if ! mkdir -p "$BASE/openwrt_one" "$BASE/bananapi_bpi-r4" 2>/tmp/mkdir.err; then
+            echo "::error::Cannot create $BASE: $(cat /tmp/mkdir.err)"
+            echo "Fix on the lab host (one-time):"
+            echo "  sudo install -d -o \$RUNNER_USER -g \$RUNNER_USER -m 0775 /srv/tftp/firmwares/ci"
+            ls -ld /srv/tftp /srv/tftp/firmwares /srv/tftp/firmwares/ci 2>/dev/null || true
+            exit 1
+          fi
           cp "$GITHUB_WORKSPACE/fw-openwrt_one"/firmware-openwrt_one.* "$BASE/openwrt_one/"
           cp "$GITHUB_WORKSPACE/fw-bananapi_bpi-r4"/firmware-bananapi_bpi-r4.* "$BASE/bananapi_bpi-r4/"
           IMG1=$(ls -1 "$BASE/openwrt_one"/firmware-openwrt_one.* | head -1)
