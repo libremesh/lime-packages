@@ -30,7 +30,6 @@ chmod 0755 "${WORK_DIR}"
 cat > "${WORK_DIR}/repositories.snippet" <<EOF
 src/gz lime_packages_local file:///feed/lime_packages
 src/gz libremesh https://feed.libremesh.org/master/${FEED_BRANCH}/${ARCH}
-src/gz libremesh_profiles https://feed.libremesh.org/profiles/${FEED_BRANCH}/${ARCH}
 EOF
 
 cat > "${WORK_DIR}/keys/a71b3c8285abd28b" <<'EOF'
@@ -52,11 +51,17 @@ docker run --rm \
   "${IMAGE_TAG}" \
   sh -lc "
     set -e
-    # Disable signature checking for our local unsigned feed. Appending
-    # 'option check_signature 0' would clash with the line shipped in
-    # repositories.conf and opkg keeps verification on (\"Duplicate boolean
-    # option check_signature, leaving this option on\").
-    sed -i 's/^option check_signature.*/option check_signature 0/' repositories.conf
+    # Disable signature checking for our local unsigned feed.
+    #
+    # opkg-lede's boolean option parser (libopkg/opkg_conf.c) ignores the
+    # value: encountering an 'option check_signature' line — with or without
+    # an argument — sets the flag to 1. Replacing 'option check_signature'
+    # with 'option check_signature 0' or appending '... 0' both keep
+    # verification on, which silently rejects our unsigned local feed and
+    # produces 'opkg_install_cmd: Cannot install package lime-system.' for
+    # every lime-* package. The only way to keep it off is to ensure no
+    # such line is present (the in-memory default is 0).
+    sed -i '/^option check_signature/d' repositories.conf
     cat /work/repositories.snippet >> repositories.conf
     cp /work/keys/* keys/ 2>/dev/null || true
 
@@ -67,6 +72,43 @@ docker run --rm \
     feed_ipks=\$(find /feed/lime_packages -maxdepth 1 -name '*.ipk' | wc -l)
     feed_pkgs=\$(grep -c '^Package:' /feed/lime_packages/Packages 2>/dev/null || echo 0)
     echo \"Feed has \${feed_ipks} IPKs and \${feed_pkgs} Packages entries\"
+
+    # Pre-flight: confirm opkg can actually see the local feed before we
+    # spend ~30 min on 'make image'. If 'lime-system' is not visible after
+    # 'opkg update', failing here is far cheaper than failing at the very
+    # end of package_install with no diagnostic context.
+    mkdir -p /tmp/preflight/tmp /tmp/preflight-lists
+    /builder/staging_dir/host/bin/opkg \
+      --offline-root /tmp/preflight \
+      --add-arch all:100 \
+      --add-arch ${ARCH}:200 \
+      -f /builder/repositories.conf \
+      --cache /tmp/preflight-cache \
+      --lists-dir /tmp/preflight-lists \
+      update >/tmp/preflight.log 2>&1 || true
+    echo '=== opkg pre-flight update (last 25 lines) ==='
+    tail -n 25 /tmp/preflight.log
+    if ! /builder/staging_dir/host/bin/opkg \
+        --offline-root /tmp/preflight \
+        --add-arch all:100 \
+        --add-arch ${ARCH}:200 \
+        -f /builder/repositories.conf \
+        --cache /tmp/preflight-cache \
+        --lists-dir /tmp/preflight-lists \
+        list 2>/dev/null | grep -q '^lime-system '; then
+      echo 'ERROR: opkg cannot see lime-system in any configured feed' >&2
+      echo 'opkg list (filtered to lime/shared-state):' >&2
+      /builder/staging_dir/host/bin/opkg \
+        --offline-root /tmp/preflight \
+        --add-arch all:100 \
+        --add-arch ${ARCH}:200 \
+        -f /builder/repositories.conf \
+        --cache /tmp/preflight-cache \
+        --lists-dir /tmp/preflight-lists \
+        list 2>/dev/null | grep -E '^(lime|shared-state|babeld-auto|check-date|batctl)' >&2 || true
+      exit 1
+    fi
+    echo '=== Pre-flight OK: local feed is visible to opkg ==='
 
     make image PROFILE=${PROFILE} BIN_DIR=/work/out PACKAGES=\"${PACKAGES}\"
   "
