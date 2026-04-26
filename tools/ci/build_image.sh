@@ -149,7 +149,33 @@ docker run --rm \
 
     make image PROFILE=${PROFILE} BIN_DIR=/work/out PACKAGES=\"${PACKAGES}\"
 
-    echo '=== /work/out contents (post make image) ==='
+    # Harvest the initramfs FIT from staging_dir.
+    #
+    # Several device profiles (e.g. mediatek/filogic openwrt_one,
+    # ath79 librerouter-v1) build a true initramfs FIT — kernel + DTB
+    # + RAMDisk-type rootfs sub-image, all addressable via bootm — but
+    # only consume it internally as the source of the factory.ubi
+    # 'recovery' volume. ImageBuilder leaves it under
+    # /builder/staging_dir/target-<sdk_arch>/image/ instead of copying
+    # it to BIN_DIR (=/work/out), because the device's IMAGES list in
+    # filogic.mk / ath79.mk only declares the sysupgrade / factory
+    # outputs. The downstream pattern matcher in this script needs the
+    # file in /work/out to ship it as the testbed boot artifact, so we
+    # copy any *initramfs*.{itb,bin} we find in staging into out/. This
+    # is purely additive: it does not displace files that ImageBuilder
+    # already wrote to BIN_DIR (sysupgrade FIT remains alongside).
+    echo '=== Harvesting initramfs FITs from /builder/staging_dir ==='
+    staged_initramfs=\$(find /builder/staging_dir -type f \\( -name '*initramfs*.itb' -o -name '*initramfs*.bin' \\) 2>/dev/null || true)
+    if [ -n \"\${staged_initramfs}\" ]; then
+      echo \"\${staged_initramfs}\" | while IFS= read -r f; do
+        echo \"  found: \${f} (\$(stat -c%s \"\${f}\") bytes) -> /work/out/\"
+        cp \"\${f}\" /work/out/
+      done
+    else
+      echo '  (none — device profile may not build an initramfs FIT)'
+    fi
+
+    echo '=== /work/out contents (post make image + harvest) ==='
     ls -la /work/out/ || true
     find /work/out -type f -printf '%p (%s bytes)\n' || true
   "
