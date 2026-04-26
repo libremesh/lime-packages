@@ -1,8 +1,10 @@
 openwrt_release: "24.10.6"
 feed_branch: "openwrt-24.10"
-# Mirrors the official LibreMesh README "Package selection" list; all lime-*
-# and shared-state-* packages must be provided by our local feed (the upstream
-# feed.libremesh.org publishes only `shared-state-async` for openwrt-24.10).
+# Default package list — mirrors the official LibreMesh README "Package
+# selection". All lime-* / shared-state-* packages must be provided by our
+# local feed (the upstream feed.libremesh.org publishes only
+# `shared-state-async` for openwrt-24.10). Per-target `packages:` keys below
+# override this on a target-by-target basis (e.g. small-flash devices).
 packages: >-
   lime-system lime-proto-babeld lime-proto-batadv lime-proto-anygw
   lime-hwd-openwrt-wan lime-hwd-ground-routing lime-app
@@ -36,3 +38,18 @@ targets:
     arch: mips_24kc
     sdk_arch: mips_24kc-openwrt-24.10
     index_imagebuilder: ath79-generic
+    # Reduced set for the librerouter v1 (8 MiB SPI NOR; sysupgrade partition
+    # caps at ~8126464 bytes per ath79 image-recipes). With the full default
+    # list the squashfs-sysupgrade.bin lands at ~8192004 bytes (overflow by
+    # ~64 KiB) and the imagebuilder aborts with `Failed to open firmware
+    # file`. We drop UI / docs / debug packages (lime-app, lime-debug,
+    # lime-docs, lime-docs-minimal) which together account for the overrun;
+    # mesh routing and shared-state remain installed so the multi-node
+    # libremesh-tests still exercise babeld + batman-adv on this target.
+    packages: >-
+      lime-system lime-proto-babeld lime-proto-batadv lime-proto-anygw
+      lime-hwd-openwrt-wan lime-hwd-ground-routing
+      shared-state-babeld_hosts shared-state-bat_hosts
+      shared-state-dnsmasq_hosts shared-state-nodes_and_links
+      babeld-auto-gw-mode check-date-http batctl-default
+      -dnsmasq -odhcpd-ipv6only
