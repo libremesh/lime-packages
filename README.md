@@ -196,7 +196,7 @@ docker run --rm \
   -e PATH=/builder/staging_dir/host/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
   -v "$(pwd)/feed-merged/lime_packages:/work" \
   ghcr.io/openwrt/imagebuilder:mediatek-filogic-v24.10.6 \
-  sh -lc '/builder/scripts/ipkg-make-index.sh /work > /work/Packages && gzip -9nc /work/Packages > /work/Packages.gz'
+  sh -lc 'cd /work && /builder/scripts/ipkg-make-index.sh . > Packages && gzip -9nc Packages > Packages.gz'
 PACKAGES="lime-system lime-proto-babeld lime-proto-batadv lime-proto-anygw lime-hwd-openwrt-wan lime-hwd-ground-routing lime-app lime-debug lime-docs lime-docs-minimal shared-state-babeld_hosts shared-state-bat_hosts shared-state-dnsmasq_hosts shared-state-nodes_and_links babeld-auto-gw-mode check-date-http batctl-default -dnsmasq -odhcpd-ipv6only" \
 ARCH=aarch64_cortex-a53 FEED_BRANCH=openwrt-24.10 DEVICE_NAME=linksys_e8450 \
 tools/ci/build_image.sh mediatek-mt7622 linksys_e8450 24.10.6 \
