@@ -441,9 +441,41 @@ jobs:
             exit 1
           fi
           cp -a "${files[@]}" "$STAGE/"
-          LG_IMAGE=$(ls -1 "$STAGE"/firmware-${{ matrix.device }}.* | head -1)
+          # Pick the actual bootable image, NOT the manifest sidecar that
+          # tools/ci/build_image.sh now ships next to the firmware. Manifest
+          # files have the .manifest extension and are text describing the
+          # installed packages — they would be useless to TFTP-boot.
+          image_candidates=("$STAGE"/firmware-${{ matrix.device }}.*)
+          LG_IMAGE=""
+          for f in "${image_candidates[@]}"; do
+            case "$f" in
+              *.manifest|*.sha256|*.txt|*.log) ;;
+              *) LG_IMAGE="$f"; break ;;
+            esac
+          done
+          if [[ -z "$LG_IMAGE" ]]; then
+            echo "::error::No bootable firmware artifact under $STAGE (only sidecars?)"
+            ls -la "$STAGE" || true
+            exit 1
+          fi
           echo "LG_IMAGE=$LG_IMAGE" >> "$GITHUB_ENV"
           echo "Staged LG_IMAGE=$LG_IMAGE"
+          echo "=== firmware sanity ==="
+          file "$LG_IMAGE" || true
+          ls -la "$LG_IMAGE"
+          sha256sum "$LG_IMAGE"
+          # Echo the manifest sidecar contents so a quick glance at the CI
+          # log answers "is this a LibreMesh image?" without re-running the
+          # build job. We grep the lime/shared-state/batctl entries because
+          # the full manifest can be 200+ lines of generic OpenWrt deps.
+          MANIFEST="$STAGE/firmware-${{ matrix.device }}.manifest"
+          if [[ -f "$MANIFEST" ]]; then
+            echo "=== manifest sidecar ($(wc -l < "$MANIFEST") packages): LibreMesh entries ==="
+            grep -E '^(lime-|shared-state-|batctl|babeld|firewall4)' "$MANIFEST" || \
+              echo "(no lime-/shared-state-/batctl/babeld entries — image is NOT LibreMesh)"
+          else
+            echo "::warning::No manifest sidecar at $MANIFEST — older build_image.sh? Cannot pre-validate LibreMesh content."
+          fi
 
       - name: Wait for free device and lock
         working-directory: libremesh-tests
@@ -590,8 +622,40 @@ jobs:
           fi
           cp "$GITHUB_WORKSPACE/fw-openwrt_one"/firmware-openwrt_one.* "$BASE/openwrt_one/"
           cp "$GITHUB_WORKSPACE/fw-bananapi_bpi-r4"/firmware-bananapi_bpi-r4.* "$BASE/bananapi_bpi-r4/"
-          IMG1=$(ls -1 "$BASE/openwrt_one"/firmware-openwrt_one.* | head -1)
-          IMG2=$(ls -1 "$BASE/bananapi_bpi-r4"/firmware-bananapi_bpi-r4.* | head -1)
+          # Skip non-bootable sidecars (.manifest, .sha256, etc) when picking
+          # the LG image. tools/ci/build_image.sh now ships a manifest next
+          # to each firmware artifact for downstream LibreMesh verification.
+          pick_image() {
+            local dir="$1" device="$2" picked=""
+            for f in "$dir"/firmware-"$device".*; do
+              case "$f" in
+                *.manifest|*.sha256|*.txt|*.log) ;;
+                *) picked="$f"; break ;;
+              esac
+            done
+            if [[ -z "$picked" ]]; then
+              echo "::error::No bootable firmware under $dir (only sidecars?)" >&2
+              ls -la "$dir" >&2 || true
+              return 1
+            fi
+            echo "$picked"
+          }
+          IMG1=$(pick_image "$BASE/openwrt_one" "openwrt_one")
+          IMG2=$(pick_image "$BASE/bananapi_bpi-r4" "bananapi_bpi-r4")
+          echo "=== mesh firmware sanity ==="
+          for img in "$IMG1" "$IMG2"; do
+            file "$img" || true
+            ls -la "$img"
+            sha256sum "$img"
+            manifest="${img%.*}.manifest"
+            if [[ -f "$manifest" ]]; then
+              echo "=== manifest for $(basename "$img"): LibreMesh entries ==="
+              grep -E '^(lime-|shared-state-|batctl|babeld|firewall4)' "$manifest" || \
+                echo "(no LibreMesh entries — image is NOT LibreMesh)"
+            else
+              echo "::warning::No manifest sidecar at $manifest"
+            fi
+          done
           export LG_PROXY=labgrid-fcefyn
           export LG_MESH_PLACES="labgrid-fcefyn-openwrt_one,labgrid-fcefyn-bananapi_bpi-r4"
           export LG_IMAGE_MAP="labgrid-fcefyn-openwrt_one=$IMG1,labgrid-fcefyn-bananapi_bpi-r4=$IMG2"
