@@ -111,21 +111,46 @@ docker run --rm \
     echo '=== Pre-flight OK: local feed is visible to opkg ==='
 
     make image PROFILE=${PROFILE} BIN_DIR=/work/out PACKAGES=\"${PACKAGES}\"
+
+    echo '=== /work/out contents (post make image) ==='
+    ls -la /work/out/ || true
+    find /work/out -type f -printf '%p (%s bytes)\n' || true
   "
 
-SOURCE_FILE="$(
-  find "${WORK_DIR}/out" -type f -name "*${PROFILE}*initramfs*" 2>/dev/null | head -n 1 || true
-)"
-if [[ -z "${SOURCE_FILE}" ]]; then
-  if [[ "${IMAGEBUILDER}" == "mediatek-filogic" ]]; then
-    SOURCE_FILE="$(compgen -G "${WORK_DIR}/out/*${PROFILE}*initramfs*.itb" | head -n 1 || true)"
-  else
-    SOURCE_FILE="$(compgen -G "${WORK_DIR}/out/*${PROFILE}*initramfs*.bin" | head -n 1 || true)"
+echo "=== Selecting firmware artifact for ${PROFILE} ==="
+ls -la "${WORK_DIR}/out/" || true
+
+# Prefer the in-RAM image we use to TFTP-boot the testbed nodes (initramfs),
+# fall back to sysupgrade artifacts when the device only ships sysupgrade in
+# the imagebuilder output (e.g. profiles whose target has
+# CONFIG_TARGET_ROOTFS_INITRAMFS=n in OpenWrt 24.10). Selection order is
+# deliberate: initramfs.itb (filogic single-file) → ubi-initramfs-recovery.itb
+# (mt7622 ubi devices like e8450) → initramfs-kernel.bin (ath79) →
+# squashfs-sysupgrade.itb / .bin as a last resort. We pick by suffix rather
+# than substring so a stray *-initramfs* embedded in another filename can't
+# false-match.
+SOURCE_FILE=""
+for pattern in \
+  "*${PROFILE}-initramfs.itb" \
+  "*${PROFILE}*initramfs-recovery.itb" \
+  "*${PROFILE}*initramfs-kernel.bin" \
+  "*${PROFILE}*initramfs*.itb" \
+  "*${PROFILE}*initramfs*.bin" \
+  "*${PROFILE}*squashfs-sysupgrade.itb" \
+  "*${PROFILE}*squashfs-sysupgrade.bin"; do
+  match="$(compgen -G "${WORK_DIR}/out/${pattern}" 2>/dev/null | head -n 1 || true)"
+  if [[ -n "${match}" && -f "${match}" ]]; then
+    SOURCE_FILE="${match}"
+    echo ">>> Matched pattern '${pattern}' -> ${SOURCE_FILE}"
+    break
   fi
-fi
+done
 
 if [[ -z "${SOURCE_FILE}" || ! -f "${SOURCE_FILE}" ]]; then
-  echo "ERROR: Could not locate built initramfs image for profile ${PROFILE}" >&2
+  echo "ERROR: Could not locate any usable built image for profile ${PROFILE}" >&2
+  echo "Searched ${WORK_DIR}/out for: initramfs.itb, *initramfs-recovery.itb, *initramfs-kernel.bin, *initramfs*.itb, *initramfs*.bin, *squashfs-sysupgrade.{itb,bin}" >&2
+  echo "Actual contents:" >&2
+  find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
   exit 1
 fi
 
@@ -134,4 +159,4 @@ DEVICE_NAME="${DEVICE_NAME:-${PROFILE}}"
 TARGET_FILE="${OUTPUT_DIR}/firmware-${DEVICE_NAME}.${EXTENSION}"
 cp "${SOURCE_FILE}" "${TARGET_FILE}"
 
-echo ">>> Firmware output: ${TARGET_FILE}"
+echo ">>> Firmware output: ${TARGET_FILE} ($(stat -c%s "${TARGET_FILE}") bytes)"

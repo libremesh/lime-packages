@@ -72,9 +72,19 @@ jobs:
             exit 1
           fi
 
+          # Per-target `packages:` (when present in targets.yml) overrides the
+          # global `packages:` default. Used by small-flash devices like
+          # librerouter_librerouter-v1 whose 8 MiB SPI NOR can't fit the full
+          # LibreMesh package list. `// $pkg` keeps the global default for
+          # every target that does NOT define its own list, so this stays
+          # backwards-compatible.
           targets_matrix="$(
             jq -c --arg release "$openwrt_release" --arg feed "$feed_branch" --arg pkg "$packages" '
-              {include: map(. + {openwrt_release: $release, feed_branch: $feed, packages: $pkg})}
+              {include: map(. + {
+                openwrt_release: $release,
+                feed_branch: $feed,
+                packages: (.packages // $pkg)
+              })}
             ' <<< "$selected_targets"
           )"
 
