@@ -149,17 +149,28 @@ jobs:
           IGNORE_ERRORS: "n m y"
 
       - name: Diagnose feed build output
+        # `set -e` plus a missing `bin/packages/all/lime_packages/` (which is
+        # the normal case here: the SDK puts every PKGARCH:=all IPK into the
+        # arch dir, not into `all/`) used to abort the whole job at `find ... |
+        # wc -l` due to pipefail. Use `shopt -s nullglob` + array length so
+        # missing directories simply yield count 0 without aborting.
+        shell: bash
         run: |
           set -euo pipefail
+          shopt -s nullglob
           echo "=== bin/packages tree ==="
           find bin/packages -maxdepth 4 -type d 2>/dev/null | sort || true
-          echo "=== IPKs in bin/packages/${{ matrix.arch }}/lime_packages/ ==="
+          echo "=== bin/packages/${{ matrix.arch }}/lime_packages/ ==="
           ls -la "bin/packages/${{ matrix.arch }}/lime_packages/" 2>/dev/null || echo "(missing)"
-          echo "=== IPKs in bin/packages/all/lime_packages/ ==="
+          echo "=== bin/packages/all/lime_packages/ ==="
           ls -la "bin/packages/all/lime_packages/" 2>/dev/null || echo "(missing)"
-          arch_count=$(find "bin/packages/${{ matrix.arch }}/lime_packages/" -maxdepth 1 -name '*.ipk' 2>/dev/null | wc -l)
-          all_count=$(find "bin/packages/all/lime_packages/" -maxdepth 1 -name '*.ipk' 2>/dev/null | wc -l)
-          echo "Arch IPKs: ${arch_count} | All IPKs: ${all_count}"
+          arch_files=("bin/packages/${{ matrix.arch }}/lime_packages/"*.ipk)
+          all_files=("bin/packages/all/lime_packages/"*.ipk)
+          echo "Arch IPKs: ${#arch_files[@]} | All IPKs: ${#all_files[@]}"
+          if (( ${#arch_files[@]} == 0 && ${#all_files[@]} == 0 )); then
+            echo "ERROR: feed produced no IPKs" >&2
+            exit 1
+          fi
 
       - name: Assemble lime_packages feed artifact (index with ImageBuilder)
         env:
