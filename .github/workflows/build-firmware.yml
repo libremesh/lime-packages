@@ -200,13 +200,20 @@ jobs:
 
           docker pull "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}"
           chmod -R a+rwX feed-artifact/lime_packages
+          # CRITICAL: must `cd /work` and pass `.` (not `/work`) to
+          # ipkg-make-index.sh — the script puts whatever path it receives
+          # straight into the `Filename:` field, after only stripping a leading
+          # `./`. Passing `/work` produces `Filename: /work/lime-system_*.ipk`,
+          # which opkg later resolves as `file:///feed/lime_packages//work/...`
+          # (404), so every package in our local feed fails to install with
+          # `* opkg_install_cmd: Cannot install package lime-system.` etc.
           docker run --rm \
             --user root \
             -e MKHASH=/builder/staging_dir/host/bin/mkhash \
             -e PATH=/builder/staging_dir/host/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
             -v "$(pwd)/feed-artifact/lime_packages:/work" \
             "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}" \
-            sh -lc '/builder/scripts/ipkg-make-index.sh /work > /work/Packages && gzip -9nc /work/Packages > /work/Packages.gz'
+            sh -lc 'cd /work && /builder/scripts/ipkg-make-index.sh . > Packages && gzip -9nc Packages > Packages.gz'
 
           echo "=== Final feed-artifact/lime_packages/ contents ==="
           ls -la feed-artifact/lime_packages/
@@ -214,6 +221,14 @@ jobs:
           head -n 60 feed-artifact/lime_packages/Packages || true
           pkg_count=$(grep -c '^Package:' feed-artifact/lime_packages/Packages || echo 0)
           echo "Total Package: entries in index: ${pkg_count}"
+          echo "=== Sanity: Filename fields must be bare basenames ==="
+          bad_fn=$(grep -E '^Filename: (/|\./)' feed-artifact/lime_packages/Packages || true)
+          if [[ -n "$bad_fn" ]]; then
+            echo "ERROR: Packages index has non-basename Filename entries:" >&2
+            echo "$bad_fn" >&2
+            exit 1
+          fi
+          grep -m 3 '^Filename:' feed-artifact/lime_packages/Packages
 
       - name: Upload local feed artifact
         uses: actions/upload-artifact@v4
