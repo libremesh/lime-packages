@@ -31,6 +31,7 @@ jobs:
       targets_matrix: ${{ steps.prepare.outputs.targets_matrix }}
       archs_matrix: ${{ steps.prepare.outputs.archs_matrix }}
       lime_packages_list: ${{ steps.prepare.outputs.lime_packages_list }}
+      feed_hash: ${{ steps.prepare.outputs.feed_hash }}
     steps:
       - uses: actions/checkout@v5
 
@@ -105,9 +106,28 @@ jobs:
           echo "Computed package list ($(echo "$lime_packages_list" | wc -w) packages):"
           echo "$lime_packages_list" | tr ' ' '\n'
 
+          # Compute a single sha256 over every input that affects the
+          # produced lime_packages IPKs. We do this in bash (instead of the
+          # workflow expression `hashFiles(...)`) because the runner-side
+          # hashFiles glob has been flaky for `packages/**` style patterns
+          # and renders an opaque "Fail to hash files under directory ..."
+          # error that aborts the whole job. Bash sort | sha256sum is
+          # deterministic and identical across runs/platforms as long as
+          # the source tree is identical.
+          feed_hash="$(
+            {
+              find packages -type f \( -name 'Makefile' -o -path 'packages/*/files/*' -o -path 'packages/*/patches/*' -o -path 'packages/*/src/*' \) -print0 \
+                | LC_ALL=C sort -z \
+                | xargs -0 sha256sum
+              sha256sum .github/ci/targets.yml .github/workflows/build-firmware.yml tools/ci/build_feed.sh
+            } | sha256sum | cut -d' ' -f1
+          )"
+          echo "Computed feed_hash=$feed_hash"
+
           echo "targets_matrix=$targets_matrix" >> "$GITHUB_OUTPUT"
           echo "archs_matrix=$archs_matrix" >> "$GITHUB_OUTPUT"
           echo "lime_packages_list=$lime_packages_list" >> "$GITHUB_OUTPUT"
+          echo "feed_hash=$feed_hash" >> "$GITHUB_OUTPUT"
 
   build-feed:
     runs-on: ubuntu-latest
@@ -122,20 +142,21 @@ jobs:
         run: sudo rm -rf /opt/hostedtoolcache /usr/share/dotnet /usr/local/lib/android
 
       # Skip the ~50-min SDK compile when nothing that affects the produced
-      # IPKs has changed. The cache key is invalidated on:
-      #   - any package source change (`packages/**`)
-      #   - target/feed/release changes (`.github/ci/targets.yml`)
-      #   - SDK invocation changes (`tools/ci/build_feed.sh`,
-      #     `.github/workflows/build-firmware.yml`)
-      #   - arch / OpenWrt release variations across the matrix
-      # On hit, all build steps below are skipped and the cached
-      # `feed-artifact/lime_packages/` is uploaded as-is for `build-image`.
+      # IPKs has changed. `feed_hash` is computed in `prepare-matrix` over
+      # every relevant source file (Makefiles, patches/, files/, src/ under
+      # each package, plus targets.yml / build-firmware.yml /
+      # build_feed.sh). We avoid the `hashFiles(...)` workflow expression
+      # because the runner-side glob has been flaky for `packages/**`
+      # patterns ("Fail to hash files under directory '...'" aborts the
+      # whole job before any debug step runs). On hit, all build steps
+      # below are skipped and the cached `feed-artifact/lime_packages/` is
+      # uploaded as-is for `build-image`.
       - name: Restore feed cache
         id: cache-feed
         uses: actions/cache@v4
         with:
           path: feed-artifact/lime_packages
-          key: lime-feed-v1-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ hashFiles('packages/**', '.github/ci/targets.yml', '.github/workflows/build-firmware.yml', 'tools/ci/build_feed.sh') }}
+          key: lime-feed-v1-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}
 
       - name: Build packages with openwrt/gh-action-sdk
         if: steps.cache-feed.outputs.cache-hit != 'true'
