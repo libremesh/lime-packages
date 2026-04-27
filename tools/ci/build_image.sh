@@ -452,22 +452,30 @@ docker run --rm \
       /builder/staging_dir/host/bin/cpio -tv < "${REPACK_DIR}/rootfs.cpio" 2>/dev/null \
         | awk "{print \$1}" | sort | uniq -c | sort -rn | head -10 || true
 
-      # Confirm /init landed in the CPIO. cpio archives produced by
-      # `find . | cpio` carry entries with the `./` prefix; we match
-      # exactly `./init` either as a symlink line (`lrwxrwxrwx ... ->
-      # /sbin/init`) or as a regular file. If grep reports nothing,
-      # the kernel will panic at runtime with VFS: Unable to mount
-      # root fs (see ln -sf rationale block above).
+      # Confirm /init landed in the CPIO. We use `cpio -t` (without -v)
+      # which prints one path per line — this avoids the regex landmine
+      # we hit in the previous iteration: GNU cpio bundled with OpenWrt
+      # buildroot strips the leading `./` in `cpio -tv` listings, so a
+      # pattern anchored on `./init` matches nothing even when the file
+      # is present (we observed exactly that in CI run 24974719437,
+      # where the rootfs went from 243 to 244 symlinks confirming the
+      # /init entry, but the verifier still aborted). `cpio -t` gives
+      # us deterministic paths to grep -Fx against, no escaping needed.
+      # If no match, the kernel will panic at runtime with VFS: Unable
+      # to mount root fs (see ln -sf rationale block above).
       echo "  /init in CPIO  :"
-      init_line="$(/builder/staging_dir/host/bin/cpio -tv < "${REPACK_DIR}/rootfs.cpio" 2>/dev/null \
-                   | grep -E " \\./init($| -> |[[:space:]])" || true)"
-      if [ -z "${init_line}" ]; then
-        echo "ERROR: ./init is missing from rootfs.cpio" >&2
+      init_paths="$(/builder/staging_dir/host/bin/cpio -t < "${REPACK_DIR}/rootfs.cpio" 2>/dev/null \
+                    | grep -E '^(\./)?init$' || true)"
+      if [ -z "${init_paths}" ]; then
+        echo "ERROR: /init is missing from rootfs.cpio" >&2
         echo "       Without /init the kernel will fall through to prepare_namespace()" >&2
         echo "       and panic with \"Unable to mount root fs on unknown-block(0,0)\"." >&2
+        echo "       cpio -t (top entries containing 'init'):" >&2
+        /builder/staging_dir/host/bin/cpio -t < "${REPACK_DIR}/rootfs.cpio" 2>/dev/null \
+          | grep -E "(^|/)init$" | head -20 >&2 || true
         exit 1
       fi
-      echo "    ${init_line}"
+      echo "    ${init_paths}"
 
       # Generate the .its source describing the FIT structure
       # (kernel + DTB + ramdisk).
