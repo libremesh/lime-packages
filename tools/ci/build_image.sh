@@ -17,21 +17,51 @@ FEED_BRANCH="${FEED_BRANCH:?FEED_BRANCH env var is required}"
 PACKAGES="${PACKAGES:?PACKAGES env var is required}"
 
 # When BUILD_INITRAMFS=1, build_image.sh repacks the ImageBuilder rootfs into a
-# RAM-bootable FIT (kernel + DTB + LibreMesh CPIO ramdisk) and ships THAT as
-# the firmware artifact. Targets that do not set this flag (e.g. ath79
-# librerouter, whose subtarget has no `KERNEL_INITRAMFS` recipe and whose
-# uImage layout requires the initramfs CPIO be linked into the kernel
-# binary at compile time — impossible without kernel sources, which
-# ImageBuilder does not ship) keep producing the squashfs-sysupgrade as
-# their build artifact for IPK validation only; they are filtered out of
-# the test-firmware matrix in `prepare-matrix`.
+# RAM-bootable image (kernel + LibreMesh CPIO ramdisk) and ships THAT as the
+# firmware artifact. Targets that do not set this flag keep producing the
+# squashfs-sysupgrade as their build artifact for IPK validation only; they
+# are filtered out of the test-firmware matrix in `prepare-matrix`.
 BUILD_INITRAMFS="${BUILD_INITRAMFS:-0}"
+
+# Format of the repack output. Two paths are supported:
+#
+#   * `fit` (default): mediatek/filogic boards (openwrt_one, bananapi_bpi-r4,
+#     linksys_e8450-ubi). U-Boot ≥2018 with `CONFIG_FIT=y` parses a single
+#     `*-initramfs-libremesh.itb` file containing `kernel-1` (raw lzma) +
+#     `fdt-1` (separate DTB) + `rootfs-1` (raw CPIO ramdisk) under one
+#     configuration node, with `bootargs` embedded in the FIT config.
+#
+#   * `multi-uimage`: ath79 boards (librerouter_v1). U-Boot 1.1.x on
+#     QCA9558 has no FIT parser but understands the legacy `IH_TYPE_MULTI`
+#     uImage. The output is a single `*-initramfs-libremesh.uimage` whose
+#     payload is `[kernel.lzma, rootfs.cpio]`: U-Boot's `bootm` decompresses
+#     the first component to `FIT_KERNEL_LOADADDR` (because the outer
+#     uImage carries `-C lzma`), keeps the second one in place, and tells
+#     the MIPS kernel where the ramdisk lives via the `initrd_start` /
+#     `initrd_size` PROM env vars (see arch/mips/.../prom.c). The DTB is
+#     NOT a separate component because ath79 fuses it into kernel-bin via
+#     the `append-dtb | lzma | uImage lzma` recipe; we ship the kernel
+#     uImage's payload as-is and let the kernel parse its appended DTB at
+#     decompression time. Bootargs cannot be embedded in a legacy uImage,
+#     so the labgrid YAML must `setenv bootargs` before `bootm`.
+IMAGE_FORMAT="${IMAGE_FORMAT:-fit}"
+case "${IMAGE_FORMAT}" in
+  fit|multi-uimage) ;;
+  *)
+    echo "ERROR: invalid IMAGE_FORMAT=${IMAGE_FORMAT} (expected: fit | multi-uimage)" >&2
+    exit 1
+    ;;
+esac
 
 # Used only when BUILD_INITRAMFS=1. Filled per-target in
 # .github/ci/targets.yml (fit_arch / fit_kernel_loadaddr / fit_dts /
 # fit_config) and forwarded by build-firmware.yml.
 FIT_ARCH="${FIT_ARCH:-}"
 FIT_KERNEL_LOADADDR="${FIT_KERNEL_LOADADDR:-}"
+# FIT_DTS is the *.dts basename whose compiled DTB lives at
+# `${LINUX_DIR}/image-${FIT_DTS}.dtb`. Only meaningful for IMAGE_FORMAT=fit;
+# ath79 boards (multi-uimage) have no separate DTB file (it is appended to
+# kernel-bin at link time) so we leave this empty for them.
 FIT_DTS="${FIT_DTS:-}"
 
 # FIT_CONFIG: the FIT configuration node name embedded in the .itb. U-Boot
@@ -98,9 +128,18 @@ FIT_BOOTARGS="${FIT_BOOTARGS:-console=ttyS0,115200n1 pci=pcie_bus_perf}"
 DTB_PATCH_NVMEM_MAC="${DTB_PATCH_NVMEM_MAC:-0}"
 
 if [[ "${BUILD_INITRAMFS}" == "1" ]]; then
-  for var in FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS FIT_CONFIG FIT_BOOTARGS; do
+  required_vars=(FIT_ARCH FIT_KERNEL_LOADADDR FIT_CONFIG FIT_BOOTARGS)
+  # FIT_DTS is only required for the FIT path: mediatek/filogic builds carry
+  # a separate `image-${FIT_DTS}.dtb` next to the kernel, while ath79 fuses
+  # the DTB into kernel-bin and leaves no standalone `.dtb` file we could
+  # embed. Multi-uimage callers therefore legitimately leave it empty —
+  # validating it would just trip the build with a misleading error.
+  if [[ "${IMAGE_FORMAT}" == "fit" ]]; then
+    required_vars+=(FIT_DTS)
+  fi
+  for var in "${required_vars[@]}"; do
     if [[ -z "${!var}" ]]; then
-      echo "ERROR: BUILD_INITRAMFS=1 requires ${var} env var" >&2
+      echo "ERROR: BUILD_INITRAMFS=1 (IMAGE_FORMAT=${IMAGE_FORMAT}) requires ${var} env var" >&2
       exit 1
     fi
   done
@@ -158,12 +197,14 @@ chmod a+w "${WORK_DIR}/out"
 # (no =value) forwards a real value. Local shell vars are NOT in the
 # process env unless exported, and Docker's `-e VAR` reads from the
 # calling process env, not from the script's lexical scope.
-export BUILD_INITRAMFS FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS FIT_CONFIG \
-       FIT_BOOTARGS DTB_PATCH_NVMEM_MAC PROFILE PACKAGES ARCH OPENWRT_RELEASE
+export BUILD_INITRAMFS IMAGE_FORMAT FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS \
+       FIT_CONFIG FIT_BOOTARGS DTB_PATCH_NVMEM_MAC PROFILE PACKAGES \
+       ARCH OPENWRT_RELEASE
 
 docker run --rm \
   --user root \
   -e BUILD_INITRAMFS \
+  -e IMAGE_FORMAT \
   -e FIT_ARCH \
   -e FIT_KERNEL_LOADADDR \
   -e FIT_DTS \
@@ -347,29 +388,51 @@ docker run --rm \
       fi
 
       KERNEL_BIN="${LINUX_DIR}/${PROFILE}-kernel.bin"
-      DTB_FILE="${LINUX_DIR}/image-${FIT_DTS}.dtb"
       if [ ! -f "${KERNEL_BIN}" ]; then
         echo "ERROR: missing ${KERNEL_BIN}" >&2
         ls -la "${LINUX_DIR}" >&2 | head -40
         exit 1
       fi
-      if [ ! -f "${DTB_FILE}" ]; then
-        echo "ERROR: missing ${DTB_FILE}" >&2
-        ls "${LINUX_DIR}" 2>/dev/null | grep -E "\.dtb$" >&2 | head -40
+      echo "  kernel-bin     : ${KERNEL_BIN} ($(stat -c%s "${KERNEL_BIN}") bytes)"
+      # uImage carries a fixed 64-byte magic header (`27 05 19 56` ... ).
+      # We confirm both FIT and multi-uimage flows that the kernel.bin we
+      # picked is indeed a uImage so a future ImageBuilder rev that drops
+      # the wrapper does not silently ship a non-bootable `.bin`.
+      kernel_magic=$(od -An -tx1 -N4 "${KERNEL_BIN}" | tr -d " ")
+      if [ "${kernel_magic}" != "27051956" ]; then
+        echo "ERROR: ${KERNEL_BIN} is not a uImage (magic=${kernel_magic}, expected 27051956)" >&2
         exit 1
       fi
 
-      # `dtc` is required by mkimage to compile the .its (DTS source)
-      # into a FIT (DTB). It is built as part of the kernel unpack and
-      # lives at linux-*/linux-<kver>/scripts/dtc/dtc.
-      DTC_BIN="$(find ${LINUX_DIR} -name dtc -type f -executable 2>/dev/null | head -n 1)"
-      if [ -z "${DTC_BIN}" ] || [ ! -x "${DTC_BIN}" ]; then
-        echo "ERROR: cannot find dtc under ${LINUX_DIR}" >&2
-        find "${LINUX_DIR}" -name dtc -type f 2>/dev/null >&2 || true
-        exit 1
+      # The DTB lookup is FIT-only: ath79 (multi-uimage) fuses the DTB into
+      # kernel-bin via `append-dtb | lzma | uImage lzma` upstream, so there
+      # is no standalone `image-*.dtb` to grab. Same for `dtc`, which is
+      # only needed when we actually patch a DTB or hand a DTS to mkits.
+      DTB_FILE=""
+      DTC_BIN=""
+      DTC_DIR=""
+      if [ "${IMAGE_FORMAT}" = "fit" ]; then
+        DTB_FILE="${LINUX_DIR}/image-${FIT_DTS}.dtb"
+        if [ ! -f "${DTB_FILE}" ]; then
+          echo "ERROR: missing ${DTB_FILE}" >&2
+          ls "${LINUX_DIR}" 2>/dev/null | grep -E "\.dtb$" >&2 | head -40
+          exit 1
+        fi
+
+        # `dtc` is required by mkimage to compile the .its (DTS source)
+        # into a FIT (DTB). It is built as part of the kernel unpack and
+        # lives at linux-*/linux-<kver>/scripts/dtc/dtc.
+        DTC_BIN="$(find ${LINUX_DIR} -name dtc -type f -executable 2>/dev/null | head -n 1)"
+        if [ -z "${DTC_BIN}" ] || [ ! -x "${DTC_BIN}" ]; then
+          echo "ERROR: cannot find dtc under ${LINUX_DIR}" >&2
+          find "${LINUX_DIR}" -name dtc -type f 2>/dev/null >&2 || true
+          exit 1
+        fi
+        DTC_DIR="$(dirname "${DTC_BIN}")"
+        echo "  using dtc      : ${DTC_BIN}"
+      else
+        echo "  IMAGE_FORMAT   : multi-uimage (no separate DTB; ath79 appends DTB to kernel-bin)"
       fi
-      DTC_DIR="$(dirname "${DTC_BIN}")"
-      echo "  using dtc      : ${DTC_BIN}"
 
       REPACK_DIR="/tmp/initramfs-repack"
       rm -rf "${REPACK_DIR}"
@@ -404,7 +467,7 @@ docker run --rm \
       # longer contains the GMAC / WAN nodes the patcher knows about
       # (e.g. a future kernel rev renames `mac@0` to `port@0` under
       # `&eth`); a silent pass would ship a still-broken firmware.
-      if [ "${DTB_PATCH_NVMEM_MAC:-0}" = "1" ]; then
+      if [ "${IMAGE_FORMAT}" = "fit" ] && [ "${DTB_PATCH_NVMEM_MAC:-0}" = "1" ]; then
         if [ ! -f /work/patch_dtb_local_mac.py ]; then
           echo "ERROR: DTB_PATCH_NVMEM_MAC=1 but /work/patch_dtb_local_mac.py is missing" >&2
           ls -la /work >&2 || true
@@ -437,6 +500,15 @@ docker run --rm \
           exit 1
         fi
         DTB_FILE="${DTB_PATCHED}"
+      elif [ "${IMAGE_FORMAT}" != "fit" ] && [ "${DTB_PATCH_NVMEM_MAC:-0}" = "1" ]; then
+        # The DTB patcher only knows how to operate on a free-standing DTB
+        # file. ath79 multi-uimage builds bake the DTB into the lzma kernel
+        # blob, so there is no DTB we could decompile/patch/recompile here.
+        # Surface the misconfiguration instead of silently shipping an
+        # unpatched image.
+        echo "ERROR: DTB_PATCH_NVMEM_MAC=1 is incompatible with IMAGE_FORMAT=${IMAGE_FORMAT}" >&2
+        echo "       (the DTB is fused inside kernel-bin and cannot be patched offline)" >&2
+        exit 1
       else
         echo "=== Skipping DTB patch (DTB_PATCH_NVMEM_MAC=${DTB_PATCH_NVMEM_MAC:-0}) ==="
       fi
@@ -602,6 +674,7 @@ docker run --rm \
       fi
       echo "    ${init_paths}"
 
+      if [ "${IMAGE_FORMAT}" = "fit" ]; then
       # Generate the .its source describing the FIT structure
       # (kernel + DTB + ramdisk).
       #
@@ -707,6 +780,119 @@ docker run --rm \
         head -80 "${REPACK_DIR}/initramfs.its" >&2 || true
         exit 1
       fi
+      else
+        # ----------------------------------------------------------------
+        # multi-uimage path (ath79 / librerouter_v1).
+        #
+        # LibreRouter v1 ships an Atheros QCA9558 SoC running a U-Boot
+        # 1.1.x fork (see https://github.com/LibreRouterOrg/u-boot ;
+        # `common/cmd_bootm.c` and `lib_mips/mips_linux.c`). That U-Boot
+        # has NO FIT parser, but it does support legacy uImage
+        # `IH_TYPE_MULTI`, which packs an arbitrary number of sub-images
+        # behind a single 64-byte mkimage header followed by a length
+        # table. `bootm` on a multi-uimage:
+        #   * decompresses sub-image 0 according to the OUTER headers
+        #     compression byte and treats it as the kernel image,
+        #   * keeps sub-image 1 verbatim and exposes its physical
+        #     location to the kernel via the PROM env vars
+        #     `initrd_start` / `initrd_size`, which the OpenWrt MIPS
+        #     prom code (arch/mips/.../prom.c) parses into the standard
+        #     `initrd_start`/`initrd_end` Linux symbols.
+        #
+        # The OpenWrt ath79 recipe for sysupgrade is
+        #   `kernel-bin | append-dtb | lzma | uImage lzma`
+        # i.e. the DTB is APPENDED to the kernel ELF inside the lzma
+        # blob, so when we extract the `<profile>-kernel.bin` payload we
+        # already have a self-contained `kernel+DTB` lzma stream. There
+        # is no separate DTB to ship, hence FIT_DTS is unused on this
+        # path (and we elided the DTB lookup above).
+        #
+        # The repack steps:
+        #   1. Strip the 64-byte uImage header from `<profile>-kernel.bin`
+        #      to recover the raw lzma payload (the inner blob carries
+        #      `5d 00 00 80 00` lzma magic).
+        #   2. Use mkimage in multi-image mode with `-C lzma` so U-Boot
+        #      decompresses sub-image 0 to FIT_KERNEL_LOADADDR. Sub-image
+        #      1 is the rootfs CPIO we already produced (raw newc; no
+        #      compression applied because the kernel initramfs unpacker
+        #      handles raw CPIO directly and ath79 builds rarely ship
+        #      RD_GZIP support in this branch — same rationale as the
+        #      mediatek/filogic FIT path above).
+        #   3. The kernel cmdline cannot live inside a legacy uImage.
+        #      The labgrid YAML for LibreRouter must `setenv bootargs`
+        #      before `bootm` (init_commands).
+        # ----------------------------------------------------------------
+        echo "=== Building multi-uimage (kernel.lzma + rootfs.cpio) for ath79 ==="
+        # Extract the raw lzma payload from the uImage. mkimage prepends
+        # exactly 64 bytes (`struct image_header`); `dd bs=1 skip=64` is
+        # portable and matches OpenWrts own `unwrap_uimage` recipe.
+        # We sanity-check the lzma magic afterwards so a future kernel
+        # binary that switches compression (e.g. `xz`) does not get
+        # silently shipped under a `-C lzma` claim.
+        KERNEL_LZMA="${REPACK_DIR}/kernel.lzma"
+        dd if="${KERNEL_BIN}" of="${KERNEL_LZMA}" bs=1 skip=64 status=none
+        kernel_lzma_size=$(stat -c%s "${KERNEL_LZMA}")
+        # Cross-check the strip yielded the data length advertised by the
+        # uImage header. We compare against the human-readable line that
+        # `mkimage -l` prints (`Data Size:   <N> Bytes`); that avoids
+        # depending on od endianness flags whose availability differs
+        # across busybox and coreutils builds inside the IB container.
+        uimage_data_line=$(/builder/staging_dir/host/bin/mkimage -l "${KERNEL_BIN}" 2>/dev/null \
+                           | awk -F"[: ]+" "/Data Size/ {print \$3; exit}")
+        if [ -n "${uimage_data_line}" ] && [ "${kernel_lzma_size}" -ne "${uimage_data_line}" ]; then
+          echo "ERROR: stripped lzma size ${kernel_lzma_size} != uImage data length ${uimage_data_line}" >&2
+          exit 1
+        fi
+        # lzma1 streams emitted by OpenWrts `lzma e -d20` start with a
+        # property byte (0x5D for the canonical lc=3/lp=0/pb=2 setting)
+        # followed by a 4-byte little-endian dictionary size. We only
+        # check the first byte: catching `1f 8b ...` (gzip) or
+        # `fd 37 7a 58 5a` (xz) sneaking in is enough — the actual lzma
+        # decoder will reject any malformed property byte at boot.
+        kernel_lzma_first=$(od -An -tx1 -N1 "${KERNEL_LZMA}" | tr -d " ")
+        if [ "${kernel_lzma_first}" != "5d" ]; then
+          echo "ERROR: kernel payload after uImage strip starts with 0x${kernel_lzma_first} (expected lzma property byte 0x5d)" >&2
+          exit 1
+        fi
+        echo "  kernel.lzma    : ${KERNEL_LZMA} (${kernel_lzma_size} bytes, first byte 0x${kernel_lzma_first})"
+
+        # mkimage `-T multi` reads sub-images from a colon-separated
+        # path list (`a:b:c`). The compression flag `-C lzma` applies
+        # to sub-image 0 (the kernel); the remaining sub-images are
+        # stored verbatim — exactly what we need for the raw CPIO
+        # rootfs in slot 1.
+        UIMAGE_OUT="${REPACK_DIR}/initramfs-libremesh.uimage"
+        /builder/staging_dir/host/bin/mkimage \
+          -A "${FIT_ARCH}" \
+          -O linux \
+          -T multi \
+          -C lzma \
+          -a "${FIT_KERNEL_LOADADDR}" \
+          -e "${FIT_KERNEL_LOADADDR}" \
+          -n "OpenWrt LibreMesh ${PROFILE} initramfs" \
+          -d "${KERNEL_LZMA}:${REPACK_DIR}/rootfs.cpio" \
+          "${UIMAGE_OUT}"
+
+        echo "=== multi-uimage generated ==="
+        ls -la "${UIMAGE_OUT}"
+        /builder/staging_dir/host/bin/mkimage -l "${UIMAGE_OUT}" \
+          | grep -E "Image |Type:|Compression:|Data Size|Architecture|Load Address|Entry Point|Image [0-9]+:" || true
+
+        # Sanity: confirm the final image announces itself as
+        # `Multi-File Image` so a downstream reader can spot a regression
+        # the moment mkimages `-T` argument silently changes.
+        if ! /builder/staging_dir/host/bin/mkimage -l "${UIMAGE_OUT}" \
+            | grep -qE "(Image Type|Type:).*Multi[- ]File"; then
+          echo "ERROR: ${UIMAGE_OUT} is not a multi-file uImage" >&2
+          /builder/staging_dir/host/bin/mkimage -l "${UIMAGE_OUT}" >&2 || true
+          exit 1
+        fi
+
+        INITRAMFS_OUT="/work/out/openwrt-${OPENWRT_RELEASE:-}-${PROFILE}-initramfs-libremesh.uimage"
+        cp "${UIMAGE_OUT}" "${INITRAMFS_OUT}"
+        echo "=== Initramfs multi-uimage exported ==="
+        ls -la "${INITRAMFS_OUT}"
+      fi
     else
       echo "=== Skipping initramfs repack (BUILD_INITRAMFS=0) ==="
       echo "Target will ship the squashfs-sysupgrade artifact and is filtered out of the test-firmware matrix."
@@ -755,10 +941,18 @@ grep -E '^(lime-|shared-state-|batctl|babeld|firewall4)' "${MANIFEST_FILE}" || t
 
 # Pick the artifact we will ship to test-firmware.
 #
-# When BUILD_INITRAMFS=1 we look for the FIT we just repacked
-# (`*-initramfs-libremesh.itb`). Its rootfs lives inside the kernel
-# image as a gzip-CPIO ramdisk, which `bootm` hands to the kernel as
-# initramfs and the testbed boots from RAM with no flash dependency.
+# When BUILD_INITRAMFS=1 we look for the artifact we just repacked. Its
+# extension depends on IMAGE_FORMAT:
+#
+#   * fit          -> `*-initramfs-libremesh.itb` (mediatek/filogic).
+#                     Rootfs lives inside the FIT as a raw CPIO ramdisk
+#                     under `rootfs-1`; bootargs are embedded in the
+#                     `${FIT_CONFIG}` configuration node.
+#   * multi-uimage -> `*-initramfs-libremesh.uimage` (ath79).
+#                     Rootfs is sub-image 1 of a legacy multi-file
+#                     uImage; bootargs are set by the labgrid YAML via
+#                     `setenv bootargs` before `bootm` (cannot be
+#                     embedded in a non-FIT uImage).
 #
 # When BUILD_INITRAMFS=0 we fall back to the sysupgrade artifact
 # (`*-squashfs-sysupgrade.{itb,bin}`). This branch is only used by
@@ -766,9 +960,11 @@ grep -E '^(lime-|shared-state-|batctl|babeld|firewall4)' "${MANIFEST_FILE}" || t
 # carried purely for IPK validation and never TFTP-booted.
 SOURCE_FILE=""
 if [[ "${BUILD_INITRAMFS}" == "1" ]]; then
-  for pattern in \
-    "*${PROFILE}-initramfs-libremesh.itb" \
-    "*${PROFILE}*initramfs-libremesh.itb"; do
+  case "${IMAGE_FORMAT}" in
+    fit)          initramfs_patterns=("*${PROFILE}-initramfs-libremesh.itb" "*${PROFILE}*initramfs-libremesh.itb") ;;
+    multi-uimage) initramfs_patterns=("*${PROFILE}-initramfs-libremesh.uimage" "*${PROFILE}*initramfs-libremesh.uimage") ;;
+  esac
+  for pattern in "${initramfs_patterns[@]}"; do
     match="$(compgen -G "${WORK_DIR}/out/${pattern}" 2>/dev/null | head -n 1 || true)"
     if [[ -n "${match}" && -f "${match}" ]]; then
       SOURCE_FILE="${match}"
@@ -777,7 +973,7 @@ if [[ "${BUILD_INITRAMFS}" == "1" ]]; then
     fi
   done
   if [[ -z "${SOURCE_FILE}" ]]; then
-    echo "::error::BUILD_INITRAMFS=1 was set but no *-initramfs-libremesh.itb found in ${WORK_DIR}/out." >&2
+    echo "::error::BUILD_INITRAMFS=1 (IMAGE_FORMAT=${IMAGE_FORMAT}) was set but no initramfs artifact found in ${WORK_DIR}/out." >&2
     echo "The mkimage repack step likely failed silently. /work/out contents:" >&2
     find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
     exit 1
