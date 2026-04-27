@@ -98,6 +98,8 @@ jobs:
                 fit_kernel_loadaddr: (.fit_kernel_loadaddr // ""),
                 fit_dts: (.fit_dts // ""),
                 fit_config: (.fit_config // "config-1"),
+                fit_bootargs: (.fit_bootargs // ""),
+                dtb_patch_nvmem_mac: (if (.dtb_patch_nvmem_mac == true) then "1" else "0" end),
                 test_firmware: (if (.test_firmware == false) then "0" else "1" end),
                 test_places: (.test_places // [.device]),
                 uboot_interrupt_spam_sec: (.uboot_interrupt_spam_sec // "" | tostring)
@@ -401,6 +403,17 @@ jobs:
           FIT_KERNEL_LOADADDR: ${{ matrix.fit_kernel_loadaddr }}
           FIT_DTS: ${{ matrix.fit_dts }}
           FIT_CONFIG: ${{ matrix.fit_config }}
+          # Empty FIT_BOOTARGS falls through to build_image.sh's own
+          # default ("console=ttyS0,115200n1 pci=pcie_bus_perf"), keeping
+          # legacy openwrt_one / bananapi_bpi-r4 builds unchanged. Set
+          # per-target via `fit_bootargs:` in targets.yml when a board
+          # needs extra args (e.g. linksys_e8450 wants `swiotlb=512`).
+          FIT_BOOTARGS: ${{ matrix.fit_bootargs }}
+          # "1" enables the patch_dtb_local_mac.py round-trip on the
+          # FIT-shipped DTB (workaround for openwrt#22858). Defaults to
+          # "0" via the matrix expansion in prepare-matrix; only set to
+          # "1" for boards whose factory NVMEM lives in a UBI volume.
+          DTB_PATCH_NVMEM_MAC: ${{ matrix.dtb_patch_nvmem_mac }}
         run: |
           chmod +x tools/ci/build_image.sh
           tools/ci/build_image.sh \

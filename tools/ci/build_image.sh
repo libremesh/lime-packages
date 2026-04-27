@@ -82,6 +82,21 @@ FIT_CONFIG="${FIT_CONFIG:-config-1}"
 # console settings (e.g. mt7622 uses 115200n8).
 FIT_BOOTARGS="${FIT_BOOTARGS:-console=ttyS0,115200n1 pci=pcie_bus_perf}"
 
+# DTB_PATCH_NVMEM_MAC: when "1", patch the device-tree blob shipped inside
+# the FIT to inject `local-mac-address` properties into every GMAC and DSA
+# port whose existing definition references a `nvmem-cell-names = "mac-address"`
+# from a UBI factory volume. This is a workaround for OpenWrt issue #22858
+# (NVMEM core perpetual `-EPROBE_DEFER` blocks fallback) which manifests
+# on the Belkin RT3200 / Linksys E8450 (UBI variant): mtk_eth_soc.probe()
+# stalls forever waiting on the UBI factory NVMEM provider, leaving the
+# device with `platform 1b100000.ethernet: deferred probe pending` and
+# no networking. Defaulted off for boards whose factory NVMEM does NOT
+# come from a UBI volume (openwrt_one, bananapi_bpi-r4 — they read MAC
+# from a fixed SPI-NOR partition that is alive long before mtk_eth_soc
+# probes), since injecting a synthetic MAC there would override the OEM
+# label MAC for no benefit.
+DTB_PATCH_NVMEM_MAC="${DTB_PATCH_NVMEM_MAC:-0}"
+
 if [[ "${BUILD_INITRAMFS}" == "1" ]]; then
   for var in FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS FIT_CONFIG FIT_BOOTARGS; do
     if [[ -z "${!var}" ]]; then
@@ -89,6 +104,17 @@ if [[ "${BUILD_INITRAMFS}" == "1" ]]; then
       exit 1
     fi
   done
+fi
+
+# Resolve the location of the DTB patcher relative to this script. The
+# patcher lives next to build_image.sh under tools/ci/ in the source tree,
+# and we copy it into WORK_DIR below so it is reachable from inside the
+# ImageBuilder container via the /work bind mount.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DTB_PATCHER_HOST="${SCRIPT_DIR}/patch_dtb_local_mac.py"
+if [[ "${DTB_PATCH_NVMEM_MAC}" == "1" && ! -f "${DTB_PATCHER_HOST}" ]]; then
+  echo "ERROR: DTB_PATCH_NVMEM_MAC=1 but ${DTB_PATCHER_HOST} not found" >&2
+  exit 1
 fi
 
 if [[ ! -d "${FEED_DIR}/lime_packages" ]]; then
@@ -101,6 +127,15 @@ trap 'rm -rf "$WORK_DIR"' EXIT
 
 mkdir -p "${WORK_DIR}/out" "${WORK_DIR}/keys" "${OUTPUT_DIR}"
 chmod 0755 "${WORK_DIR}"
+
+# Stage the DTB patcher inside WORK_DIR so the in-container repack step
+# (which only sees /work and /feed) can invoke it. We always copy when
+# the file exists so a future build that flips DTB_PATCH_NVMEM_MAC=1 on
+# the same checkout has the patcher available with no extra plumbing.
+if [[ -f "${DTB_PATCHER_HOST}" ]]; then
+  cp "${DTB_PATCHER_HOST}" "${WORK_DIR}/patch_dtb_local_mac.py"
+  chmod 0755 "${WORK_DIR}/patch_dtb_local_mac.py"
+fi
 
 cat > "${WORK_DIR}/repositories.snippet" <<EOF
 src/gz lime_packages_local file:///feed/lime_packages
@@ -124,7 +159,7 @@ chmod a+w "${WORK_DIR}/out"
 # process env unless exported, and Docker's `-e VAR` reads from the
 # calling process env, not from the script's lexical scope.
 export BUILD_INITRAMFS FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS FIT_CONFIG \
-       FIT_BOOTARGS PROFILE PACKAGES ARCH OPENWRT_RELEASE
+       FIT_BOOTARGS DTB_PATCH_NVMEM_MAC PROFILE PACKAGES ARCH OPENWRT_RELEASE
 
 docker run --rm \
   --user root \
@@ -134,6 +169,7 @@ docker run --rm \
   -e FIT_DTS \
   -e FIT_CONFIG \
   -e FIT_BOOTARGS \
+  -e DTB_PATCH_NVMEM_MAC \
   -e PROFILE \
   -e PACKAGES \
   -e ARCH \
@@ -338,6 +374,72 @@ docker run --rm \
       REPACK_DIR="/tmp/initramfs-repack"
       rm -rf "${REPACK_DIR}"
       mkdir -p "${REPACK_DIR}"
+
+      # ------------------------------------------------------------------
+      # Optional DTB patch: inject `local-mac-address` into GMAC / DSA-WAN
+      # nodes whose stock DTS pulls the MAC from a UBI factory NVMEM
+      # cell. See OpenWrt issue #22858: `nvmem_cell_get()` returns
+      # `-EPROBE_DEFER` perpetually for UBI-backed providers, which
+      # blocks `mtk_eth_soc.probe` and leaves the device with no
+      # ethernet at all (`platform 1b100000.ethernet: deferred probe
+      # pending`). Adding a DT property short-circuits the NVMEM lookup
+      # entirely (the kernel `of_get_mac_address()` helper checks DT
+      # properties before falling back to NVMEM) and unblocks probe.
+      #
+      # Implementation: dtc round-trip through DTS so the patcher can
+      # work on text. dtc is the in-tree binary we located above; the
+      # patcher is at /work/patch_dtb_local_mac.py (staged by the host
+      # side of build_image.sh into WORK_DIR before docker run, see the
+      # `cp ... patch_dtb_local_mac.py` block).
+      #
+      # NOTE: comments in this section MUST avoid literal apostrophes,
+      # since the whole block lives inside a `sh -lc "..."`-style
+      # single-quoted argument and a stray apostrophe would terminate
+      # the quoting and reparent the rest of the script to the outer
+      # bash. Use plain English (e.g. "the kernel helper" instead of
+      # "kernel apostrophe s helper") and double quotes for inline
+      # quoting if needed.
+      #
+      # `--require-patch` makes the build fail loudly if the DTS no
+      # longer contains the GMAC / WAN nodes the patcher knows about
+      # (e.g. a future kernel rev renames `mac@0` to `port@0` under
+      # `&eth`); a silent pass would ship a still-broken firmware.
+      if [ "${DTB_PATCH_NVMEM_MAC:-0}" = "1" ]; then
+        if [ ! -f /work/patch_dtb_local_mac.py ]; then
+          echo "ERROR: DTB_PATCH_NVMEM_MAC=1 but /work/patch_dtb_local_mac.py is missing" >&2
+          ls -la /work >&2 || true
+          exit 1
+        fi
+        if ! command -v python3 >/dev/null 2>&1; then
+          echo "ERROR: DTB_PATCH_NVMEM_MAC=1 requires python3 inside the ImageBuilder container" >&2
+          exit 1
+        fi
+        echo "=== Patching DTB with local-mac-address (workaround openwrt#22858) ==="
+        DTB_DTS_IN="${REPACK_DIR}/$(basename "${DTB_FILE}").orig.dts"
+        DTB_DTS_OUT="${REPACK_DIR}/$(basename "${DTB_FILE}").patched.dts"
+        DTB_PATCHED="${REPACK_DIR}/$(basename "${DTB_FILE}")"
+        # dtc decompiles the DTB into DTS we can grep/patch. -W no-unit_address_format
+        # because the IB-shipped DTBs sometimes encode reg without a
+        # leading `0x` and dtc warns about it loudly; the warnings are
+        # harmless and pollute the CI log.
+        "${DTC_BIN}" -I dtb -O dts -q -o "${DTB_DTS_IN}" "${DTB_FILE}"
+        python3 /work/patch_dtb_local_mac.py "${PROFILE}" \
+          --in "${DTB_DTS_IN}" --out "${DTB_DTS_OUT}" --require-patch
+        "${DTC_BIN}" -I dts -O dtb -q -o "${DTB_PATCHED}" "${DTB_DTS_OUT}"
+        echo "  patched DTB    : ${DTB_PATCHED} ($(stat -c%s "${DTB_PATCHED}") bytes; original $(stat -c%s "${DTB_FILE}") bytes)"
+        # Sanity: the patched DTB must be at least as large as the
+        # original (we only ever ADD properties, never remove them).
+        # A smaller output would mean dtc dropped data — fail loudly.
+        orig_sz=$(stat -c%s "${DTB_FILE}")
+        new_sz=$(stat -c%s "${DTB_PATCHED}")
+        if [ "${new_sz}" -lt "${orig_sz}" ]; then
+          echo "ERROR: patched DTB shrunk from ${orig_sz} to ${new_sz} bytes — refusing to ship" >&2
+          exit 1
+        fi
+        DTB_FILE="${DTB_PATCHED}"
+      else
+        echo "=== Skipping DTB patch (DTB_PATCH_NVMEM_MAC=${DTB_PATCH_NVMEM_MAC:-0}) ==="
+      fi
 
       # Build initramfs CPIO. Running as root inside the container so
       # device nodes (/dev/console etc.) and setuid bits inside the
