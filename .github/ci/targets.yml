@@ -25,6 +25,16 @@ packages: >-
 #     test-firmware job matrix. Setting this to false keeps the build
 #     for IPK-validation purposes only and avoids scheduling a hardware
 #     test that would TIMEOUT for lack of a bootable image.
+#   test_places    (list, default [device]): names of the labgrid places
+#     (without the `labgrid-fcefyn-` prefix) to run test-firmware on for
+#     this target. Use this when the same firmware build must be exercised
+#     across multiple physical units of the same hardware (e.g. the three
+#     Belkin RT3200 in the testbed all consume the linksys_e8450-ubi
+#     artifact). prepare-matrix expands the test_targets_matrix into one
+#     entry per (target, place) pair so each unit gets its own
+#     test-firmware job displayed as `test-firmware (<place>)`. Defaulting
+#     to [device] preserves the legacy 1-target-1-place behaviour for the
+#     other DUTs (openwrt_one, bananapi_bpi-r4).
 #   fit_arch / fit_kernel_loadaddr / fit_dts (BUILD_INITRAMFS=1 only):
 #     metadata fed to mkits.sh to generate the .its describing the FIT.
 #     fit_arch is the U-Boot/FIT architecture name (e.g. arm64), NOT
@@ -55,22 +65,26 @@ targets:
     fit_arch: arm64
     fit_kernel_loadaddr: "0x44000000"
     fit_dts: mt7622-linksys-e8450-ubi
-    # Temporarily out of the test-firmware matrix: run #24 (CI run
-    # 24972903707) caught the Belkin RT3200 (Linksys E8450) at a
-    # pre-U-Boot brick:
-    #   NOTICE:  BL2: v2.4(release):OpenWrt v2021-05-08-d2c75b21-3 (mt7622-snand-1ddr)
-    #   NOTICE:  SPI-NAND: FM35Q1GA (128MB)
-    #   ERROR:   BL2: Failed to load image id 3 (-2)
-    # `image id 3` in the mt7622 BL2 is BL31; -2 is -ENOENT, meaning
-    # BL2 cannot find a valid BL31 in the `bl31` UBI volume on flash.
-    # Until the device is physically recovered (TFTP-boot the OpenWrt
-    # `mt7622-snand-1ddr-recovery.img` and reflash bl31/fip), every
-    # TFTP boot from labgrid will TIMEOUT before reaching U-Boot — no
-    # amount of FIT/initramfs work in this repo can fix that. We keep
-    # the build active so PR validation still produces a Linksys
-    # firmware artifact, but skip the hardware test until recovered.
-    # See docs/followups/linksys_e8450_bl31_recovery.md (TODO).
-    test_firmware: false
+    # Three physical Belkin RT3200 units share the linksys_e8450-ubi
+    # firmware artifact. We expand the test-firmware matrix across all
+    # three places so each unit gets its own job and a visible result
+    # in the GitHub Actions UI. The build job runs once.
+    #
+    # Historical note: run #24 (24972903707) caught one Belkin at a
+    # pre-U-Boot brick — BL2 reported `Failed to load image id 3 (-2)`
+    # (image id 3 = BL31, -2 = -ENOENT), meaning the BL31 UBI volume
+    # was unreadable. The fcefyn lab recovered the affected unit with
+    # mtk_uartboot in March 2026 (see fcefyn_testbed_utils
+    # docs/configuracion/duts-config.md, "Kiss of Death (OKD)"). The
+    # three units now show SSH ✓ in duts-config.md, so we re-enable
+    # test-firmware. If a future run hits the same BL2 error, the
+    # recovery procedure is documented and KOD-resistant FIPs are
+    # already flashed on the units in the lab.
+    test_firmware: true
+    test_places:
+      - belkin_rt3200_1
+      - belkin_rt3200_2
+      - belkin_rt3200_3
   - device: openwrt_one
     imagebuilder: mediatek-filogic
     profile: openwrt_one
