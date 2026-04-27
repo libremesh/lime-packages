@@ -13,31 +13,80 @@ packages: >-
   shared-state-dnsmasq_hosts shared-state-nodes_and_links
   babeld-auto-gw-mode check-date-http batctl-default
   -dnsmasq -odhcpd-ipv6only
+# Per-target keys explained:
+#   build_initramfs (bool, default false): repack a RAM-bootable
+#     initramfs FIT in build_image.sh containing our LibreMesh rootfs.
+#     Required for any target that test-firmware boots over TFTP — the
+#     sysupgrade FIT does NOT pass a CPIO ramdisk to the kernel and the
+#     DUT silently boots whatever userspace is on flash. Set to false
+#     for targets whose subtarget has no `KERNEL_INITRAMFS` recipe (ath79
+#     uImage devices) or that we deliberately skip in test-firmware.
+#   test_firmware  (bool, default true): include this target in the
+#     test-firmware job matrix. Setting this to false keeps the build
+#     for IPK-validation purposes only and avoids scheduling a hardware
+#     test that would TIMEOUT for lack of a bootable image.
+#   fit_arch / fit_kernel_loadaddr / fit_dts (BUILD_INITRAMFS=1 only):
+#     metadata fed to mkits.sh to generate the .its describing the FIT.
+#     fit_arch is the U-Boot/FIT architecture name (e.g. arm64), NOT
+#     the OpenWrt arch. fit_dts is the basename (no .dtb suffix) of
+#     the per-board DTB shipped under build_dir/target-*/linux-*/
+#     image-<dts>.dtb — different from the device profile.
 targets:
   - device: linksys_e8450
     imagebuilder: mediatek-mt7622
-    profile: linksys_e8450
+    # The legacy `linksys_e8450` profile (NAND boot, sysupgrade only) does
+    # not define a KERNEL_INITRAMFS recipe in mt7622.mk, so ImageBuilder
+    # ships no <profile>-kernel.bin we could repack. The `-ubi` variant
+    # (same Belkin RT3200 hardware, UBI-on-NAND boot path) DOES define
+    # KERNEL_INITRAMFS and therefore exposes the kernel binary + DTB we
+    # need for build_image.sh's `mkimage` repack to work.
+    profile: linksys_e8450-ubi
     arch: aarch64_cortex-a53
     sdk_arch: aarch64_cortex-a53-openwrt-24.10
     index_imagebuilder: mediatek-filogic
+    build_initramfs: true
+    fit_arch: arm64
+    fit_kernel_loadaddr: "0x44000000"
+    fit_dts: mt7622-linksys-e8450-ubi
   - device: openwrt_one
     imagebuilder: mediatek-filogic
     profile: openwrt_one
     arch: aarch64_cortex-a53
     sdk_arch: aarch64_cortex-a53-openwrt-24.10
     index_imagebuilder: mediatek-filogic
+    build_initramfs: true
+    fit_arch: arm64
+    fit_kernel_loadaddr: "0x44000000"
+    fit_dts: mt7981b-openwrt-one
   - device: bananapi_bpi-r4
     imagebuilder: mediatek-filogic
     profile: bananapi_bpi-r4
     arch: aarch64_cortex-a53
     sdk_arch: aarch64_cortex-a53-openwrt-24.10
     index_imagebuilder: mediatek-filogic
+    build_initramfs: true
+    fit_arch: arm64
+    fit_kernel_loadaddr: "0x46000000"
+    fit_dts: mt7988a-bananapi-bpi-r4
   - device: librerouter_librerouter-v1
     imagebuilder: ath79-generic
     profile: librerouter_librerouter-v1
     arch: mips_24kc
     sdk_arch: mips_24kc-openwrt-24.10
     index_imagebuilder: ath79-generic
+    # ath79/generic uses the legacy uImage format: the initramfs CPIO
+    # must be linked into the kernel binary at compile time
+    # (CONFIG_INITRAMFS_SOURCE), which ImageBuilder cannot do (no kernel
+    # sources, no compiler). The `<profile>-kernel.bin` shipped by IB is
+    # already a final uImage with no rootfs slot we could append to. So
+    # we cannot produce a RAM-bootable LibreMesh image for this device
+    # from ImageBuilder; the build remains for IPK-validation only and
+    # we skip it in test-firmware to avoid a guaranteed TFTP-boot
+    # TIMEOUT. Re-enabling test-firmware here requires switching the
+    # whole pipeline to a full OpenWrt buildroot for ath79; tracked as
+    # a follow-up in docs/followups/.
+    build_initramfs: false
+    test_firmware: false
     # Reduced set for the librerouter v1 (8 MiB SPI NOR; sysupgrade partition
     # caps at ~8126464 bytes per ath79 image-recipes). With the full default
     # list the squashfs-sysupgrade.bin lands at ~8192004 bytes (overflow by

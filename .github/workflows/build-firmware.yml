@@ -29,6 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       targets_matrix: ${{ steps.prepare.outputs.targets_matrix }}
+      test_targets_matrix: ${{ steps.prepare.outputs.test_targets_matrix }}
       archs_matrix: ${{ steps.prepare.outputs.archs_matrix }}
       lime_packages_list: ${{ steps.prepare.outputs.lime_packages_list }}
       feed_hash: ${{ steps.prepare.outputs.feed_hash }}
@@ -78,14 +79,37 @@ jobs:
           # LibreMesh package list. `// $pkg` keeps the global default for
           # every target that does NOT define its own list, so this stays
           # backwards-compatible.
+          #
+          # `build_initramfs` (default false) and the FIT metadata
+          # (`fit_arch`, `fit_kernel_loadaddr`, `fit_dts`) are forwarded to
+          # build_image.sh as env vars in the `build-image` job so the script
+          # knows whether to repack a RAM-bootable initramfs FIT and with
+          # which kernel loadaddr / DTB. Targets without these keys fall back
+          # to BUILD_INITRAMFS=0 and ship the sysupgrade artifact for IPK
+          # validation only (see librerouter_librerouter-v1 below).
           targets_matrix="$(
             jq -c --arg release "$openwrt_release" --arg feed "$feed_branch" --arg pkg "$packages" '
               {include: map(. + {
                 openwrt_release: $release,
                 feed_branch: $feed,
-                packages: (.packages // $pkg)
+                packages: (.packages // $pkg),
+                build_initramfs: (if (.build_initramfs == true) then "1" else "0" end),
+                fit_arch: (.fit_arch // ""),
+                fit_kernel_loadaddr: (.fit_kernel_loadaddr // ""),
+                fit_dts: (.fit_dts // ""),
+                test_firmware: (if (.test_firmware == false) then "0" else "1" end)
               })}
             ' <<< "$selected_targets"
+          )"
+
+          # Subset of targets that actually go through hardware testing.
+          # `test_firmware: false` in targets.yml opts a target out of the
+          # test-firmware (and downstream test-mesh) matrices, e.g. for
+          # librerouter_librerouter-v1 where ImageBuilder cannot produce a
+          # RAM-bootable LibreMesh image and a TFTP boot would TIMEOUT.
+          test_targets_matrix="$(
+            jq -c '{include: (.include | map(select(.test_firmware == "1")))}' \
+              <<< "$targets_matrix"
           )"
 
           archs_matrix="$(
@@ -136,6 +160,7 @@ jobs:
           echo "Computed feed_hash=$feed_hash"
 
           echo "targets_matrix=$targets_matrix" >> "$GITHUB_OUTPUT"
+          echo "test_targets_matrix=$test_targets_matrix" >> "$GITHUB_OUTPUT"
           echo "archs_matrix=$archs_matrix" >> "$GITHUB_OUTPUT"
           echo "lime_packages_list=$lime_packages_list" >> "$GITHUB_OUTPUT"
           echo "feed_hash=$feed_hash" >> "$GITHUB_OUTPUT"
@@ -347,6 +372,16 @@ jobs:
           ARCH: ${{ matrix.arch }}
           FEED_BRANCH: ${{ matrix.feed_branch }}
           PACKAGES: ${{ matrix.packages }}
+          # FIT-repack metadata. `BUILD_INITRAMFS=1` triggers the
+          # `mkimage` repack step in build_image.sh that builds a real
+          # RAM-bootable initramfs FIT containing the LibreMesh rootfs.
+          # The other three fields are consumed by mkits.sh inside the
+          # script. Targets without these set (build_initramfs=0) just
+          # ship the sysupgrade artifact for IPK validation.
+          BUILD_INITRAMFS: ${{ matrix.build_initramfs }}
+          FIT_ARCH: ${{ matrix.fit_arch }}
+          FIT_KERNEL_LOADADDR: ${{ matrix.fit_kernel_loadaddr }}
+          FIT_DTS: ${{ matrix.fit_dts }}
         run: |
           chmod +x tools/ci/build_image.sh
           tools/ci/build_image.sh \
@@ -375,6 +410,13 @@ jobs:
           retention-days: 7
 
   # Self-hosted hardware tests: do not run for fork PRs (no lab access / abuse).
+  # Uses `test_targets_matrix` (filtered subset of `targets_matrix`) so that
+  # targets explicitly marked `test_firmware: false` in targets.yml never
+  # schedule a hardware-test job. See `librerouter_librerouter-v1`: its ath79
+  # uImage layout makes a RAM-bootable LibreMesh image impossible from
+  # ImageBuilder alone, and a TFTP-boot of the squashfs sysupgrade FIT would
+  # silently boot whatever userspace is on flash and pass tests against the
+  # wrong firmware (or, more likely, simply TIMEOUT).
   test-firmware:
     name: test-firmware (${{ matrix.device }})
     needs: [prepare-matrix, build-image]
@@ -382,7 +424,7 @@ jobs:
     runs-on: [self-hosted, testbed-fcefyn]
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.prepare-matrix.outputs.targets_matrix) }}
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.test_targets_matrix) }}
     env:
       PYTHONUNBUFFERED: "1"
       PYTEST_ADDOPTS: "--color=yes"
