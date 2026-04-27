@@ -133,24 +133,33 @@ def _find_block_end(text: str, open_brace_idx: int) -> int:
     return i  # past the closing `}`
 
 
-def _line_indent_at(text: str, idx: int) -> str:
-    """Return the leading whitespace of the line containing `idx`."""
-    line_start = text.rfind("\n", 0, idx) + 1
-    indent = ""
-    for ch in text[line_start:idx]:
-        if ch in (" ", "\t"):
-            indent += ch
-        else:
-            break
-    return indent
+# Anchor we use both as the "patch me" marker (in classify) and as the
+# insertion point inside the matched block. DTS grammar (and `dtc -I dts`)
+# enforce "properties must precede subnodes" within a node, so anchoring
+# on an existing property guarantees our injected `local-mac-address`
+# also lands in the property zone — even when the node carries
+# subnodes after its property block (e.g. `port@4` on Belkin RT3200's
+# MT7531 DSA switch wraps a `fixed-link {...}` after its
+# `nvmem-cell-names`, which is precisely what made the previous
+# "before closing `};`" placement explode with
+# `dtc: Properties must precede subnodes` (CI run 25011299098).
+#
+# The capturing group (`([ \t]*)`) reuses the anchor's own indentation
+# for the new property, so the patched DTS keeps the source's spacing
+# convention (tabs vs spaces) intact.
+NVMEM_MAC_ANCHOR_RE = re.compile(
+    r'^([ \t]*)nvmem-cell-names\s*=\s*"mac-address"\s*;[ \t]*\n',
+    re.MULTILINE,
+)
 
 
 def _inject_local_mac(text: str, node_re: re.Pattern, classify,
                       label: str, *, multi: bool = True) -> tuple[str, int]:
     """Walk every node header matched by `node_re`, scope each body to its
     matching brace pair, and inject a `local-mac-address` property
-    immediately before the closing `};` whenever
-    `classify(block_text, regex_match)` returns a non-empty seed string.
+    immediately after the `nvmem-cell-names = "mac-address";` line in the
+    body whenever `classify(block_text, regex_match)` returns a non-empty
+    seed string.
 
     `classify` is responsible for both filtering (return `None` to skip)
     and deciding the MAC seed; it is only called for nodes that do **not**
@@ -192,17 +201,23 @@ def _inject_local_mac(text: str, node_re: re.Pattern, classify,
         seed = classify(block, m)
         if not seed:
             continue
-        close_brace_idx = end - 1  # index of `}`
-        line_start = out.rfind("\n", 0, close_brace_idx) + 1
-        closing_indent = out[line_start:close_brace_idx]
-        # Body indent is one level deeper than the closing brace's line.
-        # DTS canonical form uses tabs, fall back to 4 spaces if the
-        # closing indent contains no tab (defensive).
-        indent_unit = "\t" if "\t" in closing_indent else "    "
-        body_indent = closing_indent + indent_unit
+        anchor_m = NVMEM_MAC_ANCHOR_RE.search(block)
+        if anchor_m is None:
+            # classify already required the anchor string; if we get here
+            # the DTS shape changed (e.g. anchor split across lines) and
+            # we'd rather fail loudly than ship a half-patched DTB.
+            print(f"[patch_dtb_local_mac] {label} (seed={seed}): "
+                  "anchor `nvmem-cell-names = \"mac-address\";` not found "
+                  "on its own line — refusing to guess insertion point",
+                  file=sys.stderr)
+            continue
+        indent = anchor_m.group(1)
+        # anchor_m.end() points just past the trailing `\n` of the anchor
+        # line, so insertion lands on a fresh line at the same depth.
+        insert_at = header_start + anchor_m.end()
         mac = gen_mac(seed)
-        prop = f"{body_indent}local-mac-address = [{mac}];\n"
-        out = out[:line_start] + prop + out[line_start:]
+        prop = f"{indent}local-mac-address = [{mac}];\n"
+        out = out[:insert_at] + prop + out[insert_at:]
         count += 1
         print(f"[patch_dtb_local_mac] {label} (seed={seed}): inserted "
               f"local-mac-address = [{mac}]", file=sys.stderr)
