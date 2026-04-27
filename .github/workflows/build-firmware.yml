@@ -98,19 +98,35 @@ jobs:
                 fit_kernel_loadaddr: (.fit_kernel_loadaddr // ""),
                 fit_dts: (.fit_dts // ""),
                 fit_config: (.fit_config // "config-1"),
-                test_firmware: (if (.test_firmware == false) then "0" else "1" end)
+                test_firmware: (if (.test_firmware == false) then "0" else "1" end),
+                test_places: (.test_places // [.device])
               })}
             ' <<< "$selected_targets"
           )"
 
-          # Subset of targets that actually go through hardware testing.
-          # `test_firmware: false` in targets.yml opts a target out of the
-          # test-firmware (and downstream test-mesh) matrices, e.g. for
-          # librerouter_librerouter-v1 where ImageBuilder cannot produce a
-          # RAM-bootable LibreMesh image and a TFTP boot would TIMEOUT.
+          # Subset of targets that actually go through hardware testing,
+          # expanded by labgrid place so multiple physical units of the
+          # same hardware (e.g. three Belkin RT3200 sharing the
+          # linksys_e8450-ubi artifact) each get their own test-firmware
+          # job. `test_firmware: false` in targets.yml opts a target out
+          # of this expansion entirely (e.g. librerouter_librerouter-v1
+          # where ImageBuilder cannot produce a RAM-bootable image —
+          # TFTP boot would TIMEOUT).
+          #
+          # Per matrix entry we keep ALL build-job fields (device,
+          # imagebuilder, profile, …) so any step in test-firmware that
+          # references matrix.device (artifact download, LG_ENV path)
+          # still works; and we add a `place` field used for the labgrid
+          # lock and the per-unit TFTP namespace.
           test_targets_matrix="$(
-            jq -c '{include: (.include | map(select(.test_firmware == "1")))}' \
-              <<< "$targets_matrix"
+            jq -c '
+              {include: (
+                .include
+                | map(select(.test_firmware == "1"))
+                | map(. as $t | $t.test_places | map($t + {place: .}))
+                | add
+              )}
+            ' <<< "$targets_matrix"
           )"
 
           archs_matrix="$(
@@ -420,7 +436,12 @@ jobs:
   # silently boot whatever userspace is on flash and pass tests against the
   # wrong firmware (or, more likely, simply TIMEOUT).
   test-firmware:
-    name: test-firmware (${{ matrix.device }})
+    # Display the place (e.g. `belkin_rt3200_1`) instead of the device
+    # so the GitHub UI distinguishes the three Belkin RT3200 jobs that
+    # share the linksys_e8450-ubi artifact. For single-place targets
+    # (openwrt_one, bananapi_bpi-r4) place == device so the displayed
+    # name is unchanged.
+    name: test-firmware (${{ matrix.place }})
     needs: [prepare-matrix, build-image]
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, testbed-fcefyn]
@@ -467,16 +488,21 @@ jobs:
       - name: Stage firmware on TFTP
         run: |
           set -euo pipefail
-          echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') staging firmware for ${{ matrix.device }}"
+          echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') staging firmware for ${{ matrix.device }} on place ${{ matrix.place }}"
+          # Per-place TFTP namespace: when several units of the same
+          # hardware test the same artifact in parallel (e.g. the three
+          # Belkin RT3200 + linksys_e8450-ubi build), routing each job to
+          # `<run_id>/<place>/` keeps the cleanup of one job from
+          # deleting files another job is still serving over TFTP.
           BASE="/srv/tftp/firmwares/ci"
-          if ! mkdir -p "$BASE/${{ github.run_id }}/${{ matrix.device }}" 2>/tmp/mkdir.err; then
-            echo "::error::Cannot create $BASE/...: $(cat /tmp/mkdir.err)"
+          STAGE="$BASE/${{ github.run_id }}/${{ matrix.place }}"
+          if ! mkdir -p "$STAGE" 2>/tmp/mkdir.err; then
+            echo "::error::Cannot create $STAGE: $(cat /tmp/mkdir.err)"
             echo "Fix on the lab host (one-time):"
             echo "  sudo install -d -o \$RUNNER_USER -g \$RUNNER_USER -m 0775 $BASE"
             ls -ld /srv/tftp /srv/tftp/firmwares "$BASE" 2>/dev/null || true
             exit 1
           fi
-          STAGE="$BASE/${{ github.run_id }}/${{ matrix.device }}"
           shopt -s nullglob
           files=(fw/firmware-${{ matrix.device }}.*)
           if [[ ${#files[@]} -eq 0 ]]; then
@@ -484,12 +510,31 @@ jobs:
             ls -la fw/ || true
             exit 1
           fi
-          cp -a "${files[@]}" "$STAGE/"
+          # Rename the bootable artifact and its sidecars from
+          # firmware-<device>.<ext> to firmware-<place>.<ext>. Reason:
+          # labgrid's TFTPProviderDriver.stage() creates a symlink in the
+          # exporter's TFTP root using only basename(path). Three parallel
+          # Belkin jobs would otherwise race on the same
+          # `firmware-linksys_e8450.itb` symlink. With a per-place
+          # basename, each job gets its own entry under the TFTP root and
+          # there is no cross-job interference.
+          src_prefix="firmware-${{ matrix.device }}"
+          dst_prefix="firmware-${{ matrix.place }}"
+          for f in "${files[@]}"; do
+            base="$(basename "$f")"
+            if [[ "$base" != "$src_prefix"* ]]; then
+              echo "::warning::Unexpected artifact name $base (does not start with $src_prefix); copying as-is"
+              cp -a "$f" "$STAGE/"
+              continue
+            fi
+            suffix="${base#$src_prefix}"
+            cp -a "$f" "$STAGE/${dst_prefix}${suffix}"
+          done
           # Pick the actual bootable image, NOT the manifest sidecar that
           # tools/ci/build_image.sh now ships next to the firmware. Manifest
           # files have the .manifest extension and are text describing the
           # installed packages — they would be useless to TFTP-boot.
-          image_candidates=("$STAGE"/firmware-${{ matrix.device }}.*)
+          image_candidates=("$STAGE"/firmware-${{ matrix.place }}.*)
           LG_IMAGE=""
           for f in "${image_candidates[@]}"; do
             case "$f" in
@@ -512,7 +557,7 @@ jobs:
           # log answers "is this a LibreMesh image?" without re-running the
           # build job. We grep the lime/shared-state/batctl entries because
           # the full manifest can be 200+ lines of generic OpenWrt deps.
-          MANIFEST="$STAGE/firmware-${{ matrix.device }}.manifest"
+          MANIFEST="$STAGE/firmware-${{ matrix.place }}.manifest"
           if [[ -f "$MANIFEST" ]]; then
             echo "=== manifest sidecar ($(wc -l < "$MANIFEST") packages): LibreMesh entries ==="
             grep -E '^(lime-|shared-state-|batctl|babeld|firewall4)' "$MANIFEST" || \
@@ -521,41 +566,30 @@ jobs:
             echo "::warning::No manifest sidecar at $MANIFEST — older build_image.sh? Cannot pre-validate LibreMesh content."
           fi
 
-      - name: Wait for free device and lock
+      - name: Lock labgrid place
         working-directory: libremesh-tests
         run: |
           set -euo pipefail
           echo "LG_PROXY=labgrid-fcefyn" >> "$GITHUB_ENV"
-          if [ "${{ matrix.device }}" = "linksys_e8450" ]; then
-            PLACE="labgrid-fcefyn-belkin_rt3200_2"
-            LOCK_OUT=$(uv run labgrid-client -v -p "$PLACE" lock 2>&1) || {
-              echo "$LOCK_OUT"
-              echo "::error::labgrid lock failed for $PLACE"
-              exit 1
-            }
-            echo "LG_PLACE=$PLACE" >> "$GITHUB_ENV"
-            echo "Locked $PLACE (Belkin RT3200 pool)"
-          else
-            eval "$(uv run labgrid-client reserve --shell device=${{ matrix.device }})"
-            echo "LG_TOKEN=$LG_TOKEN" >> "$GITHUB_ENV"
-            echo "LG_PLACE=+" >> "$GITHUB_ENV"
-            timeout 180 uv run labgrid-client wait || {
-              echo "::error::labgrid reserve timed out after 3 min"
-              exit 1
-            }
-            LOCK_OUT=$(uv run labgrid-client -v -p "+$LG_TOKEN" lock 2>&1) || {
-              echo "$LOCK_OUT"
-              echo "::error::labgrid lock failed"
-              exit 1
-            }
+          # Direct lock by place — every test_firmware matrix entry now
+          # carries an explicit `place` field (defaulted to the device
+          # name in prepare-matrix for single-unit targets), so we no
+          # longer need `labgrid-client reserve --shell device=…` to
+          # discover a place. This makes the lock deterministic across
+          # devices that share a hardware profile (Belkin RT3200 #1/#2/#3
+          # all run the linksys_e8450-ubi build), and keeps the legacy
+          # behaviour for openwrt_one / bananapi_bpi-r4 where place
+          # equals device.
+          PLACE="labgrid-fcefyn-${{ matrix.place }}"
+          LOCK_OUT=$(uv run labgrid-client -v -p "$PLACE" lock 2>&1) || {
             echo "$LOCK_OUT"
-            PLACE=$(echo "$LOCK_OUT" | sed -n 's/.*acquired place \([^ ]*\).*/\1/p')
-            if [ -n "$PLACE" ]; then
-              echo "LG_PLACE=$PLACE" >> "$GITHUB_ENV"
-              echo "Resolved LG_PLACE=$PLACE"
-            fi
-          fi
+            echo "::error::labgrid lock failed for $PLACE"
+            exit 1
+          }
+          echo "$LOCK_OUT"
+          echo "LG_PLACE=$PLACE" >> "$GITHUB_ENV"
           echo "LG_ENV=targets/${{ matrix.device }}.yaml" >> "$GITHUB_ENV"
+          echo "Locked $PLACE for device=${{ matrix.device }}"
 
       - name: Run single-node LibreMesh tests
         working-directory: libremesh-tests
@@ -564,13 +598,17 @@ jobs:
           LG_IMAGE: ${{ env.LG_IMAGE }}
           LG_PLACE: ${{ env.LG_PLACE }}
           LG_ENV: ${{ env.LG_ENV }}
-          LG_TOKEN: ${{ env.LG_TOKEN }}
         run: |
           set -euo pipefail
-          mkdir -p "$GITHUB_WORKSPACE/logs/${{ matrix.device }}"
+          # Per-place log dir: when three Belkin RT3200 jobs run in
+          # parallel against the linksys_e8450 build artifact each one
+          # uploads its own `test-results-<place>` artifact below;
+          # collapsing them into a single per-device dir would race on
+          # the report.xml file.
+          mkdir -p "$GITHUB_WORKSPACE/logs/${{ matrix.place }}"
           uv run pytest tests/test_libremesh.py \
-            --lg-log "$GITHUB_WORKSPACE/logs/${{ matrix.device }}/" \
-            --junitxml="$GITHUB_WORKSPACE/logs/${{ matrix.device }}/report.xml" \
+            --lg-log "$GITHUB_WORKSPACE/logs/${{ matrix.place }}/" \
+            --junitxml="$GITHUB_WORKSPACE/logs/${{ matrix.place }}/report.xml" \
             --lg-colored-steps \
             --log-cli-level=CONSOLE
 
@@ -578,33 +616,36 @@ jobs:
         if: always()
         working-directory: libremesh-tests
         env:
-          LG_TOKEN: ${{ env.LG_TOKEN }}
           LG_PLACE: ${{ env.LG_PLACE }}
         run: |
           set +e
-          # Only act on the place/token we actually acquired. Calling
-          # `labgrid-client power off`/`unlock` without -p falls back to the
-          # env's default which is empty here, and labgrid then matches all
-          # registered places ("pattern matches multiple places ..."). When an
-          # earlier step (e.g. TFTP staging) fails before we lock anything,
-          # both vars are unset and there is simply nothing to release.
-          if [ -n "${LG_TOKEN:-}" ]; then
-            uv run labgrid-client -p "+$LG_TOKEN" power off || true
-            uv run labgrid-client -p "+$LG_TOKEN" unlock || true
-          elif [ -n "${LG_PLACE:-}" ] && [ "$LG_PLACE" != "+" ]; then
+          # We only ever acquire `labgrid-fcefyn-<place>` directly (no
+          # more `labgrid-client reserve --shell` flow), so a missing
+          # LG_PLACE means the lock step never ran (e.g. TFTP staging
+          # failed first); nothing to release in that case. Otherwise
+          # release exactly the place we locked — calling power off /
+          # unlock without -p would fall back to labgrid's empty default
+          # and match every registered place ("pattern matches multiple
+          # places…").
+          if [ -n "${LG_PLACE:-}" ]; then
             uv run labgrid-client -p "$LG_PLACE" power off || true
             uv run labgrid-client -p "$LG_PLACE" unlock || true
           else
             echo "No labgrid lock acquired by this job; skipping power off / unlock."
           fi
-          rm -rf "/srv/tftp/firmwares/ci/${{ github.run_id }}/${{ matrix.device }}" 2>/dev/null || true
+          # Per-place TFTP namespace mirrors the staging step so each
+          # parallel Belkin job cleans only its own staging directory.
+          rm -rf "/srv/tftp/firmwares/ci/${{ github.run_id }}/${{ matrix.place }}" 2>/dev/null || true
 
       - name: Upload test logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.device }}
-          path: ${{ github.workspace }}/logs/${{ matrix.device }}/*
+          # Artifact name follows the place so the three Belkin jobs do
+          # not collide on `test-results-linksys_e8450`. Single-place
+          # targets keep their previous name (place == device).
+          name: test-results-${{ matrix.place }}
+          path: ${{ github.workspace }}/logs/${{ matrix.place }}/*
           if-no-files-found: ignore
           retention-days: 14
 
