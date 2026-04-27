@@ -94,6 +94,7 @@ jobs:
                 feed_branch: $feed,
                 packages: (.packages // $pkg),
                 build_initramfs: (if (.build_initramfs == true) then "1" else "0" end),
+                image_format: (.image_format // "fit"),
                 fit_arch: (.fit_arch // ""),
                 fit_kernel_loadaddr: (.fit_kernel_loadaddr // ""),
                 fit_dts: (.fit_dts // ""),
@@ -399,6 +400,14 @@ jobs:
           # script. Targets without these set (build_initramfs=0) just
           # ship the sysupgrade artifact for IPK validation.
           BUILD_INITRAMFS: ${{ matrix.build_initramfs }}
+          # IMAGE_FORMAT selects the repack output format inside
+          # build_image.sh: `fit` for mediatek/filogic FIT-aware U-Boots,
+          # `multi-uimage` for ath79 boards (e.g. librerouter_v1) whose
+          # legacy U-Boot 1.1.x has no FIT parser. The empty default
+          # falls through to build_image.sh's own `fit` default so older
+          # targets in targets.yml that do not set `image_format:` keep
+          # producing the same `.itb` they always did.
+          IMAGE_FORMAT: ${{ matrix.image_format }}
           FIT_ARCH: ${{ matrix.fit_arch }}
           FIT_KERNEL_LOADADDR: ${{ matrix.fit_kernel_loadaddr }}
           FIT_DTS: ${{ matrix.fit_dts }}
@@ -444,11 +453,12 @@ jobs:
   # Self-hosted hardware tests: do not run for fork PRs (no lab access / abuse).
   # Uses `test_targets_matrix` (filtered subset of `targets_matrix`) so that
   # targets explicitly marked `test_firmware: false` in targets.yml never
-  # schedule a hardware-test job. See `librerouter_librerouter-v1`: its ath79
-  # uImage layout makes a RAM-bootable LibreMesh image impossible from
-  # ImageBuilder alone, and a TFTP-boot of the squashfs sysupgrade FIT would
-  # silently boot whatever userspace is on flash and pass tests against the
-  # wrong firmware (or, more likely, simply TIMEOUT).
+  # schedule a hardware-test job. (Historical note: `librerouter_librerouter-v1`
+  # was excluded for a long while because its ath79 / U-Boot 1.1.x stack has
+  # no FIT parser and an ImageBuilder squashfs-sysupgrade is not
+  # RAM-bootable. The `image_format: multi-uimage` repack path now produces
+  # a legacy IH_TYPE_MULTI uImage that LibreRouter's U-Boot can load over
+  # TFTP, so the target is opted back in.)
   test-firmware:
     # Display the place (e.g. `belkin_rt3200_1`) instead of the device
     # so the GitHub UI distinguishes the three Belkin RT3200 jobs that
