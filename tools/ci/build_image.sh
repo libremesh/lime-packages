@@ -463,14 +463,17 @@ docker run --rm \
       # us deterministic paths to grep -Fx against, no escaping needed.
       # If no match, the kernel will panic at runtime with VFS: Unable
       # to mount root fs (see ln -sf rationale block above).
+      # NOTE: no single quotes here. The whole script body is wrapped
+      # in `sh -lc \x27...\x27` so a literal apostrophe terminates the
+      # wrapper. Use double quotes and escape the regex backslashes.
       echo "  /init in CPIO  :"
       init_paths="$(/builder/staging_dir/host/bin/cpio -t < "${REPACK_DIR}/rootfs.cpio" 2>/dev/null \
-                    | grep -E '^(\./)?init$' || true)"
+                    | grep -E "^(\\./)?init$" || true)"
       if [ -z "${init_paths}" ]; then
         echo "ERROR: /init is missing from rootfs.cpio" >&2
         echo "       Without /init the kernel will fall through to prepare_namespace()" >&2
         echo "       and panic with \"Unable to mount root fs on unknown-block(0,0)\"." >&2
-        echo "       cpio -t (top entries containing 'init'):" >&2
+        echo "       cpio -t entries ending in init:" >&2
         /builder/staging_dir/host/bin/cpio -t < "${REPACK_DIR}/rootfs.cpio" 2>/dev/null \
           | grep -E "(^|/)init$" | head -20 >&2 || true
         exit 1
