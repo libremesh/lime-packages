@@ -213,7 +213,18 @@ docker run --rm \
         exit 1
       fi
       LINUX_DIR="$(ls -d ${ARCH_DIR}/linux-*/ 2>/dev/null | head -n 1 | sed "s|/$||")"
-      ROOT_DIR="$(ls -d ${ARCH_DIR}/root-*/ 2>/dev/null | head -n 1 | sed "s|/$||")"
+      # IMPORTANT: ImageBuilder names the rootfs staging dir after the BOARD
+      # (target name), not the subtarget. For mediatek/filogic the dir is
+      # `root-mediatek` (NOT `root-mediatek_filogic`). A bare `root-*` glob
+      # also matches `root.orig-<board>` which is the pristine pre-package
+      # snapshot kept around by IB for diff debugging — it has only base
+      # files (~999 entries) and NONE of our lime-* / kmod-* installed,
+      # which would silently produce a "vanilla OpenWrt" CPIO and a DUT
+      # that boots with empty /lib/modules/<kver>/ and hostname (none).
+      # We exclude root.orig-* explicitly to avoid that.
+      ROOT_DIR="$(ls -d ${ARCH_DIR}/root-*/ 2>/dev/null \
+                  | grep -v "/root\.orig-" \
+                  | head -n 1 | sed "s|/$||")"
       if [ ! -d "${LINUX_DIR}" ] || [ ! -d "${ROOT_DIR}" ]; then
         echo "ERROR: cannot locate linux-* / root-* under ${ARCH_DIR}" >&2
         ls -la "${ARCH_DIR}" >&2 || true
@@ -221,6 +232,46 @@ docker run --rm \
       fi
       echo "  linux build dir: ${LINUX_DIR}"
       echo "  rootfs dir     : ${ROOT_DIR}"
+
+      # Pre-CPIO sanity dump. The CI bug we are chasing is "DUT boots,
+      # kernel unpacks initramfs, but kmodloader complains
+      # `no module folders for kernel version 6.6.127 found` and hostname
+      # stays at `(none)` — which means the rootfs we packed is missing
+      # /lib/modules/<kver>/ and /etc/uci-defaults/ ran but produced no
+      # hostname". By printing the rootfs snapshot here, the failure is
+      # caught at build time (cheap) instead of at TFTP-boot time (slow,
+      # requires hardware).
+      ROOTFS_FILES="$(find "${ROOT_DIR}" -mindepth 1 2>/dev/null | wc -l)"
+      ROOTFS_BYTES="$(du -sb "${ROOT_DIR}" 2>/dev/null | cut -f1)"
+      ROOTFS_HUMAN="$(du -sh "${ROOT_DIR}" 2>/dev/null | cut -f1)"
+      echo "  rootfs entries : ${ROOTFS_FILES}"
+      echo "  rootfs size    : ${ROOTFS_HUMAN} (${ROOTFS_BYTES} bytes)"
+      echo "  /lib/modules/* :"
+      ls -la "${ROOT_DIR}/lib/modules" 2>/dev/null | head -10 || \
+        echo "    (no /lib/modules — kmod packages were not installed!)"
+      echo "  kmod .ko count :"
+      ko_count=$(find "${ROOT_DIR}/lib/modules" -name "*.ko" 2>/dev/null | wc -l)
+      echo "    ${ko_count} .ko files"
+      echo "  /etc/banner    :"
+      head -3 "${ROOT_DIR}/etc/banner" 2>/dev/null || echo "    (no banner)"
+      echo "  /etc/uci-defaults entries:"
+      ls "${ROOT_DIR}/etc/uci-defaults" 2>/dev/null | head -20 || \
+        echo "    (no uci-defaults dir)"
+      echo "  lime-system traces:"
+      find "${ROOT_DIR}" -maxdepth 5 -path "*/lime/*" 2>/dev/null | head -10 || true
+      # Hard-fail if kmod count or rootfs is implausibly small. Empirical
+      # baseline on mediatek/filogic openwrt_one with the LibreMesh
+      # PACKAGES list: ~1100 entries, ~28 MiB, ~120 .ko files. We pick
+      # safe lower bounds well below that to catch a clearly-broken
+      # rootfs without false-positive on minor PACKAGES tweaks.
+      if [ "${ROOTFS_FILES:-0}" -lt 800 ] || [ "${ko_count}" -lt 30 ]; then
+        echo "ERROR: rootfs at ${ROOT_DIR} is implausibly small (${ROOTFS_FILES} entries, ${ko_count} .ko)" >&2
+        echo "       This is the same failure mode that boots with kmodloader" >&2
+        echo "       complaining \"no module folders for kernel version found\"" >&2
+        echo "       and hostname (none) — caught at build time instead of" >&2
+        echo "       wasting a hardware test slot on it." >&2
+        exit 1
+      fi
 
       KERNEL_BIN="${LINUX_DIR}/${PROFILE}-kernel.bin"
       DTB_FILE="${LINUX_DIR}/image-${FIT_DTS}.dtb"
@@ -278,11 +329,50 @@ docker run --rm \
       # the squashfs-decompressed rootfs is ~25 MiB on these targets,
       # well under the 512 MiB / 1 GiB / 2 GiB DRAM available, and
       # TFTP throughput is unaffected on the gigabit lab network.
+      # Embed a build marker in the rootfs so the booted DUT can prove
+      # which artifact actually loaded. Without this, "device shows
+      # vanilla OpenWrt banner" is ambiguous: it could mean (a) our FIT
+      # never booted and the device fell back to flash, or (b) our FIT
+      # booted but the rootfs is missing LibreMesh customizations.
+      # Comparing /etc/lime-build-marker on the DUT against this CI
+      # build_id distinguishes them in a single grep.
+      BUILD_MARKER="ci-${OPENWRT_RELEASE:-unknown}-${PROFILE}-$(date -u +%Y%m%dT%H%M%SZ)"
+      mkdir -p "${ROOT_DIR}/etc"
+      printf "%s\n" "${BUILD_MARKER}" > "${ROOT_DIR}/etc/lime-build-marker"
+      echo "  build marker   : ${BUILD_MARKER}"
+
       echo "  packing rootfs CPIO from ${ROOT_DIR}"
       ( cd "${ROOT_DIR}" && \
         find . | /builder/staging_dir/host/bin/cpio -o -H newc 2>/dev/null ) \
           > "${REPACK_DIR}/rootfs.cpio"
       ls -la "${REPACK_DIR}/rootfs.cpio"
+      # Sanity: a healthy uncompressed CPIO of this rootfs should be
+      # close to the source size (newc adds <5% overhead). A drastic
+      # shrink would indicate cpio errored out silently or only a
+      # subset of files was packed. Same applies for outright tiny
+      # outputs (a few MiB), which would point at the exact bug we just
+      # caught: gzip pipe sneaking back in or a wrong ROOT_DIR pick.
+      cpio_bytes=$(stat -c%s "${REPACK_DIR}/rootfs.cpio")
+      echo "  cpio size      : $((cpio_bytes / 1024 / 1024)) MiB (${cpio_bytes} bytes) vs rootfs ${ROOTFS_HUMAN}"
+      # Magic: newc CPIO archives always start with the ASCII bytes
+      # `070701`. Catching anything else (e.g. `1f 8b` for gzip,
+      # `28 b5 2f fd` for zstd) at this stage prevents the kernel-side
+      # "Initramfs unpacking failed: compression method X not configured"
+      # silent fallback to flash that bit us before the gzip-pipe fix.
+      cpio_magic=$(head -c 6 "${REPACK_DIR}/rootfs.cpio")
+      if [ "${cpio_magic}" != "070701" ]; then
+        echo "ERROR: rootfs.cpio has unexpected magic \"${cpio_magic}\" (expected 070701 newc)" >&2
+        head -c 16 "${REPACK_DIR}/rootfs.cpio" | od -c | head >&2
+        exit 1
+      fi
+      cpio_min=$((ROOTFS_BYTES * 80 / 100))
+      if [ "${cpio_bytes}" -lt "${cpio_min}" ]; then
+        echo "ERROR: cpio size ${cpio_bytes} is <80% of rootfs ${ROOTFS_BYTES} — likely truncated/compressed" >&2
+        exit 1
+      fi
+      echo "  cpio file types (top 10):"
+      /builder/staging_dir/host/bin/cpio -tv < "${REPACK_DIR}/rootfs.cpio" 2>/dev/null \
+        | awk "{print \$1}" | sort | uniq -c | sort -rn | head -10 || true
 
       # Generate the .its source describing the FIT structure
       # (kernel + DTB + ramdisk).

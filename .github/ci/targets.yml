@@ -55,6 +55,22 @@ targets:
     fit_arch: arm64
     fit_kernel_loadaddr: "0x44000000"
     fit_dts: mt7622-linksys-e8450-ubi
+    # Temporarily out of the test-firmware matrix: run #24 (CI run
+    # 24972903707) caught the Belkin RT3200 (Linksys E8450) at a
+    # pre-U-Boot brick:
+    #   NOTICE:  BL2: v2.4(release):OpenWrt v2021-05-08-d2c75b21-3 (mt7622-snand-1ddr)
+    #   NOTICE:  SPI-NAND: FM35Q1GA (128MB)
+    #   ERROR:   BL2: Failed to load image id 3 (-2)
+    # `image id 3` in the mt7622 BL2 is BL31; -2 is -ENOENT, meaning
+    # BL2 cannot find a valid BL31 in the `bl31` UBI volume on flash.
+    # Until the device is physically recovered (TFTP-boot the OpenWrt
+    # `mt7622-snand-1ddr-recovery.img` and reflash bl31/fip), every
+    # TFTP boot from labgrid will TIMEOUT before reaching U-Boot — no
+    # amount of FIT/initramfs work in this repo can fix that. We keep
+    # the build active so PR validation still produces a Linksys
+    # firmware artifact, but skip the hardware test until recovered.
+    # See docs/followups/linksys_e8450_bl31_recovery.md (TODO).
+    test_firmware: false
   - device: openwrt_one
     imagebuilder: mediatek-filogic
     profile: openwrt_one
