@@ -394,15 +394,42 @@ docker run --rm \
         exit 1
       fi
       echo "  kernel-bin     : ${KERNEL_BIN} ($(stat -c%s "${KERNEL_BIN}") bytes)"
-      # uImage carries a fixed 64-byte magic header (`27 05 19 56` ... ).
-      # We confirm both FIT and multi-uimage flows that the kernel.bin we
-      # picked is indeed a uImage so a future ImageBuilder rev that drops
-      # the wrapper does not silently ship a non-bootable `.bin`.
+      # The kernel-bin format depends on the target subtarget recipe — and
+      # therefore on IMAGE_FORMAT in our pipeline:
+      #
+      #   * mediatek/filogic (IMAGE_FORMAT=fit): KERNEL is the raw vmlinux
+      #     gzip-compressed once (`kernel-bin | gzip`). The FIT we build
+      #     wraps it under `compression = "gzip"` and U-Boots fitImage
+      #     loader decompresses at boot. Magic bytes: `1f 8b 08 ..`.
+      #
+      #   * ath79 (IMAGE_FORMAT=multi-uimage): KERNEL is a legacy uImage
+      #     wrapping an lzma-compressed `kernel + appended DTB`
+      #     (`kernel-bin | append-dtb | lzma | uImage lzma`). Magic bytes:
+      #     `27 05 19 56`. We will strip the 64-byte uImage header below
+      #     to recover the inner lzma blob and feed it to mkimage in
+      #     multi-image mode.
+      #
+      # Validate the magic per-format so a future ImageBuilder rev that
+      # changes the wrapper (e.g. switches the gzip compression to xz)
+      # fails loudly here instead of producing a silently non-bootable
+      # FIT / uImage.
       kernel_magic=$(od -An -tx1 -N4 "${KERNEL_BIN}" | tr -d " ")
-      if [ "${kernel_magic}" != "27051956" ]; then
-        echo "ERROR: ${KERNEL_BIN} is not a uImage (magic=${kernel_magic}, expected 27051956)" >&2
-        exit 1
-      fi
+      case "${IMAGE_FORMAT}" in
+        fit)
+          if [ "${kernel_magic}" != "1f8b0800" ]; then
+            echo "ERROR: ${KERNEL_BIN} is not a gzip stream (magic=${kernel_magic}, expected 1f8b0800)" >&2
+            echo "       The FIT path expects the mediatek/filogic kernel-bin gzip recipe output." >&2
+            exit 1
+          fi
+          ;;
+        multi-uimage)
+          if [ "${kernel_magic}" != "27051956" ]; then
+            echo "ERROR: ${KERNEL_BIN} is not a uImage (magic=${kernel_magic}, expected 27051956)" >&2
+            echo "       The multi-uimage path expects the ath79 lzma+uImage lzma recipe output." >&2
+            exit 1
+          fi
+          ;;
+      esac
 
       # The DTB lookup is FIT-only: ath79 (multi-uimage) fuses the DTB into
       # kernel-bin via `append-dtb | lzma | uImage lzma` upstream, so there
@@ -843,15 +870,35 @@ docker run --rm \
           echo "ERROR: stripped lzma size ${kernel_lzma_size} != uImage data length ${uimage_data_line}" >&2
           exit 1
         fi
-        # lzma1 streams emitted by OpenWrts `lzma e -d20` start with a
-        # property byte (0x5D for the canonical lc=3/lp=0/pb=2 setting)
-        # followed by a 4-byte little-endian dictionary size. We only
-        # check the first byte: catching `1f 8b ...` (gzip) or
-        # `fd 37 7a 58 5a` (xz) sneaking in is enough — the actual lzma
-        # decoder will reject any malformed property byte at boot.
+        # Sanity-check the payload is a real lzma1 stream and not some
+        # other compression format snuck in by an ImageBuilder rev.
+        #
+        # OpenWrts upstream Build/lzma recipe runs the lzma binary with
+        # `-lc1 -lp2 -pb2`, NOT the canonical lc=3/lp=0/pb=2 used by
+        # most lzma tutorials. The first byte of an lzma1 stream encodes
+        # the properties as `(pb*5 + lp)*9 + lc`, so OpenWrts kernels
+        # start with `(2*5+2)*9 + 1 = 109 = 0x6d` (NOT 0x5d, which
+        # would be the canonical setting). Property bytes for lzma1
+        # are bounded at 224 (0xe0) by the spec, so we accept the full
+        # valid range and only reject magics of competing formats:
+        #   * 0x1f -> gzip   (`1f 8b 08 ..`)
+        #   * 0xfd -> xz     (`fd 37 7a 58 5a`)
+        #   * 0x28 -> zstd   (`28 b5 2f fd`)
+        #   * 0x42 -> bzip2  (`BZh`)
+        # An out-of-range first byte (>0xe0) also indicates a non-lzma1
+        # payload — bail early so the actual lzma decoder failure at
+        # boot does not leave us hunting in dmesg.
         kernel_lzma_first=$(od -An -tx1 -N1 "${KERNEL_LZMA}" | tr -d " ")
-        if [ "${kernel_lzma_first}" != "5d" ]; then
-          echo "ERROR: kernel payload after uImage strip starts with 0x${kernel_lzma_first} (expected lzma property byte 0x5d)" >&2
+        case "${kernel_lzma_first}" in
+          1f|fd|28|42)
+            echo "ERROR: kernel payload after uImage strip starts with 0x${kernel_lzma_first} (gzip/xz/zstd/bzip2 magic, not lzma1)" >&2
+            echo "       OpenWrt ath79 expects an lzma1-compressed kernel (kernel-bin then append-dtb then lzma then uImage lzma)." >&2
+            exit 1
+            ;;
+        esac
+        kernel_lzma_first_dec=$((16#${kernel_lzma_first}))
+        if [ "${kernel_lzma_first_dec}" -gt 224 ]; then
+          echo "ERROR: kernel payload first byte 0x${kernel_lzma_first} (${kernel_lzma_first_dec}) exceeds lzma1 property byte max (224)" >&2
           exit 1
         fi
         echo "  kernel.lzma    : ${KERNEL_LZMA} (${kernel_lzma_size} bytes, first byte 0x${kernel_lzma_first})"
