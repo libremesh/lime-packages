@@ -35,6 +35,21 @@ packages: >-
 #     test-firmware job displayed as `test-firmware (<place>)`. Defaulting
 #     to [device] preserves the legacy 1-target-1-place behaviour for the
 #     other DUTs (openwrt_one, bananapi_bpi-r4).
+#   uboot_interrupt_spam_sec (number, default unset → strategy default
+#     12.0s): how long the UBootTFTPStrategy keeps writing the U-Boot
+#     interrupt byte after a power cycle, before draining the serial
+#     buffer and waiting for the U-Boot prompt. Pass-through to
+#     LG_MESH_UBOOT_INTERRUPT_SPAM_SEC in the test-firmware job.
+#     Override on slow-booting boards whose BL2/BL31 stage takes longer
+#     than the default 12s — the spam window must overlap the U-Boot
+#     "Hit any key to stop autoboot" countdown, otherwise autoboot fires
+#     and the DUT falls back to whatever firmware is on flash. Concrete
+#     example: linksys_e8450 (Belkin RT3200, MT7622) shows BL2 banner
+#     ~12s after poweron and runs a 3s autoboot countdown immediately
+#     after — so a 12s spam ends just as the countdown starts. Bumping
+#     this target to 25s gives ~13s of margin around the countdown
+#     window. Faster boards (openwrt_one, bananapi_bpi-r4) keep the
+#     12s default.
 #   fit_arch / fit_kernel_loadaddr / fit_dts (BUILD_INITRAMFS=1 only):
 #     metadata fed to mkits.sh to generate the .its describing the FIT.
 #     fit_arch is the U-Boot/FIT architecture name (e.g. arm64), NOT
@@ -85,6 +100,15 @@ targets:
       - belkin_rt3200_1
       - belkin_rt3200_2
       - belkin_rt3200_3
+    # MT7622 BL2/BL31 take ~12s after poweron before U-Boot shows up
+    # and starts its 3s autoboot countdown. The default 12s spam in
+    # tftpstrategy.py ends right as the countdown begins (run
+    # 25002154022 trace: spam 15:11:35 → 15:11:47.5; first BL2 line
+    # 15:11:47.6; "Hit any key… 3 2 1" 15:11:47.6 → ~15:11:50). Bump
+    # the spam window to 25s so our interrupt bytes definitely cover
+    # the countdown and U-Boot drops into its prompt instead of
+    # autobooting OpenWrt from flash.
+    uboot_interrupt_spam_sec: 25
   - device: openwrt_one
     imagebuilder: mediatek-filogic
     profile: openwrt_one
