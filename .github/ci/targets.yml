@@ -31,6 +31,13 @@ packages: >-
 #     the OpenWrt arch. fit_dts is the basename (no .dtb suffix) of
 #     the per-board DTB shipped under build_dir/target-*/linux-*/
 #     image-<dts>.dtb — different from the device profile.
+#   fit_config (default "config-1"): name of the FIT configuration node
+#     passed to mkits.sh -c. U-Boot resolves this at boot via
+#     `bootm $loadaddr#$bootconf`. The libremesh-tests labgrid YAMLs
+#     unconditionally `setenv bootconf config-1` in U-Boot
+#     init_commands so we can ship a uniform FIT config name across all
+#     mediatek targets. Override only for boards whose U-Boot env
+#     cannot accept a runtime override (none in our matrix today).
 targets:
   - device: linksys_e8450
     imagebuilder: mediatek-mt7622

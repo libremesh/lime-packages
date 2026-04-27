@@ -97,6 +97,7 @@ jobs:
                 fit_arch: (.fit_arch // ""),
                 fit_kernel_loadaddr: (.fit_kernel_loadaddr // ""),
                 fit_dts: (.fit_dts // ""),
+                fit_config: (.fit_config // "config-1"),
                 test_firmware: (if (.test_firmware == false) then "0" else "1" end)
               })}
             ' <<< "$selected_targets"
@@ -382,6 +383,7 @@ jobs:
           FIT_ARCH: ${{ matrix.fit_arch }}
           FIT_KERNEL_LOADADDR: ${{ matrix.fit_kernel_loadaddr }}
           FIT_DTS: ${{ matrix.fit_dts }}
+          FIT_CONFIG: ${{ matrix.fit_config }}
         run: |
           chmod +x tools/ci/build_image.sh
           tools/ci/build_image.sh \

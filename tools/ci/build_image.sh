@@ -28,14 +28,26 @@ PACKAGES="${PACKAGES:?PACKAGES env var is required}"
 BUILD_INITRAMFS="${BUILD_INITRAMFS:-0}"
 
 # Used only when BUILD_INITRAMFS=1. Filled per-target in
-# .github/ci/targets.yml (fit_arch / fit_kernel_loadaddr / fit_dts) and
-# forwarded by build-firmware.yml.
+# .github/ci/targets.yml (fit_arch / fit_kernel_loadaddr / fit_dts /
+# fit_config) and forwarded by build-firmware.yml.
 FIT_ARCH="${FIT_ARCH:-}"
 FIT_KERNEL_LOADADDR="${FIT_KERNEL_LOADADDR:-}"
 FIT_DTS="${FIT_DTS:-}"
 
+# FIT_CONFIG: the FIT configuration node name embedded in the .itb. U-Boot
+# resolves it at boot via `bootm $loadaddr#$bootconf`, where `$bootconf` is
+# whatever the device's U-Boot env has saved. The upstream OpenWrt
+# defaults set `bootconf=config-1` for openwrt_one and linksys_e8450-ubi
+# (and `config-mt7988a-bananapi-bpi-r4` for bpi-r4). The matching
+# libremesh-tests labgrid YAMLs unconditionally `setenv bootconf config-1`
+# in U-Boot init_commands so the FIT we ship can use a single uniform
+# config name across all targets — which is what the default value below
+# encodes. Override per-target via `fit_config:` in targets.yml only if a
+# specific board's U-Boot env cannot be touched at runtime.
+FIT_CONFIG="${FIT_CONFIG:-config-1}"
+
 if [[ "${BUILD_INITRAMFS}" == "1" ]]; then
-  for var in FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS; do
+  for var in FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS FIT_CONFIG; do
     if [[ -z "${!var}" ]]; then
       echo "ERROR: BUILD_INITRAMFS=1 requires ${var} env var" >&2
       exit 1
@@ -75,8 +87,8 @@ chmod a+w "${WORK_DIR}/out"
 # (no =value) forwards a real value. Local shell vars are NOT in the
 # process env unless exported, and Docker's `-e VAR` reads from the
 # calling process env, not from the script's lexical scope.
-export BUILD_INITRAMFS FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS PROFILE PACKAGES \
-       ARCH OPENWRT_RELEASE
+export BUILD_INITRAMFS FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS FIT_CONFIG \
+       PROFILE PACKAGES ARCH OPENWRT_RELEASE
 
 docker run --rm \
   --user root \
@@ -84,6 +96,7 @@ docker run --rm \
   -e FIT_ARCH \
   -e FIT_KERNEL_LOADADDR \
   -e FIT_DTS \
+  -e FIT_CONFIG \
   -e PROFILE \
   -e PACKAGES \
   -e ARCH \
@@ -258,23 +271,26 @@ docker run --rm \
       # bash with a different argv0. See git blame: a "device s" typo
       # caused an "U-Boot: 162: Syntax error" CI failure once.
       #
-      # The FIT config name MUST match the bootconf env variable set in
-      # the U-Boot environment of each device by OpenWrt. Both
-      # targets/openwrt_one.yaml and targets/linksys_e8450.yaml boot
-      # with "bootm $loadaddr#$bootconf", and on a stock OpenWrt NAND
-      # bootconf is exactly the DTS basename (e.g. mt7981b-openwrt-one,
-      # mt7622-linksys-e8450-ubi, mt7988a-bananapi-bpi-r4). Using a
-      # generic name like config-1 would cause bootm to fail with
-      # "config not found" once U-Boot tries to resolve $bootconf. We
-      # therefore name the configuration after FIT_DTS (which is also
-      # the .dtb basename), mirroring what the upstream OpenWrt
-      # KERNEL_INITRAMFS recipe does.
+      # The FIT config name MUST match the bootconf env variable that
+      # U-Boot resolves at "bootm $loadaddr#$bootconf" time. The upstream
+      # OpenWrt U-Boot defaults pin bootconf per-device:
+      #   openwrt_one         -> config-1
+      #   linksys_e8450-ubi   -> config-1
+      #   bananapi_bpi-r4     -> config-mt7988a-bananapi-bpi-r4
+      # Rather than per-device-tuning the FIT layout, the libremesh-tests
+      # labgrid YAMLs (targets/openwrt_one.yaml, targets/linksys_e8450.yaml,
+      # targets/bananapi_bpi-r4.yaml) issue an explicit
+      # "setenv bootconf ${FIT_CONFIG}" in the U-Boot init_commands of every
+      # test run, so the FIT we ship can carry a single uniform config
+      # name. FIT_CONFIG defaults to "config-1" in build_image.sh; override
+      # via fit_config: in .github/ci/targets.yml only if a board cannot
+      # accept a runtime bootconf override.
       PATH="${DTC_DIR}:${PATH}" /builder/scripts/mkits.sh \
         -A "${FIT_ARCH}" \
         -C gzip \
         -a "${FIT_KERNEL_LOADADDR}" \
         -e "${FIT_KERNEL_LOADADDR}" \
-        -c "${FIT_DTS}" \
+        -c "${FIT_CONFIG}" \
         -v "OpenWrt LibreMesh ${PROFILE}" \
         -k "${KERNEL_BIN}" \
         -D "${PROFILE}" \
@@ -293,10 +309,23 @@ docker run --rm \
       # bootable image vs. the harmless sysupgrade sidecar.
       INITRAMFS_OUT="/work/out/openwrt-${OPENWRT_RELEASE:-}-${PROFILE}-initramfs-libremesh.itb"
       cp "${REPACK_DIR}/initramfs-libremesh.itb" "${INITRAMFS_OUT}"
-      echo "=== Initramfs FIT generated ==="
+      echo "=== Initramfs FIT generated (FIT_CONFIG=${FIT_CONFIG}) ==="
       ls -la "${INITRAMFS_OUT}"
       /builder/staging_dir/host/bin/mkimage -l "${INITRAMFS_OUT}" \
         | grep -E "Image |Type:|Compression:|Data Size|Architecture|Load Address|Entry Point|Configuration |Kernel:|FDT:|Init Ramdisk:" || true
+      # Sanity check: confirm mkits.sh embedded our FIT_CONFIG. The .its
+      # we just generated declares default = "<FIT_CONFIG>"; the .itb
+      # is its mkimage output. Grepping the .its avoids parsing
+      # mkimage -l (which prints config names enclosed in apostrophes
+      # and would close the surrounding sh -lc single-quoted wrapper)
+      # while still catching the failure mode that produced the original
+      # CI bug: "Could not find configuration node" at U-Boot bootm
+      # because the FIT config name silently drifted from FIT_CONFIG.
+      if ! grep -q "default = \"${FIT_CONFIG}\"" "${REPACK_DIR}/initramfs.its"; then
+        echo "ERROR: initramfs.its has no default config = \"${FIT_CONFIG}\"" >&2
+        head -80 "${REPACK_DIR}/initramfs.its" >&2 || true
+        exit 1
+      fi
     else
       echo "=== Skipping initramfs repack (BUILD_INITRAMFS=0) ==="
       echo "Target will ship the squashfs-sysupgrade artifact and is filtered out of the test-firmware matrix."
