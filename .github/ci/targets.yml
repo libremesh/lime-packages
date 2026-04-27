@@ -273,6 +273,20 @@ targets:
     # writes into U-Boot's environment at boot time.
     build_initramfs: true
     test_firmware: true
+    # The labgrid place that owns the LibreRouter v1 hardware in the
+    # fcefyn testbed is named `labgrid-fcefyn-librerouter_1` (unit
+    # suffix `_1`, mirroring the `belkin_rt3200_<n>` naming convention
+    # for multi-unit hardware). Without this override, prepare-matrix
+    # falls back to `test_places: [.device]` and asks for
+    # `labgrid-fcefyn-librerouter_librerouter-v1`, which does not
+    # exist in `labgrid-client places` and aborts test-firmware with
+    # `place pattern ... matches nothing` (CI run 25021369701, test
+    # job for librerouter_v1). Even though we currently have a single
+    # LibreRouter unit, modelling it as `librerouter_1` keeps the door
+    # open for adding `librerouter_2` etc. without renaming the lab
+    # resources.
+    test_places:
+      - librerouter_1
     image_format: multi-uimage
     # mkimage architecture name for the multi-uimage header. Set to
     # `mips` for ath79 (32-bit big-endian MIPS); U-Boot's bootm checks
