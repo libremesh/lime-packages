@@ -251,17 +251,24 @@ docker run --rm \
       # Generate the .its source describing the FIT structure
       # (kernel + DTB + ramdisk).
       #
-      # The FIT config name MUST match the `bootconf` env variable set
-      # in the device's U-Boot environment by OpenWrt — both
-      # `targets/openwrt_one.yaml` and `targets/linksys_e8450.yaml`
-      # boot with `bootm $loadaddr#$bootconf`, and on a stock OpenWrt
-      # NAND `bootconf` is exactly the DTS basename (e.g.
-      # `mt7981b-openwrt-one`, `mt7622-linksys-e8450-ubi`,
-      # `mt7988a-bananapi-bpi-r4`). Using a generic name like `config-1`
-      # would cause `bootm` to fail with "config not found" once
-      # U-Boot tries to resolve `$bootconf`. We therefore name the
-      # configuration after FIT_DTS (which is also the .dtb basename),
-      # exactly as OpenWrt's KERNEL_INITRAMFS recipe does upstream.
+      # NOTE: avoid apostrophes in this block of comments. The whole
+      # script is wrapped in a single-quoted argument to "sh -lc", so
+      # any literal apostrophe (e.g. "devices") closes the wrapper
+      # prematurely and the rest of the script is parsed by the OUTER
+      # bash with a different argv0. See git blame: a "device s" typo
+      # caused an "U-Boot: 162: Syntax error" CI failure once.
+      #
+      # The FIT config name MUST match the bootconf env variable set in
+      # the U-Boot environment of each device by OpenWrt. Both
+      # targets/openwrt_one.yaml and targets/linksys_e8450.yaml boot
+      # with "bootm $loadaddr#$bootconf", and on a stock OpenWrt NAND
+      # bootconf is exactly the DTS basename (e.g. mt7981b-openwrt-one,
+      # mt7622-linksys-e8450-ubi, mt7988a-bananapi-bpi-r4). Using a
+      # generic name like config-1 would cause bootm to fail with
+      # "config not found" once U-Boot tries to resolve $bootconf. We
+      # therefore name the configuration after FIT_DTS (which is also
+      # the .dtb basename), mirroring what the upstream OpenWrt
+      # KERNEL_INITRAMFS recipe does.
       PATH="${DTC_DIR}:${PATH}" /builder/scripts/mkits.sh \
         -A "${FIT_ARCH}" \
         -C gzip \
