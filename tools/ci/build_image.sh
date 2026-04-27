@@ -395,101 +395,49 @@ docker run --rm \
       # initramfs unpacked successfully (33 MiB freed), bootargs were
       # ours (no root=), but no /init in the CPIO -> panic.
       #
-      # *** /init MUST be the OpenWrt-style script, not just a symlink ***
+      # OpenWrts ImageBuilder produces the squashfs-sysupgrade rootfs
+      # without /init because squashfs is always mounted as root via
+      # root=/dev/fit0 by the upstream bootloader, and the standard
+      # init path /sbin/init is invoked by prepare_namespace after
+      # the rootfs mount. For initramfs builds OpenWrts upstream
+      # include/image.mk explicitly creates a symlink before cpio-packing:
+      #   ln -sf /sbin/init $(KERNEL_BUILD_DIR)/cpiogz/init
+      # We replicate that exact step here. Idempotent: -f overwrites
+      # any existing /init from a previous repack iteration in the
+      # same staging dir.
       #
-      # The first iteration of this fix used `ln -sf /sbin/init init`,
-      # mirroring an older include/image.mk recipe. That made the kernel
-      # exec procd directly as PID 1 inside the special initramfs/rootfs
-      # filesystem, which boots far enough to print the LibreMesh banner
-      # but breaks fstools mount_root: it finds the leftover UBI
-      # `rootfs_data` volume from whatever vanilla OpenWrt was last
-      # sysupgraded to flash, mounts it, then pivot_root fails with
-      # "Invalid argument" because pivot_root is not allowed on
-      # initramfs (man 2 pivot_root). mount_root falls back to ramoverlay,
-      # ramoverlay also fails ("opening /proc/filesystems failed"), and
-      # the run aborts with "BUG: no suitable fs found". procd starts up
-      # in a degraded state, uci-defaults never run, lime-config never
-      # runs, the hostname stays `(none)`, and labgrids prompt regex
-      # `root@LiMe-XXXXXX:` times out after 180 s.
-      #
-      # OpenWrts upstream kernel-defaults.mk (Kernel/CompileImage/Initramfs)
-      # does NOT use a symlink. It copies target/linux/generic/other-files/init
-      # into the rootfs as /init. That script is intentionally short:
-      #   #!/bin/sh
-      #   export INITRAMFS=1
-      #   DIRS=$(echo *)
-      #   NEW_ROOT=/new_root
-      #   mkdir -p $NEW_ROOT
-      #   mount -t tmpfs tmpfs $NEW_ROOT
-      #   cp -pr $DIRS $NEW_ROOT
-      #   exec switch_root $NEW_ROOT /sbin/init
-      # and it does two critical things on top of "find /sbin/init":
-      #   1) exports INITRAMFS=1 to procds environment, which propagates
-      #      through preinit. /lib/preinit/70_initramfs_test then sees the
-      #      var, runs the `initramfs` hook stack, and `break`s out of the
-      #      preinit_main loop *before* /lib/preinit/80_mount_root is ever
-      #      considered.  No mount_root call -> no UBI rootfs_data scan
-      #      -> no pivot_root failure.
-      #   2) does an explicit switch_root onto a freshly-created tmpfs at
-      #      /new_root, so by the time /sbin/init starts the runtime root
-      #      is a normal tmpfs (not the kernels initramfs/rootfs which
-      #      cant be unmounted or pivot_rooted). That keeps later procd
-      #      paths (jail, pivot_root in failsafe, etc.) sane.
-      #
-      # ImageBuilder doesnt run Kernel/CompileImage/Initramfs (no kernel
-      # toolchain), so we have to drop the same /init script in by hand
-      # before cpio-packing. We materialize an exact byte-for-byte copy
-      # of upstreams target/linux/generic/other-files/init so any future
-      # debugging just maps back to upstreams reference behavior.
-      #
-      # Heredoc quoting: the heredoc delimiter is escaped with a leading
-      # backslash (<<\TAG ... TAG) instead of <<'TAG' ... 'TAG'. Both
-      # forms tell the inner shell "do not expand variables in the
-      # body", but the apostrophe form would close the outer
-      # `sh -lc '...'` wrapper that contains this whole script body.
-      # The backslash form has zero literal apostrophes so the wrapper
-      # stays intact. Same reason `sed "s/^/    /"` below uses double
-      # quotes — single-quoted sed would short-circuit the wrapper.
-      cat > "${ROOT_DIR}/init" <<\__OPENWRT_INIT__
-#!/bin/sh
-# Copyright (C) 2006 OpenWrt.org
-export INITRAMFS=1
-
-# switch to tmpfs to allow run daemons in jail on initramfs boot
-DIRS=$(echo *)
-NEW_ROOT=/new_root
-
-mkdir -p $NEW_ROOT
-mount -t tmpfs tmpfs $NEW_ROOT
-
-cp -pr $DIRS $NEW_ROOT
-
-exec switch_root $NEW_ROOT /sbin/init
-__OPENWRT_INIT__
-      chmod +x "${ROOT_DIR}/init"
-      echo "  /init script   :"
+      # NOTE on switch_root: upstreams modern Kernel/CompileImage/Initramfs
+      # actually copies target/linux/generic/other-files/init (a tiny
+      # script that exports INITRAMFS=1 and `exec switch_root /new_root
+      # /sbin/init`). That avoids fstools mount_root probing the on-flash
+      # UBI rootfs_data and triggering "pivot_root failed: Invalid
+      # argument" / "BUG: no suitable fs found" messages on hardware that
+      # has a leftover overlay. We tried that route in commit f333b66 but
+      # had to revert: ImageBuilder ships a busybox compiled WITHOUT the
+      # `switch_root` applet (CONFIG_BUSYBOX_CONFIG_SWITCH_ROOT is off
+      # upstream and util-linuxs switch_root is `-Dbuild-pivot_root=disabled`
+      # in the OpenWrt Makefile, see
+      # https://git.openwrt.org/openwrt/openwrt/tree/?&path=package/utils/util-linux/Makefile),
+      # and rebuilding busybox isnt possible from inside ImageBuilder.
+      # The mount_root probe is harmless on devices whose YAML wipes the
+      # `rootfs_data` UBI volume in init_commands BEFORE bootm
+      # (see openwrt_one.yaml / linksys_e8450.yaml `ubi remove
+      # rootfs_data || true`). New targets MUST do the same in their
+      # labgrid YAML or they will boot LibreMesh but stall at
+      # `root@(none):~#` because uci-defaults never run after the
+      # mount_root failure cascade.
+      ln -sf /sbin/init "${ROOT_DIR}/init"
+      echo "  /init symlink  :"
       ls -la "${ROOT_DIR}/init"
-      head -3 "${ROOT_DIR}/init" | sed "s/^/    /"
-      if [ ! -f "${ROOT_DIR}/init" ] || [ ! -x "${ROOT_DIR}/init" ]; then
-        echo "ERROR: ${ROOT_DIR}/init is not a regular executable file" >&2
+      if [ ! -L "${ROOT_DIR}/init" ]; then
+        echo "ERROR: ${ROOT_DIR}/init is not a symlink after ln -sf" >&2
         exit 1
       fi
       if [ ! -e "${ROOT_DIR}/sbin/init" ] && [ ! -L "${ROOT_DIR}/sbin/init" ]; then
-        echo "ERROR: ${ROOT_DIR}/sbin/init does not exist; switch_root will fail" >&2
+        echo "ERROR: ${ROOT_DIR}/sbin/init does not exist; /init -> /sbin/init will dangle" >&2
         ls -la "${ROOT_DIR}/sbin/" 2>/dev/null | head -20 >&2 || true
         exit 1
       fi
-      # busybox in the rootfs MUST provide the switch_root applet (used
-      # by the last line of /init). Static busybox builds have it in the
-      # default applet set; verify so we fail loudly here rather than at
-      # boot with an opaque "exec failed" panic.
-      if ! "${ROOT_DIR}/bin/busybox" --list 2>/dev/null | grep -qx "switch_root"; then
-        echo "ERROR: busybox in rootfs lacks switch_root applet" >&2
-        echo "       /init relies on it to pivot away from initramfs." >&2
-        "${ROOT_DIR}/bin/busybox" --list 2>/dev/null | grep -i switch >&2 || true
-        exit 1
-      fi
-      echo "  switch_root    : present in busybox"
 
       echo "  packing rootfs CPIO from ${ROOT_DIR}"
       ( cd "${ROOT_DIR}" && \
