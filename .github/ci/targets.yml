@@ -63,6 +63,35 @@ packages: >-
 #     init_commands so we can ship a uniform FIT config name across all
 #     mediatek targets. Override only for boards whose U-Boot env
 #     cannot accept a runtime override (none in our matrix today).
+#   fit_bootargs (default "console=ttyS0,115200n1 pci=pcie_bus_perf"):
+#     kernel command line embedded in the FIT configuration node so
+#     U-Boot passes it through `bootm` regardless of any stale
+#     env-side `bootargs` left behind by a previous sysupgrade. The
+#     default mirrors what mediatek/filogic boards (openwrt_one,
+#     bananapi_bpi-r4) want — minus `root=/dev/fit0 rootwait
+#     ubi.block=0,fit`, which would re-mount on-flash UBI on top of
+#     our successfully-unpacked initramfs. Override per-target when a
+#     board needs extra args; e.g. linksys_e8450 (mt7622) requires
+#     `swiotlb=512` so the mt7915e PCIe WiFi card can allocate its
+#     DMA bounce buffers (without it the kernel logs `software IO
+#     TLB: SWIOTLB bounce buffer size adjusted to 0MB` and mt7915e
+#     probe fails with `error -12` ENOMEM).
+#   dtb_patch_nvmem_mac (bool, default false): rewrite the FIT-shipped
+#     device tree to inject `local-mac-address` properties into every
+#     GMAC and DSA-WAN node whose stock DTS pulls the MAC from a UBI
+#     factory NVMEM cell. Workaround for openwrt#22858 (NVMEM core
+#     perpetual `-EPROBE_DEFER`). Required on linksys_e8450-ubi: the
+#     factory volume is part of UBI which only attaches AFTER
+#     `mtk_eth_soc.probe()` first runs, so `nvmem_cell_get()` returns
+#     `-EPROBE_DEFER` and the deferred-probe queue never re-runs
+#     mtk_eth_soc successfully — the device boots without ethernet
+#     (`platform 1b100000.ethernet: deferred probe pending: (reason
+#     unknown)`) and lime-config never gets a network to publish the
+#     LiMe-XXXXXX hostname. Boards whose factory NVMEM lives on a
+#     fixed SPI-NOR / NAND partition (openwrt_one, bananapi_bpi-r4)
+#     MUST keep this off — the kernel reads the OEM MAC just fine and
+#     overriding it with a synthetic local-mac-address would lose the
+#     label MAC for no benefit.
 targets:
   - device: linksys_e8450
     imagebuilder: mediatek-mt7622
@@ -109,6 +138,24 @@ targets:
     # the countdown and U-Boot drops into its prompt instead of
     # autobooting OpenWrt from flash.
     uboot_interrupt_spam_sec: 25
+    # MT7915E PCIe WiFi card needs an explicit `swiotlb=512` cmdline
+    # to allocate its DMA bounce buffers; the upstream mt7622-linksys-
+    # e8450-ubi.dts /chosen/bootargs is exactly this string, but we
+    # override bootargs at FIT-config level (so `bootm` overrides any
+    # stale env-side cmdline left over by a previous OpenWrt sysupgrade)
+    # and must therefore re-include swiotlb=512 here. Without it the
+    # kernel announces `software IO TLB: SWIOTLB bounce buffer size
+    # adjusted to 0MB` and mt7915e probe fails ENOMEM (-12), which then
+    # cascades into hostapd having no radios and lime-config aborting.
+    # See diagnosis in CI run 25004392669/job 73236211357 (Belkin#2).
+    fit_bootargs: "console=ttyS0,115200n1 swiotlb=512 pci=pcie_bus_perf"
+    # See `dtb_patch_nvmem_mac` block in the per-target keys legend
+    # above. Belkin RT3200 stores its OEM MAC in the UBI `factory`
+    # volume; mtk_eth_soc.probe() races UBI attach and gets stuck on
+    # -EPROBE_DEFER, leaving the device with no networking. Patching
+    # the DTB to inject `local-mac-address` short-circuits the NVMEM
+    # lookup and lets the driver bind on first probe.
+    dtb_patch_nvmem_mac: true
   - device: openwrt_one
     imagebuilder: mediatek-filogic
     profile: openwrt_one
