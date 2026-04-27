@@ -888,7 +888,18 @@ docker run --rm \
         # An out-of-range first byte (>0xe0) also indicates a non-lzma1
         # payload — bail early so the actual lzma decoder failure at
         # boot does not leave us hunting in dmesg.
+        # Read the first byte twice: once in hex (for case-arm pattern
+        # matching against well-known competing-format magics, and for
+        # error message formatting) and once in unsigned decimal (for
+        # the numeric range comparison below). Doing the hex-to-decimal
+        # conversion via `od -tu1` instead of `$((16#NN))` keeps us
+        # compatible with the BusyBox / dash that ImageBuilders
+        # `sh -lc` resolves to: ash does NOT implement bashs
+        # `BASE#VALUE` arithmetic extension and aborts the script with
+        # `arithmetic expression: expecting EOF: "16#6d"` (witnessed in
+        # CI run 25021369701, librerouter_librerouter-v1 build).
         kernel_lzma_first=$(od -An -tx1 -N1 "${KERNEL_LZMA}" | tr -d " ")
+        kernel_lzma_first_dec=$(od -An -tu1 -N1 "${KERNEL_LZMA}" | tr -d " ")
         case "${kernel_lzma_first}" in
           1f|fd|28|42)
             echo "ERROR: kernel payload after uImage strip starts with 0x${kernel_lzma_first} (gzip/xz/zstd/bzip2 magic, not lzma1)" >&2
@@ -896,7 +907,6 @@ docker run --rm \
             exit 1
             ;;
         esac
-        kernel_lzma_first_dec=$((16#${kernel_lzma_first}))
         if [ "${kernel_lzma_first_dec}" -gt 224 ]; then
           echo "ERROR: kernel payload first byte 0x${kernel_lzma_first} (${kernel_lzma_first_dec}) exceeds lzma1 property byte max (224)" >&2
           exit 1
