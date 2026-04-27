@@ -46,8 +46,44 @@ FIT_DTS="${FIT_DTS:-}"
 # specific board's U-Boot env cannot be touched at runtime.
 FIT_CONFIG="${FIT_CONFIG:-config-1}"
 
+# FIT_BOOTARGS: kernel command line to embed in the FIT configuration.
+# CRITICAL: must NOT contain `root=...` for the initramfs to survive past
+# /sbin/init. Background, paid for in CI test slots:
+#
+# OpenWrt's mediatek/filogic builds (openwrt_one, bananapi_bpi-r4) ship a
+# device tree with chosen/bootargs that includes
+#   `root=/dev/fit0 rootwait ubi.block=0,fit`
+# pointing at the on-flash UBI `fit` volume's filesystem sub-image. When
+# the kernel boots from our TFTP-loaded FIT, it correctly unpacks our
+# initramfs CPIO ramdisk into rootfs (verified in dmesg:
+# `Freeing initrd memory: 30076K`). It then walks the rootfs= cmdline
+# arg, finds `/dev/fit0` available (the device's flash still has
+# whatever vanilla OpenWrt was sysupgraded into the `fit` UBI volume),
+# mounts THAT squashfs as `/`, and runs `/sbin/init` from FLASH — not
+# from our LibreMesh initramfs.
+#
+# Symptom on openwrt_one: kernel says `Linux version 6.6.127` (our IB
+# kernel), then mounts /dev/fit0 (vanilla 24.10.5 squashfs), then prints
+# `kmodloader: no module folders for kernel version 6.6.127 found`
+# (the flash rootfs has /lib/modules/6.6.119/, mismatch), then a vanilla
+# OpenWrt 24.10.5 banner with hostname `(none)` and zero LibreMesh
+# customizations.
+# Symptom on bananapi_bpi-r4: same kernel cmdline, but the device's
+# flash UBI has no valid `fit` volume, so `fitblk: probe of fitblk
+# failed with error -2` and the kernel hangs forever in
+# `Waiting for root device /dev/fit0...`.
+#
+# Embedding `bootargs` in the FIT configuration node makes U-Boot pass
+# the override to the kernel's chosen/bootargs, and Linux then keeps
+# the unpacked initramfs as `/` for the entire boot. The default below
+# is the mediatek/filogic baseline (console + the standard pci tuning
+# OpenWrt ships) MINUS the `root=...` part. Override per-target via
+# `fit_bootargs:` in targets.yml only if a board needs different
+# console settings (e.g. mt7622 uses 115200n8).
+FIT_BOOTARGS="${FIT_BOOTARGS:-console=ttyS0,115200n1 pci=pcie_bus_perf}"
+
 if [[ "${BUILD_INITRAMFS}" == "1" ]]; then
-  for var in FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS FIT_CONFIG; do
+  for var in FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS FIT_CONFIG FIT_BOOTARGS; do
     if [[ -z "${!var}" ]]; then
       echo "ERROR: BUILD_INITRAMFS=1 requires ${var} env var" >&2
       exit 1
@@ -88,7 +124,7 @@ chmod a+w "${WORK_DIR}/out"
 # process env unless exported, and Docker's `-e VAR` reads from the
 # calling process env, not from the script's lexical scope.
 export BUILD_INITRAMFS FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS FIT_CONFIG \
-       PROFILE PACKAGES ARCH OPENWRT_RELEASE
+       FIT_BOOTARGS PROFILE PACKAGES ARCH OPENWRT_RELEASE
 
 docker run --rm \
   --user root \
@@ -97,6 +133,7 @@ docker run --rm \
   -e FIT_KERNEL_LOADADDR \
   -e FIT_DTS \
   -e FIT_CONFIG \
+  -e FIT_BOOTARGS \
   -e PROFILE \
   -e PACKAGES \
   -e ARCH \
@@ -410,6 +447,46 @@ docker run --rm \
         -d "${DTB_FILE}" \
         -i "${REPACK_DIR}/rootfs.cpio" \
         -o "${REPACK_DIR}/initramfs.its"
+
+      # Inject `bootargs = "${FIT_BOOTARGS}";` into the FIT configuration
+      # node. mkits.sh (OpenWrts upstream helper script) does not expose
+      # any flag for kernel command line in the configuration: it only
+      # writes kernel/fdt/ramdisk references. Without a bootargs property
+      # in the .itss configurations/${FIT_CONFIG} block, U-Boot falls
+      # back to whatever chosen/bootargs the device tree carries — and
+      # for mediatek/filogic that is the upstream OpenWrt
+      #   `... root=/dev/fit0 rootwait ubi.block=0,fit`
+      # which makes the kernel discard our successfully-unpacked
+      # initramfs and mount the on-flash UBI fit volume as / instead
+      # (and on bpi-r4 hangs forever because no fit volume exists).
+      # Diagnosed in CI run 24973793128 (bananapi_bpi-r4) and
+      # 24972903707 (openwrt_one).
+      #
+      # We post-process the .its with sed: inside the address range
+      # bracketed by `^${FIT_CONFIG} {` ... `^};`, we replace the closing
+      # `};` with `bootargs = "..."; \n };`. The address range bound is
+      # strict (anchored to start-of-line + literal `{`/`};`) so the
+      # match cannot leak into other blocks (kernel-1, fdt-1, initrd-1,
+      # nor the `default = "config-1";` line whose substring also says
+      # `config-1`).
+      echo "=== Injecting bootargs=\"${FIT_BOOTARGS}\" into FIT config ${FIT_CONFIG} ==="
+      sed -i "/^[[:space:]]*${FIT_CONFIG} {[[:space:]]*\$/,/^[[:space:]]*};[[:space:]]*\$/ s|^\\([[:space:]]*\\)};[[:space:]]*\$|\\1        bootargs = \"${FIT_BOOTARGS}\";\\n\\1};|" "${REPACK_DIR}/initramfs.its"
+
+      # Sanity-check the injection landed exactly once and inside the
+      # expected configuration block. Failure here is hard-fail because
+      # silently shipping a FIT without bootargs lands us right back in
+      # the "kernel boots vanilla OpenWrt from flash" rabbit hole that
+      # cost us run 24972903707.
+      bootargs_count=$(grep -c "bootargs = \"${FIT_BOOTARGS}\";" "${REPACK_DIR}/initramfs.its" || true)
+      if [ "${bootargs_count}" -ne 1 ]; then
+        echo "ERROR: bootargs injection produced ${bootargs_count} matches in initramfs.its (expected exactly 1)" >&2
+        echo "----- initramfs.its (configurations section) -----" >&2
+        sed -n "/configurations {/,/^};/p" "${REPACK_DIR}/initramfs.its" >&2 || true
+        exit 1
+      fi
+      echo "  bootargs injected: ${bootargs_count} occurrence(s) (expected 1) — OK"
+      echo "----- initramfs.its configurations block -----"
+      sed -n "/configurations {/,/^};/p" "${REPACK_DIR}/initramfs.its"
 
       # Compile the .its into a real FIT.
       PATH="${DTC_DIR}:${PATH}" /builder/staging_dir/host/bin/mkimage \
