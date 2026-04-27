@@ -91,6 +91,45 @@ targets:
     fit_arch: arm64
     fit_kernel_loadaddr: "0x46000000"
     fit_dts: mt7988a-bananapi-bpi-r4
+    # WiFi 7 (MT7996/MT7988) on the BPI-R4 ships with an `mt7996e` driver
+    # that is still being stabilized in OpenWrt 24.10.x: when LibreMesh
+    # (lime-config) brings up the AP via hostapd, the driver dereferences
+    # an unaligned pointer in the mt76 tx path and the kernel panics
+    # (mt76-tx phy0 -> "Unable to handle kernel read from unreadable
+    # memory at virtual address 0x1b" -> "Kernel panic - not syncing:
+    # Oops: Fatal exception in interrupt"). After the panic the watchdog
+    # reboots the board and the MT7988 BootROM autoboot menu picks
+    # "Boot recovery system from NAND", which means the next boot is
+    # vanilla OpenWrt SNAPSHOT off the flash (kernel 6.12.66, BusyBox
+    # 1.37.0, banner "OpenWrt SNAPSHOT, r32701-8076376aca") -- not our
+    # TFTP'd LibreMesh -- and libremesh-tests times out waiting for
+    # `root@LiMe-XXXXXX:~#`. Upstream tracking issue:
+    # https://github.com/openwrt/openwrt/issues/21657 (BPI-R4 kernel
+    # warning/panic/ramoops with or without hardware flow offloading).
+    #
+    # Until OpenWrt ships a fixed mt7996e (likely with the next 24.10.x
+    # point release that picks up the mt76 backport), we exclude the
+    # mt7996/mt7988 wifi kmods + firmware blobs from the LibreMesh
+    # image. With no driver loaded, hostapd finds no radios to bring up
+    # and the panic path is unreachable. We leave `wpad-basic-mbedtls`
+    # alone because it's a default mediatek/filogic package and lime-system
+    # / hostapd-common transitively pull it in; absent any wifi PHY,
+    # wpad will simply idle. The resulting firmware still exercises
+    # babeld + batman-adv mesh over the wired DSA ports, which is what
+    # the BPI-R4 testbed cares about (no `wifi` feature is declared in
+    # libremesh-tests/targets/bananapi_bpi-r4.yaml). When the upstream
+    # fix lands, drop these `-` entries to re-enable WiFi 7 in the CI
+    # image.
+    packages: >-
+      lime-system lime-proto-babeld lime-proto-batadv lime-proto-anygw
+      lime-hwd-openwrt-wan lime-hwd-ground-routing lime-app
+      lime-debug lime-docs lime-docs-minimal
+      shared-state-babeld_hosts shared-state-bat_hosts
+      shared-state-dnsmasq_hosts shared-state-nodes_and_links
+      babeld-auto-gw-mode check-date-http batctl-default
+      -dnsmasq -odhcpd-ipv6only
+      -kmod-mt7996e -kmod-mt7996-firmware -kmod-mt7996-firmware-common
+      -kmod-mt7996-233-firmware -mt7988-wo-firmware
   - device: librerouter_librerouter-v1
     imagebuilder: ath79-generic
     profile: librerouter_librerouter-v1
