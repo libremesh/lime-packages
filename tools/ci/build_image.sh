@@ -378,6 +378,47 @@ docker run --rm \
       printf "%s\n" "${BUILD_MARKER}" > "${ROOT_DIR}/etc/lime-build-marker"
       echo "  build marker   : ${BUILD_MARKER}"
 
+      # Add /init -> /sbin/init symlink to the rootfs.
+      #
+      # Required for an initramfs CPIO boot. When the kernel finishes
+      # populate_rootfs() it goes to kernel_init_freeable(), which
+      # checks ramdisk_execute_command (default "/init") via sys_access.
+      # If /init exists, the kernel execs it as PID 1 and the in-RAM
+      # rootfs IS the runtime root (exactly what we want). If /init
+      # is missing the kernel falls through to prepare_namespace()
+      # which tries to mount root= from the cmdline; with no root=
+      # (our setup, intentionally) the cmdline root is empty and the
+      # kernel panics with:
+      #   /dev/root: Cannot open root device "" or unknown-block(0,0)
+      #   Kernel panic - not syncing: VFS: Unable to mount root fs
+      # which is what bit us in CI run 24973793128 (bananapi_bpi-r4):
+      # initramfs unpacked successfully (33 MiB freed), bootargs were
+      # ours (no root=), but no /init in the CPIO -> panic.
+      #
+      # OpenWrts ImageBuilder produces the squashfs-sysupgrade rootfs
+      # without /init because squashfs is always mounted as root via
+      # root=/dev/fit0 by the upstream bootloader, and the standard
+      # init path /sbin/init is invoked by prepare_namespace after
+      # the rootfs mount. For initramfs builds OpenWrts upstream
+      # include/image.mk explicitly creates the symlink before
+      # cpio-packing:
+      #   ln -sf /sbin/init $(KERNEL_BUILD_DIR)/cpiogz/init
+      # We replicate that exact step here. Idempotent: -f overwrites
+      # any existing /init from a previous repack iteration in the
+      # same staging dir.
+      ln -sf /sbin/init "${ROOT_DIR}/init"
+      echo "  /init symlink  :"
+      ls -la "${ROOT_DIR}/init"
+      if [ ! -L "${ROOT_DIR}/init" ]; then
+        echo "ERROR: ${ROOT_DIR}/init is not a symlink after ln -sf" >&2
+        exit 1
+      fi
+      if [ ! -e "${ROOT_DIR}/sbin/init" ] && [ ! -L "${ROOT_DIR}/sbin/init" ]; then
+        echo "ERROR: ${ROOT_DIR}/sbin/init does not exist; /init -> /sbin/init will dangle" >&2
+        ls -la "${ROOT_DIR}/sbin/" 2>/dev/null | head -20 >&2 || true
+        exit 1
+      fi
+
       echo "  packing rootfs CPIO from ${ROOT_DIR}"
       ( cd "${ROOT_DIR}" && \
         find . | /builder/staging_dir/host/bin/cpio -o -H newc 2>/dev/null ) \
@@ -410,6 +451,23 @@ docker run --rm \
       echo "  cpio file types (top 10):"
       /builder/staging_dir/host/bin/cpio -tv < "${REPACK_DIR}/rootfs.cpio" 2>/dev/null \
         | awk "{print \$1}" | sort | uniq -c | sort -rn | head -10 || true
+
+      # Confirm /init landed in the CPIO. cpio archives produced by
+      # `find . | cpio` carry entries with the `./` prefix; we match
+      # exactly `./init` either as a symlink line (`lrwxrwxrwx ... ->
+      # /sbin/init`) or as a regular file. If grep reports nothing,
+      # the kernel will panic at runtime with VFS: Unable to mount
+      # root fs (see ln -sf rationale block above).
+      echo "  /init in CPIO  :"
+      init_line="$(/builder/staging_dir/host/bin/cpio -tv < "${REPACK_DIR}/rootfs.cpio" 2>/dev/null \
+                   | grep -E " \\./init($| -> |[[:space:]])" || true)"
+      if [ -z "${init_line}" ]; then
+        echo "ERROR: ./init is missing from rootfs.cpio" >&2
+        echo "       Without /init the kernel will fall through to prepare_namespace()" >&2
+        echo "       and panic with \"Unable to mount root fs on unknown-block(0,0)\"." >&2
+        exit 1
+      fi
+      echo "    ${init_line}"
 
       # Generate the .its source describing the FIT structure
       # (kernel + DTB + ramdisk).
