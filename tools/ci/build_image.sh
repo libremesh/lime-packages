@@ -16,6 +16,33 @@ ARCH="${ARCH:?ARCH env var is required}"
 FEED_BRANCH="${FEED_BRANCH:?FEED_BRANCH env var is required}"
 PACKAGES="${PACKAGES:?PACKAGES env var is required}"
 
+# When BUILD_INITRAMFS=1, build_image.sh repacks the ImageBuilder rootfs into a
+# RAM-bootable FIT (kernel + DTB + LibreMesh CPIO ramdisk) and ships THAT as
+# the firmware artifact. Targets that do not set this flag (e.g. ath79
+# librerouter, whose subtarget has no `KERNEL_INITRAMFS` recipe and whose
+# uImage layout requires the initramfs CPIO be linked into the kernel
+# binary at compile time — impossible without kernel sources, which
+# ImageBuilder does not ship) keep producing the squashfs-sysupgrade as
+# their build artifact for IPK validation only; they are filtered out of
+# the test-firmware matrix in `prepare-matrix`.
+BUILD_INITRAMFS="${BUILD_INITRAMFS:-0}"
+
+# Used only when BUILD_INITRAMFS=1. Filled per-target in
+# .github/ci/targets.yml (fit_arch / fit_kernel_loadaddr / fit_dts) and
+# forwarded by build-firmware.yml.
+FIT_ARCH="${FIT_ARCH:-}"
+FIT_KERNEL_LOADADDR="${FIT_KERNEL_LOADADDR:-}"
+FIT_DTS="${FIT_DTS:-}"
+
+if [[ "${BUILD_INITRAMFS}" == "1" ]]; then
+  for var in FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS; do
+    if [[ -z "${!var}" ]]; then
+      echo "ERROR: BUILD_INITRAMFS=1 requires ${var} env var" >&2
+      exit 1
+    fi
+  done
+fi
+
 if [[ ! -d "${FEED_DIR}/lime_packages" ]]; then
   echo "ERROR: Feed dir must contain lime_packages/: ${FEED_DIR}/lime_packages" >&2
   exit 1
@@ -38,147 +65,236 @@ RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8
 EOF
 
 IMAGE_TAG="ghcr.io/openwrt/imagebuilder:${IMAGEBUILDER}-v${OPENWRT_RELEASE}"
-echo ">>> Building ${PROFILE} with ${IMAGE_TAG}"
+echo ">>> Building ${PROFILE} with ${IMAGE_TAG} (BUILD_INITRAMFS=${BUILD_INITRAMFS})"
 
 # Make sure container 'buildbot' user (uid 1000) can read the bind-mounted files.
 chmod -R a+rX "${WORK_DIR}" "${FEED_DIR}"
 chmod a+w "${WORK_DIR}/out"
 
+# Export every variable consumed by the in-container script so `-e VAR`
+# (no =value) forwards a real value. Local shell vars are NOT in the
+# process env unless exported, and Docker's `-e VAR` reads from the
+# calling process env, not from the script's lexical scope.
+export BUILD_INITRAMFS FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS PROFILE PACKAGES \
+       ARCH OPENWRT_RELEASE
+
 docker run --rm \
   --user root \
+  -e BUILD_INITRAMFS \
+  -e FIT_ARCH \
+  -e FIT_KERNEL_LOADADDR \
+  -e FIT_DTS \
+  -e PROFILE \
+  -e PACKAGES \
+  -e ARCH \
+  -e OPENWRT_RELEASE \
   -v "${WORK_DIR}:/work" \
   -v "${FEED_DIR}:/feed:ro" \
   "${IMAGE_TAG}" \
-  sh -lc "
+  sh -lc '
     set -e
     # Disable signature checking for our local unsigned feed.
     #
-    # opkg-lede's boolean option parser (libopkg/opkg_conf.c) ignores the
-    # value: encountering an 'option check_signature' line — with or without
-    # an argument — sets the flag to 1. Replacing 'option check_signature'
-    # with 'option check_signature 0' or appending '... 0' both keep
-    # verification on, which silently rejects our unsigned local feed and
-    # produces 'opkg_install_cmd: Cannot install package lime-system.' for
-    # every lime-* package. The only way to keep it off is to ensure no
-    # such line is present (the in-memory default is 0).
-    sed -i '/^option check_signature/d' repositories.conf
+    # opkg-lede ignores the value of `option check_signature`: any line
+    # named that way enables verification regardless of the argument.
+    # Replacing it with `... 0` or appending `0` both leave the flag on,
+    # which silently rejects our unsigned local feed and produces
+    # `opkg_install_cmd: Cannot install package lime-system.` for every
+    # lime-* package. The only way to keep it off is to ensure no such
+    # line is present (the in-memory default is 0).
+    sed -i "/^option check_signature/d" repositories.conf
     cat /work/repositories.snippet >> repositories.conf
     cp /work/keys/* keys/ 2>/dev/null || true
 
-    echo '=== final repositories.conf ==='
+    echo "=== final repositories.conf ==="
     cat repositories.conf
-    echo '=== mounted feed contents (/feed/lime_packages) ==='
+    echo "=== mounted feed contents (/feed/lime_packages) ==="
     ls -la /feed/lime_packages/ | head -40
-    feed_ipks=\$(find /feed/lime_packages -maxdepth 1 -name '*.ipk' | wc -l)
-    feed_pkgs=\$(grep -c '^Package:' /feed/lime_packages/Packages 2>/dev/null || echo 0)
-    echo \"Feed has \${feed_ipks} IPKs and \${feed_pkgs} Packages entries\"
+    feed_ipks=$(find /feed/lime_packages -maxdepth 1 -name "*.ipk" | wc -l)
+    feed_pkgs=$(grep -c "^Package:" /feed/lime_packages/Packages 2>/dev/null || echo 0)
+    echo "Feed has ${feed_ipks} IPKs and ${feed_pkgs} Packages entries"
 
     # Pre-flight: confirm opkg can actually see the local feed before we
-    # spend ~30 min on 'make image'. If 'lime-system' is not visible after
-    # 'opkg update', failing here is far cheaper than failing at the very
-    # end of package_install with no diagnostic context.
+    # spend ~30 min on `make image`. If `lime-system` is not visible
+    # after `opkg update`, failing here is far cheaper than failing at
+    # the very end of package_install with no diagnostic context.
     mkdir -p /tmp/preflight/tmp /tmp/preflight-lists
     /builder/staging_dir/host/bin/opkg \
       --offline-root /tmp/preflight \
       --add-arch all:100 \
-      --add-arch ${ARCH}:200 \
+      --add-arch "${ARCH}:200" \
       -f /builder/repositories.conf \
       --cache /tmp/preflight-cache \
       --lists-dir /tmp/preflight-lists \
       update >/tmp/preflight.log 2>&1 || true
-    echo '=== opkg pre-flight update (last 25 lines) ==='
+    echo "=== opkg pre-flight update (last 25 lines) ==="
     tail -n 25 /tmp/preflight.log
     if ! /builder/staging_dir/host/bin/opkg \
         --offline-root /tmp/preflight \
         --add-arch all:100 \
-        --add-arch ${ARCH}:200 \
+        --add-arch "${ARCH}:200" \
         -f /builder/repositories.conf \
         --cache /tmp/preflight-cache \
         --lists-dir /tmp/preflight-lists \
-        list 2>/dev/null | grep -q '^lime-system '; then
-      echo 'ERROR: opkg cannot see lime-system in any configured feed' >&2
-      echo 'opkg list (filtered to lime/shared-state):' >&2
+        list 2>/dev/null | grep -q "^lime-system "; then
+      echo "ERROR: opkg cannot see lime-system in any configured feed" >&2
       /builder/staging_dir/host/bin/opkg \
         --offline-root /tmp/preflight \
         --add-arch all:100 \
-        --add-arch ${ARCH}:200 \
+        --add-arch "${ARCH}:200" \
         -f /builder/repositories.conf \
         --cache /tmp/preflight-cache \
         --lists-dir /tmp/preflight-lists \
-        list 2>/dev/null | grep -E '^(lime|shared-state|babeld-auto|check-date|batctl)' >&2 || true
+        list 2>/dev/null | grep -E "^(lime|shared-state|babeld-auto|check-date|batctl)" >&2 || true
       exit 1
     fi
-    echo '=== Pre-flight OK: local feed is visible to opkg ==='
+    echo "=== Pre-flight OK: local feed is visible to opkg ==="
 
-    # Force ImageBuilder to also emit the initramfs FIT (kernel + embedded
-    # CPIO rootfs) on top of the default squashfs-sysupgrade FIT.
-    #
-    # Why: testbed nodes are TFTP-booted from RAM and never sysupgraded
-    # in CI. The sysupgrade FIT is a *staged* image — its rootfs is a
-    # 'Filesystem Image' (squashfs) packed as a FIT 'loadables' entry,
-    # which bootm does NOT pass to the kernel as initramfs. A kernel
-    # booted with that FIT comes up with an empty 'root=' cmdline; the
-    # in-tree fitblk driver then walks UBI, finds the on-flash 'fit'
-    # volume from whatever was previously sysupgraded onto the device
-    # (vanilla OpenWrt 24.10.5 from 2025-12-17 in our lab), maps its
-    # squashfs sub-image as /dev/fit0 and mounts that as /. We end up
-    # running our fresh kernel against the old userspace, so lime-config
-    # never executes and the DUT presents 'root@OpenWrt:~#' instead of
-    # 'root@LiMe-XXXXXX:~#'.
-    #
-    # Setting CONFIG_TARGET_ROOTFS_INITRAMFS=y instructs make image to
-    # also build the kernel-with-initramfs variant, which produces
-    # *-initramfs-recovery.itb (filogic) / *-initramfs-kernel.bin (ath79)
-    # — true RAM-only images whose rootfs lives inside kernel-1 and
-    # therefore survive bootm without any flash dependency. The
-    # downstream pattern selection in build_image.sh prefers those over
-    # the sysupgrade FIT, so this single config tweak is what flips
-    # test-firmware from 'tests on-flash 24.10.5' to 'tests today's PR'.
-    #
-    # Note: filogic 24.10 imagebuilders ship CONFIG_TARGET_ROOTFS_INITRAMFS=n
-    # by default (initramfs is opt-in for production sysupgrades).
-    sed -i '/^CONFIG_TARGET_ROOTFS_INITRAMFS\b/d' .config
-    sed -i '/^CONFIG_TARGET_INITRAMFS_COMPRESSION_/d' .config
-    {
-      echo 'CONFIG_TARGET_ROOTFS_INITRAMFS=y'
-      echo 'CONFIG_TARGET_INITRAMFS_COMPRESSION_NONE=n'
-      echo 'CONFIG_TARGET_INITRAMFS_COMPRESSION_GZIP=y'
-    } >> .config
-    echo '=== Effective .config initramfs flags ==='
-    grep -E '^CONFIG_TARGET_(ROOTFS_INITRAMFS|INITRAMFS_COMPRESSION_)' .config || true
+    make image PROFILE="${PROFILE}" BIN_DIR=/work/out PACKAGES="${PACKAGES}"
 
-    make image PROFILE=${PROFILE} BIN_DIR=/work/out PACKAGES=\"${PACKAGES}\"
+    echo "=== /work/out contents (post make image) ==="
+    ls -la /work/out/
+    find /work/out -type f -printf "%p (%s bytes)\n"
 
-    # Harvest the initramfs FIT from staging_dir.
+    # ------------------------------------------------------------------
+    # Optional: repack a true RAM-bootable initramfs FIT containing the
+    # LibreMesh rootfs we just installed.
     #
-    # Several device profiles (e.g. mediatek/filogic openwrt_one,
-    # ath79 librerouter-v1) build a true initramfs FIT — kernel + DTB
-    # + RAMDisk-type rootfs sub-image, all addressable via bootm — but
-    # only consume it internally as the source of the factory.ubi
-    # 'recovery' volume. ImageBuilder leaves it under
-    # /builder/staging_dir/target-<sdk_arch>/image/ instead of copying
-    # it to BIN_DIR (=/work/out), because the device's IMAGES list in
-    # filogic.mk / ath79.mk only declares the sysupgrade / factory
-    # outputs. The downstream pattern matcher in this script needs the
-    # file in /work/out to ship it as the testbed boot artifact, so we
-    # copy any *initramfs*.{itb,bin} we find in staging into out/. This
-    # is purely additive: it does not displace files that ImageBuilder
-    # already wrote to BIN_DIR (sysupgrade FIT remains alongside).
-    echo '=== Harvesting initramfs FITs from /builder/staging_dir ==='
-    staged_initramfs=\$(find /builder/staging_dir -type f \\( -name '*initramfs*.itb' -o -name '*initramfs*.bin' \\) 2>/dev/null || true)
-    if [ -n \"\${staged_initramfs}\" ]; then
-      echo \"\${staged_initramfs}\" | while IFS= read -r f; do
-        echo \"  found: \${f} (\$(stat -c%s \"\${f}\") bytes) -> /work/out/\"
-        cp \"\${f}\" /work/out/
-      done
+    # Why this is needed (and why the obvious alternative does not work):
+    # ImageBuilder ships pre-built device kernel binaries
+    # (`<profile>-kernel.bin`, gzip-compressed for the sysupgrade FIT)
+    # and DTBs (`image-<dts>.dtb`), but it does NOT ship kernel sources
+    # nor a re-packable initramfs FIT for arbitrary devices. `make image`
+    # with `CONFIG_TARGET_ROOTFS_INITRAMFS=y` on an IB does not regenerate
+    # `staging_dir/.../<board>-initramfs*.itb` — empirically verified by
+    # SHA-comparing the staging FIT before and after the make. The
+    # staging FIT, when present, contains the upstream OpenWrt rootfs
+    # CPIO (vanilla), not our LibreMesh one. So even if we copied it
+    # verbatim, the testbed would boot vanilla 24.10.6 and the tests
+    # would silently pass against the wrong firmware.
+    #
+    # The fix is to assemble the FIT ourselves from the bits ImageBuilder
+    # already produced for `make image`:
+    #   1. Pre-built kernel binary       <build_dir>/linux-*/<profile>-kernel.bin
+    #      (gzip-compressed; we set `compression=gzip` in the FIT and let
+    #      U-Boot/Linux decompress at boot).
+    #   2. Pre-built DTB                 <build_dir>/linux-*/image-<dts>.dtb
+    #   3. Freshly-installed rootfs      <build_dir>/root-*/  (LibreMesh)
+    #      packed as a gzip-CPIO via `find . | cpio -o -H newc | gzip`.
+    #
+    # Then we feed the three files to `scripts/mkits.sh` (ships in IB)
+    # to generate a .its source, and to `mkimage -f` (also ships in IB)
+    # to produce the final .itb. `dtc` is required by mkimage internally
+    # and is provided by the kernel source unpacked under
+    # `linux-*/linux-<kver>/scripts/dtc/dtc` after `make image`.
+    if [ "${BUILD_INITRAMFS:-0}" = "1" ]; then
+      echo "=== Repacking initramfs FIT (RAM-bootable, embedded LibreMesh) ==="
+
+      # Locate per-target build_dir entries. ImageBuilder uses exactly
+      # one `target-<arch>_musl/` per container; inside, exactly one
+      # `linux-<sub>/` (kernel) and one `root-<sub>/` (rootfs).
+      ARCH_DIR="$(echo /builder/build_dir/target-*_musl)"
+      if [ ! -d "${ARCH_DIR}" ]; then
+        echo "ERROR: cannot locate target-<arch>_musl under /builder/build_dir" >&2
+        ls -la /builder/build_dir >&2 || true
+        exit 1
+      fi
+      LINUX_DIR="$(ls -d ${ARCH_DIR}/linux-*/ 2>/dev/null | head -n 1 | sed "s|/$||")"
+      ROOT_DIR="$(ls -d ${ARCH_DIR}/root-*/ 2>/dev/null | head -n 1 | sed "s|/$||")"
+      if [ ! -d "${LINUX_DIR}" ] || [ ! -d "${ROOT_DIR}" ]; then
+        echo "ERROR: cannot locate linux-* / root-* under ${ARCH_DIR}" >&2
+        ls -la "${ARCH_DIR}" >&2 || true
+        exit 1
+      fi
+      echo "  linux build dir: ${LINUX_DIR}"
+      echo "  rootfs dir     : ${ROOT_DIR}"
+
+      KERNEL_BIN="${LINUX_DIR}/${PROFILE}-kernel.bin"
+      DTB_FILE="${LINUX_DIR}/image-${FIT_DTS}.dtb"
+      if [ ! -f "${KERNEL_BIN}" ]; then
+        echo "ERROR: missing ${KERNEL_BIN}" >&2
+        ls -la "${LINUX_DIR}" >&2 | head -40
+        exit 1
+      fi
+      if [ ! -f "${DTB_FILE}" ]; then
+        echo "ERROR: missing ${DTB_FILE}" >&2
+        ls "${LINUX_DIR}" 2>/dev/null | grep -E "\.dtb$" >&2 | head -40
+        exit 1
+      fi
+
+      # `dtc` is required by mkimage to compile the .its (DTS source)
+      # into a FIT (DTB). It is built as part of the kernel unpack and
+      # lives at linux-*/linux-<kver>/scripts/dtc/dtc.
+      DTC_BIN="$(find ${LINUX_DIR} -name dtc -type f -executable 2>/dev/null | head -n 1)"
+      if [ -z "${DTC_BIN}" ] || [ ! -x "${DTC_BIN}" ]; then
+        echo "ERROR: cannot find dtc under ${LINUX_DIR}" >&2
+        find "${LINUX_DIR}" -name dtc -type f 2>/dev/null >&2 || true
+        exit 1
+      fi
+      DTC_DIR="$(dirname "${DTC_BIN}")"
+      echo "  using dtc      : ${DTC_BIN}"
+
+      REPACK_DIR="/tmp/initramfs-repack"
+      rm -rf "${REPACK_DIR}"
+      mkdir -p "${REPACK_DIR}"
+
+      # Build initramfs CPIO. Running as root inside the container so
+      # device nodes (/dev/console etc.) and setuid bits inside the
+      # rootfs are preserved by `cpio -H newc`. `find -print` order
+      # matches the canonical kernel initramfs convention.
+      echo "  packing rootfs CPIO from ${ROOT_DIR}"
+      ( cd "${ROOT_DIR}" && \
+        find . | /builder/staging_dir/host/bin/cpio -o -H newc 2>/dev/null ) \
+          | gzip -9n > "${REPACK_DIR}/rootfs.cpio.gz"
+      ls -la "${REPACK_DIR}/rootfs.cpio.gz"
+
+      # Generate the .its source describing the FIT structure
+      # (kernel + DTB + ramdisk).
+      #
+      # The FIT config name MUST match the `bootconf` env variable set
+      # in the device's U-Boot environment by OpenWrt — both
+      # `targets/openwrt_one.yaml` and `targets/linksys_e8450.yaml`
+      # boot with `bootm $loadaddr#$bootconf`, and on a stock OpenWrt
+      # NAND `bootconf` is exactly the DTS basename (e.g.
+      # `mt7981b-openwrt-one`, `mt7622-linksys-e8450-ubi`,
+      # `mt7988a-bananapi-bpi-r4`). Using a generic name like `config-1`
+      # would cause `bootm` to fail with "config not found" once
+      # U-Boot tries to resolve `$bootconf`. We therefore name the
+      # configuration after FIT_DTS (which is also the .dtb basename),
+      # exactly as OpenWrt's KERNEL_INITRAMFS recipe does upstream.
+      PATH="${DTC_DIR}:${PATH}" /builder/scripts/mkits.sh \
+        -A "${FIT_ARCH}" \
+        -C gzip \
+        -a "${FIT_KERNEL_LOADADDR}" \
+        -e "${FIT_KERNEL_LOADADDR}" \
+        -c "${FIT_DTS}" \
+        -v "OpenWrt LibreMesh ${PROFILE}" \
+        -k "${KERNEL_BIN}" \
+        -D "${PROFILE}" \
+        -d "${DTB_FILE}" \
+        -i "${REPACK_DIR}/rootfs.cpio.gz" \
+        -o "${REPACK_DIR}/initramfs.its"
+
+      # Compile the .its into a real FIT.
+      PATH="${DTC_DIR}:${PATH}" /builder/staging_dir/host/bin/mkimage \
+        -f "${REPACK_DIR}/initramfs.its" \
+        "${REPACK_DIR}/initramfs-libremesh.itb"
+
+      # Land the FIT in BIN_DIR alongside ImageBuilder outputs so the
+      # downstream artifact selection picks it up. Naming mirrors the
+      # OpenWrt convention so it is obvious which file is the real
+      # bootable image vs. the harmless sysupgrade sidecar.
+      INITRAMFS_OUT="/work/out/openwrt-${OPENWRT_RELEASE:-}-${PROFILE}-initramfs-libremesh.itb"
+      cp "${REPACK_DIR}/initramfs-libremesh.itb" "${INITRAMFS_OUT}"
+      echo "=== Initramfs FIT generated ==="
+      ls -la "${INITRAMFS_OUT}"
+      /builder/staging_dir/host/bin/mkimage -l "${INITRAMFS_OUT}" \
+        | grep -E "Image |Type:|Compression:|Data Size|Architecture|Load Address|Entry Point|Configuration |Kernel:|FDT:|Init Ramdisk:" || true
     else
-      echo '  (none — device profile may not build an initramfs FIT)'
+      echo "=== Skipping initramfs repack (BUILD_INITRAMFS=0) ==="
+      echo "Target will ship the squashfs-sysupgrade artifact and is filtered out of the test-firmware matrix."
     fi
-
-    echo '=== /work/out contents (post make image + harvest) ==='
-    ls -la /work/out/ || true
-    find /work/out -type f -printf '%p (%s bytes)\n' || true
-  "
+  '
 
 echo "=== Selecting firmware artifact for ${PROFILE} ==="
 ls -la "${WORK_DIR}/out/" || true
@@ -220,50 +336,52 @@ fi
 echo ">>> Manifest validation OK: lime-system + lime-proto-batadv + lime-proto-anygw + batctl-default present"
 grep -E '^(lime-|shared-state-|batctl|babeld|firewall4)' "${MANIFEST_FILE}" || true
 
-# Initramfs-only patterns: these are the artifacts whose rootfs lives
-# inside the kernel image (initramfs CPIO embedded in `kernel-1` of the
-# FIT, or a flat kernel.bin with appended initramfs on ath79). They boot
-# self-contained from RAM, which is exactly what the testbed strategy
-# relies on. We deliberately ignore *-squashfs-sysupgrade.itb and
-# *-squashfs-sysupgrade.bin here because their FIT rootfs is a
-# `Filesystem Image` loadable that bootm does NOT hand to the kernel,
-# making the DUT fall back to fitblk + on-flash UBI (vanilla OpenWrt
-# leftover) instead of testing today's build. The earlier
-# `CONFIG_TARGET_ROOTFS_INITRAMFS=y` tweak ensures these are produced;
-# this guard turns "silently shipped sysupgrade" into a hard build-image
-# failure with full /work/out listing for triage.
+# Pick the artifact we will ship to test-firmware.
+#
+# When BUILD_INITRAMFS=1 we look for the FIT we just repacked
+# (`*-initramfs-libremesh.itb`). Its rootfs lives inside the kernel
+# image as a gzip-CPIO ramdisk, which `bootm` hands to the kernel as
+# initramfs and the testbed boots from RAM with no flash dependency.
+#
+# When BUILD_INITRAMFS=0 we fall back to the sysupgrade artifact
+# (`*-squashfs-sysupgrade.{itb,bin}`). This branch is only used by
+# targets we explicitly opted out of test-firmware, so the artifact is
+# carried purely for IPK validation and never TFTP-booted.
 SOURCE_FILE=""
-for pattern in \
-  "*${PROFILE}-initramfs.itb" \
-  "*${PROFILE}*initramfs-recovery.itb" \
-  "*${PROFILE}*initramfs-kernel.bin" \
-  "*${PROFILE}*initramfs*.itb" \
-  "*${PROFILE}*initramfs*.bin"; do
-  match="$(compgen -G "${WORK_DIR}/out/${pattern}" 2>/dev/null | head -n 1 || true)"
-  if [[ -n "${match}" && -f "${match}" ]]; then
-    SOURCE_FILE="${match}"
-    echo ">>> Matched pattern '${pattern}' -> ${SOURCE_FILE}"
-    break
+if [[ "${BUILD_INITRAMFS}" == "1" ]]; then
+  for pattern in \
+    "*${PROFILE}-initramfs-libremesh.itb" \
+    "*${PROFILE}*initramfs-libremesh.itb"; do
+    match="$(compgen -G "${WORK_DIR}/out/${pattern}" 2>/dev/null | head -n 1 || true)"
+    if [[ -n "${match}" && -f "${match}" ]]; then
+      SOURCE_FILE="${match}"
+      echo ">>> Matched initramfs pattern '${pattern}' -> ${SOURCE_FILE}"
+      break
+    fi
+  done
+  if [[ -z "${SOURCE_FILE}" ]]; then
+    echo "::error::BUILD_INITRAMFS=1 was set but no *-initramfs-libremesh.itb found in ${WORK_DIR}/out." >&2
+    echo "The mkimage repack step likely failed silently. /work/out contents:" >&2
+    find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
+    exit 1
   fi
-done
-
-if [[ -z "${SOURCE_FILE}" || ! -f "${SOURCE_FILE}" ]]; then
-  echo "::error::No initramfs image produced by ImageBuilder for profile ${PROFILE}." >&2
-  echo "Searched ${WORK_DIR}/out for: *${PROFILE}-initramfs.itb, *${PROFILE}*initramfs-recovery.itb, *${PROFILE}*initramfs-kernel.bin, *${PROFILE}*initramfs*.{itb,bin}" >&2
-  echo "" >&2
-  echo "This usually means CONFIG_TARGET_ROOTFS_INITRAMFS=y was not honored by" >&2
-  echo "the imagebuilder (.config rewrite skipped, or the device profile in" >&2
-  echo "this OpenWrt release does not define a KERNEL_INITRAMFS recipe). The" >&2
-  echo "testbed strategy TFTP-boots from RAM and cannot use a sysupgrade FIT," >&2
-  echo "whose rootfs is a 'Filesystem Image' loadable that bootm does not" >&2
-  echo "pass to the kernel as initramfs — the DUT would silently boot the" >&2
-  echo "previously-flashed userspace via fitblk and tests would run against" >&2
-  echo "the wrong firmware. Failing now so the regression surfaces here," >&2
-  echo "instead of as a TIMEOUT in test-firmware." >&2
-  echo "" >&2
-  echo "Actual /work/out contents:" >&2
-  find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
-  exit 1
+else
+  for pattern in \
+    "*${PROFILE}*-squashfs-sysupgrade.itb" \
+    "*${PROFILE}*-squashfs-sysupgrade.bin" \
+    "*${PROFILE}*-sysupgrade.bin"; do
+    match="$(compgen -G "${WORK_DIR}/out/${pattern}" 2>/dev/null | head -n 1 || true)"
+    if [[ -n "${match}" && -f "${match}" ]]; then
+      SOURCE_FILE="${match}"
+      echo ">>> Matched sysupgrade pattern '${pattern}' -> ${SOURCE_FILE} (build-image-only target, not TFTP-booted)"
+      break
+    fi
+  done
+  if [[ -z "${SOURCE_FILE}" ]]; then
+    echo "::error::No sysupgrade artifact found for ${PROFILE} despite a successful make image." >&2
+    find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
+    exit 1
+  fi
 fi
 
 EXTENSION="${SOURCE_FILE##*.}"
