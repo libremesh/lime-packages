@@ -255,11 +255,34 @@ docker run --rm \
       # device nodes (/dev/console etc.) and setuid bits inside the
       # rootfs are preserved by `cpio -H newc`. `find -print` order
       # matches the canonical kernel initramfs convention.
+      #
+      # The CPIO is NOT gzip-compressed on purpose. ImageBuilder ships
+      # the sysupgrade-mode kernel for these mediatek targets
+      # (linksys_e8450-ubi, openwrt_one, bananapi_bpi-r4): a single
+      # binary that normally boots from /dev/fit0 on flash, with
+      # CONFIG_RD_GZIP / CONFIG_RD_LZ4 / CONFIG_RD_XZ disabled (those
+      # only get enabled in the dedicated KERNEL_INITRAMFS recipe,
+      # which ImageBuilder does not run because it has no kernel
+      # toolchain). Feeding a gzipped CPIO through bootm makes the
+      # kernel print "Initramfs unpacking failed: compression method
+      # gzip not configured" and silently fall back to mounting
+      # root=/dev/fit0 — i.e. it boots whatever vanilla OpenWrt was
+      # last sysupgraded to flash, which is the exact bug we saw in
+      # CI (the device greeted us with the OpenWrt 23.05.5 banner
+      # instead of LibreMesh).
+      #
+      # A raw CPIO sidesteps that path entirely: the first bytes
+      # carry the newc magic 070701, the kernel initramfs unpacker
+      # consumes them with no compression module, and procd from our
+      # LibreMesh rootfs takes over. The size penalty is bounded —
+      # the squashfs-decompressed rootfs is ~25 MiB on these targets,
+      # well under the 512 MiB / 1 GiB / 2 GiB DRAM available, and
+      # TFTP throughput is unaffected on the gigabit lab network.
       echo "  packing rootfs CPIO from ${ROOT_DIR}"
       ( cd "${ROOT_DIR}" && \
         find . | /builder/staging_dir/host/bin/cpio -o -H newc 2>/dev/null ) \
-          | gzip -9n > "${REPACK_DIR}/rootfs.cpio.gz"
-      ls -la "${REPACK_DIR}/rootfs.cpio.gz"
+          > "${REPACK_DIR}/rootfs.cpio"
+      ls -la "${REPACK_DIR}/rootfs.cpio"
 
       # Generate the .its source describing the FIT structure
       # (kernel + DTB + ramdisk).
@@ -295,7 +318,7 @@ docker run --rm \
         -k "${KERNEL_BIN}" \
         -D "${PROFILE}" \
         -d "${DTB_FILE}" \
-        -i "${REPACK_DIR}/rootfs.cpio.gz" \
+        -i "${REPACK_DIR}/rootfs.cpio" \
         -o "${REPACK_DIR}/initramfs.its"
 
       # Compile the .its into a real FIT.
