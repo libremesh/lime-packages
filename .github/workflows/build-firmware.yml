@@ -99,7 +99,8 @@ jobs:
                 fit_dts: (.fit_dts // ""),
                 fit_config: (.fit_config // "config-1"),
                 test_firmware: (if (.test_firmware == false) then "0" else "1" end),
-                test_places: (.test_places // [.device])
+                test_places: (.test_places // [.device]),
+                uboot_interrupt_spam_sec: (.uboot_interrupt_spam_sec // "" | tostring)
               })}
             ' <<< "$selected_targets"
           )"
@@ -598,6 +599,14 @@ jobs:
           LG_IMAGE: ${{ env.LG_IMAGE }}
           LG_PLACE: ${{ env.LG_PLACE }}
           LG_ENV: ${{ env.LG_ENV }}
+          # Per-target override of the U-Boot interrupt spam window
+          # honoured by tftpstrategy._spam_uboot_interrupt(). Empty
+          # string falls through to the strategy default (12s) thanks
+          # to _read_float_env() returning the default on empty input.
+          # Bumped to 25s for linksys_e8450 (Belkin RT3200) where
+          # BL2/BL31 take ~12s and the autoboot countdown follows
+          # immediately afterwards — see targets.yml comment block.
+          LG_MESH_UBOOT_INTERRUPT_SPAM_SEC: ${{ matrix.uboot_interrupt_spam_sec }}
         run: |
           set -euo pipefail
           # Per-place log dir: when three Belkin RT3200 jobs run in
