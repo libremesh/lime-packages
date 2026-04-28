@@ -50,27 +50,43 @@ packages: >-
 #     this target to 25s gives ~13s of margin around the countdown
 #     window. Faster boards (openwrt_one, bananapi_bpi-r4) keep the
 #     12s default.
-#   image_format (string, default "fit"): selects build_image.sh's
-#     repack output format. Two paths are supported today:
+#   image_format (string, default "fit"): selects which build script /
+#     output format to use. Three paths are supported today:
 #       * "fit"          — mediatek/filogic boards (openwrt_one,
 #                          bananapi_bpi-r4, linksys_e8450-ubi). Output
 #                          is a single `*-initramfs-libremesh.itb`
 #                          containing kernel+DTB+CPIO under one
 #                          configuration node, with bootargs embedded
-#                          in the FIT config. Requires fit_arch /
-#                          fit_kernel_loadaddr / fit_dts / fit_config /
-#                          fit_bootargs to be set.
-#       * "multi-uimage" — ath79 boards (librerouter_v1). Output is a
-#                          legacy IH_TYPE_MULTI uImage carrying
-#                          [kernel.lzma, rootfs.cpio]. The DTB is fused
-#                          into kernel-bin upstream so fit_dts is unused.
-#                          U-Boot 1.1.x on QCA9558 has no FIT parser
-#                          but does understand multi-image and exposes
-#                          the rootfs sub-image to the MIPS kernel via
-#                          the `initrd_start` / `initrd_size` PROM env
-#                          vars. Bootargs CANNOT be embedded in a
-#                          legacy uImage, so the labgrid YAML for that
-#                          target must `setenv bootargs` before `bootm`.
+#                          in the FIT config. Built by tools/ci/
+#                          build_image.sh via the OpenWrt ImageBuilder.
+#                          Requires fit_arch / fit_kernel_loadaddr /
+#                          fit_dts / fit_config / fit_bootargs.
+#       * "multi-uimage" — DEPRECATED. Was used for ath79 boards
+#                          (librerouter_v1). Output is a legacy
+#                          IH_TYPE_MULTI uImage carrying [kernel.lzma,
+#                          rootfs.cpio]. Built by tools/ci/build_image.sh
+#                          (same path as `fit`). Kept for reference only:
+#                          LibreRouter`s U-Boot 1.1.x fork does not
+#                          actually propagate sub-image-1 to the MIPS
+#                          kernel, so the device boots flash instead of
+#                          our CPIO. New ath79 targets must use
+#                          `sdk-initramfs-kernel` below.
+#       * "sdk-initramfs-kernel" — ath79 boards (librerouter_v1) and any
+#                          future target whose U-Boot cannot consume a
+#                          ramdisk passed alongside the kernel image.
+#                          Built by tools/ci/build_image_sdk.sh via the
+#                          full OpenWrt SDK (NOT ImageBuilder), which
+#                          recompiles the kernel with
+#                          CONFIG_INITRAMFS_SOURCE pointing at the
+#                          LibreMesh CPIO. Output is a single
+#                          `<release>-<target>-<sub>-<profile>-
+#                          initramfs-kernel.bin` (a uImage on ath79;
+#                          DTB appended into kernel-bin upstream). The
+#                          kernel carries the CPIO inside its own
+#                          .init.ramfs section, so U-Boot just needs
+#                          `bootm <addr>` and the kernel handles the
+#                          rootfs setup with no help. Requires
+#                          `sdk_target_subtarget:` (e.g. ath79_generic).
 #   fit_arch / fit_kernel_loadaddr / fit_dts (BUILD_INITRAMFS=1 only):
 #     metadata fed to mkimage to lay out the repacked image (FIT or
 #     multi-uimage). fit_arch is the U-Boot architecture name (e.g.
@@ -245,76 +261,100 @@ targets:
     arch: mips_24kc
     sdk_arch: mips_24kc-openwrt-24.10
     index_imagebuilder: ath79-generic
-    # ath79/generic uses the legacy uImage format and the LibreRouter v1
-    # ships an Atheros QCA9558 SoC running a U-Boot 1.1.x fork
-    # (https://github.com/LibreRouterOrg/u-boot) that has NO FIT parser.
-    # The `<profile>-kernel.bin` shipped by ImageBuilder is a final
-    # uImage with the DTB already fused into the lzma blob via
-    # `kernel-bin | append-dtb | lzma | uImage lzma`, so we cannot drop
-    # an external CPIO into a FIT for this target.
+    # ----------------------------------------------------------------
+    # LibreRouter v1 — full OpenWrt source build (image_format:
+    # source-initramfs-kernel).
     #
-    # What we CAN do, and what `image_format: multi-uimage` enables, is
-    # repack `[kernel.lzma, rootfs.cpio]` into a legacy IH_TYPE_MULTI
-    # uImage that the LibreRouter U-Boot understands: `bootm` decompresses
-    # sub-image 0 to `fit_kernel_loadaddr` (the outer header carries
-    # `-C lzma`) and exposes sub-image 1's physical location to the
-    # MIPS kernel via the `initrd_start` / `initrd_size` PROM env vars
-    # (see lib_mips/mips_linux.c upstream). The kernel's
-    # arch/mips/.../prom.c parses those env vars into the standard
-    # initrd_start/initrd_end Linux symbols, so the populate_rootfs()
-    # path that drops our LibreMesh CPIO into rootfs is identical to
-    # the FIT case — we just plumb the location differently.
+    # Why not ImageBuilder + repack: the LibreRouter v1 ships an
+    # Atheros QCA9558 SoC running a U-Boot 1.1.x fork
+    # (https://github.com/LibreRouterOrg/u-boot). That U-Boot has NO
+    # FIT parser and its lib_mips/mips_linux.c does NOT propagate the
+    # second sub-image of an IH_TYPE_MULTI uImage to the MIPS kernel
+    # as `initrd_start` / `initrd_size`. We tried the multi-uimage
+    # approach in commit history — the kernel boots, the cmdline ends
+    # up `console=ttyS0,115200n8 rootfstype=squashfs,jffs2`, the
+    # initramfs unpacker never runs, and the device falls through to
+    # mounting the on-flash squashfs (CI symptom: `root@margarita:/#`
+    # banner instead of `root@LiMe-XXXXXX:/#`, see CI run 25021369701
+    # and the corresponding pexpect TIMEOUT in _await_login).
     #
-    # Bootargs cannot be embedded in a non-FIT uImage, so the labgrid
-    # YAML for librerouter_v1 must `setenv bootargs` (and run any
-    # other env tweaks) BEFORE `bootm`. The fit_bootargs value below is
-    # consumed by build_image.sh for diagnostics only on this path; the
-    # actual cmdline that hits the kernel is whatever the labgrid YAML
-    # writes into U-Boot's environment at boot time.
+    # The only canonical OpenWrt path that boots a custom rootfs from
+    # RAM on ath79 is to compile the kernel with
+    # CONFIG_INITRAMFS_SOURCE pointing at the LibreMesh CPIO. The
+    # kernel then carries the rootfs in its own .init.ramfs section,
+    # U-Boot just runs `bootm <addr>`, and the kernel`s
+    # populate_rootfs() does the rest with no bootloader cooperation.
+    #
+    # Why not the SDK either: we initially tried to drive the OpenWrt
+    # SDK (ghcr.io/openwrt/sdk:ath79-generic-*) — see commit history
+    # for the now-deleted tools/ci/build_image_sdk.sh. Two blockers:
+    #   (a) The SDK ships only the `package` make targets (its
+    #       `target/` and `include/image.mk` stubs raise
+    #       "No rule to make target 'image'") so it cannot rebuild
+    #       the kernel at all, let alone with CONFIG_INITRAMFS_SOURCE.
+    #   (b) The cousin path — ImageBuilder with
+    #       CONFIG_TARGET_ROOTFS_INITRAMFS=y — only emits
+    #       sysupgrade.bin: include/image.mk explicitly skips the
+    #       initramfs recipe under `$(if $(IB),,…)`, again because
+    #       there are no kernel sources to recompile.
+    # The only viable path is therefore a full OpenWrt source-tree
+    # build (`make world`), which tools/ci/build_image_source.sh
+    # automates: clone openwrt.git at v$openwrt_release, link
+    # pi-lime-packages as a `src-link` feed, seed a .config with
+    # CONFIG_TARGET_ROOTFS_INITRAMFS=y +
+    # CONFIG_TARGET_INITRAMFS_COMPRESSION_LZMA=y + the per-device
+    # profile + every lime-* package, and let make produce the final
+    # `<release>-ath79-generic-librerouter_librerouter-v1-initramfs-
+    # kernel.bin` (a uImage; DTB is appended to kernel-bin via the
+    # standard `kernel-bin | append-dtb | lzma | uImage lzma`
+    # recipe). The build is heavy (~50–60 min cold, ~10–20 min warm
+    # with the GHA cache configured in build-firmware.yml) but it`s
+    # the only one that actually boots LibreMesh on this hardware.
+    #
+    # Bootargs and U-Boot env: with the CPIO baked into the kernel we
+    # don`t need to pass any rootfs= location, but the labgrid YAML
+    # still does `setenv bootargs console=ttyS0,115200n8` to keep the
+    # serial console output going; this is harmless and explicit.
+    # ----------------------------------------------------------------
     build_initramfs: true
     test_firmware: true
     # The labgrid place that owns the LibreRouter v1 hardware in the
     # fcefyn testbed is named `labgrid-fcefyn-librerouter_1` (unit
     # suffix `_1`, mirroring the `belkin_rt3200_<n>` naming convention
-    # for multi-unit hardware). Without this override, prepare-matrix
-    # falls back to `test_places: [.device]` and asks for
-    # `labgrid-fcefyn-librerouter_librerouter-v1`, which does not
-    # exist in `labgrid-client places` and aborts test-firmware with
-    # `place pattern ... matches nothing` (CI run 25021369701, test
-    # job for librerouter_v1). Even though we currently have a single
-    # LibreRouter unit, modelling it as `librerouter_1` keeps the door
-    # open for adding `librerouter_2` etc. without renaming the lab
-    # resources.
+    # for multi-unit hardware).
     test_places:
       - librerouter_1
-    image_format: multi-uimage
-    # mkimage architecture name for the multi-uimage header. Set to
-    # `mips` for ath79 (32-bit big-endian MIPS); U-Boot's bootm checks
-    # this against its own IH_ARCH and refuses to boot a mismatch.
-    fit_arch: mips
-    # Decompression / entry address. KERNEL_LOADADDR for ath79 in
-    # 24.10 is 0x80060000 (target/linux/ath79/image/generic.mk).
-    # mkimage `-a` is the load address (where U-Boot decompresses the
-    # lzma kernel sub-image to) and `-e` is the entry point — both
-    # are equal for a self-relocating zImage-style ath79 kernel.
-    fit_kernel_loadaddr: "0x80060000"
-    # Documented for completeness; build_image.sh ignores fit_bootargs
-    # when IMAGE_FORMAT=multi-uimage. The labgrid target YAML in
-    # libremesh-tests/targets/librerouter_librerouter-v1.yaml owns the
-    # actual U-Boot env writes that produce this cmdline at boot time.
-    fit_bootargs: "console=ttyS0,115200n8"
+    image_format: source-initramfs-kernel
+    # OpenWrt kconfig identifier for the target/subtarget pair. This
+    # drives `CONFIG_TARGET_<sdk_target_subtarget>=y` and
+    # `CONFIG_TARGET_<sdk_target_subtarget>_DEVICE_<profile>=y` in the
+    # .config seed build_image_source.sh emits. Mirrors the
+    # target/linux/<target>/image/<sub>.mk path: ath79 + generic
+    # subtarget -> `ath79_generic`. The `imagebuilder` field above
+    # already encodes the same info but with a `-` separator, which
+    # kconfig identifiers do not allow — hence the explicit field.
+    # The field name (`sdk_*`) is a leftover from the abandoned SDK
+    # path; rename to `target_subtarget` once safe (no other consumer
+    # references it).
+    sdk_target_subtarget: ath79_generic
     # ath79 reads the OEM MAC from a fixed mtd@art partition (8 MiB SPI
     # NOR), not from a UBI factory volume — there is no -EPROBE_DEFER
     # cascade analogous to openwrt#22858 here. Leave the patcher off.
     dtb_patch_nvmem_mac: false
     # Reduced set for the librerouter v1 (8 MiB SPI NOR; sysupgrade partition
     # caps at ~8126464 bytes per ath79 image-recipes). With the full default
-    # list the squashfs-sysupgrade.bin lands at ~8192004 bytes (overflow by
-    # ~64 KiB) and the imagebuilder aborts with `Failed to open firmware
-    # file`. We drop UI / docs / debug packages (lime-app, lime-debug,
-    # lime-docs, lime-docs-minimal) which together account for the overrun;
-    # mesh routing and shared-state remain installed so the multi-node
-    # libremesh-tests still exercise babeld + batman-adv on this target.
+    # list the squashfs-sysupgrade.bin overflows the partition and the build
+    # aborts. We drop UI / docs / debug packages (lime-app, lime-debug,
+    # lime-docs, lime-docs-minimal); mesh routing and shared-state remain
+    # installed so the multi-node libremesh-tests still exercise babeld +
+    # batman-adv on this target.
+    #
+    # NOTE on initramfs: the in-RAM image does NOT have the 8 MiB partition
+    # constraint (it lives in DRAM, capped only by the LibreRouter`s 64 MiB
+    # of RAM and TFTP transfer practicality). We could ship the full
+    # package list for the SDK build, but keeping the package list
+    # uniform with the on-flash variant guarantees the test exercises
+    # the same userspace stack that production LibreRouter installs.
     packages: >-
       lime-system lime-proto-babeld lime-proto-batadv lime-proto-anygw
       lime-hwd-openwrt-wan lime-hwd-ground-routing
