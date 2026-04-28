@@ -127,6 +127,28 @@ FIT_BOOTARGS="${FIT_BOOTARGS:-console=ttyS0,115200n1 pci=pcie_bus_perf}"
 # label MAC for no benefit.
 DTB_PATCH_NVMEM_MAC="${DTB_PATCH_NVMEM_MAC:-0}"
 
+# DTB_FORCE_LEGACY_PARTITIONS: when "1", rewrite the SPI-NAND
+# partitioning of the FIT-shipped DTB to the legacy 23.05 layout
+# (separate `bl2`, `fip`, `factory`, `ubi` MTD partitions) instead of
+# the OpenWrt 24.10 all-UBI layout (`bl2` + `ubi`-with-volumes-inside).
+# Required ONLY on linksys_e8450-ubi (Belkin RT3200) units that are
+# physically still on layout 1.0: with the 24.10 DTS, the kernel
+# attaches UBI starting at MTD offset 0x80000 and overwrites the
+# on-flash BL31/FIP region (0x80000-0x1c0000) and the calibration
+# `factory` region (0x1c0000-0x2c0000) with UBI EC headers, KOD'ing
+# the device on the next power cycle (BL2 then fails to load BL31).
+# After this patch the kernel UBI MTD is constrained to 0x300000+,
+# matching where on-flash UBI volumes actually live, and
+# fip/factory bytes are no longer reachable. See
+# docs/followups/belkin_rt3200_layout_1_0_dtb_patch.md for the full
+# diagnosis and the rationale for patching the FIT instead of
+# migrating the hardware to layout 2.0.
+#
+# Defaulted off everywhere else: openwrt_one and bananapi_bpi-r4 do
+# not use a UBI-on-NAND boot path and there is no `linux,ubi`
+# partition for the patcher to find — the script would hard-fail.
+DTB_FORCE_LEGACY_PARTITIONS="${DTB_FORCE_LEGACY_PARTITIONS:-0}"
+
 if [[ "${BUILD_INITRAMFS}" == "1" ]]; then
   required_vars=(FIT_ARCH FIT_KERNEL_LOADADDR FIT_CONFIG FIT_BOOTARGS)
   # FIT_DTS is only required for the FIT path: mediatek/filogic builds carry
@@ -145,14 +167,21 @@ if [[ "${BUILD_INITRAMFS}" == "1" ]]; then
   done
 fi
 
-# Resolve the location of the DTB patcher relative to this script. The
-# patcher lives next to build_image.sh under tools/ci/ in the source tree,
-# and we copy it into WORK_DIR below so it is reachable from inside the
-# ImageBuilder container via the /work bind mount.
+# Resolve the location of the DTB patchers relative to this script.
+# Both patchers live next to build_image.sh under tools/ci/ in the
+# source tree, and we copy them into WORK_DIR below so they are
+# reachable from inside the ImageBuilder container via the /work bind
+# mount. patch_dtb_local_mac.py injects local-mac-address; patch_dtb_partitions.py
+# rewrites the SPI-NAND partitioning to the legacy 23.05 layout.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DTB_PATCHER_HOST="${SCRIPT_DIR}/patch_dtb_local_mac.py"
+DTB_PARTITIONS_PATCHER_HOST="${SCRIPT_DIR}/patch_dtb_partitions.py"
 if [[ "${DTB_PATCH_NVMEM_MAC}" == "1" && ! -f "${DTB_PATCHER_HOST}" ]]; then
   echo "ERROR: DTB_PATCH_NVMEM_MAC=1 but ${DTB_PATCHER_HOST} not found" >&2
+  exit 1
+fi
+if [[ "${DTB_FORCE_LEGACY_PARTITIONS}" == "1" && ! -f "${DTB_PARTITIONS_PATCHER_HOST}" ]]; then
+  echo "ERROR: DTB_FORCE_LEGACY_PARTITIONS=1 but ${DTB_PARTITIONS_PATCHER_HOST} not found" >&2
   exit 1
 fi
 
@@ -167,13 +196,18 @@ trap 'rm -rf "$WORK_DIR"' EXIT
 mkdir -p "${WORK_DIR}/out" "${WORK_DIR}/keys" "${OUTPUT_DIR}"
 chmod 0755 "${WORK_DIR}"
 
-# Stage the DTB patcher inside WORK_DIR so the in-container repack step
-# (which only sees /work and /feed) can invoke it. We always copy when
-# the file exists so a future build that flips DTB_PATCH_NVMEM_MAC=1 on
-# the same checkout has the patcher available with no extra plumbing.
+# Stage the DTB patchers inside WORK_DIR so the in-container repack
+# step (which only sees /work and /feed) can invoke them. We always
+# copy whichever script exists so a future build that flips
+# DTB_PATCH_NVMEM_MAC=1 or DTB_FORCE_LEGACY_PARTITIONS=1 on the same
+# checkout has the patcher available with no extra plumbing.
 if [[ -f "${DTB_PATCHER_HOST}" ]]; then
   cp "${DTB_PATCHER_HOST}" "${WORK_DIR}/patch_dtb_local_mac.py"
   chmod 0755 "${WORK_DIR}/patch_dtb_local_mac.py"
+fi
+if [[ -f "${DTB_PARTITIONS_PATCHER_HOST}" ]]; then
+  cp "${DTB_PARTITIONS_PATCHER_HOST}" "${WORK_DIR}/patch_dtb_partitions.py"
+  chmod 0755 "${WORK_DIR}/patch_dtb_partitions.py"
 fi
 
 cat > "${WORK_DIR}/repositories.snippet" <<EOF
@@ -198,7 +232,8 @@ chmod a+w "${WORK_DIR}/out"
 # process env unless exported, and Docker's `-e VAR` reads from the
 # calling process env, not from the script's lexical scope.
 export BUILD_INITRAMFS IMAGE_FORMAT FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS \
-       FIT_CONFIG FIT_BOOTARGS DTB_PATCH_NVMEM_MAC PROFILE PACKAGES \
+       FIT_CONFIG FIT_BOOTARGS DTB_PATCH_NVMEM_MAC \
+       DTB_FORCE_LEGACY_PARTITIONS PROFILE PACKAGES \
        ARCH OPENWRT_RELEASE
 
 docker run --rm \
@@ -211,6 +246,7 @@ docker run --rm \
   -e FIT_CONFIG \
   -e FIT_BOOTARGS \
   -e DTB_PATCH_NVMEM_MAC \
+  -e DTB_FORCE_LEGACY_PARTITIONS \
   -e PROFILE \
   -e PACKAGES \
   -e ARCH \
@@ -466,21 +502,44 @@ docker run --rm \
       mkdir -p "${REPACK_DIR}"
 
       # ------------------------------------------------------------------
-      # Optional DTB patch: inject `local-mac-address` into GMAC / DSA-WAN
-      # nodes whose stock DTS pulls the MAC from a UBI factory NVMEM
-      # cell. See OpenWrt issue #22858: `nvmem_cell_get()` returns
-      # `-EPROBE_DEFER` perpetually for UBI-backed providers, which
-      # blocks `mtk_eth_soc.probe` and leaves the device with no
-      # ethernet at all (`platform 1b100000.ethernet: deferred probe
-      # pending`). Adding a DT property short-circuits the NVMEM lookup
-      # entirely (the kernel `of_get_mac_address()` helper checks DT
-      # properties before falling back to NVMEM) and unblocks probe.
+      # Optional DTB patches. Two independent transforms can be applied
+      # in series to the FIT-shipped DTB; each is gated by its own
+      # env-var flag and either may be off, but both share the dtc
+      # round-trip (decompile -> text edit -> recompile).
       #
-      # Implementation: dtc round-trip through DTS so the patcher can
-      # work on text. dtc is the in-tree binary we located above; the
-      # patcher is at /work/patch_dtb_local_mac.py (staged by the host
-      # side of build_image.sh into WORK_DIR before docker run, see the
-      # `cp ... patch_dtb_local_mac.py` block).
+      # 1) DTB_PATCH_NVMEM_MAC=1 (workaround openwrt#22858):
+      #    Inject `local-mac-address` into GMAC / DSA-WAN nodes whose
+      #    stock DTS pulls the MAC from a UBI factory NVMEM cell.
+      #    `nvmem_cell_get()` returns `-EPROBE_DEFER` perpetually for
+      #    UBI-backed providers, blocking mtk_eth_soc.probe and
+      #    leaving the device with no ethernet at all (`platform
+      #    1b100000.ethernet: deferred probe pending`). Adding a DT
+      #    property short-circuits the NVMEM lookup entirely (the
+      #    kernel `of_get_mac_address()` helper checks DT properties
+      #    before falling back to NVMEM) and unblocks probe.
+      #    Implemented by /work/patch_dtb_local_mac.py.
+      #
+      # 2) DTB_FORCE_LEGACY_PARTITIONS=1 (workaround Belkin layout-1.0
+      #    KOD): rewrite the SPI-NAND `partitions { ... }` block from
+      #    the OpenWrt 24.10 all-UBI shape to the legacy 23.05 layout
+      #    (separate `bl2` + `fip` + `factory` + `ubi` partitions,
+      #    ubi starting at MTD offset 0x300000). Required on Belkin
+      #    RT3200 units that are still on layout 1.0: with the 24.10
+      #    DTS, the kernel attaches UBI from offset 0x80000 onward
+      #    and overwrites BL31/FIP and the factory calibration
+      #    region with UBI EC headers, KODing the device on the
+      #    next power cycle. Implemented by
+      #    /work/patch_dtb_partitions.py. See
+      #    docs/followups/belkin_rt3200_layout_1_0_dtb_patch.md for
+      #    the full diagnosis.
+      #
+      # Implementation: a single dtc -I dtb -O dts decompile, then
+      # patcher chain over the resulting DTS text, then dtc -I dts -O dtb
+      # recompile. dtc is the in-tree binary we located above. The
+      # patchers live at /work/patch_dtb_local_mac.py and
+      # /work/patch_dtb_partitions.py (both staged by the host side
+      # of build_image.sh into WORK_DIR before docker run, see the
+      # `cp ... patch_dtb_*.py` block).
       #
       # NOTE: comments in this section MUST avoid literal apostrophes,
       # since the whole block lives inside a `sh -lc "..."`-style
@@ -489,55 +548,97 @@ docker run --rm \
       # bash. Use plain English (e.g. "the kernel helper" instead of
       # "kernel apostrophe s helper") and double quotes for inline
       # quoting if needed.
-      #
-      # `--require-patch` makes the build fail loudly if the DTS no
-      # longer contains the GMAC / WAN nodes the patcher knows about
-      # (e.g. a future kernel rev renames `mac@0` to `port@0` under
-      # `&eth`); a silent pass would ship a still-broken firmware.
-      if [ "${IMAGE_FORMAT}" = "fit" ] && [ "${DTB_PATCH_NVMEM_MAC:-0}" = "1" ]; then
-        if [ ! -f /work/patch_dtb_local_mac.py ]; then
-          echo "ERROR: DTB_PATCH_NVMEM_MAC=1 but /work/patch_dtb_local_mac.py is missing" >&2
-          ls -la /work >&2 || true
-          exit 1
-        fi
+      DTB_NEEDS_PATCH=0
+      if [ "${DTB_PATCH_NVMEM_MAC:-0}" = "1" ]; then DTB_NEEDS_PATCH=1; fi
+      if [ "${DTB_FORCE_LEGACY_PARTITIONS:-0}" = "1" ]; then DTB_NEEDS_PATCH=1; fi
+
+      if [ "${IMAGE_FORMAT}" = "fit" ] && [ "${DTB_NEEDS_PATCH}" = "1" ]; then
         if ! command -v python3 >/dev/null 2>&1; then
-          echo "ERROR: DTB_PATCH_NVMEM_MAC=1 requires python3 inside the ImageBuilder container" >&2
+          echo "ERROR: DTB patching requires python3 inside the ImageBuilder container" >&2
           exit 1
         fi
-        echo "=== Patching DTB with local-mac-address (workaround openwrt#22858) ==="
-        DTB_DTS_IN="${REPACK_DIR}/$(basename "${DTB_FILE}").orig.dts"
-        DTB_DTS_OUT="${REPACK_DIR}/$(basename "${DTB_FILE}").patched.dts"
+        DTB_DTS_ORIG="${REPACK_DIR}/$(basename "${DTB_FILE}").orig.dts"
+        DTB_DTS_STAGE1="${REPACK_DIR}/$(basename "${DTB_FILE}").stage1.dts"
+        DTB_DTS_STAGE2="${REPACK_DIR}/$(basename "${DTB_FILE}").stage2.dts"
         DTB_PATCHED="${REPACK_DIR}/$(basename "${DTB_FILE}")"
-        # dtc decompiles the DTB into DTS we can grep/patch. -W no-unit_address_format
+        # dtc decompiles the DTB into DTS we can grep/patch. -q
         # because the IB-shipped DTBs sometimes encode reg without a
         # leading `0x` and dtc warns about it loudly; the warnings are
         # harmless and pollute the CI log.
-        "${DTC_BIN}" -I dtb -O dts -q -o "${DTB_DTS_IN}" "${DTB_FILE}"
-        python3 /work/patch_dtb_local_mac.py "${PROFILE}" \
-          --in "${DTB_DTS_IN}" --out "${DTB_DTS_OUT}" --require-patch
-        "${DTC_BIN}" -I dts -O dtb -q -o "${DTB_PATCHED}" "${DTB_DTS_OUT}"
+        "${DTC_BIN}" -I dtb -O dts -q -o "${DTB_DTS_ORIG}" "${DTB_FILE}"
+        # Stage 1: local-mac-address injection. Bypass step:
+        # `cp` the original DTS unchanged when the flag is off.
+        # `--require-patch` makes the build fail loudly if the DTS
+        # no longer contains the GMAC / WAN nodes the patcher knows
+        # about (e.g. a future kernel rev renames `mac@0` to
+        # `port@0` under `&eth`); a silent pass would ship a
+        # still-broken firmware.
+        if [ "${DTB_PATCH_NVMEM_MAC:-0}" = "1" ]; then
+          if [ ! -f /work/patch_dtb_local_mac.py ]; then
+            echo "ERROR: DTB_PATCH_NVMEM_MAC=1 but /work/patch_dtb_local_mac.py is missing" >&2
+            ls -la /work >&2 || true
+            exit 1
+          fi
+          echo "=== Patching DTB stage 1: local-mac-address (workaround openwrt#22858) ==="
+          python3 /work/patch_dtb_local_mac.py "${PROFILE}" \
+            --in "${DTB_DTS_ORIG}" --out "${DTB_DTS_STAGE1}" --require-patch
+        else
+          cp "${DTB_DTS_ORIG}" "${DTB_DTS_STAGE1}"
+        fi
+        # Stage 2: SPI-NAND partitioning rewrite. Bypass step:
+        # `cp` the stage-1 DTS unchanged when the flag is off. The
+        # patcher hard-fails if the input DTS is already on layout
+        # 1.0 (no `linux,ubi` partition to find) or if dtc dropped
+        # the factory cell labels — both conditions would silently
+        # ship a half-broken DTB without this guard.
+        if [ "${DTB_FORCE_LEGACY_PARTITIONS:-0}" = "1" ]; then
+          if [ ! -f /work/patch_dtb_partitions.py ]; then
+            echo "ERROR: DTB_FORCE_LEGACY_PARTITIONS=1 but /work/patch_dtb_partitions.py is missing" >&2
+            ls -la /work >&2 || true
+            exit 1
+          fi
+          echo "=== Patching DTB stage 2: legacy 23.05 SPI-NAND partitioning ==="
+          python3 /work/patch_dtb_partitions.py \
+            --in "${DTB_DTS_STAGE1}" --out "${DTB_DTS_STAGE2}"
+        else
+          cp "${DTB_DTS_STAGE1}" "${DTB_DTS_STAGE2}"
+        fi
+        "${DTC_BIN}" -I dts -O dtb -q -o "${DTB_PATCHED}" "${DTB_DTS_STAGE2}"
         echo "  patched DTB    : ${DTB_PATCHED} ($(stat -c%s "${DTB_PATCHED}") bytes; original $(stat -c%s "${DTB_FILE}") bytes)"
-        # Sanity: the patched DTB must be at least as large as the
-        # original (we only ever ADD properties, never remove them).
-        # A smaller output would mean dtc dropped data — fail loudly.
+        # Sanity: with stage 1 only (local-mac-address inject) we
+        # only ADD properties, so the patched DTB must be at least
+        # as large as the original. With stage 2 active we REPLACE
+        # the partitioning block, so a small shrink is legitimate
+        # (the all-UBI block declares more nested volumes than the
+        # 23.05 layout uses). We therefore only enforce the
+        # "patched >= original" guard when stage 2 is OFF; with
+        # stage 2 on, we accept any non-empty output. The
+        # round-tripped recompile already crashes if the DTS is
+        # malformed, which is the actual failure mode worth
+        # catching.
         orig_sz=$(stat -c%s "${DTB_FILE}")
         new_sz=$(stat -c%s "${DTB_PATCHED}")
-        if [ "${new_sz}" -lt "${orig_sz}" ]; then
+        if [ "${DTB_FORCE_LEGACY_PARTITIONS:-0}" != "1" ] && [ "${new_sz}" -lt "${orig_sz}" ]; then
           echo "ERROR: patched DTB shrunk from ${orig_sz} to ${new_sz} bytes — refusing to ship" >&2
           exit 1
         fi
+        if [ "${new_sz}" -lt 1024 ]; then
+          echo "ERROR: patched DTB is implausibly small (${new_sz} bytes) — dtc likely dropped data" >&2
+          exit 1
+        fi
         DTB_FILE="${DTB_PATCHED}"
-      elif [ "${IMAGE_FORMAT}" != "fit" ] && [ "${DTB_PATCH_NVMEM_MAC:-0}" = "1" ]; then
-        # The DTB patcher only knows how to operate on a free-standing DTB
-        # file. ath79 multi-uimage builds bake the DTB into the lzma kernel
-        # blob, so there is no DTB we could decompile/patch/recompile here.
-        # Surface the misconfiguration instead of silently shipping an
-        # unpatched image.
-        echo "ERROR: DTB_PATCH_NVMEM_MAC=1 is incompatible with IMAGE_FORMAT=${IMAGE_FORMAT}" >&2
+      elif [ "${IMAGE_FORMAT}" != "fit" ] && [ "${DTB_NEEDS_PATCH}" = "1" ]; then
+        # The DTB patchers only know how to operate on a free-standing
+        # DTB file. ath79 multi-uimage builds bake the DTB into the
+        # lzma kernel blob, so there is no DTB we could
+        # decompile/patch/recompile here. Surface the misconfiguration
+        # instead of silently shipping an unpatched image.
+        echo "ERROR: DTB patching is incompatible with IMAGE_FORMAT=${IMAGE_FORMAT}" >&2
         echo "       (the DTB is fused inside kernel-bin and cannot be patched offline)" >&2
+        echo "       DTB_PATCH_NVMEM_MAC=${DTB_PATCH_NVMEM_MAC:-0} DTB_FORCE_LEGACY_PARTITIONS=${DTB_FORCE_LEGACY_PARTITIONS:-0}" >&2
         exit 1
       else
-        echo "=== Skipping DTB patch (DTB_PATCH_NVMEM_MAC=${DTB_PATCH_NVMEM_MAC:-0}) ==="
+        echo "=== Skipping DTB patch (DTB_PATCH_NVMEM_MAC=${DTB_PATCH_NVMEM_MAC:-0} DTB_FORCE_LEGACY_PARTITIONS=${DTB_FORCE_LEGACY_PARTITIONS:-0}) ==="
       fi
 
       # Build initramfs CPIO. Running as root inside the container so

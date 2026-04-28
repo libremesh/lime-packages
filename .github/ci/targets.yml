@@ -112,6 +112,32 @@ packages: >-
 #     MUST keep this off — the kernel reads the OEM MAC just fine and
 #     overriding it with a synthetic local-mac-address would lose the
 #     label MAC for no benefit.
+#   dtb_force_legacy_partitions (bool, default false): rewrite the
+#     SPI-NAND partitioning of the FIT-shipped DTB to the legacy
+#     OpenWrt 23.05 layout (separate `bl2`, `fip`, `factory`, `ubi`
+#     MTD partitions) instead of the OpenWrt 24.10 all-UBI shape
+#     (`bl2` + `ubi`-with-volumes-inside). Required ONLY on
+#     linksys_e8450-ubi (Belkin RT3200) units that are physically
+#     still on layout 1.0 (DEVICE_COMPAT_VERSION 1.0): with the
+#     stock 24.10 DTS, the kernel attaches UBI starting at MTD
+#     offset 0x80000 and overwrites the on-flash BL31/FIP region
+#     (0x80000-0x1c0000) plus the factory calibration region
+#     (0x1c0000-0x2c0000) with UBI EC headers. The next power
+#     cycle then KODs the device because BL2 cannot read BL31
+#     from the now-corrupted `fip` MTD (`ERROR: BL2: Failed to
+#     load image id 3 (-2)`). After this patch the kernel UBI
+#     attaches strictly to MTD offset 0x300000+, matching where
+#     on-flash UBI volumes actually live (and where BL2/BL31
+#     never touch). The patch also restores the layout 1.0
+#     `factory` MTD partition with `nvmem-cells` children so
+#     wmac/wmac1/gmac0/wan keep reading their EEPROM/MAC bytes
+#     from the same SPI-NAND offsets they did under 23.05.
+#     See docs/followups/belkin_rt3200_layout_1_0_dtb_patch.md
+#     for the full diagnosis. Boards that are not Belkin RT3200
+#     MUST keep this off — the patcher hard-fails when no
+#     `compatible = "linux,ubi"` partition exists in the DTS,
+#     so it cannot be flipped on by accident on
+#     openwrt_one / bananapi_bpi-r4.
 targets:
   - device: linksys_e8450
     imagebuilder: mediatek-mt7622
@@ -176,6 +202,18 @@ targets:
     # the DTB to inject `local-mac-address` short-circuits the NVMEM
     # lookup and lets the driver bind on first probe.
     dtb_patch_nvmem_mac: true
+    # See `dtb_force_legacy_partitions` block in the per-target keys
+    # legend above. The lab Belkins are still on layout 1.0
+    # (recovered with `mtk_uartboot` + 23.05.5 BL2/FIP each time
+    # they KOD); without this patch every CI run with a 24.10
+    # kernel writes UBI EC headers over the on-flash BL31/FIP and
+    # KODs the device on the next power cycle. The patch keeps the
+    # kernel UBI MTD constrained to the 0x300000+ offset matching
+    # the legacy layout, leaves BL2/FIP/factory bytes untouched,
+    # and re-publishes the factory nvmem-cells from the SPI-NAND
+    # `factory` MTD partition so wmac/gmac0/wan still resolve
+    # their MAC/EEPROM references.
+    dtb_force_legacy_partitions: true
   - device: openwrt_one
     imagebuilder: mediatek-filogic
     profile: openwrt_one
