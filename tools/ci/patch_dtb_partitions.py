@@ -86,12 +86,18 @@ a free-standing DTS where:
   subtree declaring `ubi-volume-fit`, `ubi-volume-factory`,
   `ubi-volume-ubootenv` etc.;
 
-* the `wmac`, `wmac1`, `gmac0`, and `wan` nodes reference
-  `<&eeprom_factory_0>`, `<&eeprom_factory_5000>`,
-  `<&macaddr_factory_7fff4>`, `<&macaddr_factory_7fffa>` for their
-  `nvmem-cells` properties (those four labels are emitted by dtc
-  whenever the source DTB carries a `__symbols__` node — which the
-  OpenWrt build always does).
+* the `wmac`, `wmac1`, `gmac0`, and `wan` nodes reference the
+  factory cells through their `nvmem-cells` properties, either as
+  symbolic labels (`<&eeprom_factory_0>` etc.) when the DTB carries
+  `__symbols__` (built with `dtc -@`), OR as numeric phandles
+  (`<0x44>` etc.) when it does not. OpenWrt 24.10 builds normal
+  kernel DTBs WITHOUT `-@`, so the references in the FIT-shipped
+  DTB this patcher receives are the numeric form. Empirical
+  evidence from CI run 25059904061: `dtc -I dtb -O dts` on
+  `image-mt7622-linksys-e8450-ubi.dtb` produced a DTS where every
+  `eeprom_factory_*` / `macaddr_factory_*` label was missing
+  while the corresponding `eeprom@<addr>` / `macaddr@<addr>` nodes
+  carried `phandle = <0xNN>;` properties.
 
 We replace the entire `partitions { ... }` block with the layout 1.0
 shape:
@@ -103,14 +109,17 @@ shape:
                                     macaddr_factory_* nvmem-cells
     ubi      partition@300000
 
-The `factory` MTD partition declares `eeprom_factory_0`,
-`eeprom_factory_5000`, `macaddr_factory_7fff4`, `macaddr_factory_7fffa`
-as child nodes with the same labels the original `&ubi_factory`
-nvmem-layout used. Because dtc preserves labels round-trip, the
-existing `nvmem-cells = <&macaddr_factory_7fff4>;` references in
-wmac/gmac0/wan/wmac1 keep resolving — but now to the new MTD-backed
-cells, which the kernel reads directly from the SPI-NAND
-`factory` partition (no UBI attach required).
+The `factory` MTD partition declares the four nvmem-cells with
+their original node names (`eeprom@0`, `eeprom@5000`,
+`macaddr@7fff4`, `macaddr@7fffa`) and copies each cell's
+`phandle = <0xNN>;` value verbatim from the original
+`ubi-volume-factory > nvmem-layout` children. Re-using the same
+phandle integers means the numeric references in
+`wmac`/`wmac1`/`gmac0`/`wan` keep pointing at the right node after
+recompile, no symbol table needed. We also keep the upstream
+labels (`eeprom_factory_0:` etc.) for human readability and so the
+patch is also correct against a DTB that DOES carry symbols (for a
+future OpenWrt rev that flips on `-@` for kernel DTBs).
 
 Idempotency and safety
 ======================
@@ -122,11 +131,14 @@ Idempotency and safety
   else, or against accidentally running this on an already-patched
   DTB (which has no `linux,ubi` block left).
 
-* We require the four `eeprom_factory_*` / `macaddr_factory_*` labels
-  to exist in the input DTS. If they are missing, dtc decompiled a
-  DTB without `__symbols__` (which would mean references downstream
-  are numeric phandles instead of `&labels`), and our textual rewrite
-  cannot guarantee correctness. Hard-fail with a clear message.
+* For each of the four expected factory cells the patcher reads the
+  cell's phandle from the original block (if a `phandle` property
+  exists; missing-phandle cells just emit the new node without one,
+  trusting that nothing references them). If the input DTS has
+  zero matches for a given cell name (e.g. `eeprom@0` vanished
+  entirely), the patcher hard-fails — that would mean the upstream
+  DTS shape changed in an incompatible way and the script needs
+  updating.
 
 CLI
 ===
@@ -148,11 +160,7 @@ import sys
 # Layout 1.0 partitioning, transcribed verbatim from
 # https://github.com/openwrt/openwrt/blob/v23.05.5/target/linux/mediatek/dts/mt7622-linksys-e8450-ubi.dts
 # (the dtsi `&snand { partitions { ... } }` block) and merged with the
-# `&factory` nvmem cell declarations from the same file. Indentation
-# below intentionally uses tabs to match dtc -I dtb -O dts default
-# output style; the consuming dtc -I dts -O dtb is whitespace-agnostic
-# but the textual diffs in CI logs are easier to read when consistent
-# with the surrounding (untouched) DTS.
+# `&factory` nvmem cell declarations from the same file.
 #
 # Why these exact reg ranges:
 #   bl2      0x000000-0x080000 — fixed by mt7622 boot ROM (the BootROM
@@ -168,6 +176,12 @@ import sys
 #                                23.05 stores in flash but does NOT
 #                                expose as an MTD partition (legacy
 #                                layout matches OpenWrt mainline).
+#
+# Placeholders `__PHANDLE_<name>_<addr>__` are replaced at rewrite
+# time with the literal phandle property line copied from the
+# original DTS. Each placeholder is at the END of the cell's reg
+# line so a missing phandle (cell had no upstream reference)
+# resolves to an empty string with no spurious whitespace artefact.
 LAYOUT_1_0_BLOCK = """\
 \t\tpartitions {
 \t\t\tcompatible = "fixed-partitions";
@@ -195,19 +209,19 @@ LAYOUT_1_0_BLOCK = """\
 \t\t\t\t#size-cells = <0x01>;
 
 \t\t\t\teeprom_factory_0: eeprom@0 {
-\t\t\t\t\treg = <0x00 0x4da8>;
+\t\t\t\t\treg = <0x00 0x4da8>;__PHANDLE_eeprom_0__
 \t\t\t\t};
 
 \t\t\t\teeprom_factory_5000: eeprom@5000 {
-\t\t\t\t\treg = <0x5000 0xe00>;
+\t\t\t\t\treg = <0x5000 0xe00>;__PHANDLE_eeprom_5000__
 \t\t\t\t};
 
 \t\t\t\tmacaddr_factory_7fff4: macaddr@7fff4 {
-\t\t\t\t\treg = <0x7fff4 0x06>;
+\t\t\t\t\treg = <0x7fff4 0x06>;__PHANDLE_macaddr_7fff4__
 \t\t\t\t};
 
 \t\t\t\tmacaddr_factory_7fffa: macaddr@7fffa {
-\t\t\t\t\treg = <0x7fffa 0x06>;
+\t\t\t\t\treg = <0x7fffa 0x06>;__PHANDLE_macaddr_7fffa__
 \t\t\t\t};
 \t\t\t};
 
@@ -238,16 +252,19 @@ PARTITIONS_HEADER_RE = re.compile(
 LINUX_UBI_MARKER = 'compatible = "linux,ubi"'
 
 
-# Labels we MUST find somewhere in the input DTS before we rewrite the
-# partitioning. If any is missing, dtc decompiled a DTB without
-# preserved labels (no __symbols__ node), which means the references
-# from wmac/gmac0/wan/wmac1 to factory cells are numeric phandles and
-# our textual rewrite would silently leave them dangling.
-REQUIRED_LABELS = (
-    "eeprom_factory_0",
-    "eeprom_factory_5000",
-    "macaddr_factory_7fff4",
-    "macaddr_factory_7fffa",
+# Cells we must find inside the original `ubi-volume-factory >
+# nvmem-layout` block, identified by their (node_name, addr_hex)
+# tuple — these are deterministic across OpenWrt revs because they
+# come straight from the upstream DTS source. We extract each cell's
+# numeric phandle (if any) so the new MTD-backed partition can
+# replicate it; numeric references downstream (`<0xNN>`) then
+# resolve to the new node without depending on a `__symbols__`
+# section that 24.10 does not emit.
+FACTORY_CELLS: tuple[tuple[str, str], ...] = (
+    ("eeprom",  "0"),
+    ("eeprom",  "5000"),
+    ("macaddr", "7fff4"),
+    ("macaddr", "7fffa"),
 )
 
 
@@ -314,36 +331,81 @@ def _find_snand_partitions(dts: str) -> tuple[int, int, str] | None:
     return matches[0]
 
 
-def _check_required_labels(dts: str) -> list[str]:
-    """Return the subset of REQUIRED_LABELS that is missing from the
-    input DTS. An empty list means every label is present and the
-    references downstream resolve symbolically."""
-    missing = []
-    for label in REQUIRED_LABELS:
-        # Match `<label>:` with surrounding whitespace at the start of
-        # a node header. dtc emits labels in this exact form
-        # (`label: name@addr {`).
-        if not re.search(rf"\b{re.escape(label)}\s*:", dts):
-            missing.append(label)
-    return missing
+def _extract_factory_phandles(
+    block: str,
+) -> dict[tuple[str, str], int | None]:
+    """Walk `block` (typically the SPI-NAND `partitions { ... }`
+    block we are about to replace) and return a mapping from
+    `(node_name, addr)` to the phandle integer for each entry of
+    FACTORY_CELLS.
+
+    A `None` value means "node was found but had no `phandle`
+    property"; this is legal — it means nothing references that cell
+    and we can emit the new node without an explicit phandle.
+
+    Raises `RuntimeError` when a cell node is missing entirely,
+    which would mean the upstream DTS shape changed and we need to
+    update FACTORY_CELLS.
+    """
+    out: dict[tuple[str, str], int | None] = {}
+    for name, addr in FACTORY_CELLS:
+        # Match `\b<name>@<addr> {` so addresses like `7fff4` cannot
+        # accidentally be matched against `1c0000` etc. dtc may emit
+        # the address as the bare hex digits or with a `0x` prefix in
+        # rare cases — anchor to the literal upstream form, which
+        # never carries the prefix on node units.
+        pattern = rf"(?<![\w-]){re.escape(name)}@{re.escape(addr)}\s*\{{"
+        m = re.search(pattern, block)
+        if not m:
+            raise RuntimeError(
+                f"Cannot find `{name}@{addr}` in the original "
+                "ubi-volume-factory block. The upstream DTS shape "
+                "changed and patch_dtb_partitions.py needs updating "
+                "(check FACTORY_CELLS against the current "
+                "mt7622-linksys-e8450-ubi.dts)."
+            )
+        open_brace_idx = m.end() - 1
+        node_end = _find_block_end(block, open_brace_idx)
+        if node_end < 0:
+            raise RuntimeError(
+                f"Unbalanced braces while reading `{name}@{addr}` "
+                "node in the original DTS."
+            )
+        body = block[open_brace_idx:node_end]
+        pm = re.search(
+            r"phandle\s*=\s*<\s*(0x[0-9a-fA-F]+|\d+)\s*>",
+            body,
+        )
+        if pm is None:
+            out[(name, addr)] = None
+            continue
+        raw = pm.group(1)
+        out[(name, addr)] = int(raw, 16) if raw.startswith("0x") else int(raw)
+    return out
+
+
+def _format_phandle_line(value: int | None) -> str:
+    """Render the phandle property line that follows a cell's `reg`
+    declaration. Empty string when there is no phandle to copy —
+    the placeholder slot in LAYOUT_1_0_BLOCK is on the same line as
+    `reg = ...;` so this collapses cleanly.
+    """
+    if value is None:
+        return ""
+    # Hex form mirrors what dtc emits in -I dtb -O dts output, which
+    # makes intermediate `.dts` files easier to diff against the
+    # original. The exact textual form is irrelevant once dtc -I dts
+    # -O dtb consumes it.
+    return f"\n\t\t\t\t\tphandle = <0x{value:x}>;"
 
 
 def patch_dts(dts: str) -> tuple[str, str]:
     """Apply the layout 1.0 rewrite. Returns `(patched_dts, summary)`.
 
     The summary string is suitable for stderr emission and lists the
-    range that was rewritten. Raises `RuntimeError` on any condition
-    that would result in a half-patched / silently broken DTB."""
-    missing = _check_required_labels(dts)
-    if missing:
-        raise RuntimeError(
-            "Input DTS is missing required factory-cell labels "
-            f"({', '.join(missing)}). dtc -I dtb -O dts probably "
-            "decompiled a DTB without a __symbols__ node, so the "
-            "wmac / wmac1 / gmac0 / wan nvmem-cells references are "
-            "numeric phandles. Textually rewriting the partitioning "
-            "would leave them pointing at deleted nodes."
-        )
+    range that was rewritten and which phandles were preserved.
+    Raises `RuntimeError` on any condition that would result in a
+    half-patched / silently broken DTB."""
     found = _find_snand_partitions(dts)
     if found is None:
         raise RuntimeError(
@@ -354,24 +416,29 @@ def patch_dts(dts: str) -> tuple[str, str]:
             "DTS shape changed and this script needs updating."
         )
     start, end, _indent = found
-    # We do NOT try to re-indent the template to match the original
-    # block's column. Reasoning:
-    #
-    # * dtc is whitespace-agnostic. The recompiled .dtb is identical
-    #   regardless of indentation depth, so functional correctness is
-    #   not affected.
-    # * Per-line re-indentation via a chain of `re.sub` over leading
-    #   tabs caused a stacking bug (a 2-tab → 3-tab pass happened
-    #   first, then the resulting 3-tab lines matched the next
-    #   2-tab→2-tab clause, snowballing each level). Tracking it
-    #   correctly would require parsing whitespace runs as
-    #   tab-counters, which is overkill for a one-pass patch.
-    # * The DTS is regenerated from the patched DTB on every CI run,
-    #   so the human-readable indentation only matters when reading
-    #   the intermediate `.patched.dts` artifact during debugging —
-    #   and there the template's own `\t\t` baseline is perfectly
-    #   legible.
+    original_block = dts[start:end]
+    # Extract phandles from the soon-to-be-deleted block BEFORE we
+    # replace it. Numeric references downstream (in wmac/gmac0/wan)
+    # would otherwise dangle.
+    phandles = _extract_factory_phandles(original_block)
     template = LAYOUT_1_0_BLOCK
+    for (name, addr), value in phandles.items():
+        placeholder = f"__PHANDLE_{name}_{addr}__"
+        if placeholder not in template:
+            raise RuntimeError(
+                f"Internal: template is missing placeholder "
+                f"{placeholder} — fix LAYOUT_1_0_BLOCK to match "
+                "FACTORY_CELLS."
+            )
+        template = template.replace(placeholder, _format_phandle_line(value))
+    # Defensive: any leftover placeholder means the FACTORY_CELLS
+    # table and the template diverged.
+    if "__PHANDLE_" in template:
+        leftover = re.findall(r"__PHANDLE_[\w]+__", template)
+        raise RuntimeError(
+            "Internal: unsubstituted placeholders left in template: "
+            f"{leftover}"
+        )
     # The original block we replace ends with `;` (statement
     # terminator), so the template must do the same. Sanity-check
     # ourselves so a future template edit cannot ship a broken DTS.
@@ -380,10 +447,18 @@ def patch_dts(dts: str) -> tuple[str, str]:
             "Internal: layout 1.0 template does not end with `};` — "
             "this should be unreachable, fix the template literal."
         )
+    # We do NOT try to re-indent the template to match the original
+    # block's column. dtc is whitespace-agnostic; the recompiled
+    # .dtb is identical regardless of indentation depth.
     out = dts[:start] + template + dts[end:]
+    phandle_summary = ", ".join(
+        f"{name}@{addr}->{('skip' if v is None else f'0x{v:x}')}"
+        for (name, addr), v in phandles.items()
+    )
     summary = (
         f"rewrote partitions block at bytes {start}..{end} "
-        f"({end - start} bytes -> {len(template)} bytes)"
+        f"({end - start} bytes -> {len(template)} bytes); "
+        f"factory phandles: {phandle_summary}"
     )
     return out, summary
 
