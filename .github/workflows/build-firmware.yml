@@ -8,8 +8,6 @@ on:
       - ".github/ci/targets.yml"
       - "tools/ci/build_feed.sh"
       - "tools/ci/build_image.sh"
-      - "tools/ci/build_image_source.sh"
-      - "libremesh.mk"
       - "packages/**"
   workflow_dispatch:
     inputs:
@@ -76,19 +74,20 @@ jobs:
           fi
 
           # Per-target `packages:` (when present in targets.yml) overrides the
-          # global `packages:` default. Used by small-flash devices like
-          # librerouter_librerouter-v1 whose 8 MiB SPI NOR can't fit the full
-          # LibreMesh package list. `// $pkg` keeps the global default for
-          # every target that does NOT define its own list, so this stays
-          # backwards-compatible.
+          # global `packages:` default. Useful for small-flash devices whose
+          # rootfs partition cannot fit the full LibreMesh package list, or
+          # for boards where a specific kmod has to be excluded (see
+          # bananapi_bpi-r4 + mt7996e in targets.yml). `// $pkg` keeps the
+          # global default for every target that does NOT define its own
+          # list, so this stays backwards-compatible.
           #
           # `build_initramfs` (default false) and the FIT metadata
           # (`fit_arch`, `fit_kernel_loadaddr`, `fit_dts`) are forwarded to
           # build_image.sh as env vars in the `build-image` job so the script
           # knows whether to repack a RAM-bootable initramfs FIT and with
           # which kernel loadaddr / DTB. Targets without these keys fall back
-          # to BUILD_INITRAMFS=0 and ship the sysupgrade artifact for IPK
-          # validation only (see librerouter_librerouter-v1 below).
+          # to BUILD_INITRAMFS=0 and ship only the sysupgrade artifact (no
+          # active target uses this fallback today).
           targets_matrix="$(
             jq -c --arg release "$openwrt_release" --arg feed "$feed_branch" --arg pkg "$packages" '
               {include: map(. + {
@@ -103,14 +102,6 @@ jobs:
                 fit_config: (.fit_config // "config-1"),
                 fit_bootargs: (.fit_bootargs // ""),
                 dtb_patch_nvmem_mac: (if (.dtb_patch_nvmem_mac == true) then "1" else "0" end),
-                # Subtarget kconfig identifier for image_format=
-                # source-initramfs-kernel. Naming kept (`sdk_*`) for
-                # backwards compat with targets.yml during the SDK -> full
-                # source migration; rename to `target_subtarget` once
-                # there are no other consumers. Defaulting to "" keeps
-                # every other target (FIT and multi-uimage) untouched;
-                # build_image_source.sh validates required != "" itself.
-                sdk_target_subtarget: (.sdk_target_subtarget // ""),
                 test_firmware: (if (.test_firmware == false) then "0" else "1" end),
                 test_places: (.test_places // [.device]),
                 uboot_interrupt_spam_sec: (.uboot_interrupt_spam_sec // "" | tostring)
@@ -123,9 +114,8 @@ jobs:
           # same hardware (e.g. three Belkin RT3200 sharing the
           # linksys_e8450-ubi artifact) each get their own test-firmware
           # job. `test_firmware: false` in targets.yml opts a target out
-          # of this expansion entirely (e.g. librerouter_librerouter-v1
-          # where ImageBuilder cannot produce a RAM-bootable image —
-          # TFTP boot would TIMEOUT).
+          # of this expansion entirely (e.g. when a board needs only IPK
+          # validation but cannot boot the resulting artifact over TFTP).
           #
           # Per matrix entry we keep ALL build-job fields (device,
           # imagebuilder, profile, …) so any step in test-firmware that
@@ -377,22 +367,16 @@ jobs:
       - name: Free disk
         run: sudo rm -rf /opt/hostedtoolcache /usr/share/dotnet /usr/local/lib/android
 
-      # The IB-based build_image.sh consumes pre-built IPKs from the
-      # build-feed artifact. The source-based build_image_source.sh
-      # consumes the LibreMesh package SOURCE tree (Makefiles + files/)
-      # instead, because the OpenWrt source tree compiles them itself as
-      # part of the kernel + rootfs assembly. We download the IPK feed
-      # only on the IB path to avoid wasting bandwidth + disk on source
-      # builds that ignore it.
-      - name: Download matching local feed (ImageBuilder path only)
-        if: matrix.image_format != 'source-initramfs-kernel'
+      # build_image.sh consumes pre-built IPKs from the build-feed
+      # artifact (every active target uses the ImageBuilder + mkimage
+      # repack path; see docs/ci/firmware-build.md).
+      - name: Download matching local feed
         uses: actions/download-artifact@v5
         with:
           name: lime-feed-${{ matrix.arch }}
           path: ./feed-in/lime_packages/
 
-      - name: Diagnose downloaded feed (ImageBuilder path only)
-        if: matrix.image_format != 'source-initramfs-kernel'
+      - name: Diagnose downloaded feed
         run: |
           set -euo pipefail
           echo "=== feed-in/lime_packages/ contents ==="
@@ -403,79 +387,10 @@ jobs:
           pkg_idx_count=$(grep -c '^Package:' ./feed-in/lime_packages/Packages 2>/dev/null || echo 0)
           echo "IPK files: ${ipk_count} | Packages index entries: ${pkg_idx_count}"
 
-      # Source builds need both `packages/<pkg>/Makefile` AND `libremesh.mk`
-      # accessible inside the container. The pi-lime-packages checkout
-      # already has both at its workspace root, so build_image_source.sh
-      # takes the workspace root as its `feed_dir` arg and bind-mounts
-      # the whole tree at /lime_pkg. No staging step needed: previous
-      # iterations symlinked packages/ → feed-src/lime_packages, but
-      # that broke the relative `include ../../libremesh.mk` lookup
-      # used by lime-proto-*, lime-hwd-*, etc. (the helper Makefile
-      # was outside the symlinked tree). See build_image_source.sh for
-      # the long version.
-
       - name: Pull ImageBuilder image
-        if: matrix.image_format != 'source-initramfs-kernel'
         run: docker pull ghcr.io/openwrt/imagebuilder:${{ matrix.imagebuilder }}-v${{ matrix.openwrt_release }}
 
-      - name: Pull build-env image (source path only)
-        if: matrix.image_format == 'source-initramfs-kernel'
-        # We re-use ghcr.io/openwrt/sdk:* purely for its preinstalled
-        # OpenWrt build deps (gcc, perl, ncurses, swig, python3-setuptools,
-        # …) — see the long comment at the top of build_image_source.sh.
-        # The image is already pulled by build_image.sh on every other
-        # matrix entry, so the Docker layer cache amortises the ~2 GB pull.
-        run: docker pull ghcr.io/openwrt/sdk:${{ matrix.imagebuilder }}-v${{ matrix.openwrt_release }}
-
-      # Persistent OpenWrt source-build cache. The full source build
-      # pulls down the OpenWrt source tree (~250 MB shallow clone),
-      # builds the cross toolchain (~1 GB host tools + ~2 GB target
-      # toolchain), and downloads ~120 package source tarballs (~500 MB).
-      # We cache all of that so that the second and subsequent runs
-      # only have to recompile the kernel + lime-* packages (~10–20 min).
-      #
-      # We DO NOT cache `build_dir/target-*` or `bin/` (the per-target
-      # package build outputs and the final image artefacts). Reasons:
-      #   * `build_dir/target-*/root-*` is the rootfs assembly area;
-      #     caching it would carry stale lime-* installs into the next
-      #     run and the LibreMesh content would not refresh.
-      #   * `bin/` is the output dir; caching it would resurrect
-      #     last-run artefacts and confuse the artefact picker below.
-      #   * Both can grow >3 GB combined, eating GHA`s 10 GB/repo cache
-      #     allowance fast.
-      #
-      # Cache key includes the imagebuilder tag, OpenWrt release, and
-      # the lime packages feed hash. A LibreMesh package source change
-      # bumps `feed_hash` → cache miss → fresh package compile (good).
-      # An OpenWrt release bump bumps `openwrt_release` → cache miss →
-      # full toolchain rebuild (necessary; ABI changes). restore-keys
-      # gives a partial hit on the same imagebuilder + release for
-      # warm-ish builds across feed-only changes.
-      #
-      # The script (build_image_source.sh) checks the cached clone`s
-      # tag and re-clones if it doesn`t match `v${openwrt_release}`,
-      # so a stale-key restore (rare, only happens when actions/cache
-      # silently restores from a different release tag because of an
-      # eviction) self-heals at the cost of one cold build.
-      - name: Restore OpenWrt source-build cache (source path only)
-        if: matrix.image_format == 'source-initramfs-kernel'
-        id: source-cache
-        uses: actions/cache@v4
-        with:
-          # actions/cache@v4 supports `!` exclusion patterns. We cache
-          # the entire openwrt-cache/ tree minus build_dir/target-* and
-          # bin/. Order matters: includes first, then exclusions.
-          path: |
-            openwrt-cache
-            !openwrt-cache/build_dir/target-*
-            !openwrt-cache/bin
-            !openwrt-cache/tmp
-          key: openwrt-source-v1-${{ matrix.imagebuilder }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}
-          restore-keys: |
-            openwrt-source-v1-${{ matrix.imagebuilder }}-${{ matrix.openwrt_release }}-
-
-      - name: Build firmware image (ImageBuilder path)
-        if: matrix.image_format != 'source-initramfs-kernel'
+      - name: Build firmware image
         env:
           DEVICE_NAME: ${{ matrix.device }}
           ARCH: ${{ matrix.arch }}
@@ -520,33 +435,6 @@ jobs:
             "./feed-in" \
             "./out"
 
-      - name: Build firmware image (full source path)
-        if: matrix.image_format == 'source-initramfs-kernel'
-        env:
-          DEVICE_NAME: ${{ matrix.device }}
-          PACKAGES: ${{ matrix.packages }}
-          # OpenWrt kconfig identifier (target/subtarget, e.g.
-          # `ath79/generic`) passed through from targets.yml.
-          # build_image_source.sh refuses to run without it.
-          PROFILE_TARGET: ${{ matrix.sdk_target_subtarget }}
-          # Persistent OpenWrt source/build cache restored above. The
-          # script accepts an empty / non-existent dir on a cold cache
-          # and rebuilds from scratch. Env name matches the script
-          # contract; the matching actions/cache step caches the same
-          # `openwrt-cache` workspace path.
-          OPENWRT_SRC_CACHE_DIR: ${{ github.workspace }}/openwrt-cache
-        run: |
-          chmod +x tools/ci/build_image_source.sh
-          # feed_dir = workspace root (contains packages/ + libremesh.mk).
-          # See "Source builds need both …" comment above for why we no
-          # longer stage a feed-src/ symlink intermediary.
-          tools/ci/build_image_source.sh \
-            "${{ matrix.imagebuilder }}" \
-            "${{ matrix.profile }}" \
-            "${{ matrix.openwrt_release }}" \
-            "${{ github.workspace }}" \
-            "./out"
-
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
@@ -568,12 +456,9 @@ jobs:
   # Self-hosted hardware tests: do not run for fork PRs (no lab access / abuse).
   # Uses `test_targets_matrix` (filtered subset of `targets_matrix`) so that
   # targets explicitly marked `test_firmware: false` in targets.yml never
-  # schedule a hardware-test job. (Historical note: `librerouter_librerouter-v1`
-  # was excluded for a long while because its ath79 / U-Boot 1.1.x stack has
-  # no FIT parser and an ImageBuilder squashfs-sysupgrade is not
-  # RAM-bootable. The `image_format: multi-uimage` repack path now produces
-  # a legacy IH_TYPE_MULTI uImage that LibreRouter's U-Boot can load over
-  # TFTP, so the target is opted back in.)
+  # schedule a hardware-test job. `librerouter_librerouter-v1` is not in the
+  # matrix at all today; ImageBuilder cannot produce a RAM-bootable LibreMesh
+  # image for ath79 — see `docs/followups/imagebuilder_initramfs_limitations.md`.
   test-firmware:
     # Display the place (e.g. `belkin_rt3200_1`) instead of the device
     # so the GitHub UI distinguishes the three Belkin RT3200 jobs that
