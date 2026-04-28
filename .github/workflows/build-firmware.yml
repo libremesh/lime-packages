@@ -8,6 +8,12 @@ on:
       - ".github/ci/targets.yml"
       - "tools/ci/build_feed.sh"
       - "tools/ci/build_image.sh"
+      # DTB patchers consumed by build_image.sh; without them on the
+      # paths list, an edit that only touches a patcher would skip
+      # the workflow entirely and ship a still-broken image on next
+      # release tag.
+      - "tools/ci/patch_dtb_local_mac.py"
+      - "tools/ci/patch_dtb_partitions.py"
       - "packages/**"
   workflow_dispatch:
     inputs:
@@ -102,6 +108,7 @@ jobs:
                 fit_config: (.fit_config // "config-1"),
                 fit_bootargs: (.fit_bootargs // ""),
                 dtb_patch_nvmem_mac: (if (.dtb_patch_nvmem_mac == true) then "1" else "0" end),
+                dtb_force_legacy_partitions: (if (.dtb_force_legacy_partitions == true) then "1" else "0" end),
                 test_firmware: (if (.test_firmware == false) then "0" else "1" end),
                 test_places: (.test_places // [.device]),
                 uboot_interrupt_spam_sec: (.uboot_interrupt_spam_sec // "" | tostring)
@@ -426,6 +433,14 @@ jobs:
           # "0" via the matrix expansion in prepare-matrix; only set to
           # "1" for boards whose factory NVMEM lives in a UBI volume.
           DTB_PATCH_NVMEM_MAC: ${{ matrix.dtb_patch_nvmem_mac }}
+          # "1" enables the patch_dtb_partitions.py round-trip on the
+          # FIT-shipped DTB, rewriting the SPI-NAND partitioning to
+          # the legacy 23.05 layout. Required on Belkin RT3200 units
+          # still on DEVICE_COMPAT_VERSION 1.0; without it the 24.10
+          # kernel attaches UBI from MTD offset 0x80000 and overwrites
+          # BL31/FIP, KODing the device. See
+          # docs/followups/belkin_rt3200_layout_1_0_dtb_patch.md.
+          DTB_FORCE_LEGACY_PARTITIONS: ${{ matrix.dtb_force_legacy_partitions }}
         run: |
           chmod +x tools/ci/build_image.sh
           tools/ci/build_image.sh \

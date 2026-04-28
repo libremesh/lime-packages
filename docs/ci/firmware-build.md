@@ -36,7 +36,8 @@ hardware tests) so every leaf job runs in parallel.
 | [`.github/workflows/build-firmware.yml`](../../.github/workflows/build-firmware.yml) | Orchestrator. Computes matrices, drives the four jobs, handles caching and artifact upload/download. |
 | [`tools/ci/build_feed.sh`](../../tools/ci/build_feed.sh) | Local reproducer of the CI feed build. Wraps `openwrt/gh-action-sdk@v9` to compile every `packages/<pkg>/Makefile` into `.ipk`s for one OpenWrt arch. The CI uses the upstream action directly, but this script is the canonical local equivalent. |
 | [`tools/ci/build_image.sh`](../../tools/ci/build_image.sh) | Runs the OpenWrt ImageBuilder against the pre-built lime_packages feed, then repacks the resulting `*-kernel.bin` + DTB + LibreMesh CPIO into a RAM-bootable FIT (`*-initramfs-libremesh.itb`) via `mkimage` and `mkits.sh`. |
-| [`tools/ci/patch_dtb_local_mac.py`](../../tools/ci/patch_dtb_local_mac.py) | Workaround for [openwrt#22858](https://github.com/openwrt/openwrt/issues/22858) on boards whose factory MAC lives in a UBI volume (Belkin RT3200): rewrites the FIT-shipped DTB to inject `local-mac-address` so `mtk_eth_soc.probe()` does not perpetually `-EPROBE_DEFER`. |
+| [`tools/ci/patch_dtb_local_mac.py`](../../tools/ci/patch_dtb_local_mac.py) | Workaround for [openwrt#22858](https://github.com/openwrt/openwrt/issues/22858) on boards whose factory MAC lives in a UBI volume (Belkin RT3200): rewrites the FIT-shipped DTB to inject `local-mac-address` so `mtk_eth_soc.probe()` does not perpetually `-EPROBE_DEFER`. Gated by `dtb_patch_nvmem_mac:` in `targets.yml`. |
+| [`tools/ci/patch_dtb_partitions.py`](../../tools/ci/patch_dtb_partitions.py) | Workaround for the Belkin RT3200 layout-1.0 KOD: rewrites the FIT-shipped DTB to declare the legacy 23.05 SPI-NAND partitioning (`bl2`+`fip`+`factory`+`ubi` separate MTD partitions) so a 24.10 kernel does not attach UBI over the on-flash BL31/FIP region and brick the device on the next power cycle. Gated by `dtb_force_legacy_partitions:` in `targets.yml`. Full diagnosis in [`docs/followups/belkin_rt3200_layout_1_0_dtb_patch.md`](../followups/belkin_rt3200_layout_1_0_dtb_patch.md). |
 
 The artifact names downstream consumers expect are
 `firmware-<device>.itb` (the bootable image) plus
@@ -121,5 +122,41 @@ gh workflow run build-firmware.yml \
 ```
 
 PRs trigger the workflow automatically when any of the watched paths
-change (`packages/**`, `tools/ci/build_*.sh`, `.github/ci/targets.yml`,
+change (`packages/**`, `tools/ci/build_*.sh`,
+`tools/ci/patch_dtb_*.py`, `.github/ci/targets.yml`,
 `.github/workflows/build-firmware.yml`).
+
+## DTB patches applied to the FIT
+
+Every FIT-shipped DTB goes through up to two textual patches before
+recompilation; both are gated per-target in `targets.yml` and either
+may be off:
+
+```mermaid
+flowchart LR
+  dtb["image-&lt;dts&gt;.dtb<br/>(from ImageBuilder)"]
+  dts1["DTS<br/>(dtc -I dtb -O dts)"]
+  s1{{"dtb_patch_nvmem_mac?"}}
+  s1y["patch_dtb_local_mac.py<br/>(inject local-mac-address)"]
+  s2{{"dtb_force_legacy_partitions?"}}
+  s2y["patch_dtb_partitions.py<br/>(rewrite SPI-NAND to layout 1.0)"]
+  out["patched DTB<br/>(dtc -I dts -O dtb)"]
+
+  dtb --> dts1
+  dts1 --> s1
+  s1 -- yes --> s1y --> s2
+  s1 -- no --> s2
+  s2 -- yes --> s2y --> out
+  s2 -- no --> out
+```
+
+Both patches share the same `dtc` round-trip (decompile -> text edit
+-> recompile) and are invoked in series inside `build_image.sh`.
+Stage ordering matters: the partitioning rewrite refers to factory
+nvmem-cell labels that the local-mac patch leaves alone, so running
+local-mac first is safe and any future patch should keep this order
+or document why it diverges.
+
+Skipping both patches keeps the original ImageBuilder DTB untouched
+(the `dtc` round-trip is also skipped). That is the path
+`openwrt_one` and `bananapi_bpi-r4` take today.
