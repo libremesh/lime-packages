@@ -1,5 +1,32 @@
-openwrt_release: "24.10.6"
-feed_branch: "openwrt-24.10"
+# Multi-version OpenWrt support. Each entry of `openwrt_releases` triggers
+# its own (target × release) cell in the build-firmware matrix; the
+# `feed_branch` for the matching LibreMesh feed at feed.libremesh.org is
+# resolved from `feed_branches` below. Adding "25.12.2" here is a
+# build-only smoke today: OpenWrt 25.12 switched the package index format
+# from OPKG/Packages.gz to APK/index.json (see
+# docs/followups/imagebuilder_initramfs_limitations.md, "OpenWrt 25.12
+# APK migration") which `tools/ci/build_image.sh` does not yet handle.
+# Until the script learns to gate `repositories.conf` editing on the
+# package manager flavor, the 25.12.2 cells in the matrix are expected
+# to flag build failures — `fail-fast: false` already keeps 24.10.6
+# cells unaffected, so this is fine for early surfacing of the
+# migration work without blocking PR merges.
+#
+# `default_physical_releases` selects WHICH releases the self-hosted
+# `test-firmware` / `test-mesh` jobs run against. By default we only
+# exercise the lab on 24.10.6 (the shipping LibreMesh stable line) so
+# the 25.12.2 cells stay build-only and do not cost lab time during the
+# APK transition. Override per-run via the `physical_releases`
+# `workflow_dispatch` input (CSV; e.g. "24.10.6,25.12.2" once 25.12
+# image builds work end-to-end).
+openwrt_releases:
+  - "24.10.6"
+  - "25.12.2"
+feed_branches:
+  "24.10.6": "openwrt-24.10"
+  "25.12.2": "openwrt-25.12"
+default_physical_releases:
+  - "24.10.6"
 # Default package list — mirrors the official LibreMesh README "Package
 # selection". All lime-* / shared-state-* packages must be provided by our
 # local feed (the upstream feed.libremesh.org publishes only
@@ -224,6 +251,61 @@ targets:
     fit_arch: arm64
     fit_kernel_loadaddr: "0x44000000"
     fit_dts: mt7981b-openwrt-one
+  - device: qemu_x86_64
+    # ImageBuilder identifier for OpenWrt's x86/64 generic profile.
+    # Maps to ghcr.io/openwrt/imagebuilder:x86-64-v<release>.
+    imagebuilder: x86-64
+    profile: generic
+    arch: x86_64
+    sdk_arch: x86_64-openwrt-24.10
+    index_imagebuilder: x86-64
+    # x86-combined ships GRUB + kernel + ext4 rootfs in one MBR-
+    # partitioned disk image. There is no FIT to repack and no
+    # initramfs to wrap; the QEMU boot path runs full disk init.
+    # `build_image.sh` rejects BUILD_INITRAMFS=1 with this format.
+    build_initramfs: false
+    image_format: x86-combined
+    # The QEMU virtual mesh test (see fork-libremesh-virtual-mesh)
+    # uses mac80211_hwsim radios + the `vwifi` daemon to forward
+    # frames over a UDP socket between QEMU instances. Both the
+    # in-image vwifi-client (built from javierbrk/vwifi_cli_package
+    # below) and the host-side vwifi-server are required to form
+    # the mesh; the kmod is needed for the virtual radios to exist
+    # in the first place.
+    packages: >-
+      {{ packages_default }} kmod-mac80211-hwsim wpad-mesh-mbedtls vwifi
+    # Extra OpenWrt SDK feed compiled into our local lime_packages
+    # artefact alongside lime-*. Format follows gh-action-sdk@v9's
+    # EXTRA_FEEDS: each entry is `<type>|<name>|<url>[^<commit>]`,
+    # `|` becomes whitespace in feeds.conf. The `^<commit>` suffix
+    # is OpenWrt's `scripts/feeds` syntax for pinning the source
+    # tree to a specific git revision so two CI runs produce
+    # bit-identical IPKs (assuming Makefile / files / patches do
+    # not change). 51bbf3bc is the first commit on
+    # javierbrk/vwifi_cli_package that fixes the package version
+    # mismatch with upstream Raizo62/vwifi (see commit message
+    # "fixed root repo version and improvements to address #1");
+    # earlier commits of the same package fail the package/check
+    # step with PKG_VERSION mismatches.
+    extra_feeds:
+      - "src-git|vwifi|https://github.com/javierbrk/vwifi_cli_package.git^51bbf3bc"
+    # Packages from `extra_feeds` (above) that the local SDK build
+    # must compile. lime-* packages are auto-picked from
+    # `packages/` by `prepare-matrix`'s `lime_packages_list` step;
+    # everything that lives in an extra feed has to be listed here
+    # explicitly. `kmod-mac80211-hwsim` is NOT here because it
+    # ships pre-compiled in OpenWrt's official kmods feed (no SDK
+    # rebuild needed) and lives in `repositories.snippet` resolved
+    # at ImageBuilder time.
+    extra_packages:
+      - "vwifi"
+    # The qemu_x86_64 firmware is consumed by the QEMU jobs, not by
+    # the self-hosted lab. test_firmware:false keeps it out of the
+    # physical-test matrix; test_qemu:true opts the device into the
+    # `test-firmware-qemu-single` and `test-mesh-qemu` jobs that
+    # `prepare-matrix` builds from a separate `qemu_test_matrix`.
+    test_firmware: false
+    test_qemu: true
   - device: bananapi_bpi-r4
     imagebuilder: mediatek-filogic
     profile: bananapi_bpi-r4
