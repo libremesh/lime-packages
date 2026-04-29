@@ -23,7 +23,7 @@ PACKAGES="${PACKAGES:?PACKAGES env var is required}"
 # are filtered out of the test-firmware matrix in `prepare-matrix`.
 BUILD_INITRAMFS="${BUILD_INITRAMFS:-0}"
 
-# Format of the repack output. Two paths are supported:
+# Format of the repack output. Three paths are supported:
 #
 #   * `fit` (default): mediatek/filogic boards (openwrt_one, bananapi_bpi-r4,
 #     linksys_e8450-ubi). U-Boot ≥2018 with `CONFIG_FIT=y` parses a single
@@ -44,11 +44,22 @@ BUILD_INITRAMFS="${BUILD_INITRAMFS:-0}"
 #     uImage's payload as-is and let the kernel parse its appended DTB at
 #     decompression time. Bootargs cannot be embedded in a legacy uImage,
 #     so the labgrid YAML must `setenv bootargs` before `bootm`.
+#
+#   * `x86-combined`: QEMU x86_64 (qemu_x86_64). ImageBuilder ships a
+#     single `*-x86-64-generic-ext4-combined.img.gz` containing GRUB +
+#     kernel + ext4 rootfs in one MBR-partitioned disk image — exactly
+#     what `qemu-system-x86_64 -drive if=virtio,file=...,format=raw`
+#     wants. There is NO RAM-bootable initramfs FIT involved (the QEMU
+#     boot path runs full disk init, not TFTP), so build_image.sh
+#     forbids `BUILD_INITRAMFS=1` for this format. The artifact
+#     selection branch below ungzips the combined image so downstream
+#     consumers (test-firmware-qemu) can mount/boot it directly without
+#     a runtime gunzip step.
 IMAGE_FORMAT="${IMAGE_FORMAT:-fit}"
 case "${IMAGE_FORMAT}" in
-  fit|multi-uimage) ;;
+  fit|multi-uimage|x86-combined) ;;
   *)
-    echo "ERROR: invalid IMAGE_FORMAT=${IMAGE_FORMAT} (expected: fit | multi-uimage)" >&2
+    echo "ERROR: invalid IMAGE_FORMAT=${IMAGE_FORMAT} (expected: fit | multi-uimage | x86-combined)" >&2
     exit 1
     ;;
 esac
@@ -148,6 +159,13 @@ DTB_PATCH_NVMEM_MAC="${DTB_PATCH_NVMEM_MAC:-0}"
 # not use a UBI-on-NAND boot path and there is no `linux,ubi`
 # partition for the patcher to find — the script would hard-fail.
 DTB_FORCE_LEGACY_PARTITIONS="${DTB_FORCE_LEGACY_PARTITIONS:-0}"
+
+if [[ "${BUILD_INITRAMFS}" == "1" && "${IMAGE_FORMAT}" == "x86-combined" ]]; then
+  echo "ERROR: BUILD_INITRAMFS=1 is incompatible with IMAGE_FORMAT=x86-combined" >&2
+  echo "       The combined disk image already carries GRUB + kernel + rootfs;" >&2
+  echo "       there is no RAM-bootable FIT to repack." >&2
+  exit 1
+fi
 
 if [[ "${BUILD_INITRAMFS}" == "1" ]]; then
   required_vars=(FIT_ARCH FIT_KERNEL_LOADADDR FIT_CONFIG FIT_BOOTARGS)
@@ -1117,7 +1135,29 @@ grep -E '^(lime-|shared-state-|batctl|babeld|firewall4)' "${MANIFEST_FILE}" || t
 # targets we explicitly opted out of test-firmware, so the artifact is
 # carried purely for IPK validation and never TFTP-booted.
 SOURCE_FILE=""
-if [[ "${BUILD_INITRAMFS}" == "1" ]]; then
+if [[ "${IMAGE_FORMAT}" == "x86-combined" ]]; then
+  # ImageBuilder's x86-64/generic recipe outputs the combined image
+  # gzip-compressed (`*-ext4-combined.img.gz`) plus an uncompressed
+  # `*-rootfs.tar.gz` and a separate `*-kernel.bin`. We want the
+  # combined disk image: it carries GRUB + kernel + ext4 rootfs in one
+  # MBR-partitioned blob that QEMU boots directly with
+  # `-drive if=virtio,format=raw`. We `gunzip -k` (keep) the .gz so
+  # downstream consumers do not need to handle compression at boot
+  # time, and keep the rest of the staging dir intact for debug.
+  combined_gz="$(compgen -G "${WORK_DIR}/out/*ext4-combined.img.gz" 2>/dev/null | head -n 1 || true)"
+  if [[ -z "${combined_gz}" ]]; then
+    echo "::error::IMAGE_FORMAT=x86-combined: no *ext4-combined.img.gz under ${WORK_DIR}/out." >&2
+    echo "       Confirm the x86-64/generic ImageBuilder profile produced the combined recipe." >&2
+    find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
+    exit 1
+  fi
+  combined_img="${combined_gz%.gz}"
+  if [[ ! -f "${combined_img}" ]]; then
+    gunzip -kc "${combined_gz}" > "${combined_img}"
+  fi
+  SOURCE_FILE="${combined_img}"
+  echo ">>> Matched x86-combined image: ${combined_gz} -> ${SOURCE_FILE} (gunzip)"
+elif [[ "${BUILD_INITRAMFS}" == "1" ]]; then
   case "${IMAGE_FORMAT}" in
     fit)          initramfs_patterns=("*${PROFILE}-initramfs-libremesh.itb" "*${PROFILE}*initramfs-libremesh.itb") ;;
     multi-uimage) initramfs_patterns=("*${PROFILE}-initramfs-libremesh.uimage" "*${PROFILE}*initramfs-libremesh.uimage") ;;
@@ -1155,8 +1195,19 @@ else
   fi
 fi
 
-EXTENSION="${SOURCE_FILE##*.}"
+# Extension preservation. For most cases `.itb` / `.bin` / `.uimage`
+# falls out of `${SOURCE_FILE##*.}` as-is. The x86-combined case is a
+# trap: the source basename ends in `.img` AFTER the `gunzip -k`, but
+# without explicit handling a `${SOURCE_FILE##*.}` against the original
+# `*.img.gz` would emit `firmware-<dev>.gz` (wrong: clients would try
+# to gunzip an already-decompressed file). We anchor the extension on
+# the ungzipped `combined_img` path explicitly.
 DEVICE_NAME="${DEVICE_NAME:-${PROFILE}}"
+if [[ "${IMAGE_FORMAT}" == "x86-combined" ]]; then
+  EXTENSION="img"
+else
+  EXTENSION="${SOURCE_FILE##*.}"
+fi
 TARGET_FILE="${OUTPUT_DIR}/firmware-${DEVICE_NAME}.${EXTENSION}"
 cp "${SOURCE_FILE}" "${TARGET_FILE}"
 
