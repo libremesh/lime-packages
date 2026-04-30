@@ -73,12 +73,16 @@ flowchart LR
   - `kmod-mac80211-hwsim` comes from OpenWrt's official kmods feed
     (no SDK rebuild needed). It just has to be in the per-target
     `packages:` list in `targets.yml`.
-  - `vwifi-client` (and the kernel module) come from the
-    `javierbrk/vwifi_cli_package` src-git feed declared as
-    `extra_feeds:` for `qemu_x86_64`. The `build-feed` job picks up
-    the feed pin via `EXTRA_FEEDS` env var and compiles the IPK
-    into the same `lime_packages` artefact the rest of the lime-*
-    packages live in. See [`docs/ci/firmware-build.md`](../ci/firmware-build.md#qemu-pipeline-virtual-mesh-build-and-test).
+  - `vwifi-client` ships as a **vendored OpenWrt package** under
+    `packages/vwifi/` in this repo. It is auto-detected by
+    `prepare-matrix`'s `lime_packages_list` step alongside
+    `lime-*`, compiled by `build-feed` like every other local
+    package, and ends up in the `lime_packages` artefact. See
+    [`docs/ci/firmware-build.md`](../ci/firmware-build.md#qemu-pipeline-virtual-mesh-build-and-test)
+    for why we vendored instead of using `extra_feeds:` (the
+    upstream Makefile is missing `PKG_MIRROR_HASH`, which the
+    OpenWrt 24.10+ SDK treats as a fatal "Package HASH check
+    failed").
 
 ## Pinned versions
 
@@ -89,14 +93,22 @@ between vwifi-client and vwifi-server (the shared C structs in
 
 | Component | Repo | Pin | Where |
 | --- | --- | --- | --- |
-| in-guest vwifi-client (OpenWrt package) | `github.com/javierbrk/vwifi_cli_package` | `^51bbf3bcf1c71f6873afb4531fc7887789e85f11` (master HEAD as of March 2026) — full 40-char SHA required, GitHub rejects short-prefix fetches with `couldn't find remote ref` | `extra_feeds:` of the `qemu_x86_64` target in `.github/ci/targets.yml` |
+| in-guest vwifi-client (OpenWrt package) | `github.com/javierbrk/vwifi_cli_package` (commit `51bbf3bc`, vendored) -> daemon source `github.com/Raizo62/vwifi` `4a9842e6` | `PKG_SOURCE_VERSION:=4a9842e646c226a254df3300f1c98b86a947acd8` + `PKG_MIRROR_HASH:=7af9fa14f45bcc19afe6c90aa329e115855cd616498ed3d1794b531e4aa0085b` | `packages/vwifi/Makefile` |
 | host vwifi-server (CMake build) | `github.com/Raizo62/vwifi` | `4a9842e6` (= release v7.0, July 2025) | `cache-vwifi-server` and the build step of `test-mesh-qemu` in `.github/workflows/build-firmware.yml` |
 
-`Raizo62/vwifi` is the upstream daemon; `javierbrk/vwifi_cli_package`
-is an OpenWrt Makefile that wraps the same daemon code. As long as
-the wire protocol stays compatible, the two pins can drift
-independently. When upstream changes `csocket.h`, both pins MUST
-move at the same time.
+Both pins resolve to the same upstream commit `4a9842e6` of
+`Raizo62/vwifi`, so client and server always speak the same wire
+protocol. When upstream `csocket.h` changes, both pins must move
+together (bump `PKG_SOURCE_VERSION` + `PKG_MIRROR_HASH` in
+`packages/vwifi/Makefile` AND the `vwifi-server-<sha>` cache key
+in `build-firmware.yml`).
+
+> The vendored Makefile differs from upstream
+> `javierbrk/vwifi_cli_package@51bbf3bc` only in the addition of
+> `PKG_MIRROR_HASH`. A PR proposing the same fix upstream is the
+> right way to eventually undo the vendoring; once merged, this
+> target can switch back to an `extra_feeds:` declaration in
+> `targets.yml` (the `build-feed` mechanism is preserved).
 
 ## Local reproduction
 
@@ -225,11 +237,14 @@ manifest sidecar into a separate artefact.
 ### 6. 25.12.2 not yet exercised in QEMU
 
 OpenWrt 25.12 switched the package index format from OPKG to APK,
-which `tools/ci/build_image.sh` does not yet handle. The
-`qemu_x86_64` target IS in the matrix for both 24.10.6 and 25.12.2,
-so the 25.12.2 cell currently fails at build time — `fail-fast:
-false` keeps the 24.10.6 run going. The QEMU jobs only fire when
-the corresponding `firmware-qemu_x86_64-<release>` artefact
-exists, so a build-failed 25.12.2 cell silently skips its QEMU
-test cells without misleading green ticks. This will resolve
-itself when the script is APK-aware.
+and the SDK config step has separate problems on top of that
+(recursive Kconfig deps, `iproute2` clean-build/compile loop). See
+[`openwrt_25_12_build_issues.md`](openwrt_25_12_build_issues.md)
+for the full diagnosis. The `qemu_x86_64` target IS in the matrix
+for both 24.10.6 and 25.12.2, so the 25.12.2 cell currently fails
+at `build-feed` time — `fail-fast: false` keeps the 24.10.6 run
+going, and `timeout-minutes: 90` on `build-feed` caps the wasted
+runner time. The QEMU jobs only fire when the corresponding
+`firmware-qemu_x86_64-<release>` artefact exists, so a
+build-failed 25.12.2 cell silently skips its QEMU test cells
+without misleading green ticks.

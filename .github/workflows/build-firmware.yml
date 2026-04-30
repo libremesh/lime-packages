@@ -473,6 +473,14 @@ jobs:
   build-feed:
     runs-on: ubuntu-latest
     needs: prepare-matrix
+    # Cap the SDK compile at 90 min. A clean cold build (cache miss) finishes
+    # in ~50 min on ubuntu-latest; 90 min leaves margin for slow runners and
+    # extra packages while still catching the OpenWrt 25.12 SDK pathology
+    # documented in docs/followups/openwrt_25_12_build_issues.md (recursive
+    # Kconfig deps trap make in an iproute2 clean-build/compile loop that
+    # runs forever). Without the cap, a single bad cell wastes hours of
+    # GitHub-hosted runner time per affected (arch × release) combination.
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-matrix.outputs.archs_matrix) }}
@@ -497,21 +505,22 @@ jobs:
         with:
           path: feed-artifact/lime_packages
           # `extra_hash` is a sha256 prefix over (extra_feeds, extra_packages)
-          # for this arch+release cell; bumping the vwifi commit pin in
-          # targets.yml therefore invalidates the cache without touching
+          # for this arch+release cell; bumping any external src-git pin
+          # in targets.yml therefore invalidates the cache without touching
           # cells that have no extras (their extra_hash is the constant
           # sha256("|")). The `restore-keys` does NOT include extra_hash
           # — that is intentional: a partial-match restore on a stale
-          # extras would deliver a feed without the right vwifi.ipk, so
+          # extras would deliver a feed without the right extra IPKs, so
           # we only allow exact matches when extras are present.
           #
-          # Reminder: the commit suffix in `extra_feeds` (e.g.
-          # `^51bbf3bcf1c71f6873afb4531fc7887789e85f11`) MUST be the
-          # full 40-char SHA. GitHub's smart-HTTP server rejects
-          # fetch-by-SHA on short prefixes (`couldn't find remote
-          # ref ...`) and the SDK build aborts before any IPK
-          # is produced. See `docs/ci/firmware-build.md` →
-          # "Feed cache" for the failure mode.
+          # Reminder: when (re-)introducing `extra_feeds`, the commit
+          # suffix MUST be the full 40-char SHA. GitHub's smart-HTTP
+          # server rejects fetch-by-SHA on short prefixes (`couldn't
+          # find remote ref ...`) and the SDK build aborts before any
+          # IPK is produced. The current matrix has no extra_feeds —
+          # `vwifi` ships as a vendored local package under
+          # `packages/vwifi/` instead. See `docs/ci/firmware-build.md`
+          # → "Feed cache" for the failure mode.
           key: lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-${{ matrix.extra_hash }}
           restore-keys: |
             lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-
@@ -522,15 +531,18 @@ jobs:
         env:
           ARCH: ${{ matrix.sdk_arch }}
           FEEDNAME: lime_packages
-          # Explicit package list = lime-* (computed in prepare-matrix from
-          # `packages/`) plus any per-arch extras (e.g. vwifi for x86_64,
-          # which qemu_x86_64 declares in targets.yml). Empty PACKAGES only
-          # builds what `make defconfig` enables and neither lime-* nor
-          # vwifi have `default y/m`, so an explicit list is required.
-          # gh-action-sdk does, per package and per feed in ALL_CUSTOM_FEEDS:
+          # Explicit package list = every package directory under
+          # `packages/` with a Makefile (lime-*, shared-state-*, vwifi,
+          # etc.; computed in prepare-matrix), plus any per-arch extras
+          # from `extra_packages` in targets.yml (no target uses extras
+          # today; the mechanism is kept for future external feeds).
+          # Empty PACKAGES would only build what `make defconfig`
+          # enables and our packages have no `default y/m`, so an
+          # explicit list is required. gh-action-sdk does, per package
+          # and per feed in ALL_CUSTOM_FEEDS:
           # `feeds install -p $FEED -f $PKG && make package/$PKG/compile`.
-          # IPKs land in bin/packages/<arch>/<source_feed>/, e.g. lime-*
-          # in lime_packages/ and vwifi in vwifi/.
+          # IPKs land in bin/packages/<arch>/<source_feed>/; with no
+          # extra_feeds, everything ends up under lime_packages/.
           PACKAGES: ${{ needs.prepare-matrix.outputs.lime_packages_list }} ${{ matrix.extra_packages }}
           # Extra src-git feeds for this arch+release. Format is
           # `<type>|<name>|<url>[^<commit>]` per entry, space-separated;
@@ -1644,10 +1656,9 @@ jobs:
       # a UDP socket. We pin the upstream commit (Raizo62/vwifi
       # @4a9842e6 = release v7.0, July 2025) to keep two CI runs
       # producing the same vwifi-server binary. The vwifi-CLIENT
-      # side (in-guest, from javierbrk/vwifi_cli_package) is pinned
-      # separately through `extra_feeds` in targets.yml; the two
-      # pinning commits are not the same git tree (cli_package is
-      # an OpenWrt Makefile wrapping the daemon code).
+      # side (in-guest) ships as a vendored OpenWrt package under
+      # packages/vwifi/ — same PKG_SOURCE_VERSION as below, so the
+      # client and server binaries always match versions.
       - name: Cache vwifi-server build
         id: cache-vwifi-server
         uses: actions/cache@v4
