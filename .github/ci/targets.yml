@@ -281,14 +281,24 @@ targets:
     # is OpenWrt's `scripts/feeds` syntax for pinning the source
     # tree to a specific git revision so two CI runs produce
     # bit-identical IPKs (assuming Makefile / files / patches do
-    # not change). 51bbf3bc is the first commit on
-    # javierbrk/vwifi_cli_package that fixes the package version
-    # mismatch with upstream Raizo62/vwifi (see commit message
-    # "fixed root repo version and improvements to address #1");
-    # earlier commits of the same package fail the package/check
-    # step with PKG_VERSION mismatches.
+    # not change). 51bbf3bcf1c71f6873afb4531fc7887789e85f11 is the
+    # first commit on javierbrk/vwifi_cli_package that fixes the
+    # package version mismatch with upstream Raizo62/vwifi (see
+    # commit message "fixed root repo version and improvements to
+    # address #1"); earlier commits of the same package fail the
+    # package/check step with PKG_VERSION mismatches.
+    #
+    # The pin MUST be the full 40-char SHA, not a short prefix.
+    # OpenWrt's `scripts/feeds` translates `^<rev>` into a
+    # `git fetch origin <rev>` against the remote. GitHub's
+    # smart-HTTP server only honours fetch-by-SHA when the
+    # value is the full 40-char object name; an 8-char prefix
+    # (e.g. `^51bbf3bc`) makes the server reply `couldn't find
+    # remote ref 51bbf3bc` and the SDK aborts before any
+    # IPK is built. Run #25139179869 hit this exact path; full
+    # SHA below resolves it.
     extra_feeds:
-      - "src-git|vwifi|https://github.com/javierbrk/vwifi_cli_package.git^51bbf3bc"
+      - "src-git|vwifi|https://github.com/javierbrk/vwifi_cli_package.git^51bbf3bcf1c71f6873afb4531fc7887789e85f11"
     # Packages from `extra_feeds` (above) that the local SDK build
     # must compile. lime-* packages are auto-picked from
     # `packages/` by `prepare-matrix`'s `lime_packages_list` step;

@@ -89,7 +89,7 @@ between vwifi-client and vwifi-server (the shared C structs in
 
 | Component | Repo | Pin | Where |
 | --- | --- | --- | --- |
-| in-guest vwifi-client (OpenWrt package) | `github.com/javierbrk/vwifi_cli_package` | `^51bbf3bc` (March 2026) | `extra_feeds:` of the `qemu_x86_64` target in `.github/ci/targets.yml` |
+| in-guest vwifi-client (OpenWrt package) | `github.com/javierbrk/vwifi_cli_package` | `^51bbf3bcf1c71f6873afb4531fc7887789e85f11` (master HEAD as of March 2026) — full 40-char SHA required, GitHub rejects short-prefix fetches with `couldn't find remote ref` | `extra_feeds:` of the `qemu_x86_64` target in `.github/ci/targets.yml` |
 | host vwifi-server (CMake build) | `github.com/Raizo62/vwifi` | `4a9842e6` (= release v7.0, July 2025) | `cache-vwifi-server` and the build step of `test-mesh-qemu` in `.github/workflows/build-firmware.yml` |
 
 `Raizo62/vwifi` is the upstream daemon; `javierbrk/vwifi_cli_package`

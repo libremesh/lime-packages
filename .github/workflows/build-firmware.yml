@@ -406,7 +406,8 @@ jobs:
 
           # Inject `extra_hash`: short sha256 over extra_feeds + extra_packages
           # so the build-feed cache key busts whenever the upstream commit pin
-          # of an extra src-git feed (e.g. vwifi `^51bbf3bc`) or the package
+          # of an extra src-git feed (e.g. vwifi
+          # `^51bbf3bcf1c71f6873afb4531fc7887789e85f11`) or the package
           # selection from those feeds changes. jq has no hash builtin, so
           # we walk each entry in shell and shell out to `sha256sum`. For
           # arch+release cells without any extras, the hash is the sha256
@@ -503,6 +504,14 @@ jobs:
           # — that is intentional: a partial-match restore on a stale
           # extras would deliver a feed without the right vwifi.ipk, so
           # we only allow exact matches when extras are present.
+          #
+          # Reminder: the commit suffix in `extra_feeds` (e.g.
+          # `^51bbf3bcf1c71f6873afb4531fc7887789e85f11`) MUST be the
+          # full 40-char SHA. GitHub's smart-HTTP server rejects
+          # fetch-by-SHA on short prefixes (`couldn't find remote
+          # ref ...`) and the SDK build aborts before any IPK
+          # is produced. See `docs/ci/firmware-build.md` →
+          # "Feed cache" for the failure mode.
           key: lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-${{ matrix.extra_hash }}
           restore-keys: |
             lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-

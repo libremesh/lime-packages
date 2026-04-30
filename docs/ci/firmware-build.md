@@ -144,9 +144,17 @@ full ~50-min SDK rebuild on every workflow tweak.
 `extra_hash` is a 12-char sha256 prefix over the (de-duplicated)
 `extra_feeds` and `extra_packages` strings for that arch+release
 cell. Bumping the upstream commit pin of an `extra_feeds:` entry in
-`targets.yml` (e.g. moving the `vwifi` src-git from `^51bbf3bc` to a
-newer commit) busts the cache for the cells that depend on it without
-disturbing the cells that have no extras. The `restore-keys` falls
+`targets.yml` (e.g. moving the `vwifi` src-git pin from one full
+40-char SHA to another) busts the cache for the cells that depend
+on it without disturbing the cells that have no extras.
+
+OpenWrt's `scripts/feeds` resolves `^<rev>` via a `git fetch origin
+<rev>` against the remote, and GitHub's smart-HTTP server only
+honours fetch-by-SHA when the value is the **full 40-char object
+name**. Short prefixes (e.g. `^51bbf3bc`) make the server reply
+`couldn't find remote ref 51bbf3bc` and the SDK aborts before any
+IPK is built. Always pin with `git ls-remote` output (or
+`git rev-parse HEAD` after a manual clone). The `restore-keys` falls
 back to the same arch+release+feed_hash without `extra_hash`, but
 the `actions/cache` step does NOT promote partial matches into a
 "cache-hit" — the build-feed step still recompiles when the
@@ -313,7 +321,9 @@ Two new keys in `targets.yml` drive the QEMU integration:
 - `extra_feeds:` — list of `<type>|<name>|<url>[^<commit>]` strings
   appended to gh-action-sdk's `feeds.conf` at build-feed time. Today
   only `qemu_x86_64` declares one (`vwifi` from
-  `javierbrk/vwifi_cli_package`, pinned to commit `^51bbf3bc`).
+  `javierbrk/vwifi_cli_package`). The `<commit>` MUST be a full
+  40-char SHA — see "Feed cache" above for why short prefixes
+  fail at fetch time.
 - `extra_packages:` — list of package names that the SDK should
   build from the extra feeds. lime-* are auto-discovered from
   `packages/`; everything else has to be listed explicitly. For
