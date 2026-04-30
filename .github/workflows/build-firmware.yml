@@ -831,29 +831,62 @@ jobs:
             grep -m 3 '^Filename:' feed-artifact/lime_packages/Packages
           else
             # apk-tools needs `packages.adb`. The IB ships a host-built
-            # `apk` under `/builder/staging_dir/host/bin/apk` with
-            # `mkndx` (preferred) or `index` (older builds). We probe
-            # both subcommands. `--no-keychain` skips signing — the
-            # local feed is unsigned and ImageBuilder will be invoked
-            # with `--allow-untrusted` downstream.
+            # `apk` somewhere under /builder/staging_dir/host/. Past
+            # OpenWrt 25.12 RCs put it at .../host/bin/apk; future
+            # releases may move it to .../host/usr/bin/apk; autodetect.
+            #
+            # CRITICAL gotchas observed against apk-tools 3.0.5:
+            #   - `apk <subcmd> --help` exits 1 even when the
+            #     sub-command is valid; do NOT probe via that idiom.
+            #     We grep `apk --help` text instead (global --help
+            #     correctly returns 0).
+            #   - `--no-keychain` is an apk 2.x option that was
+            #     removed in apk 3. The right idiom for unsigned
+            #     local feeds is the global `--allow-untrusted` flag
+            #     placed BEFORE the sub-command (otherwise apk
+            #     fails with `unrecognized option 'allow-untrusted'`
+            #     because mkndx/index don't accept it as a sub-flag).
             docker run --rm \
               --user root \
-              -e PATH=/builder/staging_dir/host/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+              -e PATH=/builder/staging_dir/host/usr/bin:/builder/staging_dir/host/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
               -v "$(pwd)/feed-artifact/lime_packages:/work" \
               "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}" \
               sh -lc '
                 set -e
                 cd /work
-                APK=/builder/staging_dir/host/bin/apk
-                if "$APK" mkndx --help >/dev/null 2>&1; then
-                  echo "Using: apk mkndx"
-                  "$APK" mkndx --no-keychain --output packages.adb -- *.apk
-                elif "$APK" index --help >/dev/null 2>&1; then
-                  echo "Using: apk index"
-                  "$APK" index --no-keychain --output packages.adb *.apk
-                else
-                  echo "ERROR: neither apk mkndx nor apk index available in the IB" >&2
+                APK=""
+                for cand in \
+                  /builder/staging_dir/host/usr/bin/apk \
+                  /builder/staging_dir/host/bin/apk \
+                  /builder/staging_dir/hostpkg/usr/bin/apk \
+                  /usr/bin/apk \
+                  $(command -v apk 2>/dev/null || true)
+                do
+                  if [ -n "$cand" ] && [ -x "$cand" ]; then
+                    APK="$cand"; break
+                  fi
+                done
+                if [ -z "$APK" ]; then
+                  echo "ERROR: cannot locate apk binary in the IB" >&2
+                  echo "=== /builder/staging_dir/host listing ===" >&2
+                  find /builder/staging_dir/host -maxdepth 4 -name apk 2>/dev/null >&2 || true
+                  echo "=== /builder layout (top 2 levels) ===" >&2
+                  find /builder -maxdepth 2 -type d 2>/dev/null >&2 || true
                   exit 1
+                fi
+                echo "=== apk binary: $APK ==="
+                "$APK" --version 2>&1 || true
+                help_text=$("$APK" --help 2>&1 || true)
+                if printf "%s\n" "$help_text" | grep -qw mkndx; then
+                  echo "Using: apk --allow-untrusted mkndx"
+                  "$APK" --allow-untrusted mkndx --output packages.adb -- *.apk
+                elif printf "%s\n" "$help_text" | grep -qw index; then
+                  echo "Using: apk --allow-untrusted index"
+                  "$APK" --allow-untrusted index --output packages.adb *.apk
+                else
+                  echo "WARNING: neither mkndx nor index advertised in apk --help; attempting mkndx anyway" >&2
+                  printf "%s\n" "$help_text" | head -80 >&2 || true
+                  "$APK" --allow-untrusted mkndx --output packages.adb -- *.apk
                 fi
               '
 
