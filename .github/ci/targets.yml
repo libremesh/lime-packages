@@ -267,48 +267,24 @@ targets:
     image_format: x86-combined
     # The QEMU virtual mesh test (see fork-libremesh-virtual-mesh)
     # uses mac80211_hwsim radios + the `vwifi` daemon to forward
-    # frames over a UDP socket between QEMU instances. Both the
-    # in-image vwifi-client (built from javierbrk/vwifi_cli_package
-    # below) and the host-side vwifi-server are required to form
-    # the mesh; the kmod is needed for the virtual radios to exist
-    # in the first place.
+    # frames over a UDP socket between QEMU instances. The
+    # in-image `vwifi` package is vendored at packages/vwifi/
+    # (originally from javierbrk/vwifi_cli_package, with a local
+    # PKG_MIRROR_HASH fix the SDK requires); kmod-mac80211-hwsim
+    # is needed for the virtual radios to exist in the first
+    # place. The host-side vwifi-server is launched by
+    # libremesh-tests/scripts/virtual_mesh_launcher.py, not
+    # built into the firmware.
+    #
+    # No `extra_feeds:` / `extra_packages:` here: vwifi ships as a
+    # local lime-package, so prepare-matrix's lime_packages_list
+    # picks it up automatically alongside lime-*. Once the
+    # PKG_MIRROR_HASH fix is merged upstream
+    # (javierbrk/vwifi_cli_package), this target can switch back
+    # to an external src-git feed via extra_feeds + extra_packages
+    # (the build-feed job already supports that mechanism).
     packages: >-
       {{ packages_default }} kmod-mac80211-hwsim wpad-mesh-mbedtls vwifi
-    # Extra OpenWrt SDK feed compiled into our local lime_packages
-    # artefact alongside lime-*. Format follows gh-action-sdk@v9's
-    # EXTRA_FEEDS: each entry is `<type>|<name>|<url>[^<commit>]`,
-    # `|` becomes whitespace in feeds.conf. The `^<commit>` suffix
-    # is OpenWrt's `scripts/feeds` syntax for pinning the source
-    # tree to a specific git revision so two CI runs produce
-    # bit-identical IPKs (assuming Makefile / files / patches do
-    # not change). 51bbf3bcf1c71f6873afb4531fc7887789e85f11 is the
-    # first commit on javierbrk/vwifi_cli_package that fixes the
-    # package version mismatch with upstream Raizo62/vwifi (see
-    # commit message "fixed root repo version and improvements to
-    # address #1"); earlier commits of the same package fail the
-    # package/check step with PKG_VERSION mismatches.
-    #
-    # The pin MUST be the full 40-char SHA, not a short prefix.
-    # OpenWrt's `scripts/feeds` translates `^<rev>` into a
-    # `git fetch origin <rev>` against the remote. GitHub's
-    # smart-HTTP server only honours fetch-by-SHA when the
-    # value is the full 40-char object name; an 8-char prefix
-    # (e.g. `^51bbf3bc`) makes the server reply `couldn't find
-    # remote ref 51bbf3bc` and the SDK aborts before any
-    # IPK is built. Run #25139179869 hit this exact path; full
-    # SHA below resolves it.
-    extra_feeds:
-      - "src-git|vwifi|https://github.com/javierbrk/vwifi_cli_package.git^51bbf3bcf1c71f6873afb4531fc7887789e85f11"
-    # Packages from `extra_feeds` (above) that the local SDK build
-    # must compile. lime-* packages are auto-picked from
-    # `packages/` by `prepare-matrix`'s `lime_packages_list` step;
-    # everything that lives in an extra feed has to be listed here
-    # explicitly. `kmod-mac80211-hwsim` is NOT here because it
-    # ships pre-compiled in OpenWrt's official kmods feed (no SDK
-    # rebuild needed) and lives in `repositories.snippet` resolved
-    # at ImageBuilder time.
-    extra_packages:
-      - "vwifi"
     # The qemu_x86_64 firmware is consumed by the QEMU jobs, not by
     # the self-hosted lab. test_firmware:false keeps it out of the
     # physical-test matrix; test_qemu:true opts the device into the

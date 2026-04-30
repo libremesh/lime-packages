@@ -52,12 +52,14 @@ Each block is a separate GitHub Actions job. `prepare-matrix` reads
   per-toolchain SDK build. Sharing the same arch across releases
   produces distinct IPKs (different libc/gcc), so each cell runs its
   own `gh-action-sdk` job and uploads its own `lime-feed-<arch>-<release>`
-  artifact. Cells whose targets declare `extra_feeds:` (e.g.
-  `qemu_x86_64` adds the `vwifi` src-git feed) propagate the entries
-  to the SDK build's `EXTRA_FEEDS` env var, and the corresponding
-  `extra_packages:` get appended to gh-action-sdk's `PACKAGES` list
-  so their IPKs end up in the same `lime-feed-<arch>-<release>`
-  artifact alongside lime-*.
+  artifact. The mechanism for cells whose targets declare
+  `extra_feeds:` is preserved (their entries get propagated to the
+  SDK build's `EXTRA_FEEDS` env var, and `extra_packages:` get
+  appended to `PACKAGES`), but **no target uses it today**: the
+  `vwifi` package is vendored under `packages/vwifi/` and behaves
+  exactly like `lime-*`. Re-introducing an external src-git feed
+  in the future just means restoring `extra_feeds:` /
+  `extra_packages:` to that target.
 - `targets_matrix` — one cell per `(device, openwrt_release)` for the
   per-device ImageBuilder run. Each cell pulls the matching
   `lime-feed-*-<release>` artifact and emits a
@@ -143,22 +145,28 @@ full ~50-min SDK rebuild on every workflow tweak.
 
 `extra_hash` is a 12-char sha256 prefix over the (de-duplicated)
 `extra_feeds` and `extra_packages` strings for that arch+release
-cell. Bumping the upstream commit pin of an `extra_feeds:` entry in
-`targets.yml` (e.g. moving the `vwifi` src-git pin from one full
-40-char SHA to another) busts the cache for the cells that depend
-on it without disturbing the cells that have no extras.
+cell. Today no target declares extras (the only previous user,
+`qemu_x86_64`, was migrated to a vendored `packages/vwifi/`), so
+`extra_hash` is the constant `sha256("|")` truncated to 12 chars
+across all cells. The mechanism is preserved so re-introducing a
+src-git feed for any package — e.g. once
+[`javierbrk/vwifi_cli_package`](https://github.com/javierbrk/vwifi_cli_package)
+ships a `PKG_MIRROR_HASH` upstream and we can drop the local
+vendoring — busts the cache for just the affected cells.
 
-OpenWrt's `scripts/feeds` resolves `^<rev>` via a `git fetch origin
-<rev>` against the remote, and GitHub's smart-HTTP server only
-honours fetch-by-SHA when the value is the **full 40-char object
-name**. Short prefixes (e.g. `^51bbf3bc`) make the server reply
-`couldn't find remote ref 51bbf3bc` and the SDK aborts before any
-IPK is built. Always pin with `git ls-remote` output (or
-`git rev-parse HEAD` after a manual clone). The `restore-keys` falls
-back to the same arch+release+feed_hash without `extra_hash`, but
-the `actions/cache` step does NOT promote partial matches into a
-"cache-hit" — the build-feed step still recompiles when the
-exact key is new, so a stale extras restore never reaches the SDK.
+When (re-)introducing an `extra_feeds:` entry in `targets.yml`,
+the `^<rev>` suffix MUST be a **full 40-char SHA**. OpenWrt's
+`scripts/feeds` resolves it via `git fetch origin <rev>` and
+GitHub's smart-HTTP server only honours fetch-by-SHA on full
+40-char object names. Short prefixes (e.g. `^51bbf3bc`) make the
+server reply `couldn't find remote ref 51bbf3bc` and the SDK
+aborts before any IPK is built. Always pin with `git ls-remote`
+output (or `git rev-parse HEAD` after a manual clone). The
+`restore-keys` falls back to the same arch+release+feed_hash
+without `extra_hash`, but the `actions/cache` step does NOT
+promote partial matches into a "cache-hit" — the build-feed step
+still recompiles when the exact key is new, so a stale extras
+restore never reaches the SDK.
 
 A cold cache run takes ~15 min for `build-feed` (per arch) and ~5 min
 for `build-image` (per device); a warm-cache run skips the SDK compile
@@ -319,16 +327,20 @@ but takes a different `IMAGE_FORMAT` branch in
 Two new keys in `targets.yml` drive the QEMU integration:
 
 - `extra_feeds:` — list of `<type>|<name>|<url>[^<commit>]` strings
-  appended to gh-action-sdk's `feeds.conf` at build-feed time. Today
-  only `qemu_x86_64` declares one (`vwifi` from
-  `javierbrk/vwifi_cli_package`). The `<commit>` MUST be a full
-  40-char SHA — see "Feed cache" above for why short prefixes
-  fail at fetch time.
+  appended to gh-action-sdk's `feeds.conf` at build-feed time. **No
+  target uses this today** — the only previous user (`qemu_x86_64`
+  with `vwifi` from `javierbrk/vwifi_cli_package`) was migrated to
+  a vendored `packages/vwifi/` because the upstream Makefile is
+  missing `PKG_MIRROR_HASH`, which OpenWrt 24.10+ SDKs treat as a
+  fatal "Package HASH check failed". When re-adding any extra
+  feed, the `<commit>` MUST be a full 40-char SHA — see "Feed
+  cache" above for why short prefixes fail at fetch time.
 - `extra_packages:` — list of package names that the SDK should
-  build from the extra feeds. lime-* are auto-discovered from
-  `packages/`; everything else has to be listed explicitly. For
-  `qemu_x86_64` this is `[vwifi]`. Note that `kmod-mac80211-hwsim`
-  ships pre-compiled in OpenWrt's official kmods feed and lives in
+  build from the extra feeds. Local packages are auto-discovered
+  from `packages/`; only packages from external feeds need to be
+  listed here. Empty for every target today.
+  Note that `kmod-mac80211-hwsim` ships pre-compiled in OpenWrt's
+  official kmods feed and lives in
   `repositories.snippet`, so it does NOT need to appear here.
 
 ### Single-node QEMU smoke (`test-firmware-qemu-single`)
