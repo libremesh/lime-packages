@@ -513,14 +513,12 @@ jobs:
           # extras would deliver a feed without the right extra IPKs, so
           # we only allow exact matches when extras are present.
           #
-          # Reminder: when (re-)introducing `extra_feeds`, the commit
-          # suffix MUST be the full 40-char SHA. GitHub's smart-HTTP
-          # server rejects fetch-by-SHA on short prefixes (`couldn't
-          # find remote ref ...`) and the SDK build aborts before any
-          # IPK is produced. The current matrix has no extra_feeds —
-          # `vwifi` ships as a vendored local package under
-          # `packages/vwifi/` instead. See `docs/ci/firmware-build.md`
-          # → "Feed cache" for the failure mode.
+          # Reminder: the commit suffix in `extra_feeds` MUST be the
+          # full 40-char SHA. GitHub's smart-HTTP server rejects
+          # fetch-by-SHA on short prefixes (`couldn't find remote
+          # ref ...`) and the SDK build aborts before any IPK is
+          # produced. See `docs/ci/firmware-build.md` → "Feed cache"
+          # for the failure mode.
           key: lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-${{ matrix.extra_hash }}
           restore-keys: |
             lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-
@@ -532,17 +530,15 @@ jobs:
           ARCH: ${{ matrix.sdk_arch }}
           FEEDNAME: lime_packages
           # Explicit package list = every package directory under
-          # `packages/` with a Makefile (lime-*, shared-state-*, vwifi,
-          # etc.; computed in prepare-matrix), plus any per-arch extras
-          # from `extra_packages` in targets.yml (no target uses extras
-          # today; the mechanism is kept for future external feeds).
+          # `packages/` with a Makefile (lime-*, shared-state-*, etc.;
+          # computed in prepare-matrix), plus any per-arch extras from
+          # `extra_packages` in targets.yml (e.g. `vwifi` for x86_64).
           # Empty PACKAGES would only build what `make defconfig`
           # enables and our packages have no `default y/m`, so an
           # explicit list is required. gh-action-sdk does, per package
           # and per feed in ALL_CUSTOM_FEEDS:
           # `feeds install -p $FEED -f $PKG && make package/$PKG/compile`.
-          # IPKs land in bin/packages/<arch>/<source_feed>/; with no
-          # extra_feeds, everything ends up under lime_packages/.
+          # IPKs land in bin/packages/<arch>/<source_feed>/.
           PACKAGES: ${{ needs.prepare-matrix.outputs.lime_packages_list }} ${{ matrix.extra_packages }}
           # Extra src-git feeds for this arch+release. Format is
           # `<type>|<name>|<url>[^<commit>]` per entry, space-separated;
