@@ -393,19 +393,45 @@ docker run --rm \
       feed_apks=$(find /feed/lime_packages -maxdepth 1 -name "*.apk" | wc -l)
       echo "Feed has ${feed_apks} APKs"
 
-      APK=/builder/staging_dir/host/bin/apk
+      # Locate the apk binary (host path varies between OpenWrt
+      # 25.12 RCs and final). Probe a few well-known spots and the
+      # PATH; bail out with diagnostics if absent.
+      APK=""
+      for cand in \
+        /builder/staging_dir/host/usr/bin/apk \
+        /builder/staging_dir/host/bin/apk \
+        /builder/staging_dir/hostpkg/usr/bin/apk \
+        /usr/bin/apk \
+        $(command -v apk 2>/dev/null || true)
+      do
+        if [ -n "$cand" ] && [ -x "$cand" ]; then
+          APK="$cand"; break
+        fi
+      done
+      if [ -z "$APK" ]; then
+        echo "ERROR: cannot locate apk binary in the IB" >&2
+        find /builder/staging_dir/host -maxdepth 4 -name apk 2>/dev/null >&2 || true
+        exit 1
+      fi
+      echo "Using apk binary: $APK"
 
       # Regenerate packages.adb in place if the assemble step did
       # not ship one (defense in depth: the workflow always indexes,
       # but a future code path that bypasses the assemble step would
       # otherwise silently fail at make image time).
+      # apk 3.x removed `--no-keychain`; the working idiom for
+      # unsigned local feeds is the global `--allow-untrusted` flag
+      # BEFORE the sub-command.
       if [ ! -f /feed/lime_packages/packages.adb ]; then
         echo ">>> packages.adb missing — generating with the IB-host apk"
         cd /feed/lime_packages
-        if "$APK" mkndx --help >/dev/null 2>&1; then
-          "$APK" mkndx --no-keychain --output packages.adb -- *.apk
+        help_text=$("$APK" --help 2>&1 || true)
+        if printf "%s\n" "$help_text" | grep -qw mkndx; then
+          "$APK" --allow-untrusted mkndx --output packages.adb -- *.apk
+        elif printf "%s\n" "$help_text" | grep -qw index; then
+          "$APK" --allow-untrusted index --output packages.adb *.apk
         else
-          "$APK" index --no-keychain --output packages.adb *.apk
+          "$APK" --allow-untrusted mkndx --output packages.adb -- *.apk
         fi
         cd /builder
       fi
