@@ -605,17 +605,21 @@ jobs:
         # arch dir, not into `all/`) used to abort the whole job at `find ... |
         # wc -l` due to pipefail. Use `shopt -s nullglob` + array length so
         # missing directories simply yield count 0 without aborting.
-        # `extra_feeds` packages compile under their own feed name in
-        # bin/packages/<arch>/<feedname>/ (e.g. vwifi/) — we list the
-        # feedname dirs here for visibility but do not fail on their
-        # absence: the per-arch extra_packages list is authoritative
-        # for "what was built" and gets verified at assemble time.
+        # extra_feeds output paths are not deterministic by feed name:
+        #   - PKGARCH:=all packages (shell-only feeds) end up under
+        #     bin/packages/<arch>/<feedname>/
+        #   - target-binary packages (e.g. vwifi: C++ compiled per-arch)
+        #     end up under bin/targets/<target>/<subtarget>/packages/
+        # We list both trees here for visibility and rely on the assemble
+        # step's globbed search across both for correctness.
         shell: bash
         run: |
           set -euo pipefail
           shopt -s nullglob
           echo "=== bin/packages tree ==="
           find bin/packages -maxdepth 4 -type d 2>/dev/null | sort || true
+          echo "=== bin/targets tree (where target-binary extras land) ==="
+          find bin/targets -maxdepth 4 -type d 2>/dev/null | sort || true
           echo "=== bin/packages/${{ matrix.arch }}/lime_packages/ ==="
           ls -la "bin/packages/${{ matrix.arch }}/lime_packages/" 2>/dev/null || echo "(missing)"
           echo "=== bin/packages/all/lime_packages/ ==="
@@ -627,8 +631,9 @@ jobs:
             echo "ERROR: feed produced no IPKs" >&2
             exit 1
           fi
-          # Best-effort listing of every extra feed dir; missing dirs are
-          # tolerated (e.g. when matrix.extra_feeds is empty).
+          # Best-effort listing of every extra feed output dir; missing
+          # dirs are tolerated since target-binary packages land under
+          # bin/targets/ instead.
           extra_feeds_str="${{ matrix.extra_feeds }}"
           if [[ -n "$extra_feeds_str" ]]; then
             echo "=== Extra src-git feeds output ==="
@@ -636,8 +641,11 @@ jobs:
               feed_name="$(echo "$entry" | cut -d'|' -f2)"
               extra_dir="bin/packages/${{ matrix.arch }}/${feed_name}"
               echo "--- ${extra_dir} ---"
-              ls -la "$extra_dir" 2>/dev/null || echo "(missing)"
+              ls -la "$extra_dir" 2>/dev/null || echo "(missing — target-binary extras live under bin/targets/)"
             done
+            echo "=== bin/targets/**/packages/ (all target-built ipks) ==="
+            find bin/targets -name "*.ipk" -path "*/packages/*" 2>/dev/null \
+              | sort || echo "(none)"
           fi
 
       - name: Assemble lime_packages feed artifact (index with ImageBuilder)
@@ -666,7 +674,16 @@ jobs:
           # in this single dir to be installable. opkg deduplicates by
           # package name + version, so co-locating is safe as long as no
           # extra feed redefines a name we already ship under lime-*.
+          #
+          # extra_feeds output paths depend on the package's PKGARCH:
+          #   - PKGARCH:=all  → bin/packages/<arch>/<feedname>/ or
+          #                     bin/packages/all/<feedname>/
+          #   - target-binary → bin/targets/<target>/<subtarget>/packages/
+          #     (the SDK lumps every per-arch extra into a single dir,
+          #     not split per feed)
+          # We probe both trees and copy any matching extra_packages entry.
           extra_feeds_str="${{ matrix.extra_feeds }}"
+          extra_packages_str="${{ matrix.extra_packages }}"
           if [[ -n "$extra_feeds_str" ]]; then
             for entry in $extra_feeds_str; do
               feed_name="$(echo "$entry" | cut -d'|' -f2)"
@@ -680,6 +697,27 @@ jobs:
                 fi
               done
             done
+            # Pull each declared extra_packages entry from bin/targets/
+            # if not already present (handles target-binary feeds like
+            # vwifi where the SDK lands the .ipk under bin/targets/).
+            if [[ -n "$extra_packages_str" && -d bin/targets ]]; then
+              for pkg in $extra_packages_str; do
+                shopt -s nullglob
+                already=(feed-artifact/lime_packages/${pkg}_*.ipk feed-artifact/lime_packages/${pkg}-*.ipk)
+                if [[ ${#already[@]} -gt 0 ]]; then
+                  continue
+                fi
+                # `find` is more robust than a glob here because the
+                # target/subtarget split (e.g. x86/64, mediatek/filogic)
+                # is not derivable from matrix.arch alone.
+                while IFS= read -r -d '' f; do
+                  echo "Merging $f (from bin/targets) into feed-artifact/lime_packages/"
+                  cp -a "$f" feed-artifact/lime_packages/
+                done < <(find bin/targets -path '*/packages/*' \
+                          \( -name "${pkg}_*.ipk" -o -name "${pkg}-*.ipk" \) \
+                          -print0 2>/dev/null)
+              done
+            fi
           fi
 
           # Verify that every package we declared in extra_packages produced
@@ -688,14 +726,17 @@ jobs:
           # 0 when an arch is unsupported) would propagate into a feed
           # without the package and fail later at ImageBuilder install
           # time, which is much harder to debug.
-          extra_packages_str="${{ matrix.extra_packages }}"
           if [[ -n "$extra_packages_str" ]]; then
             for pkg in $extra_packages_str; do
               shopt -s nullglob
               matches=(feed-artifact/lime_packages/${pkg}_*.ipk feed-artifact/lime_packages/${pkg}-*.ipk)
               if [[ ${#matches[@]} -eq 0 ]]; then
                 echo "ERROR: extra_packages entry '${pkg}' produced no IPK" >&2
-                echo "Searched: feed-artifact/lime_packages/${pkg}{_,-}*.ipk" >&2
+                echo "Searched feed-artifact/lime_packages/${pkg}{_,-}*.ipk" >&2
+                echo "Also searched bin/targets/**/packages/${pkg}*.ipk:" >&2
+                find bin/targets -path '*/packages/*' \
+                     \( -name "${pkg}_*.ipk" -o -name "${pkg}-*.ipk" \) \
+                     2>/dev/null >&2 || true
                 exit 1
               fi
             done

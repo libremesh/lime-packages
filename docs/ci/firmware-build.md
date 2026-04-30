@@ -332,6 +332,25 @@ Two new keys in `targets.yml` drive the QEMU integration:
   kmods feed and lives in `repositories.snippet`, so it does NOT
   need to appear here.
 
+  The assemble step searches for each `extra_packages:` IPK in two
+  output trees, since the SDK splits its output by package
+  architecture:
+
+  - `bin/packages/<arch>/<feedname>/` and `bin/packages/all/<feedname>/`
+    — used for `PKGARCH:=all` packages (shell scripts, lua, …),
+    same place where the in-repo lime-* IPKs land.
+  - `bin/targets/<target>/<subtarget>/packages/` — used for
+    per-arch compiled binaries. `vwifi` (a C++ daemon built per
+    arch) lands here, e.g. `bin/targets/x86/64/packages/vwifi_*.ipk`.
+
+  Both trees are merged into the unified
+  `feed-artifact/lime_packages/` so ImageBuilder can install
+  everything through the single `lime_packages_local` opkg feed.
+  If a declared `extra_packages:` entry produces no IPK in either
+  tree, the assemble step fails with `ERROR: extra_packages entry
+  '<pkg>' produced no IPK` and dumps the contents of
+  `bin/targets/**/packages/` for diagnosis.
+
 ### Single-node QEMU smoke (`test-firmware-qemu-single`)
 
 Runs on `ubuntu-latest` per `(qemu device, openwrt_release)` cell.
