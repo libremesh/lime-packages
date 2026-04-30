@@ -52,14 +52,11 @@ Each block is a separate GitHub Actions job. `prepare-matrix` reads
   per-toolchain SDK build. Sharing the same arch across releases
   produces distinct IPKs (different libc/gcc), so each cell runs its
   own `gh-action-sdk` job and uploads its own `lime-feed-<arch>-<release>`
-  artifact. The mechanism for cells whose targets declare
-  `extra_feeds:` is preserved (their entries get propagated to the
-  SDK build's `EXTRA_FEEDS` env var, and `extra_packages:` get
-  appended to `PACKAGES`), but **no target uses it today**: the
-  `vwifi` package is vendored under `packages/vwifi/` and behaves
-  exactly like `lime-*`. Re-introducing an external src-git feed
-  in the future just means restoring `extra_feeds:` /
-  `extra_packages:` to that target.
+  artifact. Cells whose targets declare `extra_feeds:` propagate the
+  entries to the SDK build's `EXTRA_FEEDS` env var; `extra_packages:`
+  get appended to `PACKAGES`. Today `qemu_x86_64` uses this for
+  `vwifi` (from `fcefyn-testbed/vwifi_cli_package`, our fork that
+  adds `PKG_MIRROR_HASH`; pending upstream PR to `javierbrk`).
 - `targets_matrix` — one cell per `(device, openwrt_release)` for the
   per-device ImageBuilder run. Each cell pulls the matching
   `lime-feed-*-<release>` artifact and emits a
@@ -145,17 +142,11 @@ full ~50-min SDK rebuild on every workflow tweak.
 
 `extra_hash` is a 12-char sha256 prefix over the (de-duplicated)
 `extra_feeds` and `extra_packages` strings for that arch+release
-cell. Today no target declares extras (the only previous user,
-`qemu_x86_64`, was migrated to a vendored `packages/vwifi/`), so
-`extra_hash` is the constant `sha256("|")` truncated to 12 chars
-across all cells. The mechanism is preserved so re-introducing a
-src-git feed for any package — e.g. once
-[`javierbrk/vwifi_cli_package`](https://github.com/javierbrk/vwifi_cli_package)
-ships a `PKG_MIRROR_HASH` upstream and we can drop the local
-vendoring — busts the cache for just the affected cells.
+cell. Bumping the feed pin in `targets.yml` (e.g. when
+`javierbrk/vwifi_cli_package` merges our PR and we switch the URL
+back to upstream) busts the cache for the affected cells only.
 
-When (re-)introducing an `extra_feeds:` entry in `targets.yml`,
-the `^<rev>` suffix MUST be a **full 40-char SHA**. OpenWrt's
+The `^<rev>` suffix in any `extra_feeds:` entry MUST be a **full 40-char SHA**. OpenWrt's
 `scripts/feeds` resolves it via `git fetch origin <rev>` and
 GitHub's smart-HTTP server only honours fetch-by-SHA on full
 40-char object names. Short prefixes (e.g. `^51bbf3bc`) make the
@@ -327,21 +318,19 @@ but takes a different `IMAGE_FORMAT` branch in
 Two new keys in `targets.yml` drive the QEMU integration:
 
 - `extra_feeds:` — list of `<type>|<name>|<url>[^<commit>]` strings
-  appended to gh-action-sdk's `feeds.conf` at build-feed time. **No
-  target uses this today** — the only previous user (`qemu_x86_64`
-  with `vwifi` from `javierbrk/vwifi_cli_package`) was migrated to
-  a vendored `packages/vwifi/` because the upstream Makefile is
-  missing `PKG_MIRROR_HASH`, which OpenWrt 24.10+ SDKs treat as a
-  fatal "Package HASH check failed". When re-adding any extra
-  feed, the `<commit>` MUST be a full 40-char SHA — see "Feed
-  cache" above for why short prefixes fail at fetch time.
+  appended to gh-action-sdk's `feeds.conf` at build-feed time.
+  `qemu_x86_64` uses this today for `vwifi`, pointing at
+  `fcefyn-testbed/vwifi_cli_package` (our fork that adds the
+  `PKG_MIRROR_HASH` missing in upstream; a PR to
+  `javierbrk/vwifi_cli_package` is open). The `<commit>` MUST be
+  a full 40-char SHA — see "Feed cache" above.
 - `extra_packages:` — list of package names that the SDK should
-  build from the extra feeds. Local packages are auto-discovered
-  from `packages/`; only packages from external feeds need to be
-  listed here. Empty for every target today.
-  Note that `kmod-mac80211-hwsim` ships pre-compiled in OpenWrt's
-  official kmods feed and lives in
-  `repositories.snippet`, so it does NOT need to appear here.
+  build from the extra feeds. Local packages under `packages/` are
+  auto-discovered; only external feed packages need to be listed
+  here. For `qemu_x86_64` this is `[vwifi]`. Note that
+  `kmod-mac80211-hwsim` ships pre-compiled in OpenWrt's official
+  kmods feed and lives in `repositories.snippet`, so it does NOT
+  need to appear here.
 
 ### Single-node QEMU smoke (`test-firmware-qemu-single`)
 

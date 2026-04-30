@@ -73,16 +73,14 @@ flowchart LR
   - `kmod-mac80211-hwsim` comes from OpenWrt's official kmods feed
     (no SDK rebuild needed). It just has to be in the per-target
     `packages:` list in `targets.yml`.
-  - `vwifi-client` ships as a **vendored OpenWrt package** under
-    `packages/vwifi/` in this repo. It is auto-detected by
-    `prepare-matrix`'s `lime_packages_list` step alongside
-    `lime-*`, compiled by `build-feed` like every other local
-    package, and ends up in the `lime_packages` artefact. See
-    [`docs/ci/firmware-build.md`](../ci/firmware-build.md#qemu-pipeline-virtual-mesh-build-and-test)
-    for why we vendored instead of using `extra_feeds:` (the
-    upstream Makefile is missing `PKG_MIRROR_HASH`, which the
-    OpenWrt 24.10+ SDK treats as a fatal "Package HASH check
-    failed").
+  - `vwifi-client` comes from `fcefyn-testbed/vwifi_cli_package`
+    declared as `extra_feeds:` for `qemu_x86_64`. This is our org
+    fork of `javierbrk/vwifi_cli_package` that adds the
+    `PKG_MIRROR_HASH` required by OpenWrt 24.10+ SDK (without it
+    `gh-action-sdk` aborts with "Package HASH check failed"). A
+    PR to upstream is open; once merged, the `extra_feeds:` URL
+    switches back to `javierbrk/vwifi_cli_package`. See
+    [`docs/ci/firmware-build.md`](../ci/firmware-build.md#qemu-pipeline-virtual-mesh-build-and-test).
 
 ## Pinned versions
 
@@ -93,22 +91,14 @@ between vwifi-client and vwifi-server (the shared C structs in
 
 | Component | Repo | Pin | Where |
 | --- | --- | --- | --- |
-| in-guest vwifi-client (OpenWrt package) | `github.com/javierbrk/vwifi_cli_package` (commit `51bbf3bc`, vendored) -> daemon source `github.com/Raizo62/vwifi` `4a9842e6` | `PKG_SOURCE_VERSION:=4a9842e646c226a254df3300f1c98b86a947acd8` + `PKG_MIRROR_HASH:=7af9fa14f45bcc19afe6c90aa329e115855cd616498ed3d1794b531e4aa0085b` | `packages/vwifi/Makefile` |
+| in-guest vwifi-client (OpenWrt package) | `github.com/fcefyn-testbed/vwifi_cli_package` (fork of `javierbrk/`, adds `PKG_MIRROR_HASH`) | `838c44a0611f6de5d2404172a95fcc311c25e95f` | `extra_feeds:` of `qemu_x86_64` in `.github/ci/targets.yml` |
 | host vwifi-server (CMake build) | `github.com/Raizo62/vwifi` | `4a9842e6` (= release v7.0, July 2025) | `cache-vwifi-server` and the build step of `test-mesh-qemu` in `.github/workflows/build-firmware.yml` |
 
-Both pins resolve to the same upstream commit `4a9842e6` of
-`Raizo62/vwifi`, so client and server always speak the same wire
-protocol. When upstream `csocket.h` changes, both pins must move
-together (bump `PKG_SOURCE_VERSION` + `PKG_MIRROR_HASH` in
-`packages/vwifi/Makefile` AND the `vwifi-server-<sha>` cache key
-in `build-firmware.yml`).
-
-> The vendored Makefile differs from upstream
-> `javierbrk/vwifi_cli_package@51bbf3bc` only in the addition of
-> `PKG_MIRROR_HASH`. A PR proposing the same fix upstream is the
-> right way to eventually undo the vendoring; once merged, this
-> target can switch back to an `extra_feeds:` declaration in
-> `targets.yml` (the `build-feed` mechanism is preserved).
+Both commits wrap the same upstream daemon source `Raizo62/vwifi@4a9842e6`,
+so client and server always speak the same wire protocol. When
+upstream `csocket.h` changes, both pins must move together (bump
+the `extra_feeds:` SHA in `targets.yml` AND the `vwifi-server-<sha>`
+cache key in `build-firmware.yml`).
 
 ## Local reproduction
 

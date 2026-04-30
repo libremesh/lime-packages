@@ -265,26 +265,27 @@ targets:
     # `build_image.sh` rejects BUILD_INITRAMFS=1 with this format.
     build_initramfs: false
     image_format: x86-combined
-    # The QEMU virtual mesh test (see fork-libremesh-virtual-mesh)
-    # uses mac80211_hwsim radios + the `vwifi` daemon to forward
-    # frames over a UDP socket between QEMU instances. The
-    # in-image `vwifi` package is vendored at packages/vwifi/
-    # (originally from javierbrk/vwifi_cli_package, with a local
-    # PKG_MIRROR_HASH fix the SDK requires); kmod-mac80211-hwsim
-    # is needed for the virtual radios to exist in the first
-    # place. The host-side vwifi-server is launched by
-    # libremesh-tests/scripts/virtual_mesh_launcher.py, not
-    # built into the firmware.
+    # The QEMU virtual mesh test uses mac80211_hwsim radios + the
+    # `vwifi` daemon to forward frames between QEMU instances.
+    # `kmod-mac80211-hwsim` comes from the official OpenWrt kmods
+    # feed; `vwifi-client` is built from the src-git feed below.
     #
-    # No `extra_feeds:` / `extra_packages:` here: vwifi ships as a
-    # local lime-package, so prepare-matrix's lime_packages_list
-    # picks it up automatically alongside lime-*. Once the
-    # PKG_MIRROR_HASH fix is merged upstream
-    # (javierbrk/vwifi_cli_package), this target can switch back
-    # to an external src-git feed via extra_feeds + extra_packages
-    # (the build-feed job already supports that mechanism).
+    # extra_feeds points to fcefyn-testbed/vwifi_cli_package, our
+    # org fork of javierbrk/vwifi_cli_package that adds the
+    # PKG_MIRROR_HASH required by OpenWrt 24.10+ SDK (without it
+    # gh-action-sdk aborts with "Package HASH check failed").
+    # Once the fix is merged upstream, switch the URL back to
+    # javierbrk/vwifi_cli_package and update the SHA.
+    #
+    # The pin MUST be a full 40-char SHA — GitHub's smart-HTTP
+    # server rejects short prefixes with "couldn't find remote
+    # ref". See docs/ci/firmware-build.md → "Feed cache".
     packages: >-
       {{ packages_default }} kmod-mac80211-hwsim wpad-mesh-mbedtls vwifi
+    extra_feeds:
+      - "src-git|vwifi|https://github.com/fcefyn-testbed/vwifi_cli_package.git^838c44a0611f6de5d2404172a95fcc311c25e95f"
+    extra_packages:
+      - "vwifi"
     # The qemu_x86_64 firmware is consumed by the QEMU jobs, not by
     # the self-hosted lab. test_firmware:false keeps it out of the
     # physical-test matrix; test_qemu:true opts the device into the
