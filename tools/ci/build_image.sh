@@ -208,6 +208,19 @@ if [[ ! -d "${FEED_DIR}/lime_packages" ]]; then
   exit 1
 fi
 
+# Package format dispatch. OpenWrt 24.10.x ships .ipk packages indexed
+# by `Packages` / `Packages.gz` and managed by opkg. OpenWrt 25.12.x
+# replaced opkg with apk-tools (Alpine package format), so the indexed
+# file is `packages.adb` and ImageBuilder consumes the local feed via
+# `--repository file:///<dir>/packages.adb` (see openwrt PR #18048).
+# This script branches the repositories config, the pre-flight, and
+# the `make image` flags off this single variable.
+case "${OPENWRT_RELEASE}" in
+  24.10.*) PKG_FORMAT=ipk ;;
+  *)       PKG_FORMAT=apk ;;
+esac
+echo ">>> Package format for ${OPENWRT_RELEASE}: ${PKG_FORMAT}"
+
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
@@ -228,10 +241,31 @@ if [[ -f "${DTB_PARTITIONS_PATCHER_HOST}" ]]; then
   chmod 0755 "${WORK_DIR}/patch_dtb_partitions.py"
 fi
 
-cat > "${WORK_DIR}/repositories.snippet" <<EOF
+# repositories.snippet: appended to the IB's repositories config.
+#
+# - opkg (24.10.x): file is `repositories.conf`. Each line of the
+#   form `src/gz <name> <url>` adds an opkg feed. We add both the
+#   bind-mounted local feed and the upstream LibreMesh remote.
+#   The `lime_packages_local` name has to match
+#   `feed.libremesh.org/master/<branch>/<arch>` only by convention;
+#   opkg keys feeds by their unique `<name>` token.
+#
+# - apk (25.12+): file is `repositories` (no .conf). apk-tools accepts
+#   one URL per line (no `src/gz` keyword), and absolute file:// URLs
+#   are required (see openwrt#18032 / PR#18048). For the local feed
+#   we point at the indexed packages.adb directly. The remote line
+#   uses the same `packages.adb` path the upstream feed serves.
+if [[ "${PKG_FORMAT}" == "ipk" ]]; then
+  cat > "${WORK_DIR}/repositories.snippet" <<EOF
 src/gz lime_packages_local file:///feed/lime_packages
 src/gz libremesh https://feed.libremesh.org/master/${FEED_BRANCH}/${ARCH}
 EOF
+else
+  cat > "${WORK_DIR}/repositories.snippet" <<EOF
+file:///feed/lime_packages/packages.adb
+https://feed.libremesh.org/master/${FEED_BRANCH}/${ARCH}/packages.adb
+EOF
+fi
 
 cat > "${WORK_DIR}/keys/a71b3c8285abd28b" <<'EOF'
 untrusted comment: signed by libremesh.org key a71b3c8285abd28b
@@ -252,7 +286,19 @@ chmod a+w "${WORK_DIR}/out"
 export BUILD_INITRAMFS IMAGE_FORMAT FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS \
        FIT_CONFIG FIT_BOOTARGS DTB_PATCH_NVMEM_MAC \
        DTB_FORCE_LEGACY_PARTITIONS PROFILE PACKAGES \
-       ARCH OPENWRT_RELEASE
+       ARCH OPENWRT_RELEASE PKG_FORMAT
+
+# When PKG_FORMAT=apk we may need to (re)generate `packages.adb`
+# inside the IB if the assemble step produced .apk packages but no
+# index. Mount /feed read-write to let the in-container apk-tools
+# refresh the index in place. For PKG_FORMAT=ipk the index is
+# already on disk (Packages + Packages.gz) and a read-only mount
+# matches the historical behavior.
+if [[ "${PKG_FORMAT}" == "apk" ]]; then
+  FEED_MOUNT_FLAGS=":rw"
+else
+  FEED_MOUNT_FLAGS=":ro"
+fi
 
 docker run --rm \
   --user root \
@@ -269,56 +315,37 @@ docker run --rm \
   -e PACKAGES \
   -e ARCH \
   -e OPENWRT_RELEASE \
+  -e PKG_FORMAT \
   -v "${WORK_DIR}:/work" \
-  -v "${FEED_DIR}:/feed:ro" \
+  -v "${FEED_DIR}:/feed${FEED_MOUNT_FLAGS}" \
   "${IMAGE_TAG}" \
   sh -lc '
     set -e
-    # Disable signature checking for our local unsigned feed.
-    #
-    # opkg-lede ignores the value of `option check_signature`: any line
-    # named that way enables verification regardless of the argument.
-    # Replacing it with `... 0` or appending `0` both leave the flag on,
-    # which silently rejects our unsigned local feed and produces
-    # `opkg_install_cmd: Cannot install package lime-system.` for every
-    # lime-* package. The only way to keep it off is to ensure no such
-    # line is present (the in-memory default is 0).
-    sed -i "/^option check_signature/d" repositories.conf
-    cat /work/repositories.snippet >> repositories.conf
     cp /work/keys/* keys/ 2>/dev/null || true
 
-    echo "=== final repositories.conf ==="
-    cat repositories.conf
-    echo "=== mounted feed contents (/feed/lime_packages) ==="
-    ls -la /feed/lime_packages/ | head -40
-    feed_ipks=$(find /feed/lime_packages -maxdepth 1 -name "*.ipk" | wc -l)
-    feed_pkgs=$(grep -c "^Package:" /feed/lime_packages/Packages 2>/dev/null || echo 0)
-    echo "Feed has ${feed_ipks} IPKs and ${feed_pkgs} Packages entries"
+    if [ "${PKG_FORMAT}" = "ipk" ]; then
+      # opkg config lives in repositories.conf. Drop the
+      # `option check_signature` line so opkg-lede does not reject our
+      # unsigned local feed; opkg-lede ignores the *value* of that
+      # option (any presence enables verification), so the only way
+      # to keep it off is to remove the line outright.
+      sed -i "/^option check_signature/d" repositories.conf
+      cat /work/repositories.snippet >> repositories.conf
 
-    # Pre-flight: confirm opkg can actually see the local feed before we
-    # spend ~30 min on `make image`. If `lime-system` is not visible
-    # after `opkg update`, failing here is far cheaper than failing at
-    # the very end of package_install with no diagnostic context.
-    mkdir -p /tmp/preflight/tmp /tmp/preflight-lists
-    /builder/staging_dir/host/bin/opkg \
-      --offline-root /tmp/preflight \
-      --add-arch all:100 \
-      --add-arch "${ARCH}:200" \
-      -f /builder/repositories.conf \
-      --cache /tmp/preflight-cache \
-      --lists-dir /tmp/preflight-lists \
-      update >/tmp/preflight.log 2>&1 || true
-    echo "=== opkg pre-flight update (last 25 lines) ==="
-    tail -n 25 /tmp/preflight.log
-    if ! /builder/staging_dir/host/bin/opkg \
-        --offline-root /tmp/preflight \
-        --add-arch all:100 \
-        --add-arch "${ARCH}:200" \
-        -f /builder/repositories.conf \
-        --cache /tmp/preflight-cache \
-        --lists-dir /tmp/preflight-lists \
-        list 2>/dev/null | grep -q "^lime-system "; then
-      echo "ERROR: opkg cannot see lime-system in any configured feed" >&2
+      echo "=== final repositories.conf ==="
+      cat repositories.conf
+      echo "=== mounted feed contents (/feed/lime_packages) ==="
+      ls -la /feed/lime_packages/ | head -40
+      feed_ipks=$(find /feed/lime_packages -maxdepth 1 -name "*.ipk" | wc -l)
+      feed_pkgs=$(grep -c "^Package:" /feed/lime_packages/Packages 2>/dev/null || echo 0)
+      echo "Feed has ${feed_ipks} IPKs and ${feed_pkgs} Packages entries"
+
+      # Pre-flight: confirm opkg can actually see the local feed before
+      # we spend ~30 min on `make image`. If `lime-system` is not
+      # visible after `opkg update`, failing here is far cheaper than
+      # failing at the very end of package_install with no diagnostic
+      # context.
+      mkdir -p /tmp/preflight/tmp /tmp/preflight-lists
       /builder/staging_dir/host/bin/opkg \
         --offline-root /tmp/preflight \
         --add-arch all:100 \
@@ -326,12 +353,106 @@ docker run --rm \
         -f /builder/repositories.conf \
         --cache /tmp/preflight-cache \
         --lists-dir /tmp/preflight-lists \
-        list 2>/dev/null | grep -E "^(lime|shared-state|babeld-auto|check-date|batctl)" >&2 || true
-      exit 1
-    fi
-    echo "=== Pre-flight OK: local feed is visible to opkg ==="
+        update >/tmp/preflight.log 2>&1 || true
+      echo "=== opkg pre-flight update (last 25 lines) ==="
+      tail -n 25 /tmp/preflight.log
+      if ! /builder/staging_dir/host/bin/opkg \
+          --offline-root /tmp/preflight \
+          --add-arch all:100 \
+          --add-arch "${ARCH}:200" \
+          -f /builder/repositories.conf \
+          --cache /tmp/preflight-cache \
+          --lists-dir /tmp/preflight-lists \
+          list 2>/dev/null | grep -q "^lime-system "; then
+        echo "ERROR: opkg cannot see lime-system in any configured feed" >&2
+        /builder/staging_dir/host/bin/opkg \
+          --offline-root /tmp/preflight \
+          --add-arch all:100 \
+          --add-arch "${ARCH}:200" \
+          -f /builder/repositories.conf \
+          --cache /tmp/preflight-cache \
+          --lists-dir /tmp/preflight-lists \
+          list 2>/dev/null | grep -E "^(lime|shared-state|babeld-auto|check-date|batctl)" >&2 || true
+        exit 1
+      fi
+      echo "=== Pre-flight OK: local feed is visible to opkg ==="
 
-    make image PROFILE="${PROFILE}" BIN_DIR=/work/out PACKAGES="${PACKAGES}"
+      make image PROFILE="${PROFILE}" BIN_DIR=/work/out PACKAGES="${PACKAGES}"
+
+    else
+      # apk-tools (OpenWrt 25.12+). Config file is `repositories`
+      # (no .conf). Each line is a single repo URL; no `src/gz`
+      # keyword. Absolute `file://` URLs are required for local
+      # feeds since openwrt#18032 / PR#18048.
+      cat /work/repositories.snippet >> repositories
+
+      echo "=== final repositories ==="
+      cat repositories
+      echo "=== mounted feed contents (/feed/lime_packages) ==="
+      ls -la /feed/lime_packages/ | head -40
+      feed_apks=$(find /feed/lime_packages -maxdepth 1 -name "*.apk" | wc -l)
+      echo "Feed has ${feed_apks} APKs"
+
+      APK=/builder/staging_dir/host/bin/apk
+
+      # Regenerate packages.adb in place if the assemble step did
+      # not ship one (defense in depth: the workflow always indexes,
+      # but a future code path that bypasses the assemble step would
+      # otherwise silently fail at make image time).
+      if [ ! -f /feed/lime_packages/packages.adb ]; then
+        echo ">>> packages.adb missing — generating with the IB-host apk"
+        cd /feed/lime_packages
+        if "$APK" mkndx --help >/dev/null 2>&1; then
+          "$APK" mkndx --no-keychain --output packages.adb -- *.apk
+        else
+          "$APK" index --no-keychain --output packages.adb *.apk
+        fi
+        cd /builder
+      fi
+
+      # apk pre-flight: ensure lime-system is resolvable from the
+      # configured repositories. We use `apk list` against an empty
+      # offline root: if the index is broken or the repository entry
+      # is malformed, this returns no rows and we abort early.
+      # `--allow-untrusted` skips signature verification (our local
+      # feed is unsigned and we did not add the LibreMesh signing
+      # key for the apk-tools keystore yet).
+      mkdir -p /tmp/preflight
+      "$APK" \
+        --root /tmp/preflight \
+        --no-cache \
+        --allow-untrusted \
+        --repositories-file /builder/repositories \
+        --repository /feed/lime_packages/packages.adb \
+        update >/tmp/preflight.log 2>&1 || true
+      echo "=== apk pre-flight update (last 25 lines) ==="
+      tail -n 25 /tmp/preflight.log || true
+      if ! "$APK" \
+          --root /tmp/preflight \
+          --no-cache \
+          --allow-untrusted \
+          --repositories-file /builder/repositories \
+          --repository /feed/lime_packages/packages.adb \
+          list lime-system 2>/dev/null | grep -q "^lime-system-"; then
+        echo "WARNING: apk pre-flight could not list lime-system" >&2
+        echo "(non-fatal: apk-tools list semantics are looser than opkg; we proceed and let make image surface any real error)" >&2
+      else
+        echo "=== Pre-flight OK: local feed is visible to apk ==="
+      fi
+
+      # `make image` for 25.12 ImageBuilder. APK_FLAGS is forwarded
+      # to every `apk` invocation under the hood and must include:
+      #   --allow-untrusted: our local feed is not signed.
+      #   --repository file:///feed/lime_packages/packages.adb:
+      #     ensures the local feed is queried in addition to whatever
+      #     the IB Makefile defaults to (it adds /builder/packages
+      #     automatically; we are appending, not replacing).
+      make image \
+        PROFILE="${PROFILE}" \
+        BIN_DIR=/work/out \
+        PACKAGES="${PACKAGES}" \
+        APK_FLAGS="--allow-untrusted --repository file:///feed/lime_packages/packages.adb"
+    fi
 
     echo "=== /work/out contents (post make image) ==="
     ls -la /work/out/
