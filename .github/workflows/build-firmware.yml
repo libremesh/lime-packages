@@ -425,37 +425,65 @@ jobs:
             jq -cn --argjson inc "$updated" '{include: $inc}'
           )"
 
-          # Explicit list of every package directory under packages/ that
-          # actually has a Makefile (the repo has placeholder dirs like
-          # `cotonete/`, `lime-curtigghio/`, `test-packet-franco/` with only a
-          # README that would crash `make package/$name/download`).
-          # We pass this as PACKAGES to openwrt/gh-action-sdk because empty
-          # PACKAGES only builds what `make defconfig` enables (which is
-          # nothing for this repo: lime-* packages have no `default y/m`).
-          lime_packages_list="$(
+          # Compute lime_packages_list: union of every package name listed
+          # in targets.yml (top-level `packages:` plus each target's
+          # per-device override + per-target `extra_packages`), filtered
+          # to names that exist as `packages/<name>/Makefile` for the
+          # local feed (extra_packages from external src-git feeds get
+          # appended after the intersection, since they're not in
+          # `packages/`).
+          #
+          # Why not just `find packages -name Makefile`? gh-action-sdk
+          # loops `make package/$PKG/compile` over PACKAGES sequentially
+          # and each iteration re-evaluates the OpenWrt dep tree,
+          # triggering rebuilds of common deps (iproute2/openssl/...)
+          # for every entry. Passing the full ~75 lime-* dirs compounds
+          # to multi-hour cold builds and trips the 90-min build-feed
+          # timeout. By restricting to the packages actually requested
+          # by some target, we cut the per-package loop to ~15-20
+          # entries; the lime-* internal cross-deps are still pulled
+          # into the IPK artefact transitively because `feeds install
+          # -p lime_packages -f $PKG` walks the full feed.
+          # `{{ packages_default }}` is a Mustache-style placeholder used in
+          # per-target packages: lists to interpolate the top-level default;
+          # we drop it explicitly so it doesn't leak into PACKAGES.
+          requested_pkgs="$(
+            yq -r '[.packages, (.targets[].packages // empty)]
+                   | map(select(. != null))
+                   | join(" ")' .github/ci/targets.yml \
+              | tr ' \t' '\n' \
+              | sed -n 's/^[A-Za-z0-9_+-][A-Za-z0-9_+-]*$/&/p' \
+              | grep -v '^-' \
+              | grep -vw 'packages_default' \
+              | sort -u
+          )"
+          available_lime="$(
             find packages -mindepth 2 -maxdepth 2 -name Makefile -printf '%h\n' \
-              | xargs -n1 basename \
-              | sort -u \
+              | xargs -n1 basename | sort -u
+          )"
+          lime_packages_list="$(
+            comm -12 <(printf '%s\n' "$requested_pkgs") <(printf '%s\n' "$available_lime") \
               | tr '\n' ' ' | sed 's/[[:space:]]*$//'
           )"
           echo "Computed package list ($(echo "$lime_packages_list" | wc -w) packages):"
           echo "$lime_packages_list" | tr ' ' '\n'
 
-          # Compute a single sha256 over inputs that affect the *compiled* IPKs
-          # only: package Makefiles / files / patches / src plus
-          # tools/ci/build_feed.sh. We intentionally exclude `.github/ci/targets.yml`
-          # and this workflow file — they affect ImageBuilder package selection and
-          # CI orchestration, not which `.ipk` files the SDK produces. Including them
-          # caused a full ~50 min SDK rebuild on every workflow or per-target
-          # `packages:` tweak despite unchanged package sources.
-          #
-          # OpenWrt release + arch remain in the actions/cache key separately.
+          # Compute a single sha256 over inputs that affect the *compiled* IPKs:
+          # package Makefiles / files / patches / src, tools/ci/build_feed.sh,
+          # AND the computed `lime_packages_list` (so a packages: edit in
+          # targets.yml that adds/removes a build-target busts the cache,
+          # since the resulting IPK set actually changes). Edits to other
+          # parts of targets.yml or to this workflow do NOT invalidate the
+          # cache — they affect orchestration, not which `.ipk` files the
+          # SDK produces. OpenWrt release + arch remain in the actions/cache
+          # key separately.
           feed_hash="$(
             {
               find packages -type f \( -name 'Makefile' -o -path 'packages/*/files/*' -o -path 'packages/*/patches/*' -o -path 'packages/*/src/*' \) -print0 \
                 | LC_ALL=C sort -z \
                 | xargs -0 sha256sum
               sha256sum tools/ci/build_feed.sh
+              printf 'lime_packages_list=%s\n' "$lime_packages_list"
             } | sha256sum | cut -d' ' -f1
           )"
           echo "Computed feed_hash=$feed_hash"
@@ -473,14 +501,19 @@ jobs:
   build-feed:
     runs-on: ubuntu-latest
     needs: prepare-matrix
-    # Cap the SDK compile at 90 min. A clean cold build (cache miss) finishes
-    # in ~50 min on ubuntu-latest; 90 min leaves margin for slow runners and
-    # extra packages while still catching the OpenWrt 25.12 SDK pathology
-    # documented in docs/followups/openwrt_25_12_build_issues.md (recursive
-    # Kconfig deps trap make in an iproute2 clean-build/compile loop that
-    # runs forever). Without the cap, a single bad cell wastes hours of
-    # GitHub-hosted runner time per affected (arch × release) combination.
-    timeout-minutes: 90
+    # Cap the SDK compile at 180 min. Historical cold-build telemetry on
+    # ubuntu-latest:
+    #   - aarch64_cortex-a53/24.10.6 first cold build = 87 min
+    #   - mips_24kc/24.10.6           first cold build = 70 min
+    # gh-action-sdk's `for PKG in $PACKAGES; make package/$PKG/compile`
+    # loop re-evaluates the OpenWrt dep tree per iteration, so common
+    # deps (iproute2/openssl/...) get rebuilt several times. Even with
+    # PACKAGES restricted to image-installed entries (~15-20 instead of
+    # 75), 180 min leaves margin for x86_64 + extra_feeds runs while
+    # still catching the OpenWrt 25.12 SDK pathology documented in
+    # docs/followups/openwrt_25_12_build_issues.md (recursive Kconfig
+    # deps trap make in an unbounded iproute2 clean-build/compile loop).
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-matrix.outputs.archs_matrix) }}
@@ -529,15 +562,16 @@ jobs:
         env:
           ARCH: ${{ matrix.sdk_arch }}
           FEEDNAME: lime_packages
-          # Explicit package list = every package directory under
-          # `packages/` with a Makefile (lime-*, shared-state-*, etc.;
-          # computed in prepare-matrix), plus any per-arch extras from
-          # `extra_packages` in targets.yml (e.g. `vwifi` for x86_64).
-          # Empty PACKAGES would only build what `make defconfig`
-          # enables and our packages have no `default y/m`, so an
-          # explicit list is required. gh-action-sdk does, per package
-          # and per feed in ALL_CUSTOM_FEEDS:
-          # `feeds install -p $FEED -f $PKG && make package/$PKG/compile`.
+          # Explicit list of packages the image actually installs, computed
+          # in prepare-matrix from `targets.yml::packages` (default + each
+          # target's override) plus per-arch `extra_packages` (e.g. `vwifi`
+          # for x86_64). gh-action-sdk loops `make package/$PKG/compile`
+          # over PACKAGES; each call re-evaluates the dep tree and triggers
+          # rebuilds of common deps (iproute2/openssl/...), so listing the
+          # full ~75 lime-* directories here would compound to multi-hour
+          # cold builds. Transitive lime-* deps are picked up automatically
+          # by `feeds install -p $FEED -f $PKG` from feeds.conf, so we don't
+          # need to list every internal cross-dep explicitly.
           # IPKs land in bin/packages/<arch>/<source_feed>/.
           PACKAGES: ${{ needs.prepare-matrix.outputs.lime_packages_list }} ${{ matrix.extra_packages }}
           # Extra src-git feeds for this arch+release. Format is
