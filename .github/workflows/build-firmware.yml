@@ -601,10 +601,11 @@ jobs:
       - name: Diagnose feed build output
         if: steps.cache-feed.outputs.cache-hit != 'true'
         # `set -e` plus a missing `bin/packages/all/lime_packages/` (which is
-        # the normal case here: the SDK puts every PKGARCH:=all IPK into the
-        # arch dir, not into `all/`) used to abort the whole job at `find ... |
-        # wc -l` due to pipefail. Use `shopt -s nullglob` + array length so
-        # missing directories simply yield count 0 without aborting.
+        # the normal case here: the SDK puts every PKGARCH:=all package into
+        # the arch dir, not into `all/`) used to abort the whole job at
+        # `find ... | wc -l` due to pipefail. Use `shopt -s nullglob` +
+        # array length so missing directories simply yield count 0 without
+        # aborting.
         # extra_feeds output paths are not deterministic by feed name:
         #   - PKGARCH:=all packages (shell-only feeds) end up under
         #     bin/packages/<arch>/<feedname>/
@@ -612,10 +613,21 @@ jobs:
         #     end up under bin/targets/<target>/<subtarget>/packages/
         # We list both trees here for visibility and rely on the assemble
         # step's globbed search across both for correctness.
+        # PACKAGE FORMAT: 24.10.x emits .ipk (opkg), 25.12.x emits .apk
+        # (apk-tools, Alpine format). We accept both: the SDK only writes
+        # one kind per build, and the assemble step picks the right
+        # indexer downstream.
         shell: bash
+        env:
+          OPENWRT_RELEASE: ${{ matrix.openwrt_release }}
         run: |
           set -euo pipefail
           shopt -s nullglob
+          case "${OPENWRT_RELEASE}" in
+            24.10.*) PKG_FORMAT=ipk ;;
+            *)       PKG_FORMAT=apk ;;
+          esac
+          echo "Package format for ${OPENWRT_RELEASE}: ${PKG_FORMAT}"
           echo "=== bin/packages tree ==="
           find bin/packages -maxdepth 4 -type d 2>/dev/null | sort || true
           echo "=== bin/targets tree (where target-binary extras land) ==="
@@ -624,11 +636,17 @@ jobs:
           ls -la "bin/packages/${{ matrix.arch }}/lime_packages/" 2>/dev/null || echo "(missing)"
           echo "=== bin/packages/all/lime_packages/ ==="
           ls -la "bin/packages/all/lime_packages/" 2>/dev/null || echo "(missing)"
-          arch_files=("bin/packages/${{ matrix.arch }}/lime_packages/"*.ipk)
-          all_files=("bin/packages/all/lime_packages/"*.ipk)
-          echo "Arch IPKs: ${#arch_files[@]} | All IPKs: ${#all_files[@]}"
+          arch_files=(
+            "bin/packages/${{ matrix.arch }}/lime_packages/"*.ipk
+            "bin/packages/${{ matrix.arch }}/lime_packages/"*.apk
+          )
+          all_files=(
+            "bin/packages/all/lime_packages/"*.ipk
+            "bin/packages/all/lime_packages/"*.apk
+          )
+          echo "Arch packages: ${#arch_files[@]} | All packages: ${#all_files[@]}"
           if (( ${#arch_files[@]} == 0 && ${#all_files[@]} == 0 )); then
-            echo "ERROR: feed produced no IPKs" >&2
+            echo "ERROR: feed produced no .ipk or .apk packages" >&2
             exit 1
           fi
           # Best-effort listing of every extra feed output dir; missing
@@ -643,8 +661,8 @@ jobs:
               echo "--- ${extra_dir} ---"
               ls -la "$extra_dir" 2>/dev/null || echo "(missing — target-binary extras live under bin/targets/)"
             done
-            echo "=== bin/targets/**/packages/ (all target-built ipks) ==="
-            find bin/targets -name "*.ipk" -path "*/packages/*" 2>/dev/null \
+            echo "=== bin/targets/**/packages/ (target-built packages) ==="
+            find bin/targets \( -name "*.ipk" -o -name "*.apk" \) -path "*/packages/*" 2>/dev/null \
               | sort || echo "(none)"
           fi
 
@@ -654,6 +672,15 @@ jobs:
           OPENWRT_RELEASE: ${{ matrix.openwrt_release }}
         run: |
           set -euo pipefail
+          # 24.10.x ships .ipk packages indexed by `Packages`/`Packages.gz`
+          # (opkg). 25.12.x switched to .apk packages indexed by
+          # `packages.adb` (apk-tools). Bifurcate the indexer here.
+          case "${OPENWRT_RELEASE}" in
+            24.10.*) PKG_FORMAT=ipk ;;
+            *)       PKG_FORMAT=apk ;;
+          esac
+          echo "Assembling feed for ${OPENWRT_RELEASE} (PKG_FORMAT=${PKG_FORMAT})"
+
           rm -rf feed-artifact
           mkdir -p feed-artifact/lime_packages
 
@@ -667,13 +694,13 @@ jobs:
             cp -a "$all_dir"/. feed-artifact/lime_packages/
           fi
 
-          # Merge IPKs from each extra src-git feed (e.g. vwifi) into the
-          # same lime_packages local feed. ImageBuilder's `repositories.conf`
-          # snippet only knows about `lime_packages_local` (see
-          # tools/ci/repositories.snippet), so every extra IPK has to live
-          # in this single dir to be installable. opkg deduplicates by
-          # package name + version, so co-locating is safe as long as no
-          # extra feed redefines a name we already ship under lime-*.
+          # Merge packages from each extra src-git feed (e.g. vwifi) into
+          # the same lime_packages local feed. The ImageBuilder snippet
+          # only knows about a single `lime_packages_local` repo, so every
+          # extra package has to live in this single dir to be installable.
+          # Both opkg (.ipk) and apk-tools (.apk) deduplicate by package
+          # name + version, so co-locating is safe as long as no extra
+          # feed redefines a name we already ship under lime-*.
           #
           # extra_feeds output paths depend on the package's PKGARCH:
           #   - PKGARCH:=all  → bin/packages/<arch>/<feedname>/ or
@@ -682,6 +709,13 @@ jobs:
           #     (the SDK lumps every per-arch extra into a single dir,
           #     not split per feed)
           # We probe both trees and copy any matching extra_packages entry.
+          # Naming differs between formats:
+          #   - .ipk: "<name>_<version>_<arch>.ipk" (underscore separator
+          #     as historically used by opkg) but the SDK has been moving
+          #     to "<name>-<version>_<arch>.ipk" since 23.x — accept both.
+          #   - .apk: "<name>-<version>.apk" (apk-tools always uses the
+          #     dash separator; underscores in package names are kept,
+          #     so "shared-state-bat_hosts-26.120.<...>.apk" is valid).
           extra_feeds_str="${{ matrix.extra_feeds }}"
           extra_packages_str="${{ matrix.extra_packages }}"
           if [[ -n "$extra_feeds_str" ]]; then
@@ -693,17 +727,24 @@ jobs:
               do
                 if [[ -d "$src" ]]; then
                   echo "Merging $src into feed-artifact/lime_packages/"
-                  cp -a "$src"/*.ipk feed-artifact/lime_packages/ 2>/dev/null || true
+                  shopt -s nullglob
+                  for f in "$src"/*.ipk "$src"/*.apk; do
+                    cp -a "$f" feed-artifact/lime_packages/
+                  done
                 fi
               done
             done
             # Pull each declared extra_packages entry from bin/targets/
             # if not already present (handles target-binary feeds like
-            # vwifi where the SDK lands the .ipk under bin/targets/).
+            # vwifi where the SDK lands the package under bin/targets/).
             if [[ -n "$extra_packages_str" && -d bin/targets ]]; then
               for pkg in $extra_packages_str; do
                 shopt -s nullglob
-                already=(feed-artifact/lime_packages/${pkg}_*.ipk feed-artifact/lime_packages/${pkg}-*.ipk)
+                already=(
+                  feed-artifact/lime_packages/${pkg}_*.ipk
+                  feed-artifact/lime_packages/${pkg}-*.ipk
+                  feed-artifact/lime_packages/${pkg}-*.apk
+                )
                 if [[ ${#already[@]} -gt 0 ]]; then
                   continue
                 fi
@@ -714,28 +755,32 @@ jobs:
                   echo "Merging $f (from bin/targets) into feed-artifact/lime_packages/"
                   cp -a "$f" feed-artifact/lime_packages/
                 done < <(find bin/targets -path '*/packages/*' \
-                          \( -name "${pkg}_*.ipk" -o -name "${pkg}-*.ipk" \) \
+                          \( -name "${pkg}_*.ipk" -o -name "${pkg}-*.ipk" -o -name "${pkg}-*.apk" \) \
                           -print0 2>/dev/null)
               done
             fi
           fi
 
           # Verify that every package we declared in extra_packages produced
-          # at least one IPK. Without this check, a misnamed package or a
-          # silently-skipped build (gh-action-sdk emits a warning and exits
-          # 0 when an arch is unsupported) would propagate into a feed
-          # without the package and fail later at ImageBuilder install
-          # time, which is much harder to debug.
+          # at least one package file. Without this check, a misnamed
+          # package or a silently-skipped build (gh-action-sdk emits a
+          # warning and exits 0 when an arch is unsupported) would
+          # propagate into a feed without the package and fail later at
+          # ImageBuilder install time, which is much harder to debug.
           if [[ -n "$extra_packages_str" ]]; then
             for pkg in $extra_packages_str; do
               shopt -s nullglob
-              matches=(feed-artifact/lime_packages/${pkg}_*.ipk feed-artifact/lime_packages/${pkg}-*.ipk)
+              matches=(
+                feed-artifact/lime_packages/${pkg}_*.ipk
+                feed-artifact/lime_packages/${pkg}-*.ipk
+                feed-artifact/lime_packages/${pkg}-*.apk
+              )
               if [[ ${#matches[@]} -eq 0 ]]; then
-                echo "ERROR: extra_packages entry '${pkg}' produced no IPK" >&2
-                echo "Searched feed-artifact/lime_packages/${pkg}{_,-}*.ipk" >&2
-                echo "Also searched bin/targets/**/packages/${pkg}*.ipk:" >&2
+                echo "ERROR: extra_packages entry '${pkg}' produced no .ipk or .apk" >&2
+                echo "Searched feed-artifact/lime_packages/${pkg}{_,-}*.{ipk,apk}" >&2
+                echo "Also searched bin/targets/**/packages/${pkg}*:" >&2
                 find bin/targets -path '*/packages/*' \
-                     \( -name "${pkg}_*.ipk" -o -name "${pkg}-*.ipk" \) \
+                     \( -name "${pkg}_*.ipk" -o -name "${pkg}-*.ipk" -o -name "${pkg}-*.apk" \) \
                      2>/dev/null >&2 || true
                 exit 1
               fi
@@ -743,53 +788,106 @@ jobs:
           fi
 
           shopt -s nullglob
-          ipk_count=(feed-artifact/lime_packages/*.ipk)
-          if [[ ${#ipk_count[@]} -eq 0 ]]; then
-            echo "ERROR: No .ipk files found under feed-artifact/lime_packages" >&2
+          all_pkgs=(feed-artifact/lime_packages/*.ipk feed-artifact/lime_packages/*.apk)
+          if [[ ${#all_pkgs[@]} -eq 0 ]]; then
+            echo "ERROR: No .ipk or .apk files found under feed-artifact/lime_packages" >&2
             echo "Expected sources: $arch_dir and/or $all_dir" >&2
             exit 1
           fi
 
           docker pull "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}"
           chmod -R a+rwX feed-artifact/lime_packages
-          # CRITICAL: must `cd /work` and pass `.` (not `/work`) to
-          # ipkg-make-index.sh — the script puts whatever path it receives
-          # straight into the `Filename:` field, after only stripping a leading
-          # `./`. Passing `/work` produces `Filename: /work/lime-system_*.ipk`,
-          # which opkg later resolves as `file:///feed/lime_packages//work/...`
-          # (404), so every package in our local feed fails to install with
-          # `* opkg_install_cmd: Cannot install package lime-system.` etc.
-          docker run --rm \
-            --user root \
-            -e MKHASH=/builder/staging_dir/host/bin/mkhash \
-            -e PATH=/builder/staging_dir/host/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-            -v "$(pwd)/feed-artifact/lime_packages:/work" \
-            "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}" \
-            sh -lc 'cd /work && /builder/scripts/ipkg-make-index.sh . > Packages && gzip -9nc Packages > Packages.gz'
 
-          echo "=== Final feed-artifact/lime_packages/ contents ==="
-          ls -la feed-artifact/lime_packages/
-          echo "=== Packages index summary (first 60 lines + count) ==="
-          head -n 60 feed-artifact/lime_packages/Packages || true
-          pkg_count=$(grep -c '^Package:' feed-artifact/lime_packages/Packages || echo 0)
-          echo "Total Package: entries in index: ${pkg_count}"
-          echo "=== Sanity: Filename fields must be bare basenames ==="
-          bad_fn=$(grep -E '^Filename: (/|\./)' feed-artifact/lime_packages/Packages || true)
-          if [[ -n "$bad_fn" ]]; then
-            echo "ERROR: Packages index has non-basename Filename entries:" >&2
-            echo "$bad_fn" >&2
-            exit 1
+          if [[ "$PKG_FORMAT" == "ipk" ]]; then
+            # CRITICAL: must `cd /work` and pass `.` (not `/work`) to
+            # ipkg-make-index.sh — the script puts whatever path it receives
+            # straight into the `Filename:` field, after only stripping a
+            # leading `./`. Passing `/work` produces
+            # `Filename: /work/lime-system_*.ipk`, which opkg later
+            # resolves as `file:///feed/lime_packages//work/...` (404), so
+            # every package in our local feed fails to install with
+            # `* opkg_install_cmd: Cannot install package lime-system.`
+            docker run --rm \
+              --user root \
+              -e MKHASH=/builder/staging_dir/host/bin/mkhash \
+              -e PATH=/builder/staging_dir/host/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+              -v "$(pwd)/feed-artifact/lime_packages:/work" \
+              "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}" \
+              sh -lc 'cd /work && /builder/scripts/ipkg-make-index.sh . > Packages && gzip -9nc Packages > Packages.gz'
+
+            echo "=== Final feed-artifact/lime_packages/ contents (ipk) ==="
+            ls -la feed-artifact/lime_packages/
+            echo "=== Packages index summary (first 60 lines + count) ==="
+            head -n 60 feed-artifact/lime_packages/Packages || true
+            pkg_count=$(grep -c '^Package:' feed-artifact/lime_packages/Packages || echo 0)
+            echo "Total Package: entries in index: ${pkg_count}"
+            echo "=== Sanity: Filename fields must be bare basenames ==="
+            bad_fn=$(grep -E '^Filename: (/|\./)' feed-artifact/lime_packages/Packages || true)
+            if [[ -n "$bad_fn" ]]; then
+              echo "ERROR: Packages index has non-basename Filename entries:" >&2
+              echo "$bad_fn" >&2
+              exit 1
+            fi
+            grep -m 3 '^Filename:' feed-artifact/lime_packages/Packages
+          else
+            # apk-tools needs `packages.adb`. The IB ships a host-built
+            # `apk` under `/builder/staging_dir/host/bin/apk` with
+            # `mkndx` (preferred) or `index` (older builds). We probe
+            # both subcommands. `--no-keychain` skips signing — the
+            # local feed is unsigned and ImageBuilder will be invoked
+            # with `--allow-untrusted` downstream.
+            docker run --rm \
+              --user root \
+              -e PATH=/builder/staging_dir/host/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+              -v "$(pwd)/feed-artifact/lime_packages:/work" \
+              "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}" \
+              sh -lc '
+                set -e
+                cd /work
+                APK=/builder/staging_dir/host/bin/apk
+                if "$APK" mkndx --help >/dev/null 2>&1; then
+                  echo "Using: apk mkndx"
+                  "$APK" mkndx --no-keychain --output packages.adb -- *.apk
+                elif "$APK" index --help >/dev/null 2>&1; then
+                  echo "Using: apk index"
+                  "$APK" index --no-keychain --output packages.adb *.apk
+                else
+                  echo "ERROR: neither apk mkndx nor apk index available in the IB" >&2
+                  exit 1
+                fi
+              '
+
+            echo "=== Final feed-artifact/lime_packages/ contents (apk) ==="
+            ls -la feed-artifact/lime_packages/
+            if [[ ! -f feed-artifact/lime_packages/packages.adb ]]; then
+              echo "ERROR: packages.adb was not generated" >&2
+              exit 1
+            fi
+            adb_size=$(stat -c%s feed-artifact/lime_packages/packages.adb)
+            apk_count=$(find feed-artifact/lime_packages -maxdepth 1 -name "*.apk" | wc -l)
+            echo "packages.adb size: ${adb_size} bytes | .apk count: ${apk_count}"
           fi
-          grep -m 3 '^Filename:' feed-artifact/lime_packages/Packages
 
       - name: Diagnose cached feed (cache hit)
         if: steps.cache-feed.outputs.cache-hit == 'true'
+        env:
+          OPENWRT_RELEASE: ${{ matrix.openwrt_release }}
         run: |
           set -euo pipefail
-          echo "=== Cache hit: feed-artifact/lime_packages/ ==="
+          case "${OPENWRT_RELEASE}" in
+            24.10.*) PKG_FORMAT=ipk ;;
+            *)       PKG_FORMAT=apk ;;
+          esac
+          echo "=== Cache hit: feed-artifact/lime_packages/ (${PKG_FORMAT}) ==="
           ls -la feed-artifact/lime_packages/
-          pkg_count=$(grep -c '^Package:' feed-artifact/lime_packages/Packages || echo 0)
-          echo "Cached index has ${pkg_count} packages"
+          if [[ "$PKG_FORMAT" == "ipk" ]]; then
+            pkg_count=$(grep -c '^Package:' feed-artifact/lime_packages/Packages 2>/dev/null || echo 0)
+            echo "Cached opkg index has ${pkg_count} packages"
+          else
+            apk_count=$(find feed-artifact/lime_packages -maxdepth 1 -name "*.apk" | wc -l)
+            adb_size=$(stat -c%s feed-artifact/lime_packages/packages.adb 2>/dev/null || echo 0)
+            echo "Cached apk feed: ${apk_count} .apk files, packages.adb=${adb_size} bytes"
+          fi
 
       - name: Upload local feed artifact
         uses: actions/upload-artifact@v4

@@ -201,7 +201,7 @@ mt7996e instability — see the long comment on that target in
 | `openwrt_release` | feed_branch | physical lab | notes |
 | --- | --- | --- | --- |
 | `24.10.6` | `openwrt-24.10` | yes | Shipping stable LibreMesh line. Default for both `openwrt_releases` and `default_physical_releases` in `targets.yml`. |
-| `25.12.2` | `openwrt-25.12` | no (build-only smoke) | OpenWrt 25.12 switched the package index format from OPKG/Packages.gz to APK/index.json. `tools/ci/build_image.sh` does not yet handle APK feeds; the 25.12.2 cells of the matrix are expected to surface this work as a build failure (`fail-fast: false` keeps the 24.10.6 cells running). Override `physical_releases` in `workflow_dispatch` to enroll 25.12.2 in the lab once the script is APK-aware. |
+| `25.12.2` | `openwrt-25.12` | no (build-only smoke) | OpenWrt 25.12 dropped opkg in favour of [apk-tools](https://gitlab.alpinelinux.org/alpine/apk-tools). The build pipeline now bifurcates on `OPENWRT_RELEASE` (`PKG_FORMAT=ipk` for 24.10.x, `PKG_FORMAT=apk` for 25.12+) — the assemble step generates `Packages` + `Packages.gz` for ipk and `packages.adb` for apk; `tools/ci/build_image.sh` writes a different `repositories` snippet per format, runs a format-specific pre-flight, and passes `APK_FLAGS="--allow-untrusted --repository file:///feed/lime_packages/packages.adb"` to `make image` for apk. Override `physical_releases` in `workflow_dispatch` to enroll 25.12.2 in the lab once a few green build-image runs validate the new path. |
 
 Adding or removing a release means editing the top of
 `.github/ci/targets.yml`:
