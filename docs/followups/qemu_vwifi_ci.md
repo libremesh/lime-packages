@@ -81,6 +81,16 @@ flowchart LR
     PR to upstream is open; once merged, the `extra_feeds:` URL
     switches back to `javierbrk/vwifi_cli_package`. See
     [`docs/ci/firmware-build.md`](../ci/firmware-build.md#qemu-pipeline-virtual-mesh-build-and-test).
+  - **Where the IPK lands.** Unlike the lime-* packages (which are
+    `PKGARCH:=all` shell scripts and end up under
+    `bin/packages/<arch>/lime_packages/`), `vwifi` is a per-arch
+    C++ binary so the SDK puts its IPK under
+    `bin/targets/<target>/<subtarget>/packages/vwifi_*.ipk` (e.g.
+    `bin/targets/x86/64/packages/`). The assemble step in
+    `build-firmware.yml` searches both trees and merges every
+    declared `extra_packages:` IPK into the unified
+    `feed-artifact/lime_packages/` so ImageBuilder can install
+    them through the single `lime_packages_local` opkg feed.
 
 ## Pinned versions
 
@@ -233,7 +243,7 @@ and the SDK config step has separate problems on top of that
 for the full diagnosis. The `qemu_x86_64` target IS in the matrix
 for both 24.10.6 and 25.12.2, so the 25.12.2 cell currently fails
 at `build-feed` time — `fail-fast: false` keeps the 24.10.6 run
-going, and `timeout-minutes: 90` on `build-feed` caps the wasted
+going, and `timeout-minutes: 180` on `build-feed` caps the wasted
 runner time. The QEMU jobs only fire when the corresponding
 `firmware-qemu_x86_64-<release>` artefact exists, so a
 build-failed 25.12.2 cell silently skips its QEMU test cells
