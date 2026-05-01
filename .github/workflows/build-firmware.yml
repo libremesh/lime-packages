@@ -97,6 +97,7 @@ jobs:
           TARGETS_INPUT="${{ github.event.inputs.targets || 'all' }}"
           RELEASES_OVERRIDE="${{ github.event.inputs.openwrt_releases || '' }}"
           PHYSICAL_RELEASES_OVERRIDE="${{ github.event.inputs.physical_releases || '' }}"
+          EVENT_NAME="${{ github.event_name }}"
 
           all_targets_json="$(yq -r '.targets | tojson' .github/ci/targets.yml)"
           default_releases_json="$(yq -r '.openwrt_releases | tojson' .github/ci/targets.yml)"
@@ -253,6 +254,23 @@ jobs:
             ' <<< "$targets_matrix"
           )"
 
+          # On `pull_request` we don't want every PR to consume the
+          # entire physical lab — pick ONE random entry so the
+          # maintainer's approval cost stays bounded and the lab
+          # stays available for parallel work. The full per-place
+          # sweep remains available daily via cron and on-demand
+          # via `workflow_dispatch -f physical_single=true`.
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            total="$(jq '.include | length' <<< "$test_targets_matrix")"
+            if [[ "$total" -gt 0 ]]; then
+              pick="$((RANDOM % total))"
+              test_targets_matrix="$(
+                jq -c --argjson i "$pick" '{include: [.include[$i]]}' <<< "$test_targets_matrix"
+              )"
+              echo "PR trigger: downsampled test_targets_matrix to 1 random entry (index=$pick of $total)"
+            fi
+          fi
+
           # Per-release mesh test matrix. The legacy mesh job ran exactly
           # once and exercised openwrt_one + bananapi_bpi-r4 sharing a
           # single LG_MESH_PLACES env var. With a multi-version build we
@@ -272,6 +290,15 @@ jobs:
           # artifact name (linksys_e8450 for the Belkin units, place
           # name for openwrt_one / bananapi_bpi-r4).
           MESH_COUNT_INPUT="${{ github.event.inputs.physical_mesh_count || '0' }}"
+          # `pull_request` cannot pass workflow inputs (no UI dropdown
+          # like workflow_dispatch). Force the deepest mesh shape
+          # (N=3) so a PR opt-in to the lab covers the full
+          # cross-arch routing surface, gated by `physical-lab`
+          # environment approval. Daily cron exercises mesh via
+          # `test-mesh-pairs` instead, so we leave its default at 0.
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            MESH_COUNT_INPUT="3"
+          fi
           case "$MESH_COUNT_INPUT" in
             "2")
               mesh_places_json='["openwrt_one","bananapi_bpi-r4"]'
@@ -1080,17 +1107,21 @@ jobs:
     # name is unchanged.
     name: test-firmware (${{ matrix.place }} / ${{ matrix.openwrt_release }})
     needs: [prepare-matrix, build-image]
-    # Physical lab gate (May 2026): pull_request events never reach
-    # the lab (every PR validates against QEMU only). Lab time is
-    # consumed by exactly two triggers:
+    # Physical lab gate. Lab time is consumed by exactly three
+    # triggers:
     #   - `schedule` (daily cron at 06:00 UTC): runs without
     #     environment approval; the lab is dedicated to the project
     #     and a daily smoke against master is the whole point of
-    #     the job.
+    #     the job. Sweeps every place returned by `prepare-matrix`.
     #   - `workflow_dispatch` with `physical_single=true`: maintainer
-    #     opt-in to validate a branch on hardware. Gated by the
-    #     `physical-lab` environment (required reviewers) — see the
-    #     `environment:` expression below.
+    #     opt-in to validate a branch on hardware. Sweeps every
+    #     place; gated by `physical-lab` environment approval.
+    #   - `pull_request`: `prepare-matrix` downsamples the matrix
+    #     to a single random place so PR cost stays bounded.
+    #     Gated by `physical-lab` environment approval — the PR
+    #     consumes lab time only after a maintainer reviews the
+    #     code. The lab stays available for parallel work because
+    #     N=1 instead of the full 5-place sweep.
     # Forks remain excluded by Actions' policy on self-hosted
     # runners. See `docs/ci/firmware-build.md` → "Manual gating for
     # physical-lab tests" for the full trade-off.
@@ -1098,6 +1129,7 @@ jobs:
       (
         github.event_name == 'schedule'
         || (github.event_name == 'workflow_dispatch' && github.event.inputs.physical_single == 'true')
+        || github.event_name == 'pull_request'
       )
       && fromJson(needs.prepare-matrix.outputs.test_targets_matrix).include[0] != null
     # `physical-lab` is a GitHub Environment configured in the
@@ -1107,10 +1139,13 @@ jobs:
     # the daily cron does not block on a reviewer (the lab is
     # dedicated; the `physical-lab-shared` concurrency group is the
     # only safety belt the daily needs against parallel lab use).
-    # The empty string in the false branch is interpreted by Actions
-    # as "no environment", same as omitting the key.
+    # `workflow_dispatch` and `pull_request` both gate on the
+    # environment — the maintainer reviews PR code before any lab
+    # time is consumed. The empty string in the false branch is
+    # interpreted by Actions as "no environment", same as omitting
+    # the key.
     environment:
-      name: ${{ github.event_name == 'workflow_dispatch' && 'physical-lab' || '' }}
+      name: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request') && 'physical-lab' || '' }}
     runs-on: [self-hosted, testbed-fcefyn]
     strategy:
       fail-fast: false
@@ -1331,17 +1366,30 @@ jobs:
           retention-days: 14
 
   test-mesh:
-    name: test-mesh (N=${{ github.event.inputs.physical_mesh_count }} / ${{ matrix.openwrt_release }})
-    needs: [prepare-matrix, build-image]
-    # Maintainer-driven mesh test on physical hardware. ONLY runs on
-    # workflow_dispatch with `physical_mesh_count` set to "2" or "3".
+    name: test-mesh (N=${{ github.event.inputs.physical_mesh_count || '3 (PR)' }} / ${{ matrix.openwrt_release }})
+    # Strict serialization after `test-firmware`: both jobs reserve
+    # the same labgrid places, and running them in parallel races on
+    # the lock (`labgrid-client: error: You have already acquired
+    # this place.`). Waiting for `test-firmware` to release every
+    # lock is the simplest deterministic fix; on triggers where
+    # `test-firmware` is skipped (no `if:` match), Actions resolves
+    # a skipped dep as success so this job still runs.
+    needs: [prepare-matrix, build-image, test-firmware]
+    # Maintainer-driven mesh test on physical hardware. Triggers:
+    #   - `workflow_dispatch` with `physical_mesh_count` set to
+    #     "2" or "3" (maintainer chooses node count via UI dropdown).
+    #   - `pull_request`: forced to N=3 in `prepare-matrix` so PRs
+    #     get full cross-arch mesh coverage, gated by `physical-lab`
+    #     environment approval before any lab time is consumed.
     # The daily cron (schedule) does NOT touch this job — daily mesh
     # coverage comes from `test-mesh-pairs` (walking chain of three
-    # 2-node pairs). pull_request never reaches the lab. Forks
-    # excluded by Actions self-hosted-runner policy.
+    # 2-node pairs). Forks excluded by Actions self-hosted-runner
+    # policy.
     if: |
-      github.event_name == 'workflow_dispatch'
-      && github.event.inputs.physical_mesh_count != '0'
+      (
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.physical_mesh_count != '0')
+        || github.event_name == 'pull_request'
+      )
       && fromJson(needs.prepare-matrix.outputs.mesh_test_matrix).include[0] != null
     environment:
       name: physical-lab
@@ -1546,7 +1594,13 @@ jobs:
   # approve a 03:00 ART run every day.
   test-mesh-pairs:
     name: test-mesh-pairs (#${{ matrix.pair }} ${{ matrix.place_a }}+${{ matrix.place_b }} / ${{ matrix.openwrt_release }})
-    needs: [prepare-matrix, build-image]
+    # Wait for the daily `test-firmware` sweep so the per-place
+    # locks are released before any pair tries to reserve two of
+    # them at once. The previous race surfaced as
+    # "labgrid-client: error: You have already acquired this place"
+    # when `test-firmware` and `test-mesh-pairs` started in parallel
+    # on the cron run.
+    needs: [prepare-matrix, build-image, test-firmware]
     if: |
       github.event_name == 'schedule'
       && fromJson(needs.prepare-matrix.outputs.mesh_pairs_matrix).include[0] != null
