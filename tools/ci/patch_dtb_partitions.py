@@ -104,7 +104,7 @@ shape:
 
     bl2      partition@0
     fip      partition@80000      (read-only)
-    factory  partition@1c0000     (read-only) — also the parent node
+    factory  partition@1c0000     (read-only) - also the parent node
                                     for the eeprom_factory_* and
                                     macaddr_factory_* nvmem-cells
     ubi      partition@300000
@@ -136,7 +136,7 @@ Idempotency and safety
   exists; missing-phandle cells just emit the new node without one,
   trusting that nothing references them). If the input DTS has
   zero matches for a given cell name (e.g. `eeprom@0` vanished
-  entirely), the patcher hard-fails — that would mean the upstream
+  entirely), the patcher hard-fails - that would mean the upstream
   DTS shape changed in an incompatible way and the script needs
   updating.
 
@@ -163,15 +163,15 @@ import sys
 # `&factory` nvmem cell declarations from the same file.
 #
 # Why these exact reg ranges:
-#   bl2      0x000000-0x080000 — fixed by mt7622 boot ROM (the BootROM
+#   bl2      0x000000-0x080000 - fixed by mt7622 boot ROM (the BootROM
 #                                pulls BL2 from offset 0).
-#   fip      0x080000-0x1c0000 — BL2 v2.4 looks for the FIP at 0x80000
+#   fip      0x080000-0x1c0000 - BL2 v2.4 looks for the FIP at 0x80000
 #                                and reads up to 1.25 MiB; matches the
 #                                23.05.5 OpenWrt FIP size.
-#   factory  0x1c0000-0x2c0000 — vendor-supplied calibration EEPROM
+#   factory  0x1c0000-0x2c0000 - vendor-supplied calibration EEPROM
 #                                + dual MAC; OEM stores it here and the
 #                                23.05 DTS expects it here.
-#   ubi      0x300000-0x8000000 — leaves a 0x40000 gap (256 KiB) before
+#   ubi      0x300000-0x8000000 - leaves a 0x40000 gap (256 KiB) before
 #                                ubi for the U-Boot environment, which
 #                                23.05 stores in flash but does NOT
 #                                expose as an MTD partition (legacy
@@ -254,7 +254,7 @@ LINUX_UBI_MARKER = 'compatible = "linux,ubi"'
 
 # Cells we must find inside the original `ubi-volume-factory >
 # nvmem-layout` block, identified by their (node_name, addr_hex)
-# tuple — these are deterministic across OpenWrt revs because they
+# tuple - these are deterministic across OpenWrt revs because they
 # come straight from the upstream DTS source. We extract each cell's
 # numeric phandle (if any) so the new MTD-backed partition can
 # replicate it; numeric references downstream (`<0xNN>`) then
@@ -292,7 +292,7 @@ def _find_snand_partitions(dts: str) -> tuple[int, int, str] | None:
     Returns `(start, end, indent)` where `indent` is the whitespace
     preceding the `partitions {` keyword (used to reapply the original
     indentation to the replacement block). Returns None when no block
-    matches. Raises `RuntimeError` when more than one block matches —
+    matches. Raises `RuntimeError` when more than one block matches -
     that would mean a future DTS rev has multiple UBI-on-flash
     partitionings and we no longer know which one is the SPI-NAND.
     """
@@ -340,7 +340,7 @@ def _extract_factory_phandles(
     FACTORY_CELLS.
 
     A `None` value means "node was found but had no `phandle`
-    property"; this is legal — it means nothing references that cell
+    property"; this is legal - it means nothing references that cell
     and we can emit the new node without an explicit phandle.
 
     Raises `RuntimeError` when a cell node is missing entirely,
@@ -352,7 +352,7 @@ def _extract_factory_phandles(
         # Match `\b<name>@<addr> {` so addresses like `7fff4` cannot
         # accidentally be matched against `1c0000` etc. dtc may emit
         # the address as the bare hex digits or with a `0x` prefix in
-        # rare cases — anchor to the literal upstream form, which
+        # rare cases - anchor to the literal upstream form, which
         # never carries the prefix on node units.
         pattern = rf"(?<![\w-]){re.escape(name)}@{re.escape(addr)}\s*\{{"
         m = re.search(pattern, block)
@@ -386,7 +386,7 @@ def _extract_factory_phandles(
 
 def _format_phandle_line(value: int | None) -> str:
     """Render the phandle property line that follows a cell's `reg`
-    declaration. Empty string when there is no phandle to copy —
+    declaration. Empty string when there is no phandle to copy -
     the placeholder slot in LAYOUT_1_0_BLOCK is on the same line as
     `reg = ...;` so this collapses cleanly.
     """
@@ -427,7 +427,7 @@ def patch_dts(dts: str) -> tuple[str, str]:
         if placeholder not in template:
             raise RuntimeError(
                 f"Internal: template is missing placeholder "
-                f"{placeholder} — fix LAYOUT_1_0_BLOCK to match "
+                f"{placeholder} - fix LAYOUT_1_0_BLOCK to match "
                 "FACTORY_CELLS."
             )
         template = template.replace(placeholder, _format_phandle_line(value))
@@ -444,7 +444,7 @@ def patch_dts(dts: str) -> tuple[str, str]:
     # ourselves so a future template edit cannot ship a broken DTS.
     if not template.rstrip("\n").endswith("};"):
         raise RuntimeError(
-            "Internal: layout 1.0 template does not end with `};` — "
+            "Internal: layout 1.0 template does not end with `};` - "
             "this should be unreachable, fix the template literal."
         )
     # We do NOT try to re-indent the template to match the original
