@@ -1,0 +1,2056 @@
+name: Build firmware
+
+on:
+  pull_request:
+    branches: [master, main]
+    paths:
+      - ".github/workflows/build-firmware.yml"
+      - ".github/ci/targets.yml"
+      - "tools/ci/build_feed.sh"
+      - "tools/ci/build_image.sh"
+      # DTB patchers consumed by build_image.sh; without them on the
+      # paths list, an edit that only touches a patcher would skip
+      # the workflow entirely and ship a still-broken image on next
+      # release tag.
+      - "tools/ci/patch_dtb_local_mac.py"
+      - "tools/ci/patch_dtb_partitions.py"
+      - "packages/**"
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: "Comma-separated devices from .github/ci/targets.yml or 'all'"
+        required: false
+        default: "all"
+      openwrt_releases:
+        description: "Comma-separated OpenWrt releases (defaults to targets.yml openwrt_releases)"
+        required: false
+        default: ""
+      physical_releases:
+        description: "Comma-separated releases to run on physical lab (defaults to targets.yml default_physical_releases)"
+        required: false
+        default: ""
+      physical_single:
+        description: "Run single-node tests on every physical lab DUT (gated on 'physical-lab' environment approval)"
+        required: false
+        type: boolean
+        default: false
+      physical_mesh_count:
+        description: "Number of physical DUTs for the mesh test (0 = skip, 2 or 3)"
+        required: false
+        type: choice
+        options:
+          - "0"
+          - "2"
+          - "3"
+        default: "0"
+  schedule:
+    # Daily lab validation at 06:00 UTC (= 03:00 ART). Runs the same
+    # build-firmware.yml as the PR pipeline, plus the physical
+    # `test-firmware` (single-node per device) and `test-mesh-pairs`
+    # (walking chain) jobs that are gated off on every other trigger.
+    # Cron runs without environment approval — the lab is dedicated
+    # to the project — but the `physical-lab-shared` concurrency
+    # group still serializes lab access against any concurrent
+    # workflow_dispatch with physical_* opted in.
+    - cron: "0 6 * * *"
+
+concurrency:
+  # Two distinct concurrency lanes:
+  #   - PR / push runs share a per-ref lane and cancel earlier runs
+  #     on the same branch (the historical behaviour).
+  #   - schedule runs and any workflow_dispatch (which can opt in to
+  #     the physical lab) share a single `physical-lab-shared` lane
+  #     so two lab-bound jobs never reserve the same place at once.
+  #     We do NOT cancel in-progress lab runs: a half-finished
+  #     reservation must be allowed to release the place cleanly.
+  group: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'physical-lab-shared' || format('build-firmware-{0}', github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      targets_matrix: ${{ steps.prepare.outputs.targets_matrix }}
+      test_targets_matrix: ${{ steps.prepare.outputs.test_targets_matrix }}
+      mesh_test_matrix: ${{ steps.prepare.outputs.mesh_test_matrix }}
+      mesh_pairs_matrix: ${{ steps.prepare.outputs.mesh_pairs_matrix }}
+      qemu_single_matrix: ${{ steps.prepare.outputs.qemu_single_matrix }}
+      qemu_mesh_matrix: ${{ steps.prepare.outputs.qemu_mesh_matrix }}
+      archs_matrix: ${{ steps.prepare.outputs.archs_matrix }}
+      lime_packages_list: ${{ steps.prepare.outputs.lime_packages_list }}
+      feed_hash: ${{ steps.prepare.outputs.feed_hash }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install yq
+        run: sudo apt-get update && sudo apt-get install -y yq jq
+
+      - name: Prepare matrices
+        id: prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RIn '^PKG_MIRROR_HASH:=skip' packages/; then
+            echo "PKG_MIRROR_HASH:=skip is deprecated on OpenWrt 24.10; pin PKG_SOURCE_VERSION and set a real sha256." >&2
+            exit 1
+          fi
+          TARGETS_INPUT="${{ github.event.inputs.targets || 'all' }}"
+          RELEASES_OVERRIDE="${{ github.event.inputs.openwrt_releases || '' }}"
+          PHYSICAL_RELEASES_OVERRIDE="${{ github.event.inputs.physical_releases || '' }}"
+
+          all_targets_json="$(yq -r '.targets | tojson' .github/ci/targets.yml)"
+          default_releases_json="$(yq -r '.openwrt_releases | tojson' .github/ci/targets.yml)"
+          feed_branches_json="$(yq -r '.feed_branches | tojson' .github/ci/targets.yml)"
+          default_physical_releases_json="$(yq -r '.default_physical_releases | tojson' .github/ci/targets.yml)"
+          packages="$(yq -r '.packages' .github/ci/targets.yml)"
+
+          # `openwrt_releases` selects the OpenWrt release dimension of the
+          # matrix. CSV override beats the YAML default; empty falls
+          # through to `default_releases_json` from targets.yml.
+          if [[ -n "$RELEASES_OVERRIDE" ]]; then
+            releases_json="$(
+              jq -cn --arg list "$RELEASES_OVERRIDE" '
+                $list | split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))
+              '
+            )"
+          else
+            releases_json="$default_releases_json"
+          fi
+          if [[ "$(jq 'length' <<< "$releases_json")" -eq 0 ]]; then
+            echo "No OpenWrt releases selected (override='$RELEASES_OVERRIDE')" >&2
+            exit 1
+          fi
+          # Cross-validate that every selected release has a feed_branch
+          # mapping in targets.yml. A typo (e.g. "24.10.5" instead of
+          # "24.10.6") would otherwise produce an empty FEED_BRANCH at
+          # build_image.sh time and silently route the local feed against
+          # the wrong upstream branch.
+          missing="$(
+            jq -cn --argjson rel "$releases_json" --argjson fb "$feed_branches_json" '
+              $rel - ($fb | keys)
+            '
+          )"
+          if [[ "$(jq 'length' <<< "$missing")" -gt 0 ]]; then
+            echo "openwrt_releases entries missing from feed_branches map: $missing" >&2
+            exit 1
+          fi
+
+          # `physical_releases`: which release dimensions get to use the
+          # self-hosted lab. By default we run the physical test-firmware
+          # / test-mesh jobs only against 24.10.6 (the shipping stable
+          # line); 25.12.2 stays build-only smoke during the APK
+          # migration. Override via workflow_dispatch.
+          if [[ -n "$PHYSICAL_RELEASES_OVERRIDE" ]]; then
+            physical_releases_json="$(
+              jq -cn --arg list "$PHYSICAL_RELEASES_OVERRIDE" '
+                $list | split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))
+              '
+            )"
+          else
+            physical_releases_json="$default_physical_releases_json"
+          fi
+
+          if [[ "$TARGETS_INPUT" == "all" ]]; then
+            selected_targets="$all_targets_json"
+          else
+            selected_targets="$(
+              jq -c --arg list "$TARGETS_INPUT" '
+                ($list | split(",") | map(gsub("^\\s+|\\s+$"; ""))) as $wanted
+                | map(select((.device as $d | any($wanted[]; . == $d))))
+              ' <<< "$all_targets_json"
+            )"
+          fi
+
+          if [[ "$(jq 'length' <<< "$selected_targets")" -eq 0 ]]; then
+            echo "No targets selected after filtering input: $TARGETS_INPUT" >&2
+            exit 1
+          fi
+
+          # Per-target `packages:` (when present in targets.yml) overrides the
+          # global `packages:` default. Useful for small-flash devices whose
+          # rootfs partition cannot fit the full LibreMesh package list, or
+          # for boards where a specific kmod has to be excluded (see
+          # bananapi_bpi-r4 + mt7996e in targets.yml). `// $pkg` keeps the
+          # global default for every target that does NOT define its own
+          # list, so this stays backwards-compatible.
+          #
+          # `build_initramfs` (default false) and the FIT metadata
+          # (`fit_arch`, `fit_kernel_loadaddr`, `fit_dts`) are forwarded to
+          # build_image.sh as env vars in the `build-image` job so the script
+          # knows whether to repack a RAM-bootable initramfs FIT and with
+          # which kernel loadaddr / DTB. Targets without these keys fall back
+          # to BUILD_INITRAMFS=0 and ship only the sysupgrade artifact (no
+          # active target uses this fallback today).
+          #
+          # The cross-product (target × release) expands the matrix so a
+          # single PR build covers every supported OpenWrt branch in
+          # parallel. `feed_branch` is resolved per-release from
+          # `feed_branches` so the upstream LibreMesh feed URL composed
+          # in build_image.sh stays consistent with the OpenWrt revision.
+          targets_matrix="$(
+            jq -c --argjson releases "$releases_json" --argjson feeds "$feed_branches_json" --arg pkg "$packages" '
+              {include: (
+                . as $tgts
+                | $releases
+                | map(. as $rel
+                  | $tgts
+                  | map(. + {
+                      openwrt_release: $rel,
+                      feed_branch: ($feeds[$rel] // ""),
+                      # Per-target `packages:` strings may contain the
+                      # `{{ packages_default }}` mustache placeholder so a
+                      # target can opt into the global default + its own
+                      # additions without duplicating the long list.
+                      # `gsub` substitutes the placeholder with the
+                      # top-level `.packages` (passed via $pkg). Targets
+                      # that do not set `packages:` keep using $pkg
+                      # verbatim through the `// $pkg` fallback.
+                      packages: ((.packages // $pkg) | gsub("\\{\\{\\s*packages_default\\s*\\}\\}"; $pkg)),
+                      build_initramfs: (if (.build_initramfs == true) then "1" else "0" end),
+                      image_format: (.image_format // "fit"),
+                      fit_arch: (.fit_arch // ""),
+                      fit_kernel_loadaddr: (.fit_kernel_loadaddr // ""),
+                      fit_dts: (.fit_dts // ""),
+                      fit_config: (.fit_config // "config-1"),
+                      fit_bootargs: (.fit_bootargs // ""),
+                      dtb_patch_nvmem_mac: (if (.dtb_patch_nvmem_mac == true) then "1" else "0" end),
+                      dtb_force_legacy_partitions: (if (.dtb_force_legacy_partitions == true) then "1" else "0" end),
+                      test_firmware: (if (.test_firmware == false) then "0" else "1" end),
+                      test_qemu: (if (.test_qemu == true) then "1" else "0" end),
+                      test_places: (.test_places // [.device]),
+                      uboot_interrupt_spam_sec: (.uboot_interrupt_spam_sec // "" | tostring)
+                    })
+                ) | add
+              )}
+            ' <<< "$selected_targets"
+          )"
+
+          # Subset of targets that actually go through hardware testing,
+          # expanded by labgrid place so multiple physical units of the
+          # same hardware (e.g. three Belkin RT3200 sharing the
+          # linksys_e8450-ubi artifact) each get their own test-firmware
+          # job. `test_firmware: false` in targets.yml opts a target out
+          # of this expansion entirely (e.g. when a board needs only IPK
+          # validation but cannot boot the resulting artifact over TFTP).
+          # Additionally we filter by `physical_releases_json` so a
+          # release that is build-only smoke (e.g. 25.12.2 today) does
+          # not enqueue any lab job.
+          #
+          # Per matrix entry we keep ALL build-job fields (device,
+          # imagebuilder, profile, …) so any step in test-firmware that
+          # references matrix.device (artifact download, LG_ENV path)
+          # still works; and we add a `place` field used for the labgrid
+          # lock and the per-unit TFTP namespace.
+          test_targets_matrix="$(
+            jq -c --argjson phys "$physical_releases_json" '
+              {include: (
+                .include
+                | map(select(.test_firmware == "1"))
+                | map(select([.openwrt_release] | inside($phys)))
+                | map(. as $t | $t.test_places | map($t + {place: .}))
+                | add // []
+              )}
+            ' <<< "$targets_matrix"
+          )"
+
+          # Per-release mesh test matrix. The legacy mesh job ran exactly
+          # once and exercised openwrt_one + bananapi_bpi-r4 sharing a
+          # single LG_MESH_PLACES env var. With a multi-version build we
+          # may run the same mesh shape under several OpenWrt releases,
+          # so the new matrix carries one entry per physical release —
+          # the test-mesh job then picks the artifacts whose name
+          # includes that release. An empty `physical_releases_json`
+          # produces an empty `include` and `test-mesh` stays skipped.
+          #
+          # `places` is the per-entry list of labgrid places that the
+          # mesh job will reserve and stage firmware for. The shape
+          # depends on the maintainer-selected `physical_mesh_count`
+          # input (0 = skip / 2 = openwrt_one + bananapi_bpi-r4 /
+          # 3 = those two plus belkin_rt3200_2). When the input is "0"
+          # we still emit no entries so test-mesh skips entirely.
+          # `device_map` translates each place to the matching build
+          # artifact name (linksys_e8450 for the Belkin units, place
+          # name for openwrt_one / bananapi_bpi-r4).
+          MESH_COUNT_INPUT="${{ github.event.inputs.physical_mesh_count || '0' }}"
+          case "$MESH_COUNT_INPUT" in
+            "2")
+              mesh_places_json='["openwrt_one","bananapi_bpi-r4"]'
+              ;;
+            "3")
+              mesh_places_json='["openwrt_one","bananapi_bpi-r4","belkin_rt3200_2"]'
+              ;;
+            *)
+              mesh_places_json='[]'
+              ;;
+          esac
+          mesh_device_map_json='{"openwrt_one":"openwrt_one","bananapi_bpi-r4":"bananapi_bpi-r4","belkin_rt3200_2":"linksys_e8450","belkin_rt3200_3":"linksys_e8450"}'
+          if [[ "$mesh_places_json" == "[]" ]]; then
+            mesh_test_matrix='{"include":[]}'
+          else
+            mesh_test_matrix="$(
+              jq -cn --argjson phys "$physical_releases_json" --argjson places "$mesh_places_json" --argjson devmap "$mesh_device_map_json" '
+                {include: ($phys | map({
+                  openwrt_release: .,
+                  places: $places,
+                  devices: ($places | map($devmap[.]))
+                }))}
+              '
+            )"
+          fi
+
+          # Walking-chain matrix for the daily mesh smoke. Three
+          # 2-node pairs covering every active lab device that can
+          # boot a LibreMesh image today (excludes belkin_rt3200_1
+          # which is in repair). The pairs share devices on purpose
+          # so each unit gets two end-to-end mesh validations per
+          # day, and the cross-pair links exercise both single-arch
+          # (openwrt_one + bananapi_bpi-r4 are both filogic) and
+          # cross-arch (belkin = mt7622) paths. This matrix only
+          # gets consumed by `test-mesh-pairs`, which runs only
+          # when `event_name == 'schedule'`. The release dimension
+          # is the first entry of `physical_releases_json`
+          # (today: 24.10.6); 25.12.2 stays build-only smoke until
+          # APK + LibreMesh stabilise. Empty `physical_releases_json`
+          # produces an empty `include` and the whole job skips.
+          if [[ "$(jq 'length' <<< "$physical_releases_json")" -eq 0 ]]; then
+            mesh_pairs_matrix='{"include":[]}'
+          else
+            primary_release="$(jq -r '.[0]' <<< "$physical_releases_json")"
+            mesh_pairs_matrix="$(
+              jq -cn --arg rel "$primary_release" '
+                {include: [
+                  {pair: 1, place_a: "belkin_rt3200_2", device_a: "linksys_e8450",
+                            place_b: "openwrt_one",     device_b: "openwrt_one",
+                            openwrt_release: $rel},
+                  {pair: 2, place_a: "openwrt_one",     device_a: "openwrt_one",
+                            place_b: "bananapi_bpi-r4", device_b: "bananapi_bpi-r4",
+                            openwrt_release: $rel},
+                  {pair: 3, place_a: "bananapi_bpi-r4", device_a: "bananapi_bpi-r4",
+                            place_b: "belkin_rt3200_3", device_b: "linksys_e8450",
+                            openwrt_release: $rel}
+                ]}
+              '
+            )"
+          fi
+
+          # QEMU single-node matrix. Picks every target whose
+          # `test_qemu: true` flag was set in targets.yml (today only
+          # qemu_x86_64) and crosses it with the full release list —
+          # NOT the physical-release filter, because QEMU validation
+          # is fast and we want it on every supported branch even when
+          # the release is build-only smoke for physical lab. Carries
+          # the full target record so the workflow step has access to
+          # device, openwrt_release and any per-release tweaks.
+          qemu_single_matrix="$(
+            jq -c '
+              {include: (
+                .include
+                | map(select(.test_qemu == "1"))
+              )}
+            ' <<< "$targets_matrix"
+          )"
+
+          # QEMU mesh (multi-node) matrix. Same shape as
+          # `qemu_single_matrix`, but each entry carries the per-arch
+          # virtual mesh shape (`virtual_mesh_nodes`, defaulted to 3
+          # in build-firmware.yml when the target does not specify a
+          # value). For now we just reuse the single-node entries: the
+          # mesh job spawns N QEMU instances of the same image, and
+          # there is no benefit to splitting it from the single-node
+          # entry beyond keeping the GitHub UI tidy.
+          qemu_mesh_matrix="$qemu_single_matrix"
+
+          # `archs_matrix` drives `build-feed`, which compiles the lime-*
+          # IPKs (and any per-target `extra_feeds`) against a specific
+          # (arch × OpenWrt release) toolchain. The unique_by must
+          # therefore key on BOTH dimensions: a single arch shared by
+          # openwrt_one + bananapi_bpi-r4 (aarch64_cortex-a53) under
+          # both 24.10.6 and 25.12.2 yields exactly two SDK builds, not
+          # one — the toolchains differ (libc, gcc, …) and the resulting
+          # IPKs are not interchangeable across releases.
+          #
+          # `extra_feeds` and `extra_packages` aggregate per-arch from
+          # whichever target(s) declared them in targets.yml. Today
+          # only `qemu_x86_64` declares an extra `vwifi` feed; if more
+          # x86_64 targets later declare distinct extras, they all get
+          # compiled together in the same SDK build because they share
+          # the same toolchain and the same local feed artefact. The
+          # space-separated string format is what gh-action-sdk's
+          # `EXTRA_FEEDS` env var expects.
+          archs_matrix="$(
+            jq -c --argjson releases "$releases_json" '
+              ([.[] | {
+                arch,
+                sdk_arch,
+                index_imagebuilder,
+                extra_feeds: (.extra_feeds // []),
+                extra_packages: (.extra_packages // [])
+              }]) as $base
+              | {
+                  include: (
+                    $releases
+                    | map(. as $rel
+                      | $base
+                      | map(. + {openwrt_release: $rel,
+                                 sdk_arch: (
+                                   .sdk_arch | sub("-openwrt-[0-9]+\\.[0-9]+(\\.[0-9]+)?$";
+                                                   "-openwrt-" + ($rel | split(".") | .[:2] | join(".")))
+                                 )})
+                    )
+                    | add
+                    | group_by([.arch, .openwrt_release])
+                    | map({
+                        arch: .[0].arch,
+                        sdk_arch: .[0].sdk_arch,
+                        index_imagebuilder: .[0].index_imagebuilder,
+                        openwrt_release: .[0].openwrt_release,
+                        extra_feeds: ([.[] | .extra_feeds[]] | unique | join(" ")),
+                        extra_packages: ([.[] | .extra_packages[]] | unique | join(" "))
+                      })
+                  )
+                }
+            ' <<< "$selected_targets"
+          )"
+
+          # Inject `extra_hash`: short sha256 over extra_feeds + extra_packages
+          # so the build-feed cache key busts whenever the upstream commit pin
+          # of an extra src-git feed (e.g. vwifi
+          # `^51bbf3bcf1c71f6873afb4531fc7887789e85f11`) or the package
+          # selection from those feeds changes. jq has no hash builtin, so
+          # we walk each entry in shell and shell out to `sha256sum`. For
+          # arch+release cells without any extras, the hash is the sha256
+          # of "|", stable across runs — cache behaviour for existing
+          # aarch64/mips_24kc cells is unchanged.
+          archs_matrix="$(
+            entries="$(jq -c '.include[]' <<<"$archs_matrix")"
+            updated="[]"
+            while IFS= read -r entry; do
+              ef="$(jq -r '.extra_feeds' <<<"$entry")"
+              ep="$(jq -r '.extra_packages' <<<"$entry")"
+              eh="$(printf '%s|%s' "$ef" "$ep" | sha256sum | cut -c1-12)"
+              updated="$(jq -c --argjson e "$entry" --arg eh "$eh" '. + [$e + {extra_hash: $eh}]' <<<"$updated")"
+            done <<<"$entries"
+            jq -cn --argjson inc "$updated" '{include: $inc}'
+          )"
+
+          # Compute lime_packages_list: union of every package name listed
+          # in targets.yml (top-level `packages:` plus each target's
+          # per-device override + per-target `extra_packages`), filtered
+          # to names that exist as `packages/<name>/Makefile` for the
+          # local feed (extra_packages from external src-git feeds get
+          # appended after the intersection, since they're not in
+          # `packages/`).
+          #
+          # Why not just `find packages -name Makefile`? gh-action-sdk
+          # loops `make package/$PKG/compile` over PACKAGES sequentially
+          # and each iteration re-evaluates the OpenWrt dep tree,
+          # triggering rebuilds of common deps (iproute2/openssl/...)
+          # for every entry. Passing the full ~75 lime-* dirs compounds
+          # to multi-hour cold builds and trips the 90-min build-feed
+          # timeout. By restricting to the packages actually requested
+          # by some target, we cut the per-package loop to ~15-20
+          # entries; the lime-* internal cross-deps are still pulled
+          # into the IPK artefact transitively because `feeds install
+          # -p lime_packages -f $PKG` walks the full feed.
+          # `{{ packages_default }}` is a Mustache-style placeholder used in
+          # per-target packages: lists to interpolate the top-level default;
+          # we drop it explicitly so it doesn't leak into PACKAGES.
+          requested_pkgs="$(
+            yq -r '[.packages, (.targets[].packages // empty)]
+                   | map(select(. != null))
+                   | join(" ")' .github/ci/targets.yml \
+              | tr ' \t' '\n' \
+              | sed -n 's/^[A-Za-z0-9_+-][A-Za-z0-9_+-]*$/&/p' \
+              | grep -v '^-' \
+              | grep -vw 'packages_default' \
+              | sort -u
+          )"
+          available_lime="$(
+            find packages -mindepth 2 -maxdepth 2 -name Makefile -printf '%h\n' \
+              | xargs -n1 basename | sort -u
+          )"
+          lime_packages_list="$(
+            comm -12 <(printf '%s\n' "$requested_pkgs") <(printf '%s\n' "$available_lime") \
+              | tr '\n' ' ' | sed 's/[[:space:]]*$//'
+          )"
+          echo "Computed package list ($(echo "$lime_packages_list" | wc -w) packages):"
+          echo "$lime_packages_list" | tr ' ' '\n'
+
+          # Compute a single sha256 over inputs that affect the *compiled* IPKs:
+          # package Makefiles / files / patches / src, tools/ci/build_feed.sh,
+          # AND the computed `lime_packages_list` (so a packages: edit in
+          # targets.yml that adds/removes a build-target busts the cache,
+          # since the resulting IPK set actually changes). Edits to other
+          # parts of targets.yml or to this workflow do NOT invalidate the
+          # cache — they affect orchestration, not which `.ipk` files the
+          # SDK produces. OpenWrt release + arch remain in the actions/cache
+          # key separately.
+          feed_hash="$(
+            {
+              find packages -type f \( -name 'Makefile' -o -path 'packages/*/files/*' -o -path 'packages/*/patches/*' -o -path 'packages/*/src/*' \) -print0 \
+                | LC_ALL=C sort -z \
+                | xargs -0 sha256sum
+              sha256sum tools/ci/build_feed.sh
+              printf 'lime_packages_list=%s\n' "$lime_packages_list"
+            } | sha256sum | cut -d' ' -f1
+          )"
+          echo "Computed feed_hash=$feed_hash"
+
+          echo "targets_matrix=$targets_matrix" >> "$GITHUB_OUTPUT"
+          echo "test_targets_matrix=$test_targets_matrix" >> "$GITHUB_OUTPUT"
+          echo "mesh_test_matrix=$mesh_test_matrix" >> "$GITHUB_OUTPUT"
+          echo "mesh_pairs_matrix=$mesh_pairs_matrix" >> "$GITHUB_OUTPUT"
+          echo "qemu_single_matrix=$qemu_single_matrix" >> "$GITHUB_OUTPUT"
+          echo "qemu_mesh_matrix=$qemu_mesh_matrix" >> "$GITHUB_OUTPUT"
+          echo "archs_matrix=$archs_matrix" >> "$GITHUB_OUTPUT"
+          echo "lime_packages_list=$lime_packages_list" >> "$GITHUB_OUTPUT"
+          echo "feed_hash=$feed_hash" >> "$GITHUB_OUTPUT"
+
+  build-feed:
+    runs-on: ubuntu-latest
+    needs: prepare-matrix
+    # Cap the SDK compile at 180 min. Historical cold-build telemetry on
+    # ubuntu-latest:
+    #   - aarch64_cortex-a53/24.10.6 first cold build = 87 min
+    #   - mips_24kc/24.10.6           first cold build = 70 min
+    # gh-action-sdk's `for PKG in $PACKAGES; make package/$PKG/compile`
+    # loop re-evaluates the OpenWrt dep tree per iteration, so common
+    # deps (iproute2/openssl/...) get rebuilt several times. Even with
+    # PACKAGES restricted to image-installed entries (~15-20 instead of
+    # 75), 180 min leaves margin for x86_64 + extra_feeds runs while
+    # still catching the OpenWrt 25.12 SDK pathology documented in
+    # docs/followups/openwrt_25_12_build_issues.md (recursive Kconfig
+    # deps trap make in an unbounded iproute2 clean-build/compile loop).
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.archs_matrix) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Free disk
+        run: sudo rm -rf /opt/hostedtoolcache /usr/share/dotnet /usr/local/lib/android
+
+      # Skip the ~50-min SDK compile when nothing that affects the produced
+      # IPKs has changed. `feed_hash` is computed in `prepare-matrix` over
+      # package sources (Makefiles, patches/, files/, src/) and
+      # `tools/ci/build_feed.sh` only — not targets.yml / this workflow, so
+      # image-only or CI-only edits reuse the feed. `restore-keys` allows a
+      # partial match on the same arch+release when the exact hash is new
+      # (first push after a package change still gets a warm-ish cache).
+      # We avoid the `hashFiles(...)` workflow expression because the runner-side
+      # glob has been flaky for `packages/**` patterns.
+      - name: Restore feed cache
+        id: cache-feed
+        uses: actions/cache@v4
+        with:
+          path: feed-artifact/lime_packages
+          # `extra_hash` is a sha256 prefix over (extra_feeds, extra_packages)
+          # for this arch+release cell; bumping any external src-git pin
+          # in targets.yml therefore invalidates the cache without touching
+          # cells that have no extras (their extra_hash is the constant
+          # sha256("|")). The `restore-keys` does NOT include extra_hash
+          # — that is intentional: a partial-match restore on a stale
+          # extras would deliver a feed without the right extra IPKs, so
+          # we only allow exact matches when extras are present.
+          #
+          # Reminder: the commit suffix in `extra_feeds` MUST be the
+          # full 40-char SHA. GitHub's smart-HTTP server rejects
+          # fetch-by-SHA on short prefixes (`couldn't find remote
+          # ref ...`) and the SDK build aborts before any IPK is
+          # produced. See `docs/ci/firmware-build.md` → "Feed cache"
+          # for the failure mode.
+          key: lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-${{ matrix.extra_hash }}
+          restore-keys: |
+            lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-
+
+      - name: Build packages with openwrt/gh-action-sdk
+        if: steps.cache-feed.outputs.cache-hit != 'true'
+        uses: openwrt/gh-action-sdk@v9
+        env:
+          ARCH: ${{ matrix.sdk_arch }}
+          FEEDNAME: lime_packages
+          # Explicit list of packages the image actually installs, computed
+          # in prepare-matrix from `targets.yml::packages` (default + each
+          # target's override) plus per-arch `extra_packages` (e.g. `vwifi`
+          # for x86_64). gh-action-sdk loops `make package/$PKG/compile`
+          # over PACKAGES; each call re-evaluates the dep tree and triggers
+          # rebuilds of common deps (iproute2/openssl/...), so listing the
+          # full ~75 lime-* directories here would compound to multi-hour
+          # cold builds. Transitive lime-* deps are picked up automatically
+          # by `feeds install -p $FEED -f $PKG` from feeds.conf, so we don't
+          # need to list every internal cross-dep explicitly.
+          # IPKs land in bin/packages/<arch>/<source_feed>/.
+          PACKAGES: ${{ needs.prepare-matrix.outputs.lime_packages_list }} ${{ matrix.extra_packages }}
+          # Extra src-git feeds for this arch+release. Format is
+          # `<type>|<name>|<url>[^<commit>]` per entry, space-separated;
+          # gh-action-sdk replaces `|` with whitespace and appends each
+          # entry to feeds.conf. The `^<commit>` suffix is OpenWrt's feed
+          # syntax for pinning the source tree to a specific git revision
+          # so two CI runs produce bit-identical IPKs. Empty for cells
+          # whose targets declare no extra_feeds (the env var is just not
+          # used by the action when empty, see openwrt/gh-action-sdk
+          # entrypoint.sh's `for EXTRA_FEED in $EXTRA_FEEDS` loop).
+          EXTRA_FEEDS: ${{ matrix.extra_feeds }}
+          # No `patches/` dir in any package -> refresh check is a no-op anyway,
+          # but we still skip it to keep logs short and avoid spurious diffs.
+          NO_REFRESH_CHECK: "1"
+          # Disable shfmt formatting check: lime-* ships init scripts whose
+          # current formatting predates the action's shfmt rules.
+          NO_SHFMT_CHECK: "1"
+          # Keep default feeds enabled: lime-* DEPENDS on firewall4, lua,
+          # luci-*, jq, … which only resolve through the upstream OpenWrt feeds.
+          # SDK-side `make package/index` is brittle in CI (fails after a
+          # successful compile with no useful stderr unless V=sc). We generate
+          # Packages/Packages.gz ourselves using ImageBuilder's ipkg-make-index.
+          INDEX: "0"
+          IGNORE_ERRORS: "n m y"
+
+      - name: Diagnose feed build output
+        if: steps.cache-feed.outputs.cache-hit != 'true'
+        # `set -e` plus a missing `bin/packages/all/lime_packages/` (which is
+        # the normal case here: the SDK puts every PKGARCH:=all package into
+        # the arch dir, not into `all/`) used to abort the whole job at
+        # `find ... | wc -l` due to pipefail. Use `shopt -s nullglob` +
+        # array length so missing directories simply yield count 0 without
+        # aborting.
+        # extra_feeds output paths are not deterministic by feed name:
+        #   - PKGARCH:=all packages (shell-only feeds) end up under
+        #     bin/packages/<arch>/<feedname>/
+        #   - target-binary packages (e.g. vwifi: C++ compiled per-arch)
+        #     end up under bin/targets/<target>/<subtarget>/packages/
+        # We list both trees here for visibility and rely on the assemble
+        # step's globbed search across both for correctness.
+        # PACKAGE FORMAT: 24.10.x emits .ipk (opkg), 25.12.x emits .apk
+        # (apk-tools, Alpine format). We accept both: the SDK only writes
+        # one kind per build, and the assemble step picks the right
+        # indexer downstream.
+        shell: bash
+        env:
+          OPENWRT_RELEASE: ${{ matrix.openwrt_release }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          case "${OPENWRT_RELEASE}" in
+            24.10.*) PKG_FORMAT=ipk ;;
+            *)       PKG_FORMAT=apk ;;
+          esac
+          echo "Package format for ${OPENWRT_RELEASE}: ${PKG_FORMAT}"
+          echo "=== bin/packages tree ==="
+          find bin/packages -maxdepth 4 -type d 2>/dev/null | sort || true
+          echo "=== bin/targets tree (where target-binary extras land) ==="
+          find bin/targets -maxdepth 4 -type d 2>/dev/null | sort || true
+          echo "=== bin/packages/${{ matrix.arch }}/lime_packages/ ==="
+          ls -la "bin/packages/${{ matrix.arch }}/lime_packages/" 2>/dev/null || echo "(missing)"
+          echo "=== bin/packages/all/lime_packages/ ==="
+          ls -la "bin/packages/all/lime_packages/" 2>/dev/null || echo "(missing)"
+          arch_files=(
+            "bin/packages/${{ matrix.arch }}/lime_packages/"*.ipk
+            "bin/packages/${{ matrix.arch }}/lime_packages/"*.apk
+          )
+          all_files=(
+            "bin/packages/all/lime_packages/"*.ipk
+            "bin/packages/all/lime_packages/"*.apk
+          )
+          echo "Arch packages: ${#arch_files[@]} | All packages: ${#all_files[@]}"
+          if (( ${#arch_files[@]} == 0 && ${#all_files[@]} == 0 )); then
+            echo "ERROR: feed produced no .ipk or .apk packages" >&2
+            exit 1
+          fi
+          # Best-effort listing of every extra feed output dir; missing
+          # dirs are tolerated since target-binary packages land under
+          # bin/targets/ instead.
+          extra_feeds_str="${{ matrix.extra_feeds }}"
+          if [[ -n "$extra_feeds_str" ]]; then
+            echo "=== Extra src-git feeds output ==="
+            for entry in $extra_feeds_str; do
+              feed_name="$(echo "$entry" | cut -d'|' -f2)"
+              extra_dir="bin/packages/${{ matrix.arch }}/${feed_name}"
+              echo "--- ${extra_dir} ---"
+              ls -la "$extra_dir" 2>/dev/null || echo "(missing — target-binary extras live under bin/targets/)"
+            done
+            echo "=== bin/targets/**/packages/ (target-built packages) ==="
+            find bin/targets \( -name "*.ipk" -o -name "*.apk" \) -path "*/packages/*" 2>/dev/null \
+              | sort || echo "(none)"
+          fi
+
+      - name: Assemble lime_packages feed artifact (index with ImageBuilder)
+        if: steps.cache-feed.outputs.cache-hit != 'true'
+        env:
+          OPENWRT_RELEASE: ${{ matrix.openwrt_release }}
+        run: |
+          set -euo pipefail
+          # 24.10.x ships .ipk packages indexed by `Packages`/`Packages.gz`
+          # (opkg). 25.12.x switched to .apk packages indexed by
+          # `packages.adb` (apk-tools). Bifurcate the indexer here.
+          case "${OPENWRT_RELEASE}" in
+            24.10.*) PKG_FORMAT=ipk ;;
+            *)       PKG_FORMAT=apk ;;
+          esac
+          echo "Assembling feed for ${OPENWRT_RELEASE} (PKG_FORMAT=${PKG_FORMAT})"
+
+          rm -rf feed-artifact
+          mkdir -p feed-artifact/lime_packages
+
+          arch_dir="bin/packages/${{ matrix.arch }}/lime_packages"
+          all_dir="bin/packages/all/lime_packages"
+
+          if [[ -d "$arch_dir" ]]; then
+            cp -a "$arch_dir"/. feed-artifact/lime_packages/
+          fi
+          if [[ -d "$all_dir" ]]; then
+            cp -a "$all_dir"/. feed-artifact/lime_packages/
+          fi
+
+          # Merge packages from each extra src-git feed (e.g. vwifi) into
+          # the same lime_packages local feed. The ImageBuilder snippet
+          # only knows about a single `lime_packages_local` repo, so every
+          # extra package has to live in this single dir to be installable.
+          # Both opkg (.ipk) and apk-tools (.apk) deduplicate by package
+          # name + version, so co-locating is safe as long as no extra
+          # feed redefines a name we already ship under lime-*.
+          #
+          # extra_feeds output paths depend on the package's PKGARCH:
+          #   - PKGARCH:=all  → bin/packages/<arch>/<feedname>/ or
+          #                     bin/packages/all/<feedname>/
+          #   - target-binary → bin/targets/<target>/<subtarget>/packages/
+          #     (the SDK lumps every per-arch extra into a single dir,
+          #     not split per feed)
+          # We probe both trees and copy any matching extra_packages entry.
+          # Naming differs between formats:
+          #   - .ipk: "<name>_<version>_<arch>.ipk" (underscore separator
+          #     as historically used by opkg) but the SDK has been moving
+          #     to "<name>-<version>_<arch>.ipk" since 23.x — accept both.
+          #   - .apk: "<name>-<version>.apk" (apk-tools always uses the
+          #     dash separator; underscores in package names are kept,
+          #     so "shared-state-bat_hosts-26.120.<...>.apk" is valid).
+          extra_feeds_str="${{ matrix.extra_feeds }}"
+          extra_packages_str="${{ matrix.extra_packages }}"
+          if [[ -n "$extra_feeds_str" ]]; then
+            for entry in $extra_feeds_str; do
+              feed_name="$(echo "$entry" | cut -d'|' -f2)"
+              for src in \
+                "bin/packages/${{ matrix.arch }}/${feed_name}" \
+                "bin/packages/all/${feed_name}"
+              do
+                if [[ -d "$src" ]]; then
+                  echo "Merging $src into feed-artifact/lime_packages/"
+                  shopt -s nullglob
+                  for f in "$src"/*.ipk "$src"/*.apk; do
+                    cp -a "$f" feed-artifact/lime_packages/
+                  done
+                fi
+              done
+            done
+            # Pull each declared extra_packages entry from bin/targets/
+            # if not already present (handles target-binary feeds like
+            # vwifi where the SDK lands the package under bin/targets/).
+            if [[ -n "$extra_packages_str" && -d bin/targets ]]; then
+              for pkg in $extra_packages_str; do
+                shopt -s nullglob
+                already=(
+                  feed-artifact/lime_packages/${pkg}_*.ipk
+                  feed-artifact/lime_packages/${pkg}-*.ipk
+                  feed-artifact/lime_packages/${pkg}-*.apk
+                )
+                if [[ ${#already[@]} -gt 0 ]]; then
+                  continue
+                fi
+                # `find` is more robust than a glob here because the
+                # target/subtarget split (e.g. x86/64, mediatek/filogic)
+                # is not derivable from matrix.arch alone.
+                while IFS= read -r -d '' f; do
+                  echo "Merging $f (from bin/targets) into feed-artifact/lime_packages/"
+                  cp -a "$f" feed-artifact/lime_packages/
+                done < <(find bin/targets -path '*/packages/*' \
+                          \( -name "${pkg}_*.ipk" -o -name "${pkg}-*.ipk" -o -name "${pkg}-*.apk" \) \
+                          -print0 2>/dev/null)
+              done
+            fi
+          fi
+
+          # Verify that every package we declared in extra_packages produced
+          # at least one package file. Without this check, a misnamed
+          # package or a silently-skipped build (gh-action-sdk emits a
+          # warning and exits 0 when an arch is unsupported) would
+          # propagate into a feed without the package and fail later at
+          # ImageBuilder install time, which is much harder to debug.
+          if [[ -n "$extra_packages_str" ]]; then
+            for pkg in $extra_packages_str; do
+              shopt -s nullglob
+              matches=(
+                feed-artifact/lime_packages/${pkg}_*.ipk
+                feed-artifact/lime_packages/${pkg}-*.ipk
+                feed-artifact/lime_packages/${pkg}-*.apk
+              )
+              if [[ ${#matches[@]} -eq 0 ]]; then
+                echo "ERROR: extra_packages entry '${pkg}' produced no .ipk or .apk" >&2
+                echo "Searched feed-artifact/lime_packages/${pkg}{_,-}*.{ipk,apk}" >&2
+                echo "Also searched bin/targets/**/packages/${pkg}*:" >&2
+                find bin/targets -path '*/packages/*' \
+                     \( -name "${pkg}_*.ipk" -o -name "${pkg}-*.ipk" -o -name "${pkg}-*.apk" \) \
+                     2>/dev/null >&2 || true
+                exit 1
+              fi
+            done
+          fi
+
+          shopt -s nullglob
+          all_pkgs=(feed-artifact/lime_packages/*.ipk feed-artifact/lime_packages/*.apk)
+          if [[ ${#all_pkgs[@]} -eq 0 ]]; then
+            echo "ERROR: No .ipk or .apk files found under feed-artifact/lime_packages" >&2
+            echo "Expected sources: $arch_dir and/or $all_dir" >&2
+            exit 1
+          fi
+
+          docker pull "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}"
+          chmod -R a+rwX feed-artifact/lime_packages
+
+          if [[ "$PKG_FORMAT" == "ipk" ]]; then
+            # CRITICAL: must `cd /work` and pass `.` (not `/work`) to
+            # ipkg-make-index.sh — the script puts whatever path it receives
+            # straight into the `Filename:` field, after only stripping a
+            # leading `./`. Passing `/work` produces
+            # `Filename: /work/lime-system_*.ipk`, which opkg later
+            # resolves as `file:///feed/lime_packages//work/...` (404), so
+            # every package in our local feed fails to install with
+            # `* opkg_install_cmd: Cannot install package lime-system.`
+            docker run --rm \
+              --user root \
+              -e MKHASH=/builder/staging_dir/host/bin/mkhash \
+              -e PATH=/builder/staging_dir/host/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+              -v "$(pwd)/feed-artifact/lime_packages:/work" \
+              "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}" \
+              sh -lc 'cd /work && /builder/scripts/ipkg-make-index.sh . > Packages && gzip -9nc Packages > Packages.gz'
+
+            echo "=== Final feed-artifact/lime_packages/ contents (ipk) ==="
+            ls -la feed-artifact/lime_packages/
+            echo "=== Packages index summary (first 60 lines + count) ==="
+            head -n 60 feed-artifact/lime_packages/Packages || true
+            pkg_count=$(grep -c '^Package:' feed-artifact/lime_packages/Packages || echo 0)
+            echo "Total Package: entries in index: ${pkg_count}"
+            echo "=== Sanity: Filename fields must be bare basenames ==="
+            bad_fn=$(grep -E '^Filename: (/|\./)' feed-artifact/lime_packages/Packages || true)
+            if [[ -n "$bad_fn" ]]; then
+              echo "ERROR: Packages index has non-basename Filename entries:" >&2
+              echo "$bad_fn" >&2
+              exit 1
+            fi
+            grep -m 3 '^Filename:' feed-artifact/lime_packages/Packages
+          else
+            # apk-tools needs `packages.adb`. The IB ships a host-built
+            # `apk` somewhere under /builder/staging_dir/host/. Past
+            # OpenWrt 25.12 RCs put it at .../host/bin/apk; future
+            # releases may move it to .../host/usr/bin/apk; autodetect.
+            #
+            # CRITICAL gotchas observed against apk-tools 3.0.5:
+            #   - `apk <subcmd> --help` exits 1 even when the
+            #     sub-command is valid; do NOT probe via that idiom.
+            #     We grep `apk --help` text instead (global --help
+            #     correctly returns 0).
+            #   - `--no-keychain` is an apk 2.x option that was
+            #     removed in apk 3. The right idiom for unsigned
+            #     local feeds is the global `--allow-untrusted` flag
+            #     placed BEFORE the sub-command (otherwise apk
+            #     fails with `unrecognized option 'allow-untrusted'`
+            #     because mkndx/index don't accept it as a sub-flag).
+            docker run --rm \
+              --user root \
+              -e PATH=/builder/staging_dir/host/usr/bin:/builder/staging_dir/host/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+              -v "$(pwd)/feed-artifact/lime_packages:/work" \
+              "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}" \
+              sh -lc '
+                set -e
+                cd /work
+                APK=""
+                for cand in \
+                  /builder/staging_dir/host/usr/bin/apk \
+                  /builder/staging_dir/host/bin/apk \
+                  /builder/staging_dir/hostpkg/usr/bin/apk \
+                  /usr/bin/apk \
+                  $(command -v apk 2>/dev/null || true)
+                do
+                  if [ -n "$cand" ] && [ -x "$cand" ]; then
+                    APK="$cand"; break
+                  fi
+                done
+                if [ -z "$APK" ]; then
+                  echo "ERROR: cannot locate apk binary in the IB" >&2
+                  echo "=== /builder/staging_dir/host listing ===" >&2
+                  find /builder/staging_dir/host -maxdepth 4 -name apk 2>/dev/null >&2 || true
+                  echo "=== /builder layout (top 2 levels) ===" >&2
+                  find /builder -maxdepth 2 -type d 2>/dev/null >&2 || true
+                  exit 1
+                fi
+                echo "=== apk binary: $APK ==="
+                "$APK" --version 2>&1 || true
+                help_text=$("$APK" --help 2>&1 || true)
+                if printf "%s\n" "$help_text" | grep -qw mkndx; then
+                  echo "Using: apk --allow-untrusted mkndx"
+                  "$APK" --allow-untrusted mkndx --output packages.adb -- *.apk
+                elif printf "%s\n" "$help_text" | grep -qw index; then
+                  echo "Using: apk --allow-untrusted index"
+                  "$APK" --allow-untrusted index --output packages.adb *.apk
+                else
+                  echo "WARNING: neither mkndx nor index advertised in apk --help; attempting mkndx anyway" >&2
+                  printf "%s\n" "$help_text" | head -80 >&2 || true
+                  "$APK" --allow-untrusted mkndx --output packages.adb -- *.apk
+                fi
+              '
+
+            echo "=== Final feed-artifact/lime_packages/ contents (apk) ==="
+            ls -la feed-artifact/lime_packages/
+            if [[ ! -f feed-artifact/lime_packages/packages.adb ]]; then
+              echo "ERROR: packages.adb was not generated" >&2
+              exit 1
+            fi
+            adb_size=$(stat -c%s feed-artifact/lime_packages/packages.adb)
+            apk_count=$(find feed-artifact/lime_packages -maxdepth 1 -name "*.apk" | wc -l)
+            echo "packages.adb size: ${adb_size} bytes | .apk count: ${apk_count}"
+          fi
+
+      - name: Diagnose cached feed (cache hit)
+        if: steps.cache-feed.outputs.cache-hit == 'true'
+        env:
+          OPENWRT_RELEASE: ${{ matrix.openwrt_release }}
+        run: |
+          set -euo pipefail
+          case "${OPENWRT_RELEASE}" in
+            24.10.*) PKG_FORMAT=ipk ;;
+            *)       PKG_FORMAT=apk ;;
+          esac
+          echo "=== Cache hit: feed-artifact/lime_packages/ (${PKG_FORMAT}) ==="
+          ls -la feed-artifact/lime_packages/
+          if [[ "$PKG_FORMAT" == "ipk" ]]; then
+            pkg_count=$(grep -c '^Package:' feed-artifact/lime_packages/Packages 2>/dev/null || echo 0)
+            echo "Cached opkg index has ${pkg_count} packages"
+          else
+            apk_count=$(find feed-artifact/lime_packages -maxdepth 1 -name "*.apk" | wc -l)
+            adb_size=$(stat -c%s feed-artifact/lime_packages/packages.adb 2>/dev/null || echo 0)
+            echo "Cached apk feed: ${apk_count} .apk files, packages.adb=${adb_size} bytes"
+          fi
+
+      - name: Upload local feed artifact
+        uses: actions/upload-artifact@v4
+        with:
+          # Multi-version: each (arch × openwrt_release) feed produces a
+          # distinct toolchain output. The release dimension MUST be in
+          # the artifact name so the matching `build-image` job pulls
+          # IPKs compiled against the right libc/gcc.
+          name: lime-feed-${{ matrix.arch }}-${{ matrix.openwrt_release }}
+          path: feed-artifact/lime_packages/
+          retention-days: 7
+
+      - name: Upload feed debug logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-debug-feed-${{ matrix.arch }}-${{ matrix.openwrt_release }}
+          path: |
+            bin/packages/${{ matrix.arch }}/
+            logs/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  build-image:
+    runs-on: ubuntu-latest
+    needs: [prepare-matrix, build-feed]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.targets_matrix) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Free disk
+        run: sudo rm -rf /opt/hostedtoolcache /usr/share/dotnet /usr/local/lib/android
+
+      # build_image.sh consumes pre-built IPKs from the build-feed
+      # artifact (every active target uses the ImageBuilder + mkimage
+      # repack path; see docs/ci/firmware-build.md). The artifact name
+      # carries the OpenWrt release dimension because the SDK toolchain
+      # (libc, gcc, …) is release-specific — pulling 24.10.6 IPKs into
+      # a 25.12.2 ImageBuilder will fail at `opkg install`.
+      - name: Download matching local feed
+        uses: actions/download-artifact@v5
+        with:
+          name: lime-feed-${{ matrix.arch }}-${{ matrix.openwrt_release }}
+          path: ./feed-in/lime_packages/
+
+      - name: Diagnose downloaded feed
+        run: |
+          set -euo pipefail
+          echo "=== feed-in/lime_packages/ contents ==="
+          ls -la ./feed-in/lime_packages/
+          echo "=== Packages index head ==="
+          head -n 80 ./feed-in/lime_packages/Packages || echo "(no Packages file)"
+          ipk_count=$(find ./feed-in/lime_packages -maxdepth 1 -name '*.ipk' | wc -l)
+          pkg_idx_count=$(grep -c '^Package:' ./feed-in/lime_packages/Packages 2>/dev/null || echo 0)
+          echo "IPK files: ${ipk_count} | Packages index entries: ${pkg_idx_count}"
+
+      - name: Pull ImageBuilder image
+        run: docker pull ghcr.io/openwrt/imagebuilder:${{ matrix.imagebuilder }}-v${{ matrix.openwrt_release }}
+
+      - name: Build firmware image
+        env:
+          DEVICE_NAME: ${{ matrix.device }}
+          ARCH: ${{ matrix.arch }}
+          FEED_BRANCH: ${{ matrix.feed_branch }}
+          PACKAGES: ${{ matrix.packages }}
+          # FIT-repack metadata. `BUILD_INITRAMFS=1` triggers the
+          # `mkimage` repack step in build_image.sh that builds a real
+          # RAM-bootable initramfs FIT containing the LibreMesh rootfs.
+          # The other three fields are consumed by mkits.sh inside the
+          # script. Targets without these set (build_initramfs=0) just
+          # ship the sysupgrade artifact for IPK validation.
+          BUILD_INITRAMFS: ${{ matrix.build_initramfs }}
+          # IMAGE_FORMAT selects the repack output format inside
+          # build_image.sh: `fit` for mediatek/filogic FIT-aware U-Boots,
+          # `multi-uimage` for legacy ath79 boards (kept for reference;
+          # no targets currently use it). The empty default falls
+          # through to build_image.sh's own `fit` default so older
+          # targets in targets.yml that do not set `image_format:` keep
+          # producing the same `.itb` they always did.
+          IMAGE_FORMAT: ${{ matrix.image_format }}
+          FIT_ARCH: ${{ matrix.fit_arch }}
+          FIT_KERNEL_LOADADDR: ${{ matrix.fit_kernel_loadaddr }}
+          FIT_DTS: ${{ matrix.fit_dts }}
+          FIT_CONFIG: ${{ matrix.fit_config }}
+          # Empty FIT_BOOTARGS falls through to build_image.sh's own
+          # default ("console=ttyS0,115200n1 pci=pcie_bus_perf"), keeping
+          # legacy openwrt_one / bananapi_bpi-r4 builds unchanged. Set
+          # per-target via `fit_bootargs:` in targets.yml when a board
+          # needs extra args (e.g. linksys_e8450 wants `swiotlb=512`).
+          FIT_BOOTARGS: ${{ matrix.fit_bootargs }}
+          # "1" enables the patch_dtb_local_mac.py round-trip on the
+          # FIT-shipped DTB (workaround for openwrt#22858). Defaults to
+          # "0" via the matrix expansion in prepare-matrix; only set to
+          # "1" for boards whose factory NVMEM lives in a UBI volume.
+          DTB_PATCH_NVMEM_MAC: ${{ matrix.dtb_patch_nvmem_mac }}
+          # "1" enables the patch_dtb_partitions.py round-trip on the
+          # FIT-shipped DTB, rewriting the SPI-NAND partitioning to
+          # the legacy 23.05 layout. Required on Belkin RT3200 units
+          # still on DEVICE_COMPAT_VERSION 1.0; without it the 24.10
+          # kernel attaches UBI from MTD offset 0x80000 and overwrites
+          # BL31/FIP, KODing the device. See
+          # docs/followups/belkin_rt3200_layout_1_0_dtb_patch.md.
+          DTB_FORCE_LEGACY_PARTITIONS: ${{ matrix.dtb_force_legacy_partitions }}
+        run: |
+          chmod +x tools/ci/build_image.sh
+          tools/ci/build_image.sh \
+            "${{ matrix.imagebuilder }}" \
+            "${{ matrix.profile }}" \
+            "${{ matrix.openwrt_release }}" \
+            "./feed-in" \
+            "./out"
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          # Multi-version matrix: artifact name MUST carry the OpenWrt
+          # release dimension or two parallel build cells (24.10.6 +
+          # 25.12.2) racing on the same `firmware-<device>` upload would
+          # corrupt each other. Downstream test jobs select the release
+          # dimension explicitly via the same naming convention.
+          name: firmware-${{ matrix.device }}-${{ matrix.openwrt_release }}
+          path: ./out/firmware-${{ matrix.device }}.*
+          retention-days: 7
+
+      - name: Upload image debug files
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-debug-image-${{ matrix.device }}-${{ matrix.openwrt_release }}
+          path: |
+            ./out/
+            ./feed-in/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # Self-hosted hardware tests: do not run for fork PRs (no lab access / abuse).
+  # Uses `test_targets_matrix` (filtered subset of `targets_matrix`) so that
+  # targets explicitly marked `test_firmware: false` in targets.yml never
+  # schedule a hardware-test job. `librerouter_librerouter-v1` is not in the
+  # matrix at all today; ImageBuilder cannot produce a RAM-bootable LibreMesh
+  # image for ath79 — see `docs/followups/imagebuilder_initramfs_limitations.md`.
+  test-firmware:
+    # Display the place (e.g. `belkin_rt3200_1`) instead of the device
+    # so the GitHub UI distinguishes the three Belkin RT3200 jobs that
+    # share the linksys_e8450-ubi artifact. For single-place targets
+    # (openwrt_one, bananapi_bpi-r4) place == device so the displayed
+    # name is unchanged.
+    name: test-firmware (${{ matrix.place }} / ${{ matrix.openwrt_release }})
+    needs: [prepare-matrix, build-image]
+    # Physical lab gate (May 2026): pull_request events never reach
+    # the lab (every PR validates against QEMU only). Lab time is
+    # consumed by exactly two triggers:
+    #   - `schedule` (daily cron at 06:00 UTC): runs without
+    #     environment approval; the lab is dedicated to the project
+    #     and a daily smoke against master is the whole point of
+    #     the job.
+    #   - `workflow_dispatch` with `physical_single=true`: maintainer
+    #     opt-in to validate a branch on hardware. Gated by the
+    #     `physical-lab` environment (required reviewers) — see the
+    #     `environment:` expression below.
+    # Forks remain excluded by Actions' policy on self-hosted
+    # runners. See `docs/ci/firmware-build.md` → "Manual gating for
+    # physical-lab tests" for the full trade-off.
+    if: |
+      (
+        github.event_name == 'schedule'
+        || (github.event_name == 'workflow_dispatch' && github.event.inputs.physical_single == 'true')
+      )
+      && fromJson(needs.prepare-matrix.outputs.test_targets_matrix).include[0] != null
+    # `physical-lab` is a GitHub Environment configured in the
+    # repo Settings UI with required reviewers (Javier, fcefyn-
+    # testbed admins). When set, the job pauses for human approval
+    # before scheduling. We omit the environment for `schedule` so
+    # the daily cron does not block on a reviewer (the lab is
+    # dedicated; the `physical-lab-shared` concurrency group is the
+    # only safety belt the daily needs against parallel lab use).
+    # The empty string in the false branch is interpreted by Actions
+    # as "no environment", same as omitting the key.
+    environment:
+      name: ${{ github.event_name == 'workflow_dispatch' && 'physical-lab' || '' }}
+    runs-on: [self-hosted, testbed-fcefyn]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.test_targets_matrix) }}
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTEST_ADDOPTS: "--color=yes"
+      LG_CONSOLE: internal
+    steps:
+      # Fresh workspace on self-hosted runner (artifact download expects ./fw).
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: firmware-${{ matrix.device }}-${{ matrix.openwrt_release }}
+          path: fw
+
+      - uses: actions/checkout@v6
+        with:
+          repository: fcefyn-testbed/libremesh-tests
+          ref: staging
+          path: libremesh-tests
+
+      - uses: actions/checkout@v6
+        with:
+          repository: aparcar/openwrt-tests
+          ref: main
+          path: openwrt-tests
+
+      - name: Set OPENWRT_TESTS_DIR for pytest
+        run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Sync libremesh-tests environment
+        run: |
+          echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') uv sync (libremesh-tests) starting"
+          cd libremesh-tests && uv sync
+          echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') uv sync finished"
+
+      - name: Stage firmware on TFTP
+        run: |
+          set -euo pipefail
+          echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') staging firmware for ${{ matrix.device }}@${{ matrix.openwrt_release }} on place ${{ matrix.place }}"
+          # Per-place TFTP namespace: when several units of the same
+          # hardware test the same artifact in parallel (e.g. the three
+          # Belkin RT3200 + linksys_e8450-ubi build), routing each job to
+          # `<run_id>/<place>/<release>/` keeps the cleanup of one job from
+          # deleting files another job is still serving over TFTP. The
+          # `<release>` segment additionally separates 24.10.6 vs 25.12.2
+          # builds when the override `physical_releases` enrolls both.
+          BASE="/srv/tftp/firmwares/ci"
+          STAGE="$BASE/${{ github.run_id }}/${{ matrix.place }}/${{ matrix.openwrt_release }}"
+          if ! mkdir -p "$STAGE" 2>/tmp/mkdir.err; then
+            echo "::error::Cannot create $STAGE: $(cat /tmp/mkdir.err)"
+            echo "Fix on the lab host (one-time):"
+            echo "  sudo install -d -o \$RUNNER_USER -g \$RUNNER_USER -m 0775 $BASE"
+            ls -ld /srv/tftp /srv/tftp/firmwares "$BASE" 2>/dev/null || true
+            exit 1
+          fi
+          shopt -s nullglob
+          files=(fw/firmware-${{ matrix.device }}.*)
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "::error::No firmware-${{ matrix.device }}.* under fw/"
+            ls -la fw/ || true
+            exit 1
+          fi
+          # Rename the bootable artifact and its sidecars from
+          # firmware-<device>.<ext> to firmware-<place>.<ext>. Reason:
+          # labgrid's TFTPProviderDriver.stage() creates a symlink in the
+          # exporter's TFTP root using only basename(path). Three parallel
+          # Belkin jobs would otherwise race on the same
+          # `firmware-linksys_e8450.itb` symlink. With a per-place
+          # basename, each job gets its own entry under the TFTP root and
+          # there is no cross-job interference.
+          src_prefix="firmware-${{ matrix.device }}"
+          dst_prefix="firmware-${{ matrix.place }}"
+          for f in "${files[@]}"; do
+            base="$(basename "$f")"
+            if [[ "$base" != "$src_prefix"* ]]; then
+              echo "::warning::Unexpected artifact name $base (does not start with $src_prefix); copying as-is"
+              cp -a "$f" "$STAGE/"
+              continue
+            fi
+            suffix="${base#$src_prefix}"
+            cp -a "$f" "$STAGE/${dst_prefix}${suffix}"
+          done
+          # Pick the actual bootable image, NOT the manifest sidecar that
+          # tools/ci/build_image.sh now ships next to the firmware. Manifest
+          # files have the .manifest extension and are text describing the
+          # installed packages — they would be useless to TFTP-boot.
+          image_candidates=("$STAGE"/firmware-${{ matrix.place }}.*)
+          LG_IMAGE=""
+          for f in "${image_candidates[@]}"; do
+            case "$f" in
+              *.manifest|*.sha256|*.txt|*.log) ;;
+              *) LG_IMAGE="$f"; break ;;
+            esac
+          done
+          if [[ -z "$LG_IMAGE" ]]; then
+            echo "::error::No bootable firmware artifact under $STAGE (only sidecars?)"
+            ls -la "$STAGE" || true
+            exit 1
+          fi
+          echo "LG_IMAGE=$LG_IMAGE" >> "$GITHUB_ENV"
+          echo "Staged LG_IMAGE=$LG_IMAGE"
+          echo "=== firmware sanity ==="
+          file "$LG_IMAGE" || true
+          ls -la "$LG_IMAGE"
+          sha256sum "$LG_IMAGE"
+          # Echo the manifest sidecar contents so a quick glance at the CI
+          # log answers "is this a LibreMesh image?" without re-running the
+          # build job. We grep the lime/shared-state/batctl entries because
+          # the full manifest can be 200+ lines of generic OpenWrt deps.
+          MANIFEST="$STAGE/firmware-${{ matrix.place }}.manifest"
+          if [[ -f "$MANIFEST" ]]; then
+            echo "=== manifest sidecar ($(wc -l < "$MANIFEST") packages): LibreMesh entries ==="
+            grep -E '^(lime-|shared-state-|batctl|babeld|firewall4)' "$MANIFEST" || \
+              echo "(no lime-/shared-state-/batctl/babeld entries — image is NOT LibreMesh)"
+          else
+            echo "::warning::No manifest sidecar at $MANIFEST — older build_image.sh? Cannot pre-validate LibreMesh content."
+          fi
+
+      - name: Lock labgrid place
+        working-directory: libremesh-tests
+        run: |
+          set -euo pipefail
+          echo "LG_PROXY=labgrid-fcefyn" >> "$GITHUB_ENV"
+          # Direct lock by place — every test_firmware matrix entry now
+          # carries an explicit `place` field (defaulted to the device
+          # name in prepare-matrix for single-unit targets), so we no
+          # longer need `labgrid-client reserve --shell device=…` to
+          # discover a place. This makes the lock deterministic across
+          # devices that share a hardware profile (Belkin RT3200 #1/#2/#3
+          # all run the linksys_e8450-ubi build), and keeps the legacy
+          # behaviour for openwrt_one / bananapi_bpi-r4 where place
+          # equals device.
+          PLACE="labgrid-fcefyn-${{ matrix.place }}"
+          LOCK_OUT=$(uv run labgrid-client -v -p "$PLACE" lock 2>&1) || {
+            echo "$LOCK_OUT"
+            echo "::error::labgrid lock failed for $PLACE"
+            exit 1
+          }
+          echo "$LOCK_OUT"
+          echo "LG_PLACE=$PLACE" >> "$GITHUB_ENV"
+          echo "LG_ENV=targets/${{ matrix.device }}.yaml" >> "$GITHUB_ENV"
+          echo "Locked $PLACE for device=${{ matrix.device }}"
+
+      - name: Run single-node LibreMesh tests
+        working-directory: libremesh-tests
+        env:
+          LG_PROXY: labgrid-fcefyn
+          LG_IMAGE: ${{ env.LG_IMAGE }}
+          LG_PLACE: ${{ env.LG_PLACE }}
+          LG_ENV: ${{ env.LG_ENV }}
+          # Per-target override of the U-Boot interrupt spam window
+          # honoured by tftpstrategy._spam_uboot_interrupt(). Empty
+          # string falls through to the strategy default (12s) thanks
+          # to _read_float_env() returning the default on empty input.
+          # Bumped to 25s for linksys_e8450 (Belkin RT3200) where
+          # BL2/BL31 take ~12s and the autoboot countdown follows
+          # immediately afterwards — see targets.yml comment block.
+          LG_MESH_UBOOT_INTERRUPT_SPAM_SEC: ${{ matrix.uboot_interrupt_spam_sec }}
+        run: |
+          set -euo pipefail
+          # Per-place / per-release log dir: three Belkin RT3200 jobs in
+          # parallel against the linksys_e8450 build artifact each upload
+          # their own `test-results-<place>-<release>` artifact below;
+          # collapsing them into a single dir would race on the
+          # report.xml file. The release dimension also future-proofs
+          # the layout against the `physical_releases` override.
+          LOG_DIR="$GITHUB_WORKSPACE/logs/${{ matrix.place }}-${{ matrix.openwrt_release }}"
+          mkdir -p "$LOG_DIR"
+          uv run pytest tests/test_libremesh.py \
+            --lg-log "$LOG_DIR/" \
+            --junitxml="$LOG_DIR/report.xml" \
+            --lg-colored-steps \
+            --log-cli-level=CONSOLE
+
+      - name: Poweroff and unlock device
+        if: always()
+        working-directory: libremesh-tests
+        env:
+          LG_PLACE: ${{ env.LG_PLACE }}
+        run: |
+          set +e
+          # We only ever acquire `labgrid-fcefyn-<place>` directly (no
+          # more `labgrid-client reserve --shell` flow), so a missing
+          # LG_PLACE means the lock step never ran (e.g. TFTP staging
+          # failed first); nothing to release in that case. Otherwise
+          # release exactly the place we locked — calling power off /
+          # unlock without -p would fall back to labgrid's empty default
+          # and match every registered place ("pattern matches multiple
+          # places…").
+          if [ -n "${LG_PLACE:-}" ]; then
+            uv run labgrid-client -p "$LG_PLACE" power off || true
+            uv run labgrid-client -p "$LG_PLACE" unlock || true
+          else
+            echo "No labgrid lock acquired by this job; skipping power off / unlock."
+          fi
+          # Per-place / per-release TFTP namespace mirrors the staging
+          # step so each parallel job cleans only its own staging
+          # directory.
+          rm -rf "/srv/tftp/firmwares/ci/${{ github.run_id }}/${{ matrix.place }}/${{ matrix.openwrt_release }}" 2>/dev/null || true
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          # Artifact name follows place + release so neither the three
+          # Belkin jobs (different places) nor a future 24.10.6 / 25.12.2
+          # parallel run (different releases on the same place) collide
+          # on `test-results-<place>`.
+          name: test-results-${{ matrix.place }}-${{ matrix.openwrt_release }}
+          path: ${{ github.workspace }}/logs/${{ matrix.place }}-${{ matrix.openwrt_release }}/*
+          if-no-files-found: ignore
+          retention-days: 14
+
+  test-mesh:
+    name: test-mesh (N=${{ github.event.inputs.physical_mesh_count }} / ${{ matrix.openwrt_release }})
+    needs: [prepare-matrix, build-image]
+    # Maintainer-driven mesh test on physical hardware. ONLY runs on
+    # workflow_dispatch with `physical_mesh_count` set to "2" or "3".
+    # The daily cron (schedule) does NOT touch this job — daily mesh
+    # coverage comes from `test-mesh-pairs` (walking chain of three
+    # 2-node pairs). pull_request never reaches the lab. Forks
+    # excluded by Actions self-hosted-runner policy.
+    if: |
+      github.event_name == 'workflow_dispatch'
+      && github.event.inputs.physical_mesh_count != '0'
+      && fromJson(needs.prepare-matrix.outputs.mesh_test_matrix).include[0] != null
+    environment:
+      name: physical-lab
+    runs-on: [self-hosted, testbed-fcefyn]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.mesh_test_matrix) }}
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTEST_ADDOPTS: "--color=yes"
+      LG_CONSOLE: internal
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/checkout@v6
+        with:
+          repository: fcefyn-testbed/libremesh-tests
+          ref: staging
+          path: libremesh-tests
+
+      - uses: actions/checkout@v6
+        with:
+          repository: aparcar/openwrt-tests
+          ref: main
+          path: openwrt-tests
+
+      - name: Set OPENWRT_TESTS_DIR for pytest
+        run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Sync libremesh-tests environment
+        run: cd libremesh-tests && uv sync
+
+      # The mesh matrix entry carries `places` (labgrid place names) and
+      # `devices` (artifact device names). We download every distinct
+      # device artifact mentioned in `matrix.devices`. The three
+      # download steps are statically declared (one per known device)
+      # and gated by `contains(matrix.devices, '<name>')`; this keeps
+      # the YAML readable and avoids dynamic invocation of the
+      # download-artifact action from bash. When the maintainer picks
+      # `physical_mesh_count=2`, only the two openwrt_one /
+      # bananapi_bpi-r4 entries fire; for N=3 the linksys_e8450
+      # artifact (consumed by belkin_rt3200_2) is added.
+      - name: Download firmware (openwrt_one)
+        if: contains(matrix.devices, 'openwrt_one')
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-openwrt_one-${{ matrix.openwrt_release }}
+          path: fw-mesh/openwrt_one
+
+      - name: Download firmware (bananapi_bpi-r4)
+        if: contains(matrix.devices, 'bananapi_bpi-r4')
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-bananapi_bpi-r4-${{ matrix.openwrt_release }}
+          path: fw-mesh/bananapi_bpi-r4
+
+      - name: Download firmware (linksys_e8450)
+        if: contains(matrix.devices, 'linksys_e8450')
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-linksys_e8450-${{ matrix.openwrt_release }}
+          path: fw-mesh/linksys_e8450
+
+      - name: Stage firmware and run mesh tests
+        env:
+          # JSON arrays from the prepare-matrix `mesh_test_matrix`.
+          # Bash `jq` parses them at runtime so the staging loop
+          # iterates the maintainer-selected mesh shape (N=2 or N=3)
+          # without further YAML conditionals.
+          MESH_PLACES_JSON: ${{ toJson(matrix.places) }}
+          MESH_DEVICES_JSON: ${{ toJson(matrix.devices) }}
+        run: |
+          set -euo pipefail
+          # Per-release TFTP namespace so a 24.10.6 + 25.12.2 mesh run in
+          # parallel does not race on the same `mesh/` dir.
+          BASE="/srv/tftp/firmwares/ci/${{ github.run_id }}/mesh/${{ matrix.openwrt_release }}"
+          mapfile -t PLACES < <(echo "$MESH_PLACES_JSON" | jq -r '.[]')
+          mapfile -t DEVICES < <(echo "$MESH_DEVICES_JSON" | jq -r '.[]')
+          if [[ ${#PLACES[@]} -ne ${#DEVICES[@]} ]]; then
+            echo "::error::places/devices length mismatch (${#PLACES[@]} vs ${#DEVICES[@]})" >&2
+            exit 1
+          fi
+          for place in "${PLACES[@]}"; do
+            if ! mkdir -p "$BASE/$place" 2>/tmp/mkdir.err; then
+              echo "::error::Cannot create $BASE/$place: $(cat /tmp/mkdir.err)"
+              echo "Fix on the lab host (one-time):"
+              echo "  sudo install -d -o \$RUNNER_USER -g \$RUNNER_USER -m 0775 /srv/tftp/firmwares/ci"
+              ls -ld /srv/tftp /srv/tftp/firmwares /srv/tftp/firmwares/ci 2>/dev/null || true
+              exit 1
+            fi
+          done
+          # Skip non-bootable sidecars (.manifest, .sha256, etc) when picking
+          # the LG image. tools/ci/build_image.sh now ships a manifest next
+          # to each firmware artifact for downstream LibreMesh verification.
+          pick_image() {
+            local dir="$1" base_prefix="$2" picked=""
+            for f in "$dir"/${base_prefix}.*; do
+              case "$f" in
+                *.manifest|*.sha256|*.txt|*.log) ;;
+                *) picked="$f"; break ;;
+              esac
+            done
+            if [[ -z "$picked" ]]; then
+              echo "::error::No bootable firmware under $dir (only sidecars?)" >&2
+              ls -la "$dir" >&2 || true
+              return 1
+            fi
+            echo "$picked"
+          }
+          # Stage per-place and build LG_MESH_PLACES + LG_IMAGE_MAP from
+          # the matrix arrays. Per-place basename rename mirrors the
+          # logic of `test-firmware`: labgrid's TFTPProviderDriver
+          # symlinks by basename only, so two parallel mesh entries
+          # against the same hardware (linksys_e8450 used by belkin
+          # places) need place-scoped names to avoid the symlink
+          # collision in the exporter TFTP root.
+          mesh_places=()
+          mesh_image_map_entries=()
+          for i in "${!PLACES[@]}"; do
+            place="${PLACES[$i]}"
+            device="${DEVICES[$i]}"
+            src_dir="$GITHUB_WORKSPACE/fw-mesh/$device"
+            if [[ ! -d "$src_dir" ]]; then
+              echo "::error::Missing artifact dir $src_dir for place=$place device=$device" >&2
+              exit 1
+            fi
+            src_prefix="firmware-${device}"
+            dst_prefix="firmware-${place}"
+            for f in "$src_dir"/${src_prefix}.*; do
+              base="$(basename "$f")"
+              suffix="${base#$src_prefix}"
+              cp -a "$f" "$BASE/$place/${dst_prefix}${suffix}"
+            done
+            img=$(pick_image "$BASE/$place" "${dst_prefix}")
+            echo "=== mesh firmware sanity (place=$place / device=$device) ==="
+            file "$img" || true
+            ls -la "$img"
+            sha256sum "$img"
+            manifest="${img%.*}.manifest"
+            if [[ -f "$manifest" ]]; then
+              echo "=== manifest for $(basename "$img"): LibreMesh entries ==="
+              grep -E '^(lime-|shared-state-|batctl|babeld|firewall4)' "$manifest" || \
+                echo "(no LibreMesh entries — image is NOT LibreMesh)"
+            else
+              echo "::warning::No manifest sidecar at $manifest"
+            fi
+            mesh_places+=("labgrid-fcefyn-$place")
+            mesh_image_map_entries+=("labgrid-fcefyn-$place=$img")
+          done
+          # Join arrays into the comma-separated env vars consumed by
+          # libremesh-tests/strategies/tftpstrategy.py and friends.
+          IFS=',' LG_MESH_PLACES_VALUE="${mesh_places[*]}"
+          IFS=',' LG_IMAGE_MAP_VALUE="${mesh_image_map_entries[*]}"
+          unset IFS
+          export LG_PROXY=labgrid-fcefyn
+          export LG_MESH_PLACES="$LG_MESH_PLACES_VALUE"
+          export LG_IMAGE_MAP="$LG_IMAGE_MAP_VALUE"
+          mkdir -p "$GITHUB_WORKSPACE/mesh-logs"
+          echo "LG_MESH_PLACES=$LG_MESH_PLACES"
+          echo "LG_IMAGE_MAP=$LG_IMAGE_MAP"
+          cd libremesh-tests
+          uv run pytest tests/test_mesh.py \
+            --lg-log "$GITHUB_WORKSPACE/mesh-logs/" \
+            --junitxml="$GITHUB_WORKSPACE/mesh-logs/report.xml" \
+            --log-cli-level=INFO -v
+          rm -rf "/srv/tftp/firmwares/ci/${{ github.run_id }}/mesh/${{ matrix.openwrt_release }}"
+
+      - name: Cleanup TFTP on failure
+        if: failure()
+        run: rm -rf "/srv/tftp/firmwares/ci/${{ github.run_id }}/mesh/${{ matrix.openwrt_release }}" || true
+
+      - name: Upload mesh test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-mesh-${{ matrix.openwrt_release }}
+          path: mesh-logs/*
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # Daily walking-chain mesh smoke. Runs ONLY on schedule (the daily
+  # cron). Three sequential 2-node pairs reuse the build artifacts
+  # already produced by `build-image`:
+  #   pair 1: belkin_rt3200_2 (linksys_e8450) ↔ openwrt_one
+  #   pair 2: openwrt_one ↔ bananapi_bpi-r4
+  #   pair 3: bananapi_bpi-r4 ↔ belkin_rt3200_3 (linksys_e8450)
+  # Every active lab device gets at least two mesh validations per day
+  # and the chain crosses arch boundaries so a regression specific to
+  # mt7622 (Belkin) or filogic (openwrt_one + r4) shows up in at least
+  # two pairs. `belkin_rt3200_1` is excluded (in repair). The pairs
+  # share physical devices on purpose, so we MUST run with
+  # `max-parallel: 1` to serialize lab access — otherwise pair 1 and
+  # pair 2 would race on `openwrt_one`, and pair 2 and pair 3 on
+  # `bananapi_bpi-r4`. The whole job is also serialized against any
+  # workflow_dispatch with `physical_*=true` via the
+  # `physical-lab-shared` concurrency group at workflow level. The job
+  # does NOT use `environment: physical-lab` because the daily cron
+  # is unattended by design — the maintainer is not expected to
+  # approve a 03:00 ART run every day.
+  test-mesh-pairs:
+    name: test-mesh-pairs (#${{ matrix.pair }} ${{ matrix.place_a }}+${{ matrix.place_b }} / ${{ matrix.openwrt_release }})
+    needs: [prepare-matrix, build-image]
+    if: |
+      github.event_name == 'schedule'
+      && fromJson(needs.prepare-matrix.outputs.mesh_pairs_matrix).include[0] != null
+    runs-on: [self-hosted, testbed-fcefyn]
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.mesh_pairs_matrix) }}
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTEST_ADDOPTS: "--color=yes"
+      LG_CONSOLE: internal
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/checkout@v6
+        with:
+          repository: fcefyn-testbed/libremesh-tests
+          ref: staging
+          path: libremesh-tests
+
+      - uses: actions/checkout@v6
+        with:
+          repository: aparcar/openwrt-tests
+          ref: main
+          path: openwrt-tests
+
+      - name: Set OPENWRT_TESTS_DIR for pytest
+        run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Sync libremesh-tests environment
+        run: cd libremesh-tests && uv sync
+
+      - name: Download firmware (${{ matrix.device_a }})
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-${{ matrix.device_a }}-${{ matrix.openwrt_release }}
+          path: fw-pair/${{ matrix.device_a }}
+
+      # Pairs 2 and 3 use the same artifact for both endpoints
+      # (openwrt_one ↔ openwrt_one is impossible; bananapi ↔ bananapi
+      # is also impossible). Skip the second download when the device
+      # name matches the first to avoid `actions/download-artifact`
+      # erroring out on a duplicate path. The Belkin-vs-openwrt and
+      # Belkin-vs-bananapi pairs always have distinct devices.
+      - name: Download firmware (${{ matrix.device_b }})
+        if: matrix.device_a != matrix.device_b
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-${{ matrix.device_b }}-${{ matrix.openwrt_release }}
+          path: fw-pair/${{ matrix.device_b }}
+
+      - name: Stage firmware and run mesh tests
+        run: |
+          set -euo pipefail
+          # Per-pair / per-release TFTP namespace mirrors the layout
+          # of `test-firmware`: each parallel job (or sequential pair
+          # via max-parallel:1) gets its own staging dir so a
+          # cleanup race never deletes another job's files.
+          BASE="/srv/tftp/firmwares/ci/${{ github.run_id }}/mesh-pairs/${{ matrix.pair }}/${{ matrix.openwrt_release }}"
+          for place in "${{ matrix.place_a }}" "${{ matrix.place_b }}"; do
+            if ! mkdir -p "$BASE/$place" 2>/tmp/mkdir.err; then
+              echo "::error::Cannot create $BASE/$place: $(cat /tmp/mkdir.err)"
+              echo "Fix on the lab host (one-time):"
+              echo "  sudo install -d -o \$RUNNER_USER -g \$RUNNER_USER -m 0775 /srv/tftp/firmwares/ci"
+              ls -ld /srv/tftp /srv/tftp/firmwares /srv/tftp/firmwares/ci 2>/dev/null || true
+              exit 1
+            fi
+          done
+          pick_image() {
+            local dir="$1" base_prefix="$2" picked=""
+            for f in "$dir"/${base_prefix}.*; do
+              case "$f" in
+                *.manifest|*.sha256|*.txt|*.log) ;;
+                *) picked="$f"; break ;;
+              esac
+            done
+            if [[ -z "$picked" ]]; then
+              echo "::error::No bootable firmware under $dir (only sidecars?)" >&2
+              ls -la "$dir" >&2 || true
+              return 1
+            fi
+            echo "$picked"
+          }
+          stage_place() {
+            local place="$1" device="$2"
+            local src_dir="$GITHUB_WORKSPACE/fw-pair/$device"
+            local src_prefix="firmware-${device}"
+            local dst_prefix="firmware-${place}"
+            for f in "$src_dir"/${src_prefix}.*; do
+              base="$(basename "$f")"
+              suffix="${base#$src_prefix}"
+              cp -a "$f" "$BASE/$place/${dst_prefix}${suffix}"
+            done
+            pick_image "$BASE/$place" "${dst_prefix}"
+          }
+          IMG_A=$(stage_place "${{ matrix.place_a }}" "${{ matrix.device_a }}")
+          IMG_B=$(stage_place "${{ matrix.place_b }}" "${{ matrix.device_b }}")
+          echo "=== mesh pair #${{ matrix.pair }} firmware sanity ==="
+          for img in "$IMG_A" "$IMG_B"; do
+            file "$img" || true
+            ls -la "$img"
+            sha256sum "$img"
+            manifest="${img%.*}.manifest"
+            if [[ -f "$manifest" ]]; then
+              echo "=== manifest for $(basename "$img"): LibreMesh entries ==="
+              grep -E '^(lime-|shared-state-|batctl|babeld|firewall4)' "$manifest" || \
+                echo "(no LibreMesh entries — image is NOT LibreMesh)"
+            else
+              echo "::warning::No manifest sidecar at $manifest"
+            fi
+          done
+          export LG_PROXY=labgrid-fcefyn
+          export LG_MESH_PLACES="labgrid-fcefyn-${{ matrix.place_a }},labgrid-fcefyn-${{ matrix.place_b }}"
+          export LG_IMAGE_MAP="labgrid-fcefyn-${{ matrix.place_a }}=$IMG_A,labgrid-fcefyn-${{ matrix.place_b }}=$IMG_B"
+          mkdir -p "$GITHUB_WORKSPACE/mesh-pairs-logs"
+          echo "LG_MESH_PLACES=$LG_MESH_PLACES"
+          echo "LG_IMAGE_MAP=$LG_IMAGE_MAP"
+          cd libremesh-tests
+          uv run pytest tests/test_mesh.py \
+            --lg-log "$GITHUB_WORKSPACE/mesh-pairs-logs/" \
+            --junitxml="$GITHUB_WORKSPACE/mesh-pairs-logs/report.xml" \
+            --log-cli-level=INFO -v
+          rm -rf "$BASE"
+
+      - name: Cleanup TFTP on failure
+        if: failure()
+        run: rm -rf "/srv/tftp/firmwares/ci/${{ github.run_id }}/mesh-pairs/${{ matrix.pair }}/${{ matrix.openwrt_release }}" || true
+
+      - name: Upload mesh-pairs test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-mesh-pairs-${{ matrix.pair }}-${{ matrix.openwrt_release }}
+          path: mesh-pairs-logs/*
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # QEMU single-node smoke test on a GitHub-hosted runner. Targets
+  # whose `test_qemu: true` flag was set in targets.yml (today only
+  # qemu_x86_64) get one job per OpenWrt release. Runs full TCG (no
+  # KVM): GitHub-hosted Linux runners ship qemu-system-x86 + ovmf
+  # but no nested virtualisation; the qemu_x86-64_libremesh.yaml
+  # labgrid env in libremesh-tests does not pass `-enable-kvm`, so
+  # boot is slower (~60-90s) but reproducible across runners. We
+  # cap the matrix at every full release because virtual smoke is
+  # cheap (no lab time, no TFTP) and surfaces 25.12.2 regressions
+  # earlier than waiting for the daily health-check.
+  test-firmware-qemu-single:
+    name: test-firmware-qemu-single (${{ matrix.device }} / ${{ matrix.openwrt_release }})
+    needs: [prepare-matrix, build-image]
+    if: |
+      fromJson(needs.prepare-matrix.outputs.qemu_single_matrix).include[0] != null
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.qemu_single_matrix) }}
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTEST_ADDOPTS: "--color=yes"
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/checkout@v6
+        with:
+          repository: fcefyn-testbed/libremesh-tests
+          ref: staging
+          path: libremesh-tests
+
+      - uses: actions/checkout@v6
+        with:
+          repository: aparcar/openwrt-tests
+          ref: main
+          path: openwrt-tests
+
+      - name: Set OPENWRT_TESTS_DIR for pytest
+        run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
+
+      - name: Download firmware artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: firmware-${{ matrix.device }}-${{ matrix.openwrt_release }}
+          path: fw
+
+      # qemu-system-x86 ships in `qemu-system-x86` on Ubuntu. ovmf is
+      # NOT required for x86-combined images (the OpenWrt x86/64
+      # generic recipe uses GRUB on a plain MBR partition table —
+      # legacy BIOS boot via qemu's seabios), but we install it
+      # anyway so a future switch to UEFI grub-efi images is a
+      # one-line YAML change.
+      - name: Install QEMU
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qemu-system-x86 ovmf
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Sync libremesh-tests environment
+        run: |
+          cd libremesh-tests
+          uv sync
+
+      - name: Locate firmware image
+        id: firmware
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          # We only ship `*.img` for x86-combined builds (build_image.sh
+          # gunzips ImageBuilder's `*-ext4-combined.img.gz`). Skip the
+          # `.manifest` sidecar.
+          candidates=(fw/firmware-${{ matrix.device }}.img)
+          if [[ ${#candidates[@]} -eq 0 ]]; then
+            echo "::error::No firmware-${{ matrix.device }}.img under fw/" >&2
+            ls -la fw/ || true
+            exit 1
+          fi
+          echo "path=${candidates[0]}" >> "$GITHUB_OUTPUT"
+          file "${candidates[0]}" || true
+          ls -la "${candidates[0]}"
+          sha256sum "${candidates[0]}"
+
+      - name: Run single-node QEMU LibreMesh tests
+        working-directory: libremesh-tests
+        env:
+          # The qemu_x86-64_libremesh.yaml env in libremesh-tests
+          # configures a QEMUDriver + QEMUNetworkStrategyLibreMesh
+          # that boots the supplied disk image, waits for dropbear
+          # (~30s after lime-config completes), and forwards SSH
+          # to the guest's anygw 10.13.0.1:22. This is the
+          # canonical LibreMesh-on-x86_64 test path.
+          LG_ENV: targets/qemu_x86-64_libremesh.yaml
+        run: |
+          set -euo pipefail
+          LOG_DIR="$GITHUB_WORKSPACE/qemu-single-logs/${{ matrix.device }}-${{ matrix.openwrt_release }}"
+          mkdir -p "$LOG_DIR"
+          # Single-node LibreMesh validation: lime-* runtime checks
+          # (test_libremesh.py), basic shell sanity (test_base.py),
+          # LAN connectivity (test_lan.py). Mesh tests are not run
+          # here — see `test-mesh-qemu` below for the multi-node path.
+          uv run pytest \
+            tests/test_libremesh.py \
+            tests/test_base.py \
+            tests/test_lan.py \
+            --lg-env "${LG_ENV}" \
+            --firmware "$GITHUB_WORKSPACE/${{ steps.firmware.outputs.path }}" \
+            --lg-log "$LOG_DIR/" \
+            --junitxml="$LOG_DIR/report.xml" \
+            --log-cli-level=INFO \
+            -v
+
+      - name: Upload QEMU single-node test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-qemu-single-${{ matrix.device }}-${{ matrix.openwrt_release }}
+          path: ${{ github.workspace }}/qemu-single-logs/${{ matrix.device }}-${{ matrix.openwrt_release }}/*
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # QEMU multi-node mesh test. Spawns N (default 3) QEMU instances
+  # of the same x86-combined LibreMesh image and ties them through
+  # vwifi-server so 802.11s-over-mac80211_hwsim forms a real mesh
+  # on the host loopback. This validates the full LibreMesh +
+  # batman-adv + babeld stack on x86_64 without any lab hardware.
+  #
+  # Runner choice — ubuntu-latest with KVM acceleration: as of
+  # 2024 GitHub-hosted ubuntu-24.04 runners DO expose `/dev/kvm`
+  # (it is owned root:kvm mode 0660). The runner user is not in
+  # the kvm group by default, so we need an `Enable KVM access`
+  # step that loosens permissions before QEMU opens the device.
+  # Without that step QEMU prints "Could not access KVM kernel
+  # module: Permission denied" and falls through to the SSH-wait
+  # timeout with no actionable diagnostic. Three TCG VMs in
+  # parallel saturate the 4-vCPU runner (~10 min per VM cold
+  # boot), so KVM is mandatory for the 180-240 s budget; the
+  # launcher's _vm_has_kvm() probe (R/W access, not just
+  # existence) keeps it correct on hosts where /dev/kvm is locked.
+  test-mesh-qemu:
+    name: test-mesh-qemu (${{ matrix.device }} / ${{ matrix.openwrt_release }})
+    needs: [prepare-matrix, build-image, test-firmware-qemu-single]
+    if: |
+      fromJson(needs.prepare-matrix.outputs.qemu_mesh_matrix).include[0] != null
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.qemu_mesh_matrix) }}
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTEST_ADDOPTS: "--color=yes"
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/checkout@v6
+        with:
+          repository: fcefyn-testbed/libremesh-tests
+          ref: staging
+          path: libremesh-tests
+
+      - uses: actions/checkout@v6
+        with:
+          repository: aparcar/openwrt-tests
+          ref: main
+          path: openwrt-tests
+
+      - name: Set OPENWRT_TESTS_DIR for pytest
+        run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
+
+      - name: Install QEMU and build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            qemu-system-x86 ovmf cmake build-essential libnl-3-dev libnl-genl-3-dev pkg-config
+
+      # GitHub-hosted ubuntu runners ship /dev/kvm at root:kvm mode
+      # 0660. The `runner` user is not in the kvm group, so opening
+      # the device fails with EACCES even though the kernel module
+      # is loaded and accessible. Drop a udev rule that re-modes
+      # /dev/kvm to 0666 (world R/W). This is the standard pattern
+      # documented by GitHub for KVM-accelerated workflows; nothing
+      # else on the runner relies on the original permissions.
+      # Reload + trigger so the rule applies immediately to the
+      # already-created device node, not just to subsequent
+      # hot-plugs. The launcher's _vm_has_kvm() probes os.access
+      # on /dev/kvm so a future runner image that locks the device
+      # falls back to TCG cleanly instead of failing opaquely.
+      - name: Enable KVM access for runner user
+        run: |
+          set -euo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm-allow-all.rules >/dev/null
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm
+          test -r /dev/kvm && test -w /dev/kvm
+
+      # vwifi-server is the host-side daemon that forwards 802.11
+      # frames between mac80211_hwsim radios in the guest VMs over
+      # a UDP socket. We pin the upstream commit (Raizo62/vwifi
+      # @4a9842e6 = release v7.0, July 2025) to keep two CI runs
+      # producing the same vwifi-server binary. The vwifi-CLIENT
+      # side (in-guest) ships as a vendored OpenWrt package under
+      # packages/vwifi/ — same PKG_SOURCE_VERSION as below, so the
+      # client and server binaries always match versions.
+      - name: Cache vwifi-server build
+        id: cache-vwifi-server
+        uses: actions/cache@v4
+        with:
+          path: ~/.vwifi-server-bin
+          key: vwifi-server-4a9842e6-${{ runner.os }}
+
+      - name: Build vwifi-server from source
+        if: steps.cache-vwifi-server.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.vwifi-server-bin
+          tmp=$(mktemp -d)
+          git clone https://github.com/Raizo62/vwifi.git "$tmp/vwifi"
+          git -C "$tmp/vwifi" checkout 4a9842e6
+          cmake -S "$tmp/vwifi" -B "$tmp/build"
+          cmake --build "$tmp/build" -j"$(nproc)"
+          # The default CMake build outputs `vwifi-server`, `vwifi-client`,
+          # `vwifi-ctrl`. The mesh launcher only needs `vwifi-server`
+          # (the in-guest client comes from the OpenWrt image), but we
+          # cache all binaries to keep cache layout symmetric with a
+          # full `make install`.
+          for bin in vwifi-server vwifi-client vwifi-ctrl; do
+            cp "$tmp/build/$bin" ~/.vwifi-server-bin/
+          done
+          rm -rf "$tmp"
+
+      - name: Install vwifi-server
+        run: |
+          sudo install -m 0755 ~/.vwifi-server-bin/vwifi-server /usr/local/bin/
+          vwifi-server --help || vwifi-server -h || true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Sync libremesh-tests environment
+        run: |
+          cd libremesh-tests
+          uv sync
+
+      - name: Download firmware artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: firmware-${{ matrix.device }}-${{ matrix.openwrt_release }}
+          path: fw
+
+      - name: Run multi-node QEMU mesh tests
+        working-directory: libremesh-tests
+        env:
+          # `LG_VIRTUAL_MESH=1` flips the `mesh_nodes` fixture in
+          # libremesh-tests/tests/conftest_mesh.py from the labgrid
+          # path to virtual_mesh_launcher.launch_virtual_mesh().
+          # The launcher reads VIRTUAL_MESH_NODES + VIRTUAL_MESH_IMAGE
+          # to spawn N VMs and configure vwifi-client per VM.
+          LG_VIRTUAL_MESH: "1"
+          # 3 nodes is the smallest non-degenerate mesh that exercises
+          # batman-adv multi-hop routing — node A reaches node C
+          # only through node B's mesh forwarding. Keep at 3 for CI:
+          # GitHub-hosted runners cap at ~16 GB RAM and TCG-emulated
+          # boot already burns ~3-5 min per VM in parallel.
+          VIRTUAL_MESH_NODES: "3"
+          VIRTUAL_MESH_MAX_NODES: "3"
+          # The launcher resolves VIRTUAL_MESH_IMAGE relative to
+          # CWD, so we point at the firmware artifact that
+          # `Download firmware artifact` already placed under fw/.
+          VIRTUAL_MESH_IMAGE: ${{ github.workspace }}/fw/firmware-${{ matrix.device }}.img
+        run: |
+          set -euo pipefail
+          LOG_DIR="$GITHUB_WORKSPACE/qemu-mesh-logs/${{ matrix.device }}-${{ matrix.openwrt_release }}"
+          mkdir -p "$LOG_DIR"
+          # Start vwifi-server in the background; the mesh launcher
+          # will spawn its own copy if this one is missing, but
+          # starting it here once and reusing it across the whole
+          # pytest session avoids per-test bring-up overhead.
+          vwifi-server -u >"$LOG_DIR/vwifi-server.log" 2>&1 &
+          echo $! > "$LOG_DIR/vwifi-server.pid"
+          trap 'kill "$(cat "$LOG_DIR/vwifi-server.pid")" 2>/dev/null || true' EXIT
+          # Quick sanity wait for the UDP socket — `vwifi-server -u`
+          # binds 0.0.0.0:8214 within ~100ms of fork. If we race past
+          # the bind, the first guest's `vwifi-client` retry loop
+          # absorbs the delay anyway.
+          sleep 1
+          uv run pytest tests/test_mesh.py \
+            --lg-log "$LOG_DIR/" \
+            --junitxml="$LOG_DIR/report.xml" \
+            --log-cli-level=INFO \
+            -v
+
+      - name: Upload QEMU mesh test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-qemu-mesh-${{ matrix.device }}-${{ matrix.openwrt_release }}
+          path: ${{ github.workspace }}/qemu-mesh-logs/${{ matrix.device }}-${{ matrix.openwrt_release }}/*
+          if-no-files-found: ignore
+          retention-days: 14
+
+  summary:
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - prepare-matrix
+      - build-feed
+      - build-image
+      - test-firmware
+      - test-mesh
+      - test-mesh-pairs
+      - test-firmware-qemu-single
+      - test-mesh-qemu
+    steps:
+      - name: Build summary
+        # All the matrix outputs are JSON strings (double-quoted keys
+        # and values). Inlining them via `${{ ... }}` directly into a
+        # bash double-quoted echo breaks the quoting: GitHub Actions
+        # renders the template at workflow-parse time, so the raw JSON
+        # — quotes, brackets, pipes, ^-pinned URLs and all — is pasted
+        # into the bash script *before* bash sees it. The first inner
+        # `"` then closes our outer string and bash starts parsing
+        # `extra_feeds:[src-git|vwifi|https://...^SHA]` etc as command
+        # tokens (hence the historical `vwifi: command not found` and
+        # `https://...:lime-system: No such file or directory`
+        # errors). Forward the values via the env vars — those are
+        # passed as opaque strings to the process and dereferenced
+        # safely by `printf` without going through a shell parsing
+        # round.
+        env:
+          TRIGGER: ${{ github.event_name }}
+          TARGETS_MATRIX: ${{ needs.prepare-matrix.outputs.targets_matrix }}
+          ARCHS_MATRIX: ${{ needs.prepare-matrix.outputs.archs_matrix }}
+          TEST_TARGETS_MATRIX: ${{ needs.prepare-matrix.outputs.test_targets_matrix }}
+          MESH_TEST_MATRIX: ${{ needs.prepare-matrix.outputs.mesh_test_matrix }}
+          MESH_PAIRS_MATRIX: ${{ needs.prepare-matrix.outputs.mesh_pairs_matrix }}
+          QEMU_SINGLE_MATRIX: ${{ needs.prepare-matrix.outputs.qemu_single_matrix }}
+          QEMU_MESH_MATRIX: ${{ needs.prepare-matrix.outputs.qemu_mesh_matrix }}
+          BUILD_FEED_RESULT: ${{ needs.build-feed.result }}
+          BUILD_IMAGE_RESULT: ${{ needs.build-image.result }}
+          TEST_FIRMWARE_RESULT: ${{ needs.test-firmware.result }}
+          TEST_MESH_RESULT: ${{ needs.test-mesh.result }}
+          TEST_MESH_PAIRS_RESULT: ${{ needs.test-mesh-pairs.result }}
+          TEST_FIRMWARE_QEMU_SINGLE_RESULT: ${{ needs.test-firmware-qemu-single.result }}
+          TEST_MESH_QEMU_RESULT: ${{ needs.test-mesh-qemu.result }}
+        run: |
+          {
+            printf '## Firmware build summary\n\n'
+            printf -- '- Trigger: `%s`\n' "$TRIGGER"
+            printf -- '- Targets matrix: `%s`\n' "$TARGETS_MATRIX"
+            printf -- '- Arch matrix: `%s`\n' "$ARCHS_MATRIX"
+            printf -- '- Physical test matrix: `%s`\n' "$TEST_TARGETS_MATRIX"
+            printf -- '- Mesh test matrix: `%s`\n' "$MESH_TEST_MATRIX"
+            printf -- '- Mesh pairs matrix (daily): `%s`\n' "$MESH_PAIRS_MATRIX"
+            printf -- '- QEMU single-node matrix: `%s`\n' "$QEMU_SINGLE_MATRIX"
+            printf -- '- QEMU mesh matrix: `%s`\n' "$QEMU_MESH_MATRIX"
+            printf -- '- Feed stage result: `%s`\n' "$BUILD_FEED_RESULT"
+            printf -- '- Image stage result: `%s`\n' "$BUILD_IMAGE_RESULT"
+            printf -- '- test-firmware result: `%s`\n' "$TEST_FIRMWARE_RESULT"
+            printf -- '- test-mesh result: `%s`\n' "$TEST_MESH_RESULT"
+            printf -- '- test-mesh-pairs result: `%s`\n' "$TEST_MESH_PAIRS_RESULT"
+            printf -- '- test-firmware-qemu-single result: `%s`\n' "$TEST_FIRMWARE_QEMU_SINGLE_RESULT"
+            printf -- '- test-mesh-qemu result: `%s`\n' "$TEST_MESH_QEMU_RESULT"
+          } >> "$GITHUB_STEP_SUMMARY"

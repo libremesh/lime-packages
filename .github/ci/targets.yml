@@ -1,0 +1,353 @@
+# Multi-version OpenWrt support. Each entry of `openwrt_releases` triggers
+# its own (target × release) cell in the build-firmware matrix; the
+# `feed_branch` for the matching LibreMesh feed at feed.libremesh.org is
+# resolved from `feed_branches` below. Adding "25.12.2" here is a
+# build-only smoke today: OpenWrt 25.12 switched the package index format
+# from OPKG/Packages.gz to APK/index.json (see
+# docs/followups/imagebuilder_initramfs_limitations.md, "OpenWrt 25.12
+# APK migration") which `tools/ci/build_image.sh` does not yet handle.
+# Until the script learns to gate `repositories.conf` editing on the
+# package manager flavor, the 25.12.2 cells in the matrix are expected
+# to flag build failures — `fail-fast: false` already keeps 24.10.6
+# cells unaffected, so this is fine for early surfacing of the
+# migration work without blocking PR merges.
+#
+# `default_physical_releases` selects WHICH releases the self-hosted
+# `test-firmware` / `test-mesh` jobs run against. By default we only
+# exercise the lab on 24.10.6 (the shipping LibreMesh stable line) so
+# the 25.12.2 cells stay build-only and do not cost lab time during the
+# APK transition. Override per-run via the `physical_releases`
+# `workflow_dispatch` input (CSV; e.g. "24.10.6,25.12.2" once 25.12
+# image builds work end-to-end).
+openwrt_releases:
+  - "24.10.6"
+  - "25.12.2"
+feed_branches:
+  "24.10.6": "openwrt-24.10"
+  "25.12.2": "openwrt-25.12"
+default_physical_releases:
+  - "24.10.6"
+# Default package list — mirrors the official LibreMesh README "Package
+# selection". All lime-* / shared-state-* packages must be provided by our
+# local feed (the upstream feed.libremesh.org publishes only
+# `shared-state-async` for openwrt-24.10). Per-target `packages:` keys below
+# override this on a target-by-target basis (e.g. small-flash devices).
+packages: >-
+  lime-system lime-proto-babeld lime-proto-batadv lime-proto-anygw
+  lime-hwd-openwrt-wan lime-hwd-ground-routing lime-app
+  lime-debug lime-docs lime-docs-minimal
+  shared-state-babeld_hosts shared-state-bat_hosts
+  shared-state-dnsmasq_hosts shared-state-nodes_and_links
+  babeld-auto-gw-mode check-date-http batctl-default
+  -dnsmasq -odhcpd-ipv6only
+# Per-target keys explained:
+#   build_initramfs (bool, default false): repack a RAM-bootable
+#     initramfs FIT in build_image.sh containing our LibreMesh rootfs.
+#     Required for any target that test-firmware boots over TFTP — the
+#     sysupgrade FIT does NOT pass a CPIO ramdisk to the kernel and the
+#     DUT silently boots whatever userspace is on flash. Leave false
+#     for targets whose subtarget has no `KERNEL_INITRAMFS` recipe (the
+#     `mkimage` repack would have no kernel-bin to consume); see the
+#     ath79 limitation note in
+#     docs/followups/imagebuilder_initramfs_limitations.md.
+#   test_firmware  (bool, default true): include this target in the
+#     test-firmware job matrix. Set to false to keep the build for
+#     IPK-validation purposes only and avoid scheduling a hardware test
+#     that would TIMEOUT for lack of a bootable image. No active target
+#     uses this opt-out today.
+#   test_places    (list, default [device]): names of the labgrid places
+#     (without the `labgrid-fcefyn-` prefix) to run test-firmware on for
+#     this target. Use this when the same firmware build must be exercised
+#     across multiple physical units of the same hardware (e.g. the three
+#     Belkin RT3200 in the testbed all consume the linksys_e8450-ubi
+#     artifact). prepare-matrix expands the test_targets_matrix into one
+#     entry per (target, place) pair so each unit gets its own
+#     test-firmware job displayed as `test-firmware (<place>)`. Defaulting
+#     to [device] preserves the legacy 1-target-1-place behaviour for the
+#     other DUTs (openwrt_one, bananapi_bpi-r4).
+#   uboot_interrupt_spam_sec (number, default unset → strategy default
+#     12.0s): how long the UBootTFTPStrategy keeps writing the U-Boot
+#     interrupt byte after a power cycle, before draining the serial
+#     buffer and waiting for the U-Boot prompt. Pass-through to
+#     LG_MESH_UBOOT_INTERRUPT_SPAM_SEC in the test-firmware job.
+#     Override on slow-booting boards whose BL2/BL31 stage takes longer
+#     than the default 12s — the spam window must overlap the U-Boot
+#     "Hit any key to stop autoboot" countdown, otherwise autoboot fires
+#     and the DUT falls back to whatever firmware is on flash. Concrete
+#     example: linksys_e8450 (Belkin RT3200, MT7622) shows BL2 banner
+#     ~12s after poweron and runs a 3s autoboot countdown immediately
+#     after — so a 12s spam ends just as the countdown starts. Bumping
+#     this target to 25s gives ~13s of margin around the countdown
+#     window. Faster boards (openwrt_one, bananapi_bpi-r4) keep the
+#     12s default.
+#   image_format (string, default "fit"): selects the output format.
+#     Only "fit" is in active use today:
+#       * "fit" — mediatek/filogic boards (openwrt_one, bananapi_bpi-r4,
+#                 linksys_e8450-ubi). Output is a single
+#                 `*-initramfs-libremesh.itb` containing kernel+DTB+CPIO
+#                 under one configuration node, with bootargs embedded
+#                 in the FIT config. Built by tools/ci/build_image.sh
+#                 via the OpenWrt ImageBuilder. Requires fit_arch /
+#                 fit_kernel_loadaddr / fit_dts / fit_config /
+#                 fit_bootargs.
+#     Targets whose U-Boot cannot consume a FIT (e.g. LibreRouter v1's
+#     U-Boot 1.1.x fork on ath79) are intentionally not in this matrix —
+#     ImageBuilder cannot produce a RAM-bootable artifact for them
+#     without a full kernel rebuild. See
+#     docs/followups/imagebuilder_initramfs_limitations.md for the
+#     analysis and the manual workaround.
+#   fit_arch / fit_kernel_loadaddr / fit_dts (BUILD_INITRAMFS=1 only):
+#     metadata fed to mkimage to lay out the repacked FIT.
+#     fit_arch is the U-Boot architecture name (e.g. `arm64` for
+#     filogic), NOT the OpenWrt arch. fit_dts is the basename (no .dtb
+#     suffix) of the per-board DTB shipped under
+#     build_dir/target-*/linux-*/image-<dts>.dtb — different from the
+#     device profile.
+#   fit_config (default "config-1"): name of the FIT configuration node
+#     passed to mkits.sh -c. U-Boot resolves this at boot via
+#     `bootm $loadaddr#$bootconf`. The libremesh-tests labgrid YAMLs
+#     unconditionally `setenv bootconf config-1` in U-Boot
+#     init_commands so we can ship a uniform FIT config name across all
+#     mediatek targets. Override only for boards whose U-Boot env
+#     cannot accept a runtime override (none in our matrix today).
+#   fit_bootargs (default "console=ttyS0,115200n1 pci=pcie_bus_perf"):
+#     kernel command line embedded in the FIT configuration node so
+#     U-Boot passes it through `bootm` regardless of any stale
+#     env-side `bootargs` left behind by a previous sysupgrade. The
+#     default mirrors what mediatek/filogic boards (openwrt_one,
+#     bananapi_bpi-r4) want — minus `root=/dev/fit0 rootwait
+#     ubi.block=0,fit`, which would re-mount on-flash UBI on top of
+#     our successfully-unpacked initramfs. Override per-target when a
+#     board needs extra args; e.g. linksys_e8450 (mt7622) requires
+#     `swiotlb=512` so the mt7915e PCIe WiFi card can allocate its
+#     DMA bounce buffers (without it the kernel logs `software IO
+#     TLB: SWIOTLB bounce buffer size adjusted to 0MB` and mt7915e
+#     probe fails with `error -12` ENOMEM).
+#   dtb_patch_nvmem_mac (bool, default false): rewrite the FIT-shipped
+#     device tree to inject `local-mac-address` properties into every
+#     GMAC and DSA-WAN node whose stock DTS pulls the MAC from a UBI
+#     factory NVMEM cell. Workaround for openwrt#22858 (NVMEM core
+#     perpetual `-EPROBE_DEFER`). Required on linksys_e8450-ubi: the
+#     factory volume is part of UBI which only attaches AFTER
+#     `mtk_eth_soc.probe()` first runs, so `nvmem_cell_get()` returns
+#     `-EPROBE_DEFER` and the deferred-probe queue never re-runs
+#     mtk_eth_soc successfully — the device boots without ethernet
+#     (`platform 1b100000.ethernet: deferred probe pending: (reason
+#     unknown)`) and lime-config never gets a network to publish the
+#     LiMe-XXXXXX hostname. Boards whose factory NVMEM lives on a
+#     fixed SPI-NOR / NAND partition (openwrt_one, bananapi_bpi-r4)
+#     MUST keep this off — the kernel reads the OEM MAC just fine and
+#     overriding it with a synthetic local-mac-address would lose the
+#     label MAC for no benefit.
+#   dtb_force_legacy_partitions (bool, default false): rewrite the
+#     SPI-NAND partitioning of the FIT-shipped DTB to the legacy
+#     OpenWrt 23.05 layout (separate `bl2`, `fip`, `factory`, `ubi`
+#     MTD partitions) instead of the OpenWrt 24.10 all-UBI shape
+#     (`bl2` + `ubi`-with-volumes-inside). Required ONLY on
+#     linksys_e8450-ubi (Belkin RT3200) units that are physically
+#     still on layout 1.0 (DEVICE_COMPAT_VERSION 1.0): with the
+#     stock 24.10 DTS, the kernel attaches UBI starting at MTD
+#     offset 0x80000 and overwrites the on-flash BL31/FIP region
+#     (0x80000-0x1c0000) plus the factory calibration region
+#     (0x1c0000-0x2c0000) with UBI EC headers. The next power
+#     cycle then KODs the device because BL2 cannot read BL31
+#     from the now-corrupted `fip` MTD (`ERROR: BL2: Failed to
+#     load image id 3 (-2)`). After this patch the kernel UBI
+#     attaches strictly to MTD offset 0x300000+, matching where
+#     on-flash UBI volumes actually live (and where BL2/BL31
+#     never touch). The patch also restores the layout 1.0
+#     `factory` MTD partition with `nvmem-cells` children so
+#     wmac/wmac1/gmac0/wan keep reading their EEPROM/MAC bytes
+#     from the same SPI-NAND offsets they did under 23.05.
+#     See docs/followups/belkin_rt3200_layout_1_0_dtb_patch.md
+#     for the full diagnosis. Boards that are not Belkin RT3200
+#     MUST keep this off — the patcher hard-fails when no
+#     `compatible = "linux,ubi"` partition exists in the DTS,
+#     so it cannot be flipped on by accident on
+#     openwrt_one / bananapi_bpi-r4.
+targets:
+  - device: linksys_e8450
+    imagebuilder: mediatek-mt7622
+    # The legacy `linksys_e8450` profile (NAND boot, sysupgrade only) does
+    # not define a KERNEL_INITRAMFS recipe in mt7622.mk, so ImageBuilder
+    # ships no <profile>-kernel.bin we could repack. The `-ubi` variant
+    # (same Belkin RT3200 hardware, UBI-on-NAND boot path) DOES define
+    # KERNEL_INITRAMFS and therefore exposes the kernel binary + DTB we
+    # need for build_image.sh's `mkimage` repack to work.
+    profile: linksys_e8450-ubi
+    arch: aarch64_cortex-a53
+    sdk_arch: aarch64_cortex-a53-openwrt-24.10
+    index_imagebuilder: mediatek-filogic
+    build_initramfs: true
+    fit_arch: arm64
+    fit_kernel_loadaddr: "0x44000000"
+    fit_dts: mt7622-linksys-e8450-ubi
+    # Three physical Belkin RT3200 units share the linksys_e8450-ubi
+    # firmware artifact. We expand the test-firmware matrix across all
+    # three places so each unit gets its own job and a visible result
+    # in the GitHub Actions UI. The build job runs once.
+    #
+    # Historical note: run #24 (24972903707) caught one Belkin at a
+    # pre-U-Boot brick — BL2 reported `Failed to load image id 3 (-2)`
+    # (image id 3 = BL31, -2 = -ENOENT), meaning the BL31 UBI volume
+    # was unreadable. The fcefyn lab recovered the affected unit with
+    # mtk_uartboot in March 2026 (see fcefyn_testbed_utils
+    # docs/configuracion/duts-config.md, "Kiss of Death (OKD)"). The
+    # three units now show SSH ✓ in duts-config.md, so we re-enable
+    # test-firmware. If a future run hits the same BL2 error, the
+    # recovery procedure is documented and KOD-resistant FIPs are
+    # already flashed on the units in the lab.
+    test_firmware: true
+    test_places:
+      - belkin_rt3200_1
+      - belkin_rt3200_2
+      - belkin_rt3200_3
+    # MT7622 BL2/BL31 take ~12s after poweron before U-Boot shows up
+    # and starts its 3s autoboot countdown. The default 12s spam in
+    # tftpstrategy.py ends right as the countdown begins (run
+    # 25002154022 trace: spam 15:11:35 → 15:11:47.5; first BL2 line
+    # 15:11:47.6; "Hit any key… 3 2 1" 15:11:47.6 → ~15:11:50). Bump
+    # the spam window to 25s so our interrupt bytes definitely cover
+    # the countdown and U-Boot drops into its prompt instead of
+    # autobooting OpenWrt from flash.
+    uboot_interrupt_spam_sec: 25
+    # MT7915E PCIe WiFi card needs an explicit `swiotlb=512` cmdline
+    # to allocate its DMA bounce buffers; the upstream mt7622-linksys-
+    # e8450-ubi.dts /chosen/bootargs is exactly this string, but we
+    # override bootargs at FIT-config level (so `bootm` overrides any
+    # stale env-side cmdline left over by a previous OpenWrt sysupgrade)
+    # and must therefore re-include swiotlb=512 here. Without it the
+    # kernel announces `software IO TLB: SWIOTLB bounce buffer size
+    # adjusted to 0MB` and mt7915e probe fails ENOMEM (-12), which then
+    # cascades into hostapd having no radios and lime-config aborting.
+    # See diagnosis in CI run 25004392669/job 73236211357 (Belkin#2).
+    fit_bootargs: "console=ttyS0,115200n1 swiotlb=512 pci=pcie_bus_perf"
+    # See `dtb_patch_nvmem_mac` block in the per-target keys legend
+    # above. Belkin RT3200 stores its OEM MAC in the UBI `factory`
+    # volume; mtk_eth_soc.probe() races UBI attach and gets stuck on
+    # -EPROBE_DEFER, leaving the device with no networking. Patching
+    # the DTB to inject `local-mac-address` short-circuits the NVMEM
+    # lookup and lets the driver bind on first probe.
+    dtb_patch_nvmem_mac: true
+    # See `dtb_force_legacy_partitions` block in the per-target keys
+    # legend above. The lab Belkins are still on layout 1.0
+    # (recovered with `mtk_uartboot` + 23.05.5 BL2/FIP each time
+    # they KOD); without this patch every CI run with a 24.10
+    # kernel writes UBI EC headers over the on-flash BL31/FIP and
+    # KODs the device on the next power cycle. The patch keeps the
+    # kernel UBI MTD constrained to the 0x300000+ offset matching
+    # the legacy layout, leaves BL2/FIP/factory bytes untouched,
+    # and re-publishes the factory nvmem-cells from the SPI-NAND
+    # `factory` MTD partition so wmac/gmac0/wan still resolve
+    # their MAC/EEPROM references.
+    dtb_force_legacy_partitions: true
+  - device: openwrt_one
+    imagebuilder: mediatek-filogic
+    profile: openwrt_one
+    arch: aarch64_cortex-a53
+    sdk_arch: aarch64_cortex-a53-openwrt-24.10
+    index_imagebuilder: mediatek-filogic
+    build_initramfs: true
+    fit_arch: arm64
+    fit_kernel_loadaddr: "0x44000000"
+    fit_dts: mt7981b-openwrt-one
+  - device: qemu_x86_64
+    # ImageBuilder identifier for OpenWrt's x86/64 generic profile.
+    # Maps to ghcr.io/openwrt/imagebuilder:x86-64-v<release>.
+    imagebuilder: x86-64
+    profile: generic
+    arch: x86_64
+    sdk_arch: x86_64-openwrt-24.10
+    index_imagebuilder: x86-64
+    # x86-combined ships GRUB + kernel + ext4 rootfs in one MBR-
+    # partitioned disk image. There is no FIT to repack and no
+    # initramfs to wrap; the QEMU boot path runs full disk init.
+    # `build_image.sh` rejects BUILD_INITRAMFS=1 with this format.
+    build_initramfs: false
+    image_format: x86-combined
+    # The QEMU virtual mesh test uses mac80211_hwsim radios + the
+    # `vwifi` daemon to forward frames between QEMU instances.
+    # `kmod-mac80211-hwsim` comes from the official OpenWrt kmods
+    # feed; `vwifi-client` is built from the src-git feed below.
+    #
+    # extra_feeds points to fcefyn-testbed/vwifi_cli_package, our
+    # org fork of javierbrk/vwifi_cli_package that adds the
+    # PKG_MIRROR_HASH required by OpenWrt 24.10+ SDK (without it
+    # gh-action-sdk aborts with "Package HASH check failed").
+    # Once the fix is merged upstream, switch the URL back to
+    # javierbrk/vwifi_cli_package and update the SHA.
+    #
+    # The pin MUST be a full 40-char SHA — GitHub's smart-HTTP
+    # server rejects short prefixes with "couldn't find remote
+    # ref". See docs/ci/firmware-build.md → "Feed cache".
+    packages: >-
+      {{ packages_default }} kmod-mac80211-hwsim wpad-mesh-mbedtls vwifi
+    extra_feeds:
+      - "src-git|vwifi|https://github.com/fcefyn-testbed/vwifi_cli_package.git^8a57be2622053ca75e7e2c8c592cf62b9fad012f"
+    extra_packages:
+      - "vwifi"
+    # The qemu_x86_64 firmware is consumed by the QEMU jobs, not by
+    # the self-hosted lab. test_firmware:false keeps it out of the
+    # physical-test matrix; test_qemu:true opts the device into the
+    # `test-firmware-qemu-single` and `test-mesh-qemu` jobs that
+    # `prepare-matrix` builds from a separate `qemu_test_matrix`.
+    test_firmware: false
+    test_qemu: true
+  - device: bananapi_bpi-r4
+    imagebuilder: mediatek-filogic
+    profile: bananapi_bpi-r4
+    arch: aarch64_cortex-a53
+    sdk_arch: aarch64_cortex-a53-openwrt-24.10
+    index_imagebuilder: mediatek-filogic
+    build_initramfs: true
+    fit_arch: arm64
+    fit_kernel_loadaddr: "0x46000000"
+    fit_dts: mt7988a-bananapi-bpi-r4
+    # WiFi 7 (MT7996/MT7988) on the BPI-R4 ships with an `mt7996e` driver
+    # that is still being stabilized in OpenWrt 24.10.x: when LibreMesh
+    # (lime-config) brings up the AP via hostapd, the driver dereferences
+    # an unaligned pointer in the mt76 tx path and the kernel panics
+    # (mt76-tx phy0 -> "Unable to handle kernel read from unreadable
+    # memory at virtual address 0x1b" -> "Kernel panic - not syncing:
+    # Oops: Fatal exception in interrupt"). After the panic the watchdog
+    # reboots the board and the MT7988 BootROM autoboot menu picks
+    # "Boot recovery system from NAND", which means the next boot is
+    # vanilla OpenWrt SNAPSHOT off the flash (kernel 6.12.66, BusyBox
+    # 1.37.0, banner "OpenWrt SNAPSHOT, r32701-8076376aca") -- not our
+    # TFTP'd LibreMesh -- and libremesh-tests times out waiting for
+    # `root@LiMe-XXXXXX:~#`. Upstream tracking issue:
+    # https://github.com/openwrt/openwrt/issues/21657 (BPI-R4 kernel
+    # warning/panic/ramoops with or without hardware flow offloading).
+    #
+    # Until OpenWrt ships a fixed mt7996e (likely with the next 24.10.x
+    # point release that picks up the mt76 backport), we exclude the
+    # mt7996/mt7988 wifi kmods + firmware blobs from the LibreMesh
+    # image. With no driver loaded, hostapd finds no radios to bring up
+    # and the panic path is unreachable. We leave `wpad-basic-mbedtls`
+    # alone because it's a default mediatek/filogic package and lime-system
+    # / hostapd-common transitively pull it in; absent any wifi PHY,
+    # wpad will simply idle. The resulting firmware still exercises
+    # babeld + batman-adv mesh over the wired DSA ports, which is what
+    # the BPI-R4 testbed cares about (no `wifi` feature is declared in
+    # libremesh-tests/targets/bananapi_bpi-r4.yaml). When the upstream
+    # fix lands, drop these `-` entries to re-enable WiFi 7 in the CI
+    # image.
+    packages: >-
+      lime-system lime-proto-babeld lime-proto-batadv lime-proto-anygw
+      lime-hwd-openwrt-wan lime-hwd-ground-routing lime-app
+      lime-debug lime-docs lime-docs-minimal
+      shared-state-babeld_hosts shared-state-bat_hosts
+      shared-state-dnsmasq_hosts shared-state-nodes_and_links
+      babeld-auto-gw-mode check-date-http batctl-default
+      -dnsmasq -odhcpd-ipv6only
+      -kmod-mt7996e -kmod-mt7996-firmware -kmod-mt7996-firmware-common
+      -kmod-mt7996-233-firmware -mt7988-wo-firmware
+
+# Note on missing devices:
+# `librerouter_librerouter-v1` (ath79/generic, MIPS) is intentionally NOT in
+# this matrix. Its U-Boot 1.1.x fork (no FIT parser) cannot consume any
+# RAM-bootable artifact that ImageBuilder can produce, so neither the
+# `build-image` nor the `test-firmware` job covers it. See
+# docs/followups/imagebuilder_initramfs_limitations.md for the analysis,
+# the build paths we tried and discarded, and the manual workaround for
+# local labgrid runs.
