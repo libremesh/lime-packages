@@ -1816,15 +1816,18 @@ jobs:
   # on the host loopback. This validates the full LibreMesh +
   # batman-adv + babeld stack on x86_64 without any lab hardware.
   #
-  # Runner choice — ubuntu-latest TCG (current) vs self-hosted KVM
-  # (future): GitHub-hosted Linux runners do NOT expose
-  # `/dev/kvm`, so QEMU runs in TCG (full software emulation).
-  # Three concurrent VMs at 512MB each typically fit in the
-  # standard 16GB hosted runner, but boot takes ~3-5x longer than
-  # KVM (~3 min per VM cold-boot). When the lab can host a
-  # self-hosted runner with `/dev/kvm` exposed, switch
-  # `runs-on:` below to `[self-hosted, qemu-kvm]` and add
-  # `enable_kvm: true` to the QEMUDriver in the labgrid env.
+  # Runner choice — ubuntu-latest with KVM acceleration: as of
+  # 2024 GitHub-hosted ubuntu-24.04 runners DO expose `/dev/kvm`
+  # (it is owned root:kvm mode 0660). The runner user is not in
+  # the kvm group by default, so we need an `Enable KVM access`
+  # step that loosens permissions before QEMU opens the device.
+  # Without that step QEMU prints "Could not access KVM kernel
+  # module: Permission denied" and falls through to the SSH-wait
+  # timeout with no actionable diagnostic. Three TCG VMs in
+  # parallel saturate the 4-vCPU runner (~10 min per VM cold
+  # boot), so KVM is mandatory for the 180-240 s budget; the
+  # launcher's _vm_has_kvm() probe (R/W access, not just
+  # existence) keeps it correct on hosts where /dev/kvm is locked.
   test-mesh-qemu:
     name: test-mesh-qemu (${{ matrix.device }} / ${{ matrix.openwrt_release }})
     needs: [prepare-matrix, build-image, test-firmware-qemu-single]
@@ -1860,6 +1863,28 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             qemu-system-x86 ovmf cmake build-essential libnl-3-dev libnl-genl-3-dev pkg-config
+
+      # GitHub-hosted ubuntu runners ship /dev/kvm at root:kvm mode
+      # 0660. The `runner` user is not in the kvm group, so opening
+      # the device fails with EACCES even though the kernel module
+      # is loaded and accessible. Drop a udev rule that re-modes
+      # /dev/kvm to 0666 (world R/W). This is the standard pattern
+      # documented by GitHub for KVM-accelerated workflows; nothing
+      # else on the runner relies on the original permissions.
+      # Reload + trigger so the rule applies immediately to the
+      # already-created device node, not just to subsequent
+      # hot-plugs. The launcher's _vm_has_kvm() probes os.access
+      # on /dev/kvm so a future runner image that locks the device
+      # falls back to TCG cleanly instead of failing opaquely.
+      - name: Enable KVM access for runner user
+        run: |
+          set -euo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm-allow-all.rules >/dev/null
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm
+          test -r /dev/kvm && test -w /dev/kvm
 
       # vwifi-server is the host-side daemon that forwards 802.11
       # frames between mac80211_hwsim radios in the guest VMs over
