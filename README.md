@@ -130,27 +130,15 @@ If you get a `docker: Cannot connect to the Docker daemon at unix:///var/run/doc
 
 If you get a `opkg_download: Check your network settings and connectivity.` error, both check the connectivity and make sure that the firewall rules of your computer allow the container to reach the internet.
 
-##### FCEFyN CI: per-target image build
+##### FCEFyN CI
 
-The repository includes a prototype CI workflow at `.github/workflows/build-firmware.yml` to build one LibreMesh image per target for pull requests and manual runs.
-
-Flow:
-- Stage 1 (`build-feed`): `uses: openwrt/gh-action-sdk@v9` with the explicit `PACKAGES` list computed in `prepare-matrix` from `packages/*/Makefile`, so the SDK installs and compiles every `lime_packages` package one by one (`feeds install -p lime_packages -f $PKG && make -j$(nproc) package/$PKG/compile`). An empty `PACKAGES` would only build what `make defconfig` enables — no `lime-*` / `shared-state-*` package declares `default y/m`, so the feed would come out empty. CI compiles locally because `feed.libremesh.org` for openwrt-24.10 is essentially empty (only `shared-state-async`). The SDK-side `make package/index` step is disabled (`INDEX=0`) because it is brittle in CI; instead CI merges `bin/packages/<arch>/lime_packages/` and `bin/packages/all/lime_packages/` (needed for `PKGARCH:=all` packages like `lime-system`) and generates `Packages` / `Packages.gz` using `ghcr.io/openwrt/imagebuilder` + `/builder/scripts/ipkg-make-index.sh` (with `MKHASH` and `PATH` pointed at `staging_dir/host/bin`, run with `cd /work && ipkg-make-index.sh .` so `Filename:` is a bare basename). The resulting directory is uploaded as `lime-feed-<arch>` and also stored in an `actions/cache` key `lime-feed-v2-<arch>-<openwrt_release>-<feed_hash>`, where `feed_hash` is a deterministic sha256 computed in `prepare-matrix` over **package sources only** (`packages/*/Makefile`, `packages/*/files/**`, `patches`, `src`) plus `tools/ci/build_feed.sh`. It intentionally excludes `.github/ci/targets.yml` and `.github/workflows/build-firmware.yml` so per-target `packages:` overrides and CI-only edits reuse the compiled feed. A `restore-keys` prefix on the same arch+release allows a partial cache hit when the exact hash is new. Bump the `lime-feed-vN-` prefix in the workflow if you change SDK action version or feed assembly incompatibly with old caches.
-- Stage 2 (`build-image`): `docker run ghcr.io/openwrt/imagebuilder` per target; `tools/ci/build_image.sh` prepends a `file://` local feed, then `feed.libremesh.org` as fallback. The script also **deletes** the existing `option check_signature` line from `repositories.conf` (opkg-lede's boolean option parser ignores the value: any `option check_signature` line — with or without an argument like `0` or `false` — sets the flag to 1, so the only way to keep verification off and accept our unsigned local feed is to remove the line entirely). Before invoking `make image`, the script runs an `opkg update` + `opkg list lime-system` pre-flight inside the container; if the local feed is not visible it fails fast (~5 s) instead of after the full `package_install` cycle (~30 min).
-
-This two-stage approach is intentional:
-- catches file-only changes and package metadata changes (`Makefile`, dependencies, new packages),
-- keeps image generation fast by using ImageBuilder instead of full Buildroot.
-
-On the **FCEFyN** self-hosted runner (`testbed-fcefyn`), the same workflow can run **downstream tests** after images are built: per-device `pytest tests/test_libremesh.py`, then a chained **two-node** `tests/test_mesh.py` for `openwrt_one` + `bananapi_bpi-r4`. Fork PRs skip hardware jobs (build-only on GitHub-hosted runners). See [fcefyn_testbed_utils docs](https://fcefyn-testbed.github.io/fcefyn_testbed_utils/diseno/lime-packages-test-flow/).
-
-The target matrix is data-driven in `.github/ci/targets.yml`:
-- add a target by appending one entry under `targets`,
-- keep `arch` aligned with the OpenWrt package architecture for that device,
-- set `sdk_arch` to `<arch>-openwrt-<branch>` (e.g. `aarch64_cortex-a53-openwrt-24.10`) for the SDK image tag consumed by `gh-action-sdk`,
-- set `index_imagebuilder` to any ImageBuilder tag for the same OpenWrt release whose architecture matches `arch` (CI uses it only to run `ipkg-make-index.sh`).
-
-Local reproduction (optional): `tools/ci/build_feed.sh` clones `openwrt/gh-action-sdk` at tag `v9`, runs `docker build` with `ARCH=$SDK_ARCH`, then `docker run` with the same env vars as CI. Cross-arch SDK images may require QEMU/binfmt on the host.
+This fork ships an end-to-end CI workflow at
+`.github/workflows/build-firmware.yml` driven by `.github/ci/targets.yml`.
+It builds LibreMesh images per device-release with `gh-action-sdk` plus
+ImageBuilder, and runs the resulting artifacts on QEMU and on a
+self-hosted lab. Pipeline overview, contributor guide and per-device
+notes:
+<https://fcefyn-testbed.github.io/fcefyn_testbed_utils/diseno/lime-packages-ci-flow/>.
 
 ###### Updating `lime-docs` source pin
 
@@ -183,7 +171,7 @@ When bumping to newer documentation:
        --submodules skip 2>&1; sha256sum /tmp/lime-docs-<PKG_VERSION>.tar.zst'
    ```
 
-   If the GitHub API path succeeds locally and CI exercises the git-clone fallback, the hashes will differ — defer to step 4.
+   If the GitHub API path succeeds locally and CI exercises the git-clone fallback, the hashes will differ - defer to step 4.
 
 ```shell
 mkdir -p ./out-feed ./feed-merged/lime_packages

@@ -5,8 +5,8 @@ the device MAC.
 
 Background
 ==========
-On targets whose `factory` partition lives inside a UBI volume — e.g. the
-Belkin RT3200 / Linksys E8450 (`mt7622-linksys-e8450-ubi.dts`) — `gmac0`
+On targets whose `factory` partition lives inside a UBI volume - e.g. the
+Belkin RT3200 / Linksys E8450 (`mt7622-linksys-e8450-ubi.dts`) - `gmac0`
 and the WAN switch port reference NVMEM cells provided by the UBI factory
 volume:
 
@@ -27,15 +27,15 @@ ethernet driver stays stuck forever:
 
 …and the MT7915E PCIe WiFi card never finishes its DMA-side probe either
 (it shares the same factory volume for its EEPROM cell), leaving LibreMesh
-without LAN, WAN nor WiFi — exactly the failure mode CI run 25004392669 hit
+without LAN, WAN nor WiFi - exactly the failure mode CI run 25004392669 hit
 on `belkin_rt3200_2`.
 
 The kernel resolves MAC addresses via `of_get_mac_address()`, which checks
 DT properties **before** falling back to NVMEM:
 
-    1. mac-address      (DT property)        ← short-circuits NVMEM
-    2. local-mac-address (DT property)        ← short-circuits NVMEM
-    3. nvmem-cells "mac-address"             ← suffers from the bug above
+    1. mac-address      (DT property)        <- short-circuits NVMEM
+    2. local-mac-address (DT property)        <- short-circuits NVMEM
+    3. nvmem-cells "mac-address"             <- suffers from the bug above
 
 So injecting a deterministic `local-mac-address` into each affected node
 makes the `nvmem-cells` reference moot for MAC purposes and unblocks the
@@ -47,7 +47,7 @@ Two node classes are patched in-place:
 
 * `mac@<unit>` whose `compatible = "mediatek,eth-mac"` AND whose existing
   body declares `nvmem-cell-names = "mac-address"`. Matches `gmac0` (and
-  `gmac1` if present) — the SoC GMAC nodes that otherwise stall
+  `gmac1` if present) - the SoC GMAC nodes that otherwise stall
   `mtk_eth_soc.probe`.
 * `port@<unit>` (DSA switch ports) whose body declares
   `nvmem-cell-names = "mac-address"`. Matches the WAN port (`port@4` on
@@ -67,7 +67,7 @@ derived from `<profile>-<role>` via SHA-256. `role` is `gmac<unit>`,
   address space and makes lab traffic easy to filter (`02:*:*:*:*:*` is
   obviously synthetic).
 * The remaining five bytes come from `sha256(seed)[2:12]` so different
-  CI rebuilds of the same board profile produce the same MAC — important
+  CI rebuilds of the same board profile produce the same MAC - important
   for the testbed's DHCP / DNS records that pin per-DUT addresses.
 
 The MAC is written into the DTS as a `[xx xx xx xx xx xx]` byte array,
@@ -86,12 +86,12 @@ the CI job log without contaminating the patched DTS on stdout.
 
 Exit codes
 ==========
-0 — patch attempted; output written. `--require-patch` upgrades
+0 - patch attempted; output written. `--require-patch` upgrades
     "no node matched" to a hard error (exit 2). Useful in CI to fail the
     build loudly if a future DTS rename silently drops the patch instead
     of shipping a still-broken firmware.
-2 — required patch could not be applied (only with `--require-patch`).
-1 — argv / I/O error.
+2 - required patch could not be applied (only with `--require-patch`).
+1 - argv / I/O error.
 
 [openwrt/openwrt#22858]: https://github.com/openwrt/openwrt/issues/22858
 """
@@ -137,7 +137,7 @@ def _find_block_end(text: str, open_brace_idx: int) -> int:
 # insertion point inside the matched block. DTS grammar (and `dtc -I dts`)
 # enforce "properties must precede subnodes" within a node, so anchoring
 # on an existing property guarantees our injected `local-mac-address`
-# also lands in the property zone — even when the node carries
+# also lands in the property zone - even when the node carries
 # subnodes after its property block (e.g. `port@4` on Belkin RT3200's
 # MT7531 DSA switch wraps a `fixed-link {...}` after its
 # `nvmem-cell-names`, which is precisely what made the previous
@@ -185,7 +185,7 @@ def _inject_local_mac(text: str, node_re: re.Pattern, classify,
         if end < 0:
             continue
         block = out[header_start:end]
-        # Skip nodes that already pin a MAC via DT properties — both
+        # Skip nodes that already pin a MAC via DT properties - both
         # `local-mac-address` and `mac-address` short-circuit
         # `of_get_mac_address()` ahead of any NVMEM lookup, so injecting
         # again would be redundant and (for `mac-address`) would silently
@@ -208,7 +208,7 @@ def _inject_local_mac(text: str, node_re: re.Pattern, classify,
             # we'd rather fail loudly than ship a half-patched DTB.
             print(f"[patch_dtb_local_mac] {label} (seed={seed}): "
                   "anchor `nvmem-cell-names = \"mac-address\";` not found "
-                  "on its own line — refusing to guess insertion point",
+                  "on its own line - refusing to guess insertion point",
                   file=sys.stderr)
             continue
         indent = anchor_m.group(1)
@@ -233,7 +233,7 @@ def patch_dts(dts: str, profile: str) -> tuple[str, int]:
     total = 0
 
     # 1) `mac@<unit>` with `compatible = "mediatek,eth-mac"` AND
-    # `nvmem-cell-names = "mac-address"` — the SoC GMAC nodes
+    # `nvmem-cell-names = "mac-address"` - the SoC GMAC nodes
     # `mtk_eth_soc` binds against. The unit address is the GMAC index
     # (0 or 1), folded into the seed so two GMACs on the same board
     # never collide.
@@ -251,7 +251,7 @@ def patch_dts(dts: str, profile: str) -> tuple[str, int]:
     total += c
 
     # 2) DSA switch ports (`port@<unit>`) with
-    # `nvmem-cell-names = "mac-address"` — the WAN port on Belkin
+    # `nvmem-cell-names = "mac-address"` - the WAN port on Belkin
     # RT3200's MT7531 (port@4) is the canonical case; other vendors may
     # ship MAC NVMEM cells on additional ports.
     port_re = re.compile(r"\bport@([0-9a-f]+)\s*\{", re.IGNORECASE)
