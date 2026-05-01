@@ -130,6 +130,83 @@ If you get a `docker: Cannot connect to the Docker daemon at unix:///var/run/doc
 
 If you get a `opkg_download: Check your network settings and connectivity.` error, both check the connectivity and make sure that the firewall rules of your computer allow the container to reach the internet.
 
+##### FCEFyN CI: per-target image build
+
+The repository includes a prototype CI workflow at `.github/workflows/build-firmware.yml` to build one LibreMesh image per target for pull requests and manual runs.
+
+Flow:
+- Stage 1 (`build-feed`): `uses: openwrt/gh-action-sdk@v9` with the explicit `PACKAGES` list computed in `prepare-matrix` from `packages/*/Makefile`, so the SDK installs and compiles every `lime_packages` package one by one (`feeds install -p lime_packages -f $PKG && make -j$(nproc) package/$PKG/compile`). An empty `PACKAGES` would only build what `make defconfig` enables — no `lime-*` / `shared-state-*` package declares `default y/m`, so the feed would come out empty. CI compiles locally because `feed.libremesh.org` for openwrt-24.10 is essentially empty (only `shared-state-async`). The SDK-side `make package/index` step is disabled (`INDEX=0`) because it is brittle in CI; instead CI merges `bin/packages/<arch>/lime_packages/` and `bin/packages/all/lime_packages/` (needed for `PKGARCH:=all` packages like `lime-system`) and generates `Packages` / `Packages.gz` using `ghcr.io/openwrt/imagebuilder` + `/builder/scripts/ipkg-make-index.sh` (with `MKHASH` and `PATH` pointed at `staging_dir/host/bin`, run with `cd /work && ipkg-make-index.sh .` so `Filename:` is a bare basename). The resulting directory is uploaded as `lime-feed-<arch>` and also stored in an `actions/cache` key `lime-feed-v2-<arch>-<openwrt_release>-<feed_hash>`, where `feed_hash` is a deterministic sha256 computed in `prepare-matrix` over **package sources only** (`packages/*/Makefile`, `packages/*/files/**`, `patches`, `src`) plus `tools/ci/build_feed.sh`. It intentionally excludes `.github/ci/targets.yml` and `.github/workflows/build-firmware.yml` so per-target `packages:` overrides and CI-only edits reuse the compiled feed. A `restore-keys` prefix on the same arch+release allows a partial cache hit when the exact hash is new. Bump the `lime-feed-vN-` prefix in the workflow if you change SDK action version or feed assembly incompatibly with old caches.
+- Stage 2 (`build-image`): `docker run ghcr.io/openwrt/imagebuilder` per target; `tools/ci/build_image.sh` prepends a `file://` local feed, then `feed.libremesh.org` as fallback. The script also **deletes** the existing `option check_signature` line from `repositories.conf` (opkg-lede's boolean option parser ignores the value: any `option check_signature` line — with or without an argument like `0` or `false` — sets the flag to 1, so the only way to keep verification off and accept our unsigned local feed is to remove the line entirely). Before invoking `make image`, the script runs an `opkg update` + `opkg list lime-system` pre-flight inside the container; if the local feed is not visible it fails fast (~5 s) instead of after the full `package_install` cycle (~30 min).
+
+This two-stage approach is intentional:
+- catches file-only changes and package metadata changes (`Makefile`, dependencies, new packages),
+- keeps image generation fast by using ImageBuilder instead of full Buildroot.
+
+On the **FCEFyN** self-hosted runner (`testbed-fcefyn`), the same workflow can run **downstream tests** after images are built: per-device `pytest tests/test_libremesh.py`, then a chained **two-node** `tests/test_mesh.py` for `openwrt_one` + `bananapi_bpi-r4`. Fork PRs skip hardware jobs (build-only on GitHub-hosted runners). See [fcefyn_testbed_utils docs](https://fcefyn-testbed.github.io/fcefyn_testbed_utils/diseno/lime-packages-test-flow/).
+
+The target matrix is data-driven in `.github/ci/targets.yml`:
+- add a target by appending one entry under `targets`,
+- keep `arch` aligned with the OpenWrt package architecture for that device,
+- set `sdk_arch` to `<arch>-openwrt-<branch>` (e.g. `aarch64_cortex-a53-openwrt-24.10`) for the SDK image tag consumed by `gh-action-sdk`,
+- set `index_imagebuilder` to any ImageBuilder tag for the same OpenWrt release whose architecture matches `arch` (CI uses it only to run `ipkg-make-index.sh`).
+
+Local reproduction (optional): `tools/ci/build_feed.sh` clones `openwrt/gh-action-sdk` at tag `v9`, runs `docker build` with `ARCH=$SDK_ARCH`, then `docker run` with the same env vars as CI. Cross-arch SDK images may require QEMU/binfmt on the host.
+
+###### Updating `lime-docs` source pin
+
+`packages/lime-docs/Makefile` pins `libremesh/libremesh.github.io` with `PKG_SOURCE_VERSION` (full SHA) and `PKG_MIRROR_HASH` (sha256 of the reproducible `.tar.zst` OpenWrt generates). OpenWrt 24.10 rejects `PKG_MIRROR_HASH:=skip`, and `gh-action-sdk` runs `make package/lime-docs/check`, so both values must stay correct.
+
+When bumping to newer documentation:
+
+1. Choose the upstream commit SHA (e.g. `git ls-remote https://github.com/libremesh/libremesh.github.io refs/heads/main`).
+2. Set `PKG_SOURCE_VERSION` to that full SHA.
+3. Set `PKG_VERSION` to `YYYY.MM.DD~shortsha`, where `YYYY.MM.DD` comes from the docs repo (`git -C <docs-clone> show -s --format=%ad --date=short HEAD | sed 's|-|.|g'`) and `shortsha` is the first 7 hex digits of `PKG_SOURCE_VERSION`.
+4. Get `PKG_MIRROR_HASH` from CI (most reliable). Set the new SHA + version in the Makefile, push, and read the value the workflow logs:
+
+   ```text
+   WARNING: PKG_MIRROR_HASH does not match lime-docs-<PKG_VERSION>.tar.zst hash <sha256>
+   Package HASH check failed
+   ```
+
+   Copy that `<sha256>` into `PKG_MIRROR_HASH`. Reason: OpenWrt's `download.pl` picks one of two paths (GitHub tarball API or `git clone` + `git archive`) depending on mirror state, and each path produces a different tarball. The hash CI prints reflects the path actually taken in CI, which is deterministic per commit once chosen.
+
+5. (Optional, faster) reproduce locally inside the SDK image so the first push succeeds:
+
+   ```shell
+   docker run --rm --user root -v "$PWD:/work" \
+     ghcr.io/openwrt/imagebuilder:mediatek-filogic-v24.10.6 \
+     sh -lc 'cd /tmp && /builder/scripts/dl_github_archive.py \
+       --dl-dir=/tmp --url=https://github.com/libremesh/libremesh.github.io/ \
+       --version=<SHA> --subdir=lime-docs-<PKG_VERSION> \
+       --source=lime-docs-<PKG_VERSION>.tar.zst \
+       --hash=0000000000000000000000000000000000000000000000000000000000000000 \
+       --submodules skip 2>&1; sha256sum /tmp/lime-docs-<PKG_VERSION>.tar.zst'
+   ```
+
+   If the GitHub API path succeeds locally and CI exercises the git-clone fallback, the hashes will differ — defer to step 4.
+
+```shell
+mkdir -p ./out-feed ./feed-merged/lime_packages
+# PACKAGES="" -> compile every package in the lime_packages feed (default).
+tools/ci/build_feed.sh aarch64_cortex-a53 ./out-feed
+# Merge arch-specific + all feed output (lime-system is PKGARCH:=all)
+cp -a ./out-feed/bin/packages/aarch64_cortex-a53/lime_packages/. ./feed-merged/lime_packages/ 2>/dev/null || true
+cp -a ./out-feed/bin/packages/all/lime_packages/. ./feed-merged/lime_packages/ 2>/dev/null || true
+docker run --rm \
+  --user root \
+  -e MKHASH=/builder/staging_dir/host/bin/mkhash \
+  -e PATH=/builder/staging_dir/host/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+  -v "$(pwd)/feed-merged/lime_packages:/work" \
+  ghcr.io/openwrt/imagebuilder:mediatek-filogic-v24.10.6 \
+  sh -lc 'cd /work && /builder/scripts/ipkg-make-index.sh . > Packages && gzip -9nc Packages > Packages.gz'
+PACKAGES="lime-system lime-proto-babeld lime-proto-batadv lime-proto-anygw lime-hwd-openwrt-wan lime-hwd-ground-routing lime-app lime-debug lime-docs lime-docs-minimal shared-state-babeld_hosts shared-state-bat_hosts shared-state-dnsmasq_hosts shared-state-nodes_and_links babeld-auto-gw-mode check-date-http batctl-default -dnsmasq -odhcpd-ipv6only" \
+ARCH=aarch64_cortex-a53 FEED_BRANCH=openwrt-24.10 DEVICE_NAME=linksys_e8450 \
+tools/ci/build_image.sh mediatek-mt7622 linksys_e8450 24.10.6 \
+  ./feed-merged ./out
+```
+
+The workflow produces firmware artifacts with stable names: `firmware-<device>.<ext>`.
+
 ##### Package selection
 
 With the `PACKAGES=` argument, you can specify which packages should be preinstalled inside the image. All packages and packages they depend on will be included in the image. This list of packes will produce an image close to the official ones:
