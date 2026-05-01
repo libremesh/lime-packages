@@ -1317,7 +1317,28 @@ if [[ "${IMAGE_FORMAT}" == "x86-combined" ]]; then
   fi
   combined_img="${combined_gz%.gz}"
   if [[ ! -f "${combined_img}" ]]; then
-    gunzip -kc "${combined_gz}" > "${combined_img}"
+    # gzip prints "decompression OK, trailing garbage ignored" and
+    # exits 2 (warning) on OpenWrt x86 combined images: the recipe
+    # pads the disk image to a partition-aligned boundary AFTER the
+    # gzip stream, so the trailing zeros are not part of the
+    # original payload. The decompressed bytes are correct. Treat
+    # exit codes 0 and 2 as success; 1 (real error) still aborts.
+    set +e
+    gunzip -kc "${combined_gz}" > "${combined_img}" 2>/tmp/gunzip.err
+    gz_rc=$?
+    set -e
+    if [[ $gz_rc -ne 0 && $gz_rc -ne 2 ]]; then
+      echo "::error::gunzip failed on ${combined_gz} (rc=$gz_rc)" >&2
+      cat /tmp/gunzip.err >&2 || true
+      exit 1
+    fi
+    if [[ ! -s "${combined_img}" ]]; then
+      echo "::error::gunzip produced empty output for ${combined_gz}" >&2
+      exit 1
+    fi
+    if [[ -s /tmp/gunzip.err ]]; then
+      echo ">>> gunzip notice (non-fatal): $(cat /tmp/gunzip.err)"
+    fi
   fi
   SOURCE_FILE="${combined_img}"
   echo ">>> Matched x86-combined image: ${combined_gz} -> ${SOURCE_FILE} (gunzip)"
