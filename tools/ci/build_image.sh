@@ -386,6 +386,23 @@ docker run --rm \
       # feeds since openwrt#18032 / PR#18048.
       cat /work/repositories.snippet >> repositories
 
+      # Disable signature verification globally for this make image.
+      # The IB ships .config with CONFIG_SIGNATURE_CHECK=y which makes
+      # the IB Makefile drop --allow-untrusted from its APK invocation.
+      # Our local feed (file:///feed/lime_packages/packages.adb) is
+      # unsigned, and the upstream LibreMesh feed at feed.libremesh.org
+      # is also unsigned today: both fail signature verification and
+      # apk update then bails out with "unable to select packages".
+      # Setting CONFIG_SIGNATURE_CHECK= via .config (preferred over a
+      # make CONFIG_SIGNATURE_CHECK= argument because the IB Makefile
+      # already evaluates it at $(if ...) parse time, before the
+      # command-line override would land for nested sub-makes) keeps
+      # the entire make image honest about every apk repo we add.
+      if grep -q "^CONFIG_SIGNATURE_CHECK=y" .config; then
+        echo ">>> Disabling CONFIG_SIGNATURE_CHECK in IB .config (local apk feed is unsigned)"
+        sed -i "s/^CONFIG_SIGNATURE_CHECK=y/# CONFIG_SIGNATURE_CHECK is not set/" .config
+      fi
+
       echo "=== final repositories ==="
       cat repositories
       echo "=== mounted feed contents (/feed/lime_packages) ==="

@@ -283,7 +283,7 @@ targets:
     packages: >-
       {{ packages_default }} kmod-mac80211-hwsim wpad-mesh-mbedtls vwifi
     extra_feeds:
-      - "src-git|vwifi|https://github.com/fcefyn-testbed/vwifi_cli_package.git^838c44a0611f6de5d2404172a95fcc311c25e95f"
+      - "src-git|vwifi|https://github.com/fcefyn-testbed/vwifi_cli_package.git^8a57be2622053ca75e7e2c8c592cf62b9fad012f"
     extra_packages:
       - "vwifi"
     # The qemu_x86_64 firmware is consumed by the QEMU jobs, not by

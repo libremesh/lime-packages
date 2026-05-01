@@ -197,7 +197,15 @@ jobs:
                   | map(. + {
                       openwrt_release: $rel,
                       feed_branch: ($feeds[$rel] // ""),
-                      packages: (.packages // $pkg),
+                      # Per-target `packages:` strings may contain the
+                      # `{{ packages_default }}` mustache placeholder so a
+                      # target can opt into the global default + its own
+                      # additions without duplicating the long list.
+                      # `gsub` substitutes the placeholder with the
+                      # top-level `.packages` (passed via $pkg). Targets
+                      # that do not set `packages:` keep using $pkg
+                      # verbatim through the `// $pkg` fallback.
+                      packages: ((.packages // $pkg) | gsub("\\{\\{\\s*packages_default\\s*\\}\\}"; $pkg)),
                       build_initramfs: (if (.build_initramfs == true) then "1" else "0" end),
                       image_format: (.image_format // "fit"),
                       fit_arch: (.fit_arch // ""),
