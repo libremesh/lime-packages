@@ -134,10 +134,24 @@ If you get a `opkg_download: Check your network settings and connectivity.` erro
 
 This fork ships an end-to-end CI workflow at
 `.github/workflows/build-firmware.yml` driven by `.github/ci/targets.yml`.
-It builds LibreMesh images per device-release with `gh-action-sdk` plus
-ImageBuilder, and runs the resulting artifacts on QEMU and on a
-self-hosted lab. Pipeline overview, contributor guide and per-device
-notes:
+
+**How it works for contributors:**
+
+When you open a pull request, the CI:
+
+1. **Compiles your changes**: The SDK builds every package under
+   `packages/` from your PR commit, so modifications to `lime-system`,
+   `lime-proto-*`, etc. are included in the resulting `.ipk`/`.apk` feed.
+2. **Builds firmware images**: ImageBuilder creates per-device images
+   that install the packages you just compiled, not upstream packages.
+3. **Runs tests on your code**: The test jobs (`test-firmware`,
+   `test-mesh`, `test-mesh-qemu`) exercise the firmware built from your
+   PR. Failures indicate issues with your changes.
+
+This means you get real hardware and QEMU validation of your actual code
+before merge, not just syntax checks.
+
+Pipeline overview, contributor guide and per-device notes:
 <https://fcefyn-testbed.github.io/fcefyn_testbed_utils/diseno/lime-packages-ci-flow/>.
 
 ###### Updating `lime-docs` source pin
