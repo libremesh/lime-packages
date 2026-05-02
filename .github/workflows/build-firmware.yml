@@ -574,6 +574,21 @@ jobs:
             --lg-colored-steps \
             --log-cli-level=CONSOLE
 
+      - name: Collect lime-report from DUT
+        id: lime-report
+        if: always() && env.LG_PLACE != ''
+        working-directory: libremesh-tests
+        env:
+          LG_PLACE: ${{ env.LG_PLACE }}
+        run: |
+          set +e
+          REPORT=$(uv run labgrid-client -p "$LG_PLACE" ssh -- lime-report.sh -m 2>/dev/null | head -c 50000)
+          if [ -z "$REPORT" ]; then
+            REPORT="_Could not collect lime-report (device unreachable or command not found)._"
+          fi
+          echo "$REPORT" > "$GITHUB_WORKSPACE/lime-report-${{ matrix.place }}.md"
+          echo "collected=true" >> "$GITHUB_OUTPUT"
+
       - name: Poweroff and unlock device
         if: always()
         working-directory: libremesh-tests
@@ -597,6 +612,103 @@ jobs:
           path: ${{ github.workspace }}/logs/${{ matrix.place }}-${{ matrix.openwrt_release }}/*
           if-no-files-found: ignore
           retention-days: 14
+
+      - name: Open or close issue on test result
+        if: always() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const device = "${{ matrix.device }}";
+            const place = "${{ matrix.place }}";
+            const release = "${{ matrix.openwrt_release }}";
+            const issueTitle = `CI healthcheck: ${place} (${release})`;
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const isSuccess = "${{ job.status }}" === "success";
+
+            let limeReport = "_Not collected._";
+            const reportPath = `${process.env.GITHUB_WORKSPACE}/lime-report-${place}.md`;
+            try { limeReport = fs.readFileSync(reportPath, 'utf8').trim(); } catch {}
+
+            const failureBody = [
+              `### CI healthcheck failed`,
+              ``,
+              `| Field | Value |`,
+              `|-------|-------|`,
+              `| **Place** | \`${place}\` |`,
+              `| **Device** | \`${device}\` |`,
+              `| **OpenWrt release** | \`${release}\` |`,
+              `| **Run** | [#${context.runId}](${runUrl}) |`,
+              `| **Date** | ${new Date().toISOString().slice(0,10)} |`,
+              ``,
+              `### lime-report`,
+              ``,
+              `<details><summary>Click to expand</summary>`,
+              ``,
+              '```',
+              limeReport,
+              '```',
+              `</details>`,
+            ].join('\n');
+
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              labels: 'healthcheck',
+              per_page: 100,
+            });
+
+            let testIssue = issues.data.find(i => i.title === issueTitle);
+
+            if (isSuccess) {
+              if (testIssue && testIssue.state === 'open') {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: testIssue.number,
+                  body: `Healthcheck passed on [run #${context.runId}](${runUrl}). Closing.`,
+                });
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: testIssue.number,
+                  state: 'closed',
+                });
+                console.log(`Closed issue #${testIssue.number} (test passed).`);
+              }
+            } else {
+              if (testIssue) {
+                if (testIssue.state === 'closed') {
+                  await github.rest.issues.update({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: testIssue.number,
+                    state: 'open',
+                    body: failureBody,
+                  });
+                  console.log(`Reopened issue #${testIssue.number}.`);
+                } else {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: testIssue.number,
+                    body: failureBody,
+                  });
+                  console.log(`Commented on open issue #${testIssue.number}.`);
+                }
+              } else {
+                const created = await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: issueTitle,
+                  body: failureBody,
+                  labels: ['healthcheck'],
+                });
+                console.log(`Created issue #${created.data.number}.`);
+              }
+            }
 
   # Physical mesh test (N=2 or N=3 places). Runs on workflow_dispatch
   # (-f physical_mesh_count=2|3) and on pull_request (forced N=3).
