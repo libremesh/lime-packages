@@ -1013,6 +1013,8 @@ jobs:
       - test-firmware-qemu-single
       - test-mesh-qemu
     steps:
+      - uses: actions/checkout@v6
+
       - name: Build summary
         env:
           TRIGGER: ${{ github.event_name }}
