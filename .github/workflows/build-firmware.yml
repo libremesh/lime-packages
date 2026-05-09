@@ -23,7 +23,7 @@ on:
         required: false
         default: ""
       physical_single:
-        description: "Run single-node tests on every physical lab DUT (gated on 'physical-lab' environment approval)"
+        description: "Run single-node tests on every physical lab DUT"
         required: false
         type: boolean
         default: false
@@ -476,7 +476,7 @@ jobs:
 
   # Physical single-node test on the self-hosted lab. Runs on schedule
   # (full sweep), on workflow_dispatch -f physical_single=true, and on
-  # pull_request (one random place; gated by the physical-lab environment).
+  # pull_request (every place).
   test-firmware:
     name: test-firmware (${{ matrix.place }} / ${{ matrix.openwrt_release }})
     needs: [prepare-matrix, build-image]
@@ -487,11 +487,6 @@ jobs:
         || github.event_name == 'pull_request'
       )
       && fromJson(needs.prepare-matrix.outputs.test_targets_matrix).include[0] != null
-    # `workflow_dispatch` and `pull_request` gate on the `physical-lab`
-    # environment (configured with required reviewers in Settings).
-    # `schedule` skips the gate so the daily cron is unattended.
-    environment:
-      name: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request') && 'physical-lab' || '' }}
     runs-on: [self-hosted, testbed-fcefyn]
     strategy:
       fail-fast: false
@@ -724,8 +719,6 @@ jobs:
         || github.event_name == 'pull_request'
       )
       && fromJson(needs.prepare-matrix.outputs.mesh_test_matrix).include[0] != null
-    environment:
-      name: physical-lab
     runs-on: [self-hosted, testbed-fcefyn]
     strategy:
       fail-fast: false

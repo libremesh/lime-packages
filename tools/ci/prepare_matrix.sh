@@ -134,20 +134,6 @@ test_targets_matrix="$(
   ' <<< "$targets_matrix"
 )"
 
-# Pull-request runs pick a single random place so a PR consumes one lab slot
-# instead of every place. The full sweep stays available daily and via
-# workflow_dispatch -f physical_single=true.
-if [[ "$EVENT_NAME" == "pull_request" ]]; then
-  total="$(jq '.include | length' <<< "$test_targets_matrix")"
-  if [[ "$total" -gt 0 ]]; then
-    pick="$((RANDOM % total))"
-    test_targets_matrix="$(
-      jq -c --argjson i "$pick" '{include: [.include[$i]]}' <<< "$test_targets_matrix"
-    )"
-    echo "PR trigger: downsampled test_targets_matrix to 1 random entry (index=$pick of $total)"
-  fi
-fi
-
 # mesh_test_matrix: physical mesh shape from MESH_COUNT_INPUT.
 # pull_request cannot pass workflow inputs, so it forces N=3.
 if [[ "$EVENT_NAME" == "pull_request" ]]; then
