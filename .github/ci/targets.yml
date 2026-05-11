@@ -69,11 +69,10 @@ targets:
     index_imagebuilder: x86-64
     build_initramfs: false
     image_format: x86-combined
-    # vwifi packaging fork pinned by full SHA (smart-HTTP rejects short prefixes).
     packages: >-
       {{ packages_default }} kmod-mac80211-hwsim wpad-mesh-mbedtls vwifi
     extra_feeds:
-      - "src-git|vwifi|https://github.com/fcefyn-testbed/vwifi_cli_package.git^8a57be2622053ca75e7e2c8c592cf62b9fad012f"
+      - "src-git|vwifi|https://github.com/javierbrk/openwrt-packages.git^2967862063bd7ad48efee3ffb4529988dfb7a4e1"
     extra_packages:
       - "vwifi"
     test_firmware: false
