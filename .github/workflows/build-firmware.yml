@@ -476,7 +476,9 @@ jobs:
 
   # Physical single-node test on the self-hosted lab. Runs on schedule
   # (full sweep), on workflow_dispatch -f physical_single=true, and on
-  # pull_request (every place).
+  # pull_request (every place; gated by the physical-lab environment).
+  # A single approval here covers test-mesh too (test-mesh needs:
+  # test-firmware, so it waits for this job to finish).
   test-firmware:
     name: test-firmware (${{ matrix.place }} / ${{ matrix.openwrt_release }})
     needs: [prepare-matrix, build-image]
@@ -487,6 +489,8 @@ jobs:
         || github.event_name == 'pull_request'
       )
       && fromJson(needs.prepare-matrix.outputs.test_targets_matrix).include[0] != null
+    environment:
+      name: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request') && 'physical-lab' || '' }}
     runs-on: [self-hosted, testbed-fcefyn]
     strategy:
       fail-fast: false
