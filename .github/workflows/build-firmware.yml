@@ -36,6 +36,11 @@ on:
           - "2"
           - "3"
         default: "0"
+      physical_mesh_pairs:
+        description: "Run 2-node mesh pairs sweep (same as daily cron)"
+        required: false
+        type: boolean
+        default: false
   schedule:
     # Daily lab sweep at 06:00 UTC (03:00 ART).
     - cron: "0 6 * * *"
@@ -803,14 +808,18 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  # Daily walking-chain mesh smoke. Three sequential 2-node pairs share
-  # devices on purpose; max-parallel:1 serialises lab access. Daily cron
-  # only. Place layout is computed in `prepare_matrix.sh::mesh_pairs_matrix`.
+  # Walking-chain mesh smoke. Three sequential 2-node pairs share devices
+  # on purpose; max-parallel:1 serialises lab access. Runs on daily cron
+  # and on workflow_dispatch with physical_mesh_pairs=true.
+  # Place layout is computed in `prepare_matrix.sh::mesh_pairs_matrix`.
   test-mesh-pairs:
     name: test-mesh-pairs (#${{ matrix.pair }} ${{ matrix.place_a }}+${{ matrix.place_b }} / ${{ matrix.openwrt_release }})
     needs: [prepare-matrix, build-image, test-firmware]
     if: |
-      github.event_name == 'schedule'
+      (
+        github.event_name == 'schedule'
+        || (github.event_name == 'workflow_dispatch' && github.event.inputs.physical_mesh_pairs == 'true')
+      )
       && fromJson(needs.prepare-matrix.outputs.mesh_pairs_matrix).include[0] != null
     runs-on: [self-hosted, testbed-fcefyn]
     strategy:
