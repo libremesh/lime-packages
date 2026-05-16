@@ -719,11 +719,18 @@ jobs:
   # Daily mesh coverage comes from `test-mesh-pairs`.
   test-mesh:
     name: test-mesh (N=${{ github.event.inputs.physical_mesh_count || '3 (PR)' }} / ${{ matrix.openwrt_release }})
-    # Serialise after test-firmware: both jobs reserve the same places,
-    # and running them in parallel races on the labgrid lock.
+    # test-firmware is in `needs` only to serialise lab access (both reserve
+    # the same labgrid places). When test-firmware is skipped via dispatch
+    # inputs we still want this job to run, so `if:` uses `!cancelled()` and
+    # checks needs.test-firmware.result != 'failure' instead of relying on
+    # GitHub's default skip-cascade behaviour.
     needs: [prepare-matrix, build-image, test-firmware]
     if: |
-      (
+      !cancelled()
+      && needs.prepare-matrix.result == 'success'
+      && needs.build-image.result == 'success'
+      && needs.test-firmware.result != 'failure'
+      && (
         (github.event_name == 'workflow_dispatch' && github.event.inputs.physical_mesh_count != '0')
         || github.event_name == 'pull_request'
       )
@@ -814,9 +821,18 @@ jobs:
   # Place layout is computed in `prepare_matrix.sh::mesh_pairs_matrix`.
   test-mesh-pairs:
     name: test-mesh-pairs (#${{ matrix.pair }} ${{ matrix.place_a }}+${{ matrix.place_b }} / ${{ matrix.openwrt_release }})
+    # test-firmware is in `needs` only to serialise lab access (both reserve
+    # the same labgrid places). When test-firmware is skipped via dispatch
+    # inputs we still want this job to run, so `if:` uses `!cancelled()` and
+    # checks needs.test-firmware.result != 'failure' instead of relying on
+    # GitHub's default skip-cascade behaviour.
     needs: [prepare-matrix, build-image, test-firmware]
     if: |
-      (
+      !cancelled()
+      && needs.prepare-matrix.result == 'success'
+      && needs.build-image.result == 'success'
+      && needs.test-firmware.result != 'failure'
+      && (
         github.event_name == 'schedule'
         || (github.event_name == 'workflow_dispatch' && github.event.inputs.physical_mesh_pairs == 'true')
       )
