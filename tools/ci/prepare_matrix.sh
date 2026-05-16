@@ -160,9 +160,12 @@ else
 fi
 
 # `mesh_pairs_matrix`: walking-chain matrix used by the daily cron.
-# Three 2-node pairs so each DUT gets at least one mesh validation per day.
-# Excludes belkin_rt3200_1 (in repair). bananapi_bpi-r4 has no WiFi, so it
-# is only paired with openwrt_one (which does wired mesh via VLAN 200).
+# Three 2-node pairs that share devices on purpose so each unit gets two
+# end-to-end mesh validations per day. Excludes belkin_rt3200_1 (in repair).
+# Note: pair #3 pairs bananapi_bpi-r4 (wired-only) with belkin_rt3200_3 on
+# VLAN 200; two identical-model belkins are NOT paired because LibreMesh's
+# primary_mac() derives identity from eth0 and same-model devices in
+# initramfs mode share that MAC, producing a mesh identity collision.
 if [[ "$(jq 'length' <<< "$physical_releases_json")" -eq 0 ]]; then
   mesh_pairs_matrix='{"include":[]}'
 else
@@ -176,7 +179,7 @@ else
         {pair: 2, place_a: "openwrt_one",     device_a: "openwrt_one",
                   place_b: "bananapi_bpi-r4", device_b: "bananapi_bpi-r4",
                   openwrt_release: $rel},
-        {pair: 3, place_a: "belkin_rt3200_2", device_a: "linksys_e8450",
+        {pair: 3, place_a: "bananapi_bpi-r4", device_a: "bananapi_bpi-r4",
                   place_b: "belkin_rt3200_3", device_b: "linksys_e8450",
                   openwrt_release: $rel}
       ]}
