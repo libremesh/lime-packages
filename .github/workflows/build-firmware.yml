@@ -46,8 +46,7 @@ on:
     - cron: "0 6 * * *"
 
 concurrency:
-  # PR/push share a per-ref lane; schedule and workflow_dispatch share a
-  # single lab lane so lab-bound runs never race on a labgrid place.
+  # PR/push share a per-ref lane; schedule and workflow_dispatch share a single lab lane so lab-bound runs never race on a labgrid place.
   group: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'physical-lab-shared' || format('build-firmware-{0}', github.ref) }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
