@@ -1,6 +1,4 @@
 # CI targets for the build-firmware workflow.
-# Field reference and the device-onboarding guide live in the docs site:
-# https://fcefyn-testbed.github.io/fcefyn_testbed_utils/diseno/lime-packages/add-device/
 openwrt_releases:
   - "24.10.6"
   - "25.12.2"
