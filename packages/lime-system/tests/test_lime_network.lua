@@ -35,7 +35,7 @@ describe('LiMe Network tests', function()
         stub(utils, "getBoardAsTable", function () return BOARD end)
         stub(network, "assert_interface_exists", function () return true end)
 
-        assert.is.equal('test0', network.primary_interface())
+        assert.is.equal('lo', network.primary_interface())
     end)
 
     it('test primary_interface auto config', function()
