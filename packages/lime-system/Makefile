@@ -26,7 +26,8 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libremesh.org
   DEPENDS:=+firewall4 +libiwinfo-lua +lua +libuci-lua \
-    +luci-lib-ip +luci-lib-nixio +luci-lib-jsonc +jq +rpcd-mod-rpcsys
+    +luci-lib-ip +luci-lib-nixio +luci-lib-jsonc +jq +rpcd-mod-rpcsys \
+    +rpcd
   PKGARCH:=all
 endef
 
