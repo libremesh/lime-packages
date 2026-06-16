@@ -132,7 +132,7 @@ generate_all() {
     echo "-d    print only device info" && \
     echo "-c    print only main configuration" && \
     echo "-s    print only current status" && \
-    echo "-ss   print only shared-state-async data (publish all and dump all datatypes)" && \
+    echo "-ss   print only shared-state-async data (publish all and dump all datatypes)"
 }
 [ "$1" = "" ] && header && generate_all
 [ "$1" = "-d" ] && header && generate_deviceinfo
