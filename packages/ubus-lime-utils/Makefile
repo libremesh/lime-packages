@@ -7,7 +7,7 @@ define Package/$(PKG_NAME)
   SUBMENU:=3. Applications
   TITLE:=LIbremesh ubus utils module
   DEPENDS:= +lua +libubox-lua +libubus-lua +libuci +lime-system +libiwinfo-lua +cgi-io +rpcd-mod-file \
-	    +luci-lib-jsonc
+	    +luci-lib-jsonc +rpcd
 
   PKGARCH:=all
 endef
