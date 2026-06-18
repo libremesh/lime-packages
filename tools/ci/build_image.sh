@@ -24,11 +24,14 @@ BUILD_INITRAMFS="${BUILD_INITRAMFS:-0}"
 # fit          -> kernel + DTB + CPIO under one FIT config (mediatek/filogic).
 # multi-uimage -> legacy IH_TYPE_MULTI uImage (ath79 boards w/o FIT).
 # x86-combined -> ImageBuilder's GRUB+kernel+ext4 disk image (QEMU x86_64).
+# dual-tftp    -> kernel.bin + rootfs.cpio as TWO separate files (ath79
+#                 LibreRouter: U-Boot TFTP-loads each to a distinct RAM
+#                 address and passes rd_start/rd_size via bootargs).
 IMAGE_FORMAT="${IMAGE_FORMAT:-fit}"
 case "${IMAGE_FORMAT}" in
-  fit|multi-uimage|x86-combined) ;;
+  fit|multi-uimage|x86-combined|dual-tftp) ;;
   *)
-    echo "ERROR: invalid IMAGE_FORMAT=${IMAGE_FORMAT} (expected: fit | multi-uimage | x86-combined)" >&2
+    echo "ERROR: invalid IMAGE_FORMAT=${IMAGE_FORMAT} (expected: fit | multi-uimage | x86-combined | dual-tftp)" >&2
     exit 1
     ;;
 esac
@@ -57,17 +60,21 @@ if [[ "${BUILD_INITRAMFS}" == "1" && "${IMAGE_FORMAT}" == "x86-combined" ]]; the
 fi
 
 if [[ "${BUILD_INITRAMFS}" == "1" ]]; then
-  required_vars=(FIT_ARCH FIT_KERNEL_LOADADDR FIT_CONFIG FIT_BOOTARGS)
-  # ath79 (multi-uimage) fuses the DTB into kernel-bin so FIT_DTS is empty.
-  if [[ "${IMAGE_FORMAT}" == "fit" ]]; then
-    required_vars+=(FIT_DTS)
-  fi
-  for var in "${required_vars[@]}"; do
-    if [[ -z "${!var}" ]]; then
-      echo "ERROR: BUILD_INITRAMFS=1 (IMAGE_FORMAT=${IMAGE_FORMAT}) requires ${var} env var" >&2
-      exit 1
+  # dual-tftp ships kernel.bin + rootfs.cpio as separate TFTP artifacts;
+  # no FIT/uImage repacking, so FIT_* vars are not required.
+  if [[ "${IMAGE_FORMAT}" != "dual-tftp" ]]; then
+    required_vars=(FIT_ARCH FIT_KERNEL_LOADADDR FIT_CONFIG FIT_BOOTARGS)
+    # ath79 (multi-uimage) fuses the DTB into kernel-bin so FIT_DTS is empty.
+    if [[ "${IMAGE_FORMAT}" == "fit" ]]; then
+      required_vars+=(FIT_DTS)
     fi
-  done
+    for var in "${required_vars[@]}"; do
+      if [[ -z "${!var}" ]]; then
+        echo "ERROR: BUILD_INITRAMFS=1 (IMAGE_FORMAT=${IMAGE_FORMAT}) requires ${var} env var" >&2
+        exit 1
+      fi
+    done
+  fi
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -375,7 +382,7 @@ docker run --rm \
             exit 1
           fi
           ;;
-        multi-uimage)
+        multi-uimage|dual-tftp)
           if [ "${kernel_magic}" != "27051956" ]; then
             echo "ERROR: ${KERNEL_BIN} is not a uImage (magic=${kernel_magic})" >&2
             exit 1
@@ -403,7 +410,7 @@ docker run --rm \
         DTC_DIR="$(dirname "${DTC_BIN}")"
         echo "  using dtc      : ${DTC_BIN}"
       else
-        echo "  IMAGE_FORMAT   : multi-uimage (no separate DTB; ath79 appends DTB to kernel-bin)"
+        echo "  IMAGE_FORMAT   : ${IMAGE_FORMAT} (no separate DTB; ath79 appends DTB to kernel-bin)"
       fi
 
       REPACK_DIR="/tmp/initramfs-repack"
@@ -539,7 +546,19 @@ docker run --rm \
       fi
       echo "    ${init_paths}"
 
-      if [ "${IMAGE_FORMAT}" = "fit" ]; then
+      if [ "${IMAGE_FORMAT}" = "dual-tftp" ]; then
+        # dual-tftp (ath79 LibreRouter): ship kernel.bin and rootfs.cpio as
+        # two separate TFTP artifacts. U-Boot loads each to a distinct RAM
+        # address and passes rd_start/rd_size via bootargs so the kernel
+        # mounts the external CPIO as its rootfs.
+        echo "=== dual-tftp: shipping kernel.bin + rootfs.cpio separately ==="
+        KERNEL_OUT="/work/out/openwrt-${OPENWRT_RELEASE:-}-${PROFILE}-kernel.bin"
+        CPIO_OUT="/work/out/openwrt-${OPENWRT_RELEASE:-}-${PROFILE}-rootfs.cpio"
+        cp "${KERNEL_BIN}" "${KERNEL_OUT}"
+        cp "${REPACK_DIR}/rootfs.cpio" "${CPIO_OUT}"
+        echo "  kernel : ${KERNEL_OUT} ($(stat -c%s "${KERNEL_OUT}") bytes)"
+        echo "  rootfs : ${CPIO_OUT} ($(stat -c%s "${CPIO_OUT}") bytes)"
+      elif [ "${IMAGE_FORMAT}" = "fit" ]; then
       PATH="${DTC_DIR}:${PATH}" /builder/scripts/mkits.sh \
         -A "${FIT_ARCH}" \
         -C gzip \
@@ -685,11 +704,31 @@ echo ">>> Manifest validation OK: lime-system + lime-proto-batadv + lime-proto-a
 grep -E '^(lime-|shared-state-|batctl|babeld|firewall4)' "${MANIFEST_FILE}" || true
 
 # Pick the artifact to ship to test-firmware.
+#   dual-tftp            -> kernel.bin + rootfs.cpio (two files).
 #   x86-combined         -> gunzip the *-ext4-combined.img.gz disk image.
 #   BUILD_INITRAMFS=1    -> *-initramfs-libremesh.{itb,uimage} (FIT or multi-uimage).
 #   BUILD_INITRAMFS=0    -> *-squashfs-sysupgrade.{itb,bin} (IPK validation only).
+DEVICE_NAME="${DEVICE_NAME:-${PROFILE}}"
 SOURCE_FILE=""
-if [[ "${IMAGE_FORMAT}" == "x86-combined" ]]; then
+if [[ "${IMAGE_FORMAT}" == "dual-tftp" ]]; then
+  KERNEL_SRC="$(compgen -G "${WORK_DIR}/out/*${PROFILE}-kernel.bin" 2>/dev/null | head -n 1 || true)"
+  CPIO_SRC="$(compgen -G "${WORK_DIR}/out/*${PROFILE}-rootfs.cpio" 2>/dev/null | head -n 1 || true)"
+  if [[ -z "${KERNEL_SRC}" || -z "${CPIO_SRC}" ]]; then
+    echo "::error::dual-tftp: expected *-kernel.bin + *-rootfs.cpio under ${WORK_DIR}/out" >&2
+    find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
+    exit 1
+  fi
+  cp "${KERNEL_SRC}" "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin"
+  cp "${CPIO_SRC}"   "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.cpio"
+  MANIFEST_TARGET="${OUTPUT_DIR}/firmware-${DEVICE_NAME}.manifest"
+  cp "${MANIFEST_FILE}" "${MANIFEST_TARGET}"
+  echo ">>> dual-tftp kernel : ${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin ($(stat -c%s "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin") bytes)"
+  echo ">>> dual-tftp rootfs : ${OUTPUT_DIR}/firmware-${DEVICE_NAME}.cpio ($(stat -c%s "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.cpio") bytes)"
+  echo ">>> Manifest output  : ${MANIFEST_TARGET} ($(wc -l < "${MANIFEST_TARGET}") packages)"
+  echo ">>> Kernel sha256    : $(sha256sum "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin" | cut -d' ' -f1)"
+  echo ">>> CPIO sha256      : $(sha256sum "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.cpio" | cut -d' ' -f1)"
+  exit 0
+elif [[ "${IMAGE_FORMAT}" == "x86-combined" ]]; then
   combined_gz="$(compgen -G "${WORK_DIR}/out/*ext4-combined.img.gz" 2>/dev/null | head -n 1 || true)"
   if [[ -z "${combined_gz}" ]]; then
     echo "::error::IMAGE_FORMAT=x86-combined: no *ext4-combined.img.gz under ${WORK_DIR}/out." >&2
@@ -725,6 +764,7 @@ elif [[ "${BUILD_INITRAMFS}" == "1" ]]; then
   case "${IMAGE_FORMAT}" in
     fit)          initramfs_patterns=("*${PROFILE}-initramfs-libremesh.itb" "*${PROFILE}*initramfs-libremesh.itb") ;;
     multi-uimage) initramfs_patterns=("*${PROFILE}-initramfs-libremesh.uimage" "*${PROFILE}*initramfs-libremesh.uimage") ;;
+    dual-tftp)    echo "BUG: dual-tftp should have exited earlier" >&2; exit 1 ;;
   esac
   for pattern in "${initramfs_patterns[@]}"; do
     match="$(compgen -G "${WORK_DIR}/out/${pattern}" 2>/dev/null | head -n 1 || true)"
@@ -759,7 +799,6 @@ else
   fi
 fi
 
-DEVICE_NAME="${DEVICE_NAME:-${PROFILE}}"
 if [[ "${IMAGE_FORMAT}" == "x86-combined" ]]; then
   EXTENSION="img"
 else

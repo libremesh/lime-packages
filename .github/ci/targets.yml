@@ -77,6 +77,18 @@ targets:
     test_firmware: false
     test_qemu: true
 
+  - device: librerouter_v1
+    imagebuilder: ath79-generic
+    profile: librerouter_librerouter-v1
+    arch: mips_24kc
+    sdk_arch: mips_24kc-openwrt-24.10
+    index_imagebuilder: ath79-generic
+    build_initramfs: true
+    image_format: dual-tftp
+    test_firmware: true
+    test_places:
+      - librerouter_1
+
   - device: bananapi_bpi-r4
     imagebuilder: mediatek-filogic
     profile: bananapi_bpi-r4
