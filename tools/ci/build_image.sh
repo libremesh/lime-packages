@@ -495,6 +495,16 @@ docker run --rm \
       printf "%s\n" "${BUILD_MARKER}" > "${ROOT_DIR}/etc/lime-build-marker"
       echo "  build marker   : ${BUILD_MARKER}"
 
+      # Kernel mountpoints: preinit needs /proc, /sys, /dev, /tmp to exist
+      # as directories so mount -t proc/sysfs/tmpfs succeeds. base-files
+      # creates them, but verify anyway.
+      for mp in proc sys dev tmp; do
+        if [ ! -d "${ROOT_DIR}/${mp}" ]; then
+          echo "  creating missing /${mp} mountpoint"
+          mkdir -p "${ROOT_DIR}/${mp}"
+        fi
+      done
+
       # /init symlink: kernel falls through to prepare_namespace() without it.
       ln -sf /sbin/init "${ROOT_DIR}/init"
       echo "  /init symlink  :"
