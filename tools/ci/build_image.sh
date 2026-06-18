@@ -24,9 +24,9 @@ BUILD_INITRAMFS="${BUILD_INITRAMFS:-0}"
 # fit          -> kernel + DTB + CPIO under one FIT config (mediatek/filogic).
 # multi-uimage -> legacy IH_TYPE_MULTI uImage (ath79 boards w/o FIT).
 # x86-combined -> ImageBuilder's GRUB+kernel+ext4 disk image (QEMU x86_64).
-# dual-tftp    -> kernel.bin + rootfs.cpio as TWO separate files (ath79
-#                 LibreRouter: U-Boot TFTP-loads each to a distinct RAM
-#                 address and passes rd_start/rd_size via bootargs).
+# dual-tftp    -> kernel.bin + rootfs.uimage (uImage-wrapped CPIO) as TWO
+#                 separate files (ath79 LibreRouter: U-Boot TFTP-loads each
+#                 to a distinct RAM address; `bootm <kernel> <ramdisk>`).
 IMAGE_FORMAT="${IMAGE_FORMAT:-fit}"
 case "${IMAGE_FORMAT}" in
   fit|multi-uimage|x86-combined|dual-tftp) ;;
@@ -547,17 +547,23 @@ docker run --rm \
       echo "    ${init_paths}"
 
       if [ "${IMAGE_FORMAT}" = "dual-tftp" ]; then
-        # dual-tftp (ath79 LibreRouter): ship kernel.bin and rootfs.cpio as
-        # two separate TFTP artifacts. U-Boot loads each to a distinct RAM
-        # address and passes rd_start/rd_size via bootargs so the kernel
-        # mounts the external CPIO as its rootfs.
-        echo "=== dual-tftp: shipping kernel.bin + rootfs.cpio separately ==="
+        # dual-tftp (ath79 LibreRouter): ship kernel.bin and a ramdisk
+        # uImage wrapping the rootfs CPIO. U-Boot TFTP-loads each to a
+        # distinct RAM address; `bootm <kernel> <ramdisk>` makes U-Boot
+        # pass initrd_start/initrd_end to the kernel natively via the
+        # MIPS boot params, bypassing any CONFIG_CMDLINE_OVERRIDE issue.
+        echo "=== dual-tftp: shipping kernel.bin + rootfs ramdisk uImage ==="
         KERNEL_OUT="/work/out/openwrt-${OPENWRT_RELEASE:-}-${PROFILE}-kernel.bin"
-        CPIO_OUT="/work/out/openwrt-${OPENWRT_RELEASE:-}-${PROFILE}-rootfs.cpio"
+        RAMDISK_OUT="/work/out/openwrt-${OPENWRT_RELEASE:-}-${PROFILE}-rootfs.uimage"
         cp "${KERNEL_BIN}" "${KERNEL_OUT}"
-        cp "${REPACK_DIR}/rootfs.cpio" "${CPIO_OUT}"
-        echo "  kernel : ${KERNEL_OUT} ($(stat -c%s "${KERNEL_OUT}") bytes)"
-        echo "  rootfs : ${CPIO_OUT} ($(stat -c%s "${CPIO_OUT}") bytes)"
+        /builder/staging_dir/host/bin/mkimage \
+          -A mips -O linux -T ramdisk -C none \
+          -a 0 -e 0 \
+          -n "LibreMesh rootfs ${PROFILE}" \
+          -d "${REPACK_DIR}/rootfs.cpio" "${RAMDISK_OUT}"
+        echo "  kernel  : ${KERNEL_OUT} ($(stat -c%s "${KERNEL_OUT}") bytes)"
+        echo "  ramdisk : ${RAMDISK_OUT} ($(stat -c%s "${RAMDISK_OUT}") bytes)"
+        /builder/staging_dir/host/bin/mkimage -l "${RAMDISK_OUT}" || true
       elif [ "${IMAGE_FORMAT}" = "fit" ]; then
       PATH="${DTC_DIR}:${PATH}" /builder/scripts/mkits.sh \
         -A "${FIT_ARCH}" \
@@ -712,21 +718,21 @@ DEVICE_NAME="${DEVICE_NAME:-${PROFILE}}"
 SOURCE_FILE=""
 if [[ "${IMAGE_FORMAT}" == "dual-tftp" ]]; then
   KERNEL_SRC="$(compgen -G "${WORK_DIR}/out/*${PROFILE}-kernel.bin" 2>/dev/null | head -n 1 || true)"
-  CPIO_SRC="$(compgen -G "${WORK_DIR}/out/*${PROFILE}-rootfs.cpio" 2>/dev/null | head -n 1 || true)"
-  if [[ -z "${KERNEL_SRC}" || -z "${CPIO_SRC}" ]]; then
-    echo "::error::dual-tftp: expected *-kernel.bin + *-rootfs.cpio under ${WORK_DIR}/out" >&2
+  RAMDISK_SRC="$(compgen -G "${WORK_DIR}/out/*${PROFILE}-rootfs.uimage" 2>/dev/null | head -n 1 || true)"
+  if [[ -z "${KERNEL_SRC}" || -z "${RAMDISK_SRC}" ]]; then
+    echo "::error::dual-tftp: expected *-kernel.bin + *-rootfs.uimage under ${WORK_DIR}/out" >&2
     find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
     exit 1
   fi
-  cp "${KERNEL_SRC}" "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin"
-  cp "${CPIO_SRC}"   "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.cpio"
+  cp "${KERNEL_SRC}"  "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin"
+  cp "${RAMDISK_SRC}" "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.uimage"
   MANIFEST_TARGET="${OUTPUT_DIR}/firmware-${DEVICE_NAME}.manifest"
   cp "${MANIFEST_FILE}" "${MANIFEST_TARGET}"
-  echo ">>> dual-tftp kernel : ${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin ($(stat -c%s "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin") bytes)"
-  echo ">>> dual-tftp rootfs : ${OUTPUT_DIR}/firmware-${DEVICE_NAME}.cpio ($(stat -c%s "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.cpio") bytes)"
-  echo ">>> Manifest output  : ${MANIFEST_TARGET} ($(wc -l < "${MANIFEST_TARGET}") packages)"
-  echo ">>> Kernel sha256    : $(sha256sum "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin" | cut -d' ' -f1)"
-  echo ">>> CPIO sha256      : $(sha256sum "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.cpio" | cut -d' ' -f1)"
+  echo ">>> dual-tftp kernel  : ${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin ($(stat -c%s "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin") bytes)"
+  echo ">>> dual-tftp ramdisk : ${OUTPUT_DIR}/firmware-${DEVICE_NAME}.uimage ($(stat -c%s "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.uimage") bytes)"
+  echo ">>> Manifest output   : ${MANIFEST_TARGET} ($(wc -l < "${MANIFEST_TARGET}") packages)"
+  echo ">>> Kernel sha256     : $(sha256sum "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin" | cut -d' ' -f1)"
+  echo ">>> Ramdisk sha256    : $(sha256sum "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.uimage" | cut -d' ' -f1)"
   exit 0
 elif [[ "${IMAGE_FORMAT}" == "x86-combined" ]]; then
   combined_gz="$(compgen -G "${WORK_DIR}/out/*ext4-combined.img.gz" 2>/dev/null | head -n 1 || true)"

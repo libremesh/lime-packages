@@ -54,23 +54,24 @@ for f in "${files[@]}"; do
 done
 
 # Dual-TFTP mode: build_image.sh emits firmware-<device>.bin (kernel) and
-# firmware-<device>.cpio (rootfs) for devices that need two TFTP loads.
+# firmware-<device>.uimage (ramdisk-wrapped rootfs CPIO) for devices that
+# need two TFTP loads + `bootm <kernel> <ramdisk>`.
 KERNEL_FILE="$STAGE/firmware-$PLACE.bin"
-CPIO_FILE="$STAGE/firmware-$PLACE.cpio"
+RAMDISK_FILE="$STAGE/firmware-$PLACE.uimage"
 
-if [[ -f "$KERNEL_FILE" && -f "$CPIO_FILE" ]]; then
-  echo "=== dual-tftp mode: kernel + rootfs CPIO ==="
+if [[ -f "$KERNEL_FILE" && -f "$RAMDISK_FILE" ]]; then
+  echo "=== dual-tftp mode: kernel + rootfs ramdisk uImage ==="
   echo "LG_IMAGE=$KERNEL_FILE" >> "${GITHUB_ENV:-/dev/null}"
-  echo "LG_IMAGE_INITRD=$CPIO_FILE" >> "${GITHUB_ENV:-/dev/null}"
+  echo "LG_IMAGE_INITRD=$RAMDISK_FILE" >> "${GITHUB_ENV:-/dev/null}"
   echo "Staged LG_IMAGE=$KERNEL_FILE"
-  echo "Staged LG_IMAGE_INITRD=$CPIO_FILE"
+  echo "Staged LG_IMAGE_INITRD=$RAMDISK_FILE"
   echo "=== firmware sanity ==="
   file "$KERNEL_FILE" || true
   ls -la "$KERNEL_FILE"
   sha256sum "$KERNEL_FILE"
-  file "$CPIO_FILE" || true
-  ls -la "$CPIO_FILE"
-  sha256sum "$CPIO_FILE"
+  file "$RAMDISK_FILE" || true
+  ls -la "$RAMDISK_FILE"
+  sha256sum "$RAMDISK_FILE"
 else
   # Single-image mode (FIT, multi-uimage, x86-combined, sysupgrade).
   image_candidates=("$STAGE"/firmware-"$PLACE".*)
