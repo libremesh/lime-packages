@@ -505,16 +505,28 @@ docker run --rm \
         fi
       done
 
-      # /init symlink: kernel falls through to prepare_namespace() without it.
-      ln -sf /sbin/init "${ROOT_DIR}/init"
-      echo "  /init symlink  :"
-      ls -la "${ROOT_DIR}/init"
-      if [ ! -L "${ROOT_DIR}/init" ]; then
-        echo "ERROR: ${ROOT_DIR}/init is not a symlink after ln -sf" >&2
+      # /init script: the kernel runs /init as PID 1. For initramfs boots
+      # this MUST export INITRAMFS=1 so that /lib/preinit/80_mount_root
+      # skips do_mount_root (which would pivot_root into the flash overlay
+      # and break /proc). This matches OpenWrt upstream target/linux/generic/
+      # other-files/init. Without it, mount_root finds rootfs_data on flash,
+      # pivot_root fails on rootfs, ramoverlay loses /proc, lime-config
+      # never runs, and the device boots as root@(none).
+      rm -f "${ROOT_DIR}/init"
+      cat > "${ROOT_DIR}/init" <<INITEOF
+#!/bin/sh
+export INITRAMFS=1
+exec /sbin/init
+INITEOF
+      chmod 0755 "${ROOT_DIR}/init"
+      echo "  /init script   :"
+      cat "${ROOT_DIR}/init"
+      if [ ! -x "${ROOT_DIR}/init" ]; then
+        echo "ERROR: ${ROOT_DIR}/init is not executable" >&2
         exit 1
       fi
       if [ ! -e "${ROOT_DIR}/sbin/init" ] && [ ! -L "${ROOT_DIR}/sbin/init" ]; then
-        echo "ERROR: ${ROOT_DIR}/sbin/init does not exist; /init -> /sbin/init will dangle" >&2
+        echo "ERROR: ${ROOT_DIR}/sbin/init does not exist; /init exec will fail" >&2
         ls -la "${ROOT_DIR}/sbin/" 2>/dev/null | head -20 >&2 || true
         exit 1
       fi
