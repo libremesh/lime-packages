@@ -573,7 +573,7 @@ INITEOF
         # uImage wrapping the rootfs CPIO. U-Boot TFTP-loads each to a
         # distinct RAM address; `bootm <kernel> <ramdisk>` makes U-Boot
         # pass initrd_start/initrd_end to the kernel natively via the
-        # MIPS boot params, bypassing any CONFIG_CMDLINE_OVERRIDE issue.
+        # MIPS boot params (not via kernel command line / DT bootargs).
         echo "=== dual-tftp: shipping kernel.bin + rootfs ramdisk uImage ==="
         KERNEL_OUT="/work/out/openwrt-${OPENWRT_RELEASE:-}-${PROFILE}-kernel.bin"
         RAMDISK_OUT="/work/out/openwrt-${OPENWRT_RELEASE:-}-${PROFILE}-rootfs.uimage"
