@@ -24,11 +24,14 @@ BUILD_INITRAMFS="${BUILD_INITRAMFS:-0}"
 # fit          -> kernel + DTB + CPIO under one FIT config (mediatek/filogic).
 # multi-uimage -> legacy IH_TYPE_MULTI uImage (ath79 boards w/o FIT).
 # x86-combined -> ImageBuilder's GRUB+kernel+ext4 disk image (QEMU x86_64).
+# dual-tftp    -> kernel.bin + rootfs.uimage (uImage-wrapped CPIO) as TWO
+#                 separate files (ath79 LibreRouter: U-Boot TFTP-loads each
+#                 to a distinct RAM address; `bootm <kernel> <ramdisk>`).
 IMAGE_FORMAT="${IMAGE_FORMAT:-fit}"
 case "${IMAGE_FORMAT}" in
-  fit|multi-uimage|x86-combined) ;;
+  fit|multi-uimage|x86-combined|dual-tftp) ;;
   *)
-    echo "ERROR: invalid IMAGE_FORMAT=${IMAGE_FORMAT} (expected: fit | multi-uimage | x86-combined)" >&2
+    echo "ERROR: invalid IMAGE_FORMAT=${IMAGE_FORMAT} (expected: fit | multi-uimage | x86-combined | dual-tftp)" >&2
     exit 1
     ;;
 esac
@@ -57,17 +60,21 @@ if [[ "${BUILD_INITRAMFS}" == "1" && "${IMAGE_FORMAT}" == "x86-combined" ]]; the
 fi
 
 if [[ "${BUILD_INITRAMFS}" == "1" ]]; then
-  required_vars=(FIT_ARCH FIT_KERNEL_LOADADDR FIT_CONFIG FIT_BOOTARGS)
-  # ath79 (multi-uimage) fuses the DTB into kernel-bin so FIT_DTS is empty.
-  if [[ "${IMAGE_FORMAT}" == "fit" ]]; then
-    required_vars+=(FIT_DTS)
-  fi
-  for var in "${required_vars[@]}"; do
-    if [[ -z "${!var}" ]]; then
-      echo "ERROR: BUILD_INITRAMFS=1 (IMAGE_FORMAT=${IMAGE_FORMAT}) requires ${var} env var" >&2
-      exit 1
+  # dual-tftp ships kernel.bin + rootfs.cpio as separate TFTP artifacts;
+  # no FIT/uImage repacking, so FIT_* vars are not required.
+  if [[ "${IMAGE_FORMAT}" != "dual-tftp" ]]; then
+    required_vars=(FIT_ARCH FIT_KERNEL_LOADADDR FIT_CONFIG FIT_BOOTARGS)
+    # ath79 (multi-uimage) fuses the DTB into kernel-bin so FIT_DTS is empty.
+    if [[ "${IMAGE_FORMAT}" == "fit" ]]; then
+      required_vars+=(FIT_DTS)
     fi
-  done
+    for var in "${required_vars[@]}"; do
+      if [[ -z "${!var}" ]]; then
+        echo "ERROR: BUILD_INITRAMFS=1 (IMAGE_FORMAT=${IMAGE_FORMAT}) requires ${var} env var" >&2
+        exit 1
+      fi
+    done
+  fi
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -375,7 +382,7 @@ docker run --rm \
             exit 1
           fi
           ;;
-        multi-uimage)
+        multi-uimage|dual-tftp)
           if [ "${kernel_magic}" != "27051956" ]; then
             echo "ERROR: ${KERNEL_BIN} is not a uImage (magic=${kernel_magic})" >&2
             exit 1
@@ -403,7 +410,7 @@ docker run --rm \
         DTC_DIR="$(dirname "${DTC_BIN}")"
         echo "  using dtc      : ${DTC_BIN}"
       else
-        echo "  IMAGE_FORMAT   : multi-uimage (no separate DTB; ath79 appends DTB to kernel-bin)"
+        echo "  IMAGE_FORMAT   : ${IMAGE_FORMAT} (no separate DTB; ath79 appends DTB to kernel-bin)"
       fi
 
       REPACK_DIR="/tmp/initramfs-repack"
@@ -488,16 +495,38 @@ docker run --rm \
       printf "%s\n" "${BUILD_MARKER}" > "${ROOT_DIR}/etc/lime-build-marker"
       echo "  build marker   : ${BUILD_MARKER}"
 
-      # /init symlink: kernel falls through to prepare_namespace() without it.
-      ln -sf /sbin/init "${ROOT_DIR}/init"
-      echo "  /init symlink  :"
-      ls -la "${ROOT_DIR}/init"
-      if [ ! -L "${ROOT_DIR}/init" ]; then
-        echo "ERROR: ${ROOT_DIR}/init is not a symlink after ln -sf" >&2
+      # Kernel mountpoints: preinit needs /proc, /sys, /dev, /tmp to exist
+      # as directories so mount -t proc/sysfs/tmpfs succeeds. base-files
+      # creates them, but verify anyway.
+      for mp in proc sys dev tmp; do
+        if [ ! -d "${ROOT_DIR}/${mp}" ]; then
+          echo "  creating missing /${mp} mountpoint"
+          mkdir -p "${ROOT_DIR}/${mp}"
+        fi
+      done
+
+      # /init script: the kernel runs /init as PID 1. For initramfs boots
+      # this MUST export INITRAMFS=1 so that /lib/preinit/80_mount_root
+      # skips do_mount_root (which would pivot_root into the flash overlay
+      # and break /proc). This matches OpenWrt upstream target/linux/generic/
+      # other-files/init. Without it, mount_root finds rootfs_data on flash,
+      # pivot_root fails on rootfs, ramoverlay loses /proc, lime-config
+      # never runs, and the device boots as root@(none).
+      rm -f "${ROOT_DIR}/init"
+      cat > "${ROOT_DIR}/init" <<INITEOF
+#!/bin/sh
+export INITRAMFS=1
+exec /sbin/init
+INITEOF
+      chmod 0755 "${ROOT_DIR}/init"
+      echo "  /init script   :"
+      cat "${ROOT_DIR}/init"
+      if [ ! -x "${ROOT_DIR}/init" ]; then
+        echo "ERROR: ${ROOT_DIR}/init is not executable" >&2
         exit 1
       fi
       if [ ! -e "${ROOT_DIR}/sbin/init" ] && [ ! -L "${ROOT_DIR}/sbin/init" ]; then
-        echo "ERROR: ${ROOT_DIR}/sbin/init does not exist; /init -> /sbin/init will dangle" >&2
+        echo "ERROR: ${ROOT_DIR}/sbin/init does not exist; /init exec will fail" >&2
         ls -la "${ROOT_DIR}/sbin/" 2>/dev/null | head -20 >&2 || true
         exit 1
       fi
@@ -539,7 +568,25 @@ docker run --rm \
       fi
       echo "    ${init_paths}"
 
-      if [ "${IMAGE_FORMAT}" = "fit" ]; then
+      if [ "${IMAGE_FORMAT}" = "dual-tftp" ]; then
+        # dual-tftp (ath79 LibreRouter): ship kernel.bin and a ramdisk
+        # uImage wrapping the rootfs CPIO. U-Boot TFTP-loads each to a
+        # distinct RAM address; `bootm <kernel> <ramdisk>` makes U-Boot
+        # pass initrd_start/initrd_end to the kernel natively via the
+        # MIPS boot params, bypassing any CONFIG_CMDLINE_OVERRIDE issue.
+        echo "=== dual-tftp: shipping kernel.bin + rootfs ramdisk uImage ==="
+        KERNEL_OUT="/work/out/openwrt-${OPENWRT_RELEASE:-}-${PROFILE}-kernel.bin"
+        RAMDISK_OUT="/work/out/openwrt-${OPENWRT_RELEASE:-}-${PROFILE}-rootfs.uimage"
+        cp "${KERNEL_BIN}" "${KERNEL_OUT}"
+        /builder/staging_dir/host/bin/mkimage \
+          -A mips -O linux -T ramdisk -C none \
+          -a 0 -e 0 \
+          -n "LibreMesh rootfs ${PROFILE}" \
+          -d "${REPACK_DIR}/rootfs.cpio" "${RAMDISK_OUT}"
+        echo "  kernel  : ${KERNEL_OUT} ($(stat -c%s "${KERNEL_OUT}") bytes)"
+        echo "  ramdisk : ${RAMDISK_OUT} ($(stat -c%s "${RAMDISK_OUT}") bytes)"
+        /builder/staging_dir/host/bin/mkimage -l "${RAMDISK_OUT}" || true
+      elif [ "${IMAGE_FORMAT}" = "fit" ]; then
       PATH="${DTC_DIR}:${PATH}" /builder/scripts/mkits.sh \
         -A "${FIT_ARCH}" \
         -C gzip \
@@ -685,11 +732,31 @@ echo ">>> Manifest validation OK: lime-system + lime-proto-batadv + lime-proto-a
 grep -E '^(lime-|shared-state-|batctl|babeld|firewall4)' "${MANIFEST_FILE}" || true
 
 # Pick the artifact to ship to test-firmware.
+#   dual-tftp            -> kernel.bin + rootfs.cpio (two files).
 #   x86-combined         -> gunzip the *-ext4-combined.img.gz disk image.
 #   BUILD_INITRAMFS=1    -> *-initramfs-libremesh.{itb,uimage} (FIT or multi-uimage).
 #   BUILD_INITRAMFS=0    -> *-squashfs-sysupgrade.{itb,bin} (IPK validation only).
+DEVICE_NAME="${DEVICE_NAME:-${PROFILE}}"
 SOURCE_FILE=""
-if [[ "${IMAGE_FORMAT}" == "x86-combined" ]]; then
+if [[ "${IMAGE_FORMAT}" == "dual-tftp" ]]; then
+  KERNEL_SRC="$(compgen -G "${WORK_DIR}/out/*${PROFILE}-kernel.bin" 2>/dev/null | head -n 1 || true)"
+  RAMDISK_SRC="$(compgen -G "${WORK_DIR}/out/*${PROFILE}-rootfs.uimage" 2>/dev/null | head -n 1 || true)"
+  if [[ -z "${KERNEL_SRC}" || -z "${RAMDISK_SRC}" ]]; then
+    echo "::error::dual-tftp: expected *-kernel.bin + *-rootfs.uimage under ${WORK_DIR}/out" >&2
+    find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
+    exit 1
+  fi
+  cp "${KERNEL_SRC}"  "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin"
+  cp "${RAMDISK_SRC}" "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.uimage"
+  MANIFEST_TARGET="${OUTPUT_DIR}/firmware-${DEVICE_NAME}.manifest"
+  cp "${MANIFEST_FILE}" "${MANIFEST_TARGET}"
+  echo ">>> dual-tftp kernel  : ${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin ($(stat -c%s "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin") bytes)"
+  echo ">>> dual-tftp ramdisk : ${OUTPUT_DIR}/firmware-${DEVICE_NAME}.uimage ($(stat -c%s "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.uimage") bytes)"
+  echo ">>> Manifest output   : ${MANIFEST_TARGET} ($(wc -l < "${MANIFEST_TARGET}") packages)"
+  echo ">>> Kernel sha256     : $(sha256sum "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin" | cut -d' ' -f1)"
+  echo ">>> Ramdisk sha256    : $(sha256sum "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.uimage" | cut -d' ' -f1)"
+  exit 0
+elif [[ "${IMAGE_FORMAT}" == "x86-combined" ]]; then
   combined_gz="$(compgen -G "${WORK_DIR}/out/*ext4-combined.img.gz" 2>/dev/null | head -n 1 || true)"
   if [[ -z "${combined_gz}" ]]; then
     echo "::error::IMAGE_FORMAT=x86-combined: no *ext4-combined.img.gz under ${WORK_DIR}/out." >&2
@@ -725,6 +792,7 @@ elif [[ "${BUILD_INITRAMFS}" == "1" ]]; then
   case "${IMAGE_FORMAT}" in
     fit)          initramfs_patterns=("*${PROFILE}-initramfs-libremesh.itb" "*${PROFILE}*initramfs-libremesh.itb") ;;
     multi-uimage) initramfs_patterns=("*${PROFILE}-initramfs-libremesh.uimage" "*${PROFILE}*initramfs-libremesh.uimage") ;;
+    dual-tftp)    echo "BUG: dual-tftp should have exited earlier" >&2; exit 1 ;;
   esac
   for pattern in "${initramfs_patterns[@]}"; do
     match="$(compgen -G "${WORK_DIR}/out/${pattern}" 2>/dev/null | head -n 1 || true)"
@@ -759,7 +827,6 @@ else
   fi
 fi
 
-DEVICE_NAME="${DEVICE_NAME:-${PROFILE}}"
 if [[ "${IMAGE_FORMAT}" == "x86-combined" ]]; then
   EXTENSION="img"
 else

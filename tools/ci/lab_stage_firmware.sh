@@ -53,27 +53,48 @@ for f in "${files[@]}"; do
   cp -a "$f" "$STAGE/${dst_prefix}${suffix}"
 done
 
-# Pick the bootable image (skip .manifest/.sha256/.txt/.log sidecars).
-image_candidates=("$STAGE"/firmware-"$PLACE".*)
-LG_IMAGE=""
-for f in "${image_candidates[@]}"; do
-  case "$f" in
-    *.manifest|*.sha256|*.txt|*.log) ;;
-    *) LG_IMAGE="$f"; break ;;
-  esac
-done
-if [[ -z "$LG_IMAGE" ]]; then
-  echo "::error::No bootable firmware artifact under $STAGE (only sidecars?)"
-  ls -la "$STAGE" || true
-  exit 1
-fi
+# Dual-TFTP mode: build_image.sh emits firmware-<device>.bin (kernel) and
+# firmware-<device>.uimage (ramdisk-wrapped rootfs CPIO) for devices that
+# need two TFTP loads + `bootm <kernel> <ramdisk>`.
+KERNEL_FILE="$STAGE/firmware-$PLACE.bin"
+RAMDISK_FILE="$STAGE/firmware-$PLACE.uimage"
 
-echo "LG_IMAGE=$LG_IMAGE" >> "${GITHUB_ENV:-/dev/null}"
-echo "Staged LG_IMAGE=$LG_IMAGE"
-echo "=== firmware sanity ==="
-file "$LG_IMAGE" || true
-ls -la "$LG_IMAGE"
-sha256sum "$LG_IMAGE"
+if [[ -f "$KERNEL_FILE" && -f "$RAMDISK_FILE" ]]; then
+  echo "=== dual-tftp mode: kernel + rootfs ramdisk uImage ==="
+  echo "LG_IMAGE=$KERNEL_FILE" >> "${GITHUB_ENV:-/dev/null}"
+  echo "LG_IMAGE_INITRD=$RAMDISK_FILE" >> "${GITHUB_ENV:-/dev/null}"
+  echo "Staged LG_IMAGE=$KERNEL_FILE"
+  echo "Staged LG_IMAGE_INITRD=$RAMDISK_FILE"
+  echo "=== firmware sanity ==="
+  file "$KERNEL_FILE" || true
+  ls -la "$KERNEL_FILE"
+  sha256sum "$KERNEL_FILE"
+  file "$RAMDISK_FILE" || true
+  ls -la "$RAMDISK_FILE"
+  sha256sum "$RAMDISK_FILE"
+else
+  # Single-image mode (FIT, multi-uimage, x86-combined, sysupgrade).
+  image_candidates=("$STAGE"/firmware-"$PLACE".*)
+  LG_IMAGE=""
+  for f in "${image_candidates[@]}"; do
+    case "$f" in
+      *.manifest|*.sha256|*.txt|*.log) ;;
+      *) LG_IMAGE="$f"; break ;;
+    esac
+  done
+  if [[ -z "$LG_IMAGE" ]]; then
+    echo "::error::No bootable firmware artifact under $STAGE (only sidecars?)"
+    ls -la "$STAGE" || true
+    exit 1
+  fi
+
+  echo "LG_IMAGE=$LG_IMAGE" >> "${GITHUB_ENV:-/dev/null}"
+  echo "Staged LG_IMAGE=$LG_IMAGE"
+  echo "=== firmware sanity ==="
+  file "$LG_IMAGE" || true
+  ls -la "$LG_IMAGE"
+  sha256sum "$LG_IMAGE"
+fi
 
 # Print the LibreMesh subset of the manifest for at-a-glance verification.
 MANIFEST="$STAGE/firmware-$PLACE.manifest"

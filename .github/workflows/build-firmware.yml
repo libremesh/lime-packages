@@ -564,6 +564,7 @@ jobs:
         env:
           LG_PROXY: labgrid-fcefyn
           LG_IMAGE: ${{ env.LG_IMAGE }}
+          LG_IMAGE_INITRD: ${{ env.LG_IMAGE_INITRD }}
           LG_PLACE: ${{ env.LG_PLACE }}
           LG_ENV: ${{ env.LG_ENV }}
           LG_MESH_UBOOT_INTERRUPT_SPAM_SEC: ${{ matrix.uboot_interrupt_spam_sec }}
