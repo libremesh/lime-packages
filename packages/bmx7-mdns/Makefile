@@ -13,7 +13,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=Network
   SUBMENU:=Routing and Redirection
   TITLE:=bmx7 distributed DNS system
-  URL:=http://bmx6.net
+  URL:=https://github.com/bmx-routing/bmx7
   MAINTAINER:=Pau Escrich <p4u@dabax.net>
   PKGARCH:=all
   DEPENDS:=+bmx7 +bmx7-sms +luci-lib-nixio

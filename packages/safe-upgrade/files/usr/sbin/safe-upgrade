@@ -313,8 +313,8 @@ local function upgrade(args)
 
     su.preserve_files_to_new_partition(args)
 
-    --! postpone 10m defarable-reboot
-    os.execute("awk '{print $1 + 600}' /proc/uptime > /tmp/deferrable-reboot.defer")
+    --! Stop watchcat to prevent periodic_reboot
+    os.execute("/etc/init.d/watchcat stop")
 
     print(string.format("erasing partition %d", partitions.other))
     os.execute(string.format("mtd erase fw%d", partitions.other))
