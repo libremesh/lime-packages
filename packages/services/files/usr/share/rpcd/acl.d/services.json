@@ -1,0 +1,31 @@
+{
+    "unauthenticated": {
+        "description": "services voucher public access",
+        "write": {
+            "ubus": {
+                    "services": ["list"]
+            }
+        }
+    },
+    "lime-app": {
+        "description": "lime-app public access",
+        "read": {
+            "ubus": {
+                    "services": ["list"]
+            }
+        }
+    },
+    "root": {
+        "description": "services administration access",
+        "write": {
+            "ubus": {
+                    "services": ["*"]
+            }
+        },
+        "read": {
+            "ubus": {
+                    "services": ["*"]
+            }
+        }
+    }
+}

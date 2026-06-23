@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+NAME=services
+PROG=/usr/bin/services
+
+start() {
+    if  [ $(uci get services.base_config.enabled) == 1 ]; then
+        logger -t services "Running services"
+        $PROG
+        # start
+    else
+        logger -t services "Services is disabled"
+    fi
+}
+
+stop () {
+    # stop
+    $PROG stop
+    logger -t pirania "Services stopped"
+}
