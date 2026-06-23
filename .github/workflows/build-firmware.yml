@@ -1,0 +1,1169 @@
+name: Build firmware
+
+on:
+  pull_request:
+    branches: [master, main]
+    paths:
+      - ".github/workflows/build-firmware.yml"
+      - ".github/ci/targets.yml"
+      - "tools/ci/**"
+      - "packages/**"
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: "Comma-separated devices from .github/ci/targets.yml or 'all'"
+        required: false
+        default: "all"
+      openwrt_releases:
+        description: "Comma-separated OpenWrt releases (defaults to targets.yml openwrt_releases)"
+        required: false
+        default: ""
+      physical_releases:
+        description: "Comma-separated releases to run on physical lab (defaults to targets.yml default_physical_releases)"
+        required: false
+        default: ""
+      physical_single:
+        description: "Run single-node tests on every physical lab DUT"
+        required: false
+        type: boolean
+        default: false
+      physical_mesh_count:
+        description: "Number of physical DUTs for the mesh test (0 = skip, 2 or 3)"
+        required: false
+        type: choice
+        options:
+          - "0"
+          - "2"
+          - "3"
+        default: "0"
+      physical_mesh_pairs:
+        description: "Run 2-node mesh pairs sweep (same as daily cron)"
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    # Daily lab sweep at 06:00 UTC (03:00 ART).
+    - cron: "0 6 * * *"
+
+concurrency:
+  # PR/push share a per-ref lane; schedule and workflow_dispatch share a single lab lane so lab-bound runs never race on a labgrid place.
+  group: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'physical-lab-shared' || format('build-firmware-{0}', github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      targets_matrix: ${{ steps.prepare.outputs.targets_matrix }}
+      test_targets_matrix: ${{ steps.prepare.outputs.test_targets_matrix }}
+      mesh_test_matrix: ${{ steps.prepare.outputs.mesh_test_matrix }}
+      mesh_pairs_matrix: ${{ steps.prepare.outputs.mesh_pairs_matrix }}
+      qemu_single_matrix: ${{ steps.prepare.outputs.qemu_single_matrix }}
+      qemu_mesh_matrix: ${{ steps.prepare.outputs.qemu_mesh_matrix }}
+      archs_matrix: ${{ steps.prepare.outputs.archs_matrix }}
+      lime_packages_list: ${{ steps.prepare.outputs.lime_packages_list }}
+      feed_hash: ${{ steps.prepare.outputs.feed_hash }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install yq
+        run: sudo apt-get update && sudo apt-get install -y yq jq
+
+      - name: Prepare matrices
+        id: prepare
+        env:
+          TARGETS_INPUT: ${{ github.event.inputs.targets || 'all' }}
+          RELEASES_OVERRIDE: ${{ github.event.inputs.openwrt_releases || '' }}
+          PHYSICAL_RELEASES_OVERRIDE: ${{ github.event.inputs.physical_releases || '' }}
+          MESH_COUNT_INPUT: ${{ github.event.inputs.physical_mesh_count || '0' }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: tools/ci/prepare_matrix.sh
+
+  build-feed:
+    runs-on: ubuntu-latest
+    needs: prepare-matrix
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.archs_matrix) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Free disk
+        run: sudo rm -rf /opt/hostedtoolcache /usr/share/dotnet /usr/local/lib/android
+
+      - name: Restore feed cache
+        id: cache-feed
+        uses: actions/cache@v4
+        with:
+          path: feed-artifact/lime_packages
+          # `extra_hash` is a 12-char sha256 prefix over (extra_feeds,
+          # extra_packages); restore-keys deliberately omits it so a stale
+          # extras pin never falls back to a partial match.
+          key: lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-${{ matrix.extra_hash }}
+          restore-keys: |
+            lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-
+
+      - name: Build packages with openwrt/gh-action-sdk
+        if: steps.cache-feed.outputs.cache-hit != 'true'
+        uses: openwrt/gh-action-sdk@v9
+        env:
+          ARCH: ${{ matrix.sdk_arch }}
+          FEEDNAME: lime_packages
+          PACKAGES: ${{ needs.prepare-matrix.outputs.lime_packages_list }} ${{ matrix.extra_packages }}
+          # Extra src-git feeds, space-separated `<type>|<name>|<url>[^<sha>]`
+          # entries; gh-action-sdk appends each to feeds.conf. Pinning the
+          # full 40-char SHA is required (smart-HTTP rejects short prefixes).
+          EXTRA_FEEDS: ${{ matrix.extra_feeds }}
+          NO_REFRESH_CHECK: "1"
+          NO_SHFMT_CHECK: "1"
+          # SDK-side `make package/index` is unreliable in CI; we index the
+          # feed downstream with ImageBuilder's ipkg-make-index / apk mkndx.
+          INDEX: "0"
+          IGNORE_ERRORS: "n m y"
+
+      - name: Diagnose feed build output
+        if: steps.cache-feed.outputs.cache-hit != 'true'
+        shell: bash
+        env:
+          OPENWRT_RELEASE: ${{ matrix.openwrt_release }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          case "${OPENWRT_RELEASE}" in
+            24.10.*) PKG_FORMAT=ipk ;;
+            *)       PKG_FORMAT=apk ;;
+          esac
+          echo "Package format for ${OPENWRT_RELEASE}: ${PKG_FORMAT}"
+          echo "=== bin/packages tree ==="
+          find bin/packages -maxdepth 4 -type d 2>/dev/null | sort || true
+          echo "=== bin/targets tree (where target-binary extras land) ==="
+          find bin/targets -maxdepth 4 -type d 2>/dev/null | sort || true
+          echo "=== bin/packages/${{ matrix.arch }}/lime_packages/ ==="
+          ls -la "bin/packages/${{ matrix.arch }}/lime_packages/" 2>/dev/null || echo "(missing)"
+          echo "=== bin/packages/all/lime_packages/ ==="
+          ls -la "bin/packages/all/lime_packages/" 2>/dev/null || echo "(missing)"
+          arch_files=(
+            "bin/packages/${{ matrix.arch }}/lime_packages/"*.ipk
+            "bin/packages/${{ matrix.arch }}/lime_packages/"*.apk
+          )
+          all_files=(
+            "bin/packages/all/lime_packages/"*.ipk
+            "bin/packages/all/lime_packages/"*.apk
+          )
+          echo "Arch packages: ${#arch_files[@]} | All packages: ${#all_files[@]}"
+          if (( ${#arch_files[@]} == 0 && ${#all_files[@]} == 0 )); then
+            echo "ERROR: feed produced no .ipk or .apk packages" >&2
+            exit 1
+          fi
+          # Best-effort listing of every extra feed output dir; missing
+          # dirs are tolerated since target-binary packages land under
+          # bin/targets/ instead.
+          extra_feeds_str="${{ matrix.extra_feeds }}"
+          if [[ -n "$extra_feeds_str" ]]; then
+            echo "=== Extra src-git feeds output ==="
+            for entry in $extra_feeds_str; do
+              feed_name="$(echo "$entry" | cut -d'|' -f2)"
+              extra_dir="bin/packages/${{ matrix.arch }}/${feed_name}"
+              echo "--- ${extra_dir} ---"
+              ls -la "$extra_dir" 2>/dev/null || echo "(missing - target-binary extras live under bin/targets/)"
+            done
+            echo "=== bin/targets/**/packages/ (target-built packages) ==="
+            find bin/targets \( -name "*.ipk" -o -name "*.apk" \) -path "*/packages/*" 2>/dev/null \
+              | sort || echo "(none)"
+          fi
+
+      - name: Assemble lime_packages feed artifact (index with ImageBuilder)
+        if: steps.cache-feed.outputs.cache-hit != 'true'
+        env:
+          OPENWRT_RELEASE: ${{ matrix.openwrt_release }}
+        run: |
+          set -euo pipefail
+          # 24.10.x emits .ipk indexed by Packages/Packages.gz (opkg);
+          # 25.12.x emits .apk indexed by packages.adb (apk-tools).
+          case "${OPENWRT_RELEASE}" in
+            24.10.*) PKG_FORMAT=ipk ;;
+            *)       PKG_FORMAT=apk ;;
+          esac
+          echo "Assembling feed for ${OPENWRT_RELEASE} (PKG_FORMAT=${PKG_FORMAT})"
+
+          rm -rf feed-artifact
+          mkdir -p feed-artifact/lime_packages
+
+          arch_dir="bin/packages/${{ matrix.arch }}/lime_packages"
+          all_dir="bin/packages/all/lime_packages"
+
+          if [[ -d "$arch_dir" ]]; then
+            cp -a "$arch_dir"/. feed-artifact/lime_packages/
+          fi
+          if [[ -d "$all_dir" ]]; then
+            cp -a "$all_dir"/. feed-artifact/lime_packages/
+          fi
+
+          # Merge per-feed packages from the extra src-git feeds. PKGARCH:=all
+          # entries land under bin/packages/<arch>/<feed>/; target-binary
+          # entries (e.g. vwifi) land under bin/targets/<t>/<st>/packages/.
+          extra_feeds_str="${{ matrix.extra_feeds }}"
+          extra_packages_str="${{ matrix.extra_packages }}"
+          if [[ -n "$extra_feeds_str" ]]; then
+            for entry in $extra_feeds_str; do
+              feed_name="$(echo "$entry" | cut -d'|' -f2)"
+              for src in \
+                "bin/packages/${{ matrix.arch }}/${feed_name}" \
+                "bin/packages/all/${feed_name}"
+              do
+                if [[ -d "$src" ]]; then
+                  echo "Merging $src into feed-artifact/lime_packages/"
+                  shopt -s nullglob
+                  for f in "$src"/*.ipk "$src"/*.apk; do
+                    cp -a "$f" feed-artifact/lime_packages/
+                  done
+                fi
+              done
+            done
+            # Pull each declared extra_packages entry from bin/targets/
+            # if not already present (handles target-binary feeds like
+            # vwifi where the SDK lands the package under bin/targets/).
+            if [[ -n "$extra_packages_str" && -d bin/targets ]]; then
+              for pkg in $extra_packages_str; do
+                shopt -s nullglob
+                already=(
+                  feed-artifact/lime_packages/${pkg}_*.ipk
+                  feed-artifact/lime_packages/${pkg}-*.ipk
+                  feed-artifact/lime_packages/${pkg}-*.apk
+                )
+                if [[ ${#already[@]} -gt 0 ]]; then
+                  continue
+                fi
+                while IFS= read -r -d '' f; do
+                  echo "Merging $f (from bin/targets) into feed-artifact/lime_packages/"
+                  cp -a "$f" feed-artifact/lime_packages/
+                done < <(find bin/targets -path '*/packages/*' \
+                          \( -name "${pkg}_*.ipk" -o -name "${pkg}-*.ipk" -o -name "${pkg}-*.apk" \) \
+                          -print0 2>/dev/null)
+              done
+            fi
+          fi
+
+          # Each declared extra_packages entry must have produced at least
+          # one .ipk/.apk; gh-action-sdk exits 0 when an arch is unsupported.
+          if [[ -n "$extra_packages_str" ]]; then
+            for pkg in $extra_packages_str; do
+              shopt -s nullglob
+              matches=(
+                feed-artifact/lime_packages/${pkg}_*.ipk
+                feed-artifact/lime_packages/${pkg}-*.ipk
+                feed-artifact/lime_packages/${pkg}-*.apk
+              )
+              if [[ ${#matches[@]} -eq 0 ]]; then
+                echo "ERROR: extra_packages entry '${pkg}' produced no .ipk or .apk" >&2
+                echo "Searched feed-artifact/lime_packages/${pkg}{_,-}*.{ipk,apk}" >&2
+                echo "Also searched bin/targets/**/packages/${pkg}*:" >&2
+                find bin/targets -path '*/packages/*' \
+                     \( -name "${pkg}_*.ipk" -o -name "${pkg}-*.ipk" -o -name "${pkg}-*.apk" \) \
+                     2>/dev/null >&2 || true
+                exit 1
+              fi
+            done
+          fi
+
+          shopt -s nullglob
+          all_pkgs=(feed-artifact/lime_packages/*.ipk feed-artifact/lime_packages/*.apk)
+          if [[ ${#all_pkgs[@]} -eq 0 ]]; then
+            echo "ERROR: No .ipk or .apk files found under feed-artifact/lime_packages" >&2
+            echo "Expected sources: $arch_dir and/or $all_dir" >&2
+            exit 1
+          fi
+
+          docker pull "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}"
+          chmod -R a+rwX feed-artifact/lime_packages
+
+          if [[ "$PKG_FORMAT" == "ipk" ]]; then
+            # ipkg-make-index puts the path it receives straight into the
+            # `Filename:` field after stripping a leading `./`. Pass `.`
+            # so the index ships bare basenames; `/work` would emit
+            # `Filename: /work/...` which opkg cannot resolve.
+            docker run --rm \
+              --user root \
+              -e MKHASH=/builder/staging_dir/host/bin/mkhash \
+              -e PATH=/builder/staging_dir/host/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+              -v "$(pwd)/feed-artifact/lime_packages:/work" \
+              "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}" \
+              sh -lc 'cd /work && /builder/scripts/ipkg-make-index.sh . > Packages && gzip -9nc Packages > Packages.gz'
+
+            echo "=== Final feed-artifact/lime_packages/ contents (ipk) ==="
+            ls -la feed-artifact/lime_packages/
+            echo "=== Packages index summary (first 60 lines + count) ==="
+            head -n 60 feed-artifact/lime_packages/Packages || true
+            pkg_count=$(grep -c '^Package:' feed-artifact/lime_packages/Packages || echo 0)
+            echo "Total Package: entries in index: ${pkg_count}"
+            echo "=== Sanity: Filename fields must be bare basenames ==="
+            bad_fn=$(grep -E '^Filename: (/|\./)' feed-artifact/lime_packages/Packages || true)
+            if [[ -n "$bad_fn" ]]; then
+              echo "ERROR: Packages index has non-basename Filename entries:" >&2
+              echo "$bad_fn" >&2
+              exit 1
+            fi
+            grep -m 3 '^Filename:' feed-artifact/lime_packages/Packages
+          else
+            # apk-tools 3.x quirks: `--allow-untrusted` is a global flag
+            # (must precede the sub-command); `apk <sub> --help` exits 1
+            # even on valid sub-commands, so probe via the global help.
+            # The IB ships `apk` under staging_dir/host{,/usr}/bin/apk.
+            docker run --rm \
+              --user root \
+              -e PATH=/builder/staging_dir/host/usr/bin:/builder/staging_dir/host/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+              -v "$(pwd)/feed-artifact/lime_packages:/work" \
+              "ghcr.io/openwrt/imagebuilder:${{ matrix.index_imagebuilder }}-v${OPENWRT_RELEASE}" \
+              sh -lc '
+                set -e
+                cd /work
+                APK=""
+                for cand in \
+                  /builder/staging_dir/host/usr/bin/apk \
+                  /builder/staging_dir/host/bin/apk \
+                  /builder/staging_dir/hostpkg/usr/bin/apk \
+                  /usr/bin/apk \
+                  $(command -v apk 2>/dev/null || true)
+                do
+                  if [ -n "$cand" ] && [ -x "$cand" ]; then
+                    APK="$cand"; break
+                  fi
+                done
+                if [ -z "$APK" ]; then
+                  echo "ERROR: cannot locate apk binary in the IB" >&2
+                  echo "=== /builder/staging_dir/host listing ===" >&2
+                  find /builder/staging_dir/host -maxdepth 4 -name apk 2>/dev/null >&2 || true
+                  echo "=== /builder layout (top 2 levels) ===" >&2
+                  find /builder -maxdepth 2 -type d 2>/dev/null >&2 || true
+                  exit 1
+                fi
+                echo "=== apk binary: $APK ==="
+                "$APK" --version 2>&1 || true
+                help_text=$("$APK" --help 2>&1 || true)
+                if printf "%s\n" "$help_text" | grep -qw mkndx; then
+                  echo "Using: apk --allow-untrusted mkndx"
+                  "$APK" --allow-untrusted mkndx --output packages.adb -- *.apk
+                elif printf "%s\n" "$help_text" | grep -qw index; then
+                  echo "Using: apk --allow-untrusted index"
+                  "$APK" --allow-untrusted index --output packages.adb *.apk
+                else
+                  echo "WARNING: neither mkndx nor index advertised in apk --help; attempting mkndx anyway" >&2
+                  printf "%s\n" "$help_text" | head -80 >&2 || true
+                  "$APK" --allow-untrusted mkndx --output packages.adb -- *.apk
+                fi
+              '
+
+            echo "=== Final feed-artifact/lime_packages/ contents (apk) ==="
+            ls -la feed-artifact/lime_packages/
+            if [[ ! -f feed-artifact/lime_packages/packages.adb ]]; then
+              echo "ERROR: packages.adb was not generated" >&2
+              exit 1
+            fi
+            adb_size=$(stat -c%s feed-artifact/lime_packages/packages.adb)
+            apk_count=$(find feed-artifact/lime_packages -maxdepth 1 -name "*.apk" | wc -l)
+            echo "packages.adb size: ${adb_size} bytes | .apk count: ${apk_count}"
+          fi
+
+      - name: Diagnose cached feed (cache hit)
+        if: steps.cache-feed.outputs.cache-hit == 'true'
+        env:
+          OPENWRT_RELEASE: ${{ matrix.openwrt_release }}
+        run: |
+          set -euo pipefail
+          case "${OPENWRT_RELEASE}" in
+            24.10.*) PKG_FORMAT=ipk ;;
+            *)       PKG_FORMAT=apk ;;
+          esac
+          echo "=== Cache hit: feed-artifact/lime_packages/ (${PKG_FORMAT}) ==="
+          ls -la feed-artifact/lime_packages/
+          if [[ "$PKG_FORMAT" == "ipk" ]]; then
+            pkg_count=$(grep -c '^Package:' feed-artifact/lime_packages/Packages 2>/dev/null || echo 0)
+            echo "Cached opkg index has ${pkg_count} packages"
+          else
+            apk_count=$(find feed-artifact/lime_packages -maxdepth 1 -name "*.apk" | wc -l)
+            adb_size=$(stat -c%s feed-artifact/lime_packages/packages.adb 2>/dev/null || echo 0)
+            echo "Cached apk feed: ${apk_count} .apk files, packages.adb=${adb_size} bytes"
+          fi
+
+      - name: Upload local feed artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lime-feed-${{ matrix.arch }}-${{ matrix.openwrt_release }}
+          path: feed-artifact/lime_packages/
+          retention-days: 7
+
+      - name: Upload feed debug logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-debug-feed-${{ matrix.arch }}-${{ matrix.openwrt_release }}
+          path: |
+            bin/packages/${{ matrix.arch }}/
+            logs/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  build-image:
+    runs-on: ubuntu-latest
+    needs: [prepare-matrix, build-feed]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.targets_matrix) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Free disk
+        run: sudo rm -rf /opt/hostedtoolcache /usr/share/dotnet /usr/local/lib/android
+
+      - name: Download matching local feed
+        uses: actions/download-artifact@v5
+        with:
+          name: lime-feed-${{ matrix.arch }}-${{ matrix.openwrt_release }}
+          path: ./feed-in/lime_packages/
+
+      - name: Diagnose downloaded feed
+        run: |
+          set -euo pipefail
+          echo "=== feed-in/lime_packages/ contents ==="
+          ls -la ./feed-in/lime_packages/
+          echo "=== Packages index head ==="
+          head -n 80 ./feed-in/lime_packages/Packages || echo "(no Packages file)"
+          ipk_count=$(find ./feed-in/lime_packages -maxdepth 1 -name '*.ipk' | wc -l)
+          pkg_idx_count=$(grep -c '^Package:' ./feed-in/lime_packages/Packages 2>/dev/null || echo 0)
+          echo "IPK files: ${ipk_count} | Packages index entries: ${pkg_idx_count}"
+
+      - name: Pull ImageBuilder image
+        run: docker pull ghcr.io/openwrt/imagebuilder:${{ matrix.imagebuilder }}-v${{ matrix.openwrt_release }}
+
+      - name: Build firmware image
+        env:
+          DEVICE_NAME: ${{ matrix.device }}
+          ARCH: ${{ matrix.arch }}
+          FEED_BRANCH: ${{ matrix.feed_branch }}
+          PACKAGES: ${{ matrix.packages }}
+          BUILD_INITRAMFS: ${{ matrix.build_initramfs }}
+          IMAGE_FORMAT: ${{ matrix.image_format }}
+          FIT_ARCH: ${{ matrix.fit_arch }}
+          FIT_KERNEL_LOADADDR: ${{ matrix.fit_kernel_loadaddr }}
+          FIT_DTS: ${{ matrix.fit_dts }}
+          FIT_CONFIG: ${{ matrix.fit_config }}
+          FIT_BOOTARGS: ${{ matrix.fit_bootargs }}
+          DTB_PATCH_NVMEM_MAC: ${{ matrix.dtb_patch_nvmem_mac }}
+          DTB_FORCE_LEGACY_PARTITIONS: ${{ matrix.dtb_force_legacy_partitions }}
+        run: |
+          chmod +x tools/ci/build_image.sh
+          tools/ci/build_image.sh \
+            "${{ matrix.imagebuilder }}" \
+            "${{ matrix.profile }}" \
+            "${{ matrix.openwrt_release }}" \
+            "./feed-in" \
+            "./out"
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.device }}-${{ matrix.openwrt_release }}
+          path: ./out/firmware-${{ matrix.device }}.*
+          retention-days: 7
+
+      - name: Upload image debug files
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-debug-image-${{ matrix.device }}-${{ matrix.openwrt_release }}
+          path: |
+            ./out/
+            ./feed-in/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # Physical single-node test on the self-hosted lab. Runs on schedule
+  # (full sweep), on workflow_dispatch -f physical_single=true, and on
+  # pull_request (every place; gated by the physical-lab environment).
+  # A single approval here covers test-mesh too (test-mesh needs:
+  # test-firmware, so it waits for this job to finish).
+  test-firmware:
+    name: test-firmware (${{ matrix.place }} / ${{ matrix.openwrt_release }})
+    needs: [prepare-matrix, build-image]
+    if: |
+      (
+        github.event_name == 'schedule'
+        || (github.event_name == 'workflow_dispatch' && github.event.inputs.physical_single == 'true')
+        || github.event_name == 'pull_request'
+      )
+      && fromJson(needs.prepare-matrix.outputs.test_targets_matrix).include[0] != null
+    environment:
+      name: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request') && 'physical-lab' || '' }}
+    runs-on: [self-hosted, testbed-fcefyn]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.test_targets_matrix) }}
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTEST_ADDOPTS: "--color=yes"
+      LG_CONSOLE: internal
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: firmware-${{ matrix.device }}-${{ matrix.openwrt_release }}
+          path: fw
+
+      - uses: actions/checkout@v6
+        with:
+          repository: fcefyn-testbed/libremesh-tests
+          ref: staging
+          path: libremesh-tests
+
+      - uses: actions/checkout@v6
+        with:
+          repository: aparcar/openwrt-tests
+          ref: main
+          path: openwrt-tests
+
+      - name: Set OPENWRT_TESTS_DIR for pytest
+        run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Sync libremesh-tests environment
+        run: |
+          echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') uv sync (libremesh-tests) starting"
+          cd libremesh-tests && uv sync
+          echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') uv sync finished"
+
+      - name: Stage firmware on TFTP
+        env:
+          DEVICE: ${{ matrix.device }}
+          PLACE: ${{ matrix.place }}
+          OPENWRT_RELEASE: ${{ matrix.openwrt_release }}
+          RUN_ID: ${{ github.run_id }}
+        run: tools/ci/lab_stage_firmware.sh
+
+      - name: Lock labgrid place
+        working-directory: libremesh-tests
+        run: |
+          set -euo pipefail
+          echo "LG_PROXY=labgrid-fcefyn" >> "$GITHUB_ENV"
+          PLACE="labgrid-fcefyn-${{ matrix.place }}"
+          LOCK_OUT=$(uv run labgrid-client -v -p "$PLACE" lock 2>&1) || {
+            echo "$LOCK_OUT"
+            echo "::error::labgrid lock failed for $PLACE"
+            exit 1
+          }
+          echo "$LOCK_OUT"
+          echo "LG_PLACE=$PLACE" >> "$GITHUB_ENV"
+          echo "LG_ENV=targets/${{ matrix.device }}.yaml" >> "$GITHUB_ENV"
+          echo "Locked $PLACE for device=${{ matrix.device }}"
+
+      - name: Run single-node LibreMesh tests
+        working-directory: libremesh-tests
+        env:
+          LG_PROXY: labgrid-fcefyn
+          LG_IMAGE: ${{ env.LG_IMAGE }}
+          LG_IMAGE_INITRD: ${{ env.LG_IMAGE_INITRD }}
+          LG_PLACE: ${{ env.LG_PLACE }}
+          LG_ENV: ${{ env.LG_ENV }}
+          LG_MESH_UBOOT_INTERRUPT_SPAM_SEC: ${{ matrix.uboot_interrupt_spam_sec }}
+        run: |
+          set -euo pipefail
+          LOG_DIR="$GITHUB_WORKSPACE/logs/${{ matrix.place }}-${{ matrix.openwrt_release }}"
+          mkdir -p "$LOG_DIR"
+          uv run pytest tests/test_libremesh.py \
+            --lg-log "$LOG_DIR/" \
+            --junitxml="$LOG_DIR/report.xml" \
+            --lg-colored-steps \
+            --log-cli-level=CONSOLE
+
+      - name: Collect lime-report from DUT
+        id: lime-report
+        if: always() && env.LG_PLACE != ''
+        working-directory: libremesh-tests
+        env:
+          LG_PLACE: ${{ env.LG_PLACE }}
+        run: |
+          set +e
+          REPORT=$(uv run labgrid-client -p "$LG_PLACE" ssh -- lime-report.sh -m 2>/dev/null | head -c 50000)
+          if [ -z "$REPORT" ]; then
+            REPORT="_Could not collect lime-report (device unreachable or command not found)._"
+          fi
+          echo "$REPORT" > "$GITHUB_WORKSPACE/lime-report-${{ matrix.place }}.md"
+          echo "collected=true" >> "$GITHUB_OUTPUT"
+
+      - name: Poweroff and unlock device
+        if: always()
+        working-directory: libremesh-tests
+        env:
+          LG_PLACE: ${{ env.LG_PLACE }}
+        run: |
+          set +e
+          if [ -n "${LG_PLACE:-}" ]; then
+            uv run labgrid-client -p "$LG_PLACE" power off || true
+            uv run labgrid-client -p "$LG_PLACE" unlock || true
+          else
+            echo "No labgrid lock acquired by this job; skipping power off / unlock."
+          fi
+          rm -rf "/srv/tftp/firmwares/ci/${{ github.run_id }}/${{ matrix.place }}/${{ matrix.openwrt_release }}" 2>/dev/null || true
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.place }}-${{ matrix.openwrt_release }}
+          path: ${{ github.workspace }}/logs/${{ matrix.place }}-${{ matrix.openwrt_release }}/*
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Open or close issue on test result
+        if: always() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const device = "${{ matrix.device }}";
+            const place = "${{ matrix.place }}";
+            const release = "${{ matrix.openwrt_release }}";
+            const issueTitle = `CI healthcheck: ${place} (${release})`;
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const isSuccess = "${{ job.status }}" === "success";
+
+            let limeReport = "_Not collected._";
+            const reportPath = `${process.env.GITHUB_WORKSPACE}/lime-report-${place}.md`;
+            try { limeReport = fs.readFileSync(reportPath, 'utf8').trim(); } catch {}
+
+            const failureBody = [
+              `### CI healthcheck failed`,
+              ``,
+              `| Field | Value |`,
+              `|-------|-------|`,
+              `| **Place** | \`${place}\` |`,
+              `| **Device** | \`${device}\` |`,
+              `| **OpenWrt release** | \`${release}\` |`,
+              `| **Run** | [#${context.runId}](${runUrl}) |`,
+              `| **Date** | ${new Date().toISOString().slice(0,10)} |`,
+              ``,
+              `### lime-report`,
+              ``,
+              `<details><summary>Click to expand</summary>`,
+              ``,
+              '```',
+              limeReport,
+              '```',
+              `</details>`,
+            ].join('\n');
+
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              labels: 'healthcheck',
+              per_page: 100,
+            });
+
+            let testIssue = issues.data.find(i => i.title === issueTitle);
+
+            if (isSuccess) {
+              if (testIssue && testIssue.state === 'open') {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: testIssue.number,
+                  body: `Healthcheck passed on [run #${context.runId}](${runUrl}). Closing.`,
+                });
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: testIssue.number,
+                  state: 'closed',
+                });
+                console.log(`Closed issue #${testIssue.number} (test passed).`);
+              }
+            } else {
+              if (testIssue) {
+                if (testIssue.state === 'closed') {
+                  await github.rest.issues.update({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: testIssue.number,
+                    state: 'open',
+                    body: failureBody,
+                  });
+                  console.log(`Reopened issue #${testIssue.number}.`);
+                } else {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: testIssue.number,
+                    body: failureBody,
+                  });
+                  console.log(`Commented on open issue #${testIssue.number}.`);
+                }
+              } else {
+                const created = await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: issueTitle,
+                  body: failureBody,
+                  labels: ['healthcheck'],
+                });
+                console.log(`Created issue #${created.data.number}.`);
+              }
+            }
+
+  # Physical mesh test (N=2 or N=3 places). Runs on workflow_dispatch
+  # (-f physical_mesh_count=2|3) and on pull_request (forced N=3).
+  # Daily mesh coverage comes from `test-mesh-pairs`.
+  test-mesh:
+    name: test-mesh (N=${{ github.event.inputs.physical_mesh_count || '3 (PR)' }} / ${{ matrix.openwrt_release }})
+    # test-firmware is in `needs` only to serialise lab access (both reserve
+    # the same labgrid places). When test-firmware is skipped via dispatch
+    # inputs we still want this job to run, so `if:` uses `!cancelled()` and
+    # checks needs.test-firmware.result != 'failure' instead of relying on
+    # GitHub's default skip-cascade behaviour.
+    needs: [prepare-matrix, build-image, test-firmware]
+    if: |
+      !cancelled()
+      && needs.prepare-matrix.result == 'success'
+      && needs.build-image.result == 'success'
+      && needs.test-firmware.result != 'failure'
+      && (
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.physical_mesh_count != '0')
+        || github.event_name == 'pull_request'
+      )
+      && fromJson(needs.prepare-matrix.outputs.mesh_test_matrix).include[0] != null
+    runs-on: [self-hosted, testbed-fcefyn]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.mesh_test_matrix) }}
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTEST_ADDOPTS: "--color=yes"
+      LG_CONSOLE: internal
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/checkout@v6
+        with:
+          repository: fcefyn-testbed/libremesh-tests
+          ref: staging
+          path: libremesh-tests
+
+      - uses: actions/checkout@v6
+        with:
+          repository: aparcar/openwrt-tests
+          ref: main
+          path: openwrt-tests
+
+      - name: Set OPENWRT_TESTS_DIR for pytest
+        run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Sync libremesh-tests environment
+        run: cd libremesh-tests && uv sync
+
+      # Static download steps gated by `contains(matrix.devices, ...)`.
+      # N=2 fires only openwrt_one + bananapi_bpi-r4; N=3 also pulls
+      # linksys_e8450 (consumed by belkin_rt3200_2).
+      - name: Download firmware (openwrt_one)
+        if: contains(matrix.devices, 'openwrt_one')
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-openwrt_one-${{ matrix.openwrt_release }}
+          path: fw-mesh/openwrt_one
+
+      - name: Download firmware (bananapi_bpi-r4)
+        if: contains(matrix.devices, 'bananapi_bpi-r4')
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-bananapi_bpi-r4-${{ matrix.openwrt_release }}
+          path: fw-mesh/bananapi_bpi-r4
+
+      - name: Download firmware (linksys_e8450)
+        if: contains(matrix.devices, 'linksys_e8450')
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-linksys_e8450-${{ matrix.openwrt_release }}
+          path: fw-mesh/linksys_e8450
+
+      - name: Stage firmware and run mesh tests
+        env:
+          MODE: full
+          OPENWRT_RELEASE: ${{ matrix.openwrt_release }}
+          RUN_ID: ${{ github.run_id }}
+          MESH_PLACES_JSON: ${{ toJson(matrix.places) }}
+          MESH_DEVICES_JSON: ${{ toJson(matrix.devices) }}
+          SRC_DIR: fw-mesh
+          LOGS_DIR: mesh-logs
+        run: tools/ci/lab_stage_mesh.sh
+
+      - name: Cleanup TFTP on failure
+        if: failure()
+        run: rm -rf "/srv/tftp/firmwares/ci/${{ github.run_id }}/mesh/${{ matrix.openwrt_release }}" || true
+
+      - name: Upload mesh test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-mesh-${{ matrix.openwrt_release }}
+          path: mesh-logs/*
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # Walking-chain mesh smoke. Three sequential 2-node pairs share devices
+  # on purpose; max-parallel:1 serialises lab access. Runs on daily cron
+  # and on workflow_dispatch with physical_mesh_pairs=true.
+  # Place layout is computed in `prepare_matrix.sh::mesh_pairs_matrix`.
+  test-mesh-pairs:
+    name: test-mesh-pairs (#${{ matrix.pair }} ${{ matrix.place_a }}+${{ matrix.place_b }} / ${{ matrix.openwrt_release }})
+    # test-firmware is in `needs` only to serialise lab access (both reserve
+    # the same labgrid places). When test-firmware is skipped via dispatch
+    # inputs we still want this job to run, so `if:` uses `!cancelled()` and
+    # checks needs.test-firmware.result != 'failure' instead of relying on
+    # GitHub's default skip-cascade behaviour.
+    needs: [prepare-matrix, build-image, test-firmware]
+    if: |
+      !cancelled()
+      && needs.prepare-matrix.result == 'success'
+      && needs.build-image.result == 'success'
+      && needs.test-firmware.result != 'failure'
+      && (
+        github.event_name == 'schedule'
+        || (github.event_name == 'workflow_dispatch' && github.event.inputs.physical_mesh_pairs == 'true')
+      )
+      && fromJson(needs.prepare-matrix.outputs.mesh_pairs_matrix).include[0] != null
+    runs-on: [self-hosted, testbed-fcefyn]
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.mesh_pairs_matrix) }}
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTEST_ADDOPTS: "--color=yes"
+      LG_CONSOLE: internal
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/checkout@v6
+        with:
+          repository: fcefyn-testbed/libremesh-tests
+          ref: staging
+          path: libremesh-tests
+
+      - uses: actions/checkout@v6
+        with:
+          repository: aparcar/openwrt-tests
+          ref: main
+          path: openwrt-tests
+
+      - name: Set OPENWRT_TESTS_DIR for pytest
+        run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Sync libremesh-tests environment
+        run: cd libremesh-tests && uv sync
+
+      - name: Download firmware (${{ matrix.device_a }})
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-${{ matrix.device_a }}-${{ matrix.openwrt_release }}
+          path: fw-pair/${{ matrix.device_a }}
+
+      # Skip the second download when both endpoints share the same
+      # device artifact (download-artifact errors on a duplicate path).
+      - name: Download firmware (${{ matrix.device_b }})
+        if: matrix.device_a != matrix.device_b
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-${{ matrix.device_b }}-${{ matrix.openwrt_release }}
+          path: fw-pair/${{ matrix.device_b }}
+
+      - name: Stage firmware and run mesh tests
+        env:
+          MODE: pair
+          OPENWRT_RELEASE: ${{ matrix.openwrt_release }}
+          RUN_ID: ${{ github.run_id }}
+          PAIR: ${{ matrix.pair }}
+          PLACE_A: ${{ matrix.place_a }}
+          DEVICE_A: ${{ matrix.device_a }}
+          PLACE_B: ${{ matrix.place_b }}
+          DEVICE_B: ${{ matrix.device_b }}
+          SRC_DIR: fw-pair
+          LOGS_DIR: mesh-pairs-logs
+        run: tools/ci/lab_stage_mesh.sh
+
+      - name: Cleanup TFTP on failure
+        if: failure()
+        run: rm -rf "/srv/tftp/firmwares/ci/${{ github.run_id }}/mesh-pairs/${{ matrix.pair }}/${{ matrix.openwrt_release }}" || true
+
+      - name: Upload mesh-pairs test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-mesh-pairs-${{ matrix.pair }}-${{ matrix.openwrt_release }}
+          path: mesh-pairs-logs/*
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # QEMU single-node smoke test on a GitHub-hosted runner. One job per
+  # release, for every target with `test_qemu: true`. Runs in TCG mode
+  # (KVM only available on the multi-node mesh job below).
+  test-firmware-qemu-single:
+    name: test-firmware-qemu-single (${{ matrix.device }} / ${{ matrix.openwrt_release }})
+    needs: [prepare-matrix, build-image]
+    if: |
+      fromJson(needs.prepare-matrix.outputs.qemu_single_matrix).include[0] != null
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.qemu_single_matrix) }}
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTEST_ADDOPTS: "--color=yes"
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/checkout@v6
+        with:
+          repository: fcefyn-testbed/libremesh-tests
+          ref: staging
+          path: libremesh-tests
+
+      - uses: actions/checkout@v6
+        with:
+          repository: aparcar/openwrt-tests
+          ref: main
+          path: openwrt-tests
+
+      - name: Set OPENWRT_TESTS_DIR for pytest
+        run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
+
+      - name: Download firmware artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: firmware-${{ matrix.device }}-${{ matrix.openwrt_release }}
+          path: fw
+
+      - name: Install QEMU
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qemu-system-x86 ovmf
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Sync libremesh-tests environment
+        run: |
+          cd libremesh-tests
+          uv sync
+
+      - name: Locate firmware image
+        id: firmware
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          candidates=(fw/firmware-${{ matrix.device }}.img)
+          if [[ ${#candidates[@]} -eq 0 ]]; then
+            echo "::error::No firmware-${{ matrix.device }}.img under fw/" >&2
+            ls -la fw/ || true
+            exit 1
+          fi
+          echo "path=${candidates[0]}" >> "$GITHUB_OUTPUT"
+          file "${candidates[0]}" || true
+          ls -la "${candidates[0]}"
+          sha256sum "${candidates[0]}"
+
+      - name: Run single-node QEMU LibreMesh tests
+        working-directory: libremesh-tests
+        env:
+          # The qemu_x86-64_libremesh.yaml env in libremesh-tests
+          # configures a QEMUDriver + QEMUNetworkStrategyLibreMesh
+          # that boots the supplied disk image, waits for dropbear
+          # (~30s after lime-config completes), and forwards SSH
+          # to the guest's anygw 10.13.0.1:22. This is the
+          # canonical LibreMesh-on-x86_64 test path.
+          LG_ENV: targets/qemu_x86-64_libremesh.yaml
+        run: |
+          set -euo pipefail
+          LOG_DIR="$GITHUB_WORKSPACE/qemu-single-logs/${{ matrix.device }}-${{ matrix.openwrt_release }}"
+          mkdir -p "$LOG_DIR"
+          # Single-node validation: lime-* runtime, base shell, LAN.
+          # Multi-node coverage lives in `test-mesh-qemu` below.
+          uv run pytest \
+            tests/test_libremesh.py \
+            tests/test_base.py \
+            tests/test_lan.py \
+            --lg-env "${LG_ENV}" \
+            --firmware "$GITHUB_WORKSPACE/${{ steps.firmware.outputs.path }}" \
+            --lg-log "$LOG_DIR/" \
+            --junitxml="$LOG_DIR/report.xml" \
+            --log-cli-level=INFO \
+            -v
+
+      - name: Upload QEMU single-node test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-qemu-single-${{ matrix.device }}-${{ matrix.openwrt_release }}
+          path: ${{ github.workspace }}/qemu-single-logs/${{ matrix.device }}-${{ matrix.openwrt_release }}/*
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # QEMU multi-node mesh test. Spawns N=3 QEMU instances of the
+  # x86-combined image tied through vwifi-server (mac80211_hwsim ↔
+  # 802.11s). Requires KVM acceleration (TCG can't fit three VMs in
+  # the runner budget) and a vwifi-server binary on PATH.
+  test-mesh-qemu:
+    name: test-mesh-qemu (${{ matrix.device }} / ${{ matrix.openwrt_release }})
+    needs: [prepare-matrix, build-image, test-firmware-qemu-single]
+    if: |
+      fromJson(needs.prepare-matrix.outputs.qemu_mesh_matrix).include[0] != null
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.qemu_mesh_matrix) }}
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTEST_ADDOPTS: "--color=yes"
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/checkout@v6
+        with:
+          repository: fcefyn-testbed/libremesh-tests
+          ref: staging
+          path: libremesh-tests
+
+      - uses: actions/checkout@v6
+        with:
+          repository: aparcar/openwrt-tests
+          ref: main
+          path: openwrt-tests
+
+      - name: Set OPENWRT_TESTS_DIR for pytest
+        run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
+
+      - name: Install QEMU and build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            qemu-system-x86 ovmf cmake build-essential libnl-3-dev libnl-genl-3-dev pkg-config
+
+      - name: Enable KVM access for runner user
+        run: tools/ci/enable_kvm.sh
+
+      # vwifi-server pinned at Raizo62/vwifi@4a9842e6 (release v7.0).
+      # The in-guest vwifi-client comes from packages/vwifi/.
+      - name: Cache vwifi-server build
+        id: cache-vwifi-server
+        uses: actions/cache@v4
+        with:
+          path: ~/.vwifi-server-bin
+          key: vwifi-server-4a9842e6-${{ runner.os }}
+
+      - name: Build vwifi-server from source
+        if: steps.cache-vwifi-server.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.vwifi-server-bin
+          tmp=$(mktemp -d)
+          git clone https://github.com/Raizo62/vwifi.git "$tmp/vwifi"
+          git -C "$tmp/vwifi" checkout 4a9842e6
+          cmake -S "$tmp/vwifi" -B "$tmp/build"
+          cmake --build "$tmp/build" -j"$(nproc)"
+          for bin in vwifi-server vwifi-client vwifi-ctrl; do
+            cp "$tmp/build/$bin" ~/.vwifi-server-bin/
+          done
+          rm -rf "$tmp"
+
+      - name: Install vwifi-server
+        run: |
+          sudo install -m 0755 ~/.vwifi-server-bin/vwifi-server /usr/local/bin/
+          vwifi-server --help || vwifi-server -h || true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Sync libremesh-tests environment
+        run: |
+          cd libremesh-tests
+          uv sync
+
+      - name: Download firmware artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: firmware-${{ matrix.device }}-${{ matrix.openwrt_release }}
+          path: fw
+
+      - name: Run multi-node QEMU mesh tests
+        working-directory: libremesh-tests
+        env:
+          # `LG_VIRTUAL_MESH=1` switches the `mesh_nodes` fixture from the
+          # labgrid path to virtual_mesh_launcher.launch_virtual_mesh().
+          LG_VIRTUAL_MESH: "1"
+          VIRTUAL_MESH_NODES: "3"
+          VIRTUAL_MESH_MAX_NODES: "3"
+          VIRTUAL_MESH_IMAGE: ${{ github.workspace }}/fw/firmware-${{ matrix.device }}.img
+        run: |
+          set -euo pipefail
+          LOG_DIR="$GITHUB_WORKSPACE/qemu-mesh-logs/${{ matrix.device }}-${{ matrix.openwrt_release }}"
+          mkdir -p "$LOG_DIR"
+          vwifi-server -u >"$LOG_DIR/vwifi-server.log" 2>&1 &
+          echo $! > "$LOG_DIR/vwifi-server.pid"
+          trap 'kill "$(cat "$LOG_DIR/vwifi-server.pid")" 2>/dev/null || true' EXIT
+          sleep 1
+          uv run pytest tests/test_mesh.py \
+            --lg-log "$LOG_DIR/" \
+            --junitxml="$LOG_DIR/report.xml" \
+            --log-cli-level=INFO \
+            -v
+
+      - name: Upload QEMU mesh test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-qemu-mesh-${{ matrix.device }}-${{ matrix.openwrt_release }}
+          path: ${{ github.workspace }}/qemu-mesh-logs/${{ matrix.device }}-${{ matrix.openwrt_release }}/*
+          if-no-files-found: ignore
+          retention-days: 14
+
+  summary:
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - prepare-matrix
+      - build-feed
+      - build-image
+      - test-firmware
+      - test-mesh
+      - test-mesh-pairs
+      - test-firmware-qemu-single
+      - test-mesh-qemu
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build summary
+        env:
+          TRIGGER: ${{ github.event_name }}
+          TARGETS_MATRIX: ${{ needs.prepare-matrix.outputs.targets_matrix }}
+          ARCHS_MATRIX: ${{ needs.prepare-matrix.outputs.archs_matrix }}
+          TEST_TARGETS_MATRIX: ${{ needs.prepare-matrix.outputs.test_targets_matrix }}
+          MESH_TEST_MATRIX: ${{ needs.prepare-matrix.outputs.mesh_test_matrix }}
+          MESH_PAIRS_MATRIX: ${{ needs.prepare-matrix.outputs.mesh_pairs_matrix }}
+          QEMU_SINGLE_MATRIX: ${{ needs.prepare-matrix.outputs.qemu_single_matrix }}
+          QEMU_MESH_MATRIX: ${{ needs.prepare-matrix.outputs.qemu_mesh_matrix }}
+          BUILD_FEED_RESULT: ${{ needs.build-feed.result }}
+          BUILD_IMAGE_RESULT: ${{ needs.build-image.result }}
+          TEST_FIRMWARE_RESULT: ${{ needs.test-firmware.result }}
+          TEST_MESH_RESULT: ${{ needs.test-mesh.result }}
+          TEST_MESH_PAIRS_RESULT: ${{ needs.test-mesh-pairs.result }}
+          TEST_FIRMWARE_QEMU_SINGLE_RESULT: ${{ needs.test-firmware-qemu-single.result }}
+          TEST_MESH_QEMU_RESULT: ${{ needs.test-mesh-qemu.result }}
+        run: tools/ci/build_summary.sh

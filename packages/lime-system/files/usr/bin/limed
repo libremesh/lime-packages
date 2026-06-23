@@ -46,8 +46,27 @@ local peerSubscriber = {
 	notify = function(nData, nType)
 		if nType ~= "apup-newpeer" then return end
 
-		utils.log("peerSubscriber:", nType, nData.ifname)
+		utils.log("peerSubscriber type: %s data.ifname: %s ", nType, nData.ifname)
+
 		network.createStatic(nData.ifname)
+--! interfaces should exist, but just in case we need to check, 
+--! to avoid 
+--! [2025-07-31 20:06:09] [limed] ip: SIOCGIFFLAGS: No such device
+--! [2025-07-31 20:06:10] [limed] ip: can't find device 'wlan1-peer2'
+--! [2025-07-31 20:06:10] [limed] lime.network.runProtocols(wlan1-peer2, ...)
+--! [2025-07-31 20:06:10] [limed] lime.proto.batadv.runOnDevice(wlan1-peer2, ...)
+--! [2025-07-31 20:06:11] [limed] lime.network.createVlan(wlan1-peer2, ...)
+--! [2025-07-31 20:06:11] [limed]           vid      =      29
+--! [2025-07-31 20:06:11] [limed]           type     =      8021ad
+--! [2025-07-31 20:06:11] [limed]           name     =      wlan1-peer2_29
+--! [2025-07-31 20:06:11] [limed]           ifname   =      wlan1-peer2
+--! [2025-07-31 20:06:12] [limed] ip: can't find device 'wlan1-peer2'
+--! [2025-07-31 20:06:12] [ubus] { "ubus.object.add":
+--{"id":-1478746778,"path":"network.interface.lm_net_wlan1-peer2_batadv"} }
+		if not network.device_exists(nData.ifname) then
+			utils.log("Device does not exist, skipping:", nData.ifname)
+			return
+		end
 		network.runProtocols(nData.ifname)
 	end
 }
@@ -61,7 +80,7 @@ local apupSubscriber = {
 
 		local evPath = "hostapd." .. apupDev
 
-		utils.log("Subscribing:", evPath)
+		utils.log("Subscribing: %s", evPath)
 		ubus:subscribe(evPath, peerSubscriber)
 	end
 }
@@ -78,7 +97,7 @@ function limed.waitForHostapd()
 		end
 		if not found then
 			utils.log("Waiting for 'hostapd' namespace...")
-			os.execute("sleep 1") -- Wait for 1 second before retrying
+			os.execute("sleep 1") 
 			else
 				utils.log(" 'hostapd' namespace exists...")
 		end
