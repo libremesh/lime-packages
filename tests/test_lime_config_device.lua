@@ -10,6 +10,7 @@ local test_utils = require 'tests.utils'
 config.log = function() end
 
 local uci
+local snapshot -- to revert luassert stubs and spies
 
 local librerouter_board = test_utils.get_board('librerouter-v1')
 
@@ -22,6 +23,19 @@ describe('LiMe Config tests', function()
         stub(network, "get_mac", utils.get_id)
         stub(network, "assert_interface_exists", function () return true end)
         stub(network, "_get_lower", function () return "wan" end)
+
+        -- Stub fs.glob to prevent wireless scandevices() from skipping radios
+        -- due to missing hardware in test environment (commit 45f0ee7d).
+        -- Preserves original glob for hardware detection module discovery,
+        -- otherwise openwrt_wan module is not found and WAN config fails.
+        local fs = require 'nixio.fs'
+        local original_glob = fs.glob
+        stub(fs, "glob", function(pattern)
+            if pattern:match("/ieee80211/phy%*") then
+                return {"phy0"}, 1
+            end
+            return original_glob(pattern)
+        end)
 
         -- copy openwrt first boot generated configs
 		for _, config_name in ipairs({'network', 'wireless'}) do
@@ -84,10 +98,12 @@ describe('LiMe Config tests', function()
 	end)
 
     before_each('', function()
+        snapshot = assert:snapshot()
         uci = test_utils.setup_test_uci()
     end)
 
     after_each('', function()
+        snapshot:revert()
         test_utils.teardown_test_uci(uci)
     end)
 end)
