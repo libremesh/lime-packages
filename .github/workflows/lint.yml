@@ -1,0 +1,31 @@
+name: Lint
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lua:
+    name: Lua
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install Dependencies
+        run: sudo apt-get -y update && sudo apt-get -y install lua-check
+      - name: Lint Lua code
+        run: ./tools/ci/lint/lua.sh
+
+  sh:
+    name: Shell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install Dependencies
+        run: sudo apt-get -y update && sudo apt-get -y install shellcheck 
+      - name: Lint shell code
+        run: ./tools/ci/lint/sh.sh
