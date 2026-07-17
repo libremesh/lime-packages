@@ -7,7 +7,7 @@
 --!
 --! SPDX-License-Identifier: AGPL-3.0-only
 
-network = {}
+local network = {}
 
 local ip = require("luci.ip")
 local fs = require("nixio.fs")
@@ -44,7 +44,7 @@ function network.get_own_macs(interface_filter)
 	local macs = {}
 	local search_path = "/sys/class/net/" .. interface_filter .. "/address"
 	for address_path in fs.glob(search_path) do
-		mac = io.open(address_path):read("*l")
+		local mac = io.open(address_path):read("*l")
 		macs[mac] = 1
 	end
 
@@ -141,8 +141,8 @@ function network.generate_host(ipprefix, hexsuffix)
 	return ipprefix:add(num)
 end
 
-function network.primary_address(offset)
-	local offset = offset or 0
+function network.primary_address(offsetArg)
+	local offset = offsetArg or 0
 	local pm = network.primary_mac()
 	local ipv4_template = config.get("network", "main_ipv4_address")
 	local ipv6_template = config.get("network", "main_ipv6_address")
@@ -197,10 +197,10 @@ function network.setup_rp_filter()
 	local sysctl_file = io.open(sysctl_file_path, "r");
 	while sysctl_file:read(0) do
 		local sysctl_line = sysctl_file:read();
-		if not string.find(sysctl_line, ".rp_filter") then sysctl_options = sysctl_options .. sysctl_line .. "\n" end 
+		if not string.find(sysctl_line, ".rp_filter") then sysctl_options = sysctl_options .. sysctl_line .. "\n" end
 	end
 	sysctl_file:close()
-	
+
 	sysctl_options = sysctl_options .. "net.ipv4.conf.default.rp_filter=2\nnet.ipv4.conf.all.rp_filter=2\n";
 	sysctl_file = io.open(sysctl_file_path, "w");
 	if sysctl_file ~= nil then
@@ -287,11 +287,10 @@ end
 
 function network.scandevices(specificIfaces)
 	local devices = {}
-	local wireless = require("lime.wireless")
 	local cpu_ports = {}
 	local board = utils.getBoardAsTable()
 
-	function dev_parser(dev)
+	local function dev_parser(dev)
 		if dev == nil then
 			utils.log("network.scandevices.dev_parser got nil device")
 			return
@@ -331,7 +330,7 @@ function network.scandevices(specificIfaces)
 		devices[dev]["dsa"] = is_dsa
 	end
 
-	function owrt_ifname_parser(section)
+	local function owrt_ifname_parser(section)
 		local dev = section["ifname"]
 		if ( type(dev) == "string" ) then
 			local is_dsa = utils.is_dsa(dev)
@@ -342,7 +341,7 @@ function network.scandevices(specificIfaces)
 		end
 	end
 
-	function board_port_parser(dev)
+	local function board_port_parser(dev)
 		local is_dsa = utils.is_dsa(dev)
 		devices[dev] = devices[dev] or {}
 		devices[dev]["dsa"] = is_dsa
@@ -356,7 +355,7 @@ function network.scandevices(specificIfaces)
 	end
 
 	--! Collect switch facing ethernet ports for swconfig devices from board.json
-	for switch, switch_table in pairs(board["switch"] or {}) do
+	for _, switch_table in pairs(board["switch"] or {}) do
 		for _,port_table in pairs(switch_table["ports"] or {}) do
 			local dev = port_table["device"]
 			if dev then
@@ -366,7 +365,7 @@ function network.scandevices(specificIfaces)
 	end
 
 	--! Collect dsa ports and usable ethernet and vlan devices from board.json
-	for role, role_table in pairs(board["network"] or {}) do
+	for _, role_table in pairs(board["network"] or {}) do
 		--! "ports" and "device" fields may be specified at the same time.
 		--! In this case, "ports" must be used.
 		local ports = role_table["ports"]
@@ -482,8 +481,8 @@ end
 --! Creates a network Interface with static protocol
 --! ipAddr can be IPv4 or IPv6
 --! the function can be called twice to set both IPv4 and IPv6
-function network.createStaticIface(linuxBaseIfname, openwrtNameSuffix, ipAddr, gwAddr)
-	local openwrtNameSuffix = openwrtNameSuffix or ""
+function network.createStaticIface(linuxBaseIfname, openwrtNameSuffixArg, ipAddr, gwAddr)
+	local openwrtNameSuffix = openwrtNameSuffixArg or ""
 	local owrtInterfaceName = network.sanitizeIfaceName(linuxBaseIfname) .. openwrtNameSuffix
 	local uci = config.get_uci_cursor()
 
@@ -492,7 +491,7 @@ function network.createStaticIface(linuxBaseIfname, openwrtNameSuffix, ipAddr, g
 	uci:set("network", owrtInterfaceName, "auto", "1")
 	uci:set("network", owrtInterfaceName, "ifname", linuxBaseIfname)
 
-	local addr = luci.ip.new(ipAddr)
+	local addr = ip.new(ipAddr)
 	local host = addr:host():string()
 
 	if addr:is4() then
@@ -518,7 +517,7 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 	vlanProtocol = vlanProtocol or "8021ad"
 	openwrtNameSuffix = openwrtNameSuffix or ""
 	vid = tonumber(vid)
-	
+
 	--! sanitize passed linuxBaseIfName for constructing uci section name
 	--! because only alphanumeric and underscores are allowed
 	local owrtInterfaceName = network.sanitizeIfaceName(linuxBaseIfname)
@@ -604,7 +603,7 @@ end
 
 --! Create a static interface at runtime via ubus
 function network.createStatic(linuxBaseIfname)
-	local ipv4, ipv6 = network.primary_address()
+	local ipv4, _ = network.primary_address()
 	local ubusIfaceName = network.sanitizeIfaceName(
 		network.LIME_UCI_IFNAME_PREFIX()..linuxBaseIfname.."_static")
 	local ifaceConf = {
@@ -668,7 +667,12 @@ function network.createVlan(linuxBaseIfname, vid, vlanProtocol)
 
 --! TODO: as of today ubus silently fails to properly creating a device
 --! dinamycally work around it by using ip command instead
-	utils.unsafe_shell("ip link add name "..vlanConf.name.." link "..vlanConf.ifname.." type vlan proto 802.1ad id "..vlanConf.vid)
+	utils.unsafe_shell("ip link add"..
+		" name "..vlanConf.name..
+		" link "..vlanConf.ifname..
+		" type vlan"..
+		" proto 802.1ad"..
+		" id "..vlanConf.vid)
 
 	return vlanConf.name
 end

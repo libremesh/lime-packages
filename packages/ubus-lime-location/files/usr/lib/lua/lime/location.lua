@@ -7,6 +7,7 @@
 local iwinfo = require "iwinfo"
 local json = require "luci.jsonc"
 local config = require "lime.config"
+local network = require 'lime.network'
 local wireless = require "lime.wireless"
 local system = require "lime.system"
 

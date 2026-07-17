@@ -1,4 +1,5 @@
 local utils = require "lime.utils"
+local network = require 'lime.network'
 local node_status = require 'lime.node_status'
 local iwinfo = require('iwinfo')
 local JSON = require("luci.jsonc")
