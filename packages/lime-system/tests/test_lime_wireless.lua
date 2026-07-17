@@ -1,4 +1,5 @@
 local wireless = require 'lime.wireless'
+local config = require 'lime.config'
 local test_utils = require 'tests.utils'
 local system = require("lime.system")
 local iwinfo = require('iwinfo')

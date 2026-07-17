@@ -1,6 +1,7 @@
 local JSON = require("luci.jsonc")
 local test_utils = require('tests.utils')
 local utils = require('lime.utils')
+local config = require 'lime.config'
 
 local uci = nil
 

@@ -1,4 +1,5 @@
 local utils = require 'lime.utils'
+local config = require 'lime.config'
 local test_utils = require 'tests.utils'
 local uci = nil
 
