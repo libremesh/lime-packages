@@ -1,6 +1,7 @@
 local test_utils = require 'tests.utils'
 local shared_state = require('shared-state')
 local portal = require('portal.portal')
+local utils = require("lime.utils")
 
 local uci
 

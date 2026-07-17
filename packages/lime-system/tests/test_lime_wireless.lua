@@ -4,6 +4,7 @@ local network = require 'lime.network'
 local test_utils = require 'tests.utils'
 local system = require("lime.system")
 local iwinfo = require('iwinfo')
+local utils = require("lime.utils")
 
 local uci = nil
 

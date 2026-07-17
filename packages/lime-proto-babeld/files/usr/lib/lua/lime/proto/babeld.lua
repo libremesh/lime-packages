@@ -6,6 +6,7 @@
 local network = require("lime.network")
 local config = require("lime.config")
 local fs = require("nixio.fs")
+local utils = require("lime.utils")
 
 babeld = {}
 

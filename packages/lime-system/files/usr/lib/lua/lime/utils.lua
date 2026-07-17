@@ -7,13 +7,15 @@
 --!
 --! SPDX-License-Identifier: AGPL-3.0-only
 
-utils = {}
+local utils = {}
 
 local modules = require("lime.modules")
 local config = require("lime.config")
 local json = require("luci.jsonc")
 local fs = require("nixio.fs")
 local nixio = require("nixio")
+
+local DISABLE_LOGGING = nil
 
 utils.BOARD_JSON_PATH = "/etc/board.json"
 utils.SHADOW_FILENAME = "/etc/shadow"
@@ -59,8 +61,8 @@ function utils.stringStarts(string, start)
    return (string.sub(string, 1, string.len(start)) == start)
 end
 
-function utils.stringEnds(string, _end)
-   return ( _end == '' or string.sub( string, -string.len(_end) ) == _end)
+function utils.stringEnds(string, __end)
+   return (__end == '' or string.sub( string, -string.len(__end) ) == __end)
 end
 
 function utils.hex(x)
@@ -250,7 +252,7 @@ function utils.is_installed(pkg)
 end
 
 function utils.has_value(tab, val)
-	for index, value in ipairs(tab) do
+	for _, value in ipairs(tab) do
 		if value == val then
 			return true
 		end
@@ -357,7 +359,7 @@ function utils.set_root_secret(secret)
 		f_bkp:close()
 
 		local root_line = f:read("*l") --! root user is always in the first line
-		local starts, ends = string.find(root_line, "root:.-:")
+		local _, ends = string.find(root_line, "root:.-:")
 		local content = "root:" .. secret .. root_line:sub(ends) .. "\n"
 		content = content .. f:read("*a")
 		f:close()
@@ -369,7 +371,8 @@ end
 
 function utils.set_shared_root_password(password)
     local uci = config.get_uci_cursor()
-    utils.set_password('root', password) -- this takes 1 second, it may be replaced with nixio.crypt(password, '$1$vv44cu1H')
+    --! this takes 1 second, it may be replaced with nixio.crypt(password, '$1$vv44cu1H')
+    utils.set_password('root', password)
     uci:set("lime-community", 'system', 'root_password_policy', 'SET_SECRET')
     uci:set("lime-community", 'system', 'root_password_secret', utils.get_root_secret())
 end
@@ -442,10 +445,10 @@ function utils.bitwise_xor(a, b)
 end
 
 function utils.mac2ipv6linklocal(text)
-    function f(mac0, mac1, mac2, mac3, mac4, mac5, mac6)
-        local mac0 = string.format("%x", utils.bitwise_xor(tonumber(mac0, 16), 0x02))
+    local function f(mac0, mac1, mac2, mac3, mac4, mac5)
+        local mac0_xored = string.format("%x", utils.bitwise_xor(tonumber(mac0, 16), 0x02))
         --! going from and to string to remove leading zeroes and convert to lowercase
-        local gr1 = string.format("%x", tonumber(mac0 .. mac1, 16))
+        local gr1 = string.format("%x", tonumber(mac0_xored .. mac1, 16))
         local gr2 = string.format("%x", tonumber(mac2 .. 'ff', 16))
         local gr3 = string.format("%x", tonumber('fe' .. mac3, 16))
         local gr4 = string.format("%x", tonumber(mac4 .. mac5, 16))
@@ -497,7 +500,7 @@ function utils.open_with_lock(fname, max_wait_s)
         return nil, "Can't create file"
     end
 
-    for i=0,max_wait_s do
+    for _=1,max_wait_s+1 do
         if not fd:lock("tlock") then
             nixio.nanosleep(1)
         else
@@ -556,8 +559,8 @@ function utils.get_ifnames()
     return ifnames
 end
 
-function utils.is_valid_mac(string)
-    local string = string:match("%w%w:%w%w:%w%w:%w%w:%w%w:%w%w")
+function utils.is_valid_mac(stringArg)
+    local string = stringArg:match("%w%w:%w%w:%w%w:%w%w:%w%w:%w%w")
     if string then
        return true
     else
@@ -590,8 +593,8 @@ function utils.is_dsa(port)
     return 0 == os.execute("grep -sq DEVTYPE=dsa /sys/class/net/"..port.."/uevent")
 end
 
-function utils.dumptable(table, nesting)
-  local nesting = nesting or 1
+function utils.dumptable(table, nestingArg)
+  local nesting = nestingArg or 1
   if type(table) ~= "table" then
     print("dumptable: first argument is expected to be a table but you passed a", type(table), table)
   else
@@ -600,7 +603,9 @@ function utils.dumptable(table, nesting)
     else
       for k,v in pairs(table) do
         print(string.rep('\t', nesting), k, ' = ', v)
-        if type(v) == 'table' then dumptable(v, nesting+1) end
+        if type(v) == 'table' then
+            utils.dumptable(v, nesting+1)
+        end
       end
     end
   end

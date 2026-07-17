@@ -1,6 +1,7 @@
 local config = require 'lime.config'
 local gen_cfg = require 'lime.generic_config'
 local test_utils = require 'tests.utils'
+local utils = require("lime.utils")
 
 local uci = nil
 

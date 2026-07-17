@@ -3,6 +3,7 @@
 local config = require 'lime.config'
 local wireless = require 'lime.wireless'
 local uci = config.get_uci_cursor()
+local utils = require("lime.utils")
 
 local uci_files = { config.UCI_COMMUNITY_NAME, config.UCI_NODE_NAME  }
 

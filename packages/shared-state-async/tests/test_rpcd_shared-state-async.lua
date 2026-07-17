@@ -1,6 +1,7 @@
 local testUtils = require "tests.utils"
 local sharedState = require("shared-state")
 local json = require("luci.jsonc")
+local utils = require("lime.utils")
 
 local testFileName = "packages/shared-state-async/files/usr/libexec/rpcd/shared-state-async"
 

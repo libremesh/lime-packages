@@ -1,5 +1,6 @@
 local bat_hosts = require "bat-hosts"
 local test_utils = require "tests.utils"
+local utils = require("lime.utils")
 
 local test_file_name = "packages/shared-state-bat_hosts/files/usr/libexec/rpcd/bat-hosts"
 local ubus_bat_hosts = test_utils.load_lua_file_as_function(test_file_name)

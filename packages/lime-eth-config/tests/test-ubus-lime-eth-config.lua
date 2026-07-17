@@ -1,4 +1,6 @@
 local test_utils = require "tests.utils"
+local utils = require("lime.utils")
+
 local json = require 'luci.jsonc'
 
 local test_file_name = "packages/lime-eth-config/files/usr/libexec/rpcd/lime-eth-config"
