@@ -6,6 +6,7 @@ local location = require 'lime.location'
 local iwinfo = require('iwinfo')
 local system = require 'lime.system'
 local json = require "luci.jsonc"
+local wireless = require "lime.wireless"
 
 local test_file_name = "packages/ubus-lime-location/files/usr/libexec/rpcd/lime-location"
 local ubus_lime_loc = test_utils.load_lua_file_as_function(test_file_name)
