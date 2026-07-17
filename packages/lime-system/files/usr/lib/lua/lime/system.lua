@@ -7,7 +7,7 @@ local network = require("lime.network")
 local utils = require("lime.utils")
 
 
-system = {}
+local system = {}
 
 function system.get_hostname()
         local system_hostname = utils.applyMacTemplate16(config.get("system", "hostname"), network.primary_mac())
@@ -27,6 +27,7 @@ function system.setup_root_password()
 
 	if policy == "DO_NOTHING" then
 		--! nothing...
+		print('By default DO_NOTHING with root password, to not interfere with manual overwrites.')
 	elseif policy == "SET_SECRET" then
 		local secret = config.get("system", "root_password_secret")
 		local current_secret = utils.get_root_secret()
@@ -72,7 +73,8 @@ function system.apply()
     local hostname
     local uci = config.get_uci_cursor()
     uci:foreach("system", "system", function(s)
-        hostname = uci:get("system", s[".name"], "hostname") -- FIXME Doesn't we already have hostaname in s["hostname"] without executing the get ?
+		--! FIXME Doesn't we already have hostname in s["hostname"] without executing the get ?
+        hostname = uci:get("system", s[".name"], "hostname")
     end)
     fs.writefile("/proc/sys/kernel/hostname", hostname)
 
