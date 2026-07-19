@@ -1,6 +1,6 @@
 #!/usr/bin/lua
 
-lan = {}
+local lan = {}
 
 local network = require("lime.network")
 local config = require("lime.config")
@@ -18,8 +18,8 @@ local function find_br_lan(uci)
 			if br_lan_section then return end
 			local dev_type = uci:get("network", s[".name"], "type")
 			local dev_name = uci:get("network", s[".name"], "name")
-			if not (dev_type == 'bridge') then return end
-			if not (dev_name == 'br-lan') then return end
+			if (dev_type ~= 'bridge') then return end
+			if (dev_name ~= 'br-lan') then return end
 			br_lan_section = s[".name"]
 		end
 	)

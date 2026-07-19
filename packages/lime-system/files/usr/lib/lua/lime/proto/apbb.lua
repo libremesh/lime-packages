@@ -1,6 +1,7 @@
 #!/usr/bin/lua
 
 local apbb_mode = require("lime.mode.apbb")
+local network = require("lime.network")
 
 local apbb = {}
 

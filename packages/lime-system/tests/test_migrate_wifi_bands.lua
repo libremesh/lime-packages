@@ -29,8 +29,10 @@ describe('migrate-wifi-bands-cfg script #migratewifibands', function()
 		test_utils.write_uci_file(uci, config.UCI_DEFAULTS_NAME, default)
         test_utils.write_uci_file(uci, config.UCI_COMMUNITY_NAME, community)
         test_utils.write_uci_file(uci, config.UCI_NODE_NAME, node)
-		
-        migration_script = test_utils.load_lua_file_as_function('packages/lime-system/files/usr/bin/migrate-wifi-bands-cfg')
+
+        local migration_script = test_utils.load_lua_file_as_function(
+            'packages/lime-system/files/usr/bin/migrate-wifi-bands-cfg'
+        )
         migration_script()
         local default_wifi = uci:get_all(config.UCI_DEFAULTS_NAME, 'wifi')
         assert.are.same({ 'ap', 'apname', 'ieee80211s' }, default_wifi['modes'])
@@ -47,7 +49,7 @@ describe('migrate-wifi-bands-cfg script #migratewifibands', function()
     it('setup band modes to { manual } when no modes are available for that band', function()
         -- If band specific modes were left undefined, then general modes would be used.
         -- The mode 'manual' is used to prevent this behaviour (missing empty list configs),
-        -- and mantain consistency with previous config setup. 
+        -- and mantain consistency with previous config setup.
         local default = [[
         config lime 'wifi'
             list modes 'ap'
@@ -68,8 +70,10 @@ describe('migrate-wifi-bands-cfg script #migratewifibands', function()
 		test_utils.write_uci_file(uci, config.UCI_DEFAULTS_NAME, default)
         test_utils.write_uci_file(uci, config.UCI_COMMUNITY_NAME, community)
         test_utils.write_uci_file(uci, config.UCI_NODE_NAME, node)
-		
-        migration_script = test_utils.load_lua_file_as_function('packages/lime-system/files/usr/bin/migrate-wifi-bands-cfg')
+
+        local migration_script = test_utils.load_lua_file_as_function(
+            'packages/lime-system/files/usr/bin/migrate-wifi-bands-cfg'
+        )
         migration_script()
         local community_5ghz = uci:get_all(config.UCI_COMMUNITY_NAME, '5ghz')
         assert.are.same({ 'manual' }, community_5ghz['modes'])
@@ -94,8 +98,10 @@ describe('migrate-wifi-bands-cfg script #migratewifibands', function()
 
         test_utils.write_uci_file(uci, config.UCI_COMMUNITY_NAME, community)
         test_utils.write_uci_file(uci, config.UCI_NODE_NAME, node)
-		
-        migration_script = test_utils.load_lua_file_as_function('packages/lime-system/files/usr/bin/migrate-wifi-bands-cfg')
+
+        local migration_script = test_utils.load_lua_file_as_function(
+            'packages/lime-system/files/usr/bin/migrate-wifi-bands-cfg'
+        )
         migration_script()
         local community_5ghz = uci:get_all(config.UCI_COMMUNITY_NAME, '5ghz')
         assert.are.same({ '48', '157' }, community_5ghz['channel'])
