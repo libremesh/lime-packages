@@ -115,8 +115,7 @@ function fbw.get_config(results, mesh_network)
     fbw.log('Calc link local address and download lime-community - '.. json.stringify(mesh_network))
     local mode = mesh_network.mode == "Mesh Point" and 'mesh' or 'adhoc'
     local dev_id = 'wlan'..mesh_network['phy_idx']..'-'..mode
-    local stations = {}
-    local linksLocalIpv6 = {}
+    local stations
     --! Setup wireless interface
     fbw.setup_wireless(mesh_network)
     --! Check if connected if not sleep some more until connected or ignore if 10s passed
@@ -137,13 +136,13 @@ function fbw.get_config(results, mesh_network)
     --! Try to fetch remote config file
     local configs = ft.map(fbw.fetch_config, data)
     --! Return only valid configs
-    for _, config in pairs(configs) do
-        results[config.host] = config
+    for _, option in pairs(configs) do
+        results[option.host] = option
     end
     return results
 end
 
---! Setup wireless 
+--! Setup wireless
 function fbw.setup_wireless(mesh_network)
     local phy_idx = mesh_network["phy_idx"]
     local mode = mesh_network.mode == "Mesh Point" and 'mesh' or 'adhoc'
@@ -159,7 +158,7 @@ function fbw.setup_wireless(mesh_network)
     --! Remove current wireless setup
     uci_cursor:foreach("wireless", "wifi-iface", function(entry)
         if entry['.name'] == device_name then
-            uci_cursor:delete("wireless", entry['.name']) 
+            uci_cursor:delete("wireless", entry['.name'])
         end
     end)
     --! Set new wireless configuration
@@ -189,8 +188,9 @@ function fbw.fetch_lime_community(host, lime_community_fname)
 end
 
 --! Return true if download success, false otherwise
-function fbw.fetch_lime_community_assets(host, fname)
-    local res = lutils.http_client_get("http://[" .. host .. "]/cgi-bin/lime/lime-community-assets", 10, lime_community_fname)
+function fbw.fetch_lime_community_assets(host, lime_community_fname)
+    local res = lutils.http_client_get("http://["..host..
+        "]/cgi-bin/lime/lime-community-assets", 10, lime_community_fname)
     return res
 end
 
@@ -198,10 +198,11 @@ end
 function fbw.fetch_config(data)
     fbw.log('Fetch config from '.. json.stringify(data))
     fbw.set_status_to_scanned_bbsid(data.bssid, fbw.FETCH_CONFIG_STATUS.downloading_config)
-    local success = true
+    local success
     local host = data.host
 
-    local hostname = utils.execute("wget --no-check-certificate http://["..data.host.."]/cgi-bin/hostname -qO - "):gsub("\n", "")
+    local hostname = utils.execute("wget --no-check-certificate http://["..data.host..
+        "]/cgi-bin/hostname -qO - "):gsub("\n", "")
     fbw.log('Hostname found: '.. hostname)
     if (hostname == '') then hostname = host end
 
@@ -210,7 +211,7 @@ function fbw.fetch_config(data)
     local res = fbw.fetch_lime_community(data.host, lime_community_fname)
 
     --! Remove lime-community files that are not yet configured.
-    --! For this we asume that no ap_ssid options equals not configured.
+    --! For this we assume that no ap_ssid options equals not configured.
     if res == true and not utils.file_not_exists_or_empty(lime_community_fname) then
         local f = io.open(lime_community_fname)
         local content = f:read("*a")
@@ -319,10 +320,10 @@ end
 --! Get config from lime-default file
 local function getConfig(path)
     local uci_cursor = uci.cursor(fbw.WORKDIR)
-    local config = uci_cursor:get_all(path)
+    local lime_default_config = uci_cursor:get_all(path)
 
-    if config ~= nil then
-        return config
+    if lime_default_config ~= nil then
+        return lime_default_config
     end
     return {}
 end
@@ -333,9 +334,9 @@ function fbw.read_configs()
     local result = {}
     for file in tempFiles do
         if (file ~= nil and file:match("^" .. lutils.literalize(fbw.COMMUNITY_HOST_CONFIG_PREFIX))) then
-            local config = getConfig(file)
+            local lime_config = getConfig(file)
             local trimedConfig = {}
-            trimedConfig.wifi = config['wifi']
+            trimedConfig.wifi = lime_config['wifi']
             table.insert(result, {
                 config = trimedConfig,
                 file = file
@@ -393,7 +394,7 @@ function fbw.set_status_to_scanned_bbsid(destBssid, status)
     --! Open scan_results.json
     local results = fbw.read_scan_results()
     --! Search ssid
-    for k, v in pairs(results) do
+    for _, v in pairs(results) do
         if(v['bssid'] == destBssid) then
             --! Add status message
             v["status"] = status
@@ -412,8 +413,8 @@ end
 
 --! Scan for networks and fetch configurations files
 function fbw.get_all_networks()
-    local networks = {}
-    local configs = {}
+    local networks
+    local configs
     fbw.log("Starting search networks")
 
     fbw.log('Add lock file')
@@ -459,7 +460,7 @@ function fbw.status_search_networks()
     else
         status = 'scanned'
     end
-    lock = not fbw.is_configured() and not fbw.is_dismissed()
+    local lock = not fbw.is_configured() and not fbw.is_dismissed()
     return { lock = lock, status = status, networks = fbw.read_configs(), scanned = fbw.read_scan_results()}
 end
 
@@ -482,7 +483,6 @@ function fbw.stop_search_networks()
     else
         return true
     end
-    return false
 end
 
 --! Return false if can't perform the restart
@@ -490,7 +490,7 @@ function fbw.restart_search_networks()
     if fbw.stop_search_networks() then
         return fbw.start_search_networks()
     end
-    return false        
+    return false
 end
 
 return fbw
