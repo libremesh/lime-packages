@@ -2,8 +2,8 @@
 
 --! LibreMesh
 --! Generic hook to be called as a symbolic link for each ref type
---! Copyright (C) 2025  Javier Jorge 
---! Copyright (C) 2025  Instituto Nacional de Tecnología Industrial (INTI) 
+--! Copyright (C) 2025  Javier Jorge
+--! Copyright (C) 2025  Instituto Nacional de Tecnología Industrial (INTI)
 --! Copyright (C) 2025  Asociación Civil Altermundi <info@altermundi.net>
 --! SPDX-License-Identifier: AGPL-3.0-only
 
@@ -13,23 +13,23 @@ local utils = require 'lime.utils'
 local eth_config = require("lime-eth-config")
 
 
-local function get_eth_config(msg)
-    
-    interfaces = eth_config.get_eth_config()
+local function get_eth_config()
 
-    result = {}
+    local interfaces = eth_config.get_eth_config()
+
+    local result = {}
     if interfaces and #interfaces > 0 then
       result.status = "ok"
       result.interfaces = interfaces
     else
-      result.status = "error"  
+      result.status = "error"
       result.interfaces = {}
       result.error = "No interface configuration found"
     end
     utils.printJson(result)
 end
 
-function set_eth_config(msg)
+local function set_eth_config(msg)
   local device, role = msg.device, msg.role
 
   if not device or not role then

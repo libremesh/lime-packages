@@ -1,20 +1,17 @@
 --! LibreMesh
 --! Generic hook to be called as a symbolic link for each ref type
---! Copyright (C) 2025  Javier Jorge 
---! Copyright (C) 2025  Instituto Nacional de Tecnología Industrial (INTI) 
+--! Copyright (C) 2025  Javier Jorge
+--! Copyright (C) 2025  Instituto Nacional de Tecnología Industrial (INTI)
 --! Copyright (C) 2025  Asociación Civil Altermundi <info@altermundi.net>
 --! SPDX-License-Identifier: AGPL-3.0-only
-local JSON = require("luci.jsonc")
-local utils = require("lime.utils")
+
 local config = require("lime.config")
-local libuci = require("uci")
 local node_status = require 'lime.node_status'
 
-local luci_config = libuci:cursor()
 local eht_config = {}
 
 function eht_config.get_eth_config()
-    limenode_interfaces = {}
+    local limenode_interfaces = {}
     --! get configurations from lime-node
     local uci = config.get_uci_cursor()
     uci:foreach("lime-autogen", "net", function(entry)
@@ -25,7 +22,7 @@ function eht_config.get_eth_config()
             table.insert(limenode_interfaces, interface)
         end
     end)
-    --! get default settings 
+    --! get default settings
     local switch_status = node_status.switch_status()
     local interfaces = {}
     if switch_status ~= nil then

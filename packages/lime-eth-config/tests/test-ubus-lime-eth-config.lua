@@ -8,7 +8,7 @@ local ubus_eth_config = test_utils.load_lua_file_as_function(test_file_name)
 
 local rpcd_call = test_utils.rpcd_call
 
-local COMPLETE_BOARD = 
+local COMPLETE_BOARD =
 {
     ["model"] = {
         ["id"] = "librerouter,librerouter-v1",
@@ -72,7 +72,7 @@ local COMPLETE_BOARD =
         },
     },
 }
-    
+
 describe('ubus-eth-config tests #eth-config', function()
     it('test get_config ', function()
         stub(utils, "getBoardAsTable", function () return COMPLETE_BOARD end)
@@ -146,7 +146,8 @@ describe('ubus-eth-config tests #eth-config', function()
         assert.is.equal("ok", set_response.status)
 
         -- Get eth config and verify
-        local get_response = rpcd_call(ubus_eth_config, {'call', 'get_eth_config'}, json.stringify({device = "eth1.2", role = "default"}))
+        local get_response = rpcd_call(ubus_eth_config, {'call', 'get_eth_config'},
+            json.stringify({device = "eth1.2", role = "default"}))
         utils.printJson(get_response)
         assert.is.equal("ok", get_response.status)
         assert.is_not_nil(get_response.interfaces)
