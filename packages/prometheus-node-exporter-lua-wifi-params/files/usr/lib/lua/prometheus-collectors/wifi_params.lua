@@ -16,7 +16,7 @@ local function scrape()
     end
   )
 
-  uci:foreach("wireless", "wifi-iface", 
+  uci:foreach("wireless", "wifi-iface",
     function(s)
       local mcast_rate = uci:get("wireless", s[".name"], "mcast_rate")
       local ifname = uci:get("wireless", s[".name"], "ifname")

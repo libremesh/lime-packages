@@ -3,9 +3,9 @@ local iwinfo = require "iwinfo"
 
 local function mac2name_init()
   local mac2name = {}
-  local f = ""
+  local f
 
-  filename = "/etc/bat-hosts"
+  local filename = "/etc/bat-hosts"
   f = io.open(filename, "r")
   if(f == nil) then
     filename = "/etc/babeld-hosts"
@@ -25,7 +25,7 @@ local function mac2name_init()
   f = io.open(filename, "r")
   if(f ~= nil) then
     for line in io.lines(filename) do
-      local mac, ip, name = line:match("(..:..:..:..:..:..)%s+([^%s]+)%s+([^%s]+)")
+      local mac, _, name = line:match("(..:..:..:..:..:..)%s+([^%s]+)%s+([^%s]+)")
       if mac then mac2name[mac:lower()] = name end
     end
   end
@@ -47,14 +47,14 @@ local function scrape()
   local u = ubus.connect()
   local status = u:call("network.wireless", "status", {})
 
-  for dev, dev_table in pairs(status) do
+  for _, dev_table in pairs(status) do
     for _, intf in ipairs(dev_table['interfaces']) do
       local ifname = intf['ifname']
       if ifname ~= nil then
         local iw = iwinfo[iwinfo.type(ifname)]
 
         local assoclist = iw.assoclist(ifname)
-        for mac, station in pairs(assoclist) do
+        for mac, _ in pairs(assoclist) do
           local labels = {
             ifname = ifname,
             mac = mac,
@@ -67,7 +67,7 @@ local function scrape()
             repeat
               l = iwstation:read("*l")
 
-              regexp = "^%s*signal avg:[^-%d]*(-?%d*)[^-%d]*(-?%d*)[^-%d]*(-?%d*)[^-%d]*(-?%d*)"
+              local regexp = "^%s*signal avg:[^-%d]*(-?%d*)[^-%d]*(-?%d*)[^-%d]*(-?%d*)[^-%d]*(-?%d*)"
               if l and l:match(regexp) then
                 local avg, chain0, chain1, chain2 = l:match(regexp)
                 if avg ~= "" and avg ~= 0 then
