@@ -1,17 +1,17 @@
 #!/bin/bash
 
 PWD=$(printf "%q\n" "${PWD}")
-APP=${@:-/bin/bash}
+APP=${*:-/bin/bash}
 
 DOCKER_IMAGE="${DOCKER_IMAGE:-libremesh/luatest:1.2}"
 
 DOCKER_BASHRC=/tmp/.docker_${USER}_bashrc
 
-rm -rf ${DOCKER_BASHRC} 2>/dev/null
-cp ${HOME}/.bashrc ${DOCKER_BASHRC} 2>/dev/null
-echo "PS1=\"(docker) \$PS1\"" >> ${DOCKER_BASHRC}
+rm -rf "${DOCKER_BASHRC}" 2>/dev/null
+cp "${HOME}/.bashrc" "${DOCKER_BASHRC}" 2>/dev/null
+echo "PS1=\"(docker) \$PS1\"" >> "${DOCKER_BASHRC}"
 
-REPO_PATH=$(printf "%q\n" "`git rev-parse --show-toplevel`")
+REPO_PATH=$(printf "%q\n" "$(git rev-parse --show-toplevel)")
 
 DOCKER_CMD="docker run \
     -v ${HOME}:${HOME} \

@@ -56,7 +56,7 @@ done
 
 pick_image() {
   local dir="$1" base_prefix="$2" picked=""
-  for f in "$dir"/${base_prefix}.*; do
+  for f in "${dir}/${base_prefix}".*; do
     case "$f" in
       *.manifest|*.sha256|*.txt|*.log) ;;
       *) picked="$f"; break ;;
@@ -82,9 +82,9 @@ for i in "${!PLACES[@]}"; do
   fi
   src_prefix="firmware-${device}"
   dst_prefix="firmware-${place}"
-  for f in "$src_dir"/${src_prefix}.*; do
+  for f in "${src_dir}/${src_prefix}".*; do
     base="$(basename "$f")"
-    suffix="${base#$src_prefix}"
+    suffix="${base#"$src_prefix"}"
     cp -a "$f" "$BASE/$place/${dst_prefix}${suffix}"
   done
   img=$(pick_image "$BASE/$place" "${dst_prefix}")
