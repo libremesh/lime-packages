@@ -14,7 +14,7 @@ if not conn then
     error("Failed to connect to ubus")
 end
 
-local function is_new_version_available(msg)
+local function is_new_version_available()
     local cached_only = false
     local ret = {}
     if eupgrade.is_enabled() then
@@ -28,7 +28,7 @@ local function is_new_version_available(msg)
     utils.printJson(ret)
 end
 
-local function start_download(msg)
+local function start_download()
     local ret = {status = 'ok'}
     local cached_only = true
     local latest_data = eupgrade.is_new_version_available(cached_only)
@@ -40,11 +40,11 @@ local function start_download(msg)
     utils.printJson(ret)
 end
 
-local function download_status(msg)
+local function download_status()
     local ret = {status = 'ok'}
-    local download_status = eupgrade.get_download_status()
-    ret.download_status = download_status
-    if download_status == eupgrade.STATUS_DOWNLOADED then
+    local status = eupgrade.get_download_status()
+    ret.download_status = status
+    if status == eupgrade.STATUS_DOWNLOADED then
         ret.fw_path, ret.fw_type = eupgrade.get_downloaded_info()
     end
     utils.printJson(ret)

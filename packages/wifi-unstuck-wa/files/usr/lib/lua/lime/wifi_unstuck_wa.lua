@@ -34,7 +34,7 @@ end
 function wu.wait_and_kill_on_timeout(pid_time_started)
 	local pid_done = {}
 
-	for pid,time_started in pairs(pid_time_started) do
+	for pid,_ in pairs(pid_time_started) do
 		pid_done[pid]=false
 	end
 
@@ -44,16 +44,16 @@ function wu.wait_and_kill_on_timeout(pid_time_started)
 
 		--! see if something changed
 		while true do
-			pid,state,code = nixio.waitpid(nil,"nohang")
+			local pid,_,_ = nixio.waitpid(nil,"nohang")
 			if not pid then break end
 			if pid == 0 then break end
 			pid_done[pid] = true
 		end
 
 		--! see if time is up
-		now = os.time()
+		local now = os.time()
 		for pid,time_started in pairs(pid_time_started) do
-			time_is_up = now - time_started > wu.TIMEOUT
+			local time_is_up = now - time_started > wu.TIMEOUT
 			if not pid_done[pid] and time_is_up then
 				--! time is up. send SIGTERM
 				nixio.kill(pid,15)
@@ -63,8 +63,8 @@ function wu.wait_and_kill_on_timeout(pid_time_started)
 		end
 
 		--! see if there are remaining processes
-		all_done = true
-		for pid,done in pairs(pid_done) do
+		local all_done = true
+		for _,done in pairs(pid_done) do
 			all_done = all_done and done
 		end
 	until all_done
@@ -88,7 +88,7 @@ function wu.do_workaround()
 
 			--! we can not use os.popen here, because it does not give us the
 			--! pid
-			pid = nixio.fork()
+			local pid = nixio.fork()
 			if pid == 0 then
 				nixio.exec('/bin/sh','-c',cmd..' >/dev/null')
 				os.exit(1)
@@ -104,13 +104,13 @@ function wu.do_workaround()
 end
 
 function wu.configure()
-	interval = tonumber( config.get("wifi", "unstuck_interval", -1) )                                  
-                                                                                                           
-	if interval and interval > 0 then                                                                  
-		--! use sed to replace interval in /etc/crontabs/root                                      
-		io.popen("sed -i 's/\\*\\/\\d\\+ \\* \\* \\* \\* ((wifi-unstuck &> \\/dev\\/"..            
-			"null)&)/*\\/"..interval.." * * * * ((wifi-unstuck \\&> \\/dev\\/null)\\&)/g"..            
-			"' /etc/crontabs/root")                                                               
+	local interval = tonumber( config.get("wifi", "unstuck_interval", -1) )
+
+	if interval and interval > 0 then
+		--! use sed to replace interval in /etc/crontabs/root
+		io.popen("sed -i 's/\\*\\/\\d\\+ \\* \\* \\* \\* ((wifi-unstuck &> \\/dev\\/"..
+			"null)&)/*\\/"..interval.." * * * * ((wifi-unstuck \\&> \\/dev\\/null)\\&)/g"..
+			"' /etc/crontabs/root")
 	end
 end
 

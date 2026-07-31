@@ -1,6 +1,6 @@
 #!/usr/bin/lua
 --! SPDX-License-Identifier: AGPL-3.0-only
---! 
+--!
 --! Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
 --! Copyright (C) 2019  Nicolas Echaniz <nicoechaniz@altermundi.net>
 
@@ -11,31 +11,31 @@ local function http_head_request(url)
     -- Parse URL to extract host and path
     local host = url:gsub("^https?://", ""):gsub("/.*", "")
     local port = 80
-    
+
     -- Check if port is specified in host
     if host:match(":") then
         host, port = host:match("([^:]+):(%d+)")
         port = tonumber(port)
     end
-    
+
     -- Build netcat command with HTTP HEAD request
     local cmd = string.format(
         "printf 'HEAD / HTTP/1.1\\r\\nHost: %s\\r\\nConnection: close\\r\\n\\r\\n' | nc %s %d 2>/dev/null",
         host, host, port
     )
-    
+
     local handle = io.popen(cmd)
     if not handle then
         return nil
     end
-    
+
     local response = handle:read("*a")
     local success = handle:close()
-    
+
     if not success or response == "" then
         return nil
     end
-    
+
     -- Parse headers into a table
     local headers = {}
     for line in response:gmatch("[^\r\n]+") do
@@ -44,7 +44,7 @@ local function http_head_request(url)
             headers[key] = value
         end
     end
-    
+
     return { headers = headers }
 end
 
@@ -56,7 +56,6 @@ url = url[math.random(#url)]
 local resetDate = config:get("check-date", "system", "reset_date") or false
 local restartSysntpd = config:get("check-date", "system", "restart_sysntpd")
 restartSysntpd = (restartSysntpd == nil) or restartSysntpd
-config = nil
 
 local localCurrDate = assert(io.popen("date --utc -Iminutes", 'r'):read())
 local lFormat="(%d+)-(%d+)-(%d+)T(%d+):(%d+)"
@@ -81,7 +80,8 @@ if not day then
     os.exit(44)
 end
 
-local MON = { Jan="01", Feb="02", Mar="03", Apr="04", May="05", Jun="06", Jul="07", Aug="08", Sep="09", Oct="10", Nov="11", Dec="12"}
+local MON = { Jan="01", Feb="02", Mar="03", Apr="04", May="05", Jun="06", Jul="07",
+    Aug="08", Sep="09", Oct="10", Nov="11", Dec="12"}
 month = MON[month]
 
 local skewDetected = false
@@ -108,7 +108,7 @@ if(skewDetected) then
 	       " local "..currDate.." "..url.." "..newDate )
 
 	if resetDate then
-		local newDate = string.format(
+		newDate = string.format(
 			"%s.%s.%s-%s:%s:%s", year, month, day, hour, min, sec )
 		os.execute("date --utc --set "..newDate)
 	end

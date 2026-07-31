@@ -1,6 +1,4 @@
-local utils = require "lime.utils"
 local test_utils = require "tests.utils"
-local config = require 'lime.config'
 
 local test_file_name = "packages/check-internet/files/usr/libexec/rpcd/check-internet"
 local check_internet = test_utils.load_lua_file_as_function(test_file_name)

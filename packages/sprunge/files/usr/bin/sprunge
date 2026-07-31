@@ -29,20 +29,20 @@ case "${1}" in
 		;;
 	"-f")
 		echo "${COMMAND}" > "${TEMP_FILE}"
-		cat "${2}" | tee -a "${TEMP_FILE}"
+		tee -a "${TEMP_FILE}" < "${2}"
 		;;
 	*) tee <&0 "${TEMP_FILE}" ;;
 esac
 
-cat "${TEMP_FILE}" | hexdump -v -e '/1 "%02x"' \
+hexdump -v -e '/1 "%02x"' "${TEMP_FILE}" \
 	| sed 's/\(..\)/%\1/g' > "${TEMP_FILE_ENCODED}"
 
 echo -n "POST / HTTP/1.0
 Host: ${SPRUNGE_HOST}
-Content-Length: $(( $(cat ${TEMP_FILE_ENCODED} | wc -m) + 8 ))
+Content-Length: $(( $(cat "${TEMP_FILE_ENCODED}" | wc -m) + 8 ))
 Content-Type: application/x-www-form-urlencoded
 
-sprunge=$(cat ${TEMP_FILE_ENCODED})" \
+sprunge=$(cat "${TEMP_FILE_ENCODED}")" \
 	| nc "${SPRUNGE_HOST}" 80 \
 	| grep "${SPRUNGE_HOST}" 1>&2
 
