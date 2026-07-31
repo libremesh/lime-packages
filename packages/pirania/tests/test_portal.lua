@@ -25,7 +25,7 @@ describe('Pirania portal tests #portal', function()
         portal_cfg = portal.get_config()
         assert.is_true(portal_cfg.activated)
 
-        local activated = false
+        activated = false
         status = portal.set_config(activated, with_vouchers)
         assert.is_true(status)
         assert.stub.spy(utils.unsafe_shell).was.called_with('captive-portal stop')
@@ -34,7 +34,7 @@ describe('Pirania portal tests #portal', function()
         assert.is_false(portal_cfg.activated)
 
         with_vouchers = false
-        status, message = portal.set_config(activated, with_vouchers)
+        status = portal.set_config(activated, with_vouchers)
         assert.is_true(status)
         portal_cfg = portal.get_config()
         assert.is_false(portal_cfg.with_vouchers)
@@ -45,11 +45,13 @@ describe('Pirania portal tests #portal', function()
 
         local content = portal.get_page_content()
         assert.is.equal('Pirania', content.title)
-        local title, main_text, logo, link_title, link_url, bgcolor = 'My Portal', 'my text', 'mylogo', 'linktitle', 'http://foo', '#aabbcc'
+        local title, main_text, logo, link_title, link_url, bgcolor = 'My Portal',
+            'my text', 'mylogo', 'linktitle', 'http://foo', '#aabbcc'
         portal.set_page_content(title, main_text, logo, link_title, link_url, bgcolor)
 
-        local content = portal.get_page_content()
-        assert.are.same({title=title, main_text=main_text, background_color=bgcolor, link_title=link_title, link_url=link_url, logo=logo}, content)
+        content = portal.get_page_content()
+        assert.are.same({title=title, main_text=main_text, background_color=bgcolor,
+            link_title=link_title, link_url=link_url, logo=logo}, content)
 
     end)
 
@@ -106,7 +108,7 @@ describe('Pirania portal tests #portal', function()
 
     before_each('', function()
         snapshot = assert:snapshot()
-        test_dir = test_utils.setup_test_dir()
+        local test_dir = test_utils.setup_test_dir()
         shared_state.PERSISTENT_DATA_DIR = test_dir
         shared_state.DATA_DIR = test_dir
         uci = test_utils.setup_test_uci()

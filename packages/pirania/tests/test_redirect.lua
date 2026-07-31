@@ -1,5 +1,4 @@
 local test_utils = require("tests.utils")
-local match = require("luassert.match")
 local REDIRECT_PATH = "packages/pirania/files/www/pirania-redirect/redirect"
 local DNSMASQ_INIT_PATH = "./packages/pirania/files/etc/init.d/pirania-dnsmasq"
 local PORTAL_JS_PATH = "./packages/pirania/files/www/portal/js/ubusFetch.js"
@@ -12,10 +11,13 @@ local FAKE_ENV = {
 
 local uci
 
+package.path = package.path .. ";packages/pirania/files/www/pirania-redirect/?;;"
+
 describe('Pirania redirect request handler #portalredirect', function()
     local snapshot
-    
+
     it('should redirect to url_auth when vouchers are active', function()
+        local handle_request = require("redirect")
         local portal_domain = uci:get('pirania', 'base_config', 'portal_domain')
         uci:set('pirania', 'base_config', 'with_vouchers', '1')
         uci:commit('pirania')
@@ -29,6 +31,7 @@ describe('Pirania redirect request handler #portalredirect', function()
     end)
 
     it('should redirect to read_for_access portal when vouchers are non active', function()
+        local handle_request = require("redirect")
         local portal_domain = uci:get('pirania', 'base_config', 'portal_domain')
         uci:set('pirania', 'base_config', 'with_vouchers', '0')
         uci:commit('pirania')
@@ -42,6 +45,7 @@ describe('Pirania redirect request handler #portalredirect', function()
     end)
 
     it('uses a configured portal_domain in redirects', function()
+        local handle_request = require("redirect")
         uci:set('pirania', 'base_config', 'portal_domain', 'portal.example.test')
         uci:set('pirania', 'base_config', 'with_vouchers', '1')
         uci:commit('pirania')
@@ -78,13 +82,13 @@ describe('Pirania redirect request handler #portalredirect', function()
 
     before_each('', function()
         snapshot = assert:snapshot()
-        test_dir = test_utils.setup_test_dir()
+        test_utils.setup_test_dir()
         uci = test_utils.setup_test_uci()
         local default_cfg = io.open(CONFIG_PATH):read("*all")
         test_utils.write_uci_file(uci, 'pirania', default_cfg)
         test_utils.load_lua_file_as_function(REDIRECT_PATH)()
         _G.uhttpd = {
-            send = function(msg) end
+            send = function() end
         }
         stub(uhttpd, "send")
     end)

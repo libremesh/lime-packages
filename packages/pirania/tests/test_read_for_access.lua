@@ -21,13 +21,12 @@ describe('read_for_access tests #readforaccess', function()
         assert.is.equal(0, utils.tableLength(auth_macs))
     end)
 
-    
     it('calls captive-portal-update on authorize_mac', function()
         stub(os, 'execute', function() end)
         read_for_access.authorize_mac('AA:BB:CC:DD:EE:FF')
         assert.stub(os.execute).was_called_with('/usr/bin/captive-portal update > /dev/null 2>&1')
     end)
-    
+
     it('let us re-authorize a mac', function()
         stub(os, 'execute', function() end)
         local duration_m = uci:get('pirania', 'read_for_access', 'duration_m')

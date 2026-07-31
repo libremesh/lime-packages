@@ -2,8 +2,10 @@ local test_utils = require 'tests.utils'
 
 local CONFIG_PATH = "./packages/pirania/files/etc/config/pirania"
 local SCRIPT_PATH = "./packages/pirania/files/usr/bin/captive-portal"
-local GLOBAL_ALLOWLIST_URL = "https://raw.githubusercontent.com/HybridNetworks/whatsapp-cidr/refs/heads/main/WhatsApp/whatsapp_cidr_ipv4.txt"
-local TRANCA_ALLOWLIST_URL = "https://raw.githubusercontent.com/nickoppen/libremesh-whatsapp-ipv4-allowlist/refs/heads/main/whatsapp_ipv4_cidr.txt"
+local GLOBAL_ALLOWLIST_URL = "https://raw.githubusercontent.com/HybridNetworks/whatsapp-cidr/"..
+"refs/heads/main/WhatsApp/whatsapp_cidr_ipv4.txt"
+local TRANCA_ALLOWLIST_URL = "https://raw.githubusercontent.com/nickoppen/libremesh-whatsapp-ipv4-allowlist/"..
+"refs/heads/main/whatsapp_ipv4_cidr.txt"
 
 local test_dir
 local bin_dir
@@ -134,7 +136,8 @@ esac
         write_executable("nft", [[#!/bin/sh
 printf '%s\n' "$*" >> "$TEST_ROOT/nft.log"
 
-if [ "$1" = "list" ] && [ "$2" = "chain" ] && [ "$3" = "inet" ] && [ "$4" = "pirania" ] && [ "$5" = "pirania_forward" ]; then
+if [ "$1" = "list" ] && [ "$2" = "chain" ] && [ "$3" = "inet" ] &&
+    [ "$4" = "pirania" ] && [ "$5" = "pirania_forward" ]; then
     if [ -f "$TEST_ROOT/tranca_marker_present" ]; then
         printf 'chain pirania_forward {\n'
         printf '    ether saddr @pirania-auth-macs drop comment "TRANCA_BLOCK_AUTH_MAC"\n'
@@ -239,9 +242,14 @@ exit 0
 
         local nft_log = read_file(test_dir .. "nft.log") or ""
 
-        assert.is_not_nil(string.find(nft_log, 'add rule inet pirania pirania_prerouting tcp dport 443 return', 1, true))
-        assert.is_not_nil(string.find(nft_log, 'add rule inet pirania pirania_input tcp dport 443 ether saddr != @pirania-auth-macs reject with tcp reset', 1, true))
-        assert.is_not_nil(string.find(nft_log, 'add rule inet pirania pirania_forward tcp dport 443 ether saddr != @pirania-auth-macs reject with tcp reset', 1, true))
+        assert.is_not_nil(string.find(nft_log,
+            'add rule inet pirania pirania_prerouting tcp dport 443 return', 1, true))
+        assert.is_not_nil(string.find(nft_log,
+            'add rule inet pirania pirania_input tcp dport 443 ether saddr != @pirania-auth-macs '..
+            'reject with tcp reset', 1, true))
+        assert.is_not_nil(string.find(nft_log,
+            'add rule inet pirania pirania_forward tcp dport 443 ether saddr != @pirania-auth-macs '..
+            'reject with tcp reset', 1, true))
     end)
 
     it('logs a warning before retrying insecure allowlist downloads', function()
@@ -255,8 +263,11 @@ exit 0
         local logger_log = read_file(test_dir .. "logger.log") or ""
         local wget_log = read_file(test_dir .. "wget.log") or ""
 
-        assert.is_not_nil(string.find(logger_log, 'WARNING: Retrying IPv4 allowlist download without certificate validation: https://example.test/allowlist.txt', 1, true))
-        assert.is_not_nil(string.find(wget_log, '--no-check-certificate -q -O - https://example.test/allowlist.txt', 1, true))
+        assert.is_not_nil(string.find(logger_log,
+            'WARNING: Retrying IPv4 allowlist download without certificate validation: '..
+            'https://example.test/allowlist.txt', 1, true))
+        assert.is_not_nil(string.find(wget_log,
+            '--no-check-certificate -q -O - https://example.test/allowlist.txt', 1, true))
     end)
 
     it('logs a warning before retrying insecure Tranca allowlist downloads', function()
@@ -272,7 +283,9 @@ exit 0
         )
         local wget_log = read_file(test_dir .. "wget.log") or ""
 
-        assert.is_not_nil(string.find(logger_log, 'WARNING: Retrying Tranca allowlist download without certificate validation: ' .. TRANCA_ALLOWLIST_URL, 1, true))
+        assert.is_not_nil(string.find(logger_log,
+            'WARNING: Retrying Tranca allowlist download without certificate validation: '..
+            TRANCA_ALLOWLIST_URL, 1, true))
         assert.is_not_nil(string.find(wget_log, '--no-check-certificate -q -O - ' .. TRANCA_ALLOWLIST_URL, 1, true))
     end)
 end)

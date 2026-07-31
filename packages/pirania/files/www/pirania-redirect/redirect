@@ -3,23 +3,23 @@ local utils = require('voucher.utils')
 local portal = require('portal.portal')
 local config = require('lime.config')
 
-
-local uci_cursor = config.get_uci_cursor()
-
-function handle_request (env)
+local function handle_request (env)
+  local uci_cursor = config.get_uci_cursor()
   local method = 'http://'
   local origin_url = utils.urlencode(method .. env.HTTP_HOST .. env.REQUEST_URI)
   local portal_domain = uci_cursor:get("pirania", "base_config", "portal_domain") or 'thisnode.info'
   local with_vouchers = portal.get_config().with_vouchers
-  local redirect_path = ''
+  local redirect_path
   if with_vouchers then
     redirect_path = uci_cursor:get("pirania", "base_config", "url_auth") or '/portal/auth.html'
   else
     redirect_path = uci_cursor:get("pirania", "read_for_access", "url_portal") or '/portal/read_for_access.html'
   end
   local redirect_url = method .. portal_domain .. redirect_path .. "?prev=" .. origin_url
-  
+
   uhttpd.send("Status: 302 \r\n")
   uhttpd.send("Location: " .. redirect_url .. "\r\n")
   uhttpd.send("\r\n") --! indicate uhttpd to send the response
 end
+
+return handle_request

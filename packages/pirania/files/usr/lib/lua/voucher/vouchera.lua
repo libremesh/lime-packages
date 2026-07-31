@@ -18,7 +18,7 @@ local voucher_metatable = {
 }
 
 --! obj attrs id, name, code, mac, duration_m, mod_counter, creation_date, activation_date
-function voucher_init(obj)
+local function voucher_init(obj)
     local voucher = {}
 
     if not obj.id then
@@ -242,7 +242,7 @@ end
 function vouchera.activate(code, mac)
     local voucher = vouchera.is_activable(code)
     if voucher then
-        function _update(v)
+        local function _update(v)
             v.mac = mac
             v.activation_date = os.time()
         end
@@ -269,7 +269,7 @@ end
 --! Return true if there is an activated voucher that grants a access to the specified MAC
 function vouchera.is_mac_authorized(mac)
     if mac ~= nil then
-        for k, v in pairs(vouchera.vouchers) do
+        for _, v in pairs(vouchera.vouchers) do
             if v.mac == mac and v.is_active() then
                 return true
             end
@@ -296,7 +296,10 @@ function vouchera.should_be_pruned(voucher)
     local current_time = os.time()
     return (voucher.expiration_date() ~= nil and (
            voucher.expiration_date() <= (current_time - vouchera.PRUNE_OLDER_THAN_S))) or
-           ((voucher.invalidation_date or false) and (voucher.invalidation_date <= (current_time - vouchera.PRUNE_OLDER_THAN_S)))
+            (
+                (voucher.invalidation_date or false) and
+                (voucher.invalidation_date <= (current_time - vouchera.PRUNE_OLDER_THAN_S))
+            )
 end
 
 function vouchera.rename(id, new_name)
@@ -312,7 +315,7 @@ end
 
 function vouchera.list()
     local vouchers = {}
-    for k, v in pairs(vouchera.vouchers) do
+    for _, v in pairs(vouchera.vouchers) do
         table.insert(vouchers, {
             id=v.id,
             name=v.name,

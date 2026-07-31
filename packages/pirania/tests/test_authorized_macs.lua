@@ -89,7 +89,7 @@ describe('pirania_authorized_macs script tests #authorizedmacs', function()
 
     before_each('', function()
         snapshot = assert:snapshot()
-        test_dir = test_utils.setup_test_dir()
+        local test_dir = test_utils.setup_test_dir()
         shared_state.PERSISTENT_DATA_DIR = test_dir
         shared_state.DATA_DIR = test_dir
         uci = test_utils.setup_test_uci()

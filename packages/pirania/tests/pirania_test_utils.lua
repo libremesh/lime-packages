@@ -10,7 +10,7 @@ function utils.fake_for_tests()
     os.execute("mkdir -p " .. config.db_path)
     config.prune_expired_for_days = '30'
 
-    hooks.run = function(action) end
+    hooks.run = function() end
 end
 
 return utils

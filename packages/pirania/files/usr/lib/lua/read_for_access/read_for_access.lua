@@ -4,7 +4,7 @@ local config = require('lime.config')
 
 local read_for_access = {}
 
-function uptime_s()
+local function uptime_s()
     return math.floor(utils.uptime_s())
 end
 

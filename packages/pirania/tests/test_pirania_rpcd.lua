@@ -1,5 +1,3 @@
-local utils = require "lime.utils"
-local test_utils = require "tests.utils"
 local json = require 'luci.jsonc'
 local test_utils = require 'tests.utils'
 require('packages/pirania/tests/pirania_test_utils').fake_for_tests()
@@ -32,13 +30,13 @@ describe('pirania rpcd tests #piraniarpcd', function()
 
 
         local json_data = json.stringify({activated=false, with_vouchers=true})
-        local response  = rpcd_call(pirania, {'call', 'set_portal_config'}, json_data)
+        response  = rpcd_call(pirania, {'call', 'set_portal_config'}, json_data)
         assert.is.equal("ok", response.status)
         assert.stub.spy(portal.set_config).was.called_with(false, true)
 
         stub(portal, "set_config", function () return nil, 'errormsg' end)
-        local json_data = json.stringify({activated=true, with_vouchers=false})
-        local response  = rpcd_call(pirania, {'call', 'set_portal_config'}, json_data)
+        json_data = json.stringify({activated=true, with_vouchers=false})
+        response  = rpcd_call(pirania, {'call', 'set_portal_config'}, json_data)
         assert.is.equal("error", response.status)
         assert.is.equal("errormsg", response.message)
     end)
@@ -64,11 +62,12 @@ describe('pirania rpcd tests #piraniarpcd', function()
     end)
 
     it('test list vouchers', function()
-        local json_data = json.stringify({name='foo', duration_m=100, activation_deadline=os.time()+10, permanent = false, qty=5})
-        local response = rpcd_call(pirania, {'call', 'add_vouchers'}, json_data)
+        local json_data = json.stringify({name='foo', duration_m=100, activation_deadline=os.time()+10,
+            permanent = false, qty=5})
+        rpcd_call(pirania, {'call', 'add_vouchers'}, json_data)
 
         spy.on(vouchera, "list")
-        local response  = rpcd_call(pirania, {'call', 'list_vouchers'}, '{}')
+        local response = rpcd_call(pirania, {'call', 'list_vouchers'}, '{}')
         assert.is.equal("ok", response.status)
         assert.is.equal(5, #response.vouchers)
         assert.stub.spy(vouchera.list).was.called()
@@ -79,11 +78,11 @@ describe('pirania rpcd tests #piraniarpcd', function()
         local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=100})
 
         spy.on(vouchera, "invalidate")
-        local response  = rpcd_call(pirania, {'call', 'invalidate'}, json.stringify({id=voucher.id}))
+        local response = rpcd_call(pirania, {'call', 'invalidate'}, json.stringify({id=voucher.id}))
         assert.is.equal("ok", response.status)
         assert.stub.spy(vouchera.invalidate).was.called_with(voucher.id)
 
-        local response  = rpcd_call(pirania, {'call', 'invalidate'}, json.stringify({id='invalidid'}))
+        response = rpcd_call(pirania, {'call', 'invalidate'}, json.stringify({id='invalidid'}))
         assert.is.equal("error", response.status)
     end)
 
@@ -96,7 +95,7 @@ describe('pirania rpcd tests #piraniarpcd', function()
         msg.link_url = 'http://foo'
         msg.background_color = '#aabbcc'
         stub(portal, "set_page_content", function() end)
-        local response  = rpcd_call(pirania, {'call', 'set_portal_page_content'}, json.stringify(msg))
+        rpcd_call(pirania, {'call', 'set_portal_page_content'}, json.stringify(msg))
         assert.stub(portal.set_page_content).was_called_with(
             msg.title, msg.main_text, msg.logo, msg.link_title,
             msg.link_url, msg.background_color
