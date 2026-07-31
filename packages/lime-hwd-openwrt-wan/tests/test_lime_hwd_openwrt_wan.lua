@@ -1,4 +1,3 @@
-local network = require 'lime.network'
 local utils = require 'lime.utils'
 local config = require 'lime.config'
 local openwrt_wan = require 'lime.hwd.openwrt_wan'

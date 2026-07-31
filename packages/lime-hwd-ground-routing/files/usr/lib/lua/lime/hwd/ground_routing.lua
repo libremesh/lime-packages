@@ -17,7 +17,7 @@ end
 function ground_routing.clean()
 	local uci = config.get_uci_cursor()
 
-	function cleanGrSection(section)
+	local function cleanGrSection(section)
 		if utils.stringStarts(section[".name"], ground_routing.sectionNamePrefix) then
 			uci:delete("network", section[".name"])
 		end
@@ -29,13 +29,13 @@ function ground_routing.clean()
 end
 
 function ground_routing.detect_hardware()
-	function parse_gr(section)
+	local function parse_gr(section)
 		local link_name = section[".name"]
 		local net_dev = section["net_dev"]
 		local vlan = section["vlan"]
 		local uci = config.get_uci_cursor()
 
-		function create_8021q_dev(vlan_p)
+		local function create_8021q_dev(vlan_p)
 			local dev_secname = ground_routing.sectionNamePrefix..link_name.."_"..net_dev.."_"..vlan_p
 			uci:set("network", dev_secname, "device")
 			uci:set("network", dev_secname, "name", net_dev.."."..vlan_p)
@@ -47,21 +47,21 @@ function ground_routing.detect_hardware()
 		local switch_dev = section["switch_dev"]
 		if switch_dev then
 			local switch_cpu_port = section["switch_cpu_port"]
-			function tag_cpu_port(section)
-				if (section["device"] ~= switch_dev) then return end
+			local function tag_cpu_port(sectionArg)
+				if (sectionArg["device"] ~= switch_dev) then return end
 
 				local patterns = { "^"..switch_cpu_port.." ", " "..switch_cpu_port.."$", " "..switch_cpu_port.." "  }
 				local substits = { switch_cpu_port.."t ",     " "..switch_cpu_port.."t", " "..switch_cpu_port.."t " }
 				local matchCount = 0
-				local m = 0
+				local m
 				for i,p in pairs(patterns) do
-					section["ports"], m = section["ports"]:gsub(p, substits[i])
+					sectionArg["ports"], m = sectionArg["ports"]:gsub(p, substits[i])
 					matchCount = matchCount + m
 				end
 
 				if (matchCount > 0) then
-					create_8021q_dev(section["vlan"])
-					uci:set("network", section[".name"], "ports", section["ports"])
+					create_8021q_dev(sectionArg["vlan"])
+					uci:set("network", sectionArg[".name"], "ports", sectionArg["ports"])
 				end
 			end
 
@@ -86,7 +86,7 @@ function ground_routing.detect_hardware()
 	end
 
 	local clean_needed -- if there are no hwd_gr sections defined, don't clean all switch_vlan sections
-	config.foreach("hwd_gr", function(s) clean_needed = true end)
+	config.foreach("hwd_gr", function() clean_needed = true end)
 	if clean_needed then ground_routing.delete_all_switch_vlan_sections() end
 
 	config.foreach("hwd_gr", parse_gr)
