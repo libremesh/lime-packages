@@ -139,7 +139,8 @@ function pkg.firmware_upgrade(fw_path, preserve_config, metadata, fw_type)
         local progress_status = utils.read_file("/tmp/upgrade-installer-status") or 'unknown'
         if progress_status == 'failed' then
             pkg.set_upgrade_status(pkg.UPGRADE_STATUS_FAILED)
-            return nil, utils.read_file("/tmp/upgrade-installer-error-mesage") or 'Installer failed without error message'
+            return nil, utils.read_file("/tmp/upgrade-installer-error-mesage")
+                or 'Installer failed without error message'
         end
     end
     return true, metadata

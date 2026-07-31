@@ -13,8 +13,8 @@ end
 function metrics.get_metrics(target)
     local result = {}
     local node = target
-    local loss = nil
-    local shell_output = ""
+    local loss
+    local shell_output
 
     if lutils.is_installed("lime-proto-babeld") then
         loss = utils.get_loss(node)
@@ -35,7 +35,7 @@ end
 function metrics.get_loss(target)
     local result = {}
     local node = target
-    local loss = nil
+    local loss
 
     loss = utils.get_loss(node)
     result.loss = loss
@@ -45,14 +45,11 @@ end
 
 
 function metrics.get_gateway()
-    local result = {}
-    local gw = nil
-
     local internet_path_file = io.open(metrics.get_last_internet_path_filename(), "r")
     if internet_path_file then
         local path_content = assert(internet_path_file:read("*a"), nil)
         internet_path_file:close()
-        path = json.parse(path_content) or nil
+        local path = json.parse(path_content) or nil
         if lutils.tableLength(path) > 0 then
             return { status="ok", gateway=path[lutils.tableLength(path)] }
         end
@@ -61,15 +58,15 @@ function metrics.get_gateway()
     return {status="error", error={msg="Not found. No gateway available.", code="1"}}
 end
 
-function metrics.get_last_internet_path(msg)
+function metrics.get_last_internet_path()
     local internet_path_file = io.open(metrics.get_last_internet_path_filename(), "r")
     if internet_path_file then
-        path_content = assert(internet_path_file:read("*a"), nil)
+        local path_content = assert(internet_path_file:read("*a"), nil)
         internet_path_file:close()
-        path = json.parse(path_content) or nil
+        local path = json.parse(path_content) or nil
         local result = {}
         if path ~= nil then
-            result.path = path 
+            result.path = path
             result.status = "ok"
             return result
         end
@@ -111,10 +108,10 @@ function metrics.get_station_traffic(msg)
     if traffic == "" or traffic == nil then
         return {status="error", error={msg="No interface found.", code="1"}}
     end
-    words = {}
+    local words = {}
     for w in traffic:gmatch("[^\n]+") do table.insert(words, w) end
-    rx = words[1]
-    tx = words[2]
+    local rx = words[1]
+    local tx = words[2]
     result.station = mac
     result.rx_bytes = tonumber(rx, 10)
     result.tx_bytes = tonumber(tx, 10)

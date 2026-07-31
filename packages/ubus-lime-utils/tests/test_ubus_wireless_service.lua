@@ -1,5 +1,4 @@
 local test_utils = require "tests.utils"
-local config = require 'lime.config'
 local wireless = require 'lime.wireless_service'
 
 local wireless_service = test_utils.load_lua_file_as_function(

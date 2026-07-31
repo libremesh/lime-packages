@@ -12,12 +12,12 @@ local TMATE_CONFIG = "/etc/tmate/tmate.conf"
 local tmate = {}
 
 function tmate.cmd_as_str(cmd)
-   final_cmd = "tmate -f "..TMATE_CONFIG.." -S "..TMATE_SOCK.." "..cmd
+   local final_cmd = "tmate -f "..TMATE_CONFIG.." -S "..TMATE_SOCK.." "..cmd
    return utils.unsafe_shell(final_cmd)
 end
 
 local function unix_socket_listening(name)
-   return "" ~= utils.unsafe_shell("netstat -xl | grep "..TMATE_SOCK.." 2>/dev/null")
+   return "" ~= utils.unsafe_shell("netstat -xl | grep "..name.." 2>/dev/null")
 end
 
 function tmate.session_running()

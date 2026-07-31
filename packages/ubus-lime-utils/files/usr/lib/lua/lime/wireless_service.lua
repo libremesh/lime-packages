@@ -1,5 +1,4 @@
 local utils = require('lime.utils')
-local config = require('lime.config')
 local wireless = require('lime.wireless')
 
 local wireless_service = {}

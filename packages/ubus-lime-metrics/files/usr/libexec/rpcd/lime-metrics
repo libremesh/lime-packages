@@ -27,15 +27,15 @@ local function get_loss(msg)
     utils.printJson(result)
 end
 
-local function get_gateway(msg)
+local function get_gateway()
     utils.printJson(metrics.get_gateway())
 end
 
-local function get_path(msg)
+local function get_path()
     utils.printJson(metrics.get_last_internet_path())
 end
 
-local function get_internet_status(msg)
+local function get_internet_status()
     utils.printJson(metrics.get_internet_status())
 end
 

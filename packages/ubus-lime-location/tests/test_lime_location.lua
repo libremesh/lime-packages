@@ -1,6 +1,5 @@
 local utils = require "lime.utils"
 local test_utils = require "tests.utils"
-local config = require 'lime.config'
 local network = require 'lime.network'
 local location = require 'lime.location'
 local iwinfo = require('iwinfo')
@@ -34,8 +33,8 @@ describe('ubus-lime-utils tests #ubuslimelocation', function()
 
     it('test get with no specific location provided defaulting to community', function()
         uci:set("location", "settings", "location")
-        lat = uci:set("location", "settings", "community_latitude", "23.123")
-        lon = uci:set("location", "settings", "community_longitude", "-45")
+        uci:set("location", "settings", "community_latitude", "23.123")
+        uci:set("location", "settings", "community_longitude", "-45")
 
         local response  = rpcd_call(ubus_lime_loc, {'call', 'get'}, '')
         assert.is.equal("ok", response.status)
@@ -48,8 +47,8 @@ describe('ubus-lime-utils tests #ubuslimelocation', function()
         uci:set("location", "settings", "location")
         local latitude = "15.123"
         local longitude = "-5"
-        lat = uci:set("location", "settings", "node_latitude", latitude)
-        lon = uci:set("location", "settings", "node_longitude", longitude)
+        uci:set("location", "settings", "node_latitude", latitude)
+        uci:set("location", "settings", "node_longitude", longitude)
         uci:commit("location")
 
         local response  = rpcd_call(ubus_lime_loc, {'call', 'get'}, '')
@@ -68,8 +67,8 @@ describe('ubus-lime-utils tests #ubuslimelocation', function()
         stub(wireless,"mesh_ifaces", function() return {} end)
 
         uci:set("location", "settings", "location")
-        lat = uci:set("location", "settings", "node_latitude", "15.123")
-        lon = uci:set("location", "settings", "node_longitude", "-5")
+        uci:set("location", "settings", "node_latitude", "15.123")
+        uci:set("location", "settings", "node_longitude", "-5")
 
         local response  = rpcd_call(ubus_lime_loc, {'call', 'set'}, '{"lat":"1", "lon":"3.14"}')
         io.popen:revert()
@@ -84,8 +83,8 @@ describe('ubus-lime-utils tests #ubuslimelocation', function()
 
     it('test nodes_and_links', function()
         uci:set("location", "settings", "location")
-        local lat = uci:set("location", "settings", "community_latitude", "23.123")
-        local lon = uci:set("location", "settings", "community_longitude", "-45")
+        uci:set("location", "settings", "community_latitude", "23.123")
+        uci:set("location", "settings", "community_longitude", "-45")
 
         local own_macs = {"00:11:7f:13:36:16", "02:ce:16:aa:83:52"}
         uci:set('wireless', 'wlan0_mesh_foo', 'wifi-iface')
@@ -128,8 +127,8 @@ describe('ubus-lime-utils tests #liblocation', function()
 
     it('test get with no node config', function()
         uci:set("location", "settings", "location")
-        lat = uci:set("location", "settings", "community_latitude", "23.123")
-        lon = uci:set("location", "settings", "community_longitude", "-45")
+        uci:set("location", "settings", "community_latitude", "23.123")
+        uci:set("location", "settings", "community_longitude", "-45")
         assert.is_nil(location.get_node())
     end)
 
@@ -137,10 +136,10 @@ describe('ubus-lime-utils tests #liblocation', function()
         uci:set("location", "settings", "location")
         local latitude = "15.123"
         local longitude = "-5"
-        lat = uci:set("location", "settings", "node_latitude", latitude)
-        lon = uci:set("location", "settings", "node_longitude", longitude)
-        lat = uci:set("location", "settings", "community_latitude", "23.123")
-        lon = uci:set("location", "settings", "community_longitude", "-45")
+        uci:set("location", "settings", "node_latitude", latitude)
+        uci:set("location", "settings", "node_longitude", longitude)
+        uci:set("location", "settings", "community_latitude", "23.123")
+        uci:set("location", "settings", "community_longitude", "-45")
         assert.are.same({lat=latitude, long=longitude}, location.get_node())
     end)
 

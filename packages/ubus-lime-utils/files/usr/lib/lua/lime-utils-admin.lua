@@ -15,7 +15,7 @@ local UPGRADE_METADATA_FILE = "/etc/upgrade_metadata"
 local limeutilsadmin = {}
 
 function limeutilsadmin.set_root_password(msg)
-    local result = nil
+    local result
     if type(msg.password) ~= "string" then
         result = {status = 'error', msg = 'Password must be a string'}
     else
@@ -78,8 +78,8 @@ function limeutilsadmin.firmware_confirm()
 end
 
 --! Creates a client connection to a wifi hotspot
-function limeutilsadmin.hotspot_wwan_enable(msg)
-    local msg = msg or {}
+function limeutilsadmin.hotspot_wwan_enable(msgArg)
+    local msg = msgArg or {}
     local status, errmsg = hotspot_wwan.safe_enable(msg.ssid, msg.password, msg.encryption, msg.radio)
     if status then
         return {status = 'ok'}
@@ -89,8 +89,8 @@ function limeutilsadmin.hotspot_wwan_enable(msg)
 end
 
 
-function limeutilsadmin.hotspot_wwan_disable(msg)
-    local msg = msg or {}
+function limeutilsadmin.hotspot_wwan_disable(msgArg)
+    local msg = msgArg or {}
     local status, errmsg = hotspot_wwan.disable(msg.radio)
     if status then
         return {status = 'ok'}
@@ -129,9 +129,9 @@ function limeutilsadmin.safe_reboot(msg)
         if result.status == true then result.started = true end
     end
 
-    --! Rreboot now and wait for fallback timeout
+    --! Reboot now and wait for fallback timeout
     if msg.action == 'now' then
-        local sr = assert(io.popen('safe-reboot now'))
+        assert(io.popen('safe-reboot now'))
         result.status = getStatus()
         result.now = result.status
     end
