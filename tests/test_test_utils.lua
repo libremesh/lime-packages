@@ -1,9 +1,7 @@
-local fs = require 'nixio.fs'
-local config = require 'lime.config'
 local utils = require 'lime.utils'
 local test_utils = require "tests.utils"
 
-local uci = nil
+local uci
 
 describe("Test utils tests #testutils", function()
     it("test setup_test_uci check creation of empty config files", function()

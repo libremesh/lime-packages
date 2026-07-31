@@ -131,12 +131,12 @@ iwinfo.mocks.get_stations = {
 iwinfo.mocks.wlan1_mesh_mac = {'C0', '00', '00', '01', '01', '01'}
 iwinfo.mocks.wlan0_mesh_mac = {'C0', '00', '00', '00', '00', '00'}
 
-OP_MODES = {
+local OP_MODES = {
     "Unknown", "Master", "Ad-Hoc", "Client", "Monitor", "Master (VLAN)",
     "WDS", "Mesh Point", "P2P Client", "P2P Go"
 }
 
-HT_MODES = {"HT20", "HT40", "VHT20", "VHT40", "VHT80", "VHT80+80", "VHT160"}
+--! local HT_MODES = {"HT20", "HT40", "VHT20", "VHT40", "VHT80", "VHT80+80", "VHT160"}
 
 iwinfo.fake._scanlists = {}
 iwinfo.fake._channels = {}
@@ -147,7 +147,7 @@ function iwinfo.fake.set_scanlist(phy_id, scanlist)
     iwinfo.fake._scanlists[phy_id] = scanlist
 end
 
-function iwinfo.fake.scanlist_gen_station(ssid, channel, signal, mac, mode, quality)
+function iwinfo.fake.scanlist_gen_station(ssid, channel, signal, bssid, mode, quality)
     local utils = require("lime.utils")
     assert(utils.has_value(OP_MODES, mode))
 
@@ -155,7 +155,7 @@ function iwinfo.fake.scanlist_gen_station(ssid, channel, signal, mac, mode, qual
     ["encryption"] = {
         ["enabled"] = false,
         ["auth_algs"] = { } ,
-        ["description"] = None,
+        ["description"] = "None",
         ["wep"] = false,
         ["auth_suites"] = { } ,
         ["wpa"] = 0,
@@ -194,7 +194,7 @@ function iwinfo.nl80211.assoclist(radio)
     return iwinfo.fake._assoclists[radio] or {}
 end
 
-function iwinfo.type(phy_id)
+function iwinfo.type()
     return 'nl80211'
 end
 
@@ -229,22 +229,23 @@ function iwinfo.fake.gen_assoc_station(rx_ht_mode, tx_ht_mode, signal, quality, 
         ["rx_ht"] = rx_ht,
         ["rx_vht"] = rx_vht,
         ["rx_mhz"] = rx_mhz,
-        ["rx_rate"] = rx_rate,
+        -- ["rx_rate"] = rx_rate,
 
         ["tx_ht"] = tx_ht,
         ["tx_vht"] = tx_vht,
         ["tx_40mhz"] = tx_40mhz,
         ["tx_mhz"] = tx_mhz,
-        ["tx_mcs"] = tx_mcs,
-        ["tx_rate"] = tx_rate,
+        -- ["tx_mcs"] = tx_mcs,
+        -- ["tx_rate"] = tx_rate,
         ["tx_short_gi"] = true,
 
         ["tx_packets"] = tx_packets,
         ["rx_packets"] = rx_packets,
-        ["noise"] = noise,
+        -- ["noise"] = noise,
         ["inactive"] = inactive_ms,
-        ["expected_throughput"] = throughtput,
-        ["signal"] = signal
+        -- ["expected_throughput"] = throughtput,
+        ["signal"] = signal,
+        ["quality"] = quality
     }
     return r
 end
@@ -263,7 +264,7 @@ function iwinfo.nl80211.hwmodelist(radio_or_phy)
 end
 
 function iwinfo.fake.load_from_uci(uci_cursor)
-    function create_device(dev)
+    local function create_device(dev)
         local hwmode
         if dev.band == '5g' then
             hwmode = iwinfo.fake.HWMODE.HW_5GHZ_N
