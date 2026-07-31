@@ -1,13 +1,10 @@
 #!/usr/bin/lua
 
 local network = require("lime.network")
-local config = require("lime.config")
 local fs = require("nixio.fs")
 local libuci = require("uci")
-local wireless = require("lime.wireless")
-local utils = require("lime.utils")
-local ip = require("luci.ip")
-olsr2 = {}
+
+local olsr2 = {}
 
 olsr2.configured = false
 
@@ -51,7 +48,7 @@ function olsr2.setup_interface(ifname, args)
 	local vlanId = tonumber(args[2]) or 16
 	local vlanProto = args[3] or "8021ad"
 	local nameSuffix = args[4] or "_olsr"
-	local owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
+	local owrtInterfaceName, _, _ = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 	local uci = libuci:cursor()
 
 	uci:set("olsrd2", owrtInterfaceName, "interface")

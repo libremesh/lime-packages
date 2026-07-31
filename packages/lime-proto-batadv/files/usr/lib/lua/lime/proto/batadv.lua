@@ -1,12 +1,11 @@
 #!/usr/bin/lua
 
-local fs = require("nixio.fs")
 local lan = require("lime.proto.lan")
 local utils = require("lime.utils")
 local network = require("lime.network")
 local config = require("lime.config")
 
-batadv = {}
+local batadv = {}
 
 batadv.configured = false
 
@@ -105,9 +104,6 @@ function batadv.runOnDevice(linuxDev, args)
 	local vlanProto = args[3] or "8021ad"
 
 	utils.log("lime.proto.batadv.runOnDevice(%s, ...)", linuxDev)
-
-
-	local mtu = 1532
 
 	if not tonumber(vlanId) then
 		vlanId = 29 + (utils.applyNetTemplate10(vlanId) - 13) % 256

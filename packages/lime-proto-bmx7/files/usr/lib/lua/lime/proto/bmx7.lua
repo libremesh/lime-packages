@@ -7,7 +7,7 @@ local libuci = require("uci")
 local wireless = require("lime.wireless")
 local utils = require("lime.utils")
 
-bmx7 = {}
+local bmx7 = {}
 
 bmx7.configured = false
 bmx7.f = "bmx7"
@@ -191,11 +191,12 @@ function bmx7.setup_interface(ifname, args)
 		( ifname:match("^wlan%d+.ap") or ifname:match("^eth%d+") )
 	then return end
 
-	vlanId = tonumber(args[2]) or 18
-	vlanProto = args[3] or "8021ad"
-	nameSuffix = args[4] or "_bmx7"
+	local vlanId = tonumber(args[2]) or 18
+	local vlanProto = args[3] or "8021ad"
+	local nameSuffix = args[4] or "_bmx7"
 
-	local owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
+	local owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(
+		ifname, vlanId, nameSuffix, vlanProto)
 
 	local uci = libuci:cursor()
 	local mtu = config.get("network", "bmx7_mtu", "1500")
