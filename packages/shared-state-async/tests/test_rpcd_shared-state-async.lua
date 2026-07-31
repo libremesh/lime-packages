@@ -1,5 +1,3 @@
-local testUtils = require "tests.utils"
-local sharedState = require("shared-state")
 local json = require("luci.jsonc")
 local utils = require("lime.utils")
 
@@ -7,7 +5,7 @@ local testFileName = "packages/shared-state-async/files/usr/libexec/rpcd/shared-
 
 
 --since there is no Shared State async binary, testing possiblities are reduced
---also testing the full 
+--also testing the full
 --manual testing can be done on a router with bat-hosts package using this commands:
 --ubus -S call shared-state-async get "{'data_type': 'bat-hosts'}"
 --ubus -S call shared-state-async sync "{'data_type': 'bat-hosts'}"

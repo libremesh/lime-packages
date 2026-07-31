@@ -12,7 +12,7 @@ end
 
 local JSON = require("luci.jsonc")
 local shared_state = require("shared-state")
-require("nixio.util")
+local nixio = require ("nixio")
 
 nixio.openlog("shared-state")
 local logmask = "info"
@@ -22,30 +22,30 @@ end
 nixio.setlogmask(logmask)
 
 if arg[1] == "bleach" then
-	local sharedState = shared_state.SharedState:new(arg[2], nixio.syslog)
+	local sharedState = shared_state.SharedState.new(arg[2], nixio.syslog)
 	sharedState:bleach()
 elseif arg[1] == "insert" then
 	local inputTable = JSON.parse(io.stdin:read("*all")) or {}
-	local sharedState = shared_state.SharedState:new(arg[2], nixio.syslog)
+	local sharedState = shared_state.SharedState.new(arg[2], nixio.syslog)
 	sharedState:insert(inputTable)
 elseif arg[1] == "get" then
-	local sharedState = shared_state.SharedState:new(arg[2], nixio.syslog)
+	local sharedState = shared_state.SharedState.new(arg[2], nixio.syslog)
 	local resultTable = sharedState:get()
 	print(JSON.stringify(resultTable))
 elseif arg[1] == "sync" then
 	local urls = {}
 	if arg[3] ~= nil then for i=3,#arg do table.insert(urls, arg[i]) end end
-	local sharedState = shared_state.SharedState:new(arg[2], nixio.syslog)
+	local sharedState = shared_state.SharedState.new(arg[2], nixio.syslog)
 	sharedState:sync(urls)
 elseif arg[1] == "reqsync" then
 	local inputJson = JSON.parse(io.stdin:read("*all"))
-	local sharedState = shared_state.SharedState:new(arg[2], nixio.syslog)
+	local sharedState = shared_state.SharedState.new(arg[2], nixio.syslog)
 	sharedState:merge(inputJson)
 	print(sharedState:toJsonString())
 elseif arg[1] == "remove" then
 	local inputTable = JSON.parse(io.stdin:read("*all"))
 	if inputTable ~= nil then
-		local sharedState = shared_state.SharedState:new(arg[2], nixio.syslog)
+		local sharedState = shared_state.SharedState.new(arg[2], nixio.syslog)
 		sharedState:remove(inputTable)
 	end
 else

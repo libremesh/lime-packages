@@ -1,4 +1,3 @@
-local JSON = require("luci.jsonc")
 local test_utils = require('tests.utils')
 local utils = require('lime.utils')
 local config = require 'lime.config'
@@ -6,7 +5,7 @@ local config = require 'lime.config'
 local uci = nil
 
 package.path = package.path .. ";packages/shared-state-node_info/files/usr/share/shared-state/publishers/?;;"
-require ("shared-state-publish_node_info")
+local sspni = require ("shared-state-publish_node_info")
 
 describe('Tests network_nodes #network_nodes', function ()
     before_each('', function()
@@ -25,7 +24,7 @@ describe('Tests network_nodes #network_nodes', function ()
         uci:set('network', 'lan', 'ipaddr', '10.5.0.5')
         uci:set('network', 'lan', 'ip6addr', 'fd0d:fe46:8ce8::ab:cd00/64')
         uci:commit('network')
-        nodeinfo = get_node_info()
+        local nodeinfo = sspni.get_node_info()
         assert.are.equal('devboard', nodeinfo.board)
         assert.are.equal('2021.1', nodeinfo.firmware_version)
         assert.are.equal('10.5.0.5', nodeinfo.ipv4)

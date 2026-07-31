@@ -4,9 +4,9 @@
 --! Copyright (C) 2019 Luandro <luandro@gmail.com>
 --! Copyright (C) 2019 Marcos Gutierrez <gmarcos@altermundi.net>
 
---!	Documentation: 
+--!	Documentation:
 --!	Searches the mounted devices according to the following logic:
---!	- The mounted storage device has no shared-state folder (creates 
+--!	- The mounted storage device has no shared-state folder (creates
 --!   the directory and uses it after copy actual /var/shared-state)
 --!	- The mounted device has the folder shred-state (uses it as is)
 --!	- If not devices found use the defautl /var/shared-state
@@ -22,7 +22,7 @@ local NEW_DEVICE = 0
 local OLD_DEVICE = 1
 local NON_DEVICE = 2
 
-local function log(text) 
+local function log(text)
 	nixio.syslog('info', 'shared-state-persist: '..text)
 end
 
@@ -33,7 +33,7 @@ local function shell(command)
     return result
 end
 
-local function usePath(path, status)   
+local function usePath(path, status)
 
 	if status == NEW_DEVICE then
 		log('Device found - Use device after create shared-folder and preseve status '..path..' '..status)
@@ -57,7 +57,7 @@ end
 
 local function getDevices()
 	log('Scanning devices')
-	return shell("block info | grep -oE \"(\/mnt\/+[a-z]*[0-9])\""):gmatch("[^'\n']+")
+	return shell("block info | grep -oE \"(/mnt/+[a-z]*[0-9])\""):gmatch("[^'\n']+")
 end
 
 local function isWritable(devicePath)
@@ -77,7 +77,7 @@ local function runPersist()
 		--! Check for previus shared-state folder in the device
 		local folders = fs.dir(mntPath)
 		for folder in folders do
-			if selectedOption == NEW_DEVICE and folder == 'shared-state' then 
+			if selectedOption == NEW_DEVICE and folder == 'shared-state' then
 				selectedOption = OLD_DEVICE
 				selectedPath = mntPath
 			end

@@ -44,8 +44,8 @@ end
 --! Public API
 
 function network_nodes.get_nodes()
-    local network_nodes_db = shared_state.SharedStateMultiWriter:new("network_nodes")
-    local node_and_links_db = shared_state.SharedState:new("nodes_and_links")
+    local network_nodes_db = shared_state.SharedStateMultiWriter.new("network_nodes")
+    local node_and_links_db = shared_state.SharedState.new("nodes_and_links")
 
     local nodes = {}
     --! augment the node information from the network_nodes and the 'nodes_and_links' dbs
@@ -80,12 +80,12 @@ function network_nodes.publish()
     local data = {
         [node.hostname] = network_nodes._serialize_for_network_nodes(node)
     }
-    network_nodes_db = shared_state.SharedStateMultiWriter:new("network_nodes")
+    local network_nodes_db = shared_state.SharedStateMultiWriter.new("network_nodes")
     network_nodes_db:insert(data)
 end
 
 function network_nodes.mark_nodes_as_gone(hostnames)
-    local network_nodes_db = shared_state.SharedStateMultiWriter:new("network_nodes")
+    local network_nodes_db = shared_state.SharedStateMultiWriter.new("network_nodes")
     local nodes = network_nodes._nodes_from_db(network_nodes_db)
     local data = {}
     for _, hostname in pairs(hostnames or {}) do

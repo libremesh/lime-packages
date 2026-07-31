@@ -7,8 +7,6 @@
 --! Copyright (C) 2020  Santiago Piccinini <spiccinini@altermundi.net>
 
 local json = require("luci.jsonc")
-local uci = require("uci")
-local uci_conf = uci.cursor()
 local vouchera = require("voucher.vouchera")
 local utils = require("voucher.utils")
 
@@ -27,7 +25,7 @@ for key, value in pairs(input_table) do
 end
 
 local new_voucher_info = false
-for key, shared_voucher in pairs(shared_db) do
+for _, shared_voucher in pairs(shared_db) do
     local local_voucher = vouchera.get_by_id(shared_voucher.id)
     if local_voucher and local_voucher ~= shared_voucher then
         if shared_voucher.mod_counter > local_voucher.mod_counter then
