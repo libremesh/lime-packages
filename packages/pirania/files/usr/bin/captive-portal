@@ -236,14 +236,14 @@ add_tranca_allowlist_elements () {
         fi
         count=$((count + 1))
         if [ "$count" -ge 200 ]; then
-            nft add element inet pirania pirania-tranca-allowlist-ipv4 {$batch}
+            nft add element inet pirania pirania-tranca-allowlist-ipv4 "{$batch}"
             batch=""
             count=0
         fi
     done
 
     if [ -n "$batch" ]; then
-        nft add element inet pirania pirania-tranca-allowlist-ipv4 {$batch}
+        nft add element inet pirania pirania-tranca-allowlist-ipv4 "{$batch}"
     fi
 }
 
@@ -262,14 +262,14 @@ add_allowlist_ipv4_elements () {
     fi
     count=$((count + 1))
     if [ "$count" -ge 200 ]; then
-      nft add element inet pirania pirania-allowlist-ipv4 {$batch}
+      nft add element inet pirania pirania-allowlist-ipv4 "{$batch}"
       batch=""
       count=0
     fi
   done
 
   if [ -n "$batch" ]; then
-    nft add element inet pirania pirania-allowlist-ipv4 {$batch}
+    nft add element inet pirania pirania-allowlist-ipv4 "{$batch}"
   fi
 }
 
@@ -290,7 +290,7 @@ update_nft_sets () {
   nft flush set inet pirania pirania-catch-ifaces
   catch_interfaces=$(uci -q get pirania.base_config.catch_interfaces)
   for iface in $catch_interfaces; do
-    nft add element inet pirania pirania-catch-ifaces \{$iface\}
+    nft add element inet pirania pirania-catch-ifaces "{$iface}"
     echo "Adding L3 catch interface: $iface"
   done
 
@@ -298,7 +298,7 @@ update_nft_sets () {
   if [ -n "$catch_bridged_interfaces" ] && nft list set bridge pirania pirania-catch-bridge-ifaces >/dev/null 2>&1; then
     nft flush set bridge pirania pirania-catch-bridge-ifaces
     for iface in $catch_bridged_interfaces; do
-      nft add element bridge pirania pirania-catch-bridge-ifaces \{$iface\}
+      nft add element bridge pirania pirania-catch-bridge-ifaces "{$iface}"
       echo "Adding L2 catch interface: $iface"
     done
   fi
@@ -306,7 +306,7 @@ update_nft_sets () {
   # Add authorized MAC addresses
   nft flush set inet pirania pirania-auth-macs
   for mac in $(pirania_authorized_macs) ; do
-    nft add element inet pirania pirania-auth-macs {$mac}
+    nft add element inet pirania pirania-auth-macs "{$mac}"
     echo "Adding authorized MAC: $mac"
   done
 
@@ -318,7 +318,7 @@ update_nft_sets () {
   get_allowlist_ipv4_tokens | add_allowlist_ipv4_elements
 
   ipv6allowlist=$(uci get pirania.base_config.allowlist_ipv6 | sed 's/ /,/g')
-  nft add element inet pirania pirania-allowlist-ipv6 {$ipv6allowlist}
+  nft add element inet pirania pirania-allowlist-ipv6 "{$ipv6allowlist}"
 
   # --- Tranca Redes handling ---
   tranca_active=$(uci -q get pirania.tranca_redes.active)
@@ -336,7 +336,7 @@ update_nft_sets () {
 
     # Update unrestricted MACs
     for mac in $(pirania_authorized_macs --unrestricted) ; do
-      nft add element inet pirania pirania-unrestricted-macs {$mac}
+      nft add element inet pirania pirania-unrestricted-macs "{$mac}"
       echo "Adding unrestricted MAC: $mac"
     done
 

@@ -2,7 +2,7 @@
 
 FIRMWARE="$1"
 shift
-BACKUP_FILES="$@"
+BACKUP_FILES="$*"
 
 [ ! "$DO_NOT_BACKUP" ] && KEEP_LISTS="$(uci -q get lime-autogen.system.keep_on_upgrade)"
 
@@ -10,9 +10,11 @@ BACKUP_ARCHIVE="/tmp/upgrade.tar.gz"
 BACKUP_EXTRA_DIR="/tmp/lime-sysupgrade/preserve/"
 
 add_file() {
-  for l in `cat $1 | sed -e s/#.*$// -e /^$/d`; do
-    [ -e "$l" ] && BACKUP_FILES="$BACKUP_FILES $l" || true
-  done
+  filebody=
+  filebody=$(sed -e s/#.*$// -e /^$/d "$1")
+  while read -r l; do
+    if [ -e "$l" ]; then BACKUP_FILES="$BACKUP_FILES $l"; else true; fi
+  done < "$filebody"
 }
 
 usage() {
@@ -23,7 +25,7 @@ usage() {
   echo ""
   echo "In addition to the user specified backup files, the content of the following lists will also be included:"
   for f in $KEEP_LISTS; do
-    echo $f | grep -q '/' && echo " -> $f" || echo " -> /lib/upgrade/keep.d/$f"
+    echo "$f" | grep -q '/' && echo " -> $f" || echo " -> /lib/upgrade/keep.d/$f"
   done
   exit 1
 }
@@ -32,37 +34,41 @@ usage() {
 
 for f in $KEEP_LISTS; do
   echo "$f" | grep -q '/' && file="$f" || file="/lib/upgrade/keep.d/$f"
-  [ -f "$file" ] && add_file $file || echo "Warning: Cannot read $file file"
+  [ -f "$file" ] && add_file "$file" || echo "Warning: Cannot read $file file"
 done
 
 rm -f $BACKUP_ARCHIVE
 
 if [ -d "$BACKUP_EXTRA_DIR" ] ; then
-    cd $BACKUP_EXTRA_DIR
-    tar cvfz $BACKUP_ARCHIVE -C $BACKUP_EXTRA_DIR * $BACKUP_FILES || exit 1
-    cd -
+    cd $BACKUP_EXTRA_DIR || return
+    tar cvfz "$BACKUP_ARCHIVE" -C "$BACKUP_EXTRA_DIR" -- * "$BACKUP_FILES" || exit 1
+    cd - || return
 elif [ -n "$BACKUP_FILES" ] ; then
-    tar czf $BACKUP_ARCHIVE $BACKUP_FILES || exit 1
+    tar czf "$BACKUP_ARCHIVE" "$BACKUP_FILES" || exit 1
 fi
 
 echo "Upgrading the system..."
 echo ""
 echo "Files to be saved"
 echo "------------------"
-[ -e $BACKUP_ARCHIVE ] && tar tvfz $BACKUP_ARCHIVE
+[ -e "$BACKUP_ARCHIVE" ] && tar tvfz "$BACKUP_ARCHIVE"
 echo "------------------"
 echo ""
 echo "The device model is $(cat /tmp/sysinfo/model)"
-echo "The md5sum of the new firmware is $(md5sum $FIRMWARE | awk '{print $1}')"
-command -v sha256sum &> /dev/null && echo "Its sha256sum is $(sha256sum $FIRMWARE | awk '{print $1}')" || true
+echo "The md5sum of the new firmware is $(md5sum "$FIRMWARE" | awk '{print $1}')"
+if [ "$(command -v sha256sum > /dev/null)" ]; then 
+  echo "Its sha256sum is $(sha256sum "$FIRMWARE" | awk '{print $1}')"; 
+else 
+  true; 
+fi
 echo "Ready to perform the upgrade. Press [ENTER] to continue or CTRL+C to cancel"
-[ "$FORCE" == "1" ] || read
+[ "$FORCE" = "1" ] || read -r FORCE
 echo ""
 
 if safe-upgrade board-supported > /dev/null 2>&1; then
     [ -e "$BACKUP_ARCHIVE" ] && OPTIONS="--preserve-archive $BACKUP_ARCHIVE" || OPTIONS="-n"
-    safe-upgrade upgrade $OPTIONS $FIRMWARE
+    safe-upgrade upgrade "$OPTIONS" "$FIRMWARE"
 else
     [ -e "$BACKUP_ARCHIVE" ] && OPTIONS="-f $BACKUP_ARCHIVE" || OPTIONS="-n"
-    sysupgrade $OPTIONS $FIRMWARE &
+    sysupgrade "$OPTIONS" "$FIRMWARE" &
 fi

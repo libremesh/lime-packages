@@ -20,8 +20,9 @@ DOMAINS4="$(uci -q get bmx7-mdns.domains.domain4)"
 DOMAINS6="$(uci -q get bmx7-mdns.domains.domain6)"
 
 start() {
-	if ! cat /etc/crontabs/root | grep -q mdns; then
-		local rnd=$(awk 'BEGIN{srand();print int(rand()*60)}')
+	if ! grep -q mdns /etc/crontabs/root; then
+		local rnd
+		rnd=$(awk 'BEGIN{srand();print int(rand()*60)}')
 		echo "$rnd * * * * /etc/init.d/bmx7-mdns reload" >> /etc/crontabs/root
 		/etc/init.d/cron enable
 		/etc/init.d/cron start
@@ -47,7 +48,7 @@ refresh() {
 }
 
 log() {
-	logger -s -t "bmx7-mdns" $1
+	logger -s -t "bmx7-mdns" "$1"
 }
 
 error() {
@@ -60,7 +61,7 @@ init() {
 	log "preparing bmx7"
 	bmx7 -c --syncSms mdns || error "cannot enable bmx7 sms"
 
-	cat $DNSMASQ | egrep "^addn-hosts=$HOSTF" -q || {
+	cat $DNSMASQ | grep -E "^addn-hosts=$HOSTF" -q || {
 		log "adding addn-host entry to dnsmasq config file"
 		echo "addn-hosts=$HOSTF" >> $DNSMASQ
 		log "reloading dnsmasq daemon"
@@ -77,19 +78,19 @@ check_domain() {
 		local valid=1
 		local domains=""
 
-		[ $v == "4" ] && domains="$DOMAINS4"
-		[ $v == "6" ] && domains="$DOMAINS6"
-		[ $v == "all" ] && domains="$DOMAINS4 $DOMAINS6"
+		[ "$v" = "4" ] && domains="$DOMAINS4"
+		[ "$v" = "6" ] && domains="$DOMAINS6"
+		[ "$v" = "all" ] && domains="$DOMAINS4 $DOMAINS6"
 
 		for D in $domains; do
-			echo "$d" | egrep "\.$D"$ -q && valid=0 && break
+			echo "$d" | grep -E "\.$D"$ -q && valid=0 && break
 		done
 
 		return $valid
 }
 
 get_my_domains() {
-	local v=${1:-4}
+	local v="${1:-4}"
 	local my_domains=""
 	local domains=""
 
@@ -97,20 +98,20 @@ get_my_domains() {
 		echo "$d" | grep -q -v "@" && my_tmp_domains="$d $my_tmp_domains"
 	done
 
-	[ "$v" == "4" ] && domains="$DOMAINS4"
-	[ "$v" == "6" ] && domains="$DOMAINS6"
+	[ "$v" = "4" ] && domains="$DOMAINS4"
+	[ "$v" = "6" ] && domains="$DOMAINS6"
 
 	for t in $my_tmp_domains; do
 		for d in $domains; do
 			my_domains="$t.$d $my_domains"
 		done
 	done
-	[ "$(uci -q get bmx7-mdns.domains.publish_hostname)" == "1" ] && {
+	[ "$(uci -q get bmx7-mdns.domains.publish_hostname)" = "1" ] && {
 		for d in $domains; do
 			my_domains="$(cat /proc/sys/kernel/hostname).$d $my_domains"
 		done
 	}
-	echo $my_domains
+	echo "$my_domains"
 }
 
 get_myext_domains() {
@@ -123,9 +124,9 @@ get_myext_domains() {
 	done
 
 	for d in $ext_domains; do
-		ip="$(echo $d | grep @ | cut -d@ -f2)"
-		domain="$(echo $d | grep @ | cut -d@ -f1)"
-		[ -z "$ip" -o -z "$domain" ] && continue
+		ip="$(echo "$d" | grep @ | cut -d@ -f2)"
+		domain="$(echo "$d" | grep @ | cut -d@ -f1)"
+		[ -z "$ip" ] || [ -z "$domain" ] && continue
 		my_ext_domains="$ip $domain\n$my_ext_domains"
 	done
 
@@ -133,21 +134,21 @@ get_myext_domains() {
 }
 
 get_my_ip4() {
-	[ -z $IPV4 ] && \
+	[ -z "$IPV4" ] && \
 		bmx7 -cp | grep tun4Address | awk '{print $2}' | awk -F / '{print $1}' || \
 	echo "$IPV4"
 }
 
 get_my_ip6() {
-	[ -z $IPV6 ] && \
+	[ -z "$IPV6" ] && \
 		bmx7 -cp | grep tun6Address | awk '{print $2}' | awk -F / '{print $1}' || \
 	echo "$IPV6"
 }
 
 publish_my_domains() {
-	local d domains ext_domains
-	local ip4="$(get_my_ip4)"
-	local ip6="$(get_my_ip6)"
+	local d domains ext_domains ip4 ip6
+	ip4="$(get_my_ip4)"
+	ip6="$(get_my_ip6)"
 
 	echo -n "" > $SMSTMP
 	[ -z "$ip4$ip6" ] && error "cannot get ip address"
@@ -177,38 +178,39 @@ publish_my_domains() {
 	}
 
 	sed '/./!d' -i $SMSTMP $HOSTF
-	[ $(md5sum $SMSTMP $SMSF | awk '{print $1}' | uniq | wc -l) -gt 1 ] && cp -f $SMSTMP $SMSF
+	[ "$(md5sum $SMSTMP $SMSF | awk '{print $1}' | uniq | wc -l)" -gt 1 ] && cp -f $SMSTMP $SMSF
 }
 
 get_domains() {
 	local f d domline ip line n i
-	ls $SMSR/*:mdns 2>/dev/null >/dev/null && {
-	  # for each received file
-	  for f in $SMSR/*:mdns; do
-			n=$(cat $f | wc -l)
+	if ls $SMSR/*:mdns 2>/dev/null >/dev/null; then
+		# for each received file
+		for f in "$SMSR"/*:mdns; do
+			n=$(wc -l < "$f")
 			# for each line inside the file
-			for i in $(seq $n); do
-				line=$(cat $f | awk "NR==$i")
-				ip="$(echo $line | awk '{print $1}')"
-				[ -z $ip ] && continue
+			for i in $(seq "$n"); do
+				line=$(awk "NR==$i" < "$f")
+				ip="$(echo "$line" | awk '{print $1}')"
+				[ -z "$ip" ] && continue
 				domains=""
 				# for each domain (first is IP)
 				for d in $(echo "$line" | awk '{$1=""; print $0}'); do
-					check_domain all $d && domains="$d $domains"
+					check_domain all "$d" && domains="$d $domains"
 				done
 
 				[ -n "$domains" ] && echo "$ip $domains" >> $HOSTF
 				log "added remote domains $domains= $ip"
-		  done
-  	done
-
-	  } || log "not published domains found in the network"
+		  	done
+  		done
+	else 
+		log "not published domains found in the network"
+	fi
 }
 
 finish() {
-	for pidfile in $DNSMASQ_PID_DIR*; do
-		kill -SIGHUP $(cat $pidfile)
+	for pidfile in "$DNSMASQ_PID_DIR"*; do
+		kill -SIGHUP "$(cat "$pidfile")"
 	done
 }
 
-$@
+"$@"

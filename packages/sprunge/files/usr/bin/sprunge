@@ -4,7 +4,7 @@ SPRUNGE_HOST="sprunge.us"
 
 TEMP_FILE="$(mktemp)"
 TEMP_FILE_ENCODED="$(mktemp)"
-COMMAND="$0 $@"
+COMMAND="$0 $*"
 
 usage()
 {
@@ -39,7 +39,7 @@ hexdump -v -e '/1 "%02x"' "${TEMP_FILE}" \
 
 echo -n "POST / HTTP/1.0
 Host: ${SPRUNGE_HOST}
-Content-Length: $(( $(cat "${TEMP_FILE_ENCODED}" | wc -m) + 8 ))
+Content-Length: $(( $(wc -m < "${TEMP_FILE_ENCODED}") + 8 ))
 Content-Type: application/x-www-form-urlencoded
 
 sprunge=$(cat "${TEMP_FILE_ENCODED}")" \

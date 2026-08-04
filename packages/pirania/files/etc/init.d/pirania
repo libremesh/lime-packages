@@ -5,7 +5,7 @@ NAME=pirania
 PROG=/usr/bin/captive-portal
 
 start() {
-    if  [ $(uci get pirania.base_config.enabled) == 1 ]; then
+    if  [ "$(uci get pirania.base_config.enabled)" = 1 ]; then
         logger -t pirania "Running portal captive"
         $PROG
         /usr/lib/lua/voucher/hooks.lua start

@@ -11,7 +11,7 @@ load_autoAP() {
 	config_load lime
 	config_get enabled network autoap_enabled
 	config_get hosts network autoap_hosts
-	[ -z "$enabled" -o $enabled -eq 0 ] && {
+	[ -z "$enabled" ] || [ "$enabled" -eq 0 ] && {
 		echo "autoAP disabled in lime config"
 		exit 0
 	}
@@ -19,20 +19,19 @@ load_autoAP() {
 	timeout=120
 	pinginterval=20
 	interface=autoAP
-	/usr/bin/watchping none "$timeout" "$pinghosts" "$pinginterval" "$interface" 2>/tmp/autoAP.err.log &
-	[ $? -eq 0 ] && {
+	if /usr/bin/watchping none "$timeout" "$pinghosts" "$pinginterval" "$interface" 2>/tmp/autoAP.err.log; then
 		echo $! >> "${PIDFILE}"
 		echo "autoAP wathcping started"
 		logger -t autoAP "watchping started"
-	} || {
+	else
 		echo "error starting watchping"
 		logger -t autoAP "error starting watchping"
-	}
+	fi
 }
 
 stop() {
 	[ -f "$PIDFILE" ] && {
-		kill -9 $(cat $PIDFILE)
+		kill -9 "$(cat $PIDFILE)"
 		rm -f "$PIDFILE"
 		logger -t autoAP "Stopped"
 	}

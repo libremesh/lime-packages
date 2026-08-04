@@ -6,13 +6,17 @@ START=30
 handle_data_type_config()
 {
 	local cfg="$1"
+	local name
+	local scope
+	local ttl
+	local update_interval
 
 	config_get name            "$cfg" name
 	config_get scope           "$cfg" scope
 	config_get ttl             "$cfg" ttl
 	config_get update_interval "$cfg" update_interval
 
-	shared-state-async register $name $scope $update_interval $ttl
+	shared-state-async register "$name" "$scope" "$update_interval" "$ttl"
 }
 
 start_service()
@@ -33,5 +37,5 @@ start_service()
 	procd_close_instance
 	
 	#wait 10 secconds in detached mode and call publishres
-	((sleep 10; shared-state-async-publish-all)&) 
+	( sleep 10; shared-state-async-publish-all ) &
 }

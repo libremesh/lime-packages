@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC3028
 
 echo "Status: 200"
 echo "Content-type: text/plain;"
@@ -7,4 +8,4 @@ echo "Access-Control-Allow-Origin: *"
 echo "Access-Control-Allow-Methods: GET;"
 echo "Access-Control-Allow-Headers: X-PINGOTHER, Content-Type;"
 echo
-echo $HOSTNAME
+echo "$HOSTNAME"

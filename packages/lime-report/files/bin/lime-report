@@ -4,15 +4,15 @@ paste_file() {
     echo -e "\n### FILE $1\n"
     [ -e "$1" ] && (
         echo '```'
-        cat "$1" | grep -v key | grep -v pass
+        grep -v -e key -e pass "$1"
         echo '```'
     ) || echo "_NOT FOUND_"
 }
 
 paste_cmd() {
-    echo -e "\n### CMD $@\n"
+    echo -e "\n### CMD $*\n"
     echo '```'
-    eval $@ 2>&1 | grep -v key | grep -v pass
+    eval "$*" 2>&1 | grep -v key | grep -v pass
     echo '```'
 }
 
@@ -92,7 +92,7 @@ generate_shared_state() {
     
     echo -e "\n### shared-state-async registered datatypes\n"
     for section in $(uci show shared-state 2>/dev/null | grep '=dataType' | cut -d'.' -f2 | cut -d'=' -f1); do
-        datatype=$(uci -q get shared-state.$section.name)
+        datatype=$(uci -q get "shared-state.$section.name")
         if [ -n "$datatype" ]; then
             echo -e "\n#### $datatype\n"
             echo '```json'

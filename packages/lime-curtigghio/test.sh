@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC1091,SC3044,SC3009
 
 ## LibreMesh community mesh networks meta-firmware
 ##
@@ -11,12 +12,12 @@
 ## Define default value for variable, take two arguments, $1 variable name,
 ## $2 default variable value, if the variable is not already define define it
 ## with default value.
-function define_default_value()
+define_default_value()
 {
 	VAR_NAME="${1}"
 	DEFAULT_VALUE="${2}"
 
-	[ -z "${!VAR_NAME}" ] && export ${VAR_NAME}="${DEFAULT_VALUE}" || true
+	if [ -n "${VAR_NAME}" ]; then export "${VAR_NAME}"="${DEFAULT_VALUE}"; else true; fi
 }
 
 
@@ -30,36 +31,36 @@ define_default_value NETIFD_REPO_DIR "$HOME/Development/netifd/"
 
 cIface="usbe1"
 
-bianco43IP="fe80::c24a:ff:fefc:2f12%$cIface"
-bluIP="fe80::6670:2ff:fede:c51e%$cIface"
-neroIP="fe80::c24a:ff:fe7a:acac%$cIface"
+# bianco43IP="fe80::c24a:ff:fefc:2f12%$cIface"
+# bluIP="fe80::6670:2ff:fede:c51e%$cIface"
+# neroIP="fe80::c24a:ff:fe7a:acac%$cIface"
 verdeIP="fe80::ea94:f6ff:fe68:3364%$cIface"
 
-dax1Ipll="fe80::aa63:7dff:fe2e:97c8%$cIface"
-dax2Ipll="fe80::aa63:7dff:fe2e:97d8%$cIface"
+# dax1Ipll="fe80::aa63:7dff:fe2e:97c8%$cIface"
+# dax2Ipll="fe80::aa63:7dff:fe2e:97d8%$cIface"
 
-hlk1Ipll="169.254.145.20"
-hlk2Ipll="169.254.145.22"
+# hlk1Ipll="169.254.145.20"
+# hlk2Ipll="169.254.145.22"
 
-youhuaIpll="fe80::d65f:25ff:feeb:63d8%$cIface"
+# youhuaIpll="fe80::d65f:25ff:feeb:63d8%$cIface"
 
-source "${KCONFIG_UTILS_DIR}/kconfig-utils.sh"
+. "${KCONFIG_UTILS_DIR}/kconfig-utils.sh"
 
-function fHostapdSourceTreeOverride()
+fHostapdSourceTreeOverride()
 {
 	local mHostapdGitSrc="$OPENWRT_BUILD_DIR/package/network/services/hostapd/git-src"
 	rm -f "$mHostapdGitSrc"
 	ln -s "${HOSTAPD_REPO_DIR}/.git" "$mHostapdGitSrc"
 }
 
-function fNetifdSourceTreeOverride()
+fNetifdSourceTreeOverride()
 {
 	local mNetifdGitSrc="$OPENWRT_BUILD_DIR/package/network/config/netifd/git-src"
 	rm -f "$mNetifdGitSrc"
 	ln -s "$NETIFD_REPO_DIR/.git" "$mNetifdGitSrc"
 }
 
-function fTestConf()
+fTestConf()
 {
 	kconfig_set CONFIG_DEVEL
 	kconfig_set CONFIG_SRC_TREE_OVERRIDE
@@ -77,9 +78,9 @@ function fTestConf()
 	kconfig_unset CONFIG_PACKAGE_kmod-pppox
 }
 
-function fBuildDapX()
+fBuildDapX()
 {
-	pushd "$OPENWRT_BUILD_DIR"
+	pushd "$OPENWRT_BUILD_DIR" || return
 
 	./scripts/feeds update -a
 	./scripts/feeds install -a
@@ -102,12 +103,12 @@ function fBuildDapX()
 	clean_hostapd
 
 	make -j $(($(nproc)-1))
-	popd
+	popd || return
 }
 
-function fBuildYouhua()
+fBuildYouhua()
 {
-	pushd "$OPENWRT_BUILD_DIR"
+	pushd "$OPENWRT_BUILD_DIR" || return
 
 	./scripts/feeds update -a
 	./scripts/feeds install -a
@@ -130,12 +131,12 @@ function fBuildYouhua()
 	clean_hostapd
 
 	make -j $(($(nproc)-1))
-	popd
+	popd || return
 }
 
-function fBuildHlk()
+fBuildHlk()
 {
-	pushd "$OPENWRT_BUILD_DIR"
+	pushd "$OPENWRT_BUILD_DIR" || return
 
 	./scripts/feeds update -a
 	./scripts/feeds install -a
@@ -160,51 +161,51 @@ function fBuildHlk()
 	clean_packages
 
 	make -j $(($(nproc)-1))
-	popd
+	popd || return
 }
 
-function dflash()
+dflash()
 {
 	dDevice="$1"
 	dImage="$2"
 
-	scp -O "${dImage}" root@[${dDevice}]:/tmp/
+	scp -O "${dImage}" "root@[${dDevice}]:/tmp/"
 	imgName="$(basename "$dImage")"
 
 	origHash="$(sha256sum "$dImage" | awk '{print $1}')"
-	copiedHash="$(ssh root@$dDevice sha256sum "/tmp/$imgName" | awk '{print $1}')"
+	copiedHash="$(ssh root@"$dDevice" sha256sum /tmp/"$imgName" | awk '{print "$1"}')"
 
-	[ "X$origHash" != "X$copiedHash" ] && echo "Hash mismatch" && return -1
+	if [ "X$origHash" != "X$copiedHash" ]; then echo "Hash mismatch"; else return 1; fi
 
 	# Do not use -n as this will erease IP confifuration for hilink_hlk-7621a-evb
-	ssh root@$dDevice "sysupgrade /tmp/$imgName"
+	ssh root@"$dDevice" sysupgrade /tmp/"$imgName"
 
 	# Wait the detached flashing to start
 	sleep 10
 }
 
 # Wait for a device to be ready after flashing
-function dWait()
+dWait()
 {
 	dAddress="$1"
 	mInterval="10s"
 	mTryMax="20"
 
-	function mTest()
+	mTest()
 	{
-		dUptime="$(ssh root@$dAddress cat /proc/uptime)"
-		[ "0$(echo $dUptime | awk -F. '{print $1}')" -gt "100" ]
+		dUptime="$(ssh root@"$dAddress" cat /proc/uptime)"
+		[ "0$(echo "$dUptime" | awk -F. '{print $1}')" -gt "100" ]
 	}
 
 	for mTry in $(seq $mTryMax -1 1) ; do
-		mTest && return $? || sleep $mInterval $mTry
+		if mTest; then return "$?"; else sleep "$mInterval" "$mTry"; fi
 	done
 
 	# Failure after max try
-	return -1
+	return 1
 }
 
-function wait_all()
+wait_all()
 {
 #	dWait ${youhuaIpll}
 #	dWait ${dax1Ipll}
@@ -224,13 +225,13 @@ function wait_all()
 #	dWait ${bianco43IP}
 }
 
-function dConf()
+dConf()
 {
 	dAddress="$1"
 	dHostName="$2"
 	dHostIPv4="$3"
 
-	cat << EOF | ssh root@${dAddress} uci batch
+	cat << EOF | ssh root@"${dAddress}" uci batch
 
 	set system.@system[0].hostname="$dHostName"
 	set network.lan.ipaddr="$dHostIPv4"
@@ -262,10 +263,10 @@ function dConf()
 	set firewall.@defaults[0].forward='ACCEPT'
 EOF
 
-	ssh root@${dAddress} uci commit
+	ssh root@"${dAddress}" uci commit
 }
 
-function conf_all()
+conf_all()
 {
 #	dConf ${youhuaIpll} "OpenWrt-Youhua" "192.168.1.24"
 #	dConf ${dax1Ipll} "OpenWrt-Dax1" "192.168.1.16"
@@ -285,7 +286,7 @@ function conf_all()
 #	dConf ${bianco43IP} "OpenWrt-bianco43" "192.168.1.12"
 }
 
-function flash_all()
+flash_all()
 {
 #	dflash ${hlk1Ipll} "${OPENWRT_BUILD_DIR}/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-hilink_hlk-7621a-evb-squashfs-sysupgrade.bin"
 #	dflash ${hlk2Ipll} "${OPENWRT_BUILD_DIR}/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-hilink_hlk-7621a-evb-squashfs-sysupgrade.bin"
@@ -318,7 +319,7 @@ function flash_all()
 #	ssh root@${youhuaIpll} reboot
 }
 
-function dev_packages_paths()
+dev_packages_paths()
 {
 	echo package/feeds/libremesh/lime-system \
 	     package/feeds/libremesh/lime-proto-batadv \
@@ -331,35 +332,35 @@ function dev_packages_paths()
 #	     package/network/services/hostapd
 }
 
-function clean_packages()
+clean_packages()
 {
-	pushd "$OPENWRT_BUILD_DIR"
+	pushd "$OPENWRT_BUILD_DIR" || return
 
 	for mPackagePath in $(dev_packages_paths) ; do
-		make $mPackagePath/clean
+		make "$mPackagePath"/clean
 	done
 
-	popd
+	popd || return
 }
 
-function build_packages()
+build_packages()
 {
 	clean_packages
 
-	pushd "$OPENWRT_BUILD_DIR"
+	pushd "$OPENWRT_BUILD_DIR" || return
 
 	for mPackagePath in $(dev_packages_paths); do
-		make $mPackagePath/compile ||
+		make "$mPackagePath"/compile ||
 		{
-			make $mPackagePath/compile -j1 V=sc
-			return -1
+			make "$mPackagePath"/compile -j1 V=sc
+			return 1
 		}
 	done
 
-	popd
+	popd || return
 }
 
-function upgrade_packages()
+upgrade_packages()
 {
 	local dAddress="$1"
 	local dPkgArch="${2:-mipsel_24kc}"
@@ -368,17 +369,17 @@ function upgrade_packages()
 
 	for mPackageName in $(dev_packages_paths) ; do
 		mPackageName="$(basename "$mPackageName")"
+		local mPkgPath
+		mPkgPath="$(find "$OPENWRT_BUILD_DIR/bin/packages/$dPkgArch/"*"/$mPackageName"*.ipk -type f | head -n 1)"
+		scp -O "$mPkgPath" root@["${dAddress}"]:/tmp/
 
-		local mPkgPath="$(ls "$OPENWRT_BUILD_DIR/bin/packages/$dPkgArch/"*"/$mPackageName"*.ipk | head -n 1)"
-		scp -O "$mPkgPath" root@[${dAddress}]:/tmp/
-
-		mInstalls="$mInstalls \"/tmp/$(basename $mPkgPath)\""
+		mInstalls="$mInstalls /tmp/$(basename "$mPkgPath")"
 	done
 
-	ssh root@${dAddress} "opkg install --force-reinstall $mInstalls && reboot"
+	ssh root@"${dAddress}" opkg install --force-reinstall "$mInstalls" && reboot
 }
 
-function upgrade_packages_all()
+upgrade_packages_all()
 {
 #	upgrade_packages ${hlk1Ipll}
 #	upgrade_packages ${hlk2Ipll}
@@ -398,29 +399,29 @@ function upgrade_packages_all()
 	wait_all
 }
 
-function errcho() { >&2 echo $@; }
+errcho() { >&2 echo "$@"; }
 
-function dTestMulticast()
+dTestMulticast()
 {
 	local dAddress="$1"
 
-	[ "0$(ssh root@${dAddress} ping6 -c 4 ff02::1%phy0-ap0.sta1 | \
+	[ "0$(ssh root@"${dAddress}" ping6 -c 4 ff02::1%phy0-ap0.sta1 | \
 		grep duplicates | awk '{print $7}')" -gt "1" ] ||
-		{ errcho dTestMulticast $dAddress Failed ; return -1 ; }
-	errcho dTestMulticast $dAddress Success
+		{ errcho dTestMulticast "$dAddress" Failed ; return 1 ; }
+	errcho dTestMulticast "$dAddress" Success
 }
 
-function dTestIperf3()
+dTestIperf3()
 {
 	local clientAddress="$1"
 	local servAddress="$2"
 	local servIfaceAddress="$3"
 
-	ssh root@${servAddress} iperf3 -s
-	ssh root@${clientAddress} iperf3 -c $servIfaceAddress
+	ssh root@"${servAddress}" iperf3 -s
+	ssh root@"${clientAddress}" iperf3 -c "$servIfaceAddress"
 }
 
-function dTestUbusDev()
+dTestUbusDev()
 {
 	local dAddress="$1"
 
@@ -428,7 +429,7 @@ function dTestUbusDev()
 
 #	dWait ${dAddress}
 
-	ssh root@${dAddress} << REMOTE_HOST_EOS
+	ssh root@"${dAddress}" << REMOTE_HOST_EOS
 	ubus call network add_dynamic_device '{"name":"wlan0_peer1_47", "type":"8021ad", "ifname":"wlan0.peer1", "vid":"47"}'
 	ubus call network add_dynamic '{"name":"wlan0_peer1_47", "proto":"static", "auto":1, "device":"nomestru", "ipaddr":"169.254.145.20", "netmask":"255.255.255.255"}'
 	ubus call network.interface.wlan0_peer1_47 up
@@ -438,27 +439,27 @@ function dTestUbusDev()
 REMOTE_HOST_EOS
 }
 
-function DO_NOT_CALL_prepareHostapdChangesForSubmission()
+DO_NOT_CALL_prepareHostapdChangesForSubmission()
 {
-	# Just a bunch of commands I used, not a proper function the commands
+	# Just a bunch of commands I used, not a proper the commands
 	# requires developer interaction
 	# See https://openwrt.org/docs/guide-developer/toolchain/use-patches-with-buildsystem
 
-	pushd "$HOSTAPD_REPO_DIR"
+	pushd "$HOSTAPD_REPO_DIR" || return
 	# -3 number of commit for which to create patches
 	git format-patch -3 HEAD
-	popd
+	popd || return
 
-	pushd "$OPENWRT_REPO_DIR"
+	pushd "$OPENWRT_REPO_DIR" || return
 	make package/network/services/hostapd/{clean,prepare} V=s QUILT=1
 
-	pushd "$OPENWRT_REPO_DIR/build_dir/target-mips_24kc_musl/hostapd-wpad-basic-mbedtls/hostapd-2024.03.09~695277a5"
+	pushd "$OPENWRT_REPO_DIR/build_dir/target-mips_24kc_musl/hostapd-wpad-basic-mbedtls/hostapd-2024.03.09~695277a5" || return
 	quilt push -a
 
 	mLastIndex="$(quilt series | tail -n 1 | awk -F- '{print $1}')"
-	for mPatch in $(ls "$HOSTAPD_REPO_DIR"/*.patch) ; do
-		mLastIndex=$((mLastIndex+10))
-		mNewPatchPath="/tmp/$mLastIndex-$(basename $mPatch | cut -c 6-)"
+	for mPatch in "$HOSTAPD_REPO_DIR"/*.patch ; do
+		mLastIndex="$((mLastIndex+10))"
+		mNewPatchPath="/tmp/$mLastIndex-$(basename "$mPatch" | cut -c 6-)"
 		mv "$mPatch" "$mNewPatchPath"
 		quilt import "$mNewPatchPath"
 		quilt push -a
@@ -466,13 +467,13 @@ function DO_NOT_CALL_prepareHostapdChangesForSubmission()
 		rm "$mNewPatchPath"
 	done
 
-	popd
+	popd || return
 
 	make package/network/services/hostapd/update V=s
 	make package/network/services/hostapd/refresh V=s
 
 
-	popd
+	popd || return
 }
 
 #fBuildDapX

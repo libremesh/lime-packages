@@ -76,7 +76,7 @@ describe('Pirania redirect request handler #portalredirect', function()
         file:close()
 
         assert.is_not_nil(string.find(script, 'uci -q get pirania.base_config.portal_domain', 1, true))
-        assert.is_not_nil(string.find(script, '--address=/$PORTAL_DOMAIN/', 1, true))
+        assert.is_not_nil(string.find(script, '--address=/"$PORTAL_DOMAIN"/', 1, true))
         assert.is_nil(string.find(script, '--address=/thisnode.info/', 1, true))
     end)
 
