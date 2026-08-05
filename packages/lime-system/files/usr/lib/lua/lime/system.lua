@@ -1,6 +1,6 @@
 #!/usr/bin/lua
 
-local fs = require("nixio.fs")
+-- local fs = require("nixio.fs")
 
 local config = require("lime.config")
 local network = require("lime.network")
@@ -68,18 +68,17 @@ function system.configure()
     uci:save("uhttpd")
 end
 
-function system.apply()
-    --! apply hostname
-    local hostname
-    local uci = config.get_uci_cursor()
-    uci:foreach("system", "system", function(s)
-		--! FIXME Doesn't we already have hostname in s["hostname"] without executing the get ?
-        hostname = uci:get("system", s[".name"], "hostname")
-    end)
-    fs.writefile("/proc/sys/kernel/hostname", hostname)
-
-    --! apply uhttpd settings
-    os.execute("/etc/init.d/uhttpd reload")
-end
+--! function system.apply()
+--!     --! apply hostname
+--!     local hostname
+--!     local uci = config.get_uci_cursor()
+--!     uci:foreach("system", "system", function(s)
+--! 		--! FIXME Doesn't we already have hostname in s["hostname"] without executing the get ?
+--!         hostname = uci:get("system", s[".name"], "hostname")
+--!     end)
+--!     fs.writefile("/proc/sys/kernel/hostname", hostname)
+--!     --! apply uhttpd settings
+--!     os.execute("/etc/init.d/uhttpd reload")
+--! end
 
 return system

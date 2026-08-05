@@ -227,10 +227,10 @@ function bmx7.setup_interface(ifname, args)
 	uci:save(bmx7.f)
 end
 
-function bmx7.apply()
-	utils.unsafe_shell("killall bmx7 ; sleep 2 ; killall -9 bmx7")
-	utils.unsafe_shell("bmx7")
-end
+--! function bmx7.apply()
+--! 	utils.unsafe_shell("killall bmx7 ; sleep 2 ; killall -9 bmx7")
+--! 	utils.unsafe_shell("bmx7")
+--! end
 
 function bmx7.bgp_conf(templateVarsIPv4, templateVarsIPv6)
 	local uci = libuci:cursor()

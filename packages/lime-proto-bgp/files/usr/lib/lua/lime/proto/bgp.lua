@@ -100,9 +100,9 @@ end
 function bgp.setup_interface(ifname, args)
 end
 
-function bgp.apply()
-    os.execute("/etc/init.d/bird4 restart")
-    os.execute("/etc/init.d/bird6 restart")
-end
+--! function bgp.apply()
+--!     os.execute("/etc/init.d/bird4 restart")
+--!     os.execute("/etc/init.d/bird6 restart")
+--! end
 
 return bgp
