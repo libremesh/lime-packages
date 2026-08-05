@@ -104,14 +104,17 @@ local function push_loop()
 
     if tcp then tcp:close() end
     tcp = assert(socket.tcp6())
-    tcp:settimeout(10) -- seconds
+    --! seconds
+    tcp:settimeout(10)
     debug("### try connecting to "..server_address.." over IPv6")
     status_connect, err_connect = tcp:connect(server_address, server_port)
-    if not status_connect then -- retry falling back to ipv4
+    --! retry falling back to ipv4
+    if not status_connect then
       debug("tcp status:", status_connect, "err:", err_connect)
       debug("# retry connecting to "..server_address.." over IPv4")
       tcp = assert(socket.tcp())
-      tcp:settimeout(10) -- seconds
+      --! seconds
+      tcp:settimeout(10)
       status_connect, err_connect = tcp:connect(server_address, server_port)
     end
     debug("tcp status:", status_connect, "err:", err_connect)

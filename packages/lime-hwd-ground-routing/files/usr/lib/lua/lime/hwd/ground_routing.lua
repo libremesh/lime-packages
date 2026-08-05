@@ -85,7 +85,8 @@ function ground_routing.detect_hardware()
 		uci:save("network")
 	end
 
-	local clean_needed -- if there are no hwd_gr sections defined, don't clean all switch_vlan sections
+	--! if there are no hwd_gr sections defined, don't clean all switch_vlan sections
+	local clean_needed
 	config.foreach("hwd_gr", function() clean_needed = true end)
 	if clean_needed then ground_routing.delete_all_switch_vlan_sections() end
 

@@ -49,7 +49,8 @@ local function voucher_init(obj)
     if not (type(obj.duration_m) == "nil" or type(obj.duration_m) == "number") then
         return nil, "invalid duration_m type"
     end
-    voucher.duration_m = obj.duration_m -- use nil to create a permanent voucher
+    --! use nil to create a permanent voucher
+    voucher.duration_m = obj.duration_m
 
     if not obj.creation_date then
         return nil, "creation_date can't be nil"
@@ -70,7 +71,7 @@ local function voucher_init(obj)
 
     voucher.mod_counter = obj.mod_counter or 1
 
-    -- Unrestricted voucher flag (bypasses Tranca Redes restrictions)
+    --! Unrestricted voucher flag (bypasses Tranca Redes restrictions)
     if not (type(obj.unrestricted) == "nil" or type(obj.unrestricted) == "boolean") then
         return nil, "invalid unrestricted type"
     end

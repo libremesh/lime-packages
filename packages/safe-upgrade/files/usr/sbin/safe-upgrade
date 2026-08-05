@@ -10,7 +10,7 @@ local utils = require "lime.utils"
 local su = {}
 
 su.version = '1.0'
--- local firmware_size_bytes = 7936*1024
+--! local firmware_size_bytes = 7936*1024
 --! Keep the fw addresses as strings beacause of https://gitlab.com/librerouter/librerouteros/-/issues/61
 local fw1_addr = '0x9f050000'
 --! fw1_addr + firmware_size_bytes

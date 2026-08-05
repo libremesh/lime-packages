@@ -3,8 +3,8 @@
 local network = require("lime.network")
 local fs = require("nixio.fs")
 local libuci = require("uci")
--- local utils = require("lime.utils")
--- local ip = require("luci.ip")
+--! local utils = require("lime.utils")
+--! local ip = require("luci.ip")
 
 local olsr = {}
 
@@ -45,10 +45,10 @@ function olsr.setup_interface(ifname, args)
 	local vlanId = tonumber(args[2]) or 15
 	local vlanProto = args[3] or "8021ad"
 	local nameSuffix = args[4] or "_olsr6"
-	-- local ipPrefixTemplate = args[5] or "fc00::%M1%M2:%M3%M4:%M5%M6/64"
+	--! local ipPrefixTemplate = args[5] or "fc00::%M1%M2:%M3%M4:%M5%M6/64"
 
 	local owrtInterfaceName, _, _ = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
-	-- local macAddr = network.get_mac(utils.split(ifname, ".")[1])
+	--! local macAddr = network.get_mac(utils.split(ifname, ".")[1])
 	--! local ipAddr = ip.IPv6(utils.applyMacTemplate16(ipPrefixTemplate, macAddr))
 
 	local uci = libuci:cursor()

@@ -433,7 +433,8 @@ function network.configure()
 		for _,protoParams in pairs(deviceProtos) do
 			local args = utils.split(protoParams, network.protoParamsSeparator)
 			local protoName = args[1]
-			if protoName == "manual" then break end -- If manual is specified do not configure interface
+			--! If manual is specified do not configure interface
+			if protoName == "manual" then break end
 			local protoModule = "lime.proto."..protoName
 			local needsConfig = utils.isModuleAvailable(protoModule)
 			if protoName ~= 'lan' and not flags["specific"] then

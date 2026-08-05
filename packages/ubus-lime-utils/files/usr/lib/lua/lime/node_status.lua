@@ -105,7 +105,8 @@ end
 function node_status.boardjson_get_ports()
     local response_ports = {}
     local board = utils.getBoardAsTable()
-    if board['switch'] ~= nil and board['switch']['switch0'] ~= nil then -- legacy swconfig devices support
+    --! legacy swconfig devices support
+    if board['switch'] ~= nil and board['switch']['switch0'] ~= nil then
         for _, role in ipairs(board['switch']['switch0']['roles']) do
             for port_number in string.gmatch(role['ports'], "%S+") do
                 if not tonumber(port_number) then
@@ -117,7 +118,8 @@ function node_status.boardjson_get_ports()
                 end
             end
         end
-    elseif board['network'] ~= nil then -- DSA devices support
+    --! DSA devices support
+    elseif board['network'] ~= nil then
         for switch_name, switch in pairs(board['network']) do
             if switch['ports'] ~= nil then
                 for _, port in ipairs(switch.ports) do
@@ -139,7 +141,8 @@ function node_status.dsa_get_link_status(ports)
         if ifindex and ifname and operstate then
             port['device'] = port['num']
             port['num'] = tonumber(ifindex)
-            port['role'] = link ~= "" and link or nil -- Handle optional link field
+            --! Handle optional link field
+            port['role'] = link ~= "" and link or nil
             if port['role'] == nil then
                 port['role'] = ifname
             end

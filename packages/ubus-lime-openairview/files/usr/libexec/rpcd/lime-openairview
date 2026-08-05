@@ -74,7 +74,8 @@ local function spectral_scan(msg)
 
     local freqs = { }
     freqs["2ghz"] = { 2412, 2422, 2432, 2442, 2452, 2462 }
-    freqs["5ghz"] = { } -- scan all possible channels
+    --! scan all possible channels
+    freqs["5ghz"] = { }
 
     if spectrum == "2ghz" or spectrum == "5ghz" then
         samples = sample_whole_spectrum(device, path_ath9k, freqs[spectrum])

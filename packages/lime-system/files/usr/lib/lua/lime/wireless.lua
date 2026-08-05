@@ -79,8 +79,8 @@ function wireless.getRadioBand(radioName)
 	end
 	if wireless.is6Ghz(radioName) then
 		--! currently untested and reserved for indoor use
-		-- let's default to 5ghz for now
-		-- TODO: test 6g band and decide a path forward with
+		--! let's default to 5ghz for now
+		--! TODO: test 6g band and decide a path forward with
 		local uci = config.get_uci_cursor()
 		uci:set("wireless", radioName, "band", "5g")
 		return '5ghz'

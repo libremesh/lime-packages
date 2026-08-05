@@ -32,7 +32,8 @@ function eht_config.get_eth_config()
                 num = status.num,
                 role = status.role,
                 link = status.link,
-                eth_role = "default" -- default value
+                --! default value
+                eth_role = "default"
             }
             for _, limenode_interface in ipairs(limenode_interfaces) do
                 if limenode_interface.name == status.device then

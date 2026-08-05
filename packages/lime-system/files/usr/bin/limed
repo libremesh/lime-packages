@@ -78,7 +78,8 @@ function limed.waitForHostapd()
 		end
 		if not found then
 			utils.log("Waiting for 'hostapd' namespace...")
-			os.execute("sleep 1") -- Wait for 1 second before retrying
+			--! Wait for 1 second before retrying
+			os.execute("sleep 1")
 			else
 				utils.log(" 'hostapd' namespace exists...")
 		end

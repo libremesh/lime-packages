@@ -54,12 +54,18 @@ local function get_originators()
 		originators = {}
 	}
 	local originators_command = (
-        "batctl o -H 2>/dev/null ".. -- gets originators from batctl
-        "| tr -d '[]()' ".. -- removes brackets and parenthesis
-        "| sed 's/^  / -/g' ".. -- normalizes output, adding a minus when no asterisk is outputed in each line
-        "| sed 's/^ //g' "..  -- removes the space from the beginning of the line
-        "| sed -r 's/\\s+/,/g'".. -- replaces tabs for commas
-        "| sed -r 's/s,/,/g'" -- removes the 's' from the last_seen field referencing seconds
+		--! gets originators from batctl
+        "batctl o -H 2>/dev/null "..
+		--! removes brackets and parenthesis
+        "| tr -d '[]()' "..
+		--! normalizes output, adding a minus when no asterisk is outputed in each line
+        "| sed 's/^  / -/g' "..
+		--! removes the space from the beginning of the line
+        "| sed 's/^ //g' "..
+		--! replaces tabs for commas
+        "| sed -r 's/\\s+/,/g'"..
+		--! removes the 's' from the last_seen field referencing seconds
+        "| sed -r 's/s,/,/g'"
     )
 	fd = io.popen(originators_command)
 	if fd then

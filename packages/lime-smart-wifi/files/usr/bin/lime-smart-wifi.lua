@@ -18,7 +18,8 @@ function smart_wifi.get_modes(dev)
 end
 
 function smart_wifi.get_channels(dev)
-    local clist = {} -- output channel list
+    --! output channel list
+    local clist = {}
     local iw = iwinfo[iwinfo.type(dev)]
     local ch = {}
 
@@ -33,8 +34,10 @@ function smart_wifi.get_channels(dev)
     end
 
     local freqs = iw.freqlist(dev) --freqs list
-    local c -- current channel
-    local nc -- next channel
+    --! current channel
+    local c
+    --! next channel
+    local nc
     --! local pc = 0 -- previous channel
     --! local adhoc
     local ht40_support = smart_wifi.get_modes(dev).n

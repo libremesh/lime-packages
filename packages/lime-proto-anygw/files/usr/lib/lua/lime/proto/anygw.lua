@@ -29,7 +29,8 @@ function anygw.configure(args)
 	--! local anygw_mac_mask = "ff:ff:ff:00:00:00"
 	local anygw_ipv6 = ipv6:minhost()
 	local anygw_ipv4 = ipv4:minhost()
-	anygw_ipv6:prefix(64) -- SLAAC only works with a /64, per RFC
+	--! SLAAC only works with a /64, per RFC
+	anygw_ipv6:prefix(64)
 	anygw_ipv4:prefix(ipv4:prefix())
 	local baseIfname = "br-lan"
 	local argsDev = { macaddr = anygw_mac }
@@ -51,7 +52,8 @@ function anygw.configure(args)
 
 	uci:set("network", pfr.."rule6", "rule6")
 	uci:set("network", pfr.."rule6", "src", anygw_ipv6:host():string().."/128")
-	uci:set("network", pfr.."rule6", "lookup", "170") -- 0xaa in decimal
+	--! 0xaa in decimal
+	uci:set("network", pfr.."rule6", "lookup", "170")
 
 	uci:set("network", pfr.."route6", "route6")
 	uci:set("network", pfr.."route6", "interface", owrtInterfaceName)

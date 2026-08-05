@@ -2,7 +2,7 @@
 
 local portal = require('portal.portal')
 
--- Check for --unrestricted flag
+--! Check for --unrestricted flag
 local unrestricted_only = false
 for _, arg in ipairs(arg) do
     if arg == "--unrestricted" or arg == "-u" then

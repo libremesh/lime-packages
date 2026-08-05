@@ -78,7 +78,7 @@ function portal.update_captive_portal(daemonized)
     if daemonized then
         utils.execute_daemonized('captive-portal update')
     else
-	-- redirects stdout and stderr to /dev/null to not trigger 502 Bad Gateway after voucher portal auth
+	--! redirects stdout and stderr to /dev/null to not trigger 502 Bad Gateway after voucher portal auth
         os.execute('captive-portal update > /dev/null 2>&1')
     end
 end

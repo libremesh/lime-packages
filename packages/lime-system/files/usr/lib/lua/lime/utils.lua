@@ -423,7 +423,8 @@ function utils.execute_daemonized(cmd, out_file, stdin)
         out_file = "/dev/null"
     end
     if not stdin then
-        stdin = "0<&-" -- closing standard input
+        --! closing standard input
+        stdin = "0<&-"
     else
         stdin = "0<" .. stdin
     end

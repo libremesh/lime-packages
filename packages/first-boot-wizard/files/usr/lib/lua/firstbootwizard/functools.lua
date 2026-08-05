@@ -23,7 +23,7 @@ function functools.curry(func, num_args)
             --! reverse argument list and call function
             return func(functools.reverse(argtrace()))
         else
-            -- "push" argument (by building a wrapper function) and decrement n
+            --! "push" argument (by building a wrapper function) and decrement n
             return function (onearg)
                 return curry_h(function () return onearg, argtrace() end, n - 1)
             end

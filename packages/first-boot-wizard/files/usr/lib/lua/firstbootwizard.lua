@@ -407,7 +407,8 @@ end
 
 --! Apply file config for specific file, hostname and stop scanning if running
 function fbw.set_network(file, hostname)
-    fbw.stop_search_networks() -- Stop firstbootwizard service if running
+    --! Stop firstbootwizard service if running
+    fbw.stop_search_networks()
     fbw.apply_file_config(file, hostname)
 end
 

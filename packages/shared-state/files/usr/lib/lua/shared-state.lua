@@ -140,7 +140,8 @@ function SharedStateBase:sync(urls)
 	self:unlock()
 	self:_sync(urls)
 	self:lock()
-	self:load(true) -- Take in account changes happened during sync
+	--! Take in account changes happened during sync
+	self:load(true)
 	self:save()
 	self:unlock()
 	self:notifyHooks()

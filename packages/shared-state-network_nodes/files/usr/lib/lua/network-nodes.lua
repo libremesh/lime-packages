@@ -34,7 +34,8 @@ function network_nodes._create_node()
     local member = true
     local ipv4 = uci:get("network", "lan", "ipaddr")
     local ipv6 = uci:get("network", "lan", "ip6addr")
-    if ipv6 then ipv6 = ipv6:gsub("/.*$", "") end -- remove the netmask info
+    --! remove the netmask info
+    if ipv6 then ipv6 = ipv6:gsub("/.*$", "") end
     local node = network_nodes._node(hostname, member, fw_version, board, ipv4, ipv6)
     node.status = "recently_reachable"
 

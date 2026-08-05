@@ -20,14 +20,16 @@ local function scrape()
           local l
           repeat
             l = iwsurvey:read("*l")
-            if l and l:match("%[in use%]") then -- catch the frequency in use
+            --! catch the frequency in use
+            if l and l:match("%[in use%]") then
               local freq = l:match("frequency:%s+(%d+) MHz")
               local labels = {
                 ifname = ifname,
                 freq = freq,
               }
               local count = 0
-              while count < 5 do -- and scrape the next 5 lines for survey values
+              --! and scrape the next 5 lines for survey values
+              while count < 5 do
                 l = iwsurvey:read("*l")
                 if not l then break end
 

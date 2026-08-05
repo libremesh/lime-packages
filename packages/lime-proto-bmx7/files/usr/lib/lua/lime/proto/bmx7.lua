@@ -210,7 +210,7 @@ function bmx7.setup_interface(ifname, args)
 		uci:set("network", owrtInterfaceName, "ipaddr", table.concat(vlanIp, "."))
 		uci:set("network", owrtInterfaceName, "netmask", "255.255.255.255")
 	end
-	--- END [Workaround issue 38]
+	--! END [Workaround issue 38]
 
 	uci:save("network")
 

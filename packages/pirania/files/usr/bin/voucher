@@ -124,7 +124,7 @@ if debug.getinfo(2).name == nil then
     if f ~= nil then
         local res, msg
         if action == "add" then
-            -- Special handling for add command with flag support
+            --! Special handling for add command with flag support
             local name = positional[1]
             local duration_m = flags.duration or positional[2]
             local deadline = flags.deadline or positional[3]
