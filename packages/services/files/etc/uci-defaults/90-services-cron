@@ -1,0 +1,12 @@
+#!/bin/sh
+
+unique_append()
+{
+	grep -qF "$1" "$2" || echo "$1" >> "$2"
+}
+
+unique_append \
+	'*/10 * * * * ((services update &> /dev/null)&)'\
+	/etc/crontabs/root
+
+exit 0

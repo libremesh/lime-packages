@@ -1,0 +1,43 @@
+#!/usr/bin/env lua
+--[[
+Copyright 2022 Luandro <luandro@digital-democarcy.org>
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-3.0
+]]--
+local ubus = require "ubus"
+local json = require 'luci.jsonc'
+local uci = require 'uci'
+local services = require('services.main')
+local utils = require('lime.utils')
+local config = require('lime.config')
+
+local uci_cursor = config.get_uci_cursor()
+
+local conn = ubus.connect()
+if not conn then
+    error("Failed to connect to ubus")
+end
+
+local function list_services()
+    -- services.list()
+    return utils.printJson({ status = 'ok', services = {}})
+    -- return utils.printJson({ status = services and 'ok' or 'error', services = services })
+end
+
+local methods = {
+    list = { no_params = 0 },
+}
+
+if arg[1] == 'list' then
+    utils.printJson(methods)
+end
+
+if arg[1] == 'call' then
+  local msg = utils.rpcd_readline()
+  msg = json.parse(msg)
+  if       arg[2] == 'list'	then list_services(msg)
+  else     utils.printJson({ error = "Method not found" })
+  end
+end
