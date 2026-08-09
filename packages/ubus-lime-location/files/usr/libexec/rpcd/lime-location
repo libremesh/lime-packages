@@ -1,25 +1,20 @@
 #!/usr/bin/env lua
 --! SPDX-License-Identifier: Apache-2.0
---! 
+--!
 --! Copyright 2017 Marcos Gutierrez <gmarcos87@gmail.com>
 --! Copyright 2020 Santiago Piccinini <spiccinini@altermundi.net>
 
 local ubus = require "ubus"
-local iwinfo = require "iwinfo"
 local json = require "luci.jsonc"
-local config = require("lime.config")
-local wireless = require "lime.wireless"
-local network = require 'lime.network'
 local utils = require 'lime.utils'
 local location = require 'lime.location'
-
 
 local conn = ubus.connect()
 if not conn then
     error("Failed to connect to ubus")
 end
 
-local function _get_location(msg)
+local function _get_location()
     local result = {location = {}, default = false}
 
     local coords = location.get_node()
@@ -50,7 +45,7 @@ local function nodes_and_links()
   utils.printJson(result)
 end
 
-function all_nodes_and_links(msg)
+local function all_nodes_and_links()
   print('{"result":'..utils.unsafe_shell("shared-state get nodes_and_links")..'}')
 end
 

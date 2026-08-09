@@ -14,7 +14,7 @@ if not conn then
     error("Failed to connect to ubus")
 end
 
-local function get_nodes(msg)
+local function get_nodes()
     local nodes = network_nodes.get_nodes()
     utils.printJson({ status = "ok", nodes = nodes })
 end

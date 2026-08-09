@@ -4,6 +4,7 @@ local shared_state = require('shared-state')
 local network_nodes = require('network-nodes')
 
 local uci = nil
+local test_dir
 
 describe('Tests network_nodes #network_nodes', function ()
     before_each('', function()
@@ -32,8 +33,9 @@ describe('Tests network_nodes #network_nodes', function ()
         assert.are.equal('10.5.0.5', node.ipv4)
         assert.are.equal('fd0d:fe46:8ce8::ab:cd00', node.ipv6)
 
-        local node = network_nodes._node("node1", true, "2021.1", "librerouter-v1")
-        assert.are.same(node, network_nodes._deserialize_from_network_nodes(network_nodes._serialize_for_network_nodes(node)))
+        node = network_nodes._node("node1", true, "2021.1", "librerouter-v1")
+        assert.are.same(node, network_nodes._deserialize_from_network_nodes(
+            network_nodes._serialize_for_network_nodes(node)))
 
     end)
 
@@ -48,7 +50,7 @@ describe('Tests network_nodes #network_nodes', function ()
                                          "fd0d:fe46:8ce8::ab:cd01")
         local node3 = network_nodes._node("node3", true, "2020.1", "tplink-wdr3600", "10.24.3.98",
                                          "fd0d:fe46:8ce8::ab:cd02")
-        local network_nodes_db = shared_state.SharedStateMultiWriter:new('network_nodes')
+        local network_nodes_db = shared_state.SharedStateMultiWriter.new('network_nodes')
         local data = {
             ["node1"] = network_nodes._serialize_for_network_nodes(node1),
             ["node2"] = network_nodes._serialize_for_network_nodes(node2),
@@ -56,7 +58,7 @@ describe('Tests network_nodes #network_nodes', function ()
         }
         network_nodes_db:insert(data)
 
-        local nodes_and_links_db = shared_state.SharedState:new('nodes_and_links')
+        local nodes_and_links_db = shared_state.SharedState.new('nodes_and_links')
         nodes_and_links_db:get()
         nodes_and_links_db:insert({node1={foo='bar'}})
 
@@ -67,14 +69,14 @@ describe('Tests network_nodes #network_nodes', function ()
         assert.is.equal("unreachable", nodes["node2"].status)
         assert.is.equal("librerouter-v1", nodes["node2"].board)
 
-        local csv = network_nodes.as_human_readable_table() -- ok just some excercise...
+        -- local csv = network_nodes.as_human_readable_table() -- ok just some excercise...
     end)
 
     it('test mark_nodes_as_gone marks nodes as gone', function ()
         local node1 = network_nodes._node("node1", true, "2021.1", "librerouter-v1")
         local node2 = network_nodes._node("node2", true, "2020.3", "librerouter-v1")
         local node3 = network_nodes._node("node3", true, "2020.1", "tplink-wdr3600")
-        local network_nodes_db = shared_state.SharedStateMultiWriter:new('network_nodes')
+        local network_nodes_db = shared_state.SharedStateMultiWriter.new('network_nodes')
         local data = {
             ["node1"] = network_nodes._serialize_for_network_nodes(node1),
             ["node2"] = network_nodes._serialize_for_network_nodes(node2),

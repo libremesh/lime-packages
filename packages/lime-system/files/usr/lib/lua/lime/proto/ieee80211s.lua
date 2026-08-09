@@ -2,6 +2,7 @@
 
 local config = require("lime.config")
 local ieee80211s_mode = require("lime.mode.ieee80211s")
+local network = require 'lime.network'
 
 local ieee80211s = {}
 

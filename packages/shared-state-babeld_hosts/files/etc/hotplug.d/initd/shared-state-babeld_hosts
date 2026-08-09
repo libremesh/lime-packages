@@ -3,5 +3,5 @@
 #
 # Copyright (C) 2019  Gioacchino Mazzurco <gio@altermundi.net>
 
-[ "$SERVICE" == "babeld" ] && [ "$ACTION" == "service.start" ] &&
-	((sleep 2s; /usr/bin/shared-state-publish_babeld_hosts)&)
+[ "$SERVICE" = "babeld" ] && [ "$ACTION" = "service.start" ] &&
+	( sleep 2s; /usr/bin/shared-state-publish_babeld_hosts ) &

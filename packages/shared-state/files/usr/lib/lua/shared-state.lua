@@ -37,7 +37,7 @@ function SharedStateBase:lock(maxwait)
 	self.storageFD = nixio.open(
 		self.dataFile, nixio.open_flags("rdwr", "creat") )
 
-	for i=1,maxwait do
+	for _=1,maxwait do
 		if not self.storageFD:lock("tlock") then
 			nixio.nanosleep(1)
 		else
@@ -78,17 +78,15 @@ function SharedStateBase:save()
 		local outFd = io.open(self.dataFile, "w")
 		outFd:write(self:toJsonString())
 		outFd:close()
-		outFd = nil
 	end
 end
 
-function SharedStateBase:httpRequest(url, body)
+function SharedStateBase.httpRequest(url, body)
 	local tmpfname = os.tmpname()
 
 	local tmpfd = io.open(tmpfname, "w")
 	tmpfd:write(body)
 	tmpfd:close()
-	tmpfd = nil
 
 	local cmd = "uclient-fetch --no-check-certificate -q -O- --timeout=3 "
 	cmd = cmd.."--post-file='"..tmpfname.."' '"..url.."' ; "
@@ -125,7 +123,7 @@ function SharedStateBase:_sync(urls)
 	for _,url in ipairs(urls) do
 		local body = self:toJsonString()
 
-		local response = self:httpRequest(url, body)
+		local response = self.httpRequest(url, body)
 
 		if type(response) == "string" and response:len() > 1  then
 			local parsedJson = JSON.parse(response)
@@ -142,7 +140,8 @@ function SharedStateBase:sync(urls)
 	self:unlock()
 	self:_sync(urls)
 	self:lock()
-	self:load(true) -- Take in account changes happened during sync
+	--! Take in account changes happened during sync
+	self:load(true)
 	self:save()
 	self:unlock()
 	self:notifyHooks()
@@ -167,8 +166,8 @@ function SharedStateBase:unlock()
 	self.locked = false
 end
 
-function createSharedStateBase(dataType, logger, dataFile)
-	local logger = (type(logger) == "function") and logger or function() end
+local function createSharedStateBase(dataType, loggerArg, dataFile)
+	local logger = (type(loggerArg) == "function") and loggerArg or function() end
 	local newInstance = {
 		dataType = dataType,
 		log = logger,
@@ -193,7 +192,7 @@ end
 local SharedState = {}
 setmetatable(SharedState, {__index = SharedStateBase})
 
-function SharedState:new(dataType, logger)
+function SharedState.new(dataType, logger)
 	local dataFile = shared_state.DATA_DIR..dataType..".json"
 	local newInstance = createSharedStateBase(dataType, logger, dataFile)
 	setmetatable(newInstance, {__index = SharedState})
@@ -243,8 +242,8 @@ function SharedState:insert(data, bleachTTL)
 	self:notifyHooks()
 end
 
-function SharedState:_merge(stateSlice)
-	local stateSlice = stateSlice or {}
+function SharedState:_merge(stateSliceArg)
+	local stateSlice = stateSliceArg or {}
 	for key,rv in pairs(stateSlice) do
 		if rv.bleachTTL <= 0 then
 			self.log( "debug", "sharedState:merge got expired entry" )
@@ -283,7 +282,7 @@ end
 local SharedStateMultiWriter = {}
 setmetatable(SharedStateMultiWriter, {__index = SharedStateBase})
 
-function SharedStateMultiWriter:new(dataType, logger)
+function SharedStateMultiWriter.new(dataType, logger)
 	local dataFile = shared_state.PERSISTENT_DATA_DIR..dataType..".json"
 	local newInstance = createSharedStateBase(dataType, logger, dataFile)
 	setmetatable(newInstance, {__index = SharedStateMultiWriter})
@@ -291,9 +290,9 @@ function SharedStateMultiWriter:new(dataType, logger)
 end
 
 
-function SharedStateMultiWriter:_merge(stateSlice)
+function SharedStateMultiWriter:_merge(stateSliceArg)
 	--! Make merge based on an incremental counter (changes) and a random number (fortune)
-	local stateSlice = stateSlice or {}
+	local stateSlice = stateSliceArg or {}
 	for key,rv in pairs(stateSlice) do
 		local lv = self.storage[key]
 		if ( lv == nil or lv.changes < rv.changes or

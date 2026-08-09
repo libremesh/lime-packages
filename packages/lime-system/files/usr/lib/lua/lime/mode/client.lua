@@ -1,5 +1,7 @@
 #!/usr/bin/lua
 
+local wireless = require("lime.wireless")
+
 local client = {}
 
 client.wifi_mode="sta"

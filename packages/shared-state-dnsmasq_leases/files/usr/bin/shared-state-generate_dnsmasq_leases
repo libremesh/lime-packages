@@ -23,6 +23,5 @@ end
 local outFile = io.open("/tmp/dhcp.hosts_remote", "w")
 outFile:write(table.concat(outputTable,"\n").."\n")
 outFile:close()
-outFile = nil
 
 os.execute("killall -HUP dnsmasq 2>/dev/null")

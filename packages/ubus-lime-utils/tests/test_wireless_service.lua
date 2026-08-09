@@ -1,7 +1,6 @@
 local utils = require "lime.utils"
 local test_utils = require "tests.utils"
 local wireless_service = require "lime.wireless_service"
-local wireless = require "lime.wireless"
 local config = require "lime.config"
 local network = require "lime.network"
 local system = require "lime.system"
@@ -14,23 +13,23 @@ local function mock_wifi_config()
         config lime wifi
             option apname_ssid 'LibreMesh.org/%H'
             option ap_ssid 'LibreMesh.org'
-        
+
         config lime-wifi-band '2ghz'
             list modes 'ap'
             list modes 'apname'
     ]]
-        
+
     local community = [[
         config lime wifi
             option apname_ssid 'OurCommunity.org/%H'
             option ap_ssid 'OurCommunity.org'
     ]]
-    
+
     local node = [[
         config lime wifi
             option apname_encryption 'psk2'
             option apname_key 'testpassword'
-        
+
         config lime-wifi-band '2ghz'
             list modes 'apname'
     ]]
@@ -52,7 +51,7 @@ describe('wireless-service #wireless_service', function()
             }
             assert.are.same(expected, result.node_ap)
         end)
-        
+
         it('returns unprivileged node_ap settings when not is_admin', function()
             mock_wifi_config()
             local result = wireless_service.get_access_points_data()
@@ -105,7 +104,7 @@ describe('wireless-service #wireless_service', function()
                     list modes 'ap'
                     list modes 'apname'
             ]]
-            
+
             local community = [[
                 config lime wifi
             ]]
@@ -114,7 +113,7 @@ describe('wireless-service #wireless_service', function()
                 config lime wifi
                     list modes 'apname'
             ]]
-        
+
             test_utils.write_uci_file(uci, config.UCI_DEFAULTS_NAME, defaults)
             test_utils.write_uci_file(uci, config.UCI_COMMUNITY_NAME, community)
             test_utils.write_uci_file(uci, config.UCI_NODE_NAME, node)
@@ -134,7 +133,7 @@ describe('wireless-service #wireless_service', function()
             local node = [[
                 config lime wifi
             ]]
-                
+
             test_utils.write_uci_file(uci, config.UCI_DEFAULTS_NAME, defaults)
             test_utils.write_uci_file(uci, config.UCI_COMMUNITY_NAME, community)
             test_utils.write_uci_file(uci, config.UCI_NODE_NAME, node)
@@ -145,7 +144,6 @@ describe('wireless-service #wireless_service', function()
             mock_community_ap_disabled()
             wireless_service.set_community_ap(true)
             local modes = uci:get(config.UCI_NODE_NAME, '2ghz', 'modes')
-            local all = uci:get_all(config.UCI_NODE_NAME, '2ghz')
             assert.is_true(utils.has_value(modes, 'ap'))
         end)
 

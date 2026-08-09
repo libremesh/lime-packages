@@ -12,13 +12,15 @@ echo "Reload network config"
 
 echo "Reload routing protocols"
 
-[ -e /etc/init.d/bmx7 -a -x /etc/init.d/bmx7 ] && {
+[ -e /etc/init.d/bmx7 ] && [ -x /etc/init.d/bmx7 ] && {
 	bmx7_hostname=$(bmx7 -c jshow status | jsonfilter -e '@.status.name')
 	sys_hostname=$(uci get system.@system[0].hostname)
-	[ "$bmx7_hostname" == "$sys_hostname" ] && bmx7 -c configReload || {
+	if [ "$bmx7_hostname" = "$sys_hostname" ]; then 
+		bmx7 -c configReload
+	else
 		/etc/init.d/watchping stop
 		/etc/init.d/bmx7 restart
 		sleep 1 && /etc/init.d/watchping start
-	}
+	fi
 }
 

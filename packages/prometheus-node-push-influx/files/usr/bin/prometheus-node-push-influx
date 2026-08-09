@@ -6,13 +6,20 @@
 
 --! Metrics web server
 
-socket = require("socket")
+local socket = require("socket")
 
 --! load LiMe config ap_ssid only if it exists. don't fail otherwise
 local status, lime_config = pcall(require, 'lime.config')
+local ap_ssid
+local output
 if status then
   ap_ssid = lime_config.get("wifi", "ap_ssid")
 end
+local col_mods = {}
+local col_names = {}
+local interval
+local server_address
+local server_port
 
 --! common labels
 
@@ -21,37 +28,15 @@ local u = ubus.connect()
 local domain = u:call("uci", "get", {config = "dhcp", section = "@dnsmasq[0]", option = "domain"}).value
 local host = u:call("system", "board", {}).hostname
 local hostmac = u:call("network.device", "status", {name = "br-lan"}).macaddr
-u = nil
-ubus = nil
 
-function debug(...)
-  print(socket.gettime(), unpack(arg))
-end
-
---! Parsing
-
-function space_split(s)
-  local elements = {}
-  for element in s:gmatch("%S+") do
-    table.insert(elements, element)
-  end
-  return elements
-end
-
-function get_contents(filename)
-  local f = io.open(filename, "rb")
-  local contents = ""
-  if f then
-    contents = f:read "*a"
-    f:close()
-  end
-
-  return contents
+local function debug(...)
+  local args = {...}
+  print(socket.gettime(), unpack(args))
 end
 
 --! Metric printing
 
-function print_metric(metric, labels, value)
+local function print_metric(metric, labels, value)
   local label_string = ""
   if ap_ssid then
     label_string = label_string .. 'ap_ssid' .. '=' .. ap_ssid .. ','
@@ -60,8 +45,9 @@ function print_metric(metric, labels, value)
   label_string = label_string .. 'host' .. '=' .. host .. ','
   label_string = label_string .. 'hostmac' .. '=' .. hostmac .. ','
   if labels then
-    for label,value in pairs(labels) do
-      label_string =  label_string .. string.gsub(label, "[ ,=]", "\\%0") .. '=' .. string.gsub(value, "[ ,=]", "\\%0") .. ','
+    for label,label_value in pairs(labels) do
+      label_string =  label_string ..
+        string.gsub(label, "[ ,=]", "\\%0") .. '=' .. string.gsub(label_value, "[ ,=]", "\\%0") .. ','
     end
   end
   label_string = string.sub(label_string, 1, -2)
@@ -70,28 +56,30 @@ function print_metric(metric, labels, value)
   output(string.format("%s,%s %s=%s", metric_prefix, label_string, metric_suffix, value))
 end
 
-function metric(name, mtype, labels, value)
-  local outputter = function(labels, value)
-    print_metric(name, labels, value)
+local function metric(name, _, labels, value)
+
+  local function outputter(nameArg, labelsArg, valueArg)
+    print_metric(nameArg, labelsArg, valueArg)
   end
+
   if value then
-    outputter(labels, value)
+    outputter(name, labels, value)
   end
   return outputter
 end
 
-function timed_scrape(collector)
+local function timed_scrape(collector)
   local start_time = socket.gettime()
   local success = 1
-  local status, err = pcall(collector.scrape)
-  if not status then
+  local status_scrape, err = pcall(collector.scrape)
+  if not status_scrape then
     success = 0
     print(err)
   end
   return (socket.gettime() - start_time), success, err
 end
 
-function run_all_collectors(collectors)
+local function run_all_collectors(collectors)
   local metric_duration = metric("node_scrape_collector_duration_seconds", "gauge")
   local metric_success = metric("node_scrape_collector_success", "gauge")
   for _,cname in pairs(collectors) do
@@ -106,8 +94,8 @@ function run_all_collectors(collectors)
   end
 end
 
-function push_loop()
-  local tcp, status, err
+local function push_loop()
+  local tcp, status_connect, err_connect
   local start_time = socket.gettime()
 
   while 1 do
@@ -116,19 +104,22 @@ function push_loop()
 
     if tcp then tcp:close() end
     tcp = assert(socket.tcp6())
-    tcp:settimeout(10) -- seconds
+    --! seconds
+    tcp:settimeout(10)
     debug("### try connecting to "..server_address.." over IPv6")
-    status, err = tcp:connect(server_address, server_port)
-    if not status then -- retry falling back to ipv4
-      debug("tcp status:", status, "err:", err)
+    status_connect, err_connect = tcp:connect(server_address, server_port)
+    --! retry falling back to ipv4
+    if not status_connect then
+      debug("tcp status:", status_connect, "err:", err_connect)
       debug("# retry connecting to "..server_address.." over IPv4")
       tcp = assert(socket.tcp())
-      tcp:settimeout(10) -- seconds
-      status, err = tcp:connect(server_address, server_port)
+      --! seconds
+      tcp:settimeout(10)
+      status_connect, err_connect = tcp:connect(server_address, server_port)
     end
-    debug("tcp status:", status, "err:", err)
+    debug("tcp status:", status_connect, "err:", err_connect)
 
-    if status then
+    if status_connect then
       tcp:send("POST /write HTTP/1.1\n")
       tcp:send("User-Agent: prometheus-node-push-influx\n")
       tcp:send("Host: "..server_address..":"..server_port.."\n")
@@ -141,9 +132,9 @@ function push_loop()
       run_all_collectors(col_names)
       debug("run_all_collectors done: "..string.len(collectors_output).." bytes to send")
       tcp:send(string.len(collectors_output).."\n")
-      status, err, last_byte = tcp:send(collectors_output)
+      local status_out, err, last_byte = tcp:send(collectors_output)
       tcp:send("0\n\n")
-      debug('### sent: ', status, err, last_byte)
+      debug('### sent: ', status_out, err, last_byte)
       tcp:close()
     end
 
@@ -151,7 +142,6 @@ function push_loop()
       socket.sleep((lastrun_time + interval - drift) - socket.gettime())
     until (lastrun_time + interval - drift) < socket.gettime()
   end
-  tcp:close()
 end
 
 --! Main program
@@ -168,9 +158,8 @@ for k,v in ipairs(arg) do
   end
 end
 
-col_mods = {}
-col_names = {}
-ls_fd = io.popen("ls -1 /usr/lib/lua/prometheus-collectors/*.lua")
+
+local ls_fd = io.popen("ls -1 /usr/lib/lua/prometheus-collectors/*.lua")
 for c in ls_fd:lines() do
   c = c:match("([^/]+)%.lua$")
   col_mods[c] = require('prometheus-collectors.'..c)

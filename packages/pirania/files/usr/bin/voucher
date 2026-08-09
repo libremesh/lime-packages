@@ -1,14 +1,8 @@
 #!/usr/bin/lua
 
 local vouchera = require('voucher.vouchera')
-local utils = require('voucher.utils')
-local uci = require('uci')
-local json = require 'luci.jsonc'
 
-local uci_cursor = uci.cursor()
 local arguments
-local action
-local context
 
 local captive_portal = {}
 
@@ -99,20 +93,20 @@ captive_portal.show_authorized_macs = function()
 end
 
 --! Parse command line flags
-local function parse_flags(arguments)
+local function parse_flags(args)
     local flags = {}
     local positional = {}
     local i = 1
-    while i <= #arguments do
-        local arg = arguments[i]
+    while i <= #args do
+        local arg = args[i]
         if arg == "--unrestricted" or arg == "-u" then
             flags.unrestricted = true
         elseif arg == "--duration" or arg == "-d" then
             i = i + 1
-            flags.duration = arguments[i]
+            flags.duration = args[i]
         elseif arg == "--deadline" then
             i = i + 1
-            flags.deadline = arguments[i]
+            flags.deadline = args[i]
         elseif arg:sub(1, 2) ~= "--" and arg:sub(1, 1) ~= "-" then
             table.insert(positional, arg)
         end
@@ -123,14 +117,14 @@ end
 
 --! if is main
 if debug.getinfo(2).name == nil then
-    local arguments = { ... }
+    arguments = { ... }
     local action = table.remove(arguments, 1)
     local positional, flags = parse_flags(arguments)
     local f = captive_portal[action]
     if f ~= nil then
         local res, msg
         if action == "add" then
-            -- Special handling for add command with flag support
+            --! Special handling for add command with flag support
             local name = positional[1]
             local duration_m = flags.duration or positional[2]
             local deadline = flags.deadline or positional[3]

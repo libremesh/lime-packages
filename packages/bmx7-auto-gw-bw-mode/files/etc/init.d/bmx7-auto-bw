@@ -7,10 +7,11 @@ SAVE="/tmp/bmx7-internet-bw.log"
 
 start() {
   echo "Ensuring bmx7-auto-bw-test is run by cron"
+  local rnd
   if ! ( grep -q "$BIN" "$CRONTAB" 2>/dev/null ) ; then
-	# run twice and random sleep for better entropy
-    local rnd=$(awk 'BEGIN{srand();print int(rand()*3)}')
-	sleep $rnd
+	  # run twice and random sleep for better entropy
+    rnd=$(awk 'BEGIN{srand();print int(rand()*3)}')
+	  sleep "$rnd"
     rnd=$(awk 'BEGIN{srand();print int(rand()*60)}')
     echo "$rnd */6 * * * SAVE=$SAVE $BIN" >> "$CRONTAB"
     /etc/init.d/cron enable

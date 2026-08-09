@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # batman-adv gateway handling (DHCP mangling)
-[ "$(uci -q get batman-adv.bat0.gw_mode)" == "client" ] || exit 0
+[ "$(uci -q get batman-adv.bat0.gw_mode)" = "client" ] || exit 0
 if grep -q "^=>" /sys/kernel/debug/batman_adv/bat0/gateways ; then
   BATTYPE=gw BATACTION=add /etc/hotplug.d/net/99-batman-gw
 fi

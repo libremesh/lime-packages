@@ -34,7 +34,8 @@ function network_nodes._create_node()
     local member = true
     local ipv4 = uci:get("network", "lan", "ipaddr")
     local ipv6 = uci:get("network", "lan", "ip6addr")
-    if ipv6 then ipv6 = ipv6:gsub("/.*$", "") end -- remove the netmask info
+    --! remove the netmask info
+    if ipv6 then ipv6 = ipv6:gsub("/.*$", "") end
     local node = network_nodes._node(hostname, member, fw_version, board, ipv4, ipv6)
     node.status = "recently_reachable"
 
@@ -44,8 +45,8 @@ end
 --! Public API
 
 function network_nodes.get_nodes()
-    local network_nodes_db = shared_state.SharedStateMultiWriter:new("network_nodes")
-    local node_and_links_db = shared_state.SharedState:new("nodes_and_links")
+    local network_nodes_db = shared_state.SharedStateMultiWriter.new("network_nodes")
+    local node_and_links_db = shared_state.SharedState.new("nodes_and_links")
 
     local nodes = {}
     --! augment the node information from the network_nodes and the 'nodes_and_links' dbs
@@ -80,12 +81,12 @@ function network_nodes.publish()
     local data = {
         [node.hostname] = network_nodes._serialize_for_network_nodes(node)
     }
-    network_nodes_db = shared_state.SharedStateMultiWriter:new("network_nodes")
+    local network_nodes_db = shared_state.SharedStateMultiWriter.new("network_nodes")
     network_nodes_db:insert(data)
 end
 
 function network_nodes.mark_nodes_as_gone(hostnames)
-    local network_nodes_db = shared_state.SharedStateMultiWriter:new("network_nodes")
+    local network_nodes_db = shared_state.SharedStateMultiWriter.new("network_nodes")
     local nodes = network_nodes._nodes_from_db(network_nodes_db)
     local data = {}
     for _, hostname in pairs(hostnames or {}) do

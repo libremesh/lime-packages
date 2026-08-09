@@ -18,7 +18,7 @@ local voucher_metatable = {
 }
 
 --! obj attrs id, name, code, mac, duration_m, mod_counter, creation_date, activation_date
-function voucher_init(obj)
+local function voucher_init(obj)
     local voucher = {}
 
     if not obj.id then
@@ -49,7 +49,8 @@ function voucher_init(obj)
     if not (type(obj.duration_m) == "nil" or type(obj.duration_m) == "number") then
         return nil, "invalid duration_m type"
     end
-    voucher.duration_m = obj.duration_m -- use nil to create a permanent voucher
+    --! use nil to create a permanent voucher
+    voucher.duration_m = obj.duration_m
 
     if not obj.creation_date then
         return nil, "creation_date can't be nil"
@@ -70,7 +71,7 @@ function voucher_init(obj)
 
     voucher.mod_counter = obj.mod_counter or 1
 
-    -- Unrestricted voucher flag (bypasses Tranca Redes restrictions)
+    --! Unrestricted voucher flag (bypasses Tranca Redes restrictions)
     if not (type(obj.unrestricted) == "nil" or type(obj.unrestricted) == "boolean") then
         return nil, "invalid unrestricted type"
     end
@@ -242,7 +243,7 @@ end
 function vouchera.activate(code, mac)
     local voucher = vouchera.is_activable(code)
     if voucher then
-        function _update(v)
+        local function _update(v)
             v.mac = mac
             v.activation_date = os.time()
         end
@@ -269,7 +270,7 @@ end
 --! Return true if there is an activated voucher that grants a access to the specified MAC
 function vouchera.is_mac_authorized(mac)
     if mac ~= nil then
-        for k, v in pairs(vouchera.vouchers) do
+        for _, v in pairs(vouchera.vouchers) do
             if v.mac == mac and v.is_active() then
                 return true
             end
@@ -296,7 +297,10 @@ function vouchera.should_be_pruned(voucher)
     local current_time = os.time()
     return (voucher.expiration_date() ~= nil and (
            voucher.expiration_date() <= (current_time - vouchera.PRUNE_OLDER_THAN_S))) or
-           ((voucher.invalidation_date or false) and (voucher.invalidation_date <= (current_time - vouchera.PRUNE_OLDER_THAN_S)))
+            (
+                (voucher.invalidation_date or false) and
+                (voucher.invalidation_date <= (current_time - vouchera.PRUNE_OLDER_THAN_S))
+            )
 end
 
 function vouchera.rename(id, new_name)
@@ -312,7 +316,7 @@ end
 
 function vouchera.list()
     local vouchers = {}
-    for k, v in pairs(vouchera.vouchers) do
+    for _, v in pairs(vouchera.vouchers) do
         table.insert(vouchers, {
             id=v.id,
             name=v.name,

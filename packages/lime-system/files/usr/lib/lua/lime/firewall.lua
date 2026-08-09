@@ -7,12 +7,9 @@
 --!
 --! SPDX-License-Identifier: AGPL-3.0-only
 
-
-local fs = require("nixio.fs")
-local utils = require("lime.utils")
 local config = require("lime.config")
 
-firewall = {}
+local firewall = {}
 
 function firewall.clean()
 	--! There could be things to cleanup here, but we don't do it as it would

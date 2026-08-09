@@ -20,19 +20,17 @@ pkg.GENERIC_SECTION_NAME = 'hotspot_wwan'
 pkg.IFACE_SECTION_NAME = 'lm_client_wwan'
 pkg.IFACE_NAME = 'client-wwan'
 
-local gen_cfg = require 'lime.generic_config'
-
 function pkg._apply_change()
     utils.execute_daemonized("lime-config && wifi reload")
 end
 
 --! Create a client connection to a wifi hotspot
-function pkg.enable(ssid, password, encryption, radio)
+function pkg.enable(ssidArg, passwordArg, encryptionArg, radioArg)
     local uci = config.get_uci_cursor()
-    local encryption = encryption or pkg.DEFAULT_ENCRYPTION
-    local ssid = ssid or pkg.DEFAULT_SSID
-    local password = password or pkg.DEFAULT_PASSWORD
-    local radio = radio or pkg.DEFAULT_RADIO
+    local encryption = encryptionArg or pkg.DEFAULT_ENCRYPTION
+    local ssid = ssidArg or pkg.DEFAULT_SSID
+    local password = passwordArg or pkg.DEFAULT_PASSWORD
+    local radio = radioArg or pkg.DEFAULT_RADIO
 
     uci:set(config.UCI_NODE_NAME, pkg.GENERIC_SECTION_NAME, "generic_uci_config")
     uci:set(config.UCI_NODE_NAME, pkg.GENERIC_SECTION_NAME, "uci_set", {
@@ -55,7 +53,7 @@ function pkg.enable(ssid, password, encryption, radio)
     return true
 end
 
-function ap_match_encryption(ap, encryption)
+local function ap_match_encryption(ap, encryption)
     if encryption == 'psk2' then
         return ap.encryption.enabled and ap.encryption.wpa == 2
     end
@@ -72,10 +70,10 @@ function pkg._is_safe(ssid, encryption, radio)
             return false, 'radio has mesh ifaces'
         end
     end
-    ifname = ifaces[1].ifname
-    iface_type = iwinfo.type(ifname)
+    local ifname = ifaces[1].ifname
+    local iface_type = iwinfo.type(ifname)
     if iface_type ~= nil then
-        scanlist = iwinfo[iface_type].scanlist(ifname)
+        local scanlist = iwinfo[iface_type].scanlist(ifname)
         for _, ap in pairs(scanlist) do
             if (ap.ssid == ssid and ap_match_encryption(ap, encryption)) then
                 return true
@@ -85,12 +83,12 @@ function pkg._is_safe(ssid, encryption, radio)
     return false, 'hotspot ap not found'
 end
 
-function pkg.safe_enable(ssid, password, encryption, radio)
+function pkg.safe_enable(ssidArg, password, encryptionArg, radioArg)
     --! Enables the hotpost client only if the hotpost is already available
     --! in order to avoid clients from ap interfaces to be kicked out.
-    local encryption = encryption or pkg.DEFAULT_ENCRYPTION
-    local ssid = ssid or pkg.DEFAULT_SSID
-    local radio = radio or pkg.DEFAULT_RADIO
+    local encryption = encryptionArg or pkg.DEFAULT_ENCRYPTION
+    local ssid = ssidArg or pkg.DEFAULT_SSID
+    local radio = radioArg or pkg.DEFAULT_RADIO
 
     local is_safe, reason = pkg._is_safe(ssid, encryption, radio)
     if is_safe then
@@ -100,9 +98,8 @@ function pkg.safe_enable(ssid, password, encryption, radio)
     end
 end
 
-function pkg.disable(radio)
+function pkg.disable()
     local uci = config.get_uci_cursor()
-    local radio = radio or pkg.DEFAULT_RADIO
 
     uci:delete(config.UCI_NODE_NAME, pkg.GENERIC_SECTION_NAME)
     uci:commit(config.UCI_NODE_NAME)
@@ -112,9 +109,8 @@ function pkg.disable(radio)
     return true
 end
 
-function pkg.status(radio)
+function pkg.status()
     local uci = config.get_uci_cursor()
-    local radio = radio or pkg.DEFAULT_RADIO
     local connected = false
     local signal
 
@@ -124,7 +120,7 @@ function pkg.status(radio)
         enabled = true
     end
 
-    for mac, station in pairs(iwinfo.nl80211.assoclist(pkg.IFACE_NAME)) do
+    for _, station in pairs(iwinfo.nl80211.assoclist(pkg.IFACE_NAME)) do
         connected = true
         signal = station['signal']
     end

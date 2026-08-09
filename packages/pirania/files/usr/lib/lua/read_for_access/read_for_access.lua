@@ -4,7 +4,7 @@ local config = require('lime.config')
 
 local read_for_access = {}
 
-function uptime_s()
+local function uptime_s()
     return math.floor(utils.uptime_s())
 end
 
@@ -42,7 +42,7 @@ function read_for_access.authorize_mac(mac)
         content = content:gsub("(" .. mac .. ") %d+", "%1 " .. timestamp)
         utils.write_file(read_for_access.AUTH_MACS_FILE, content)
     end
-    -- redirects stdout and stderr to /dev/null to not trigger 502 Bad Gateway after read for access portal
+    --! redirects stdout and stderr to /dev/null to not trigger 502 Bad Gateway after read for access portal
     os.execute('/usr/bin/captive-portal update > /dev/null 2>&1')
 end
 

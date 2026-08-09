@@ -15,9 +15,6 @@ if not conn then
     error("Failed to connect to ubus")
 end
 
-local UPGRADE_METADATA_FILE = "/etc/upgrade_metadata"
-
-
 local function set_root_password(msg)
     local result = limeutilsadmin.set_root_password(msg)
     return utils.printJson(result)

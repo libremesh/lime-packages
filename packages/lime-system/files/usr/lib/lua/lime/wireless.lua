@@ -6,7 +6,7 @@ local utils = require("lime.utils")
 local fs = require("nixio.fs")
 local iwinfo = require("iwinfo")
 
-wireless = {}
+local wireless = {}
 
 wireless.limeIfNamePrefix="lm_"
 
@@ -53,11 +53,10 @@ function wireless.scandevices()
 end
 
 function wireless.is5Ghz(radio)
-	local config = require("lime.config")
 	local uci = config.get_uci_cursor()
-	wifi_band = uci:get('wireless', radio, 'band')
+	local wifi_band = uci:get('wireless', radio, 'band')
 	if wifi_band then return wifi_band=='5g' end
-	wifi_channel = uci:get('wireless', radio, 'channel')
+	local wifi_channel = uci:get('wireless', radio, 'channel')
 	if tonumber(wifi_channel) then
 		wifi_channel = tonumber(wifi_channel)
 		return 32<=wifi_channel and wifi_channel<178
@@ -68,9 +67,8 @@ function wireless.is5Ghz(radio)
 end
 
 function wireless.is6Ghz(radio)
-	local config = require("lime.config")
 	local uci = config.get_uci_cursor()
-	wifi_band = uci:get('wireless', radio, 'band')
+	local wifi_band = uci:get('wireless', radio, 'band')
 	if wifi_band then return wifi_band=='6g' end
 	return false
 end
@@ -81,10 +79,10 @@ function wireless.getRadioBand(radioName)
 	end
 	if wireless.is6Ghz(radioName) then
 		--! currently untested and reserved for indoor use
-		-- let's default to 5ghz for now
-		-- TODO: test 6g band and decide a path forward with
+		--! let's default to 5ghz for now
+		--! TODO: test 6g band and decide a path forward with
 		local uci = config.get_uci_cursor()
-		uci:set("wireless", radioName, "band", "5g") 
+		uci:set("wireless", radioName, "band", "5g")
 		return '5ghz'
 	end
 	return '2ghz'
@@ -108,8 +106,8 @@ function wireless.mesh_ifaces()
 				table.insert(ifaces, entry.ifname)
 			end
 		end)
-	--! add apup interfaces 
-	--! this are not listed in uci 
+	--! add apup interfaces
+	--! this are not listed in uci
 	local shell_output = utils.unsafe_shell("ls /sys/class/net/ -R")
 	if shell_output ~= nil then
 		for line in shell_output:gmatch("[^\n]+") do
@@ -188,11 +186,11 @@ function wireless.configure()
 	local allRadios = wireless.scandevices()
 	for _,radio in pairs(allRadios) do
 		local radioName = radio[".name"]
-		local radioBand = wireless.getRadioBand(radioName) 
+		local radioBand = wireless.getRadioBand(radioName)
 		local radioOptions = specificRadios[radioName] or {}
 		local bandOptions = config.get_all(radioBand) or {}
 		local options = config.get_all("wifi")
-		
+
 		options = utils.tableMelt(options, bandOptions)
 		options = utils.tableMelt(options, radioOptions)
 
@@ -216,7 +214,9 @@ function wireless.configure()
 			uci:set("wireless", radioName, "noscan", 1)
 			uci:set("wireless", radioName, "channel", channel)
 			if options["country"] then uci:set("wireless", radioName, "country", options["country"]) end
-			if options["legacy_rates"] and not wireless.is5Ghz(radioName) then uci:set("wireless", radioName, "legacy_rates", options["legacy_rates"]) end
+			if options["legacy_rates"] and not wireless.is5Ghz(radioName) then
+				uci:set("wireless", radioName, "legacy_rates", options["legacy_rates"])
+			end
 			if options["txpower"] then uci:set("wireless", radioName, "txpower", options["txpower"]) end
 			if options["htmode"] then uci:set("wireless", radioName, "htmode", options["htmode"]) end
 			uci:save("wireless")
@@ -349,7 +349,7 @@ function wireless.is_distance_auto_available(radioName)
 end
 
 --! If distance 'auto' is requested for a driver that does not support it,
---! use the lime-defaults value as safer option than allowing to set "auto" 
+--! use the lime-defaults value as safer option than allowing to set "auto"
 --! which could lead to the minimum being applied at next reboot
 --! potentially compromising long distance wireless links.
 function wireless.apply_distance_auto_fallback(radioName,options)
@@ -364,7 +364,7 @@ end
 
 function wireless.get_distance(radioName, options)
 	--! distance auto requested or enforced
-	if (options["distance"] == "auto" or options["distance_use_auto_if_available"] == 'true') then 
+	if (options["distance"] == "auto" or options["distance_use_auto_if_available"] == 'true') then
 		if wireless.is_distance_auto_available(radioName) == '1' then return "auto"
 		else return wireless.apply_distance_auto_fallback(radioName,options) end
 	--! distance set

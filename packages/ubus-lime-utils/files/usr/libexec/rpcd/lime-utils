@@ -11,17 +11,17 @@ local utils = require 'lime.utils'
 
 local limeutils = require 'lime-utils'
 
-local function get_cloud_nodes(msg)
+local function get_cloud_nodes()
     local cloud = limeutils.get_cloud_nodes()
     utils.printJson(cloud)
 end
 
-local function get_mesh_ifaces(msg)
+local function get_mesh_ifaces()
     local result = limeutils.get_mesh_ifaces()
     utils.printJson(result)
 end
 
-local function get_node_status(msg)
+local function get_node_status()
     local result = limeutils.get_node_status()
     utils.printJson(result)
 end
@@ -46,7 +46,7 @@ local function get_config()
     utils.printJson(result)
 end
 
-local function get_upgrade_info(msg)
+local function get_upgrade_info()
     local result = limeutils.get_upgrade_info()
     utils.printJson(result)
 end

@@ -36,7 +36,7 @@ mtd7: 00010000 00010000 "ART"
         assert.are.equal(1, partitions.stable)
         assert.are.equal(0, partitions.testing)
 
-        local mtd = [[dev:    size   erasesize  name
+        mtd = [[dev:    size   erasesize  name
 mtd0: 00040000 00010000 "u-boot"
 mtd1: 00010000 00010000 "u-boot-env"
 mtd2: 007c0000 00010000 "fw1"
@@ -49,7 +49,7 @@ mtd8: 00010000 00010000 "ART"
 ]]
         utils.write_file(mtd_file, mtd)
         su._mtd_partitions_desc = mtd_file
-        local partitions = su.get_partitions()
+        partitions = su.get_partitions()
         assert.are.equal(2, partitions.current)
         assert.are.equal(1, partitions.other)
         assert.are.equal(1, partitions.stable)

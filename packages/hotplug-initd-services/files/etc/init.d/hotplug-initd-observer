@@ -10,7 +10,7 @@ start_service() {
 	procd_set_param respawn
 	procd_set_param stdout 1
 	procd_set_param stderr 1
-	procd_set_param respawn ${respawn_threshold:-60} ${respawn_timeout:-3} ${respawn_retry:-5}
+	procd_set_param respawn "${respawn_threshold:-60}" "${respawn_timeout:-3}" "${respawn_retry:-5}"
 	procd_set_param command /usr/bin/hotplug-initd-observer
 	procd_close_instance
 }

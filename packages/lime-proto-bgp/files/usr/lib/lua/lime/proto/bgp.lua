@@ -5,14 +5,13 @@ local config = require("lime.config")
 local fs = require("nixio.fs")
 local utils = require("lime.utils")
 
+local bgp = {}
 
-proto = {}
+bgp.configured = false
 
-proto.configured = false
-
-function proto.configure(args)
-	if proto.configured then return end
-	proto.configured = true
+function bgp.configure(args)
+	if bgp.configured then return end
+	bgp.configured = true
 
 	local ipv4, ipv6 = network.primary_address()
 	local localAS = args[2] or 64496
@@ -22,7 +21,7 @@ function proto.configure(args)
 	local meshPenalty = args[4] or 8
 
 	local mp = "bgp_path.prepend("..localAS..");\n"
-	for i=1,meshPenalty do
+	for _=1,meshPenalty do
 		mp = mp .. "\t\t\tbgp_path.prepend("..localAS..");\n"
 	end
 
@@ -98,12 +97,12 @@ protocol bgp {
 	fs.writefile("/etc/bird6.conf", bird6_config)
 end
 
-function proto.setup_interface(ifname, args)
+function bgp.setup_interface(ifname, args)
 end
 
-function proto.apply()
-    os.execute("/etc/init.d/bird4 restart")
-    os.execute("/etc/init.d/bird6 restart")
-end
+--! function bgp.apply()
+--!     os.execute("/etc/init.d/bird4 restart")
+--!     os.execute("/etc/init.d/bird6 restart")
+--! end
 
-return proto
+return bgp

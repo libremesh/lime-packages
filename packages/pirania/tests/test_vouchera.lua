@@ -1,6 +1,3 @@
-local test_utils = require 'tests.utils'
-local fs = require("nixio.fs")
-
 local config = require('voucher.config')
 local hooks = require('voucher.hooks')
 local portal = require('portal.portal')
@@ -34,8 +31,10 @@ describe('Vouchera tests #vouchera', function()
         local voucher_d = vouchera.voucher(v)
         v.code = 'myvoucher'
         local voucher_e = vouchera.voucher(v)
-        local voucher_f = vouchera.voucher({name='myvoucher', code='secret_code', mod_counter=2, creation_date=current_time_s})
-        local voucher_g = vouchera.voucher({name='myvoucher', code='secret_code', mod_counter=3, creation_date=current_time_s})
+        local voucher_f = vouchera.voucher({name='myvoucher', code='secret_code',
+            mod_counter=2, creation_date=current_time_s})
+        local voucher_g = vouchera.voucher({name='myvoucher', code='secret_code',
+            mod_counter=3, creation_date=current_time_s})
 
         assert.is_not_nil(voucher_a)
         assert.is.equal(voucher_a, voucher_b)
@@ -45,9 +44,12 @@ describe('Vouchera tests #vouchera', function()
         assert.is.not_equal(voucher_a, voucher_f)
         assert.is.not_equal(voucher_f, voucher_g)
 
-        local voucher_h = vouchera.voucher({name='myvoucher', code='secret_code', id='foo', duration_m=100, creation_date=current_time_s})
-        local voucher_i = vouchera.voucher({name='myvoucher', code='secret_code', id='foo', duration_m=100, creation_date=current_time_s})
-        local voucher_j = vouchera.voucher({name='myvoucher', code='secret_code', id='bar', duration_m=100, creation_date=current_time_s})
+        local voucher_h = vouchera.voucher({name='myvoucher', code='secret_code',
+            id='foo', duration_m=100, creation_date=current_time_s})
+        local voucher_i = vouchera.voucher({name='myvoucher', code='secret_code',
+            id='foo', duration_m=100, creation_date=current_time_s})
+        local voucher_j = vouchera.voucher({name='myvoucher', code='secret_code',
+            id='bar', duration_m=100, creation_date=current_time_s})
         assert.is.equal(voucher_h, voucher_i)
         assert.is.not_equal(voucher_h, voucher_j)
     end)
@@ -77,9 +79,9 @@ describe('Vouchera tests #vouchera', function()
         assert.is_nil(voucher.mac)
         assert.is.equal(current_time_s, voucher.creation_date)
 
-        v1 = vouchera.get_by_id('myvoucher')
+        local v1 = vouchera.get_by_id('myvoucher')
         vouchera.init()
-        v2 = vouchera.get_by_id('myvoucher')
+        local v2 = vouchera.get_by_id('myvoucher')
         assert.is.equal(v1, v2)
         assert.is.not_nil(v1)
     end)
@@ -111,7 +113,7 @@ describe('Vouchera tests #vouchera', function()
 
     it('activate voucher calls and waits for captive portal update when activable', function()
         vouchera.init()
-        local voucher = vouchera.add({name='myvoucher', code='secret_code', duration_m=100})
+        vouchera.add({name='myvoucher', code='secret_code', duration_m=100})
         -- when activable
         stub(portal, "update_captive_portal", function() end)
         vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff")
@@ -124,7 +126,7 @@ describe('Vouchera tests #vouchera', function()
 
     it('activate triggers db_change hooks when activable', function()
         vouchera.init()
-        local voucher = vouchera.add({name='myvoucher', code='secret_code', duration_m=100})
+        vouchera.add({name='myvoucher', code='secret_code', duration_m=100})
         -- when activable
         stub(hooks, "run", function() end)
         vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff")
@@ -144,7 +146,7 @@ describe('Vouchera tests #vouchera', function()
 
         local voucher = vouchera.add({name='myvoucher', code='secret_code', duration_m=minutes})
         assert.is_nil(voucher.expiration_date())
-        local voucher = vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff")
+        voucher = vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff")
         assert.is.equal(expiration_date, voucher.expiration_date())
     end)
 
@@ -168,7 +170,7 @@ describe('Vouchera tests #vouchera', function()
         local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code'})
         assert.is.equal(1, voucher.mod_counter)
 
-        local voucher = vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff")
+        voucher = vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff")
         assert.is.not_false(voucher)
         assert.is_true(vouchera.is_mac_authorized("aa:bb:cc:dd:ee:ff"))
         assert.is.equal(2, voucher.mod_counter)
@@ -182,8 +184,8 @@ describe('Vouchera tests #vouchera', function()
 
     it('test activation deadline', function()
         vouchera.init()
-        deadline = current_time_s + 10
-        local voucher = vouchera.add({name='myvoucher', code='secret_code', duration_m=100,
+        local deadline = current_time_s + 10
+        vouchera.add({name='myvoucher', code='secret_code', duration_m=100,
                                      activation_deadline=deadline})
 
         assert.is.not_false(vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff"))
@@ -202,7 +204,7 @@ describe('Vouchera tests #vouchera', function()
     it('add and remove vouchers', function()
         vouchera.init()
 
-        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code'})
+        vouchera.add({id='myvoucher', name='foo', code='secret_code'})
         os.execute:revert()
         assert.is_true(vouchera.remove_locally('myvoucher'))
         assert.is_nil(vouchera.get_by_id('myvoucher'))
@@ -232,7 +234,7 @@ describe('Vouchera tests #vouchera', function()
 
     it('invalidate calls captive portal update daemonized if the voucher was active', function()
         vouchera.init()
-        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=100})
+        vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=100})
         vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff")
         stub(portal, "update_captive_portal", function() end)
         vouchera.invalidate('myvoucher')
@@ -241,7 +243,7 @@ describe('Vouchera tests #vouchera', function()
 
     it('invalidate doesnt call captive portal update if the voucher was inactive', function()
         vouchera.init()
-        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=100})
+        vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=100})
         stub(portal, "update_captive_portal", function() end)
         vouchera.invalidate('myvoucher')
         assert.stub(portal.update_captive_portal).was_not_called()
@@ -249,7 +251,7 @@ describe('Vouchera tests #vouchera', function()
 
     it('invalidates triggers db_change hooks', function()
         vouchera.init()
-        local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=100})
+        vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=100})
         vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff")
         stub(hooks, "run", function() end)
         vouchera.invalidate('myvoucher')
@@ -273,7 +275,7 @@ describe('Vouchera tests #vouchera', function()
 
     it('prune expired vouchers', function()
         vouchera.init()
-        duration_m = 100
+        local duration_m = 100
         local voucher = vouchera.add({id='myvoucher', name='foo', code='secret_code', duration_m=duration_m})
         vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff")
         local pre_expiry_time = current_time_s + vouchera.PRUNE_OLDER_THAN_S + (duration_m*60) - 1
@@ -302,7 +304,7 @@ describe('Vouchera tests #vouchera', function()
         vouchera.init()
         local v = vouchera.voucher({id='myvoucher', name='foo', code='secret_code',
                                     duration_m=100, creation_date=current_time_s})
-        local voucher = vouchera.add(v)
+        vouchera.add(v)
         vouchera.activate('secret_code', "aa:bb:cc:dd:ee:ff")
         assert.is_not_nil(vouchera.get_by_id('myvoucher'))
 
@@ -316,11 +318,10 @@ describe('Vouchera tests #vouchera', function()
     it('test automatic pruning is not removing a not too old voucher', function()
         config.prune_expired_for_days = '100'
         vouchera.init()
-        local some_seconds = 10
         local v = vouchera.voucher({id='myvoucher', name='foo', code='secret_code',
                                     duration_m=100, creation_date=current_time_s})
 
-        local voucher = vouchera.add(v)
+        vouchera.add(v)
 
         assert.is_not_nil(vouchera.get_by_id('myvoucher'))
 
@@ -342,10 +343,10 @@ describe('Vouchera tests #vouchera', function()
         assert.is.equal(duration_m, v.duration_m)
         assert.is.equal('foo', v.name)
 
-        local qty = 5
-        local duration_m = 100
+        qty = 5
+        duration_m = 100
         local deadline = current_time_s + 10
-        local created_vouchers = vouchera.create(base_name, qty, duration_m, deadline)
+        created_vouchers = vouchera.create(base_name, qty, duration_m, deadline)
         assert.is.equal(#created_vouchers, qty)
 
         local v1 = vouchera.get_by_id(created_vouchers[1].id)
@@ -363,7 +364,7 @@ describe('Vouchera tests #vouchera', function()
         local base_name = 'foo'
         local qty = 5
         local duration_m = 100
-        local created_vouchers = vouchera.create(base_name, qty, duration_m)
+        vouchera.create(base_name, qty, duration_m)
 
         local listed = vouchera.list()
         assert.is.equal(qty, #listed)
@@ -412,11 +413,11 @@ describe('Vouchera tests #vouchera', function()
         vouchera.init()
 
         -- Create normal voucher
-        local normal = vouchera.add({name='normal', code='normal_code', duration_m=100})
+        vouchera.add({name='normal', code='normal_code', duration_m=100})
         vouchera.activate('normal_code', "aa:bb:cc:dd:ee:ff")
 
         -- Create unrestricted voucher
-        local unrestricted = vouchera.add({name='unrestricted', code='unrestricted_code', duration_m=100, unrestricted=true})
+        vouchera.add({name='unrestricted', code='unrestricted_code', duration_m=100, unrestricted=true})
         vouchera.activate('unrestricted_code', "11:22:33:44:55:66")
 
         -- get_authorized_macs should return both
@@ -433,7 +434,7 @@ describe('Vouchera tests #vouchera', function()
         vouchera.init()
 
         -- Create unrestricted voucher but don't activate
-        local unrestricted = vouchera.add({name='unrestricted', code='unrestricted_code', duration_m=100, unrestricted=true})
+        vouchera.add({name='unrestricted', code='unrestricted_code', duration_m=100, unrestricted=true})
 
         local unrestricted_macs = vouchera.get_unrestricted_macs()
         assert.is.equal(0, #unrestricted_macs)
@@ -464,7 +465,8 @@ describe('Vouchera tests #vouchera', function()
 
     it('test unrestricted voucher persists after reload', function()
         vouchera.init()
-        local voucher = vouchera.add({id='unrestricted_voucher', name='unrestricted', code='unrestricted_code', unrestricted=true})
+        local voucher = vouchera.add({id='unrestricted_voucher', name='unrestricted',
+            code='unrestricted_code', unrestricted=true})
         assert.is.equal(true, voucher.unrestricted)
 
         -- Reload database

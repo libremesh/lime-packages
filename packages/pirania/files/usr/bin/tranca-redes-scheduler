@@ -148,7 +148,7 @@ evaluate_schedule() {
             uci set "$PIRANIA_CFG.$TRANCA_SECTION.active=0"
             uci commit "$PIRANIA_CFG"
             log_info "Tranca Redes disabled, deactivating"
-            captive-portal update &>/dev/null &
+            captive-portal update >/dev/null &
         fi
         return 0
     fi
@@ -231,7 +231,7 @@ evaluate_schedule() {
         fi
 
         # Trigger captive-portal update in background
-        captive-portal update &>/dev/null &
+        captive-portal update >/dev/null &
     fi
 }
 

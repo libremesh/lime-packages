@@ -1,4 +1,5 @@
 local utils = require 'lime.utils'
+local config = require 'lime.config'
 local test_utils = require 'tests.utils'
 local uci = nil
 
@@ -196,7 +197,7 @@ dnsmasq:*:18362:0:99999:7:::
 
     it('test set_shared_root_password', function()
 		uci:set('lime-community', 'system', 'lime')
-		stub(utils, "set_password", function (user, pass) return pass end)
+		stub(utils, "set_password", function (_, pass) return pass end)
 
 		utils.set_shared_root_password('foo')
 
@@ -244,7 +245,7 @@ DISTRIB_ARCH='mips_24kc'
 DISTRIB_DESCRIPTION='LiMe master development (master rev. ec81de9 20190613_1242)'
 DISTRIB_TAINTS='no-all busybox'
 ]]
-        stub(utils, "read_file", function (cmd) return info end)
+        stub(utils, "read_file", function () return info end)
         local data = utils.release_info()
         assert.is.equal('LiMe', data['DISTRIB_ID'])
         assert.is.equal('master', data['DISTRIB_RELEASE'])

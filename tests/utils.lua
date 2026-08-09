@@ -7,7 +7,7 @@ local utils = {}
 
 utils.assert = assert
 
-UCI_CONFIG_FILES = {
+local UCI_CONFIG_FILES = {
 	"6relayd", "babeld", "batman-adv", "check-date", "dhcp", "dropbear", "fstab", "firewall",
 	"libremap", "lime", "lime-app", "location",
 	"luci", "network", "pirania", "rpcd", "shared-state", "system", "ucitrack",
@@ -16,7 +16,7 @@ UCI_CONFIG_FILES = {
 }
 
 function utils.disable_asserts()
-    _G['assert'] = function(expresion, message) return expresion end
+    _G['assert'] = function(expression) return expression end
 end
 
 function utils.enable_asserts()
@@ -28,7 +28,7 @@ function utils.lua_path_from_pkgname(pkgname)
 end
 
 function utils.enable_package(pkgname)
-    path = utils.lua_path_from_pkgname(pkgname)
+    local path = utils.lua_path_from_pkgname(pkgname)
     if string.find(package.path, path) == nil then
         package.path = path .. package.path
     end
@@ -36,7 +36,7 @@ end
 
 function utils.disable_package(pkgname, modulename)
     -- remove pkg from LUA search path
-    path = utils.lua_path_from_pkgname(pkgname)
+    local path = utils.lua_path_from_pkgname(pkgname)
     package.path = string.gsub(package.path, limeutils.literalize(path), '')
     -- remove module from preload table
     package.preload[modulename] = nil
@@ -55,7 +55,7 @@ function utils.setup_test_uci()
 	-- If the uci files does not exists then doing uci add fails
 	-- so here we create empty config files
 	for _, cfgname in ipairs(UCI_CONFIG_FILES) do
-		local f = io.open(tmpdir .. '/' .. cfgname, "w"):close()
+		io.open(tmpdir .. '/' .. cfgname, "w"):close()
 	end
 	return uci
 end

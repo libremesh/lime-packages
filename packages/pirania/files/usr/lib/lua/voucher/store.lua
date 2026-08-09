@@ -2,7 +2,6 @@
 
 local fs = require("nixio.fs")
 local json = require("luci.jsonc")
-local hooks = require('voucher.hooks')
 local utils = require("voucher.utils")
 
 local store = {}
@@ -18,7 +17,7 @@ function store.load_db(db_path, voucher_init)
     end
 
     for fname in fs.glob(db_path .. '/*.json') do
-        local f = io.open(fname, "r")
+        f = io.open(fname, "r")
         if f ~= nil then
             local json_obj = json.parse(f:read("*all"))
             f:close()

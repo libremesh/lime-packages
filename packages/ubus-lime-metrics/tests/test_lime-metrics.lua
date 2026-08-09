@@ -31,7 +31,8 @@ describe('Lime-metric tests', function()
 
 
     it('test get_gateway return last entry on the last internet file', function()
-        mock_last_internet_path('[{"ip":"10.133.43.6", "hostname":"node_foo"}, {"ip":"10.0.0.1","hostname":"thegateway"}]')
+        mock_last_internet_path('[{"ip":"10.133.43.6", "hostname":"node_foo"}, '..
+            '{"ip":"10.0.0.1","hostname":"thegateway"}]')
         local response  = metrics.get_gateway()
         assert.is.equal("ok", response.status)
         assert.are.same("thegateway", response.gateway.hostname)
@@ -57,7 +58,7 @@ describe('Lime-metric tests', function()
 
 
     it('test get_station_traffic', function()
-        stub(lutils, "unsafe_shell", function () return cmd_out  end)
+        stub(lutils, "unsafe_shell", function () return nil end)
         stub(lutils, "unsafe_shell", function () return '256723649\n22785424'  end)
         local msg = json.parse('{"iface": "wlan0", "station_mac": "AA:BB:CC:DD:EE:FF"}')
         local response  = metrics.get_station_traffic(msg)

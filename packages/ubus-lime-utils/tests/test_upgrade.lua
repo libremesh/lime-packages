@@ -1,4 +1,3 @@
-local utils = require "lime.utils"
 local test_utils = require "tests.utils"
 local lib = require "lime.upgrade"
 

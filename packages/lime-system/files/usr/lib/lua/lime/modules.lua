@@ -1,6 +1,6 @@
 #!/usr/bin/lua
 
-modules = {}
+local modules = {}
 
 modules.NAMES = {
 	"hardware_detection",
@@ -34,7 +34,7 @@ function modules.ensure_modules()
 
 	modules.modules = {}
 	for i, name in pairs(modules.NAMES) do
-		full_name = "lime." .. name
+		local full_name = "lime." .. name
 		if modules.is_available(full_name) then
 			modules.modules[i] = require(full_name)
 		end

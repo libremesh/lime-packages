@@ -25,7 +25,7 @@ function bat_hosts.get_bat_hosts_from_shared_state()
         io.popen("shared-state-async get bat-hosts 2> /dev/null", "r"):read("*all"))
 end
 
-function bat_hosts.get_bathost(mac, outgoing_iface)
+function bat_hosts.get_bathost(mac)
     local bathosts = bat_hosts.get_bat_hosts_from_shared_state()
     local bathost = bathosts[mac:lower()]
     if bathost == nil then return end

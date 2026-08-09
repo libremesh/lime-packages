@@ -1,15 +1,17 @@
 #!/bin/sh
+# shellcheck disable=SC2034
+
 TRIES=3
 
 bw_test() {
   local bw=""
   local try=0
-  while [ -z "$bw" -a $try -lt $TRIES ]; do
-    test=$({ wget -T5 -q $1 -O- | pv -n -b -t >/dev/null; } 2>&1)
-    bw=$(echo $test | awk '{printf "%.0f",$NF/$(NF-1)*8}')
+  while [ -z "$bw" ] && [ $try -lt $TRIES ]; do
+    test=$({ wget -T5 -q "$1" -O- | pv -n -b -t >/dev/null; } 2>&1)
+    bw=$(echo "$test" | awk '{printf "%.0f",$NF/$(NF-1)*8}')
     try=$((try+1))
   done
-  echo $bw
+  echo "$bw"
 }
 
 random_test() {
@@ -27,16 +29,16 @@ random_test() {
 
   rnd=$(awk 'BEGIN{srand();print int(rand()*11)}')
   svid="sv$rnd"
-  sv=$(eval echo \$$svid)
+  sv=$(eval echo "\$$svid")
   logger -t bmx7-auto-gw "Testing bandwidth [$sv]"
   bw_test "$sv"
 }
 
-cat /var/run/bmx7/json/parameters | jsonfilter -e '@["OPTIONS"][*]' | grep tunIn | grep -q "0.0.0.0" && {
+jsonfilter -e '@["OPTIONS"][*]' < /var/run/bmx7/json/parameters | grep tunIn | grep -q "0.0.0.0" && {
   bw=$(random_test)
-  [ -n "$bw" -a $bw -gt 1000 ] && {
+  [ -n "$bw" ] && [ "$bw" -gt 1000 ] && {
     logger -t bmx7-auto-gw "Got bandwidth of $bw bit/s"
-    bmx7 -c tunIn inet4 /b $bw /n 0.0.0.0/0
-    [ -n "$SAVE" ] && echo $(date +"%Y.%m.%d.%H.%M") $bw >> $SAVE
+    bmx7 -c tunIn inet4 /b "$bw" /n 0.0.0.0/0
+    [ -n "$SAVE" ] && echo "$(date +"%Y.%m.%d.%H.%M")" "$bw" >> "$SAVE"
   }
 }

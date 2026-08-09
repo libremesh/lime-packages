@@ -7,6 +7,7 @@
 local iwinfo = require "iwinfo"
 local json = require "luci.jsonc"
 local config = require "lime.config"
+local network = require 'lime.network'
 local wireless = require "lime.wireless"
 local system = require "lime.system"
 
@@ -52,13 +53,13 @@ function location.nodes_and_links()
   local macs = network.get_own_macs("wlan*")
 
   local coords = location.get_node() or location.get_community() or {lat="FIXME", long="FIXME"}
-  local iface, currneigh, _, n
+  local currneigh
 
   local interfaces = wireless.mesh_ifaces()
   local links = {}
   for _, iface in pairs(interfaces) do
     currneigh = iwinfo.nl80211.assoclist(iface)
-    for mac, station in pairs(currneigh) do
+    for mac, _ in pairs(currneigh) do
         table.insert(links, string.lower(mac))
     end
   end

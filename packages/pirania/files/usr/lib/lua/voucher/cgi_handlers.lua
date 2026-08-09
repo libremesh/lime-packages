@@ -26,7 +26,6 @@ function handlers.preactivate_voucher()
     if client_is_authorized then
         url = url_authenticated
     else
-        local output
         local params = utils.urldecode_params(os.getenv("QUERY_STRING"))
         local code = params['voucher']
         local prevUrl = params['prev']

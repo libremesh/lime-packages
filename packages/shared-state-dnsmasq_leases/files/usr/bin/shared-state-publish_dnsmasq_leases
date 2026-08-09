@@ -8,15 +8,15 @@ local JSON = require("luci.jsonc")
 local uci = require("uci")
 local fs = require("nixio.fs")
 
-function string:split(sep)
+local function split_line(str, sep)
 	local ret = {}
-	for token in self:gmatch("[^"..sep.."]+") do
+	for token in str:gmatch("[^"..sep.."]+") do
 		table.insert(ret, token)
 	end
 	return ret
 end
 
-function add_dhcp_leases_from_files()
+local function add_dhcp_leases_from_files()
 	local leasesTable = {}
 	local hostTable = {}
 
@@ -32,7 +32,7 @@ function add_dhcp_leases_from_files()
 	end
 
 	for line in io.lines("/tmp/dhcp.leases") do
-		_, client_mac, client_ip, client_hostname, client_id = unpack(line:split(" "))
+		local _, client_mac, client_ip, client_hostname, _ = unpack(split_line(line, " "))
 		--! client_ip will be nil in duid lines
 		--! https://dnsmasq-discuss.thekelleys.org.narkive.com/ia9YNLmE/dnsmasq-leases-file-format-specification
 		if client_ip and type(client_hostname) == "string" then
@@ -55,12 +55,12 @@ function add_dhcp_leases_from_files()
 	cStdin:write(JSON.stringify(leasesTable))
 	cStdin:close()
 
-	local cStdin = io.popen("shared-state insert dnsmasq-hosts", "w")
+	cStdin = io.popen("shared-state insert dnsmasq-hosts", "w")
 	cStdin:write(JSON.stringify(hostTable))
 	cStdin:close()
 end
 
-function add_lease(client_mac, client_ip, client_hostname)
+local function add_lease(client_mac, client_ip, client_hostname)
 	if type(client_hostname) == "string" then
 		--! avoid adding IPv6 as collisions are very unlikely
 		--! if we were going to include it, we should prepend "id:" to the duid received as first argument
@@ -83,13 +83,10 @@ function add_lease(client_mac, client_ip, client_hostname)
 	end
 end
 
-function add_own()
-	local leasesTable = {}
-
+local function add_own()
 	local uci_conf = uci.cursor()
 	local own_ipv4 = uci_conf:get("network", "lan", "ipaddr")
 	local own_ipv6 = uci_conf:get("network", "lan", "ip6addr")
-	uci_conf = nil
 	if own_ipv6 then own_ipv6 = own_ipv6:gsub("/.*$", "") end
 
 	local own_hostname = io.input("/proc/sys/kernel/hostname"):read("*line")
@@ -99,16 +96,16 @@ function add_own()
 	add_lease(own_mac, own_ipv6, own_hostname, "*")
 end
 
-function del_lease(client_ip)
+local function del_lease(client_ipArg, client_hostnameArg)
 	local keysArr = {}
-	table.insert(keysArr, client_ip)
+	table.insert(keysArr, client_ipArg)
 	local cStdin = io.popen("shared-state remove dnsmasq-leases", "w")
 	cStdin:write(JSON.stringify(keysArr))
 	cStdin:close()
 
 	local hostArr = {}
-	table.insert(hostArr, client_ip.." "..client_hostname)
-	local cStdin = io.popen("shared-state remove dnsmasq-hosts", "w")
+	table.insert(hostArr, client_ipArg.." "..client_hostnameArg)
+	cStdin = io.popen("shared-state remove dnsmasq-hosts", "w")
 	cStdin:write(JSON.stringify(hostArr))
 	cStdin:close()
 end
@@ -129,7 +126,7 @@ if command == "add" then
 	add_own()
 
 elseif command == "del" then
-	del_lease(client_ip)
+	del_lease(client_ip, client_hostname)
 	add_own()
 
 elseif command == nil or command:match("^%s*$") then

@@ -18,7 +18,7 @@ function watchcat.clean()
 
         local function clear_watchcat_section(section)
                 local is_ours = utils.stringStarts(section[".name"], watchcat.sectionNamePrefix)
-                
+
                 local is_anon = section[".anonymous"]
 
                 if is_ours or is_anon then
@@ -36,8 +36,8 @@ end
 
 function watchcat.detect_hardware()
         local uci = config.get_uci_cursor()
-        local user_defined = false 
-        
+        local user_defined = false
+
         config.foreach("hwd_watchcat", function(user_section)
                 user_defined = true
                 local identifier = user_section.id or "default"
@@ -50,7 +50,7 @@ function watchcat.detect_hardware()
                         if option_key:sub(1,1) ~= "." and option_key ~= "id" then
                                 uci:set("watchcat", section_name, option_key, option_value)
                         end
-                end 
+                end
         end)
         --! only saved if we actually aplied any user section
         if user_defined then

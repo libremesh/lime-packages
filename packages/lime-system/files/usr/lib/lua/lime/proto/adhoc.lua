@@ -2,6 +2,7 @@
 
 local config = require("lime.config")
 local adhoc_mode = require("lime.mode.adhoc")
+local network = require("lime.network")
 
 local adhoc = {}
 

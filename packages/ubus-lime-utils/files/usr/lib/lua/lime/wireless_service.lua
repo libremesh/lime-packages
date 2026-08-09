@@ -1,9 +1,9 @@
 local utils = require('lime.utils')
-local config = require('lime.config')
 local wireless = require('lime.wireless')
 
 local wireless_service = {}
-wireless_service.AP_BAND = '2ghz' -- TODO: grab from uci config
+--! TODO: grab from uci config
+wireless_service.AP_BAND = '2ghz'
 
 
 local function get_node_ap_data(is_admin)

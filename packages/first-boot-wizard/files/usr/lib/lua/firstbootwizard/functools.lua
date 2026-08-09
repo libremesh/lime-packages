@@ -23,7 +23,7 @@ function functools.curry(func, num_args)
             --! reverse argument list and call function
             return func(functools.reverse(argtrace()))
         else
-            -- "push" argument (by building a wrapper function) and decrement n
+            --! "push" argument (by building a wrapper function) and decrement n
             return function (onearg)
                 return curry_h(function () return onearg, argtrace() end, n - 1)
             end
@@ -39,7 +39,7 @@ function functools.curry(func, num_args)
 end
 
 --! reverse(...) : take some tuple and return a tuple of	elements in reverse order
---! 
+--!
 --! e.g.	"reverse(1,2,3)" returns 3,2,1
 function functools.reverse(...)
 
@@ -89,15 +89,15 @@ end
 
 function functools.print_r ( t )
     local print_r_cache={}
-    local function sub_print_r(t,indent)
-        if (print_r_cache[tostring(t)]) then
-            print(indent.."*"..tostring(t))
+    local function sub_print_r(tArg,indent)
+        if (print_r_cache[tostring(tArg)]) then
+            print(indent.."*"..tostring(tArg))
         else
-            print_r_cache[tostring(t)]=true
-            if (type(t)=="table") then
-                for pos,val in pairs(t) do
+            print_r_cache[tostring(tArg)]=true
+            if (type(tArg)=="table") then
+                for pos,val in pairs(tArg) do
                     if (type(val)=="table") then
-                        print(indent.."["..pos.."] => "..tostring(t).." {")
+                        print(indent.."["..pos.."] => "..tostring(tArg).." {")
                         sub_print_r(val,indent..string.rep(" ",string.len(pos)+8))
                         print(indent..string.rep(" ",string.len(pos)+6).."}")
                     elseif (type(val)=="string") then
@@ -123,8 +123,8 @@ end
 
 function functools.reduce(cb, tab, default)
     local result = default
-    for k, act in pairs(tab) do
-        result = cb(result,act) 
+    for _, act in pairs(tab) do
+        result = cb(result,act)
     end
     return result
 end
@@ -132,7 +132,7 @@ end
 function functools.splitBy(option)
     return function(tab)
         local result = {}
-        for k, obj in pairs(tab) do
+        for _, obj in pairs(tab) do
             if result[obj[option]] == nil then
                 result[obj[option]] = {}
             end
@@ -145,7 +145,7 @@ end
 function functools.sortBy(option, reverse)
     return function(tab)
         table.sort(tab, function (left, right)
-            order = left[option] < right[option]
+            local order = left[option] < right[option]
             return (not reverse and order) or not order
         end)
         return tab

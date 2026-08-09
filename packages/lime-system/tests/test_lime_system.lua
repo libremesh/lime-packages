@@ -36,7 +36,7 @@ describe('LiMe Utils tests #limesystem', function()
     it('test setup_root_password() RANDOM', function()
         config.set('system', 'lime')
         config.set('system', 'root_password_policy', 'RANDOM')
-        stub(utils, "set_password", function (user, pass)  end)
+        stub(utils, "set_password", function () end)
 
         system.setup_root_password()
 

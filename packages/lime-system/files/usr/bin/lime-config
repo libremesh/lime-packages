@@ -1,9 +1,8 @@
 #!/usr/bin/lua
 
 local config = require("lime.config")
-local fs = require("nixio.fs")
 
-function getopt( arg, options )
+local function getopt( arg, options )
   --! Taken from http://lua-users.org/wiki/AlternativeGetOpt
   local tab = {}
   for k, v in ipairs(arg) do
@@ -50,7 +49,7 @@ else
 	lockFile:write(statFile:read("*n"))
 	statFile:close()
 
-	opts = getopt( arg, "" )
+	local opts = getopt( arg, "" )
 
 	config.main()
 
@@ -58,8 +57,8 @@ else
 	--! mainly because many config files are not uci-based
 	if not opts["no-commit"] and not opts["n"] then
 		local uci = require("uci"):cursor()
-		for config,_ in pairs(uci:changes()) do
-			uci:commit(config)
+		for config_changed,_ in pairs(uci:changes()) do
+			uci:commit(config_changed)
 		end
 	end
 

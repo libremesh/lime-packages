@@ -44,7 +44,6 @@ local scanlist_result = {
     } ,
 }
 
-
 describe('iwinfo fake tests #iwinfo', function()
     it('test scanlist returning a single station', function()
         iwinfo.fake.set_scanlist('phy0', scanlist_result)

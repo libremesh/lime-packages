@@ -1,5 +1,7 @@
 #!/usr/bin/lua
 
+local wireless = require("lime.wireless")
+
 local ieee80211s = {}
 
 ieee80211s.wifi_mode="mesh"

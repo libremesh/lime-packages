@@ -11,7 +11,7 @@ local libuci = require("uci")
 local network = require("lime.network")
 local utils = require("lime.utils")
 
-wan = {}
+local wan = {}
 
 wan.configured = false
 
@@ -31,7 +31,7 @@ function wan.setup_interface(ifname, args)
 
 	if vlanId ~= "0" then
 		local vlanProto = args[3] or "8021q"
-		local nameSuffix = args[4] or "_wan"
+		--! local nameSuffix = args[4] or "_wan"
 
 		local owrtDeviceName = network.sanitizeIfaceName(ifname.."_dev")
 

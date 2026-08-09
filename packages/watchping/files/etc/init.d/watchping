@@ -17,7 +17,7 @@ append_string() {
 }
 
 timetoseconds() {
-	local time=$1
+	local time="$1"
 	unset seconds
 
 	{ [ "$time" -ge 1 ] 2> /dev/null && seconds="$time"; } || \
@@ -28,10 +28,15 @@ timetoseconds() {
 }
 
 load_watchping() {
-	config_get interface	$1 interface
-	config_get timeout	$1 timeout
-	config_get pinghosts	$1 pinghosts	"8.8.8.8"
-	config_get pinginterval	$1 pinginterval
+	local interface
+	local timeout
+	local pinghosts
+	local pinginterval
+
+	config_get interface	"$1" interface
+	config_get timeout	"$1" timeout
+	config_get pinghosts	"$1" pinghosts	"8.8.8.8"
+	config_get pinginterval	"$1" pinginterval
 	
 	error=""
 

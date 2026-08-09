@@ -1,5 +1,7 @@
 #!/usr/bin/lua
 
+local wireless = require("lime.wireless")
+
 local apname = {}
 
 apname.wifi_mode="ap"

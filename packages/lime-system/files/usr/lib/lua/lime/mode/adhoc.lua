@@ -1,5 +1,7 @@
 #!/usr/bin/lua
 
+local wireless = require("lime.wireless")
+
 local adhoc = {}
 
 adhoc.wifi_mode="adhoc"

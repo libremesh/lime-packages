@@ -32,7 +32,7 @@ function portal.set_config(activated, with_vouchers)
 end
 
 function portal.get_page_content()
-    local db = shared_state.SharedStateMultiWriter:new('pirania_persistent'):get()
+    local db = shared_state.SharedStateMultiWriter.new('pirania_persistent'):get()
     if db.portal then
         return db.portal.data
     else
@@ -42,13 +42,14 @@ end
 
 
 function portal.set_page_content(title, main_text, logo, link_title, link_url, background_color)
-    local data = {title=title, main_text=main_text, logo=logo, link_title=link_title, link_url=link_url, background_color=background_color}
-    local db = shared_state.SharedStateMultiWriter:new('pirania_persistent')
+    local data = {title=title, main_text=main_text, logo=logo, link_title=link_title,
+        link_url=link_url, background_color=background_color}
+    local db = shared_state.SharedStateMultiWriter.new('pirania_persistent')
     return db:insert({portal=data})
 end
 
 function portal.get_authorized_macs()
-    local auth_macs = {}
+    local auth_macs
     local with_vouchers = portal.get_config().with_vouchers
     if with_vouchers then
         local vouchera = require("voucher.vouchera")
@@ -77,7 +78,7 @@ function portal.update_captive_portal(daemonized)
     if daemonized then
         utils.execute_daemonized('captive-portal update')
     else
-	-- redirects stdout and stderr to /dev/null to not trigger 502 Bad Gateway after voucher portal auth
+	--! redirects stdout and stderr to /dev/null to not trigger 502 Bad Gateway after voucher portal auth
         os.execute('captive-portal update > /dev/null 2>&1')
     end
 end

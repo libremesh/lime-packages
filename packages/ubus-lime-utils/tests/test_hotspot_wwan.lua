@@ -1,4 +1,3 @@
-local utils = require "lime.utils"
 local test_utils = require "tests.utils"
 local config = require 'lime.config'
 local hotspot_wwan = require "lime.hotspot_wwan"
@@ -8,7 +7,7 @@ local uci
 
 stub(hotspot_wwan, "_apply_change", function () return '' end)
 
-function config_uci_hotspot_radio()
+local function config_uci_hotspot_radio()
     uci:set('wireless', 'radio0', 'wifi-device')
     uci:set('wireless', 'radio0', 'type', 'mac80211')
     uci:set('wireless', 'radio0', 'channel', '4')

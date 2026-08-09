@@ -2,6 +2,7 @@
 
 local config = require("lime.config")
 local client_mode = require("lime.mode.client")
+local network = require("lime.network")
 
 local client = {}
 

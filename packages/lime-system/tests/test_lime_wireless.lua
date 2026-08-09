@@ -1,7 +1,10 @@
 local wireless = require 'lime.wireless'
+local config = require 'lime.config'
+local network = require 'lime.network'
 local test_utils = require 'tests.utils'
 local system = require("lime.system")
 local iwinfo = require('iwinfo')
+local utils = require("lime.utils")
 
 local uci = nil
 
@@ -10,7 +13,8 @@ describe('LiMe Wireless tests #wireless', function()
     it('test is5Ghz(phy) with single freq radios', function()
         iwinfo.fake.set_hwmodelist('phy0', { ["a"] = true, ["b"] = false, ["ac"] = false, ["g"] = false, ["n"] = true,})
         assert.is_true(wireless.is5Ghz('phy0'))
-        iwinfo.fake.set_hwmodelist('phy0', { ["a"] = true, ["b"] = false, ["ac"] = false, ["g"] = false, ["n"] = false,})
+        iwinfo.fake.set_hwmodelist('phy0', { ["a"] = true, ["b"] = false,
+            ["ac"] = false, ["g"] = false, ["n"] = false,})
         assert.is_true(wireless.is5Ghz('phy0'))
         iwinfo.fake.set_hwmodelist('phy0', { ["a"] = false, ["b"] = false, ["ac"] = true, ["g"] = false, ["n"] = true,})
         assert.is_true(wireless.is5Ghz('phy0'))

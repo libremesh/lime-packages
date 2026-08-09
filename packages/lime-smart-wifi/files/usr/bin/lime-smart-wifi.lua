@@ -1,12 +1,14 @@
 #!/usr/bin/lua
 
 local config = require("lime.config")
+local iwinfo = require "iwinfo"
 local wireless = require("lime.wireless")
 local utils = require("lime.utils")
 
+
 local all_radios = wireless.scandevices()
 
-smart_wifi = {}
+local smart_wifi = {}
 
 function smart_wifi.get_modes(dev)
     local modes = {}
@@ -16,7 +18,8 @@ function smart_wifi.get_modes(dev)
 end
 
 function smart_wifi.get_channels(dev)
-    local clist = {} -- output channel list
+    --! output channel list
+    local clist = {}
     local iw = iwinfo[iwinfo.type(dev)]
     local ch = {}
 
@@ -31,10 +34,12 @@ function smart_wifi.get_channels(dev)
     end
 
     local freqs = iw.freqlist(dev) --freqs list
-    local c -- current channel
-    local nc = 0 -- next channel
-    local pc = 0 -- previous channel
-    local adhoc
+    --! current channel
+    local c
+    --! next channel
+    local nc
+    --! local pc = 0 -- previous channel
+    --! local adhoc
     local ht40_support = smart_wifi.get_modes(dev).n
 
     for i,f in ipairs(freqs) do
@@ -128,11 +133,11 @@ function smart_wifi.run()
     local channels = {}
     channels["2ghz"] = config.get("smart_wifi", "channels_2ghz", { 1, 11, 6 })
     channels["5ghz"] = config.get("smart_wifi", "channels_5ghz", { 36, 48, 40, 44})
-    channels_active = {}
+    local channels_active = {}
     channels_active["2ghz"] = 0
     channels_active["5ghz"] = 0
-    has2ghz = false
-    has5ghz = false
+    local has2ghz = false
+    local has5ghz = false
 
     smart_wifi.modes = config.get("wifi", "modes", {})
     if #smart_wifi.modes == 0 then
@@ -145,6 +150,7 @@ function smart_wifi.run()
     for _, radio in pairs(all_radios) do
         local radioName = radio[".name"]
         local is5ghz = wireless.is5Ghz(radioName)
+        local freq
         config.set(radioName, "wifi")
 
         if is5ghz then
@@ -173,7 +179,7 @@ function smart_wifi.run()
         config.set(radioName, "channel",
             channels[freq][channels_active[freq]])
 
-        txpowers = smart_wifi.get_txpower(radioName)
+        local txpowers = smart_wifi.get_txpower(radioName)
         config.set(radioName, "txpower", txpowers[table.getn(txpowers)])
     end
 

@@ -2,7 +2,6 @@ local utils = require "lime.utils"
 local test_utils = require "tests.utils"
 local config = require 'lime.config'
 local upgrade = require 'lime.upgrade'
-local iwinfo = require 'iwinfo'
 local hotspot_wwan = require 'lime.hotspot_wwan'
 
 local test_file_name = "packages/ubus-lime-utils/files/usr/libexec/rpcd/lime-utils-admin"
@@ -29,7 +28,7 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
 
     it('test set_root_password', function()
         uci:set('lime-community', 'system', 'lime')
-        stub(utils, "set_password", function (user, pass) return pass end)
+        stub(utils, "set_password", function (pass) return pass end)
 
         local response  = rpcd_call(ubus_lime_utils, {'call', 'set_root_password'},
                                     '{"password": "foo"}')
@@ -49,12 +48,12 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
         assert.is.equal("ok", response.status)
         assert.is.equal("foo", uci:get(config.UCI_NODE_NAME, 'system', 'hostname'))
 
-        local response  = rpcd_call(ubus_lime_utils, {'call', 'set_hostname'}, '{}')
+        response  = rpcd_call(ubus_lime_utils, {'call', 'set_hostname'}, '{}')
         assert.is.equal("error", response.status)
         assert.is.equal("Hostname not provided", response.msg)
         assert.is.equal("foo", uci:get(config.UCI_NODE_NAME, 'system', 'hostname'))
 
-        local response  = rpcd_call(ubus_lime_utils, {'call', 'set_hostname'}, '{"hostname": "inv@lid-"}')
+        response  = rpcd_call(ubus_lime_utils, {'call', 'set_hostname'}, '{"hostname": "inv@lid-"}')
         assert.is.equal("error", response.status)
         assert.is.equal("Invalid hostname", response.msg)
         assert.is.equal("foo", uci:get(config.UCI_NODE_NAME, 'system', 'hostname'))
@@ -141,11 +140,11 @@ describe('ubus-lime-utils-admin tests #ubuslimeutilsadmin', function()
     it('test hotspot_wwan_enable with args #fooo', function()
         stub(hotspot_wwan, "_apply_change", function () return true end)
         stub(hotspot_wwan, "safe_enable", function () return true end)
-        local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_enable'}, '{"radio":"radio1", "password": "mypass"}')
+        rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_enable'}, '{"radio":"radio1", "password": "mypass"}')
         assert.stub(hotspot_wwan.safe_enable).was.called_with(nil, 'mypass', nil, 'radio1')
 
         stub(hotspot_wwan, "disable", function () return true end)
-        local response  = rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_disable'}, '{"radio":"radio1"}')
+        rpcd_call(ubus_lime_utils, {'call', 'hotspot_wwan_disable'}, '{"radio":"radio1"}')
         assert.stub(hotspot_wwan.disable).was.called_with('radio1')
     end)
 

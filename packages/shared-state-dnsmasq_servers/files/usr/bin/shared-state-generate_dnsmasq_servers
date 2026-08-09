@@ -5,8 +5,8 @@
 --! Copyright (C) 2020 Gui iribarren <gui@altermundi.net>
 
 local JSON = require("luci.jsonc")
-
 local uci = require("uci"):cursor()
+local localDomain
 
 uci:foreach("dhcp", "dnsmasq",
   function(s)

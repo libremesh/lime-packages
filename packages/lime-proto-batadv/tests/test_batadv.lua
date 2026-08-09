@@ -1,7 +1,5 @@
 local config = require 'lime.config'
 local network = require 'lime.network'
-local wireless = require 'lime.wireless'
-local utils = require 'lime.utils'
 local test_utils = require 'tests.utils'
 local proto = require 'lime.proto.batadv'
 
@@ -16,7 +14,7 @@ describe('LiMe proto Batman-adv #protobatadv', function()
         config.set('network', 'protocols', {'lan'})
         stub(network, "primary_mac", function () return  {'00', '00', '00', '00', '00', '00'} end)
 
-        batadv.configured = false
+        proto.configured = false
         proto.configure()
 
         assert.is.equal('batadv', uci:get('network', 'bat0', 'proto'))
@@ -35,7 +33,7 @@ describe('LiMe proto Batman-adv #protobatadv', function()
         config.set('network', 'protocols', {'lan', 'anygw'})
         stub(network, "primary_mac", function () return  {'00', '00', '00', '00', '00', '00'} end)
 
-        batadv.configured = false
+        proto.configured = false
         proto.configure()
 
         -- anygw is enabled

@@ -55,7 +55,7 @@ describe('ubus-lime-utils tests #ubuslimeutils', function()
     end)
 
     it('test get_node_status switch links are shown', function()
-        stub(utils, "unsafe_shell", 
+        stub(utils, "unsafe_shell",
         function (param)
             if param == "swconfig dev switch0 show" then
                 return mocks.swconfig_dev_switch0_show
@@ -77,8 +77,8 @@ describe('ubus-lime-utils tests #ubuslimeutils', function()
 
 
     it('test get_most_active return most active iface with stats from iw', function()
-        stub(utils, "unsafe_shell", function (cmd) 
-            if string.match(cmd, "wlan0") then 
+        stub(utils, "unsafe_shell", function (cmd)
+            if string.match(cmd, "wlan0") then
                 return mocks.iw_station_get_result_wlan0
             end
             return mocks.iw_station_get_result_wlan1
@@ -110,12 +110,12 @@ describe('ubus-lime-utils tests #ubuslimeutils', function()
     it('test hotspot_wwan_get_status', function()
         stub(hotspot_wwan, "status", function () return {connected = false} end)
 
-        local response  = limeutils.hotspot_wwan_get_status()
+        local response = limeutils.hotspot_wwan_get_status()
         assert.is.equal("ok", response.status)
         assert.is_false(response.connected)
         assert.stub(hotspot_wwan.status).was.called()
 
-        local response  = limeutils.hotspot_wwan_get_status(json.parse('{"radio":"radio1"}'))
+        limeutils.hotspot_wwan_get_status(json.parse('{"radio":"radio1"}'))
         assert.stub(hotspot_wwan.status).was.called_with('radio1')
     end)
 
@@ -367,7 +367,7 @@ Port 0:
 	igmp_snooping: 0
 	vlan_prio: 0
 	pvid: 0
-	link: port:0 link:up speed:1000baseT full-duplex txflow rxflow 
+	link: port:0 link:up speed:1000baseT full-duplex txflow rxflow
 Port 1:
 	mib: ???
 	enable_eee: 0
@@ -409,13 +409,13 @@ Port 6:
 	igmp_snooping: 0
 	vlan_prio: 0
 	pvid: 0
-	link: port:6 link:up speed:10baseT half-duplex 
+	link: port:6 link:up speed:10baseT half-duplex
 VLAN 1:
 	vid: 1
-	ports: 0t 2 3 4 5 
+	ports: 0t 2 3 4 5
 VLAN 2:
 	vid: 2
-	ports: 0t 1 
+	ports: 0t 1
 
 ]]
 

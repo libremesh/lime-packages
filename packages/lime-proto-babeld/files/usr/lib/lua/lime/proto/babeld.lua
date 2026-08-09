@@ -1,13 +1,14 @@
 #!/usr/bin/lua
 --! SPDX-License-Identifier: AGPL-3.0-or-later
---! 
---! Copyright (C) 2018  Gioacchino Mazzurco <gio@altermundi.net>
+--!
+--! Copyright (C) 2018 Gioacchino Mazzurco <gio@altermundi.net>
 
 local network = require("lime.network")
 local config = require("lime.config")
 local fs = require("nixio.fs")
+local utils = require("lime.utils")
 
-babeld = {}
+local babeld = {}
 
 babeld.configured = false
 

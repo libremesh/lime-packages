@@ -6,8 +6,7 @@ local config = require("lime.config")
 local system = require("lime.system")
 local utils = require("lime.utils")
 
-
-anygw = {}
+local anygw = {}
 
 anygw.configured = false
 
@@ -27,10 +26,11 @@ function anygw.configure(args)
 	local anygw_mac = config.get("network", "anygw_mac")
 	anygw_mac = utils.applyNetTemplate16(anygw_mac)
 	--! bytes 4 & 5 vary depending on %N1 and %N2 by default
-	local anygw_mac_mask = "ff:ff:ff:00:00:00"
+	--! local anygw_mac_mask = "ff:ff:ff:00:00:00"
 	local anygw_ipv6 = ipv6:minhost()
 	local anygw_ipv4 = ipv4:minhost()
-	anygw_ipv6:prefix(64) -- SLAAC only works with a /64, per RFC
+	--! SLAAC only works with a /64, per RFC
+	anygw_ipv6:prefix(64)
 	anygw_ipv4:prefix(ipv4:prefix())
 	local baseIfname = "br-lan"
 	local argsDev = { macaddr = anygw_mac }
@@ -52,7 +52,8 @@ function anygw.configure(args)
 
 	uci:set("network", pfr.."rule6", "rule6")
 	uci:set("network", pfr.."rule6", "src", anygw_ipv6:host():string().."/128")
-	uci:set("network", pfr.."rule6", "lookup", "170") -- 0xaa in decimal
+	--! 0xaa in decimal
+	uci:set("network", pfr.."rule6", "lookup", "170")
 
 	uci:set("network", pfr.."route6", "route6")
 	uci:set("network", pfr.."route6", "interface", owrtInterfaceName)
@@ -74,9 +75,9 @@ function anygw.configure(args)
 	uci:set("dhcp", "lan", "ignore", "1")
 	uci:set("dhcp", owrtInterfaceName.."_dhcp", "dhcp")
 	uci:set("dhcp", owrtInterfaceName.."_dhcp", "interface", owrtInterfaceName)
-	anygw_dhcp_start = config.get("network", "anygw_dhcp_start")
+	local anygw_dhcp_start = config.get("network", "anygw_dhcp_start")
 	uci:set("dhcp", owrtInterfaceName.."_dhcp", "start", anygw_dhcp_start)
-	anygw_dhcp_limit = config.get("network", "anygw_dhcp_limit")
+	local anygw_dhcp_limit = config.get("network", "anygw_dhcp_limit")
 	if tonumber(anygw_dhcp_limit) > 0 then
 		uci:set("dhcp", owrtInterfaceName.."_dhcp", "limit", anygw_dhcp_limit)
 	else

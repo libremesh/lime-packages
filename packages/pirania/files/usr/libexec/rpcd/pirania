@@ -1,12 +1,11 @@
 #!/usr/bin/env lua
 --! SPDX-License-Identifier: Apache-2.0
---! 
+--!
 --! Copyright 2018 Marcos Gutierrez <gmarcos87@gmail.com>
 --! Copyright 2021 Santiago Piccinini <spiccinini@altermundi.net>
 
 local ubus = require "ubus"
 local json = require 'luci.jsonc'
-local uci = require 'uci'
 local vouchera = require('voucher.vouchera')
 local utils = require('lime.utils')
 local config = require('lime.config')
@@ -36,11 +35,11 @@ local function set_portal_config(msg)
     end
 end
 
-local function disable(msg)
+local function disable()
     set_portal_config({activated = false})
 end
 
-local function get_portal_page_content(msg)
+local function get_portal_page_content()
     utils.printJson(portal.get_page_content())
 end
 
@@ -56,7 +55,7 @@ local function set_portal_page_content(msg)
     utils.printJson({ status = 'ok'})
 end
 
-local function show_url(msg)
+local function show_url()
     utils.printJson({ status = 'ok', url = uci_cursor:get("pirania", "base_config", "portal_url") });
 end
 
@@ -69,7 +68,7 @@ end
 
 
 local function add_vouchers(msg)
-    -- Handle permanent vouchers (nil duration_m means permanent)
+    --! Handle permanent vouchers (nil duration_m means permanent)
     local duration_m = msg.duration_m
     if msg.permanent then
         duration_m = nil
@@ -94,7 +93,7 @@ local function invalidate(msg)
 end
 
 
-local function list_vouchers(msg)
+local function list_vouchers()
     local vouchers = vouchera.list()
     return utils.printJson({ status = vouchers and 'ok' or 'error', vouchers = vouchers })
 end
@@ -105,7 +104,8 @@ local methods = {
   disable = { no_params = 0 },
   show_url = { no_params = 0 },
   change_url = { url = 'value' },
-  add_vouchers = { name='str', qty='int', duration_m='int', activation_deadline='timestamp', permanent='bool', unrestricted='bool'},
+  add_vouchers = { name='str', qty='int', duration_m='int', activation_deadline='timestamp',
+    permanent='bool', unrestricted='bool'},
   list_vouchers = { no_params = 0 },
   rename = { id = 'str', name = 'str' },
   invalidate = { id = 'str' },

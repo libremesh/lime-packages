@@ -6,21 +6,24 @@
 # Copyright (C) 2024 Asociacion Civil Altermundi <info@altermundi.net>
 # SPDX-License-Identifier: AGPL-3.0-only
 
-
-sinc_args=""
- 
 case "$1" in 
     list) 
         echo '{ "sync": { "data_type": "str", "peers_ip": "str" }, "get": { "data_type": "str" },  "publish": { "data_type": "str" }, "publish_all": { },"insert": { "data_type": "str", "json": "str" } }'
     ;; 
     call)
         # source jshn shell library
+        # shellcheck disable=SC1091
         . /usr/share/libubox/jshn.sh
-        read msg
-        json_load $msg
+
+        local ip_addr
+        local data_type
+        local peers_ip
+
+        read -r msg
+        json_load "$msg"
         json_get_vars data_type 
         json_get_vars peers_ip
-        json=$(jsonfilter -s $msg -e "@.json")
+        json=$(jsonfilter -s "$msg" -e "@.json")
         if json_is_a peers_ip array
         then
             json_select peers_ip
@@ -37,31 +40,31 @@ case "$1" in
         fi
         case "$2" in 
             get) 
-                if output=$(shared-state-async get $data_type 2>/dev/null) 
+                if output=$(shared-state-async get "$data_type" 2>/dev/null) 
                 then 
-                    echo {\"data\": $output , \"error\" :$?}
+                    echo "{\"data\": $output , \"error\" :$?}"
                 else 
-                    echo {\"data\": {} , \"error\": $? } 
+                    echo "{\"data\": {} , \"error\": $? }"
                 fi 
             ;; 
             sync) 
-                shared-state-async sync $data_type $ips > /dev/null 2>&1
-                echo {\"data\": {} , \"error\": $? } 
+                shared-state-async sync "$data_type" "$ips" > /dev/null 2>&1
+                echo "{\"data\": {} , \"error\": $? }"
             ;; 
             publish) 
-                /usr/share/shared-state/publishers/shared-state-publish_$data_type > /dev/null 2>&1
-                echo {\"data\": {} , \"error\": $? } 
+                "/usr/share/shared-state/publishers/shared-state-publish_$data_type" > /dev/null 2>&1
+                echo "{\"data\": {} , \"error\": $? }"
             ;;
             publish_all)
                 shared-state-async-publish-all > /dev/null 2>&1
-                echo {\"data\": {} , \"error\": $? }
+                echo "{\"data\": {} , \"error\": $? }"
             ;;
             insert)
-                printf '%s' "$json" | shared-state-async insert $data_type > /dev/null 2>&1 
-                echo {\"data\": {} , \"error\": $? }
+                printf '%s' "$json" | shared-state-async insert "$data_type" > /dev/null 2>&1 
+                echo "{\"data\": {} , \"error\": $? }"
             ;;
             *)
-                 echo '{\"data\" {} ,\"error\" = "Method not found"}' 
+                 echo "{\"data\" {} ,\"error\" = \"Method not found\"}" 
             ;; 
         esac 
     ;; 

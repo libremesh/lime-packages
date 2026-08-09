@@ -44,11 +44,11 @@ local function validate_ip(ip)
     if ip == nil or type(ip) ~= "string" then
         return false
     end
-    -- IPv4: digits and dots only
+    --! IPv4: digits and dots only
     if ip:match("^[0-9%.]+$") then
         return true
     end
-    -- IPv6: hex, colons, brackets (for [::1] format)
+    --! IPv6: hex, colons, brackets (for [::1] format)
     if ip:match("^[0-9a-fA-F:%[%]]+$") then
         return true
     end

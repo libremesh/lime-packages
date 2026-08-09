@@ -1,4 +1,3 @@
-local config = require 'lime.config'
 local test_utils = require 'tests.utils'
 local unstuck_wa = require 'lime.wifi_unstuck_wa'
 local iwinfo = require 'iwinfo'

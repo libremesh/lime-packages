@@ -1,4 +1,3 @@
-local utils = require "lime.utils"
 local test_utils = require "tests.utils"
 
 local test_file_name = "packages/ubus-tmate/files/usr/libexec/rpcd/tmate"
@@ -29,7 +28,7 @@ describe('ubus-tmate tests #tmateubus', function()
 	stub(tmate, "get_connected_clients")
         stub(tmate, 'session_running', function () return true end)
 
-        local response  = rpcd_call(ubus_tmate, {'call', 'open_session'}, '')
+        rpcd_call(ubus_tmate, {'call', 'open_session'}, '')
         local response  = rpcd_call(ubus_tmate, {'call', 'get_session'}, '')
         assert.is_not.equal("no session", response.session)
     end)

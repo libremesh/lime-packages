@@ -3,7 +3,7 @@
 local config = require("lime.config")
 local utils = require("lime.utils")
 
-gen_cfg = {}
+local gen_cfg = {}
 
 gen_cfg.ASSET_BASE_DIR = '/etc/lime-assets/'
 gen_cfg.NODE_ASSET_DIRNAME = 'node/'
@@ -51,10 +51,10 @@ function gen_cfg.do_generic_uci_configs()
     return ok
 end
 
-function gen_cfg.get_asset(asset)
-    if (utils.stringStarts(asset, gen_cfg.NODE_ASSET_DIRNAME) or
-        utils.stringStarts(asset, gen_cfg.COMMUNITY_ASSET_DIRNAME)) then
-        local asset = gen_cfg.ASSET_BASE_DIR .. asset
+function gen_cfg.get_asset(assetArg)
+    if (utils.stringStarts(assetArg, gen_cfg.NODE_ASSET_DIRNAME) or
+        utils.stringStarts(assetArg, gen_cfg.COMMUNITY_ASSET_DIRNAME)) then
+        local asset = gen_cfg.ASSET_BASE_DIR .. assetArg
         if utils.file_exists(asset) then
             return asset
         end
@@ -71,7 +71,6 @@ end
 --!
 
 function gen_cfg.do_copy_assets()
-    local uci = config.get_uci_cursor()
     local ok = true
     utils.log("Copying assets:")
     config.foreach("copy_asset", function(copy_asset)
@@ -104,7 +103,6 @@ end
 --!     option when 'ATFIRSTBOOT' # ATFIRSTBOOT, ATCONFIG
 --!
 function gen_cfg.do_run_assets(when)
-    local uci = config.get_uci_cursor()
     local ok = true
     utils.log("Running assets on " .. when .. " :")
     config.foreach("run_asset", function(run_asset)

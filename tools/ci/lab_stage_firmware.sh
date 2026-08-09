@@ -49,7 +49,7 @@ for f in "${files[@]}"; do
     cp -a "$f" "$STAGE/"
     continue
   fi
-  suffix="${base#$src_prefix}"
+  suffix="${base#"$src_prefix"}"
   cp -a "$f" "$STAGE/${dst_prefix}${suffix}"
 done
 
