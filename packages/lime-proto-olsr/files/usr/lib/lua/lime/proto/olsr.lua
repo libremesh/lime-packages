@@ -11,7 +11,9 @@ local olsr = {}
 olsr.configured = false
 
 function olsr.configure(args)
-	if olsr.configured then return end
+	if olsr.configured then
+		return
+	end
 	olsr.configured = true
 
 	local uci = libuci:cursor()
@@ -36,7 +38,9 @@ end
 
 function olsr.setup_interface(ifname, args)
 	if not args["specific"] then
-		if ifname:match("^wlan%d+.ap") then return end
+		if ifname:match("^wlan%d+.ap") then
+			return
+		end
 	end
 
 	local vlanId = tonumber(args[2]) or 14
@@ -57,6 +61,5 @@ function olsr.setup_interface(ifname, args)
 	uci:set("olsrd", owrtInterfaceName, "interface", owrtInterfaceName)
 	uci:save("olsrd")
 end
-
 
 return olsr

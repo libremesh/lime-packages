@@ -4,10 +4,10 @@ local wireless = require("lime.wireless")
 
 local client = {}
 
-client.wifi_mode="sta"
+client.wifi_mode = "sta"
 
 function client.setup_radio(radio, args)
---!	checks("table", "?table")
+	--!	checks("table", "?table")
 	return wireless.createBaseWirelessIface(radio, client.wifi_mode, nil, args)
 end
 

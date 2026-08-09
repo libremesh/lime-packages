@@ -1,102 +1,103 @@
-local test_utils = require 'tests.utils'
+local test_utils = require("tests.utils")
 
 local CONFIG_PATH = "./packages/pirania/files/etc/config/pirania"
 local SCRIPT_PATH = "./packages/pirania/files/usr/bin/captive-portal"
-local GLOBAL_ALLOWLIST_URL = "https://raw.githubusercontent.com/HybridNetworks/whatsapp-cidr/"..
-"refs/heads/main/WhatsApp/whatsapp_cidr_ipv4.txt"
-local TRANCA_ALLOWLIST_URL = "https://raw.githubusercontent.com/nickoppen/libremesh-whatsapp-ipv4-allowlist/"..
-"refs/heads/main/whatsapp_ipv4_cidr.txt"
+local GLOBAL_ALLOWLIST_URL = "https://raw.githubusercontent.com/HybridNetworks/whatsapp-cidr/"
+	.. "refs/heads/main/WhatsApp/whatsapp_cidr_ipv4.txt"
+local TRANCA_ALLOWLIST_URL = "https://raw.githubusercontent.com/nickoppen/libremesh-whatsapp-ipv4-allowlist/"
+	.. "refs/heads/main/whatsapp_ipv4_cidr.txt"
 
 local test_dir
 local bin_dir
 local command_succeeds
 
 local function write_file(path, content)
-    local file = assert(io.open(path, "w"))
-    file:write(content)
-    file:close()
+	local file = assert(io.open(path, "w"))
+	file:write(content)
+	file:close()
 end
 
 local function read_file(path)
-    local file = io.open(path, "r")
-    if file == nil then
-        return nil
-    end
+	local file = io.open(path, "r")
+	if file == nil then
+		return nil
+	end
 
-    local content = file:read("*all")
-    file:close()
-    return content
+	local content = file:read("*all")
+	file:close()
+	return content
 end
 
 local function write_executable(name, content)
-    local path = bin_dir .. name
-    write_file(path, content)
-    local ok = command_succeeds("chmod +x " .. path)
-    assert.is_true(ok)
+	local path = bin_dir .. name
+	write_file(path, content)
+	local ok = command_succeeds("chmod +x " .. path)
+	assert.is_true(ok)
 end
 
 local function write_state(name, content)
-    write_file(test_dir .. name, content)
+	write_file(test_dir .. name, content)
 end
 
 local function wait_for_file_contains(path, pattern)
-    for _ = 1, 20 do
-        local content = read_file(path) or ""
-        if string.find(content, pattern, 1, true) ~= nil then
-            return content
-        end
-        os.execute("sleep 0.05")
-    end
-    return read_file(path) or ""
+	for _ = 1, 20 do
+		local content = read_file(path) or ""
+		if string.find(content, pattern, 1, true) ~= nil then
+			return content
+		end
+		os.execute("sleep 0.05")
+	end
+	return read_file(path) or ""
 end
 
 command_succeeds = function(cmd)
-    local ok, _, code = os.execute(cmd)
-    if type(ok) == "number" then
-        return ok == 0, ok
-    end
-    if ok == true then
-        return true, code or 0
-    end
-    return false, code or 1
+	local ok, _, code = os.execute(cmd)
+	if type(ok) == "number" then
+		return ok == 0, ok
+	end
+	if ok == true then
+		return true, code or 0
+	end
+	return false, code or 1
 end
 
 local function run_update(tranca_active, marker_present)
-    write_state("tranca_active", tranca_active and "1\n" or "0\n")
-    write_state("nft.log", "")
-    write_state("wget.log", "")
-    write_state("logger.log", "")
-    write_state("command.out", "")
+	write_state("tranca_active", tranca_active and "1\n" or "0\n")
+	write_state("nft.log", "")
+	write_state("wget.log", "")
+	write_state("logger.log", "")
+	write_state("command.out", "")
 
-    local marker_path = test_dir .. "tranca_marker_present"
-    if marker_present then
-        write_state("tranca_marker_present", "1\n")
-    else
-        os.remove(marker_path)
-    end
+	local marker_path = test_dir .. "tranca_marker_present"
+	if marker_present then
+		write_state("tranca_marker_present", "1\n")
+	else
+		os.remove(marker_path)
+	end
 
-    local cmd = string.format(
-        "PATH='%s':\"$PATH\" TEST_ROOT='%s' sh %s update > %s 2>&1",
-        bin_dir:sub(1, -2),
-        test_dir:sub(1, -2),
-        SCRIPT_PATH,
-        test_dir .. "command.out"
-    )
+	local cmd = string.format(
+		"PATH='%s':\"$PATH\" TEST_ROOT='%s' sh %s update > %s 2>&1",
+		bin_dir:sub(1, -2),
+		test_dir:sub(1, -2),
+		SCRIPT_PATH,
+		test_dir .. "command.out"
+	)
 
-    local ok, code = command_succeeds(cmd)
-    return ok, code, read_file(test_dir .. "command.out") or ""
+	local ok, code = command_succeeds(cmd)
+	return ok, code, read_file(test_dir .. "command.out") or ""
 end
 
-describe('Pirania captive-portal shell tests #captiveportal', function()
-    before_each('', function()
-        test_dir = test_utils.setup_test_dir()
-        bin_dir = test_dir .. "bin/"
-        local ok = command_succeeds("mkdir -p " .. bin_dir)
-        assert.is_true(ok)
-        write_state("allowlist_url", "")
-        write_state("allowlist_insecure", "0\n")
+describe("Pirania captive-portal shell tests #captiveportal", function()
+	before_each("", function()
+		test_dir = test_utils.setup_test_dir()
+		bin_dir = test_dir .. "bin/"
+		local ok = command_succeeds("mkdir -p " .. bin_dir)
+		assert.is_true(ok)
+		write_state("allowlist_url", "")
+		write_state("allowlist_insecure", "0\n")
 
-        local uci_script = string.format([[#!/bin/sh
+		local uci_script = string.format(
+			[[#!/bin/sh
 if [ "$1" = "-q" ]; then
     shift
 fi
@@ -130,10 +131,14 @@ show)
     exit 1
     ;;
 esac
-]], TRANCA_ALLOWLIST_URL)
-        write_executable("uci", uci_script)
+]],
+			TRANCA_ALLOWLIST_URL
+		)
+		write_executable("uci", uci_script)
 
-        write_executable("nft", [[#!/bin/sh
+		write_executable(
+			"nft",
+			[[#!/bin/sh
 printf '%s\n' "$*" >> "$TEST_ROOT/nft.log"
 
 if [ "$1" = "list" ] && [ "$2" = "chain" ] && [ "$3" = "inet" ] &&
@@ -146,146 +151,181 @@ if [ "$1" = "list" ] && [ "$2" = "chain" ] && [ "$3" = "inet" ] &&
 fi
 
 exit 0
-]])
+]]
+		)
 
-        write_executable("wget", [[#!/bin/sh
+		write_executable(
+			"wget",
+			[[#!/bin/sh
 printf '%s\n' "$*" >> "$TEST_ROOT/wget.log"
 if [ -f "$TEST_ROOT/wget_fail" ]; then
     exit 1
 fi
 printf '203.0.113.0/24\n'
 exit 0
-]])
+]]
+		)
 
-        write_executable("pirania_authorized_macs", [[#!/bin/sh
+		write_executable(
+			"pirania_authorized_macs",
+			[[#!/bin/sh
 if [ "$1" = "--unrestricted" ]; then
     exit 0
 fi
 
 printf 'aa:bb:cc:dd:ee:ff\n'
-]])
+]]
+		)
 
-        write_executable("logger", [[#!/bin/sh
+		write_executable(
+			"logger",
+			[[#!/bin/sh
 printf '%s\n' "$*" >> "$TEST_ROOT/logger.log"
 exit 0
-]])
-    end)
+]]
+		)
+	end)
 
-    after_each('', function()
-        os.remove("/tmp/allowlist_ipv4_urls.txt")
-        test_utils.teardown_test_dir()
-    end)
+	after_each("", function()
+		os.remove("/tmp/allowlist_ipv4_urls.txt")
+		test_utils.teardown_test_dir()
+	end)
 
-    it('does not ship the legacy WhatsApp global allowlist URL', function()
-        local file = assert(io.open(CONFIG_PATH))
-        local config = file:read("*all")
-        file:close()
-        assert.is_nil(string.find(config, GLOBAL_ALLOWLIST_URL, 1, true))
-    end)
+	it("does not ship the legacy WhatsApp global allowlist URL", function()
+		local file = assert(io.open(CONFIG_PATH))
+		local config = file:read("*all")
+		file:close()
+		assert.is_nil(string.find(config, GLOBAL_ALLOWLIST_URL, 1, true))
+	end)
 
-    it('ships allowlist insecure retry enabled by default for compatibility', function()
-        local file = assert(io.open(CONFIG_PATH))
-        local config = file:read("*all")
-        file:close()
-        assert.is_not_nil(string.find(config, "option allowlist_ipv4_url_insecure '1'", 1, true))
-    end)
+	it("ships allowlist insecure retry enabled by default for compatibility", function()
+		local file = assert(io.open(CONFIG_PATH))
+		local config = file:read("*all")
+		file:close()
+		assert.is_not_nil(string.find(config, "option allowlist_ipv4_url_insecure '1'", 1, true))
+	end)
 
-    it('ignores stale global allowlist cache when no allowlist URL is configured', function()
-        write_file("/tmp/allowlist_ipv4_urls.txt", "198.51.100.0/24\n")
+	it("ignores stale global allowlist cache when no allowlist URL is configured", function()
+		write_file("/tmp/allowlist_ipv4_urls.txt", "198.51.100.0/24\n")
 
-        local ok, code, output = run_update(false, false)
-        assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
+		local ok, code, output = run_update(false, false)
+		assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
 
-        local nft_log = read_file(test_dir .. "nft.log") or ""
-        assert.is_nil(string.find(nft_log, '198.51.100.0/24', 1, true))
-    end)
+		local nft_log = read_file(test_dir .. "nft.log") or ""
+		assert.is_nil(string.find(nft_log, "198.51.100.0/24", 1, true))
+	end)
 
-    it('rebuilds Tranca rules when active and marker is missing', function()
-        local ok, code, output = run_update(true, false)
-        assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
+	it("rebuilds Tranca rules when active and marker is missing", function()
+		local ok, code, output = run_update(true, false)
+		assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
 
-        local nft_log = read_file(test_dir .. "nft.log") or ""
-        local wget_log = read_file(test_dir .. "wget.log") or ""
+		local nft_log = read_file(test_dir .. "nft.log") or ""
+		local wget_log = read_file(test_dir .. "wget.log") or ""
 
-        assert.is_not_nil(string.find(nft_log, 'list chain inet pirania pirania_forward', 1, true))
-        assert.is_nil(string.find(nft_log, 'list chain inet pirania forward', 1, true))
-        assert.is_not_nil(string.find(nft_log, 'delete table inet pirania', 1, true))
-        assert.is_not_nil(string.find(nft_log, 'TRANCA_BLOCK_AUTH_MAC', 1, true))
-        assert.is_not_nil(string.find(wget_log, TRANCA_ALLOWLIST_URL, 1, true))
-    end)
+		assert.is_not_nil(string.find(nft_log, "list chain inet pirania pirania_forward", 1, true))
+		assert.is_nil(string.find(nft_log, "list chain inet pirania forward", 1, true))
+		assert.is_not_nil(string.find(nft_log, "delete table inet pirania", 1, true))
+		assert.is_not_nil(string.find(nft_log, "TRANCA_BLOCK_AUTH_MAC", 1, true))
+		assert.is_not_nil(string.find(wget_log, TRANCA_ALLOWLIST_URL, 1, true))
+	end)
 
-    it('skips rebuild when active and the Tranca marker is already present', function()
-        local ok, code, output = run_update(true, true)
-        assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
+	it("skips rebuild when active and the Tranca marker is already present", function()
+		local ok, code, output = run_update(true, true)
+		assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
 
-        local nft_log = read_file(test_dir .. "nft.log") or ""
+		local nft_log = read_file(test_dir .. "nft.log") or ""
 
-        assert.is_not_nil(string.find(nft_log, 'list chain inet pirania pirania_forward', 1, true))
-        assert.is_nil(string.find(nft_log, 'delete table inet pirania', 1, true))
-        assert.is_nil(string.find(nft_log, 'TRANCA_BLOCK_AUTH_MAC', 1, true))
-    end)
+		assert.is_not_nil(string.find(nft_log, "list chain inet pirania pirania_forward", 1, true))
+		assert.is_nil(string.find(nft_log, "delete table inet pirania", 1, true))
+		assert.is_nil(string.find(nft_log, "TRANCA_BLOCK_AUTH_MAC", 1, true))
+	end)
 
-    it('rebuilds when inactive and a Tranca marker is still present', function()
-        local ok, code, output = run_update(false, true)
-        assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
+	it("rebuilds when inactive and a Tranca marker is still present", function()
+		local ok, code, output = run_update(false, true)
+		assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
 
-        local nft_log = read_file(test_dir .. "nft.log") or ""
+		local nft_log = read_file(test_dir .. "nft.log") or ""
 
-        assert.is_not_nil(string.find(nft_log, 'list chain inet pirania pirania_forward', 1, true))
-        assert.is_not_nil(string.find(nft_log, 'delete table inet pirania', 1, true))
-        assert.is_nil(string.find(nft_log, 'TRANCA_BLOCK_AUTH_MAC', 1, true))
-    end)
+		assert.is_not_nil(string.find(nft_log, "list chain inet pirania pirania_forward", 1, true))
+		assert.is_not_nil(string.find(nft_log, "delete table inet pirania", 1, true))
+		assert.is_nil(string.find(nft_log, "TRANCA_BLOCK_AUTH_MAC", 1, true))
+	end)
 
-    it('lets HTTPS bypass prerouting drop and rejects it in input and forward with tcp reset', function()
-        local ok, code, output = run_update(true, false)
-        assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
+	it("lets HTTPS bypass prerouting drop and rejects it in input and forward with tcp reset", function()
+		local ok, code, output = run_update(true, false)
+		assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
 
-        local nft_log = read_file(test_dir .. "nft.log") or ""
+		local nft_log = read_file(test_dir .. "nft.log") or ""
 
-        assert.is_not_nil(string.find(nft_log,
-            'add rule inet pirania pirania_prerouting tcp dport 443 return', 1, true))
-        assert.is_not_nil(string.find(nft_log,
-            'add rule inet pirania pirania_input tcp dport 443 ether saddr != @pirania-auth-macs '..
-            'reject with tcp reset', 1, true))
-        assert.is_not_nil(string.find(nft_log,
-            'add rule inet pirania pirania_forward tcp dport 443 ether saddr != @pirania-auth-macs '..
-            'reject with tcp reset', 1, true))
-    end)
+		assert.is_not_nil(
+			string.find(nft_log, "add rule inet pirania pirania_prerouting tcp dport 443 return", 1, true)
+		)
+		assert.is_not_nil(
+			string.find(
+				nft_log,
+				"add rule inet pirania pirania_input tcp dport 443 ether saddr != @pirania-auth-macs "
+					.. "reject with tcp reset",
+				1,
+				true
+			)
+		)
+		assert.is_not_nil(
+			string.find(
+				nft_log,
+				"add rule inet pirania pirania_forward tcp dport 443 ether saddr != @pirania-auth-macs "
+					.. "reject with tcp reset",
+				1,
+				true
+			)
+		)
+	end)
 
-    it('logs a warning before retrying insecure allowlist downloads', function()
-        write_state("allowlist_url", "https://example.test/allowlist.txt\n")
-        write_state("allowlist_insecure", "1\n")
-        write_state("wget_fail", "1\n")
+	it("logs a warning before retrying insecure allowlist downloads", function()
+		write_state("allowlist_url", "https://example.test/allowlist.txt\n")
+		write_state("allowlist_insecure", "1\n")
+		write_state("wget_fail", "1\n")
 
-        local ok, code, output = run_update(false, true)
-        assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
+		local ok, code, output = run_update(false, true)
+		assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
 
-        local logger_log = read_file(test_dir .. "logger.log") or ""
-        local wget_log = read_file(test_dir .. "wget.log") or ""
+		local logger_log = read_file(test_dir .. "logger.log") or ""
+		local wget_log = read_file(test_dir .. "wget.log") or ""
 
-        assert.is_not_nil(string.find(logger_log,
-            'WARNING: Retrying IPv4 allowlist download without certificate validation: '..
-            'https://example.test/allowlist.txt', 1, true))
-        assert.is_not_nil(string.find(wget_log,
-            '--no-check-certificate -q -O - https://example.test/allowlist.txt', 1, true))
-    end)
+		assert.is_not_nil(
+			string.find(
+				logger_log,
+				"WARNING: Retrying IPv4 allowlist download without certificate validation: "
+					.. "https://example.test/allowlist.txt",
+				1,
+				true
+			)
+		)
+		assert.is_not_nil(
+			string.find(wget_log, "--no-check-certificate -q -O - https://example.test/allowlist.txt", 1, true)
+		)
+	end)
 
-    it('logs a warning before retrying insecure Tranca allowlist downloads', function()
-        write_state("allowlist_insecure", "1\n")
-        write_state("wget_fail", "1\n")
+	it("logs a warning before retrying insecure Tranca allowlist downloads", function()
+		write_state("allowlist_insecure", "1\n")
+		write_state("wget_fail", "1\n")
 
-        local ok, code, output = run_update(true, false)
-        assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
+		local ok, code, output = run_update(true, false)
+		assert.is_true(ok, output .. "\nexit code: " .. tostring(code))
 
-        local logger_log = wait_for_file_contains(
-            test_dir .. "logger.log",
-            'WARNING: Retrying Tranca allowlist download without certificate validation: ' .. TRANCA_ALLOWLIST_URL
-        )
-        local wget_log = read_file(test_dir .. "wget.log") or ""
+		local logger_log = wait_for_file_contains(
+			test_dir .. "logger.log",
+			"WARNING: Retrying Tranca allowlist download without certificate validation: " .. TRANCA_ALLOWLIST_URL
+		)
+		local wget_log = read_file(test_dir .. "wget.log") or ""
 
-        assert.is_not_nil(string.find(logger_log,
-            'WARNING: Retrying Tranca allowlist download without certificate validation: '..
-            TRANCA_ALLOWLIST_URL, 1, true))
-        assert.is_not_nil(string.find(wget_log, '--no-check-certificate -q -O - ' .. TRANCA_ALLOWLIST_URL, 1, true))
-    end)
+		assert.is_not_nil(
+			string.find(
+				logger_log,
+				"WARNING: Retrying Tranca allowlist download without certificate validation: " .. TRANCA_ALLOWLIST_URL,
+				1,
+				true
+			)
+		)
+		assert.is_not_nil(string.find(wget_log, "--no-check-certificate -q -O - " .. TRANCA_ALLOWLIST_URL, 1, true))
+	end)
 end)

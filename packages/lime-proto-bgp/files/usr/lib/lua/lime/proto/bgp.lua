@@ -10,25 +10,30 @@ local bgp = {}
 bgp.configured = false
 
 function bgp.configure(args)
-	if bgp.configured then return end
+	if bgp.configured then
+		return
+	end
 	bgp.configured = true
 
 	local ipv4, ipv6 = network.primary_address()
 	local localAS = args[2] or 64496
 	local bgp_exchanges = args[3]
-	if bgp_exchanges then bgp_exchanges = utils.split(bgp_exchanges,",")
-	else bgp_exchanges = {} end
+	if bgp_exchanges then
+		bgp_exchanges = utils.split(bgp_exchanges, ",")
+	else
+		bgp_exchanges = {}
+	end
 	local meshPenalty = args[4] or 8
 
-	local mp = "bgp_path.prepend("..localAS..");\n"
-	for _=1,meshPenalty do
-		mp = mp .. "\t\t\tbgp_path.prepend("..localAS..");\n"
+	local mp = "bgp_path.prepend(" .. localAS .. ");\n"
+	for _ = 1, meshPenalty do
+		mp = mp .. "\t\t\tbgp_path.prepend(" .. localAS .. ");\n"
 	end
 
-	local templateVarsIPv4 = { localIp=ipv4:host():string(),
-		localAS=localAS, acceptedNet="10.0.0.0/8", meshPenalty=mp }
-	local templateVarsIPv6 = { localIp=ipv6:host():string(),
-		localAS=localAS, acceptedNet="2000::0/3", meshPenalty=mp }
+	local templateVarsIPv4 =
+		{ localIp = ipv4:host():string(), localAS = localAS, acceptedNet = "10.0.0.0/8", meshPenalty = mp }
+	local templateVarsIPv6 =
+		{ localIp = ipv6:host():string(), localAS = localAS, acceptedNet = "2000::0/3", meshPenalty = mp }
 
 	local base_template = [[
 router id $localIp;
@@ -59,14 +64,21 @@ protocol kernel {
 }
 ]]
 
-	for _,protocol in pairs(bgp_exchanges) do
-		local protoModule = "lime.proto."..protocol
+	for _, protocol in pairs(bgp_exchanges) do
+		local protoModule = "lime.proto." .. protocol
 		if utils.isModuleAvailable(protoModule) then
 			local proto = require(protoModule)
 			local snippet = nil
-			xpcall( function() snippet = proto.bgp_conf(templateVarsIPv4, templateVarsIPv6) end,
-			       function(errmsg) print(errmsg) ; print(debug.traceback()) ; snippet = nil end)
-			if snippet then base_template = base_template .. snippet end
+			xpcall(function()
+				snippet = proto.bgp_conf(templateVarsIPv4, templateVarsIPv6)
+			end, function(errmsg)
+				print(errmsg)
+				print(debug.traceback())
+				snippet = nil
+			end)
+			if snippet then
+				base_template = base_template .. snippet
+			end
 		end
 	end
 
@@ -97,8 +109,7 @@ protocol bgp {
 	fs.writefile("/etc/bird6.conf", bird6_config)
 end
 
-function bgp.setup_interface(ifname, args)
-end
+function bgp.setup_interface(ifname, args) end
 
 --! function bgp.apply()
 --!     os.execute("/etc/init.d/bird4 restart")

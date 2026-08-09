@@ -16,7 +16,9 @@ local wan = {}
 wan.configured = false
 
 function wan.configure(args)
-	if wan.configured then return end
+	if wan.configured then
+		return
+	end
 	wan.configured = true
 
 	local uci = libuci:cursor()
@@ -33,13 +35,13 @@ function wan.setup_interface(ifname, args)
 		local vlanProto = args[3] or "8021q"
 		--! local nameSuffix = args[4] or "_wan"
 
-		local owrtDeviceName = network.sanitizeIfaceName(ifname.."_dev")
+		local owrtDeviceName = network.sanitizeIfaceName(ifname .. "_dev")
 
 		--! Do not use . as separator as this will make netifd create an 802.1q interface anyway
 		--! and sanitize ifname because it can contain dots as well (i.e. switch ports)
-		local linuxName = ifname:gsub("[^%w-]", "-")..network.protoVlanSeparator..vlanId
+		local linuxName = ifname:gsub("[^%w-]", "-") .. network.protoVlanSeparator .. vlanId
 
-		network.createDevice(owrtDeviceName, ifname, linuxName, vlanProto, { vid=vlanId })
+		network.createDevice(owrtDeviceName, ifname, linuxName, vlanProto, { vid = vlanId })
 
 		utils.log("lime.proto.wan.setup_interface(%s with VLAN ID %s, ...)", ifname, vlanId)
 		uci:set("network", "wan", "device", linuxName)

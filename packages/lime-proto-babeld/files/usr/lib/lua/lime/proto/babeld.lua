@@ -13,7 +13,9 @@ local babeld = {}
 babeld.configured = false
 
 function babeld.configure(args)
-	if babeld.configured then return end
+	if babeld.configured then
+		return
+	end
 	babeld.configured = true
 
 	utils.log("lime.proto.babeld.configure(...)")
@@ -76,7 +78,6 @@ function babeld.configure(args)
 	uci:set("babeld", "denyany", "action", "deny")
 
 	uci:save("babeld")
-
 end
 
 function babeld.setup_interface(ifname, args)
@@ -92,13 +93,13 @@ function babeld.setup_interface(ifname, args)
 	local nameSuffix = args[4] or "_babeld"
 
 	local owrtInterfaceName, linuxVlanIfName, owrtDeviceName =
-	  network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
+		network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 
 	local ipv4, _ = network.primary_address()
 
 	local uci = config.get_uci_cursor()
 
-	if(vlanId ~= 0 and (ifname:match("^eth") or ifname:match("^lan"))) then
+	if vlanId ~= 0 and (ifname:match("^eth") or ifname:match("^lan")) then
 		uci:set("network", owrtDeviceName, "mtu", tostring(network.MTU_ETH_WITH_VLAN))
 	end
 
@@ -128,7 +129,7 @@ function babeld.runOnDevice(linuxDev, args)
 
 	local libubus = require("ubus")
 	local ubus = libubus.connect()
-	ubus:call('babeld', 'add_interface', { ifname = vlanDev })
+	ubus:call("babeld", "add_interface", { ifname = vlanDev })
 end
 
 return babeld

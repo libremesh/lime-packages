@@ -7,14 +7,13 @@
 --!
 --! SPDX-License-Identifier: AGPL-3.0-only
 
-
 local hardware_detection = require("lime.hardware_detection")
 local config = require("lime.config")
 local utils = require("lime.utils")
 
 local openwrt_wan = {}
 
-openwrt_wan.sectionName = hardware_detection.sectionNamePrefix.."openwrt_wan"
+openwrt_wan.sectionName = hardware_detection.sectionNamePrefix .. "openwrt_wan"
 
 function openwrt_wan.clean()
 	if config.autogenerable(openwrt_wan.sectionName) then
@@ -26,11 +25,11 @@ function openwrt_wan.detect_hardware()
 	if config.autogenerable(openwrt_wan.sectionName) then
 		local ifname
 		local board = utils.getBoardAsTable()
-		local networkTable = board['network']
+		local networkTable = board["network"]
 		if networkTable then
-			local wanTable = networkTable['wan']
+			local wanTable = networkTable["wan"]
 			if wanTable then
-				ifname = wanTable['device']
+				ifname = wanTable["device"]
 			end
 		end
 		if ifname and ifname ~= "" then
@@ -38,11 +37,11 @@ function openwrt_wan.detect_hardware()
 			local net = require("lime.network")
 			for _, pArgs in pairs(config.get("network", "protocols")) do
 				local pArr = utils.split(pArgs, net.protoParamsSeparator)
-				if ( pArr[1] == "bmx7") then
+				if pArr[1] == "bmx7" then
 					pArr[2] = 0
 					pArgs = table.concat(pArr, net.protoParamsSeparator)
 					table.insert(protos, pArgs)
-				elseif ( pArr[1]~="lan" and pArr[1]~="wan" ) then
+				elseif pArr[1] ~= "lan" and pArr[1] ~= "wan" then
 					table.insert(protos, pArgs)
 				end
 			end

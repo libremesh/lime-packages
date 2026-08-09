@@ -10,7 +10,9 @@ local batadv = {}
 batadv.configured = false
 
 function batadv.configure(args)
-	if batadv.configured then return end
+	if batadv.configured then
+		return
+	end
 	batadv.configured = true
 
 	local uci = config.get_uci_cursor()
@@ -27,12 +29,12 @@ function batadv.configure(args)
 	--! in a network with static nodes, a larger interval between OGM packets can be used (e.g. 2000)
 	--! see https://github.com/libremesh/lime-packages/issues/1010
 	local orig_interval = config.get("network", "batadv_orig_interval", "2000")
-        uci:set("network", "bat0", "orig_interval", orig_interval)
+	uci:set("network", "bat0", "orig_interval", orig_interval)
 
 	--! if anygw enabled disable DAT that doesn't play well with it
 	--! and set gw_mode=client everywhere. Since there's no gw_mode=server, this makes bat0 never forward requests
 	--! so a rogue DHCP server doesn't affect whole network (DHCP requests are always answered locally)
-	for _,proto in pairs(config.get("network", "protocols")) do
+	for _, proto in pairs(config.get("network", "protocols")) do
 		if proto == "anygw" then
 			uci:set("network", "bat0", "distributed_arp_table", "0")
 			uci:set("network", "bat0", "gw_mode", "client")
@@ -51,8 +53,7 @@ end
 function batadv.setup_interface(ifname, args)
 	if not args["specific"] then
 		if ifname:match("^wlan%d+.ap") then
-			utils.log( "lime.proto.batadv.setup_interface(%s, ...) ignored",
-			           ifname )
+			utils.log("lime.proto.batadv.setup_interface(%s, ...) ignored", ifname)
 			return
 		end
 	end
@@ -68,7 +69,9 @@ function batadv.setup_interface(ifname, args)
 	--! and use that number to get a vlanId between 29 and 284 for batadv
 	--! (to avoid overlapping with other protocols,
 	--! complex definition is for keeping retrocompatibility)
-	if not tonumber(vlanId) then vlanId = 29 + (utils.applyNetTemplate10(vlanId) - 13) % 256 end
+	if not tonumber(vlanId) then
+		vlanId = 29 + (utils.applyNetTemplate10(vlanId) - 13) % 256
+	end
 
 	local owrtInterfaceName, _, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 
@@ -88,7 +91,7 @@ function batadv.setup_interface(ifname, args)
 	--! 00 + Locally administered unicast .. 2 bytes from interface name
 	--! .. 3 bytes from main interface
 	local id = utils.get_id(ifname)
-	local vMacaddr = network.primary_mac();
+	local vMacaddr = network.primary_mac()
 	vMacaddr[1] = "02"
 	vMacaddr[2] = id[2]
 	vMacaddr[3] = id[3]
@@ -110,27 +113,26 @@ function batadv.runOnDevice(linuxDev, args)
 	end
 
 	local devName = network.createVlan(linuxDev, vlanId, vlanProto)
-	local ifName = network.limeIfNamePrefix..linuxDev .. "_batadv"
+	local ifName = network.limeIfNamePrefix .. linuxDev .. "_batadv"
 
 	local ifaceConf = {
-		name   = ifName,
-		proto  = "batadv_hardif",
-		auto   = "1",
+		name = ifName,
+		proto = "batadv_hardif",
+		auto = "1",
 		device = devName,
-		master = "bat0"
+		master = "bat0",
 	}
 
-	local libubus = require("ubus");
+	local libubus = require("ubus")
 	local ubus = libubus.connect()
-	ubus:call('network', 'add_dynamic', ifaceConf)
-	ubus:call('network.interface.'..ifName, 'up', {})
+	ubus:call("network", "add_dynamic", ifaceConf)
+	ubus:call("network.interface." .. ifName, "up", {})
 
-
---! TODO: as of today ubus silently fails to properly setting up a linux network
---! device for batman ADV usage dinamycally work around it by using
---! shell commands instead
+	--! TODO: as of today ubus silently fails to properly setting up a linux network
+	--! device for batman ADV usage dinamycally work around it by using
+	--! shell commands instead
 	network.createStatic(devName)
-	utils.unsafe_shell("batctl if add "..devName)
+	utils.unsafe_shell("batctl if add " .. devName)
 end
 
 return batadv
