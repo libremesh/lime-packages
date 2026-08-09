@@ -9,7 +9,7 @@ utils.assert = assert
 
 UCI_CONFIG_FILES = {
 	"6relayd", "babeld", "batman-adv", "check-date", "dhcp", "dropbear", "fstab", "firewall",
-	"libremap", "lime", "lime-app", "location",
+	"libremap", "lime", "lime-app", "location", "mesh-upgrade",
 	"luci", "network", "pirania", "rpcd", "shared-state", "system", "ucitrack",
 	"uhttpd", "wireless", config.UCI_AUTOGEN_NAME, config.UCI_NODE_NAME,
 	config.UCI_COMMUNITY_NAME, config.UCI_DEFAULTS_NAME

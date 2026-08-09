@@ -1,0 +1,28 @@
+{
+  "root": {
+    "description": "Shared state data root ubus interface",
+    "read": {
+      "ubus": {
+        "shared-state": ["insertIntoSharedStateMultiWriter"]
+      }
+    },
+    "write": {
+      "ubus": {
+        "shared-state": ["insertIntoSharedStateMultiWriter"]
+      }
+    }
+  },
+  "lime-app": {
+    "description": "Get shared state data from ubus",
+    "read": {
+      "ubus": {
+        "shared-state": [ "*" ]
+      }
+    },
+    "write": {
+      "ubus": {
+        "shared-state": [ "*" ]
+      }
+    }
+  }
+}
