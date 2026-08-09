@@ -6,9 +6,8 @@ uci set dhcp.@dnsmasq[0].dhcpscript=/usr/bin/dnsmasq-lease-share.sh
 uci set dhcp.@dnsmasq[0].dhcphostsfile=$dhcpHostsFile
 uci commit dhcp
 
-unique_append()
-{
-	grep -qF "$1" "$2" || echo "$1" >> "$2"
+unique_append() {
+	grep -qF "$1" "$2" || echo "$1" >>"$2"
 }
 
 unique_append \

@@ -4,20 +4,20 @@
 # Copyleft 2012 Gui Iribarren <gui@altermundi.net>
 
 ###  Usage: $0 [ [-w time] | now ] [-f time]
-###  
+###
 ###  $0 falls back to a last-known-good config after an ill-fated reboot.
-### 
-###  It makes a backup of /etc, and after the grace time reboots the system. 
+###
+###  It makes a backup of /etc, and after the grace time reboots the system.
 ###    At the next boot, it waits again for a fallback timeout; if you can't
 ###    login and delete the backup, it will restore it and reboot.
-###  This mechanism makes it possible to run $0, try risky operations (like 
+###  This mechanism makes it possible to run $0, try risky operations (like
 ###    restarting the network), and if something goes wrong so you can't
 ###    login, just wait for the fallback timeout.
 ###  Even more, you can make actual changes to /etc config and reboot. If it
 ###    comes up right, you can login and simply delete the backup
-###    /.etc.last-good.tgz . But if something went wrong with the new /etc, 
+###    /.etc.last-good.tgz . But if something went wrong with the new /etc,
 ###    again just wait for the revert timeout.
-###  
+###
 ###  -w, --wait, --in TIME
 ###        After backing up /overlay/upper/etc, wait for TIME before reboot.
 ###          Default: 5min
@@ -35,7 +35,7 @@
 ###  discard
 ###        Restores /overlay/upper/etc from /overlay/upper/.etc.last-good.tgz.
 ###        (useful to discard changes)
-### 
+###
 ###    TIME examples: 1hour 60min 60m 3600sec 3600
 ###    (all of them are equivalent)
 
@@ -48,37 +48,39 @@ safe_fallback_script="/overlay/upper/etc/init.d/safe-fallback"
 safe_fallback_script_enable="ln -sf ../init.d/safe-fallback /overlay/upper/etc/rc.d/S11safe-fallback"
 cmd_force_reboot="echo b > /proc/sysrq-trigger" # Immediately reboot the system without syncing or unmounting disks.
 
-usage () { reason="$*"
-  [ -n "$reason" ] && echo "$reason"
-  sed -n "/^### /{s///;s|\$0|$(basename "$0")|g;p}" "$0"
-  exit 1
+usage() {
+	reason="$*"
+	[ -n "$reason" ] && echo "$reason"
+	sed -n "/^### /{s///;s|\$0|$(basename "$0")|g;p}" "$0"
+	exit 1
 }
 
 timetoseconds() { # valid and equivalent input examples: 3600 3600s 3600sec 60minutes 1ho
-        local time="$1" ; local seconds
+	local time="$1"
+	local seconds
 
-        { [ "${time%s*}" -ge 0 ] 2> /dev/null && seconds="${time%s*}"; } \
-      ||{ [ "${time%m*}" -ge 0 ] 2> /dev/null && seconds="$((${time%m*}*60))"; } \
-      ||{ [ "${time%h*}" -ge 0 ] 2> /dev/null && seconds="$((${time%h*}*3600))"; }
-      
-        echo "$seconds"
+	{ [ "${time%s*}" -ge 0 ] 2>/dev/null && seconds="${time%s*}"; } ||
+		{ [ "${time%m*}" -ge 0 ] 2>/dev/null && seconds="$((${time%m*} * 60))"; } ||
+		{ [ "${time%h*}" -ge 0 ] 2>/dev/null && seconds="$((${time%h*} * 3600))"; }
+
+	echo "$seconds"
 }
 
-backup_etc_exists () {
-  [ -s "$file_etc_lastgood" ]
+backup_etc_exists() {
+	[ -s "$file_etc_lastgood" ]
 }
 
-backup_etc () {
-  rm -f "$file_etc_lastgood"
-  tar -czf "$file_etc_lastgood" -C "$dir_etc" .
+backup_etc() {
+	rm -f "$file_etc_lastgood"
+	tar -czf "$file_etc_lastgood" -C "$dir_etc" .
 }
 
-write_safe_fallback_script () {
-  mkdir -p "$(dirname "$safe_fallback_script")"
-  rm -f "$safe_fallback_script"
-  touch "$safe_fallback_script"
-  chmod +x "$safe_fallback_script"
-  cat <<EOF > "$safe_fallback_script"
+write_safe_fallback_script() {
+	mkdir -p "$(dirname "$safe_fallback_script")"
+	rm -f "$safe_fallback_script"
+	touch "$safe_fallback_script"
+	chmod +x "$safe_fallback_script"
+	cat <<EOF >"$safe_fallback_script"
 #!/bin/sh /etc/rc.common
 START=11
 start() {
@@ -90,67 +92,96 @@ start() {
   echo \$! > "$PIDFILE"
 }
 EOF
-  mkdir -p "$dir_etc"/rc.d/
-  $safe_fallback_script_enable
+	mkdir -p "$dir_etc"/rc.d/
+	$safe_fallback_script_enable
 }
 
-reboot_after_grace_period () {
-  sleep "$grace_period" & trap 'kill $! ; exit' TERM ; wait
-  write_safe_fallback_script
-  reboot ; sleep 10 ; eval "$cmd_force_reboot"
+reboot_after_grace_period() {
+	sleep "$grace_period" &
+	trap 'kill $! ; exit' TERM
+	wait
+	write_safe_fallback_script
+	reboot
+	sleep 10
+	eval "$cmd_force_reboot"
 }
 
-action_cancel () {
-  rm -f "$file_etc_lastgood"
-  rm -f "$safe_fallback_script"
-  echo -n "Removed $file_etc_lastgood, "
-  if [ -s "$PIDFILE" ] ; then
-    kill "$(cat "$PIDFILE")"
-    rm -f "$PIDFILE"
-    echo "and killed running timeout."
-  else
-    echo "no running timeout found."
-  fi
+action_cancel() {
+	rm -f "$file_etc_lastgood"
+	rm -f "$safe_fallback_script"
+	echo -n "Removed $file_etc_lastgood, "
+	if [ -s "$PIDFILE" ]; then
+		kill "$(cat "$PIDFILE")"
+		rm -f "$PIDFILE"
+		echo "and killed running timeout."
+	else
+		echo "no running timeout found."
+	fi
 }
 
-action_discard () {
-  if backup_etc_exists ; then
-    rm -f "$safe_fallback_script"
-    rm -rf $dir_etc ; mkdir -p $dir_etc
-    tar -xzf $file_etc_lastgood -C $dir_etc
-    rm -f $file_etc_lastgood
-    reboot ; sleep 10 ; eval "$cmd_force_reboot"
-  else
-    echo "STOP! Backup file $file_etc_lastgood not found or 0 sized! Refusing to continue."
-    exit 2
-  fi
+action_discard() {
+	if backup_etc_exists; then
+		rm -f "$safe_fallback_script"
+		rm -rf $dir_etc
+		mkdir -p $dir_etc
+		tar -xzf $file_etc_lastgood -C $dir_etc
+		rm -f $file_etc_lastgood
+		reboot
+		sleep 10
+		eval "$cmd_force_reboot"
+	else
+		echo "STOP! Backup file $file_etc_lastgood not found or 0 sized! Refusing to continue."
+		exit 2
+	fi
 }
 
 while [ -n "$1" ]; do
-  arg="$1"
-  shift
-  case "$arg" in
-    --in | in | --wait | wait | -w ) grace_period=$(timetoseconds "$1") ; shift
-      [ -z "$grace_period" ] && usage "Error with grace period value."
-    ;;
-    --fallback-after | -f ) fallback_timeout=$(timetoseconds "$1") ; shift
-      [ -z "$fallback_timeout" ] && usage "Error with fallback timeout value."
-    ;;
-    --discard | discard ) action_discard ; exit ;;
-    --cancel | cancel ) action_cancel ; exit ;;
-    now ) grace_period=0 ;;
-    --help | -h ) usage ;;
-  esac
+	arg="$1"
+	shift
+	case "$arg" in
+	--in | in | --wait | wait | -w)
+		grace_period=$(timetoseconds "$1")
+		shift
+		[ -z "$grace_period" ] && usage "Error with grace period value."
+		;;
+	--fallback-after | -f)
+		fallback_timeout=$(timetoseconds "$1")
+		shift
+		[ -z "$fallback_timeout" ] && usage "Error with fallback timeout value."
+		;;
+	--discard | discard)
+		action_discard
+		exit
+		;;
+	--cancel | cancel)
+		action_cancel
+		exit
+		;;
+	now) grace_period=0 ;;
+	--help | -h) usage ;;
+	esac
 done
 
-if [ "$grace_period" -eq 0 ] ; then
-  backup_etc_exists || { echo "STOP! Backup file $file_etc_lastgood not found! Refusing to continue." ; exit 2 ; }
+if [ "$grace_period" -eq 0 ]; then
+	backup_etc_exists || {
+		echo "STOP! Backup file $file_etc_lastgood not found! Refusing to continue."
+		exit 2
+	}
 else
-  backup_etc_exists && { echo "STOP! Backup file $file_etc_lastgood exists! You probably want to \`$0 now\`" ; exit 4 ; }
-  backup_etc || { echo "STOP! Backup failed. Refusing to continue." ; exit 8 ; }
+	backup_etc_exists && {
+		echo "STOP! Backup file $file_etc_lastgood exists! You probably want to \`$0 now\`"
+		exit 4
+	}
+	backup_etc || {
+		echo "STOP! Backup failed. Refusing to continue."
+		exit 8
+	}
 fi
 
-write_safe_fallback_script || { echo "STOP! Writing fallback script failed. Refusing to continue." ; exit 16 ; } 
-reboot_after_grace_period & { echo "Rebooting in $grace_period seconds..." ; }
-echo $! > "$PIDFILE"
-
+write_safe_fallback_script || {
+	echo "STOP! Writing fallback script failed. Refusing to continue."
+	exit 16
+}
+reboot_after_grace_period &
+{ echo "Rebooting in $grace_period seconds..."; }
+echo $! >"$PIDFILE"

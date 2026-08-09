@@ -9,7 +9,7 @@ DOCKER_BASHRC=/tmp/.docker_${USER}_bashrc
 
 rm -rf "${DOCKER_BASHRC}" 2>/dev/null
 cp "${HOME}/.bashrc" "${DOCKER_BASHRC}" 2>/dev/null
-echo "PS1=\"(docker) \$PS1\"" >> "${DOCKER_BASHRC}"
+echo "PS1=\"(docker) \$PS1\"" >>"${DOCKER_BASHRC}"
 
 REPO_PATH=$(printf "%q\n" "$(git rev-parse --show-toplevel)")
 

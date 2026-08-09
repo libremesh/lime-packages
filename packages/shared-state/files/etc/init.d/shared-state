@@ -3,6 +3,6 @@
 START=13
 
 start() {
-    logger -p daemon.info  -t shared-state "Generating and publishing databases"
-    shared-state-publish-all > /dev/null &
+	logger -p daemon.info -t shared-state "Generating and publishing databases"
+	shared-state-publish-all >/dev/null &
 }

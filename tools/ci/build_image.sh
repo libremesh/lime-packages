@@ -2,8 +2,8 @@
 set -euo pipefail
 
 if [[ $# -ne 5 ]]; then
-  echo "Usage: $0 <imagebuilder> <profile> <openwrt_release> <feed_dir> <output_dir>" >&2
-  exit 1
+	echo "Usage: $0 <imagebuilder> <profile> <openwrt_release> <feed_dir> <output_dir>" >&2
+	exit 1
 fi
 
 IMAGEBUILDER="$1"
@@ -29,11 +29,11 @@ BUILD_INITRAMFS="${BUILD_INITRAMFS:-0}"
 #                 to a distinct RAM address; `bootm <kernel> <ramdisk>`).
 IMAGE_FORMAT="${IMAGE_FORMAT:-fit}"
 case "${IMAGE_FORMAT}" in
-  fit|multi-uimage|x86-combined|dual-tftp) ;;
-  *)
-    echo "ERROR: invalid IMAGE_FORMAT=${IMAGE_FORMAT} (expected: fit | multi-uimage | x86-combined | dual-tftp)" >&2
-    exit 1
-    ;;
+fit | multi-uimage | x86-combined | dual-tftp) ;;
+*)
+	echo "ERROR: invalid IMAGE_FORMAT=${IMAGE_FORMAT} (expected: fit | multi-uimage | x86-combined | dual-tftp)" >&2
+	exit 1
+	;;
 esac
 
 FIT_ARCH="${FIT_ARCH:-}"
@@ -55,50 +55,50 @@ DTB_PATCH_NVMEM_MAC="${DTB_PATCH_NVMEM_MAC:-0}"
 DTB_FORCE_LEGACY_PARTITIONS="${DTB_FORCE_LEGACY_PARTITIONS:-0}"
 
 if [[ "${BUILD_INITRAMFS}" == "1" && "${IMAGE_FORMAT}" == "x86-combined" ]]; then
-  echo "ERROR: BUILD_INITRAMFS=1 is incompatible with IMAGE_FORMAT=x86-combined" >&2
-  exit 1
+	echo "ERROR: BUILD_INITRAMFS=1 is incompatible with IMAGE_FORMAT=x86-combined" >&2
+	exit 1
 fi
 
 if [[ "${BUILD_INITRAMFS}" == "1" ]]; then
-  # dual-tftp ships kernel.bin + rootfs.cpio as separate TFTP artifacts;
-  # no FIT/uImage repacking, so FIT_* vars are not required.
-  if [[ "${IMAGE_FORMAT}" != "dual-tftp" ]]; then
-    required_vars=(FIT_ARCH FIT_KERNEL_LOADADDR FIT_CONFIG FIT_BOOTARGS)
-    # ath79 (multi-uimage) fuses the DTB into kernel-bin so FIT_DTS is empty.
-    if [[ "${IMAGE_FORMAT}" == "fit" ]]; then
-      required_vars+=(FIT_DTS)
-    fi
-    for var in "${required_vars[@]}"; do
-      if [[ -z "${!var}" ]]; then
-        echo "ERROR: BUILD_INITRAMFS=1 (IMAGE_FORMAT=${IMAGE_FORMAT}) requires ${var} env var" >&2
-        exit 1
-      fi
-    done
-  fi
+	# dual-tftp ships kernel.bin + rootfs.cpio as separate TFTP artifacts;
+	# no FIT/uImage repacking, so FIT_* vars are not required.
+	if [[ "${IMAGE_FORMAT}" != "dual-tftp" ]]; then
+		required_vars=(FIT_ARCH FIT_KERNEL_LOADADDR FIT_CONFIG FIT_BOOTARGS)
+		# ath79 (multi-uimage) fuses the DTB into kernel-bin so FIT_DTS is empty.
+		if [[ "${IMAGE_FORMAT}" == "fit" ]]; then
+			required_vars+=(FIT_DTS)
+		fi
+		for var in "${required_vars[@]}"; do
+			if [[ -z "${!var}" ]]; then
+				echo "ERROR: BUILD_INITRAMFS=1 (IMAGE_FORMAT=${IMAGE_FORMAT}) requires ${var} env var" >&2
+				exit 1
+			fi
+		done
+	fi
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DTB_PATCHER_HOST="${SCRIPT_DIR}/patch_dtb_local_mac.py"
 DTB_PARTITIONS_PATCHER_HOST="${SCRIPT_DIR}/patch_dtb_partitions.py"
 if [[ "${DTB_PATCH_NVMEM_MAC}" == "1" && ! -f "${DTB_PATCHER_HOST}" ]]; then
-  echo "ERROR: DTB_PATCH_NVMEM_MAC=1 but ${DTB_PATCHER_HOST} not found" >&2
-  exit 1
+	echo "ERROR: DTB_PATCH_NVMEM_MAC=1 but ${DTB_PATCHER_HOST} not found" >&2
+	exit 1
 fi
 if [[ "${DTB_FORCE_LEGACY_PARTITIONS}" == "1" && ! -f "${DTB_PARTITIONS_PATCHER_HOST}" ]]; then
-  echo "ERROR: DTB_FORCE_LEGACY_PARTITIONS=1 but ${DTB_PARTITIONS_PATCHER_HOST} not found" >&2
-  exit 1
+	echo "ERROR: DTB_FORCE_LEGACY_PARTITIONS=1 but ${DTB_PARTITIONS_PATCHER_HOST} not found" >&2
+	exit 1
 fi
 
 if [[ ! -d "${FEED_DIR}/lime_packages" ]]; then
-  echo "ERROR: Feed dir must contain lime_packages/: ${FEED_DIR}/lime_packages" >&2
-  exit 1
+	echo "ERROR: Feed dir must contain lime_packages/: ${FEED_DIR}/lime_packages" >&2
+	exit 1
 fi
 
 # 24.10.x = .ipk + opkg + Packages[.gz]; 25.12.x = .apk + apk-tools +
 # packages.adb. Branches downstream config and `make image` flags.
 case "${OPENWRT_RELEASE}" in
-  24.10.*) PKG_FORMAT=ipk ;;
-  *)       PKG_FORMAT=apk ;;
+24.10.*) PKG_FORMAT=ipk ;;
+*) PKG_FORMAT=apk ;;
 esac
 echo ">>> Package format for ${OPENWRT_RELEASE}: ${PKG_FORMAT}"
 
@@ -111,30 +111,30 @@ chmod 0755 "${WORK_DIR}"
 # Stage the DTB patchers in WORK_DIR; the in-container repack step
 # only sees /work and /feed.
 if [[ -f "${DTB_PATCHER_HOST}" ]]; then
-  cp "${DTB_PATCHER_HOST}" "${WORK_DIR}/patch_dtb_local_mac.py"
-  chmod 0755 "${WORK_DIR}/patch_dtb_local_mac.py"
+	cp "${DTB_PATCHER_HOST}" "${WORK_DIR}/patch_dtb_local_mac.py"
+	chmod 0755 "${WORK_DIR}/patch_dtb_local_mac.py"
 fi
 if [[ -f "${DTB_PARTITIONS_PATCHER_HOST}" ]]; then
-  cp "${DTB_PARTITIONS_PATCHER_HOST}" "${WORK_DIR}/patch_dtb_partitions.py"
-  chmod 0755 "${WORK_DIR}/patch_dtb_partitions.py"
+	cp "${DTB_PARTITIONS_PATCHER_HOST}" "${WORK_DIR}/patch_dtb_partitions.py"
+	chmod 0755 "${WORK_DIR}/patch_dtb_partitions.py"
 fi
 
 # Repositories snippet appended to the IB's repos config.
 #   ipk -> repositories.conf (one `src/gz <name> <url>` per line).
 #   apk -> repositories       (one URL per line, file:// required).
 if [[ "${PKG_FORMAT}" == "ipk" ]]; then
-  cat > "${WORK_DIR}/repositories.snippet" <<EOF
+	cat >"${WORK_DIR}/repositories.snippet" <<EOF
 src/gz lime_packages_local file:///feed/lime_packages
 src/gz libremesh https://feed.libremesh.org/master/${FEED_BRANCH}/${ARCH}
 EOF
 else
-  cat > "${WORK_DIR}/repositories.snippet" <<EOF
+	cat >"${WORK_DIR}/repositories.snippet" <<EOF
 file:///feed/lime_packages/packages.adb
 https://feed.libremesh.org/master/${FEED_BRANCH}/${ARCH}/packages.adb
 EOF
 fi
 
-cat > "${WORK_DIR}/keys/a71b3c8285abd28b" <<'EOF'
+cat >"${WORK_DIR}/keys/a71b3c8285abd28b" <<'EOF'
 untrusted comment: signed by libremesh.org key a71b3c8285abd28b
 RWSnGzyChavSiyQ+vLk3x7F0NqcLa4kKyXCdriThMhO78ldHgxGljM/8
 EOF
@@ -148,37 +148,37 @@ chmod a+w "${WORK_DIR}/out"
 
 # Export so docker `-e VAR` (no =value) forwards real values to the in-container script.
 export BUILD_INITRAMFS IMAGE_FORMAT FIT_ARCH FIT_KERNEL_LOADADDR FIT_DTS \
-       FIT_CONFIG FIT_BOOTARGS DTB_PATCH_NVMEM_MAC \
-       DTB_FORCE_LEGACY_PARTITIONS PROFILE PACKAGES \
-       ARCH OPENWRT_RELEASE PKG_FORMAT
+	FIT_CONFIG FIT_BOOTARGS DTB_PATCH_NVMEM_MAC \
+	DTB_FORCE_LEGACY_PARTITIONS PROFILE PACKAGES \
+	ARCH OPENWRT_RELEASE PKG_FORMAT
 
 # apk needs to (re)generate packages.adb in /feed; ipk's index is static.
 if [[ "${PKG_FORMAT}" == "apk" ]]; then
-  FEED_MOUNT_FLAGS=":rw"
+	FEED_MOUNT_FLAGS=":rw"
 else
-  FEED_MOUNT_FLAGS=":ro"
+	FEED_MOUNT_FLAGS=":ro"
 fi
 
 docker run --rm \
-  --user root \
-  -e BUILD_INITRAMFS \
-  -e IMAGE_FORMAT \
-  -e FIT_ARCH \
-  -e FIT_KERNEL_LOADADDR \
-  -e FIT_DTS \
-  -e FIT_CONFIG \
-  -e FIT_BOOTARGS \
-  -e DTB_PATCH_NVMEM_MAC \
-  -e DTB_FORCE_LEGACY_PARTITIONS \
-  -e PROFILE \
-  -e PACKAGES \
-  -e ARCH \
-  -e OPENWRT_RELEASE \
-  -e PKG_FORMAT \
-  -v "${WORK_DIR}:/work" \
-  -v "${FEED_DIR}:/feed${FEED_MOUNT_FLAGS}" \
-  "${IMAGE_TAG}" \
-  sh -lc '
+	--user root \
+	-e BUILD_INITRAMFS \
+	-e IMAGE_FORMAT \
+	-e FIT_ARCH \
+	-e FIT_KERNEL_LOADADDR \
+	-e FIT_DTS \
+	-e FIT_CONFIG \
+	-e FIT_BOOTARGS \
+	-e DTB_PATCH_NVMEM_MAC \
+	-e DTB_FORCE_LEGACY_PARTITIONS \
+	-e PROFILE \
+	-e PACKAGES \
+	-e ARCH \
+	-e OPENWRT_RELEASE \
+	-e PKG_FORMAT \
+	-v "${WORK_DIR}:/work" \
+	-v "${FEED_DIR}:/feed${FEED_MOUNT_FLAGS}" \
+	"${IMAGE_TAG}" \
+	sh -lc '
     set -e
     cp /work/keys/* keys/ 2>/dev/null || true
 
@@ -706,27 +706,27 @@ ls -la "${WORK_DIR}/out/" || true
 # ship a vanilla OpenWrt artifact otherwise.
 MANIFEST_FILE="$(compgen -G "${WORK_DIR}/out/*${PROFILE}*.manifest" 2>/dev/null | head -n 1 || true)"
 if [[ -z "${MANIFEST_FILE}" || ! -f "${MANIFEST_FILE}" ]]; then
-  echo "::error::ImageBuilder produced no .manifest for ${PROFILE} - cannot verify LibreMesh content" >&2
-  find "${WORK_DIR}/out" -maxdepth 1 -type f -printf '  %p (%s bytes)\n' >&2 || true
-  exit 1
+	echo "::error::ImageBuilder produced no .manifest for ${PROFILE} - cannot verify LibreMesh content" >&2
+	find "${WORK_DIR}/out" -maxdepth 1 -type f -printf '  %p (%s bytes)\n' >&2 || true
+	exit 1
 fi
 echo "=== Manifest: ${MANIFEST_FILE} ==="
-echo "Total packages in manifest: $(wc -l < "${MANIFEST_FILE}")"
+echo "Total packages in manifest: $(wc -l <"${MANIFEST_FILE}")"
 required_pkgs=(lime-system lime-proto-batadv lime-proto-anygw batctl-default)
 missing=()
 for pkg in "${required_pkgs[@]}"; do
-  if ! grep -qE "^${pkg} " "${MANIFEST_FILE}"; then
-    missing+=("${pkg}")
-  fi
+	if ! grep -qE "^${pkg} " "${MANIFEST_FILE}"; then
+		missing+=("${pkg}")
+	fi
 done
-if (( ${#missing[@]} > 0 )); then
-  echo "::error::Image manifest is missing required LibreMesh packages: ${missing[*]}" >&2
-  echo "This means make image silently dropped them despite the opkg pre-flight pass." >&2
-  echo "=== Manifest contents (lime/shared-state/batctl entries) ===" >&2
-  grep -E '^(lime|shared-state|batctl|babeld|firewall)' "${MANIFEST_FILE}" >&2 || true
-  echo "=== First 40 manifest lines ===" >&2
-  head -n 40 "${MANIFEST_FILE}" >&2 || true
-  exit 1
+if ((${#missing[@]} > 0)); then
+	echo "::error::Image manifest is missing required LibreMesh packages: ${missing[*]}" >&2
+	echo "This means make image silently dropped them despite the opkg pre-flight pass." >&2
+	echo "=== Manifest contents (lime/shared-state/batctl entries) ===" >&2
+	grep -E '^(lime|shared-state|batctl|babeld|firewall)' "${MANIFEST_FILE}" >&2 || true
+	echo "=== First 40 manifest lines ===" >&2
+	head -n 40 "${MANIFEST_FILE}" >&2 || true
+	exit 1
 fi
 echo ">>> Manifest validation OK: lime-system + lime-proto-batadv + lime-proto-anygw + batctl-default present"
 grep -E '^(lime-|shared-state-|batctl|babeld|firewall4)' "${MANIFEST_FILE}" || true
@@ -739,98 +739,101 @@ grep -E '^(lime-|shared-state-|batctl|babeld|firewall4)' "${MANIFEST_FILE}" || t
 DEVICE_NAME="${DEVICE_NAME:-${PROFILE}}"
 SOURCE_FILE=""
 if [[ "${IMAGE_FORMAT}" == "dual-tftp" ]]; then
-  KERNEL_SRC="$(compgen -G "${WORK_DIR}/out/*${PROFILE}-kernel.bin" 2>/dev/null | head -n 1 || true)"
-  RAMDISK_SRC="$(compgen -G "${WORK_DIR}/out/*${PROFILE}-rootfs.uimage" 2>/dev/null | head -n 1 || true)"
-  if [[ -z "${KERNEL_SRC}" || -z "${RAMDISK_SRC}" ]]; then
-    echo "::error::dual-tftp: expected *-kernel.bin + *-rootfs.uimage under ${WORK_DIR}/out" >&2
-    find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
-    exit 1
-  fi
-  cp "${KERNEL_SRC}"  "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin"
-  cp "${RAMDISK_SRC}" "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.uimage"
-  MANIFEST_TARGET="${OUTPUT_DIR}/firmware-${DEVICE_NAME}.manifest"
-  cp "${MANIFEST_FILE}" "${MANIFEST_TARGET}"
-  echo ">>> dual-tftp kernel  : ${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin ($(stat -c%s "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin") bytes)"
-  echo ">>> dual-tftp ramdisk : ${OUTPUT_DIR}/firmware-${DEVICE_NAME}.uimage ($(stat -c%s "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.uimage") bytes)"
-  echo ">>> Manifest output   : ${MANIFEST_TARGET} ($(wc -l < "${MANIFEST_TARGET}") packages)"
-  echo ">>> Kernel sha256     : $(sha256sum "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin" | cut -d' ' -f1)"
-  echo ">>> Ramdisk sha256    : $(sha256sum "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.uimage" | cut -d' ' -f1)"
-  exit 0
+	KERNEL_SRC="$(compgen -G "${WORK_DIR}/out/*${PROFILE}-kernel.bin" 2>/dev/null | head -n 1 || true)"
+	RAMDISK_SRC="$(compgen -G "${WORK_DIR}/out/*${PROFILE}-rootfs.uimage" 2>/dev/null | head -n 1 || true)"
+	if [[ -z "${KERNEL_SRC}" || -z "${RAMDISK_SRC}" ]]; then
+		echo "::error::dual-tftp: expected *-kernel.bin + *-rootfs.uimage under ${WORK_DIR}/out" >&2
+		find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
+		exit 1
+	fi
+	cp "${KERNEL_SRC}" "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin"
+	cp "${RAMDISK_SRC}" "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.uimage"
+	MANIFEST_TARGET="${OUTPUT_DIR}/firmware-${DEVICE_NAME}.manifest"
+	cp "${MANIFEST_FILE}" "${MANIFEST_TARGET}"
+	echo ">>> dual-tftp kernel  : ${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin ($(stat -c%s "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin") bytes)"
+	echo ">>> dual-tftp ramdisk : ${OUTPUT_DIR}/firmware-${DEVICE_NAME}.uimage ($(stat -c%s "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.uimage") bytes)"
+	echo ">>> Manifest output   : ${MANIFEST_TARGET} ($(wc -l <"${MANIFEST_TARGET}") packages)"
+	echo ">>> Kernel sha256     : $(sha256sum "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.bin" | cut -d' ' -f1)"
+	echo ">>> Ramdisk sha256    : $(sha256sum "${OUTPUT_DIR}/firmware-${DEVICE_NAME}.uimage" | cut -d' ' -f1)"
+	exit 0
 elif [[ "${IMAGE_FORMAT}" == "x86-combined" ]]; then
-  combined_gz="$(compgen -G "${WORK_DIR}/out/*ext4-combined.img.gz" 2>/dev/null | head -n 1 || true)"
-  if [[ -z "${combined_gz}" ]]; then
-    echo "::error::IMAGE_FORMAT=x86-combined: no *ext4-combined.img.gz under ${WORK_DIR}/out." >&2
-    echo "       Confirm the x86-64/generic ImageBuilder profile produced the combined recipe." >&2
-    find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
-    exit 1
-  fi
-  combined_img="${combined_gz%.gz}"
-  if [[ ! -f "${combined_img}" ]]; then
-    # OpenWrt pads the combined image past the gzip stream, so gunzip
-    # exits 2 with a "trailing garbage ignored" warning. The bytes are
-    # correct; treat 0 and 2 as success.
-    set +e
-    gunzip -kc "${combined_gz}" > "${combined_img}" 2>/tmp/gunzip.err
-    gz_rc=$?
-    set -e
-    if [[ $gz_rc -ne 0 && $gz_rc -ne 2 ]]; then
-      echo "::error::gunzip failed on ${combined_gz} (rc=$gz_rc)" >&2
-      cat /tmp/gunzip.err >&2 || true
-      exit 1
-    fi
-    if [[ ! -s "${combined_img}" ]]; then
-      echo "::error::gunzip produced empty output for ${combined_gz}" >&2
-      exit 1
-    fi
-    if [[ -s /tmp/gunzip.err ]]; then
-      echo ">>> gunzip notice (non-fatal): $(cat /tmp/gunzip.err)"
-    fi
-  fi
-  SOURCE_FILE="${combined_img}"
-  echo ">>> Matched x86-combined image: ${combined_gz} -> ${SOURCE_FILE} (gunzip)"
+	combined_gz="$(compgen -G "${WORK_DIR}/out/*ext4-combined.img.gz" 2>/dev/null | head -n 1 || true)"
+	if [[ -z "${combined_gz}" ]]; then
+		echo "::error::IMAGE_FORMAT=x86-combined: no *ext4-combined.img.gz under ${WORK_DIR}/out." >&2
+		echo "       Confirm the x86-64/generic ImageBuilder profile produced the combined recipe." >&2
+		find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
+		exit 1
+	fi
+	combined_img="${combined_gz%.gz}"
+	if [[ ! -f "${combined_img}" ]]; then
+		# OpenWrt pads the combined image past the gzip stream, so gunzip
+		# exits 2 with a "trailing garbage ignored" warning. The bytes are
+		# correct; treat 0 and 2 as success.
+		set +e
+		gunzip -kc "${combined_gz}" >"${combined_img}" 2>/tmp/gunzip.err
+		gz_rc=$?
+		set -e
+		if [[ $gz_rc -ne 0 && $gz_rc -ne 2 ]]; then
+			echo "::error::gunzip failed on ${combined_gz} (rc=$gz_rc)" >&2
+			cat /tmp/gunzip.err >&2 || true
+			exit 1
+		fi
+		if [[ ! -s "${combined_img}" ]]; then
+			echo "::error::gunzip produced empty output for ${combined_gz}" >&2
+			exit 1
+		fi
+		if [[ -s /tmp/gunzip.err ]]; then
+			echo ">>> gunzip notice (non-fatal): $(cat /tmp/gunzip.err)"
+		fi
+	fi
+	SOURCE_FILE="${combined_img}"
+	echo ">>> Matched x86-combined image: ${combined_gz} -> ${SOURCE_FILE} (gunzip)"
 elif [[ "${BUILD_INITRAMFS}" == "1" ]]; then
-  case "${IMAGE_FORMAT}" in
-    fit)          initramfs_patterns=("*${PROFILE}-initramfs-libremesh.itb" "*${PROFILE}*initramfs-libremesh.itb") ;;
-    multi-uimage) initramfs_patterns=("*${PROFILE}-initramfs-libremesh.uimage" "*${PROFILE}*initramfs-libremesh.uimage") ;;
-    dual-tftp)    echo "BUG: dual-tftp should have exited earlier" >&2; exit 1 ;;
-  esac
-  for pattern in "${initramfs_patterns[@]}"; do
-    match="$(compgen -G "${WORK_DIR}/out/${pattern}" 2>/dev/null | head -n 1 || true)"
-    if [[ -n "${match}" && -f "${match}" ]]; then
-      SOURCE_FILE="${match}"
-      echo ">>> Matched initramfs pattern '${pattern}' -> ${SOURCE_FILE}"
-      break
-    fi
-  done
-  if [[ -z "${SOURCE_FILE}" ]]; then
-    echo "::error::BUILD_INITRAMFS=1 (IMAGE_FORMAT=${IMAGE_FORMAT}) was set but no initramfs artifact found in ${WORK_DIR}/out." >&2
-    echo "The mkimage repack step likely failed silently. /work/out contents:" >&2
-    find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
-    exit 1
-  fi
+	case "${IMAGE_FORMAT}" in
+	fit) initramfs_patterns=("*${PROFILE}-initramfs-libremesh.itb" "*${PROFILE}*initramfs-libremesh.itb") ;;
+	multi-uimage) initramfs_patterns=("*${PROFILE}-initramfs-libremesh.uimage" "*${PROFILE}*initramfs-libremesh.uimage") ;;
+	dual-tftp)
+		echo "BUG: dual-tftp should have exited earlier" >&2
+		exit 1
+		;;
+	esac
+	for pattern in "${initramfs_patterns[@]}"; do
+		match="$(compgen -G "${WORK_DIR}/out/${pattern}" 2>/dev/null | head -n 1 || true)"
+		if [[ -n "${match}" && -f "${match}" ]]; then
+			SOURCE_FILE="${match}"
+			echo ">>> Matched initramfs pattern '${pattern}' -> ${SOURCE_FILE}"
+			break
+		fi
+	done
+	if [[ -z "${SOURCE_FILE}" ]]; then
+		echo "::error::BUILD_INITRAMFS=1 (IMAGE_FORMAT=${IMAGE_FORMAT}) was set but no initramfs artifact found in ${WORK_DIR}/out." >&2
+		echo "The mkimage repack step likely failed silently. /work/out contents:" >&2
+		find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
+		exit 1
+	fi
 else
-  for pattern in \
-    "*${PROFILE}*-squashfs-sysupgrade.itb" \
-    "*${PROFILE}*-squashfs-sysupgrade.bin" \
-    "*${PROFILE}*-sysupgrade.bin"; do
-    match="$(compgen -G "${WORK_DIR}/out/${pattern}" 2>/dev/null | head -n 1 || true)"
-    if [[ -n "${match}" && -f "${match}" ]]; then
-      SOURCE_FILE="${match}"
-      echo ">>> Matched sysupgrade pattern '${pattern}' -> ${SOURCE_FILE} (build-image-only target, not TFTP-booted)"
-      break
-    fi
-  done
-  if [[ -z "${SOURCE_FILE}" ]]; then
-    echo "::error::No sysupgrade artifact found for ${PROFILE} despite a successful make image." >&2
-    find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
-    exit 1
-  fi
+	for pattern in \
+		"*${PROFILE}*-squashfs-sysupgrade.itb" \
+		"*${PROFILE}*-squashfs-sysupgrade.bin" \
+		"*${PROFILE}*-sysupgrade.bin"; do
+		match="$(compgen -G "${WORK_DIR}/out/${pattern}" 2>/dev/null | head -n 1 || true)"
+		if [[ -n "${match}" && -f "${match}" ]]; then
+			SOURCE_FILE="${match}"
+			echo ">>> Matched sysupgrade pattern '${pattern}' -> ${SOURCE_FILE} (build-image-only target, not TFTP-booted)"
+			break
+		fi
+	done
+	if [[ -z "${SOURCE_FILE}" ]]; then
+		echo "::error::No sysupgrade artifact found for ${PROFILE} despite a successful make image." >&2
+		find "${WORK_DIR}/out" -type f -printf '  %p (%s bytes)\n' >&2 || true
+		exit 1
+	fi
 fi
 
 if [[ "${IMAGE_FORMAT}" == "x86-combined" ]]; then
-  EXTENSION="img"
+	EXTENSION="img"
 else
-  EXTENSION="${SOURCE_FILE##*.}"
+	EXTENSION="${SOURCE_FILE##*.}"
 fi
 TARGET_FILE="${OUTPUT_DIR}/firmware-${DEVICE_NAME}.${EXTENSION}"
 cp "${SOURCE_FILE}" "${TARGET_FILE}"
@@ -839,5 +842,5 @@ MANIFEST_TARGET="${OUTPUT_DIR}/firmware-${DEVICE_NAME}.manifest"
 cp "${MANIFEST_FILE}" "${MANIFEST_TARGET}"
 
 echo ">>> Firmware output: ${TARGET_FILE} ($(stat -c%s "${TARGET_FILE}") bytes)"
-echo ">>> Manifest output: ${MANIFEST_TARGET} ($(wc -l < "${MANIFEST_TARGET}") packages)"
+echo ">>> Manifest output: ${MANIFEST_TARGET} ($(wc -l <"${MANIFEST_TARGET}") packages)"
 echo ">>> Firmware sha256: $(sha256sum "${TARGET_FILE}" | cut -d' ' -f1)"

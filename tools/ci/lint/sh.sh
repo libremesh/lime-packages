@@ -13,18 +13,18 @@ is_initscript() {
 
 local="$1"
 if [ "$local" != "" ]; then
-    if [ -d "./${local}" ]; then
-        find "./${local}" -type f | while read -r file; do
-            is_scriptfile "$file" || continue
+	if [ -d "./${local}" ]; then
+		find "./${local}" -type f | while read -r file; do
+			is_scriptfile "$file" || continue
 
-            echo "Checking $file"
-            shellcheck -f gcc "$file"
-        done
-    elif [ -f "./${local}" ]; then
-        echo "Checking $local"
-        shellcheck -f gcc "$local"
-    fi
-    return
+			echo "Checking $file"
+			shellcheck -f gcc "$file"
+		done
+	elif [ -f "./${local}" ]; then
+		echo "Checking $local"
+		shellcheck -f gcc "$local"
+	fi
+	return
 fi
 
 find tools -type f | while read -r file; do

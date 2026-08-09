@@ -4,9 +4,8 @@
 uci set dhcp.@dnsmasq[0].serversfile=/var/shared-state/dnsmasq_servers
 uci commit dhcp
 
-unique_append()
-{
-	grep -qF "$1" "$2" || echo "$1" >> "$2"
+unique_append() {
+	grep -qF "$1" "$2" || echo "$1" >>"$2"
 }
 
 unique_append \

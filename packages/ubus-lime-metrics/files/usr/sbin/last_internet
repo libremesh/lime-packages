@@ -1,37 +1,37 @@
 #!/bin/sh
 
 # TO DO:
- # This script needs some volunteer work
- # It currently gets the path through babeld, 
- # but it should actually be able to detect any protocol is being used and 
- # use a strategy for each case.
+# This script needs some volunteer work
+# It currently gets the path through babeld,
+# but it should actually be able to detect any protocol is being used and
+# use a strategy for each case.
 
 result=''
 # if 8.8.8.8 is accessible, print internet path
 if check-internet; then
-    if [ -f '/etc/init.d/babeld' ]; then
-        path=''
-        for ip in $(mtr -4 -r --no-dns -c1 8.8.8.8 | grep "\.|" |  awk '{ print $2}' | grep '^10\.'); do
-            name=$(nslookup "$ip" | grep name | cut -d '=' -f 2 | sed "s/ //" | cut -d '.' -f 1)
-            if [ "$name" = "" ]; then
-                name=$(wget --no-check-certificate "http://$ip/cgi-bin/hostname" -qO -)
-            fi
-            path="$path,{\"ip\":\"$ip\",\"hostname\":\"$name\"}"
-        done
-        result="[${path#?}]"
-    fi
+	if [ -f '/etc/init.d/babeld' ]; then
+		path=''
+		for ip in $(mtr -4 -r --no-dns -c1 8.8.8.8 | grep "\.|" | awk '{ print $2}' | grep '^10\.'); do
+			name=$(nslookup "$ip" | grep name | cut -d '=' -f 2 | sed "s/ //" | cut -d '.' -f 1)
+			if [ "$name" = "" ]; then
+				name=$(wget --no-check-certificate "http://$ip/cgi-bin/hostname" -qO -)
+			fi
+			path="$path,{\"ip\":\"$ip\",\"hostname\":\"$name\"}"
+		done
+		result="[${path#?}]"
+	fi
 fi
 
 echo "$result"
 
-if [ -n "$result" ] && [ "$1" = "save" ] ; then
-    echo -n -e "$result" > /tmp/last_internet_path
-    newSum=$(md5sum /tmp/last_internet_path | cut -d' ' -f 1)
-    oldSum=$(md5sum /etc/last_internet_path | cut -d' ' -f 1)
-    if [ "$newSum" != "$oldSum" ]; then
-        echo -n -e "$result" > /etc/last_internet_path
-        logger 'Last path to internet updated'
-    else 
-        logger 'Last path to internet has no changed'
-    fi
+if [ -n "$result" ] && [ "$1" = "save" ]; then
+	echo -n -e "$result" >/tmp/last_internet_path
+	newSum=$(md5sum /tmp/last_internet_path | cut -d' ' -f 1)
+	oldSum=$(md5sum /etc/last_internet_path | cut -d' ' -f 1)
+	if [ "$newSum" != "$oldSum" ]; then
+		echo -n -e "$result" >/etc/last_internet_path
+		logger 'Last path to internet updated'
+	else
+		logger 'Last path to internet has no changed'
+	fi
 fi

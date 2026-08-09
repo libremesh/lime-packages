@@ -31,18 +31,14 @@
 # Argbash is FREE SOFTWARE, see https://argbash.io for more info
 # Generated online by https://argbash.io/generate
 
-
-die()
-{
+die() {
 	local _ret="${2:-1}"
 	test "${_PRINT_HELP:-no}" = yes && print_help >&2
 	echo "$1" >&2
 	exit "${_ret}"
 }
 
-
-begins_with_short_option()
-{
+begins_with_short_option() {
 	local first_option all_short_options='h'
 	first_option="${1:0:1}"
 	test "$all_short_options" = "${all_short_options/$first_option/}" && return 1 || return 0
@@ -60,9 +56,7 @@ _arg_verbose="off"
 _arg_rootfs=
 _arg_ramfs=
 
-
-print_help()
-{
+print_help() {
 	printf '%s\n' "Helper to run libremesh in a qemu x86_64 for development purposes"
 	printf 'Usage: %s [--libremesh-workdir <arg>] [--node-id <arg>] [--enable-wan <arg>] [--eth0 <arg>] [--eth2 <arg>] [--(no-)verbose] [-h|--help] <rootfs> <ramfs>\n' "$0"
 	printf '\t%s\n' "<rootfs>: Path to a x86-64-generic-rootfs.tar.gz"
@@ -76,93 +70,85 @@ print_help()
 	printf '\t%s\n' "-h, --help: Prints help"
 }
 
-
-parse_commandline()
-{
+parse_commandline() {
 	_positionals_count=0
-	while test $# -gt 0
-	do
+	while test $# -gt 0; do
 		_key="$1"
 		case "$_key" in
-			--libremesh-workdir)
-				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
-				_arg_libremesh_workdir="$2"
-				shift
-				;;
-			--libremesh-workdir=*)
-				_arg_libremesh_workdir="${_key##--libremesh-workdir=}"
-				;;
-			--node-id)
-				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
-				_arg_node_id="$2"
-				shift
-				;;
-			--node-id=*)
-				_arg_node_id="${_key##--node-id=}"
-				;;
-			--enable-wan)
-				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
-				_arg_enable_wan="$2"
-				shift
-				;;
-			--enable-wan=*)
-				_arg_enable_wan="${_key##--enable-wan=}"
-				;;
-			--eth0)
-				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
-				_arg_eth0="$2"
-				shift
-				;;
-			--eth0=*)
-				_arg_eth0="${_key##--eth0=}"
-				;;
-			--eth2)
-				test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
-				_arg_eth2="$2"
-				shift
-				;;
-			--eth2=*)
-				_arg_eth2="${_key##--eth2=}"
-				;;
-			--no-verbose|--verbose)
-				_arg_verbose="on"
-				test "${1:0:5}" = "--no-" && _arg_verbose="off"
-				;;
-			-h|--help)
-				print_help
-				exit 0
-				;;
-			-h*)
-				print_help
-				exit 0
-				;;
-			*)
-				_last_positional="$1"
-				_positionals+=("$_last_positional")
-				_positionals_count=$((_positionals_count + 1))
-				;;
+		--libremesh-workdir)
+			test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+			_arg_libremesh_workdir="$2"
+			shift
+			;;
+		--libremesh-workdir=*)
+			_arg_libremesh_workdir="${_key##--libremesh-workdir=}"
+			;;
+		--node-id)
+			test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+			_arg_node_id="$2"
+			shift
+			;;
+		--node-id=*)
+			_arg_node_id="${_key##--node-id=}"
+			;;
+		--enable-wan)
+			test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+			_arg_enable_wan="$2"
+			shift
+			;;
+		--enable-wan=*)
+			_arg_enable_wan="${_key##--enable-wan=}"
+			;;
+		--eth0)
+			test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+			_arg_eth0="$2"
+			shift
+			;;
+		--eth0=*)
+			_arg_eth0="${_key##--eth0=}"
+			;;
+		--eth2)
+			test $# -lt 2 && die "Missing value for the optional argument '$_key'." 1
+			_arg_eth2="$2"
+			shift
+			;;
+		--eth2=*)
+			_arg_eth2="${_key##--eth2=}"
+			;;
+		--no-verbose | --verbose)
+			_arg_verbose="on"
+			test "${1:0:5}" = "--no-" && _arg_verbose="off"
+			;;
+		-h | --help)
+			print_help
+			exit 0
+			;;
+		-h*)
+			print_help
+			exit 0
+			;;
+		*)
+			_last_positional="$1"
+			_positionals+=("$_last_positional")
+			_positionals_count=$((_positionals_count + 1))
+			;;
 		esac
 		shift
 	done
 }
 
-
-handle_passed_args_count()
-{
+handle_passed_args_count() {
 	local _required_args_string="'rootfs' and 'ramfs'"
 	test "${_positionals_count}" -ge 2 || _PRINT_HELP=yes die "FATAL ERROR: Not enough positional arguments - we require exactly 2 (namely: $_required_args_string), but got only ${_positionals_count}." 1
 	test "${_positionals_count}" -le 2 || _PRINT_HELP=yes die "FATAL ERROR: There were spurious positional arguments --- we expect exactly 2 (namely: $_required_args_string), but got ${_positionals_count} (the last one was: '${_last_positional}')." 1
 }
 
-
-assign_positional_args()
-{
+assign_positional_args() {
 	local _positional_name _shift_for=$1
 	_positional_names="_arg_rootfs _arg_ramfs "
 
 	shift "$_shift_for"
-	for _positional_name in ${_positional_names}
-	do
+	for _positional_name in ${_positional_names}; do
 		test $# -gt 0 || break
 		eval "$_positional_name=\${1}" || die "Error during argument parsing, possibly an Argbash bug." 1
 		shift
@@ -175,9 +161,8 @@ assign_positional_args 1 "${_positionals[@]}"
 
 #####################
 
-
 if [[ "$_arg_verbose" == "on" ]]; then
-    set -x
+	set -x
 fi
 
 BRIDGE_IFC="lime_br0"
@@ -195,36 +180,36 @@ OWN_LAN_IP="10.13.0.2/16"
 [ -n "${_arg_eth2}" ] && ETH2_IFC="${_arg_eth2}"
 
 if [[ -z "$_arg_eth0" ]]; then
-    if [ ! -e "/sys/class/net/$BRIDGE_IFC" ]; then
-        ip link add name "$BRIDGE_IFC" type bridge
-        ip link set "$BRIDGE_IFC" up
-        ip addr add "$OWN_LAN_IP" dev "$BRIDGE_IFC"
-    fi
+	if [ ! -e "/sys/class/net/$BRIDGE_IFC" ]; then
+		ip link add name "$BRIDGE_IFC" type bridge
+		ip link set "$BRIDGE_IFC" up
+		ip addr add "$OWN_LAN_IP" dev "$BRIDGE_IFC"
+	fi
 
-    if [ ! -e "/sys/class/net/$LAN_IFC" ]; then
-        # No IP for the tap LAN ifc
-        ip tuntap add name "$LAN_IFC" mode tap
-        ip link set "$LAN_IFC" up
-        ip link set "$LAN_IFC" master "$BRIDGE_IFC"
-    fi
+	if [ ! -e "/sys/class/net/$LAN_IFC" ]; then
+		# No IP for the tap LAN ifc
+		ip tuntap add name "$LAN_IFC" mode tap
+		ip link set "$LAN_IFC" up
+		ip link set "$LAN_IFC" master "$BRIDGE_IFC"
+	fi
 fi
 
 if [ -n "$_arg_enable_wan" ]; then
-    # WAN ifc
-    if [ ! -e "/sys/class/net/$WAN_IFC" ]; then
-        ip tuntap add name "$WAN_IFC" mode tap
-        ip addr add 172.99.0.1/24 dev "$WAN_IFC"
-        ip link set "$WAN_IFC" up
-    fi
+	# WAN ifc
+	if [ ! -e "/sys/class/net/$WAN_IFC" ]; then
+		ip tuntap add name "$WAN_IFC" mode tap
+		ip addr add 172.99.0.1/24 dev "$WAN_IFC"
+		ip link set "$WAN_IFC" up
+	fi
 
-    # DHCP server for WAN ifc
-    dnsmasq -F 172.99.0.100,172.99.0.100 --dhcp-option=3,172.99.0.1 -i "$WAN_IFC" --dhcp-authoritative --log-dhcp --port=5353 --bind-dynamic
+	# DHCP server for WAN ifc
+	dnsmasq -F 172.99.0.100,172.99.0.100 --dhcp-option=3,172.99.0.1 -i "$WAN_IFC" --dhcp-authoritative --log-dhcp --port=5353 --bind-dynamic
 
-    # enable forwarding and NAT
-    echo 1 > /proc/sys/net/ipv4/ip_forward
-    iptables -t nat -A POSTROUTING -o "$_arg_enable_wan" -j MASQUERADE
-    iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-    iptables -A FORWARD -i  "$WAN_IFC"  -o "$_arg_enable_wan" -j ACCEPT
+	# enable forwarding and NAT
+	echo 1 >/proc/sys/net/ipv4/ip_forward
+	iptables -t nat -A POSTROUTING -o "$_arg_enable_wan" -j MASQUERADE
+	iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+	iptables -A FORWARD -i "$WAN_IFC" -o "$_arg_enable_wan" -j ACCEPT
 fi
 
 # Convert the rootfs.tar.gz into a cpio file
@@ -237,50 +222,49 @@ tar xf "${_arg_rootfs}" -C "$temp_dir"
 # if a libremesh workdir is specified then we copy the files from the workdir
 # into the rootfs
 if [ "$_arg_libremesh_workdir" ]; then
-    # Copying the new lime overlay here
-    for package in "${_arg_libremesh_workdir}"/packages/*/files/*; do
-        cp -r "${package}" "$temp_dir"
-    done
+	# Copying the new lime overlay here
+	for package in "${_arg_libremesh_workdir}"/packages/*/files/*; do
+		cp -r "${package}" "$temp_dir"
+	done
 fi
 
 # quick hack used by qemu_cloud_start.yml ansible playbook
 [ -e "/tmp/lime_node_${NODE_ID}" ] && mv "/tmp/lime_node_${NODE_ID}" "${temp_dir}/etc/config/lime-node"
 
 # build the cpio
-( cd "/tmp/lime_rootfs_${NODE_ID}" && find . | cpio --quiet -o -H newc  > "/tmp/lime_rootfs_${NODE_ID}.cpio" )
+(cd "/tmp/lime_rootfs_${NODE_ID}" && find . | cpio --quiet -o -H newc >"/tmp/lime_rootfs_${NODE_ID}.cpio")
 
 MONITOR_PORT="454${NODE_ID}"
 
 qemu-system-x86_64 \
--m 128 \
--smp 1,sockets=1,cores=1,threads=1 \
--no-user-config \
--enable-kvm \
--nographic \
--nodefaults \
--no-reboot \
--kernel "${_arg_ramfs}" \
--initrd "/tmp/lime_rootfs_${NODE_ID}.cpio" \
--serial mon:stdio \
--monitor "telnet::${MONITOR_PORT},server,nowait" \
--netdev tap,id=hostnet0,ifname="${LAN_IFC}",script=no,downscript=no \
--device e1000,netdev=hostnet0,id=net0,mac="${LAN_MAC}",bus=pci.0,addr=0x3 \
--netdev tap,id=hostnet1,ifname="${WAN_IFC}",script=no,downscript=no \
--device e1000,netdev=hostnet1,id=net1,mac="${WAN_MAC}",bus=pci.0,addr=0x4 \
--netdev tap,id=hostnet2,ifname="${ETH2_IFC}",script=no,downscript=no \
--device e1000,netdev=hostnet2,id=net2,mac="${ETH2_MAC}",bus=pci.0,addr=0x5
-
+	-m 128 \
+	-smp 1,sockets=1,cores=1,threads=1 \
+	-no-user-config \
+	-enable-kvm \
+	-nographic \
+	-nodefaults \
+	-no-reboot \
+	-kernel "${_arg_ramfs}" \
+	-initrd "/tmp/lime_rootfs_${NODE_ID}.cpio" \
+	-serial mon:stdio \
+	-monitor "telnet::${MONITOR_PORT},server,nowait" \
+	-netdev tap,id=hostnet0,ifname="${LAN_IFC}",script=no,downscript=no \
+	-device e1000,netdev=hostnet0,id=net0,mac="${LAN_MAC}",bus=pci.0,addr=0x3 \
+	-netdev tap,id=hostnet1,ifname="${WAN_IFC}",script=no,downscript=no \
+	-device e1000,netdev=hostnet1,id=net1,mac="${WAN_MAC}",bus=pci.0,addr=0x4 \
+	-netdev tap,id=hostnet2,ifname="${ETH2_IFC}",script=no,downscript=no \
+	-device e1000,netdev=hostnet2,id=net2,mac="${ETH2_MAC}",bus=pci.0,addr=0x5
 
 # cleanup
 if [[ -z "$_arg_eth0" ]]; then
-    ip tuntap del name "${LAN_IFC}" mode tap
+	ip tuntap del name "${LAN_IFC}" mode tap
 fi
 
 if [ -n "$_arg_enable_wan" ]; then
 
-    ip tuntap del name "${WAN_IFC}" mode tap
+	ip tuntap del name "${WAN_IFC}" mode tap
 
-    # End dnsmasaq
-    kill -TERM "$(cat /var/run/dnsmasq.pid)"
+	# End dnsmasaq
+	kill -TERM "$(cat /var/run/dnsmasq.pid)"
 
 fi

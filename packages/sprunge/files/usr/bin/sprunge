@@ -6,8 +6,7 @@ TEMP_FILE="$(mktemp)"
 TEMP_FILE_ENCODED="$(mktemp)"
 COMMAND="$0 $*"
 
-usage()
-{
+usage() {
 	echo "\
 sprunge: Command line pastebin
 
@@ -21,29 +20,29 @@ $0; then EOF using Ctrl+D" 1>&2
 }
 
 case "${1}" in
-	"-h") usage ;;
-	"--help") usage ;;
-	"-c")
-		echo "${COMMAND}" > "${TEMP_FILE}"
-		eval "${2}" | tee -a "${TEMP_FILE}"
-		;;
-	"-f")
-		echo "${COMMAND}" > "${TEMP_FILE}"
-		tee -a "${TEMP_FILE}" < "${2}"
-		;;
-	*) tee <&0 "${TEMP_FILE}" ;;
+"-h") usage ;;
+"--help") usage ;;
+"-c")
+	echo "${COMMAND}" >"${TEMP_FILE}"
+	eval "${2}" | tee -a "${TEMP_FILE}"
+	;;
+"-f")
+	echo "${COMMAND}" >"${TEMP_FILE}"
+	tee -a "${TEMP_FILE}" <"${2}"
+	;;
+*) tee <&0 "${TEMP_FILE}" ;;
 esac
 
-hexdump -v -e '/1 "%02x"' "${TEMP_FILE}" \
-	| sed 's/\(..\)/%\1/g' > "${TEMP_FILE_ENCODED}"
+hexdump -v -e '/1 "%02x"' "${TEMP_FILE}" |
+	sed 's/\(..\)/%\1/g' >"${TEMP_FILE_ENCODED}"
 
 echo -n "POST / HTTP/1.0
 Host: ${SPRUNGE_HOST}
-Content-Length: $(( $(wc -m < "${TEMP_FILE_ENCODED}") + 8 ))
+Content-Length: $(($(wc -m <"${TEMP_FILE_ENCODED}") + 8))
 Content-Type: application/x-www-form-urlencoded
 
-sprunge=$(cat "${TEMP_FILE_ENCODED}")" \
-	| nc "${SPRUNGE_HOST}" 80 \
-	| grep "${SPRUNGE_HOST}" 1>&2
+sprunge=$(cat "${TEMP_FILE_ENCODED}")" |
+	nc "${SPRUNGE_HOST}" 80 |
+	grep "${SPRUNGE_HOST}" 1>&2
 
 rm -f "${TEMP_FILE}" "${TEMP_FILE_ENCODED}"

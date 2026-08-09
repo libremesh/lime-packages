@@ -8,26 +8,21 @@
 ##
 ## SPDX-License-Identifier: AGPL-3.0-only
 
-
 ## Define default value for variable, take two arguments, $1 variable name,
 ## $2 default variable value, if the variable is not already define define it
 ## with default value.
-define_default_value()
-{
+define_default_value() {
 	VAR_NAME="${1}"
 	DEFAULT_VALUE="${2}"
 
 	if [ -n "${VAR_NAME}" ]; then export "${VAR_NAME}"="${DEFAULT_VALUE}"; else true; fi
 }
 
-
 define_default_value OPENWRT_BUILD_DIR "$HOME/Builds/openwrt-apup/"
 define_default_value KCONFIG_UTILS_DIR "$HOME/Development/kconfig-utils/"
 define_default_value HOSTAPD_REPO_DIR "$HOME/Development/hostap/"
 define_default_value OPENWRT_REPO_DIR "$HOME/Development/openwrt/"
 define_default_value NETIFD_REPO_DIR "$HOME/Development/netifd/"
-
-
 
 cIface="usbe1"
 
@@ -46,26 +41,23 @@ verdeIP="fe80::ea94:f6ff:fe68:3364%$cIface"
 
 . "${KCONFIG_UTILS_DIR}/kconfig-utils.sh"
 
-fHostapdSourceTreeOverride()
-{
+fHostapdSourceTreeOverride() {
 	local mHostapdGitSrc="$OPENWRT_BUILD_DIR/package/network/services/hostapd/git-src"
 	rm -f "$mHostapdGitSrc"
 	ln -s "${HOSTAPD_REPO_DIR}/.git" "$mHostapdGitSrc"
 }
 
-fNetifdSourceTreeOverride()
-{
+fNetifdSourceTreeOverride() {
 	local mNetifdGitSrc="$OPENWRT_BUILD_DIR/package/network/config/netifd/git-src"
 	rm -f "$mNetifdGitSrc"
 	ln -s "$NETIFD_REPO_DIR/.git" "$mNetifdGitSrc"
 }
 
-fTestConf()
-{
+fTestConf() {
 	kconfig_set CONFIG_DEVEL
 	kconfig_set CONFIG_SRC_TREE_OVERRIDE
 
-#	fHostapdSourceTreeOverride
+	#	fHostapdSourceTreeOverride
 
 	fNetifdSourceTreeOverride
 
@@ -78,15 +70,14 @@ fTestConf()
 	kconfig_unset CONFIG_PACKAGE_kmod-pppox
 }
 
-fBuildDapX()
-{
+fBuildDapX() {
 	pushd "$OPENWRT_BUILD_DIR" || return
 
 	./scripts/feeds update -a
 	./scripts/feeds install -a
 
 	# Prepare firmware for D-Link DAP-X1860
-	echo "" > "$KCONFIG_CONFIG_PATH"
+	echo "" >"$KCONFIG_CONFIG_PATH"
 	kconfig_init_register
 
 	kconfig_set CONFIG_TARGET_ramips
@@ -102,19 +93,18 @@ fBuildDapX()
 
 	clean_hostapd
 
-	make -j $(($(nproc)-1))
+	make -j $(($(nproc) - 1))
 	popd || return
 }
 
-fBuildYouhua()
-{
+fBuildYouhua() {
 	pushd "$OPENWRT_BUILD_DIR" || return
 
 	./scripts/feeds update -a
 	./scripts/feeds install -a
 
 	# Prepare firmware for D-Link DAP-X1860
-	echo "" > "$KCONFIG_CONFIG_PATH"
+	echo "" >"$KCONFIG_CONFIG_PATH"
 	kconfig_init_register
 
 	kconfig_set CONFIG_TARGET_ramips
@@ -130,19 +120,18 @@ fBuildYouhua()
 
 	clean_hostapd
 
-	make -j $(($(nproc)-1))
+	make -j $(($(nproc) - 1))
 	popd || return
 }
 
-fBuildHlk()
-{
+fBuildHlk() {
 	pushd "$OPENWRT_BUILD_DIR" || return
 
 	./scripts/feeds update -a
 	./scripts/feeds install -a
 
 	# Prepare firmware for D-Link DAP-X1860
-	echo "" > "$KCONFIG_CONFIG_PATH"
+	echo "" >"$KCONFIG_CONFIG_PATH"
 	kconfig_init_register
 
 	kconfig_set CONFIG_TARGET_ramips
@@ -160,12 +149,11 @@ fBuildHlk()
 
 	clean_packages
 
-	make -j $(($(nproc)-1))
+	make -j $(($(nproc) - 1))
 	popd || return
 }
 
-dflash()
-{
+dflash() {
 	dDevice="$1"
 	dImage="$2"
 
@@ -185,19 +173,17 @@ dflash()
 }
 
 # Wait for a device to be ready after flashing
-dWait()
-{
+dWait() {
 	dAddress="$1"
 	mInterval="10s"
 	mTryMax="20"
 
-	mTest()
-	{
+	mTest() {
 		dUptime="$(ssh root@"$dAddress" cat /proc/uptime)"
 		[ "0$(echo "$dUptime" | awk -F. '{print $1}')" -gt "100" ]
 	}
 
-	for mTry in $(seq $mTryMax -1 1) ; do
+	for mTry in $(seq $mTryMax -1 1); do
 		if mTest; then return "$?"; else sleep "$mInterval" "$mTry"; fi
 	done
 
@@ -205,33 +191,31 @@ dWait()
 	return 1
 }
 
-wait_all()
-{
-#	dWait ${youhuaIpll}
-#	dWait ${dax1Ipll}
-#	return
+wait_all() {
+	#	dWait ${youhuaIpll}
+	#	dWait ${dax1Ipll}
+	#	return
 
-#	dWait ${hlk1Ipll}
-#	dWait ${hlk2Ipll}
-#	return
+	#	dWait ${hlk1Ipll}
+	#	dWait ${hlk2Ipll}
+	#	return
 
-#	dWait ${dax1Ipll}
-#	dWait ${dax2Ipll}
-#	return
+	#	dWait ${dax1Ipll}
+	#	dWait ${dax2Ipll}
+	#	return
 
 	dWait ${verdeIP}
-#	dWait ${neroIP}
-#	dWait ${bluIP}
-#	dWait ${bianco43IP}
+	#	dWait ${neroIP}
+	#	dWait ${bluIP}
+	#	dWait ${bianco43IP}
 }
 
-dConf()
-{
+dConf() {
 	dAddress="$1"
 	dHostName="$2"
 	dHostIPv4="$3"
 
-	cat << EOF | ssh root@"${dAddress}" uci batch
+	cat <<EOF | ssh root@"${dAddress}" uci batch
 
 	set system.@system[0].hostname="$dHostName"
 	set network.lan.ipaddr="$dHostIPv4"
@@ -266,108 +250,102 @@ EOF
 	ssh root@"${dAddress}" uci commit
 }
 
-conf_all()
-{
-#	dConf ${youhuaIpll} "OpenWrt-Youhua" "192.168.1.24"
-#	dConf ${dax1Ipll} "OpenWrt-Dax1" "192.168.1.16"
-#	return
+conf_all() {
+	#	dConf ${youhuaIpll} "OpenWrt-Youhua" "192.168.1.24"
+	#	dConf ${dax1Ipll} "OpenWrt-Dax1" "192.168.1.16"
+	#	return
 
-#	dConf ${hlk1Ipll} "OpenWrt-Hlk1" "169.254.145.20"
-#	dConf ${hlk2Ipll} "OpenWrt-Hlk2" "169.254.145.22"
-#	return
+	#	dConf ${hlk1Ipll} "OpenWrt-Hlk1" "169.254.145.20"
+	#	dConf ${hlk2Ipll} "OpenWrt-Hlk2" "169.254.145.22"
+	#	return
 
-#	dConf ${dax1Ipll} "OpenWrt-Dax1" "192.168.1.16"
-#	dConf ${dax2Ipll} "OpenWrt-Dax2" "192.168.1.18"
-#	return
+	#	dConf ${dax1Ipll} "OpenWrt-Dax1" "192.168.1.16"
+	#	dConf ${dax2Ipll} "OpenWrt-Dax2" "192.168.1.18"
+	#	return
 
 	dConf ${verdeIP} "OpenWrt-Verde" "192.168.1.4"
-#	dConf ${neroIP} "OpenWrt-nero" "192.168.1.10"
-#	dConf ${bluIP} "OpenWrt-blu" "192.168.1.8"
-#	dConf ${bianco43IP} "OpenWrt-bianco43" "192.168.1.12"
+	#	dConf ${neroIP} "OpenWrt-nero" "192.168.1.10"
+	#	dConf ${bluIP} "OpenWrt-blu" "192.168.1.8"
+	#	dConf ${bianco43IP} "OpenWrt-bianco43" "192.168.1.12"
 }
 
-flash_all()
-{
-#	dflash ${hlk1Ipll} "${OPENWRT_BUILD_DIR}/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-hilink_hlk-7621a-evb-squashfs-sysupgrade.bin"
-#	dflash ${hlk2Ipll} "${OPENWRT_BUILD_DIR}/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-hilink_hlk-7621a-evb-squashfs-sysupgrade.bin"
+flash_all() {
+	#	dflash ${hlk1Ipll} "${OPENWRT_BUILD_DIR}/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-hilink_hlk-7621a-evb-squashfs-sysupgrade.bin"
+	#	dflash ${hlk2Ipll} "${OPENWRT_BUILD_DIR}/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-hilink_hlk-7621a-evb-squashfs-sysupgrade.bin"
 
-#	dflash ${dax1Ipll} "${OPENWRT_BUILD_DIR}/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-dlink_dap-x1860-a1-squashfs-sysupgrade.bin"
-#	dflash ${dax2Ipll} "${OPENWRT_BUILD_DIR}/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-dlink_dap-x1860-a1-squashfs-sysupgrade.bin"
+	#	dflash ${dax1Ipll} "${OPENWRT_BUILD_DIR}/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-dlink_dap-x1860-a1-squashfs-sysupgrade.bin"
+	#	dflash ${dax2Ipll} "${OPENWRT_BUILD_DIR}/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-dlink_dap-x1860-a1-squashfs-sysupgrade.bin"
 
 	dflash ${verdeIP} "${OPENWRT_BUILD_DIR}/bin/targets/ath79/generic/openwrt-ath79-generic-tplink_tl-wdr3600-v1-squashfs-sysupgrade.bin"
-#	dflash ${neroIP} "${OPENWRT_BUILD_DIR}/bin/targets/ath79/generic/openwrt-ath79-generic-tplink_tl-wdr3600-v1-squashfs-sysupgrade.bin"
-#	dflash ${bluIP} "${OPENWRT_BUILD_DIR}/bin/targets/ath79/generic/openwrt-ath79-generic-tplink_tl-wdr3600-v1-squashfs-sysupgrade.bin"
-#	dflash ${bianco43IP} "${OPENWRT_BUILD_DIR}/bin/targets/ath79/generic/openwrt-ath79-generic-tplink_tl-wdr4300-v1-squashfs-sysupgrade.bin"
+	#	dflash ${neroIP} "${OPENWRT_BUILD_DIR}/bin/targets/ath79/generic/openwrt-ath79-generic-tplink_tl-wdr3600-v1-squashfs-sysupgrade.bin"
+	#	dflash ${bluIP} "${OPENWRT_BUILD_DIR}/bin/targets/ath79/generic/openwrt-ath79-generic-tplink_tl-wdr3600-v1-squashfs-sysupgrade.bin"
+	#	dflash ${bianco43IP} "${OPENWRT_BUILD_DIR}/bin/targets/ath79/generic/openwrt-ath79-generic-tplink_tl-wdr4300-v1-squashfs-sysupgrade.bin"
 
-#	dflash ${youhuaIpll} "${OPENWRT_BUILD_DIR}/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-youhua_wr1200js-squashfs-sysupgrade.bin"
+	#	dflash ${youhuaIpll} "${OPENWRT_BUILD_DIR}/bin/targets/ramips/mt7621/openwrt-ramips-mt7621-youhua_wr1200js-squashfs-sysupgrade.bin"
 
 	wait_all
 
 	conf_all
 
-#	ssh root@${hlk1Ipll} reboot
-#	ssh root@${hlk2Ipll} reboot
+	#	ssh root@${hlk1Ipll} reboot
+	#	ssh root@${hlk2Ipll} reboot
 
-#	ssh root@${dax1Ipll} reboot
-#	ssh root@${dax2Ipll} reboot
+	#	ssh root@${dax1Ipll} reboot
+	#	ssh root@${dax2Ipll} reboot
 
 	ssh root@${verdeIP} reboot
-#	ssh root@${neroIP} reboot
-#	ssh root@${bluIP} reboot
-#	ssh root@${bianco43IP} reboot
+	#	ssh root@${neroIP} reboot
+	#	ssh root@${bluIP} reboot
+	#	ssh root@${bianco43IP} reboot
 
-#	ssh root@${youhuaIpll} reboot
+	#	ssh root@${youhuaIpll} reboot
 }
 
-dev_packages_paths()
-{
+dev_packages_paths() {
 	echo package/feeds/libremesh/lime-system \
-	     package/feeds/libremesh/lime-proto-batadv \
-	     package/feeds/libremesh/lime-proto-babeld
+		package/feeds/libremesh/lime-proto-batadv \
+		package/feeds/libremesh/lime-proto-babeld
 
-#	     package/feeds/libremesh/lime-proto-anygw
+	#	     package/feeds/libremesh/lime-proto-anygw
 
-#	echo package/network/config/netifd
-#	     package/network/config/wifi-scripts \
-#	     package/network/services/hostapd
+	#	echo package/network/config/netifd
+	#	     package/network/config/wifi-scripts \
+	#	     package/network/services/hostapd
 }
 
-clean_packages()
-{
+clean_packages() {
 	pushd "$OPENWRT_BUILD_DIR" || return
 
-	for mPackagePath in $(dev_packages_paths) ; do
+	for mPackagePath in $(dev_packages_paths); do
 		make "$mPackagePath"/clean
 	done
 
 	popd || return
 }
 
-build_packages()
-{
+build_packages() {
 	clean_packages
 
 	pushd "$OPENWRT_BUILD_DIR" || return
 
 	for mPackagePath in $(dev_packages_paths); do
 		make "$mPackagePath"/compile ||
-		{
-			make "$mPackagePath"/compile -j1 V=sc
-			return 1
-		}
+			{
+				make "$mPackagePath"/compile -j1 V=sc
+				return 1
+			}
 	done
 
 	popd || return
 }
 
-upgrade_packages()
-{
+upgrade_packages() {
 	local dAddress="$1"
 	local dPkgArch="${2:-mipsel_24kc}"
 
 	local mInstalls=""
 
-	for mPackageName in $(dev_packages_paths) ; do
+	for mPackageName in $(dev_packages_paths); do
 		mPackageName="$(basename "$mPackageName")"
 		local mPkgPath
 		mPkgPath="$(find "$OPENWRT_BUILD_DIR/bin/packages/$dPkgArch/"*"/$mPackageName"*.ipk -type f | head -n 1)"
@@ -379,20 +357,19 @@ upgrade_packages()
 	ssh root@"${dAddress}" opkg install --force-reinstall "$mInstalls" && reboot
 }
 
-upgrade_packages_all()
-{
-#	upgrade_packages ${hlk1Ipll}
-#	upgrade_packages ${hlk2Ipll}
+upgrade_packages_all() {
+	#	upgrade_packages ${hlk1Ipll}
+	#	upgrade_packages ${hlk2Ipll}
 
-#	upgrade_packages ${dax1Ipll}
-#	upgrade_packages ${dax2Ipll}
+	#	upgrade_packages ${dax1Ipll}
+	#	upgrade_packages ${dax2Ipll}
 
 	upgrade_packages $verdeIP mips_24kc
-#	upgrade_packages ${neroIP} mips_24kc
-#	upgrade_packages $bluIP mips_24kc
-#	upgrade_packages ${bianco43IP} mips_24kc
+	#	upgrade_packages ${neroIP} mips_24kc
+	#	upgrade_packages $bluIP mips_24kc
+	#	upgrade_packages ${bianco43IP} mips_24kc
 
-#	upgrade_packages ${youhuaIpll}
+	#	upgrade_packages ${youhuaIpll}
 
 	sleep 5s
 
@@ -401,18 +378,19 @@ upgrade_packages_all()
 
 errcho() { >&2 echo "$@"; }
 
-dTestMulticast()
-{
+dTestMulticast() {
 	local dAddress="$1"
 
-	[ "0$(ssh root@"${dAddress}" ping6 -c 4 ff02::1%phy0-ap0.sta1 | \
+	[ "0$(ssh root@"${dAddress}" ping6 -c 4 ff02::1%phy0-ap0.sta1 |
 		grep duplicates | awk '{print $7}')" -gt "1" ] ||
-		{ errcho dTestMulticast "$dAddress" Failed ; return 1 ; }
+		{
+			errcho dTestMulticast "$dAddress" Failed
+			return 1
+		}
 	errcho dTestMulticast "$dAddress" Success
 }
 
-dTestIperf3()
-{
+dTestIperf3() {
 	local clientAddress="$1"
 	local servAddress="$2"
 	local servIfaceAddress="$3"
@@ -421,15 +399,14 @@ dTestIperf3()
 	ssh root@"${clientAddress}" iperf3 -c "$servIfaceAddress"
 }
 
-dTestUbusDev()
-{
+dTestUbusDev() {
 	local dAddress="$1"
 
-#	ssh root@${dAddress} reboot ; sleep 10
+	#	ssh root@${dAddress} reboot ; sleep 10
 
-#	dWait ${dAddress}
+	#	dWait ${dAddress}
 
-	ssh root@"${dAddress}" << REMOTE_HOST_EOS
+	ssh root@"${dAddress}" <<REMOTE_HOST_EOS
 	ubus call network add_dynamic_device '{"name":"wlan0_peer1_47", "type":"8021ad", "ifname":"wlan0.peer1", "vid":"47"}'
 	ubus call network add_dynamic '{"name":"wlan0_peer1_47", "proto":"static", "auto":1, "device":"nomestru", "ipaddr":"169.254.145.20", "netmask":"255.255.255.255"}'
 	ubus call network.interface.wlan0_peer1_47 up
@@ -439,8 +416,7 @@ dTestUbusDev()
 REMOTE_HOST_EOS
 }
 
-DO_NOT_CALL_prepareHostapdChangesForSubmission()
-{
+DO_NOT_CALL_prepareHostapdChangesForSubmission() {
 	# Just a bunch of commands I used, not a proper the commands
 	# requires developer interaction
 	# See https://openwrt.org/docs/guide-developer/toolchain/use-patches-with-buildsystem
@@ -457,8 +433,8 @@ DO_NOT_CALL_prepareHostapdChangesForSubmission()
 	quilt push -a
 
 	mLastIndex="$(quilt series | tail -n 1 | awk -F- '{print $1}')"
-	for mPatch in "$HOSTAPD_REPO_DIR"/*.patch ; do
-		mLastIndex="$((mLastIndex+10))"
+	for mPatch in "$HOSTAPD_REPO_DIR"/*.patch; do
+		mLastIndex="$((mLastIndex + 10))"
 		mNewPatchPath="/tmp/$mLastIndex-$(basename "$mPatch" | cut -c 6-)"
 		mv "$mPatch" "$mNewPatchPath"
 		quilt import "$mNewPatchPath"
@@ -471,7 +447,6 @@ DO_NOT_CALL_prepareHostapdChangesForSubmission()
 
 	make package/network/services/hostapd/update V=s
 	make package/network/services/hostapd/refresh V=s
-
 
 	popd || return
 }
@@ -492,7 +467,6 @@ upgrade_packages_all
 #conf_all
 
 #dTestUbusDev ${verdeIP}
-
 
 #dTestMulticast ${dax1Ipll}
 #dTestMulticast ${dax2Ipll}

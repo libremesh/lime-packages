@@ -9,7 +9,10 @@ USE_PROCD=1
 PROG=/usr/bin/watchping
 
 append_string() {
-	local varname="$1"; local add="$2"; local separator="${3:- }"; local actual
+	local varname="$1"
+	local add="$2"
+	local separator="${3:- }"
+	local actual
 	eval "actual=\$$varname"
 
 	new="${actual:+$actual$separator}$add"
@@ -20,11 +23,11 @@ timetoseconds() {
 	local time="$1"
 	unset seconds
 
-	{ [ "$time" -ge 1 ] 2> /dev/null && seconds="$time"; } || \
-	{ [ "${time%s}" -ge 1 ] 2> /dev/null && seconds="${time%s}"; } || \
-	{ [ "${time%m}" -ge 1 ] 2> /dev/null && seconds=$((${time%m}*60)); } || \
-	{ [ "${time%h}" -ge 1 ] 2> /dev/null && seconds=$((${time%h}*3600)); } || \
-	{ [ "${time%d}" -ge 1 ] 2> /dev/null && seconds=$((${time%d}*86400)); }
+	{ [ "$time" -ge 1 ] 2>/dev/null && seconds="$time"; } ||
+		{ [ "${time%s}" -ge 1 ] 2>/dev/null && seconds="${time%s}"; } ||
+		{ [ "${time%m}" -ge 1 ] 2>/dev/null && seconds=$((${time%m} * 60)); } ||
+		{ [ "${time%h}" -ge 1 ] 2>/dev/null && seconds=$((${time%h} * 3600)); } ||
+		{ [ "${time%d}" -ge 1 ] 2>/dev/null && seconds=$((${time%d} * 86400)); }
 }
 
 load_watchping() {
@@ -33,11 +36,11 @@ load_watchping() {
 	local pinghosts
 	local pinginterval
 
-	config_get interface	"$1" interface
-	config_get timeout	"$1" timeout
-	config_get pinghosts	"$1" pinghosts	"8.8.8.8"
-	config_get pinginterval	"$1" pinginterval
-	
+	config_get interface "$1" interface
+	config_get timeout "$1" timeout
+	config_get pinghosts "$1" pinghosts "8.8.8.8"
+	config_get pinginterval "$1" pinginterval
+
 	error=""
 
 	ifname="$(uci_get_state network "$interface" ifname)"
@@ -54,27 +57,30 @@ load_watchping() {
 
 	timetoseconds "$timeout"
 	timeout="$seconds"
-	[ "$timeout" -ge 1 ] \
-		|| append_string "error" 'timeout is not a valid time value (ex: "30"; "4m"; "6h"; "2d")' "; "
-	[ -n "$pinghosts" ] \
-		|| append_string "error" "pinghosts must be set" "; "
-	if [ -n "$pinginterval" ] ;	then
+	[ "$timeout" -ge 1 ] ||
+		append_string "error" 'timeout is not a valid time value (ex: "30"; "4m"; "6h"; "2d")' "; "
+	[ -n "$pinghosts" ] ||
+		append_string "error" "pinghosts must be set" "; "
+	if [ -n "$pinginterval" ]; then
 		timetoseconds "$pinginterval"
 		pinginterval="$seconds"
-		if [ "$pinginterval" -ge 0 ] ; then
-			[ "$pinginterval" -le "$timeout" ] \
-				|| append_string "error" "pinginterval must be less than timeout" "; "
+		if [ "$pinginterval" -ge 0 ]; then
+			[ "$pinginterval" -le "$timeout" ] ||
+				append_string "error" "pinginterval must be less than timeout" "; "
 		else
 			append_string "error" 'pinginterval is not a valid time value (ex: "30"; "4m"; "6h"; "2d")' "; "
 		fi
 	else
-		pinginterval="$((timeout/20))"
+		pinginterval="$((timeout / 20))"
 	fi
-	
-	[ "$pinginterval" -le "$timeout" ] \
-		|| append_string "error" "pinginterval is not recognised" "; "
 
-	[ -n "$error" ] && { logger -p user.err -t "watchping" "daemon $1 not started - $error"; return; }
+	[ "$pinginterval" -le "$timeout" ] ||
+		append_string "error" "pinginterval is not recognised" "; "
+
+	[ -n "$error" ] && {
+		logger -p user.err -t "watchping" "daemon $1 not started - $error"
+		return
+	}
 
 	procd_open_instance
 	procd_set_param command $PROG "$ifname" "$timeout" "$pinghosts" "$pinginterval" "$interface"
@@ -86,8 +92,7 @@ load_watchping() {
 
 start_service() {
 	config_load system
-	if [ -n "$(uci show system.@watchping[0])" ] # at least one watchping section exists
-	then
+	if [ -n "$(uci show system.@watchping[0])" ]; then # at least one watchping section exists
 		logger -p user.info -t "watchping" "starting all tasks"
 		config_foreach load_watchping watchping
 		logger -p user.info -t "watchping" "all tasks started"
