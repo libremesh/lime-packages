@@ -8,33 +8,37 @@ local iwinfo = require("iwinfo")
 
 local wireless = {}
 
-wireless.limeIfNamePrefix="lm_"
+wireless.limeIfNamePrefix = "lm_"
 
 function wireless.WIFI_MODE_SEPARATOR()
 	return "-"
 end
 
 function wireless.get_phy_mac(phy)
-	local path = "/sys/class/ieee80211/"..phy.."/macaddress"
-	local mac = assert(fs.readfile(path), "wireless.get_phy_mac(..) failed reading: "..path):gsub("\n","")
+	local path = "/sys/class/ieee80211/" .. phy .. "/macaddress"
+	local mac = assert(fs.readfile(path), "wireless.get_phy_mac(..) failed reading: " .. path):gsub("\n", "")
 	return utils.split(mac, ":")
 end
 
 function wireless.clean()
 	utils.log("Clearing wireless config...")
 	local uci = config.get_uci_cursor()
-	uci:foreach("wireless", "wifi-iface", function(s) uci:delete("wireless", s[".name"]) end)
+	uci:foreach("wireless", "wifi-iface", function(s)
+		uci:delete("wireless", s[".name"])
+	end)
 	uci:save("wireless")
 end
 
 function wireless.scandevices()
 	local devices = {}
 	local uci = config.get_uci_cursor()
-	uci:foreach("wireless", "wifi-device", function(dev) devices[dev[".name"]] = dev end)
+	uci:foreach("wireless", "wifi-device", function(dev)
+		devices[dev[".name"]] = dev
+	end)
 
 	local sorted_devices = {}
 	for _, dev in pairs(devices) do
-		table.insert(sorted_devices, utils.indexFromName(dev[".name"])+1, dev)
+		table.insert(sorted_devices, utils.indexFromName(dev[".name"]) + 1, dev)
 	end
 
 	local band_2ghz_index = 0
@@ -54,12 +58,14 @@ end
 
 function wireless.is5Ghz(radio)
 	local uci = config.get_uci_cursor()
-	local wifi_band = uci:get('wireless', radio, 'band')
-	if wifi_band then return wifi_band=='5g' end
-	local wifi_channel = uci:get('wireless', radio, 'channel')
+	local wifi_band = uci:get("wireless", radio, "band")
+	if wifi_band then
+		return wifi_band == "5g"
+	end
+	local wifi_channel = uci:get("wireless", radio, "channel")
 	if tonumber(wifi_channel) then
 		wifi_channel = tonumber(wifi_channel)
-		return 32<=wifi_channel and wifi_channel<178
+		return 32 <= wifi_channel and wifi_channel < 178
 	end
 	local backend = iwinfo.type(radio)
 	local devModes = backend and iwinfo[backend].hwmodelist(radio)
@@ -68,14 +74,16 @@ end
 
 function wireless.is6Ghz(radio)
 	local uci = config.get_uci_cursor()
-	local wifi_band = uci:get('wireless', radio, 'band')
-	if wifi_band then return wifi_band=='6g' end
+	local wifi_band = uci:get("wireless", radio, "band")
+	if wifi_band then
+		return wifi_band == "6g"
+	end
 	return false
 end
 
 function wireless.getRadioBand(radioName)
 	if wireless.is5Ghz(radioName) then
-		return '5ghz'
+		return "5ghz"
 	end
 	if wireless.is6Ghz(radioName) then
 		--! currently untested and reserved for indoor use
@@ -83,18 +91,18 @@ function wireless.getRadioBand(radioName)
 		--! TODO: test 6g band and decide a path forward with
 		local uci = config.get_uci_cursor()
 		uci:set("wireless", radioName, "band", "5g")
-		return '5ghz'
+		return "5ghz"
 	end
-	return '2ghz'
+	return "2ghz"
 end
 
-wireless.availableModes = { adhoc=true, ap=true, apname=true, apbb=true, apup=true, ieee80211s=true }
+wireless.availableModes = { adhoc = true, ap = true, apname = true, apbb = true, apup = true, ieee80211s = true }
 function wireless.isMode(m)
 	return wireless.availableModes[m]
 end
 
 function wireless.is_mesh(iface)
-	return iface.mode == 'mesh' or iface.mode == 'adhoc'
+	return iface.mode == "mesh" or iface.mode == "adhoc"
 end
 
 function wireless.mesh_ifaces()
@@ -102,10 +110,10 @@ function wireless.mesh_ifaces()
 	local ifaces = {}
 
 	uci:foreach("wireless", "wifi-iface", function(entry)
-			if entry.disabled ~= '1' and wireless.is_mesh(entry) then
-				table.insert(ifaces, entry.ifname)
-			end
-		end)
+		if entry.disabled ~= "1" and wireless.is_mesh(entry) then
+			table.insert(ifaces, entry.ifname)
+		end
+	end)
 	--! add apup interfaces
 	--! this are not listed in uci
 	local shell_output = utils.unsafe_shell("ls /sys/class/net/ -R")
@@ -113,9 +121,9 @@ function wireless.mesh_ifaces()
 		for line in shell_output:gmatch("[^\n]+") do
 			--! Check if the line contains the pattern 'wlanX-peerY'
 			local apup = require("lime.mode.apup")
-			local iface = line:match("wlan(%d+)-"..apup.PEER_SUFFIX().."(%d+)$")
+			local iface = line:match("wlan(%d+)-" .. apup.PEER_SUFFIX() .. "(%d+)$")
 			if iface then
-			--! Add the matched interface to the table
+				--! Add the matched interface to the table
 				table.insert(ifaces, line)
 			end
 		end
@@ -128,28 +136,28 @@ function wireless.get_radio_ifaces(radio)
 	local ifaces = {}
 
 	uci:foreach("wireless", "wifi-iface", function(entry)
-			if entry.disabled ~= '1' and entry.device == radio then
-				table.insert(ifaces, entry)
-			end
-		end)
+		if entry.disabled ~= "1" and entry.device == radio then
+			table.insert(ifaces, entry)
+		end
+	end)
 	return ifaces
 end
 
 function wireless.calcIfname(radioName, mode, nameSuffix)
 	local phyIndex = tostring(utils.indexFromName(radioName))
-	return "wlan"..phyIndex..wireless.WIFI_MODE_SEPARATOR()..mode..nameSuffix
+	return "wlan" .. phyIndex .. wireless.WIFI_MODE_SEPARATOR() .. mode .. nameSuffix
 end
 
 function wireless.createBaseWirelessIface(radio, mode, nameSuffix, extras)
---! checks("table", "string", "?string", "?table")
---! checks(...) come from http://lua-users.org/wiki/LuaTypeChecking -> https://github.com/fab13n/checks
+	--! checks("table", "string", "?string", "?table")
+	--! checks(...) come from http://lua-users.org/wiki/LuaTypeChecking -> https://github.com/fab13n/checks
 	nameSuffix = nameSuffix or ""
 	local radioName = radio[".name"]
 	local ifname = wireless.calcIfname(radioName, mode, nameSuffix)
 	--! sanitize generated ifname for constructing uci section name
 	--! because only alphanumeric and underscores are allowed
-	local wirelessInterfaceName = wireless.limeIfNamePrefix..ifname:gsub("[^%w_]", "_").."_"..radioName
-	local networkInterfaceName = network.limeIfNamePrefix..ifname:gsub("[^%w_]", "_")
+	local wirelessInterfaceName = wireless.limeIfNamePrefix .. ifname:gsub("[^%w_]", "_") .. "_" .. radioName
+	local networkInterfaceName = network.limeIfNamePrefix .. ifname:gsub("[^%w_]", "_")
 
 	local uci = config.get_uci_cursor()
 
@@ -184,7 +192,7 @@ function wireless.configure()
 	end)
 
 	local allRadios = wireless.scandevices()
-	for _,radio in pairs(allRadios) do
+	for _, radio in pairs(allRadios) do
 		local radioName = radio[".name"]
 		local radioBand = wireless.getRadioBand(radioName)
 		local radioOptions = specificRadios[radioName] or {}
@@ -213,36 +221,44 @@ function wireless.configure()
 			uci:set("wireless", radioName, "distance", wireless.get_distance(radioName, options))
 			uci:set("wireless", radioName, "noscan", 1)
 			uci:set("wireless", radioName, "channel", channel)
-			if options["country"] then uci:set("wireless", radioName, "country", options["country"]) end
+			if options["country"] then
+				uci:set("wireless", radioName, "country", options["country"])
+			end
 			if options["legacy_rates"] and not wireless.is5Ghz(radioName) then
 				uci:set("wireless", radioName, "legacy_rates", options["legacy_rates"])
 			end
-			if options["txpower"] then uci:set("wireless", radioName, "txpower", options["txpower"]) end
-			if options["htmode"] then uci:set("wireless", radioName, "htmode", options["htmode"]) end
+			if options["txpower"] then
+				uci:set("wireless", radioName, "txpower", options["txpower"])
+			end
+			if options["htmode"] then
+				uci:set("wireless", radioName, "htmode", options["htmode"])
+			end
 			uci:save("wireless")
 
-			for _,modeName in pairs(options["modes"]) do
+			for _, modeName in pairs(options["modes"]) do
 				local args = {}
-				local mode = require("lime.mode."..modeName)
+				local mode = require("lime.mode." .. modeName)
 
 				--! gather mode specific configs (eg ieee80211s_mcast_rate_5ghz)
-				for key,value in pairs(options) do
+				for key, value in pairs(options) do
 					local keyPrefix = utils.split(key, "_")[1]
-					local isGoodOption = ( (key ~= "modes")
-					                and (not key:match("^%."))
-					                and (not key:match("channel"))
-					                and (not key:match("country"))
-					                and (not key:match("legacy_rates"))
-					                and (not key:match("txpower"))
-					                and (not key:match("htmode"))
-					                and (not key:match("distance"))
-					                and (not key:match("unstuck_interval"))
-					                and (not key:match("unstuck_timeout"))
-					                and (not key:match("dynack"))
-					                and (not key:match("phy_macaddr"))
-					                and (not (wireless.isMode(keyPrefix) and keyPrefix ~= modeName)))
+					local isGoodOption = (
+						(key ~= "modes")
+						and (not key:match("^%."))
+						and (not key:match("channel"))
+						and (not key:match("country"))
+						and (not key:match("legacy_rates"))
+						and (not key:match("txpower"))
+						and (not key:match("htmode"))
+						and (not key:match("distance"))
+						and (not key:match("unstuck_interval"))
+						and (not key:match("unstuck_timeout"))
+						and (not key:match("dynack"))
+						and (not key:match("phy_macaddr"))
+						and not (wireless.isMode(keyPrefix) and keyPrefix ~= modeName)
+					)
 					if isGoodOption then
-						local nk = key:gsub("^"..modeName.."_", "")
+						local nk = key:gsub("^" .. modeName .. "_", "")
 						if nk == "ssid" then
 							value = wireless.resolve_ssid(value)
 						end
@@ -281,16 +297,16 @@ function wireless.add_band_mode(band, mode_name)
 	local uci = config.get_uci_cursor()
 	local cfg = wireless.get_band_config(band)
 	if not utils.has_value(cfg.modes, mode_name) then
-		local modes = uci:get(config.UCI_NODE_NAME, band, 'modes')
-		if not modes or modes[1] == 'manual' then
+		local modes = uci:get(config.UCI_NODE_NAME, band, "modes")
+		if not modes or modes[1] == "manual" then
 			modes = { mode_name }
 		else
 			table.insert(modes, mode_name)
 		end
-		uci:set(config.UCI_NODE_NAME, band, 'lime-wifi-band')
-		uci:set(config.UCI_NODE_NAME, band, 'modes', modes)
+		uci:set(config.UCI_NODE_NAME, band, "lime-wifi-band")
+		uci:set(config.UCI_NODE_NAME, band, "modes", modes)
 		uci:commit(config.UCI_NODE_NAME)
-		utils.unsafe_shell('lime-config')
+		utils.unsafe_shell("lime-config")
 	end
 end
 
@@ -305,23 +321,23 @@ function wireless.remove_band_mode(band, mode_name)
 			end
 		end
 		if utils.tableLength(new_modes) == 0 then
-			new_modes = {'manual'}
+			new_modes = { "manual" }
 		end
-		uci:set(config.UCI_NODE_NAME, band, 'lime-wifi-band')
-		uci:set(config.UCI_NODE_NAME, band, 'modes', new_modes)
+		uci:set(config.UCI_NODE_NAME, band, "lime-wifi-band")
+		uci:set(config.UCI_NODE_NAME, band, "modes", new_modes)
 		uci:commit(config.UCI_NODE_NAME)
-		utils.unsafe_shell('lime-config')
+		utils.unsafe_shell("lime-config")
 	end
 end
 
 function wireless.set_band_config(band, cfg)
 	local uci = config.get_uci_cursor()
-	uci:set(config.UCI_NODE_NAME, band, 'lime-wifi-band')
+	uci:set(config.UCI_NODE_NAME, band, "lime-wifi-band")
 	for key, value in pairs(cfg) do
 		uci:set(config.UCI_NODE_NAME, band, key, value)
 	end
 	uci:commit(config.UCI_NODE_NAME)
-	utils.unsafe_shell('lime-config')
+	utils.unsafe_shell("lime-config")
 end
 
 --! Check if the driver supports dynack.
@@ -329,19 +345,20 @@ end
 --! and save the result in lime-autogen i.e. lime-autogen.radio0.dynack=0
 --! Re run on the same phy when the macaddress has changed i.e. in case of plugging a different usb wireless adapter
 function wireless.is_distance_auto_available(radioName)
-	local phy = "phy"..utils.indexFromName(radioName)
-	local phy_mac =  utils.unsafe_shell("cat /sys/class/ieee80211/"..phy.."/macaddress 2>/dev/null"):gsub("\n","")
+	local phy = "phy" .. utils.indexFromName(radioName)
+	local phy_mac = utils.unsafe_shell("cat /sys/class/ieee80211/" .. phy .. "/macaddress 2>/dev/null"):gsub("\n", "")
 	local uci = config.get_uci_cursor()
 
 	uci:set(config.UCI_AUTOGEN_NAME, radioName, "wifi")
 	--! mac unchanged
-	if (phy_mac == uci:get(config.UCI_AUTOGEN_NAME, radioName, "phy_macaddr")) then
+	if phy_mac == uci:get(config.UCI_AUTOGEN_NAME, radioName, "phy_macaddr") then
 		if uci:get(config.UCI_AUTOGEN_NAME, radioName, "dynack") ~= nil then
 			return uci:get(config.UCI_AUTOGEN_NAME, radioName, "dynack")
 		end
 	end
 
-	local iw_cmd = utils.unsafe_shell("iw "..phy.." set distance auto 2>/dev/null; echo $(( $? == 0 ))"):gsub("\n","")
+	local iw_cmd =
+		utils.unsafe_shell("iw " .. phy .. " set distance auto 2>/dev/null; echo $(( $? == 0 ))"):gsub("\n", "")
 	uci:set(config.UCI_AUTOGEN_NAME, radioName, "phy_macaddr", phy_mac)
 	uci:set(config.UCI_AUTOGEN_NAME, radioName, "dynack", iw_cmd)
 	uci:commit(config.UCI_AUTOGEN_NAME)
@@ -352,23 +369,36 @@ end
 --! use the lime-defaults value as safer option than allowing to set "auto"
 --! which could lead to the minimum being applied at next reboot
 --! potentially compromising long distance wireless links.
-function wireless.apply_distance_auto_fallback(radioName,options)
-	if options["distance"] ~= "auto" then return options["distance"] end
+function wireless.apply_distance_auto_fallback(radioName, options)
+	if options["distance"] ~= "auto" then
+		return options["distance"]
+	end
 	local uci = config.get_uci_cursor()
 	local band = wireless.getRadioBand(radioName)
 	local distance_default = uci:get(config.UCI_DEFAULTS_NAME, band, "distance")
-	print('WARNING: wireless.get_distance: invalid "option distance \'auto\'" for '..band..' '..radioName..
-		'. Fallback to lime-defaults value: '.. distance_default)
+	print(
+		"WARNING: wireless.get_distance: invalid \"option distance 'auto'\" for "
+			.. band
+			.. " "
+			.. radioName
+			.. ". Fallback to lime-defaults value: "
+			.. distance_default
+	)
 	return distance_default
 end
 
 function wireless.get_distance(radioName, options)
 	--! distance auto requested or enforced
-	if (options["distance"] == "auto" or options["distance_use_auto_if_available"] == 'true') then
-		if wireless.is_distance_auto_available(radioName) == '1' then return "auto"
-		else return wireless.apply_distance_auto_fallback(radioName,options) end
+	if options["distance"] == "auto" or options["distance_use_auto_if_available"] == "true" then
+		if wireless.is_distance_auto_available(radioName) == "1" then
+			return "auto"
+		else
+			return wireless.apply_distance_auto_fallback(radioName, options)
+		end
 	--! distance set
-	else return options["distance"] end
+	else
+		return options["distance"]
+	end
 end
 
 return wireless

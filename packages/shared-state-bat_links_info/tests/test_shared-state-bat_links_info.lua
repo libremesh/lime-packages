@@ -1,13 +1,12 @@
-local utils = require "lime.utils"
-local network = require ("lime.network")
-local iwinfo = require "iwinfo"
+local utils = require("lime.utils")
+local network = require("lime.network")
+local iwinfo = require("iwinfo")
 
 package.path = package.path .. ";packages/shared-state-bat_links_info/files/usr/share/shared-state/publishers/?;;"
-local sspbli = require ("shared-state-publish_bat_links_info")
+local sspbli = require("shared-state-publish_bat_links_info")
 
-describe('Tests bat_links_info #bat_links_info', function ()
-
-    local oj_output = [[
+describe("Tests bat_links_info #bat_links_info", function()
+	local oj_output = [[
         [
             {
               "hard_ifindex": 28,
@@ -145,7 +144,7 @@ describe('Tests bat_links_info #bat_links_info', function ()
             }
           ]
         ]]
-    local nj_output = [[
+	local nj_output = [[
     [
         {
             "hard_ifindex": 26,
@@ -174,33 +173,37 @@ describe('Tests bat_links_info #bat_links_info', function ()
     ]
     ]]
 
-    stub(utils, "unsafe_shell", function (cmd)
-        if cmd == "batctl nj" then
-            return nj_output
-        elseif cmd == "batctl oj" then
-            return oj_output
-        end
-        return ""
-    end)
+	stub(utils, "unsafe_shell", function(cmd)
+		if cmd == "batctl nj" then
+			return nj_output
+		elseif cmd == "batctl oj" then
+			return oj_output
+		end
+		return ""
+	end)
 
-    stub(network, "get_mac", function (iface)
-        if string.match(iface, "wlan0") then
-            return iwinfo.mocks.wlan0_mesh_mac
-        end
-        return iwinfo.mocks.wlan1_mesh_mac
-    end)
+	stub(network, "get_mac", function(iface)
+		if string.match(iface, "wlan0") then
+			return iwinfo.mocks.wlan0_mesh_mac
+		end
+		return iwinfo.mocks.wlan1_mesh_mac
+	end)
 
-    it('a simple test to get node info and assert required fields are present', function()
-        local links_info = sspbli.get_bat_links_info()
-        assert.are.equal(string.lower(table.concat(iwinfo.mocks.wlan0_mesh_mac,":")),
-          links_info["025847462895c00000000000"].src_mac)
-        assert.are.equal(string.lower(table.concat(iwinfo.mocks.wlan1_mesh_mac,":")),
-          links_info["02ab46da4eaac00000010101"].src_mac)
-        assert.are.equal('02:58:47:da:4e:aa', links_info["025847da4eaac00000000000"].dst_mac)
-        assert.are.equal(1250, links_info["025847462895c00000000000"].last_seen_msecs)
-        assert.are.equal("wlan0-mesh_250", links_info["025847462895c00000000000"].iface)
-        assert.are.equal(222, links_info["025847462895c00000000000"].tq)
-        assert.are.equal(333, links_info["02ab46da4eaac00000010101"].tq)
-        assert.are.equal(444, links_info["02ab46462895c00000010101"].tq)
-    end)
+	it("a simple test to get node info and assert required fields are present", function()
+		local links_info = sspbli.get_bat_links_info()
+		assert.are.equal(
+			string.lower(table.concat(iwinfo.mocks.wlan0_mesh_mac, ":")),
+			links_info["025847462895c00000000000"].src_mac
+		)
+		assert.are.equal(
+			string.lower(table.concat(iwinfo.mocks.wlan1_mesh_mac, ":")),
+			links_info["02ab46da4eaac00000010101"].src_mac
+		)
+		assert.are.equal("02:58:47:da:4e:aa", links_info["025847da4eaac00000000000"].dst_mac)
+		assert.are.equal(1250, links_info["025847462895c00000000000"].last_seen_msecs)
+		assert.are.equal("wlan0-mesh_250", links_info["025847462895c00000000000"].iface)
+		assert.are.equal(222, links_info["025847462895c00000000000"].tq)
+		assert.are.equal(333, links_info["02ab46da4eaac00000010101"].tq)
+		assert.are.equal(444, links_info["02ab46462895c00000010101"].tq)
+	end)
 end)

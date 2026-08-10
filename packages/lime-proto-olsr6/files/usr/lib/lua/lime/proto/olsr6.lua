@@ -11,7 +11,9 @@ local olsr = {}
 olsr.configured = false
 
 function olsr.configure(args)
-	if olsr.configured then return end
+	if olsr.configured then
+		return
+	end
 	olsr.configured = true
 
 	local uci = libuci:cursor()
@@ -36,7 +38,9 @@ end
 
 function olsr.setup_interface(ifname, args)
 	if not args["specific"] then
-		if ifname:match("^wlan%d+.ap") then return end
+		if ifname:match("^wlan%d+.ap") then
+			return
+		end
 	end
 
 	--! ...e-proto-olsr6/files/usr/lib/lua/lime/proto/olsr6.lua:55: attempt to index global 'ipv6' (a nil value)

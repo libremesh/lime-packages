@@ -1,96 +1,95 @@
-local config = require 'lime.config'
-local test_utils = require 'tests.utils'
+local config = require("lime.config")
+local test_utils = require("tests.utils")
 
 -- disable logging in config module
 config.log = function() end
 
 local uci = nil
 
-describe('LiMe Config tests #limeconfig', function()
+describe("LiMe Config tests #limeconfig", function()
+	it("test get/set_uci_cursor", function()
+		local cursor = config.get_uci_cursor()
+		assert.are.equal(config.get_uci_cursor(), cursor)
+		config.set_uci_cursor("foo")
+		assert.is.equal("foo", config.get_uci_cursor())
+		--restore cursor
+		config.set_uci_cursor(cursor)
+	end)
 
-    it('test get/set_uci_cursor', function()
-        local cursor = config.get_uci_cursor()
-        assert.are.equal(config.get_uci_cursor(), cursor)
-        config.set_uci_cursor('foo')
-        assert.is.equal('foo', config.get_uci_cursor())
-        --restore cursor
-        config.set_uci_cursor(cursor)
-    end)
+	it("test empty get", function()
+		assert.is_nil(config.get("section_foo", "option_bar"))
+	end)
 
+	it("test simple get", function()
+		uci:set(config.UCI_CONFIG_NAME, "section_foo", "type_foo")
+		uci:set(config.UCI_CONFIG_NAME, "section_foo", "option_bar", "value")
+		assert.is.equal("value", config.get("section_foo", "option_bar"))
+	end)
 
-    it('test empty get', function()
-        assert.is_nil(config.get('section_foo', 'option_bar'))
-    end)
+	it("test get with fallback", function()
+		assert.is.equal("fallback", config.get("section_foo", "option_bar", "fallback"))
+	end)
 
-    it('test simple get', function()
-        uci:set(config.UCI_CONFIG_NAME, 'section_foo', 'type_foo')
-        uci:set(config.UCI_CONFIG_NAME, 'section_foo', 'option_bar', 'value')
-        assert.is.equal('value', config.get('section_foo', 'option_bar'))
-    end)
+	it("test get_bool", function()
+		for _, value in pairs({ "1", "on", "true", "enabled" }) do
+			uci:set(config.UCI_CONFIG_NAME, "foo", "type")
+			uci:set(config.UCI_CONFIG_NAME, "foo", "bar", value)
+			assert.is_true(config.get_bool("foo", "bar"))
+		end
 
-    it('test get with fallback', function()
-        assert.is.equal('fallback', config.get('section_foo', 'option_bar', 'fallback'))
-    end)
+		for _, value in pairs({ "0", "off", "anything", "false" }) do
+			uci:set(config.UCI_CONFIG_NAME, "foo", "type")
+			uci:set(config.UCI_CONFIG_NAME, "foo", "bar", value)
+			assert.is_false(config.get_bool("foo", "bar"))
+		end
+	end)
 
-    it('test get_bool', function()
-        for _, value in pairs({'1', 'on', 'true', 'enabled'}) do
-            uci:set(config.UCI_CONFIG_NAME, 'foo', 'type')
-            uci:set(config.UCI_CONFIG_NAME, 'foo', 'bar', value)
-            assert.is_true(config.get_bool('foo', 'bar'))
-        end
+	it("test set", function()
+		config.set("wlan0", "type")
+		config.set("wlan0", "htmode", "HT20")
+		assert.is.equal("HT20", config.get("wlan0", "htmode"))
+		assert.is.equal("HT20", uci:get(config.UCI_CONFIG_NAME, "wlan0", "htmode"))
+	end)
 
-        for _, value in pairs({'0', 'off', 'anything', 'false'}) do
-            uci:set(config.UCI_CONFIG_NAME, 'foo', 'type')
-            uci:set(config.UCI_CONFIG_NAME, 'foo', 'bar', value)
-            assert.is_false(config.get_bool('foo', 'bar'))
-        end
-    end)
+	it("test set nonstrings", function()
+		-- convert integers to strings
+		config.set("wifi", "type")
+		config.set("wifi", "foo", 1)
+		assert.is.equal("1", config.get("wifi", "foo"))
 
-    it('test set', function()
-        config.set('wlan0', 'type')
-        config.set('wlan0', 'htmode', 'HT20')
-        assert.is.equal('HT20', config.get('wlan0', 'htmode'))
-        assert.is.equal('HT20', uci:get(config.UCI_CONFIG_NAME, 'wlan0', 'htmode'))
-    end)
+		-- convert floats to strings
+		config.set("wifi", "foo", 1.9)
+		assert.is.equal("1.9", config.get("wifi", "foo"))
 
-    it('test set nonstrings', function()
-        -- convert integers to strings
-        config.set('wifi', 'type')
-        config.set('wifi', 'foo', 1)
-        assert.is.equal('1', config.get('wifi', 'foo'))
+		-- convert booleans to strings
+		config.set("wifi", "foo", false)
+		assert.is.equal("false", config.get("wifi", "foo"))
 
-        -- convert floats to strings
-        config.set('wifi', 'foo', 1.9)
-        assert.is.equal('1.9', config.get('wifi', 'foo'))
+		config.set("wifi", "foo", true)
+		assert.is.equal("true", config.get("wifi", "foo"))
+	end)
 
-        -- convert booleans to strings
-        config.set('wifi', 'foo', false)
-        assert.is.equal('false', config.get('wifi', 'foo'))
+	it("test get_all", function()
+		config.set("wifi", "type")
+		config.set("wifi", "wlan0", "0")
+		config.set("wifi", "wlan1", "1")
+		assert.is.equal("0", config.get_all("wifi").wlan0)
+		assert.is.equal("1", config.get_all("wifi").wlan1)
+	end)
 
-        config.set('wifi', 'foo', true)
-        assert.is.equal('true', config.get('wifi', 'foo'))
-    end)
+	it("test config.foreach only loading from config/lime", function()
+		uci:set("lime-defaults", "wifi", "type")
+		uci:set("lime-defaults", "wifi", "wlan0", "bar")
+		local results = {}
+		config.foreach("type", function(a)
+			table.insert(results, a)
+		end)
 
-    it('test get_all', function()
-        config.set('wifi', 'type')
-        config.set('wifi', 'wlan0', '0')
-        config.set('wifi', 'wlan1', '1')
-        assert.is.equal('0', config.get_all('wifi').wlan0)
-        assert.is.equal('1', config.get_all('wifi').wlan1)
-    end)
+		assert.is.equal(0, #results)
+	end)
 
-    it('test config.foreach only loading from config/lime', function()
-        uci:set('lime-defaults', 'wifi', 'type')
-        uci:set('lime-defaults', 'wifi', 'wlan0', 'bar')
-        local results = {}
-        config.foreach('type', function(a) table.insert(results, a) end)
-
-        assert.is.equal(0, #results)
-    end)
-
-    it('test config.uci_merge_files', function()
-
-        local high_prio = [[
+	it("test config.uci_merge_files", function()
+		local high_prio = [[
         config interface 'wan'
             option proto 'dhcp'
 
@@ -103,7 +102,7 @@ describe('LiMe Config tests #limeconfig', function()
             option proto 'static'
         ]]
 
-        local low_prio = [[
+		local low_prio = [[
         config interface 'wan'
             option proto    'static'
             option ifname   'eth0.1'
@@ -117,86 +116,83 @@ describe('LiMe Config tests #limeconfig', function()
             option proto 'static'
         ]]
 
-        test_utils.write_uci_file(uci, 'high_prio', high_prio)
-        test_utils.write_uci_file(uci, 'low_prio', low_prio)
+		test_utils.write_uci_file(uci, "high_prio", high_prio)
+		test_utils.write_uci_file(uci, "low_prio", low_prio)
 
-        -- create empty config (needed by uci)
-        test_utils.write_uci_file(uci, 'result', '')
+		-- create empty config (needed by uci)
+		test_utils.write_uci_file(uci, "result", "")
 
-        config.uci_merge_files('high_prio', 'low_prio', 'result')
+		config.uci_merge_files("high_prio", "low_prio", "result")
 
-        assert.is.equal('dhcp', uci:get('result', 'wan', 'proto'))
-        assert.is.equal('eth0.1', uci:get('result', 'wan', 'ifname'))
-        assert.are.same({'false'}, uci:get('result', 'wan', 'wan_list'))
+		assert.is.equal("dhcp", uci:get("result", "wan", "proto"))
+		assert.is.equal("eth0.1", uci:get("result", "wan", "ifname"))
+		assert.are.same({ "false" }, uci:get("result", "wan", "wan_list"))
 
-        assert.is.equal('dhcp', uci:get('result', 'lan', 'proto'))
-        assert.are.same({'eth0', 'eth1'}, uci:get('result', 'lan', 'lan_list'))
+		assert.is.equal("dhcp", uci:get("result", "lan", "proto"))
+		assert.are.same({ "eth0", "eth1" }, uci:get("result", "lan", "lan_list"))
 
-        assert.is.equal('static', uci:get('result', 'only_high', 'proto'))
-        assert.is.equal('static', uci:get('result', 'only_low', 'proto'))
+		assert.is.equal("static", uci:get("result", "only_high", "proto"))
+		assert.is.equal("static", uci:get("result", "only_low", "proto"))
 
-        local result = uci:get_all('result')
-        assert.is.equal('interface', result['lan']['.type'])
-    end)
+		local result = uci:get_all("result")
+		assert.is.equal("interface", result["lan"][".type"])
+	end)
 
-    it('test config.uci_autogen standard config', function()
-
-        local node = [[
+	it("test config.uci_autogen standard config", function()
+		local node = [[
         config interface 'wan'
             option proto 'dhcp'
         ]]
 
-        local network = [[
+		local network = [[
         config interface 'wan'
             option proto    'static'
         ]]
 
-        local defaults = [[
-        config interface 'wan'
-            option proto    'static'
-			option ifname    'eth0'
-        ]]
-
-        test_utils.write_uci_file(uci, config.UCI_NODE_NAME, node)
-        test_utils.write_uci_file(uci, config.UCI_COMMUNITY_NAME, network)
-		test_utils.write_uci_file(uci, config.UCI_DEFAULTS_NAME, defaults)
-
-		config.uci_autogen()
-
-		assert.is.equal('dhcp', config.get('wan', 'proto'))
-        assert.is.equal('eth0', config.get('wan', 'ifname'))
-    end)
-
-    it('test config.uci_autogen missing node', function()
-
-        local network = [[
-        config interface 'wan'
-            option proto    'dhcp'
-        ]]
-
-        local defaults = [[
+		local defaults = [[
         config interface 'wan'
             option proto    'static'
 			option ifname    'eth0'
         ]]
 
-        test_utils.write_uci_file(uci, config.UCI_COMMUNITY_NAME, network)
+		test_utils.write_uci_file(uci, config.UCI_NODE_NAME, node)
+		test_utils.write_uci_file(uci, config.UCI_COMMUNITY_NAME, network)
 		test_utils.write_uci_file(uci, config.UCI_DEFAULTS_NAME, defaults)
 
 		config.uci_autogen()
 
-		assert.is.equal('dhcp', config.get('wan', 'proto'))
-		assert.is.equal('eth0', config.get('wan', 'ifname'))
-    end)
+		assert.is.equal("dhcp", config.get("wan", "proto"))
+		assert.is.equal("eth0", config.get("wan", "ifname"))
+	end)
 
-    it('test config.uci_autogen missing network', function()
-
-        local node = [[
+	it("test config.uci_autogen missing node", function()
+		local network = [[
         config interface 'wan'
             option proto    'dhcp'
         ]]
 
-        local defaults = [[
+		local defaults = [[
+        config interface 'wan'
+            option proto    'static'
+			option ifname    'eth0'
+        ]]
+
+		test_utils.write_uci_file(uci, config.UCI_COMMUNITY_NAME, network)
+		test_utils.write_uci_file(uci, config.UCI_DEFAULTS_NAME, defaults)
+
+		config.uci_autogen()
+
+		assert.is.equal("dhcp", config.get("wan", "proto"))
+		assert.is.equal("eth0", config.get("wan", "ifname"))
+	end)
+
+	it("test config.uci_autogen missing network", function()
+		local node = [[
+        config interface 'wan'
+            option proto    'dhcp'
+        ]]
+
+		local defaults = [[
         config interface 'wan'
             option proto    'static'
 			option ifname    'eth0'
@@ -207,36 +203,35 @@ describe('LiMe Config tests #limeconfig', function()
 
 		config.uci_autogen()
 
-		assert.is.equal('dhcp', config.get('wan', 'proto'))
-		assert.is.equal('eth0', config.get('wan', 'ifname'))
-    end)
+		assert.is.equal("dhcp", config.get("wan", "proto"))
+		assert.is.equal("eth0", config.get("wan", "ifname"))
+	end)
 
-    it('test config.uci_commit_all (not commiting)', function()
-        uci:set('wireless', 'wifi', 'type')
-        uci:set('wireless', 'wifi', 'wlan0', 'foo')
+	it("test config.uci_commit_all (not commiting)", function()
+		uci:set("wireless", "wifi", "type")
+		uci:set("wireless", "wifi", "wlan0", "foo")
 
-        -- this is read from the uci cache
-        assert.is.equal('foo', uci:get('wireless', 'wifi', 'wlan0'))
+		-- this is read from the uci cache
+		assert.is.equal("foo", uci:get("wireless", "wifi", "wlan0"))
 
-        -- reloading shows that is not commited
-        uci:load('wireless')
-        assert.is.equal(nil, uci:get('wireless', 'wifi', 'wlan0'))
-    end)
+		-- reloading shows that is not commited
+		uci:load("wireless")
+		assert.is.equal(nil, uci:get("wireless", "wifi", "wlan0"))
+	end)
 
-    it('test config.uci_commit_all (commiting)', function()
-        uci:set('wireless', 'wifi', 'type')
-        uci:set('wireless', 'wifi', 'wlan0', 'foo')
-        config.uci_commit_all()
-        uci:load('wireless')
-        assert.is.equal('foo', uci:get('wireless', 'wifi', 'wlan0'))
-    end)
+	it("test config.uci_commit_all (commiting)", function()
+		uci:set("wireless", "wifi", "type")
+		uci:set("wireless", "wifi", "wlan0", "foo")
+		config.uci_commit_all()
+		uci:load("wireless")
+		assert.is.equal("foo", uci:get("wireless", "wifi", "wlan0"))
+	end)
 
+	before_each("", function()
+		uci = test_utils.setup_test_uci()
+	end)
 
-    before_each('', function()
-        uci = test_utils.setup_test_uci()
-    end)
-
-    after_each('', function()
-        test_utils.teardown_test_uci(uci)
-    end)
+	after_each("", function()
+		test_utils.teardown_test_uci(uci)
+	end)
 end)

@@ -6,17 +6,15 @@ local network = require("lime.network")
 
 local adhoc = {}
 
-function adhoc.configure(args)
-end
+function adhoc.configure(args) end
 
 function adhoc.setup_interface(ifname, args)
-	if ifname:match("^wlan%d+."..adhoc_mode.wifi_mode) then
-
+	if ifname:match("^wlan%d+." .. adhoc_mode.wifi_mode) then
 		local uci = config.get_uci_cursor()
 
 		--! sanitize passed ifname for constructing uci section name
 		--! because only alphanumeric and underscores are allowed
-		local networkInterfaceName = network.limeIfNamePrefix..ifname:gsub("[^%w_]", "_")
+		local networkInterfaceName = network.limeIfNamePrefix .. ifname:gsub("[^%w_]", "_")
 
 		uci:set("network", networkInterfaceName, "interface")
 		uci:set("network", networkInterfaceName, "proto", "none")

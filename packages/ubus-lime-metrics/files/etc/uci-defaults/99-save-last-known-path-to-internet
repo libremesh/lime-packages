@@ -1,10 +1,9 @@
 #!/bin/sh
 
-unique_append()
-{
-	grep -qF "$1" "$2" || echo "$1" >> "$2"
+unique_append() {
+	grep -qF "$1" "$2" || echo "$1" >>"$2"
 }
 
 unique_append \
-	"*/30 * * * * /usr/sbin/last_internet save"\
+	"*/30 * * * * /usr/sbin/last_internet save" \
 	/etc/crontabs/root

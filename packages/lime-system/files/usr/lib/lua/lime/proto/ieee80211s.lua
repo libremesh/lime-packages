@@ -2,20 +2,19 @@
 
 local config = require("lime.config")
 local ieee80211s_mode = require("lime.mode.ieee80211s")
-local network = require 'lime.network'
+local network = require("lime.network")
 
 local ieee80211s = {}
 
-function ieee80211s.configure(args)
-end
+function ieee80211s.configure(args) end
 
 function ieee80211s.setup_interface(ifname, args)
-	if ifname:match("^wlan%d+."..ieee80211s_mode.wifi_mode) then
+	if ifname:match("^wlan%d+." .. ieee80211s_mode.wifi_mode) then
 		local uci = config.get_uci_cursor()
 
 		--! sanitize passed ifname for constructing uci section name
 		--! because only alphanumeric and underscores are allowed
-		local networkInterfaceName = network.limeIfNamePrefix..ifname:gsub("[^%w_]", "_")
+		local networkInterfaceName = network.limeIfNamePrefix .. ifname:gsub("[^%w_]", "_")
 
 		uci:set("network", networkInterfaceName, "interface")
 		uci:set("network", networkInterfaceName, "proto", "none")

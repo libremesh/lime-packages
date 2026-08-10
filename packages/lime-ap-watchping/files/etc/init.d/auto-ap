@@ -20,7 +20,7 @@ load_autoAP() {
 	pinginterval=20
 	interface=autoAP
 	if /usr/bin/watchping none "$timeout" "$pinghosts" "$pinginterval" "$interface" 2>/tmp/autoAP.err.log; then
-		echo $! >> "${PIDFILE}"
+		echo $! >>"${PIDFILE}"
 		echo "autoAP wathcping started"
 		logger -t autoAP "watchping started"
 	else

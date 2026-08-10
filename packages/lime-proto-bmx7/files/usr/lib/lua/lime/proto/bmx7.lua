@@ -13,13 +13,15 @@ bmx7.configured = false
 bmx7.f = "bmx7"
 
 function bmx7.configure(args)
-	if bmx7.configured then return end
+	if bmx7.configured then
+		return
+	end
 	bmx7.configured = true
 
 	local uci = libuci:cursor()
 	local ipv4, ipv6 = network.primary_address()
 
-	fs.writefile("/etc/config/"..bmx7.f, "")
+	fs.writefile("/etc/config/" .. bmx7.f, "")
 
 	uci:set(bmx7.f, "general", "bmx7")
 	uci:set(bmx7.f, "general", "dbgMuteTimeout", "1000000")
@@ -34,13 +36,13 @@ function bmx7.configure(args)
 
 	--! If publish own IP enabled, configure tunIn
 	local pub_own_ip = config.get_bool("network", "bmx7_publish_ownip", false)
-	if (pub_own_ip) then
+	if pub_own_ip then
 		uci:set(bmx7.f, "myIP4", "tunIn")
 		uci:set(bmx7.f, "myIP4", "tunIn", "myIP4")
-		uci:set(bmx7.f, "myIP4", "network", ipv4:host():string()..'/32')
+		uci:set(bmx7.f, "myIP4", "network", ipv4:host():string() .. "/32")
 		uci:set(bmx7.f, "myIP6", "tunIn")
 		uci:set(bmx7.f, "myIP6", "tunIn", "myIP6")
-		uci:set(bmx7.f, "myIP6", "network", ipv6:host():string()..'/128')
+		uci:set(bmx7.f, "myIP6", "network", ipv6:host():string() .. "/128")
 	end
 
 	--! Enable bmx7 uci config plugin
@@ -109,7 +111,7 @@ function bmx7.configure(args)
 
 	--! Set prefered GW if defined
 	local pref_gw = config.get("network", "bmx7_pref_gw")
-	if (pref_gw ~= "none") then
+	if pref_gw ~= "none" then
 		uci:set(bmx7.f, "inet4p", "tunOut")
 		uci:set(bmx7.f, "inet4p", "tunOut", "inet4p")
 		uci:set(bmx7.f, "inet4p", "network", "0.0.0.0/0")
@@ -131,10 +133,13 @@ function bmx7.configure(args)
 	local hasBatadv = false
 	local bmxOverBatdv = config.get_bool("network", "bmx7_over_batman")
 	local hasLan = false
-	for _,protoArgs in pairs(config.get("network", "protocols")) do
-		local proto =  utils.split(protoArgs, network.protoParamsSeparator)[1]
-		if(proto == "lan") then hasLan = true
-		elseif(proto == "batadv") then hasBatadv = true end
+	for _, protoArgs in pairs(config.get("network", "protocols")) do
+		local proto = utils.split(protoArgs, network.protoParamsSeparator)[1]
+		if proto == "lan" then
+			hasLan = true
+		elseif proto == "batadv" then
+			hasBatadv = true
+		end
 	end
 
 	if config.get("network", "bmx7_over_librenet6", false) then
@@ -143,30 +148,24 @@ function bmx7.configure(args)
 	end
 
 	local enablePKI = config.get_bool("network", "bmx7_enable_pki")
-	if (enablePKI) then
+	if enablePKI then
 		uci:set(bmx7.f, "general", "trustedNodesDir", "/etc/bmx7/trustedNodes")
 	end
 
-	if(hasLan) then
+	if hasLan then
 		uci:set(bmx7.f, "lm_net_br_lan", "dev")
 		uci:set(bmx7.f, "lm_net_br_lan", "dev", "br-lan")
 	end
 
-	if(hasLan and hasBatadv and not bmxOverBatdv) then
+	if hasLan and hasBatadv and not bmxOverBatdv then
 		--! Let firewall4 append a table of family 'bridge' with a chain
 		--! that hooks into postrouting and prevents bmx7 over batadv.
 		local includeDir = "/usr/share/nftables.d/ruleset-post/"
 		local fileName = "lime-proto-bmx7_bmx7-not-over-bat0.nft"
 		fs.mkdirr(includeDir)
-		fs.symlink(
-			"/usr/share/lime/"..fileName,
-			includeDir..fileName
-		)
+		fs.symlink("/usr/share/lime/" .. fileName, includeDir .. fileName)
 	else
-		fs.unlink(
-			"/usr/share/nftables.d/ruleset-post/"..
-			"lime-proto-bmx7_bmx7-not-over-bat0.nft"
-		)
+		fs.unlink("/usr/share/nftables.d/ruleset-post/" .. "lime-proto-bmx7_bmx7-not-over-bat0.nft")
 	end
 
 	uci:save(bmx7.f)
@@ -187,16 +186,16 @@ function bmx7.configure(args)
 end
 
 function bmx7.setup_interface(ifname, args)
-	if not args["specific"] and
-		( ifname:match("^wlan%d+.ap") or ifname:match("^eth%d+") )
-	then return end
+	if not args["specific"] and (ifname:match("^wlan%d+.ap") or ifname:match("^eth%d+")) then
+		return
+	end
 
 	local vlanId = tonumber(args[2]) or 18
 	local vlanProto = args[3] or "8021ad"
 	local nameSuffix = args[4] or "_bmx7"
 
-	local owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(
-		ifname, vlanId, nameSuffix, vlanProto)
+	local owrtInterfaceName, linux802adIfName, owrtDeviceName =
+		network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 
 	local uci = libuci:cursor()
 	local mtu = config.get("network", "bmx7_mtu", "1500")
@@ -204,7 +203,7 @@ function bmx7.setup_interface(ifname, args)
 
 	--! BEGIN [Workaround issue 38]
 	if ifname:match("^wlan%d+") then
-		local macAddr = wireless.get_phy_mac("phy"..ifname:match("%d+"))
+		local macAddr = wireless.get_phy_mac("phy" .. ifname:match("%d+"))
 		local vlanIp = { 169, 254, tonumber(macAddr[5], 16), tonumber(macAddr[6], 16) }
 		uci:set("network", owrtInterfaceName, "proto", "static")
 		uci:set("network", owrtInterfaceName, "ipaddr", table.concat(vlanIp, "."))

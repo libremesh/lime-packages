@@ -6,25 +6,25 @@ CRONTAB="/etc/crontabs/root"
 SAVE="/tmp/bmx7-internet-bw.log"
 
 start() {
-  echo "Ensuring bmx7-auto-bw-test is run by cron"
-  local rnd
-  if ! ( grep -q "$BIN" "$CRONTAB" 2>/dev/null ) ; then
-	  # run twice and random sleep for better entropy
-    rnd=$(awk 'BEGIN{srand();print int(rand()*3)}')
-	  sleep "$rnd"
-    rnd=$(awk 'BEGIN{srand();print int(rand()*60)}')
-    echo "$rnd */6 * * * SAVE=$SAVE $BIN" >> "$CRONTAB"
-    /etc/init.d/cron enable
-    /etc/init.d/cron restart
-  fi
+	echo "Ensuring bmx7-auto-bw-test is run by cron"
+	local rnd
+	if ! (grep -q "$BIN" "$CRONTAB" 2>/dev/null); then
+		# run twice and random sleep for better entropy
+		rnd=$(awk 'BEGIN{srand();print int(rand()*3)}')
+		sleep "$rnd"
+		rnd=$(awk 'BEGIN{srand();print int(rand()*60)}')
+		echo "$rnd */6 * * * SAVE=$SAVE $BIN" >>"$CRONTAB"
+		/etc/init.d/cron enable
+		/etc/init.d/cron restart
+	fi
 }
 
 stop() {
-  echo "Removing bmx7-auto-bw-test from crontab"
-  sed "\|$BIN|d" -i "$CRONTAB"
-  /etc/init.d/cron restart
+	echo "Removing bmx7-auto-bw-test from crontab"
+	sed "\|$BIN|d" -i "$CRONTAB"
+	/etc/init.d/cron restart
 }
 
 reload() {
-  $BIN
+	$BIN
 }

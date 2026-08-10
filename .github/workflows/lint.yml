@@ -29,3 +29,18 @@ jobs:
         run: sudo apt-get -y update && sudo apt-get -y install shellcheck 
       - name: Lint shell code
         run: ./tools/ci/lint/sh.sh
+
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Install Dependencies
+        run: uv init && uv add shfmt-py && uv tool install git+https://github.com/johnnymorganz/stylua
+      - name: Check the formatting
+        run: ./tools/ci/lint/format.sh

@@ -1,7 +1,7 @@
 #!/bin/sh
 echo "Apply hostname"
 hostname="$(/sbin/uci get system.@system[0].hostname)"
-echo "$hostname" > /proc/sys/kernel/hostname
+echo "$hostname" >/proc/sys/kernel/hostname
 echo "Reload network config"
 /sbin/reload_config
 
@@ -15,7 +15,7 @@ echo "Reload routing protocols"
 [ -e /etc/init.d/bmx7 ] && [ -x /etc/init.d/bmx7 ] && {
 	bmx7_hostname=$(bmx7 -c jshow status | jsonfilter -e '@.status.name')
 	sys_hostname=$(uci get system.@system[0].hostname)
-	if [ "$bmx7_hostname" = "$sys_hostname" ]; then 
+	if [ "$bmx7_hostname" = "$sys_hostname" ]; then
 		bmx7 -c configReload
 	else
 		/etc/init.d/watchping stop
@@ -23,4 +23,3 @@ echo "Reload routing protocols"
 		sleep 1 && /etc/init.d/watchping start
 	fi
 }
-

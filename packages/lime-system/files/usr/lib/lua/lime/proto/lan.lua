@@ -13,21 +13,27 @@ lan.configured = false
 --! option type 'bridge'
 local function find_br_lan(uci)
 	local br_lan_section = nil
-	uci:foreach("network", "device",
-		function(s)
-			if br_lan_section then return end
-			local dev_type = uci:get("network", s[".name"], "type")
-			local dev_name = uci:get("network", s[".name"], "name")
-			if (dev_type ~= 'bridge') then return end
-			if (dev_name ~= 'br-lan') then return end
-			br_lan_section = s[".name"]
+	uci:foreach("network", "device", function(s)
+		if br_lan_section then
+			return
 		end
-	)
+		local dev_type = uci:get("network", s[".name"], "type")
+		local dev_name = uci:get("network", s[".name"], "name")
+		if dev_type ~= "bridge" then
+			return
+		end
+		if dev_name ~= "br-lan" then
+			return
+		end
+		br_lan_section = s[".name"]
+	end)
 	return br_lan_section
 end
 
 function lan.configure(args)
-	if lan.configured then return end
+	if lan.configured then
+		return
+	end
 	lan.configured = true
 
 	local ipv4, ipv6 = network.primary_address()
@@ -39,15 +45,17 @@ function lan.configure(args)
 	uci:set("network", "lan", "proto", "static")
 	uci:set("network", "lan", "mtu", "1500")
 	local br_lan_section = find_br_lan(uci)
-	if br_lan_section then uci:delete("network", br_lan_section, "ports") end
+	if br_lan_section then
+		uci:delete("network", br_lan_section, "ports")
+	end
 	uci:save("network")
 
 	--! disable bat0 on alfred if batadv not enabled
 	if utils.is_installed("alfred") then
 		local is_batadv_enabled = false
 		local generalProtocols = config.get("network", "protocols")
-		for _,protocol in pairs(generalProtocols) do
-			local protoModule = "lime.proto."..utils.split(protocol,":")[1]
+		for _, protocol in pairs(generalProtocols) do
+			local protoModule = "lime.proto." .. utils.split(protocol, ":")[1]
 			if protoModule == "lime.proto.batadv" then
 				is_batadv_enabled = true
 				break
@@ -61,17 +69,25 @@ function lan.configure(args)
 end
 
 function lan.setup_interface(ifname, args)
-	if ifname:match("^wlan") then return end
-	if ifname:match(network.protoVlanSeparator.."%d+$") then return end
+	if ifname:match("^wlan") then
+		return
+	end
+	if ifname:match(network.protoVlanSeparator .. "%d+$") then
+		return
+	end
 
 	local uci = config.get_uci_cursor()
 	local bridgedIfs = {}
 	local br_lan_section = find_br_lan(uci)
-	if not br_lan_section then return end
+	if not br_lan_section then
+		return
+	end
 	local oldIfs = uci:get("network", br_lan_section, "ports") or {}
 	--! it should be a table, it was a string in old OpenWrt releases
-	if type(oldIfs) == "string" then oldIfs = utils.split(oldIfs, " ") end
-	for _,iface in pairs(oldIfs) do
+	if type(oldIfs) == "string" then
+		oldIfs = utils.split(oldIfs, " ")
+	end
+	for _, iface in pairs(oldIfs) do
 		if iface ~= ifname then
 			table.insert(bridgedIfs, iface)
 		end

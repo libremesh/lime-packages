@@ -4,10 +4,10 @@ local wireless = require("lime.wireless")
 
 local apbb = {}
 
-apbb.wifi_mode="ap"
+apbb.wifi_mode = "ap"
 
 function apbb.setup_radio(radio, args)
---!	checks("table", "?table")
+	--!	checks("table", "?table")
 
 	return wireless.createBaseWirelessIface(radio, apbb.wifi_mode, "bb", args)
 end

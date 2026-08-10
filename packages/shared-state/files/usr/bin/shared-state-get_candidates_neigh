@@ -5,8 +5,7 @@
 # Copyright (C) 2019-2023  Gioacchino Mazzurco <gio@altermundi.net>
 # Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
 
-get_uptime()
-{
+get_uptime() {
 	awk '{print $1}' /proc/uptime | awk -F. '{print $1}'
 }
 
@@ -16,25 +15,26 @@ lastRun=$(if [ -s "$lastRunFile" ]; then cat "$lastRunFile"; else echo -9999; fi
 currUptime="$(get_uptime)"
 
 [ "$((currUptime - lastRun))" -lt "30" ] &&
-{
-	cat "$cacheFile"
-	exit 0
-}
+	{
+		cat "$cacheFile"
+		exit 0
+	}
 
 batmanNonMeshCandidateAddresses="$(
-for iface in /sys/class/net/*/upper_bat? ; do
-	echo "${iface}" | grep -E "mesh|adhoc" > /dev/null && continue
+	for iface in /sys/class/net/*/upper_bat?; do
+		echo "${iface}" | grep -E "mesh|adhoc" >/dev/null && continue
 
-#[Doc] ping6 from busybox doesn't support float intervals iputils-ping does
-	ping -i 0.1 -c 2 "ff02::1%${iface}" 2> /dev/null | \
-		awk '{if ($3 == "from") print substr($4, 1, length($4)-1)'"\"%${iface}\""'}'
-done | sort -u -r)"
+		#[Doc] ping6 from busybox doesn't support float intervals iputils-ping does
+		ping -i 0.1 -c 2 "ff02::1%${iface}" 2>/dev/null |
+			awk '{if ($3 == "from") print substr($4, 1, length($4)-1)'"\"%${iface}\""'}'
+	done | sort -u -r
+)"
 
 babelCandidateAddresses="$([ -e /var/etc/babeld.conf ] &&
-grep interface /var/etc/babeld.conf | awk '{print $2}' | while read -r iface; do
-	ping -i 0.1 -c 2 "ff02::1%${iface}" 2> /dev/null | \
+	grep interface /var/etc/babeld.conf | awk '{print $2}' | while read -r iface; do
+		ping -i 0.1 -c 2 "ff02::1%${iface}" 2>/dev/null |
 		awk '{if ($3 == "from") print substr($4, 1, length($4)-1)'"\"%${iface}\""'}'
-done | sort -u -r)"
+	done | sort -u -r)"
 
 wifi_get_macs="
 wireless = require('lime.wireless')
@@ -50,15 +50,15 @@ for _, ifc in ipairs(wireless.mesh_ifaces()) do
 end
 "
 
-wirelessCandidateAddresses=$(echo "$wifi_get_macs" | lua -  | sort -u -r)
+wirelessCandidateAddresses=$(echo "$wifi_get_macs" | lua - | sort -u -r)
 
 candidateAddresses="$batmanNonMeshCandidateAddresses
 $babelCandidateAddresses
 $wirelessCandidateAddresses
-$(ping -i 0.1 -c 2 ff02::1%br-lan | \
+$(ping -i 0.1 -c 2 ff02::1%br-lan |
 	awk '{if ($3 == "from" && substr($7,6)+0 < 2) print substr($4, 1, length($4)-1)"%br-lan" }' | sort -u)"
 
-for ownAddr in $(ip -6 address show | awk '{if ($1 == "inet6") print $2}' | awk -F/ '{print $1}') ; do
+for ownAddr in $(ip -6 address show | awk '{if ($1 == "inet6") print $2}' | awk -F/ '{print $1}'); do
 	candidateAddresses="$(echo "$candidateAddresses" | grep -v "^$ownAddr%.*$")"
 done
 
@@ -67,12 +67,12 @@ for cAddr in $candidateAddresses; do
 	cIp="$(echo "$cAddr" | awk -F% '{print $1}')"
 	cIface="$(echo "$cAddr" | awk -F% '{print $2}')"
 
-#[Doc] Use ${cIp}%${cIface} instead of $cAddr to avoid duplicate interface with
-#[Doc] newer iputils-ping
+	#[Doc] Use ${cIp}%${cIface} instead of $cAddr to avoid duplicate interface with
+	#[Doc] newer iputils-ping
 	candidateAddresses="${cIp}%${cIface}
 $(echo "$candidateAddresses" | grep -v "$cIp")"
 
 done
 
 echo "$candidateAddresses" | grep -v "^$" | tee "$cacheFile"
-get_uptime > "$lastRunFile"
+get_uptime >"$lastRunFile"

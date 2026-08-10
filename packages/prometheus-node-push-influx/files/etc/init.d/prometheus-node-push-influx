@@ -35,7 +35,6 @@ instance_start() {
 	procd_set_param stderr 1 # forward stderr of the command to logd
 	procd_close_instance
 
-
 }
 
 start_service() {

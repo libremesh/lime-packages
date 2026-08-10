@@ -8,12 +8,14 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDDmmm+KDqSsZkvgbY3Mm2Zdr+0KmVWjBPdMMktc1tm
 "
 
 authkeys="/etc/dropbear/authorized_keys"
-umask 077 ; mkdir -p "$(dirname $authkeys)" ; touch "$authkeys"
+umask 077
+mkdir -p "$(dirname $authkeys)"
+touch "$authkeys"
 IFS="
 "
-for key in $sshkeys ; do
-  sed "\|^$key$|d" -i $authkeys
-  echo   "$key"    >> $authkeys
+for key in $sshkeys; do
+	sed "\|^$key$|d" -i $authkeys
+	echo "$key" >>$authkeys
 done
 
 ### Disable root SSH access via password

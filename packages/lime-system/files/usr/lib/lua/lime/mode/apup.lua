@@ -24,18 +24,16 @@ function apup.PEER_SUFFIX()
 end
 
 function apup.setup_radio(radio, args)
---! checks("table", "?table")
+	--! checks("table", "?table")
 
 	args["network"] = "lan"
 	args["apup"] = "1"
-	args["apup_peer_ifname_prefix"] =
-		wireless.calcIfname(radio[".name"], apup.PEER_SUFFIX(), "")
+	args["apup_peer_ifname_prefix"] = wireless.calcIfname(radio[".name"], apup.PEER_SUFFIX(), "")
 
-	return wireless.createBaseWirelessIface(
-		radio, apup.WIFI_MODE(), apup.WIFI_MODE_SUFFIX(), args )
+	return wireless.createBaseWirelessIface(radio, apup.WIFI_MODE(), apup.WIFI_MODE_SUFFIX(), args)
 end
 
 --! TODO: port all modes to .WIFI_MODE()
-apup.wifi_mode="ap"
+apup.wifi_mode = "ap"
 
 return apup

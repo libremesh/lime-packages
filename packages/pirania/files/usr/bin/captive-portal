@@ -4,14 +4,14 @@
 LOG_TAG="captive-portal"
 
 log_info() {
-    logger -t "$LOG_TAG" "$1"
+	logger -t "$LOG_TAG" "$1"
 }
 
 log_warn() {
-    logger -t "$LOG_TAG" -p user.warning "WARNING: $1"
+	logger -t "$LOG_TAG" -p user.warning "WARNING: $1"
 }
 
-clean_tables () {
+clean_tables() {
 	echo "Cleaning captive-portal rules if there's any"
 	# Remove bridge table first (marking)
 	if nft list tables bridge 2>/dev/null | grep -q "pirania"; then
@@ -23,331 +23,331 @@ clean_tables () {
 	fi
 }
 
-set_nftables () {
-    echo "Apply captive-portal rules"
+set_nftables() {
+	echo "Apply captive-portal rules"
 
-    # Legacy mark constant (compatible with previous ebtables implementation)
-    PIRANIA_MARK="0x9124714"
+	# Legacy mark constant (compatible with previous ebtables implementation)
+	PIRANIA_MARK="0x9124714"
 
-    # Get interface configuration
-    catch_interfaces=$(uci -q get pirania.base_config.catch_interfaces)
-    catch_bridged_interfaces=$(uci -q get pirania.base_config.catch_bridged_interfaces)
+	# Get interface configuration
+	catch_interfaces=$(uci -q get pirania.base_config.catch_interfaces)
+	catch_bridged_interfaces=$(uci -q get pirania.base_config.catch_bridged_interfaces)
 
-    # Check if bridge-family nftables is available (required for catch_bridged_interfaces)
-    if [ -n "$catch_bridged_interfaces" ]; then
-        if ! nft list tables bridge >/dev/null 2>&1; then
-            log_warn "Bridge-family nftables not available (missing kmod-nft-bridge?)"
-            log_warn "catch_bridged_interfaces configured but cannot be used"
-            echo "Error: bridge-family nftables not available (missing kmod-nft-bridge?)"
-            exit 1
-        fi
-    fi
+	# Check if bridge-family nftables is available (required for catch_bridged_interfaces)
+	if [ -n "$catch_bridged_interfaces" ]; then
+		if ! nft list tables bridge >/dev/null 2>&1; then
+			log_warn "Bridge-family nftables not available (missing kmod-nft-bridge?)"
+			log_warn "catch_bridged_interfaces configured but cannot be used"
+			echo "Error: bridge-family nftables not available (missing kmod-nft-bridge?)"
+			exit 1
+		fi
+	fi
 
-    # Previous cleanup
-    nft delete table bridge pirania 2>/dev/null
-    nft delete table inet pirania 2>/dev/null
+	# Previous cleanup
+	nft delete table bridge pirania 2>/dev/null
+	nft delete table inet pirania 2>/dev/null
 
-    # ==========================================================================
-    # BRIDGE TABLE (L2 marking for bridged interfaces)
-    # ==========================================================================
-    if [ -n "$catch_bridged_interfaces" ]; then
-        nft add table bridge pirania
-        nft add set bridge pirania pirania-catch-bridge-ifaces \{ type ifname\; \}
-        nft add chain bridge pirania prerouting \{ type filter hook prerouting priority dstnat\; \}
-        nft add rule bridge pirania prerouting iifname @pirania-catch-bridge-ifaces meta mark set $PIRANIA_MARK
-    fi
+	# ==========================================================================
+	# BRIDGE TABLE (L2 marking for bridged interfaces)
+	# ==========================================================================
+	if [ -n "$catch_bridged_interfaces" ]; then
+		nft add table bridge pirania
+		nft add set bridge pirania pirania-catch-bridge-ifaces \{ type ifname\; \}
+		nft add chain bridge pirania prerouting \{ type filter hook prerouting priority dstnat\; \}
+		nft add rule bridge pirania prerouting iifname @pirania-catch-bridge-ifaces meta mark set $PIRANIA_MARK
+	fi
 
-    # ==========================================================================
-    # INET TABLE (L3 gating and rules)
-    # ==========================================================================
-    nft add table inet pirania
+	# ==========================================================================
+	# INET TABLE (L3 gating and rules)
+	# ==========================================================================
+	nft add table inet pirania
 
-    # --- Sets ---
-    nft add set inet pirania pirania-catch-ifaces \{ type ifname\; \}
-    nft add set inet pirania pirania-auth-macs \{ type ether_addr\; \}
-    nft add set inet pirania pirania-allowlist-ipv4 \{ type ipv4_addr\; flags interval\; comment \"allow ipv4 list\"\; \}
-    nft add set inet pirania pirania-allowlist-ipv6 \{ type ipv6_addr\; flags interval\; comment \"allow ipv6 list\"\; \}
-    nft add set inet pirania pirania-tranca-allowlist-ipv4 \{ type ipv4_addr\; flags interval\; comment \"tranca redes category allowlist\"\; \}
-    nft add set inet pirania pirania-unrestricted-macs \{ type ether_addr\; comment \"unrestricted voucher MACs\"\; \}
+	# --- Sets ---
+	nft add set inet pirania pirania-catch-ifaces \{ type ifname\; \}
+	nft add set inet pirania pirania-auth-macs \{ type ether_addr\; \}
+	nft add set inet pirania pirania-allowlist-ipv4 \{ type ipv4_addr\; flags interval\; comment \"allow ipv4 list\"\; \}
+	nft add set inet pirania pirania-allowlist-ipv6 \{ type ipv6_addr\; flags interval\; comment \"allow ipv6 list\"\; \}
+	nft add set inet pirania pirania-tranca-allowlist-ipv4 \{ type ipv4_addr\; flags interval\; comment \"tranca redes category allowlist\"\; \}
+	nft add set inet pirania pirania-unrestricted-macs \{ type ether_addr\; comment \"unrestricted voucher MACs\"\; \}
 
-    # --- Regular chains (MUST be created BEFORE base chains that jump to them) ---
-    nft add chain inet pirania pirania_prerouting
-    nft add chain inet pirania pirania_input
-    nft add chain inet pirania pirania_forward
+	# --- Regular chains (MUST be created BEFORE base chains that jump to them) ---
+	nft add chain inet pirania pirania_prerouting
+	nft add chain inet pirania pirania_input
+	nft add chain inet pirania pirania_forward
 
-    # --- Base chains with gating logic ---
-    nft add chain inet pirania prerouting \{ type nat hook prerouting priority -100\; \}
-    nft add rule inet pirania prerouting iifname @pirania-catch-ifaces jump pirania_prerouting
-    nft add rule inet pirania prerouting meta mark $PIRANIA_MARK jump pirania_prerouting
+	# --- Base chains with gating logic ---
+	nft add chain inet pirania prerouting \{ type nat hook prerouting priority -100\; \}
+	nft add rule inet pirania prerouting iifname @pirania-catch-ifaces jump pirania_prerouting
+	nft add rule inet pirania prerouting meta mark $PIRANIA_MARK jump pirania_prerouting
 
-    nft add chain inet pirania input \{ type filter hook input priority 0\; policy accept\; \}
-    nft add rule inet pirania input iifname @pirania-catch-ifaces jump pirania_input
-    nft add rule inet pirania input meta mark $PIRANIA_MARK jump pirania_input
-    nft add rule inet pirania input meta mark $PIRANIA_MARK meta mark set 0
+	nft add chain inet pirania input \{ type filter hook input priority 0\; policy accept\; \}
+	nft add rule inet pirania input iifname @pirania-catch-ifaces jump pirania_input
+	nft add rule inet pirania input meta mark $PIRANIA_MARK jump pirania_input
+	nft add rule inet pirania input meta mark $PIRANIA_MARK meta mark set 0
 
-    nft add chain inet pirania forward \{ type filter hook forward priority 0\; policy accept\; \}
-    nft add rule inet pirania forward iifname @pirania-catch-ifaces jump pirania_forward
-    nft add rule inet pirania forward meta mark $PIRANIA_MARK jump pirania_forward
-    nft add rule inet pirania forward meta mark $PIRANIA_MARK meta mark set 0
+	nft add chain inet pirania forward \{ type filter hook forward priority 0\; policy accept\; \}
+	nft add rule inet pirania forward iifname @pirania-catch-ifaces jump pirania_forward
+	nft add rule inet pirania forward meta mark $PIRANIA_MARK jump pirania_forward
+	nft add rule inet pirania forward meta mark $PIRANIA_MARK meta mark set 0
 
-    # --- Prerouting rules ---
-    nft add rule inet pirania pirania_prerouting ip daddr @pirania-allowlist-ipv4 accept
-    nft add rule inet pirania pirania_prerouting ip6 daddr @pirania-allowlist-ipv6 accept
-    nft add rule inet pirania pirania_prerouting udp dport \{ 67, 68 \} accept
-    nft add rule inet pirania pirania_prerouting udp dport \{ 546, 547 \} accept
-    nft add rule inet pirania pirania_prerouting ether saddr @pirania-auth-macs accept
-    nft add rule inet pirania pirania_prerouting tcp dport 80 redirect to :59080
-    nft add rule inet pirania pirania_prerouting udp dport 53 redirect to :59053
-    nft add rule inet pirania pirania_prerouting tcp dport 443 return
-    nft add rule inet pirania pirania_prerouting drop
+	# --- Prerouting rules ---
+	nft add rule inet pirania pirania_prerouting ip daddr @pirania-allowlist-ipv4 accept
+	nft add rule inet pirania pirania_prerouting ip6 daddr @pirania-allowlist-ipv6 accept
+	nft add rule inet pirania pirania_prerouting udp dport \{ 67, 68 \} accept
+	nft add rule inet pirania pirania_prerouting udp dport \{ 546, 547 \} accept
+	nft add rule inet pirania pirania_prerouting ether saddr @pirania-auth-macs accept
+	nft add rule inet pirania pirania_prerouting tcp dport 80 redirect to :59080
+	nft add rule inet pirania pirania_prerouting udp dport 53 redirect to :59053
+	nft add rule inet pirania pirania_prerouting tcp dport 443 return
+	nft add rule inet pirania pirania_prerouting drop
 
-    # Router-local HTTPS must be rejected in input; forwarded HTTPS is handled below.
-    nft add rule inet pirania pirania_input tcp dport 443 ether saddr != @pirania-auth-macs reject with tcp reset
+	# Router-local HTTPS must be rejected in input; forwarded HTTPS is handled below.
+	nft add rule inet pirania pirania_input tcp dport 443 ether saddr != @pirania-auth-macs reject with tcp reset
 
-    # --- Forward rules ---
-    tranca_active=$(uci -q get pirania.tranca_redes.active)
+	# --- Forward rules ---
+	tranca_active=$(uci -q get pirania.tranca_redes.active)
 
-    if [ "$tranca_active" = "1" ]; then
-        nft add rule inet pirania pirania_forward ip daddr @pirania-allowlist-ipv4 return
-        nft add rule inet pirania pirania_forward ip6 daddr @pirania-allowlist-ipv6 return
-        nft add rule inet pirania pirania_forward udp dport 53 return
-        nft add rule inet pirania pirania_forward ether saddr @pirania-unrestricted-macs return
-        nft add rule inet pirania pirania_forward ether saddr @pirania-auth-macs ip daddr @pirania-tranca-allowlist-ipv4 return
-        nft add rule inet pirania pirania_forward ether saddr @pirania-auth-macs drop comment \"TRANCA_BLOCK_AUTH_MAC\"
-    else
-        nft add rule inet pirania pirania_forward ether saddr @pirania-auth-macs return
-        nft add rule inet pirania pirania_forward udp dport 53 return
-        nft add rule inet pirania pirania_forward ip daddr @pirania-allowlist-ipv4 return
-        nft add rule inet pirania pirania_forward ip6 daddr @pirania-allowlist-ipv6 return
-    fi
+	if [ "$tranca_active" = "1" ]; then
+		nft add rule inet pirania pirania_forward ip daddr @pirania-allowlist-ipv4 return
+		nft add rule inet pirania pirania_forward ip6 daddr @pirania-allowlist-ipv6 return
+		nft add rule inet pirania pirania_forward udp dport 53 return
+		nft add rule inet pirania pirania_forward ether saddr @pirania-unrestricted-macs return
+		nft add rule inet pirania pirania_forward ether saddr @pirania-auth-macs ip daddr @pirania-tranca-allowlist-ipv4 return
+		nft add rule inet pirania pirania_forward ether saddr @pirania-auth-macs drop comment \"TRANCA_BLOCK_AUTH_MAC\"
+	else
+		nft add rule inet pirania pirania_forward ether saddr @pirania-auth-macs return
+		nft add rule inet pirania pirania_forward udp dport 53 return
+		nft add rule inet pirania pirania_forward ip daddr @pirania-allowlist-ipv4 return
+		nft add rule inet pirania pirania_forward ip6 daddr @pirania-allowlist-ipv6 return
+	fi
 
-    nft add rule inet pirania pirania_forward tcp dport 443 ether saddr != @pirania-auth-macs reject with tcp reset
+	nft add rule inet pirania pirania_forward tcp dport 443 ether saddr != @pirania-auth-macs reject with tcp reset
 
-    echo "Captive-portal rules applied successfully"
+	echo "Captive-portal rules applied successfully"
 }
 
-download_allowlist_ipv4 () {
-  tmpfile="/tmp/allowlist_ipv4_urls.txt"
-  allowlist_urls=$(uci -q get pirania.base_config.allowlist_ipv4_url)
-  : > "$tmpfile"
-  if [ -z "$allowlist_urls" ]; then
-    return
-  fi
-  allowlist_insecure=$(uci -q get pirania.base_config.allowlist_ipv4_url_insecure)
-  echo "Downloading IPv4 allowlist URLs to $tmpfile"
+download_allowlist_ipv4() {
+	tmpfile="/tmp/allowlist_ipv4_urls.txt"
+	allowlist_urls=$(uci -q get pirania.base_config.allowlist_ipv4_url)
+	: >"$tmpfile"
+	if [ -z "$allowlist_urls" ]; then
+		return
+	fi
+	allowlist_insecure=$(uci -q get pirania.base_config.allowlist_ipv4_url_insecure)
+	echo "Downloading IPv4 allowlist URLs to $tmpfile"
 
-  for url in $allowlist_urls ; do
-    if ! wget -q -O - "$url" >> "$tmpfile" ; then
-      if [ "$allowlist_insecure" = "1" ]; then
-        log_warn "Retrying IPv4 allowlist download without certificate validation: $url"
-        echo "Retrying IPv4 allowlist download without certificate check: $url"
-        if ! wget --no-check-certificate -q -O - "$url" >> "$tmpfile" ; then
-          echo "Failed to download IPv4 allowlist from $url"
-        fi
-      else
-        echo "Failed to download IPv4 allowlist from $url"
-      fi
-    else
-      echo "" >> "$tmpfile"
-    fi
-  done
-  echo "IPv4 allowlist downloads completed"
+	for url in $allowlist_urls; do
+		if ! wget -q -O - "$url" >>"$tmpfile"; then
+			if [ "$allowlist_insecure" = "1" ]; then
+				log_warn "Retrying IPv4 allowlist download without certificate validation: $url"
+				echo "Retrying IPv4 allowlist download without certificate check: $url"
+				if ! wget --no-check-certificate -q -O - "$url" >>"$tmpfile"; then
+					echo "Failed to download IPv4 allowlist from $url"
+				fi
+			else
+				echo "Failed to download IPv4 allowlist from $url"
+			fi
+		else
+			echo "" >>"$tmpfile"
+		fi
+	done
+	echo "IPv4 allowlist downloads completed"
 }
 
 # Download Tranca Redes category allowlists
-download_tranca_allowlist_ipv4 () {
-    log_info "Starting Tranca Redes category allowlist download"
-    local tmpfile="/tmp/tranca_allowlist_ipv4.txt"
-    : > "$tmpfile"
+download_tranca_allowlist_ipv4() {
+	log_info "Starting Tranca Redes category allowlist download"
+	local tmpfile="/tmp/tranca_allowlist_ipv4.txt"
+	: >"$tmpfile"
 
-    local allowlist_insecure
-    allowlist_insecure=$(uci -q get pirania.base_config.allowlist_ipv4_url_insecure)
+	local allowlist_insecure
+	allowlist_insecure=$(uci -q get pirania.base_config.allowlist_ipv4_url_insecure)
 
-    # Get list of enabled categories
-    local categories
-    categories=$(uci -q show pirania.tranca_redes.allowlist_category 2>/dev/null | grep -oE "'[^']+'" | tr -d "'")
+	# Get list of enabled categories
+	local categories
+	categories=$(uci -q show pirania.tranca_redes.allowlist_category 2>/dev/null | grep -oE "'[^']+'" | tr -d "'")
 
-    if [ -z "$categories" ]; then
-        log_warn "No allowlist categories configured for Tranca Redes"
-        return
-    fi
+	if [ -z "$categories" ]; then
+		log_warn "No allowlist categories configured for Tranca Redes"
+		return
+	fi
 
-    local total_entries=0
+	local total_entries=0
 
-    for category in $categories; do
-        echo "Processing category: $category"
-        log_info "Downloading allowlist for category: $category"
+	for category in $categories; do
+		echo "Processing category: $category"
+		log_info "Downloading allowlist for category: $category"
 
-        # Get URLs for this category
-        local urls
-        urls=$(uci -q show "pirania.$category.ipv4_url" 2>/dev/null | grep -oE "'[^']+'" | tr -d "'")
+		# Get URLs for this category
+		local urls
+		urls=$(uci -q show "pirania.$category.ipv4_url" 2>/dev/null | grep -oE "'[^']+'" | tr -d "'")
 
-        if [ -z "$urls" ]; then
-            log_warn "No URLs configured for category: $category"
-            continue
-        fi
+		if [ -z "$urls" ]; then
+			log_warn "No URLs configured for category: $category"
+			continue
+		fi
 
-        for url in $urls; do
-            echo "  Downloading: $url"
-            if ! wget -q -O - "$url" >> "$tmpfile" 2>/dev/null; then
-                if [ "$allowlist_insecure" = "1" ]; then
-                    log_warn "Retrying Tranca allowlist download without certificate validation: $url"
-                    echo "  Retrying without certificate check: $url"
-                    if ! wget --no-check-certificate -q -O - "$url" >> "$tmpfile" 2>/dev/null; then
-                        log_warn "Failed to download Tranca allowlist: $url"
-                    fi
-                else
-                    log_warn "Failed to download Tranca allowlist: $url"
-                fi
-            else
-                echo "" >> "$tmpfile"
-            fi
-        done
-    done
+		for url in $urls; do
+			echo "  Downloading: $url"
+			if ! wget -q -O - "$url" >>"$tmpfile" 2>/dev/null; then
+				if [ "$allowlist_insecure" = "1" ]; then
+					log_warn "Retrying Tranca allowlist download without certificate validation: $url"
+					echo "  Retrying without certificate check: $url"
+					if ! wget --no-check-certificate -q -O - "$url" >>"$tmpfile" 2>/dev/null; then
+						log_warn "Failed to download Tranca allowlist: $url"
+					fi
+				else
+					log_warn "Failed to download Tranca allowlist: $url"
+				fi
+			else
+				echo "" >>"$tmpfile"
+			fi
+		done
+	done
 
-    # Count entries for logging
-    if [ -f "$tmpfile" ]; then
-        total_entries=$(grep -cE '([0-9]{1,3}\.){3}[0-9]{1,3}' "$tmpfile" 2>/dev/null || echo "0")
-    fi
+	# Count entries for logging
+	if [ -f "$tmpfile" ]; then
+		total_entries=$(grep -cE '([0-9]{1,3}\.){3}[0-9]{1,3}' "$tmpfile" 2>/dev/null || echo "0")
+	fi
 
-    log_info "Tranca Redes allowlist download completed: $total_entries entries"
+	log_info "Tranca Redes allowlist download completed: $total_entries entries"
 }
 
 # Get Tranca allowlist tokens for nftables
-get_tranca_allowlist_ipv4_tokens () {
-    if [ -f /tmp/tranca_allowlist_ipv4.txt ]; then
-        tr -d '\r' < /tmp/tranca_allowlist_ipv4.txt | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}(/([0-9]|[12][0-9]|3[0-2]))?'
-    fi
+get_tranca_allowlist_ipv4_tokens() {
+	if [ -f /tmp/tranca_allowlist_ipv4.txt ]; then
+		tr -d '\r' </tmp/tranca_allowlist_ipv4.txt | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}(/([0-9]|[12][0-9]|3[0-2]))?'
+	fi
 }
 
 # Add Tranca allowlist elements to nftables set (batched)
-add_tranca_allowlist_elements () {
-    local batch=""
-    local count=0
+add_tranca_allowlist_elements() {
+	local batch=""
+	local count=0
 
-    while read -r token; do
-        if [ -z "$token" ]; then
-            continue
-        fi
-        if [ -z "$batch" ]; then
-            batch="$token"
-        else
-            batch="$batch,$token"
-        fi
-        count=$((count + 1))
-        if [ "$count" -ge 200 ]; then
-            nft add element inet pirania pirania-tranca-allowlist-ipv4 "{$batch}"
-            batch=""
-            count=0
-        fi
-    done
+	while read -r token; do
+		if [ -z "$token" ]; then
+			continue
+		fi
+		if [ -z "$batch" ]; then
+			batch="$token"
+		else
+			batch="$batch,$token"
+		fi
+		count=$((count + 1))
+		if [ "$count" -ge 200 ]; then
+			nft add element inet pirania pirania-tranca-allowlist-ipv4 "{$batch}"
+			batch=""
+			count=0
+		fi
+	done
 
-    if [ -n "$batch" ]; then
-        nft add element inet pirania pirania-tranca-allowlist-ipv4 "{$batch}"
-    fi
+	if [ -n "$batch" ]; then
+		nft add element inet pirania pirania-tranca-allowlist-ipv4 "{$batch}"
+	fi
 }
 
-add_allowlist_ipv4_elements () {
-  batch=""
-  count=0
+add_allowlist_ipv4_elements() {
+	batch=""
+	count=0
 
-  while read -r token; do
-    if [ -z "$token" ]; then
-      continue
-    fi
-    if [ -z "$batch" ]; then
-      batch="$token"
-    else
-      batch="$batch,$token"
-    fi
-    count=$((count + 1))
-    if [ "$count" -ge 200 ]; then
-      nft add element inet pirania pirania-allowlist-ipv4 "{$batch}"
-      batch=""
-      count=0
-    fi
-  done
+	while read -r token; do
+		if [ -z "$token" ]; then
+			continue
+		fi
+		if [ -z "$batch" ]; then
+			batch="$token"
+		else
+			batch="$batch,$token"
+		fi
+		count=$((count + 1))
+		if [ "$count" -ge 200 ]; then
+			nft add element inet pirania pirania-allowlist-ipv4 "{$batch}"
+			batch=""
+			count=0
+		fi
+	done
 
-  if [ -n "$batch" ]; then
-    nft add element inet pirania pirania-allowlist-ipv4 "{$batch}"
-  fi
+	if [ -n "$batch" ]; then
+		nft add element inet pirania pirania-allowlist-ipv4 "{$batch}"
+	fi
 }
 
-get_allowlist_ipv4_tokens () {
-  uci -q get pirania.base_config.allowlist_ipv4 | tr ' ' '\n'
-  allowlist_urls=$(uci -q get pirania.base_config.allowlist_ipv4_url)
-  if [ -n "$allowlist_urls" ] && [ -f /tmp/allowlist_ipv4_urls.txt ]; then
-    tr -d '\r' < /tmp/allowlist_ipv4_urls.txt | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}(/([0-9]|[12][0-9]|3[0-2]))?'
-  fi
+get_allowlist_ipv4_tokens() {
+	uci -q get pirania.base_config.allowlist_ipv4 | tr ' ' '\n'
+	allowlist_urls=$(uci -q get pirania.base_config.allowlist_ipv4_url)
+	if [ -n "$allowlist_urls" ] && [ -f /tmp/allowlist_ipv4_urls.txt ]; then
+		tr -d '\r' </tmp/allowlist_ipv4_urls.txt | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}(/([0-9]|[12][0-9]|3[0-2]))?'
+	fi
 }
 
-update_nft_sets () {
+update_nft_sets() {
 
-  # Create tables and sets
-  echo "Updating captive-portal nft sets"
+	# Create tables and sets
+	echo "Updating captive-portal nft sets"
 
-  # --- Update interface catch sets ---
-  nft flush set inet pirania pirania-catch-ifaces
-  catch_interfaces=$(uci -q get pirania.base_config.catch_interfaces)
-  for iface in $catch_interfaces; do
-    nft add element inet pirania pirania-catch-ifaces "{$iface}"
-    echo "Adding L3 catch interface: $iface"
-  done
+	# --- Update interface catch sets ---
+	nft flush set inet pirania pirania-catch-ifaces
+	catch_interfaces=$(uci -q get pirania.base_config.catch_interfaces)
+	for iface in $catch_interfaces; do
+		nft add element inet pirania pirania-catch-ifaces "{$iface}"
+		echo "Adding L3 catch interface: $iface"
+	done
 
-  catch_bridged_interfaces=$(uci -q get pirania.base_config.catch_bridged_interfaces)
-  if [ -n "$catch_bridged_interfaces" ] && nft list set bridge pirania pirania-catch-bridge-ifaces >/dev/null 2>&1; then
-    nft flush set bridge pirania pirania-catch-bridge-ifaces
-    for iface in $catch_bridged_interfaces; do
-      nft add element bridge pirania pirania-catch-bridge-ifaces "{$iface}"
-      echo "Adding L2 catch interface: $iface"
-    done
-  fi
+	catch_bridged_interfaces=$(uci -q get pirania.base_config.catch_bridged_interfaces)
+	if [ -n "$catch_bridged_interfaces" ] && nft list set bridge pirania pirania-catch-bridge-ifaces >/dev/null 2>&1; then
+		nft flush set bridge pirania pirania-catch-bridge-ifaces
+		for iface in $catch_bridged_interfaces; do
+			nft add element bridge pirania pirania-catch-bridge-ifaces "{$iface}"
+			echo "Adding L2 catch interface: $iface"
+		done
+	fi
 
-  # Add authorized MAC addresses
-  nft flush set inet pirania pirania-auth-macs
-  for mac in $(pirania_authorized_macs) ; do
-    nft add element inet pirania pirania-auth-macs "{$mac}"
-    echo "Adding authorized MAC: $mac"
-  done
+	# Add authorized MAC addresses
+	nft flush set inet pirania pirania-auth-macs
+	for mac in $(pirania_authorized_macs); do
+		nft add element inet pirania pirania-auth-macs "{$mac}"
+		echo "Adding authorized MAC: $mac"
+	done
 
-  # Update pirania-allowlist sets for ipv4 and ipv6
-  nft flush set inet pirania pirania-allowlist-ipv4
-  nft flush set inet pirania pirania-allowlist-ipv6
-  # Add allowed ip/prefixes
-  # Get values from allowlist_ipvX and add to pirania-allowlist-ipvX set
-  get_allowlist_ipv4_tokens | add_allowlist_ipv4_elements
+	# Update pirania-allowlist sets for ipv4 and ipv6
+	nft flush set inet pirania pirania-allowlist-ipv4
+	nft flush set inet pirania pirania-allowlist-ipv6
+	# Add allowed ip/prefixes
+	# Get values from allowlist_ipvX and add to pirania-allowlist-ipvX set
+	get_allowlist_ipv4_tokens | add_allowlist_ipv4_elements
 
-  ipv6allowlist=$(uci get pirania.base_config.allowlist_ipv6 | sed 's/ /,/g')
-  nft add element inet pirania pirania-allowlist-ipv6 "{$ipv6allowlist}"
+	ipv6allowlist=$(uci get pirania.base_config.allowlist_ipv6 | sed 's/ /,/g')
+	nft add element inet pirania pirania-allowlist-ipv6 "{$ipv6allowlist}"
 
-  # --- Tranca Redes handling ---
-  tranca_active=$(uci -q get pirania.tranca_redes.active)
+	# --- Tranca Redes handling ---
+	tranca_active=$(uci -q get pirania.tranca_redes.active)
 
-  # Always flush Tranca sets first
-  nft flush set inet pirania pirania-tranca-allowlist-ipv4 2>/dev/null
-  nft flush set inet pirania pirania-unrestricted-macs 2>/dev/null
+	# Always flush Tranca sets first
+	nft flush set inet pirania pirania-tranca-allowlist-ipv4 2>/dev/null
+	nft flush set inet pirania pirania-unrestricted-macs 2>/dev/null
 
-  if [ "$tranca_active" = "1" ]; then
-    log_info "Tranca Redes is active, updating category allowlists"
+	if [ "$tranca_active" = "1" ]; then
+		log_info "Tranca Redes is active, updating category allowlists"
 
-    # Download and populate Tranca category allowlists
-    download_tranca_allowlist_ipv4
-    get_tranca_allowlist_ipv4_tokens | add_tranca_allowlist_elements
+		# Download and populate Tranca category allowlists
+		download_tranca_allowlist_ipv4
+		get_tranca_allowlist_ipv4_tokens | add_tranca_allowlist_elements
 
-    # Update unrestricted MACs
-    for mac in $(pirania_authorized_macs --unrestricted) ; do
-      nft add element inet pirania pirania-unrestricted-macs "{$mac}"
-      echo "Adding unrestricted MAC: $mac"
-    done
+		# Update unrestricted MACs
+		for mac in $(pirania_authorized_macs --unrestricted); do
+			nft add element inet pirania pirania-unrestricted-macs "{$mac}"
+			echo "Adding unrestricted MAC: $mac"
+		done
 
-    log_info "Tranca Redes nft sets updated"
-  fi
+		log_info "Tranca Redes nft sets updated"
+	fi
 }
 
 # check if captive-portal is enabled in /etc/config/pirania
 enabled=$(uci get pirania.base_config.enabled)
 
-if  [ "$1" = "start" ]; then
+if [ "$1" = "start" ]; then
 	echo "Running captive-portal"
 	/etc/init.d/pirania-dnsmasq start
 	/etc/init.d/pirania-uhttpd start
@@ -358,7 +358,7 @@ if  [ "$1" = "start" ]; then
 	echo "IPv4 allowlist download finished"
 	update_nft_sets
 	exit
-elif [ "$1" = "update" ] ; then
+elif [ "$1" = "update" ]; then
 	if [ "$enabled" != "1" ]; then
 		echo "Captive-portal disabled, skipping update"
 		exit
@@ -391,7 +391,7 @@ elif [ "$1" = "update" ] ; then
 	fi
 	update_nft_sets
 	exit
-elif [ "$1" = "clean" ] || [ "$1" = "stop" ] ; then
+elif [ "$1" = "clean" ] || [ "$1" = "stop" ]; then
 	clean_tables
 	exit
 elif [ "$enabled" = "1" ]; then
