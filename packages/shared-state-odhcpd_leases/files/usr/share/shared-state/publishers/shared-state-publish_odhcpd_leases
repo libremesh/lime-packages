@@ -1,0 +1,47 @@
+#!/usr/bin/lua
+
+local JSON = require("luci.jsonc")
+local CRDT = "odhcpd-leases"
+
+
+local handle = io.popen("ubus call dhcp ipv4leases '{}' 2>/dev/null")
+local ubus_output = handle:read("*a")
+handle:close()
+
+
+local ubus_data = JSON.parse(ubus_output or "{}")
+
+local output_table = {}
+
+
+if ubus_data and ubus_data.device then
+
+  for device_name, device_data in pairs(ubus_data.device) do
+    if device_data and device_data.leases then
+
+      for _, lease in ipairs(device_data.leases) do
+
+        if lease.address and lease.mac then
+
+          output_table[lease.address] = {
+            hostname = lease.hostname or "", 
+            mac = lease.mac
+          }
+        end
+      end
+    end
+  end
+end
+
+
+local final_json_string = JSON.stringify(output_table)
+
+
+local pipe = io.popen("shared-state-async insert " .. CRDT, "w")
+if pipe then
+  pipe:write(final_json_string)
+  pipe:close()
+end
+
+
+os.execute("/usr/sbin/odhcpd-update >/dev/null 2>&1")
