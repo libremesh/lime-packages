@@ -123,6 +123,16 @@ foo.search_paths = {"/usr/lib/lua/lime/hwd/*.lua"}
 
 Coverage is measured using the [luacov](https://keplerproject.github.io/luacov/) library each time the tests are run. The results statistics are merged at `./luacov.stats.out` and a human friendly report is generated at `luacov.report.out`.
 
+## Linting
+
+To ensure code quality and consistency, we have a lint workflow that runs on GitHub Actions.
+You can also run the lint workflow locally before pushing your changes.
+
+To easily run lint locally before pushing, we provide a git pre-push hook:
+* Copy `tools/ci/lint/pre-push.sample` to `.git/hooks/pre-push`
+* Make it executable: `chmod +x .git/hooks/pre-push`
+* This script requires [act](https://github.com/nektos/act) and Docker to run the GitHub Actions workflow locally.
+
 ## Under the hood: tools in detail
 
 As one of the goals is that it must be easy for developers to write, modify and run the tests we created some simple tools to do this:
