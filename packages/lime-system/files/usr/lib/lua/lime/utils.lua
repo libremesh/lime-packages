@@ -56,7 +56,7 @@ end
 function utils.split(string, sep)
 	local ret = {}
     if sep == nil or sep == '' then
-        sep = '%s' --! default to whitespace
+        error("utils.split: separator cannot be nil or empty",2)
     end
     if string == nil or string == '' then
         return ret
