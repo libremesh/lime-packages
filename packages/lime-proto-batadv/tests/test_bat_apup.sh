@@ -2,13 +2,16 @@
 # configure at least three routers with apup and limed, only leave one of them
 # on and turn the rest off.
 # run this script on a computer connected to the node to start limed and u-bus
-# listen. 
+# listen.
 # turn on the other nodes and wait for them to connect
 
-NODE_IP="thisnode.info"        
+NODE_IP="thisnode.info"
 SSH_USER="root"
 SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
 
+# SC2086: SSH_OPTS must word-split to pass multiple args to ssh
+# SC2029: client-side expansion of SSH_USER and NODE_IP is intentional
+# shellcheck disable=SC2086,SC2029
 ssh $SSH_OPTS "$SSH_USER@$NODE_IP" <<EOF
 
 echo "[0/4] Killing any running limed processes..."
@@ -17,7 +20,6 @@ killall limed
 
 echo "[1/4] Bringing Wi-Fi down..."
 wifi down
-
 
 echo "[2/4] Starting limed and ubus listen ..."
 echo "------------------------------------------"
@@ -46,7 +48,6 @@ echo "------------------------------------------"
 )
 EOF
 
-
 ###### sample output
 # [1/4] Bringing Wi-Fi down...
 # [2/4] Starting limed and ubus listen ...
@@ -58,10 +59,8 @@ EOF
 # [3/4] Bringing Wi-Fi up...
 # [4/4] Now you should be able to see new connections. Press Ctrl+C to stop.
 # [2025-07-31 21:35:16] [ubus] { "ubus.object.add": {"id":-1307156726,"path":"hostapd.wlan1-apup"} }
-
-
 # [2025-07-31 21:36:02] [limed] Subscribing: hostapd.wlan1-apup
-# [2025-07-31 21:36:03] [limed] peerSubscriber type: apup-newpeer data.ifname: wlan1-peer1 
+# [2025-07-31 21:36:03] [limed] peerSubscriber type: apup-newpeer data.ifname: wlan1-peer1
 # [2025-07-31 21:36:03] [ubus] { "ubus.object.add": {"id":565721540,"path":"network.interface.lm_net_lm_net_wlan1_peer1_static"} }
 # [2025-07-31 21:36:03] [limed] lime.network.runProtocols(wlan1-peer1, ...)
 # [2025-07-31 21:36:03] [limed] lime.proto.batadv.runOnDevice(wlan1-peer1, ...)
@@ -91,7 +90,7 @@ EOF
 # [2025-07-31 21:36:07] [ubus] { "network.interface": {"action":"ifup","interface":"lm_net_wlan1-peer2_batadv"} }
 # [2025-07-31 21:36:07] [ubus] { "network.interface": {"action":"ifup","interface":"lm_net_lm_net_wlan1_peer2_17_static"} }
 # [2025-07-31 21:36:07] [ubus] { "ubus.object.add": {"id":-1538210722,"path":"network.interface.lm_net_lm_net_wlan1_peer2_17_static"} }
-# [2025-07-31 21:36:08] [limed] peerSubscriber type: apup-newpeer data.ifname: wlan1-peer2 
+# [2025-07-31 21:36:08] [limed] peerSubscriber type: apup-newpeer data.ifname: wlan1-peer2
 # [2025-07-31 21:36:08] [limed] ip: RTNETLINK answers: File exists
 # [2025-07-31 21:36:08] [limed] lime.network.runProtocols(wlan1-peer2, ...)
 # [2025-07-31 21:36:08] [limed] lime.proto.batadv.runOnDevice(wlan1-peer2, ...)
