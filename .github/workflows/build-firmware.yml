@@ -110,7 +110,7 @@ jobs:
         env:
           ARCH: ${{ matrix.sdk_arch }}
           FEEDNAME: lime_packages
-          PACKAGES: ${{ needs.prepare-matrix.outputs.lime_packages_list }} ${{ matrix.extra_packages }}
+          # PACKAGES: ${{ needs.prepare-matrix.outputs.lime_packages_list }} ${{ matrix.extra_packages }}
           # Extra src-git feeds, space-separated `<type>|<name>|<url>[^<sha>]`
           # entries; gh-action-sdk appends each to feeds.conf. Pinning the
           # full 40-char SHA is required (smart-HTTP rejects short prefixes).
