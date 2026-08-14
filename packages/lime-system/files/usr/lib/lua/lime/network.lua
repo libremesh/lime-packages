@@ -35,10 +35,9 @@ network.limeIfNamePrefix = "lm_net_"
 --! Retuns the mac address of the interface or nill if it does not exist
 function network.get_mac(ifname)
 	local _, macaddr = next(network.get_own_macs(ifname))
-	--! this is to avoid the error:
-	--! ...ackages/lime-system/files/usr/lib/lua/lime/utils.lua:53: attempt to index local 'string' (a nil value)
+	--! Fail if the MAC address for a non-existent device is requested
 	if macaddr == nil then
-		return nil
+		error("MAC address not found for the specified interface: " .. tostring(ifname),2)
 	end
 	return utils.split(macaddr, ":")
 end
