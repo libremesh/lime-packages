@@ -27,9 +27,10 @@ describe("LiMe Network tests", function()
 		assert.are.same({ "00", "00", "00", "00", "00", "00" }, network.get_mac("lo"))
 	end)
 
-    it("test get_mac for ethernet", function()
-        assert.is_nil (network.get_mac("nonexistent-interface"))
-    end)
+	it("test get_mac for a non-existing interface", function()
+		assert.has_error(function() network.get_mac('nonexistent-interface') end,
+			"MAC address not found for the specified interface: nonexistent-interface")
+	end)
 
 	it("test primary_interface configured interface", function()
 		config.set("network", "lime")
@@ -41,11 +42,6 @@ describe("LiMe Network tests", function()
 		stub(network, "assert_interface_exists", function()
 			return true
 		end)
-		
-    it('test get_mac for a non-existing interface', function()
-        assert.has_error(function() network.get_mac('nonexistent-interface') end,"MAC address not found for the specified interface: nonexistent-interface")
-    end)
-
 		assert.is.equal("lo", network.primary_interface())
 	end)
 
