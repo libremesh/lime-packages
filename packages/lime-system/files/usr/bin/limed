@@ -53,8 +53,8 @@ local peerSubscriber = {
 			utils.log("Device does not exist: %s", nData.ifname)
 		end
 		network.createStatic(nData.ifname)
---! interfaces should exist, but just in case we need to check, 
---! to avoid 
+--! interfaces should exist, but just in case we need to check,
+--! to avoid
 --! [2025-07-31 20:06:09] [limed] ip: SIOCGIFFLAGS: No such device
 --! [2025-07-31 20:06:10] [limed] ip: can't find device 'wlan1-peer2'
 --! [2025-07-31 20:06:10] [limed] lime.network.runProtocols(wlan1-peer2, ...)

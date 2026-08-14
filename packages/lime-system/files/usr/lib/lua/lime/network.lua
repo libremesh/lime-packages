@@ -37,7 +37,7 @@ function network.get_mac(ifname)
 	local _, macaddr = next(network.get_own_macs(ifname))
 	--! Fail if the MAC address for a non-existent device is requested
 	if macaddr == nil then
-		error("MAC address not found for the specified interface: " .. tostring(ifname),2)
+		error("MAC address not found for the specified interface: " .. tostring(ifname), 2)
 	end
 	return utils.split(macaddr, ":")
 end
@@ -677,10 +677,10 @@ end
 
 --! Check if a device exists in the system
 function network.device_exists(dev)
-    local handle = io.popen("ip link show " .. dev .. " 2>/dev/null")
-    local result = handle:read("*a")
-    handle:close()
-    return result ~= nil and result ~= ""
+	local handle = io.popen("ip link show " .. dev .. " 2>/dev/null")
+	local result = handle:read("*a")
+	handle:close()
+	return result ~= nil and result ~= ""
 end
 
 --! Create a vlan at runtime via ubus

@@ -128,13 +128,12 @@ function batadv.runOnDevice(linuxDev, args)
 	ubus:call("network", "add_dynamic", ifaceConf)
 	ubus:call("network.interface." .. ifName, "up", {})
 
-
---! TODO: as of today ubus silently fails to properly setting up a linux network
---! device for batman ADV usage dinamycally work around it by using
---! shell commands instead
+	--! TODO: as of today ubus silently fails to properly setting up a linux network
+	--! device for batman ADV usage dinamycally work around it by using
+	--! shell commands instead
 	local id = utils.get_id(devName)
-	local original_mac = network.get_mac(devName) 
-	local vMacaddr = { }
+	local original_mac = network.get_mac(devName)
+	local vMacaddr = {}
 	-- Set first byte to 02 (locally administered unicast)
 	vMacaddr[1] = "02"
 	-- Use id[2] and id[3] from interface name for next bytes
@@ -144,11 +143,11 @@ function batadv.runOnDevice(linuxDev, args)
 	vMacaddr[4] = original_mac[4]
 	vMacaddr[5] = original_mac[5]
 	vMacaddr[6] = original_mac[6]
-	macaddr =  table.concat(vMacaddr, ":")
+	local macaddr = table.concat(vMacaddr, ":")
 
-	utils.unsafe_shell("ip link set dev "..devName.." address "..macaddr)
+	utils.unsafe_shell("ip link set dev " .. devName .. " address " .. macaddr)
 	local ifnames = network.createStatic(devName)
-	utils.log("batadv created vlan "..devName.." with address:".. macaddr .." and static ".. ifnames)
+	utils.log("batadv created vlan " .. devName .. " with address:" .. macaddr .. " and static " .. ifnames)
 	--this seems not to be needed
 	--utils.unsafe_shell("batctl if add "..devName)
 end
