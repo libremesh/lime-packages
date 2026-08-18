@@ -47,7 +47,7 @@ local peerSubscriber = {
 		if nType ~= "apup-newpeer" then return end
 
 		utils.log("peerSubscriber type: %s data.ifname: %s ", nType, nData.ifname)
-		if network.device_exists(nData.ifname) then
+		if network.interface_exists(nData.ifname) then
 			utils.log("Device exists: %s", nData.ifname)
 		else
 			utils.log("Device does not exist: %s", nData.ifname)
@@ -67,7 +67,7 @@ local peerSubscriber = {
 --! [2025-07-31 20:06:12] [limed] ip: can't find device 'wlan1-peer2'
 --! [2025-07-31 20:06:12] [ubus] { "ubus.object.add":
 --!  {"id":-1478746778,"path":"network.interface.lm_net_wlan1-peer2_batadv"} }
-		if not network.device_exists(nData.ifname) then
+		if not network.interface_exists(nData.ifname) then
 			utils.log("Device %s does not exist, skip runProtocols()", nData.ifname)
 			return
 		end

@@ -34,7 +34,8 @@ network.MACVLAN_HACK_FW4_INCLUDE_PREFIX = "/usr/share/nftables.d/ruleset-post/50
 network.protoParamsSeparator = ":"
 network.protoVlanSeparator = "_"
 network.limeIfNamePrefix = "lm_net_"
---! Retuns the mac address of the interface or nill if it does not exist
+
+--! Returns the mac address of the interface or raises an error if it does not exist
 function network.get_mac(ifname)
 	local _, macaddr = next(network.get_own_macs(ifname))
 	--! Fail if the MAC address for a non-existent device is requested
@@ -706,14 +707,6 @@ function network.createStatic(linuxBaseIfname)
 	utils.unsafe_shell("ip address add " .. ifaceConf.ipaddr .. "/32 dev " .. ifaceConf.ifname)
 
 	return ifaceConf.name
-end
-
---! Check if a device exists in the system
-function network.device_exists(dev)
-	local handle = io.popen("ip link show " .. dev .. " 2>/dev/null")
-	local result = handle:read("*a")
-	handle:close()
-	return result ~= nil and result ~= ""
 end
 
 --! Create a vlan at runtime via ubus
