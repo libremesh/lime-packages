@@ -2,7 +2,6 @@
 
 dhcpHostsFile="/tmp/dhcp.hosts_remote"
 
-uci set dhcp.@dnsmasq[0].dhcpscript=/usr/bin/dnsmasq-lease-share.sh
 uci set dhcp.@dnsmasq[0].dhcphostsfile=$dhcpHostsFile
 uci commit dhcp
 
