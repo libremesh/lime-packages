@@ -10,7 +10,7 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Nicolas Pace <nico@libre.ws>
 	URL:=http://libremesh.org
 	DEPENDS:=+lua +luci-lib-jsonc \
-		shared-state +ubus-lime-location
+		+shared-state +ubus-lime-location
 	PKGARCH:=all
 endef
 

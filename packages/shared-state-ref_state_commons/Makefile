@@ -11,7 +11,7 @@ define Package/$(PKG_NAME)
 	TITLE:=Common components for reference satate datypes
 	MAINTAINER:= Javier <jjorge@inti.gob.ar>
 	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils \
-		+lime-system shared-state-async   
+		+lime-system +shared-state-async
 	PKGARCH:=all
 endef
 
