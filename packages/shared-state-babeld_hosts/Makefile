@@ -10,7 +10,7 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Gioacchino Mazzurco <gio@altermundi.net>
 	URL:=http://libremesh.org
 	DEPENDS:=+hotplug-initd-services \
-		+lua +luci-lib-jsonc shared-state
+		+lua +luci-lib-jsonc +shared-state
 	PKGARCH:=all
 endef
 

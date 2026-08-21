@@ -11,7 +11,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LibreMesh
 	MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 	URL:=http://libremesh.org
-	DEPENDS:=+libubus-lua +lime-system +lua +luci-lib-jsonc 
+	DEPENDS:=+libubus-lua +lime-system +lua +luci-lib-jsonc
 	PKGARCH:=all
 endef
 

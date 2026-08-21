@@ -18,7 +18,7 @@ define Package/$(PKG_NAME)
             +prometheus-node-exporter-lua-wifi-stations-extra \
             +prometheus-node-exporter-lua-wifi-survey \
             +prometheus-node-exporter-lua-wifi-params \
-            +prometheus-node-exporter-lua-location-latlon \
+            +prometheus-node-exporter-lua-location-latlon
 
 endef
 

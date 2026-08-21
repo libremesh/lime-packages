@@ -9,7 +9,7 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LibreMesh
 	MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 	DEPENDS:=+lua +luci-lib-jsonc +ubus-lime-utils \
-		+lime-system +libiwinfo-lua +shared-state-ref_state_commons shared-state-async 
+		+lime-system +libiwinfo-lua +shared-state-ref_state_commons +shared-state-async
 	PKGARCH:=all
 endef
 

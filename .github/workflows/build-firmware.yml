@@ -41,6 +41,11 @@ on:
         required: false
         type: boolean
         default: false
+      build_lime_packages_deps:
+        description: "Build all lime-packages dependencies, increases compilation time of feeds"
+        required: false
+        type: boolean
+        default: false
   schedule:
     # Daily lab sweep at 06:00 UTC (03:00 ART).
     - cron: "0 6 * * *"
@@ -104,13 +109,24 @@ jobs:
           restore-keys: |
             lime-feed-v3-${{ matrix.arch }}-${{ matrix.openwrt_release }}-${{ needs.prepare-matrix.outputs.feed_hash }}-
 
+      - name: Prevent the compilation of all dependencies of the libremesh packages
+        if: steps.cache-feed.outputs.cache-hit != 'true' && github.event.inputs.build_lime_packages_deps != 'true'
+        run: |
+          shopt -s nullglob
+          sed -i \
+            -e '/^define Package\/\$(PKG_NAME)[^/]*$/,/^endef$/ s|DEPENDS:=|EXTRA_DEPENDS:=|g' \
+            -e '/^define Package\/\$(PKG_NAME)[^/]*$/,/^endef$/ s/+\($(PKG_NAME)[a-zA-Z0-9_-]*\)/\1 (>0),/g' \
+            -e '/^define Package\/\$(PKG_NAME)[^/]*$/,/^endef$/ s/+\([a-zA-Z_-][a-zA-Z0-9_-]*\)/\1 (>0),/g' \
+            -e '/^define Package\/\$(PKG_NAME)[^/]*$/,/^endef$/ s|,$||g' \
+            $(grep -l "PKGARCH:=all" packages/*/Makefile)
+
       - name: Build packages with openwrt/gh-action-sdk
         if: steps.cache-feed.outputs.cache-hit != 'true'
         uses: openwrt/gh-action-sdk@v9
         env:
           ARCH: ${{ matrix.sdk_arch }}
           FEEDNAME: lime_packages
-          PACKAGES: ${{ needs.prepare-matrix.outputs.lime_packages_list }} ${{ matrix.extra_packages }}
+          # PACKAGES: ${{ needs.prepare-matrix.outputs.lime_packages_list }} ${{ matrix.extra_packages }}
           # Extra src-git feeds, space-separated `<type>|<name>|<url>[^<sha>]`
           # entries; gh-action-sdk appends each to feeds.conf. Pinning the
           # full 40-char SHA is required (smart-HTTP rejects short prefixes).
@@ -121,6 +137,7 @@ jobs:
           # feed downstream with ImageBuilder's ipkg-make-index / apk mkndx.
           INDEX: "0"
           IGNORE_ERRORS: "n m y"
+          # V: "sc"
 
       - name: Diagnose feed build output
         if: steps.cache-feed.outputs.cache-hit != 'true'
