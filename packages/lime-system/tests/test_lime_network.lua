@@ -27,6 +27,12 @@ describe("LiMe Network tests", function()
 		assert.are.same({ "00", "00", "00", "00", "00", "00" }, network.get_mac("lo"))
 	end)
 
+	it("test get_mac for a non-existing interface", function()
+		assert.has_error(function()
+			network.get_mac("nonexistent-interface")
+		end, "MAC address not found for the specified interface: nonexistent-interface")
+	end)
+
 	it("test primary_interface configured interface", function()
 		config.set("network", "lime")
 		config.set("network", "primary_interface", "test0")
@@ -37,7 +43,6 @@ describe("LiMe Network tests", function()
 		stub(network, "assert_interface_exists", function()
 			return true
 		end)
-
 		assert.is.equal("lo", network.primary_interface())
 	end)
 
@@ -174,6 +179,21 @@ describe("LiMe Network tests", function()
 		assert.are.same(network.get_own_macs(), network.get_own_macs("*"))
 		assert.are.Not.same(network.get_own_macs("wlan0"), network.get_own_macs("*"))
 		assert.are.Not.same(network.get_own_macs("wlan0"), network.get_own_macs("lo"))
+	end)
+
+	it("test get_own_macs", function()
+		assert.are.same({ "00:00:00:00:00:00" }, network.get_own_macs("lo"))
+		assert.are.same(network.get_own_macs(), network.get_own_macs("*"))
+		assert.are.Not.same(network.get_own_macs("wlan0"), network.get_own_macs("*"))
+		assert.are.Not.same(network.get_own_macs("wlan0"), network.get_own_macs("lo"))
+	end)
+
+	it("test interface_exists returns true for existing interface", function()
+		assert.is_true(network.interface_exists("lo"))
+	end)
+
+	it("test interface_exists returns false for non-existing interface", function()
+		assert.is_false(network.interface_exists("definitelynotadevicename"))
 	end)
 
 	before_each("", function()
