@@ -2,9 +2,10 @@
 
 execute_hooks() {
 	local action="$1"
-	for filename in /etc/hotplug.d/lime-apply/*; do
-		printf "Executed hook:\tsh -c \"ACTION=%s %s\"" "$action" "$filename"
-		ACTION=$action ${filename} >/dev/null
+	for file in /etc/hotplug.d/lime-apply/*; do
+		[ -f "$file" ] || return
+		printf "Executed hook:\tsh -c \"ACTION=%s %s\"" "$action" "$file"
+		ACTION=$action "$file" >/dev/null
 		printf "\t%s\n" "$?"
 	done
 }

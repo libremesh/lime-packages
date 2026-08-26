@@ -2,15 +2,7 @@
 #
 # Copyright (C) 2006-2014 OpenWrt.org
 
-include $(TOPDIR)/rules.mk
-
-GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . | sed 's|-|.|g')
-GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
-
-PKG_NAME=lime-debug
-PKG_VERSION=$(GIT_COMMIT_DATE)~$(GIT_COMMIT_TSTAMP)
-
-include $(INCLUDE_DIR)/package.mk
+include ../../libremesh.mk
 
 define Package/$(PKG_NAME)
 	TITLE:=libremesh debug utils
@@ -33,13 +25,6 @@ define Package/$(PKG_NAME)/config
 	select BUSYBOX_CUSTOM
 	select BUSYBOX_CONFIG_NC
 	select BUSYBOX_CONFIG_NC_SERVER
-endef
-
-define Build/Compile
-endef
-
-define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
