@@ -1,0 +1,3 @@
+rm /usr/bin/shared-state-async-discover
+ln -s /usr/bin/shared-state-get_candidates_neigh /usr/bin/shared-state-async-discover
+exit 0

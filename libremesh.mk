@@ -23,17 +23,19 @@ include $(INCLUDE_DIR)/package.mk
 define Build/Compile
 	@rm -rf ./build || true
 	@mkdir ./build
-	$(CP) ./files ./build
+	[ ! -d ./files ] || $(CP) ./files ./build
 	$(FIND) ./build -name '*.sh' -exec sed -i '/^\s*#\[Doc\]/d' {} +
 	$(FIND) ./build -name '*.lua' -exec sed -i '/^\s*--!.*/d' {} +
 	$(FIND) ./build -type f -executable -exec sed -i '/^\s*#\[Doc\]/d' {} +
 	$(FIND) ./build -type f -executable -exec sed -i '/^\s*--!.*/d' {} +
 endef
 
+ifndef Package/$(PKG_NAME)/install
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/
-	$(CP) ./build/files/* $(1)/
+	[ ! -d ./build/files ] || $(CP) ./build/files/* $(1)/
 endef
+endif
 
 define Build/Configure
 endef

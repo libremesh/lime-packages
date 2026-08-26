@@ -9,7 +9,7 @@
 . /etc/lime_release
 
 feed_host='https://feed.libremesh.org'
-feed_ref=$([ $LIME_CODENAME == "development" ] &&
+feed_ref=$([ $LIME_CODENAME == "nightly" ] &&
 	echo "master" || echo "$LIME_RELEASE")
 ow_branch=$( [ $VERSION == 'SNAPSHOT' ] &&
 	echo "openwrt-main" || echo openwrt-${VERSION:0:5})
