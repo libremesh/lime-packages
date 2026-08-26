@@ -2,23 +2,14 @@
 #
 # Copyright (C) 2006-2014 OpenWrt.org
 
-include $(TOPDIR)/rules.mk
+include ../../libremesh.mk
 
-GIT_COMMIT_DATE:=$(shell git log -n 1 --pretty=%ad --date=short . | sed 's|-|.|g' )
-GIT_COMMIT_TSTAMP:=$(shell git log -n 1 --pretty=%at . )
-
-PKG_NAME:=lime-system
-PKG_VERSION=$(GIT_COMMIT_DATE)~$(GIT_COMMIT_TSTAMP)
-
-LIME_ID:=LiMe
-LIME_RELEASE:=$(shell git branch | sed -n '/\* /s///p')
-LIME_CODENAME:=development
+LIME_ID:=LibreMesh
+LIME_RELEASE:=
+LIME_CODENAME:=nightly
 LIME_BRANCH:=$(shell git branch | sed -n '/\* /s///p')
-LIME_REVISION:=$(shell git log -n 1 --pretty=%h)
-LIME_BUILDDATE:=$(shell date +%Y%m%d_%H%M)
-LIME_DESCRIPTION:=$(LIME_ID) $(LIME_RELEASE) $(LIME_CODENAME) ($(LIME_BRANCH) rev. $(LIME_REVISION) $(LIME_BUILDDATE))
-
-include $(INCLUDE_DIR)/package.mk
+LIME_REVISION:=r$(PKG_VERSION)
+LIME_BUILD_DATE:=$(shell date +%s)
 
 define Package/$(PKG_NAME)
   TITLE:=LibreMesh system core
@@ -32,28 +23,25 @@ define Package/$(PKG_NAME)
 endef
 
 define Package/$(PKG_NAME)/description
-	LibreMesh is a modular meta-firmare this package provide the core of it
+	LibreMesh is a modular meta-firmware this package provide the core of it
 	which articulates all LiMe modules around it
 endef
 
-define Build/Compile
-endef
-
-LIME_VERSION_SED:=$(SED)   's,%LIME_ID%,$(LIME_ID),g' \
-			-e 's,%LIME_RELEASE%,$(LIME_RELEASE),g' \
-			-e 's,%LIME_CODENAME%,$(LIME_CODENAME),g' \
-			-e 's,%LIME_BRANCH%,$(LIME_BRANCH),g' \
-			-e 's,%LIME_REVISION%,$(LIME_REVISION),g' \
-			-e 's,%LIME_BUILDDATE%,$(LIME_BUILDDATE),g' \
-			-e 's,%LIME_DESCRIPTION%,$(LIME_DESCRIPTION),g'
+LIME_VERSION_SED:=$(SED) 's,%LIME_ID%,$(LIME_ID),g' \
+	-e 's,%LIME_RELEASE%,$(LIME_RELEASE),g' \
+	-e 's,%LIME_CODENAME%,$(LIME_CODENAME),g' \
+	-e 's,%LIME_BRANCH%,$(LIME_BRANCH),g' \
+	-e 's,%LIME_REVISION%,$(LIME_REVISION),g' \
+	-e 's,%LIME_BUILD_DATE%,$(LIME_BUILD_DATE),g'
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/
-	$(CP) ./files/* $(1)/
+	[ ! -d ./build/files ] || $(CP) ./build/files/* $(1)/
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/lime-config/
-	$(LIME_VERSION_SED) \
-		$(1)/etc/lime_release \
-		$(1)/etc/profile.d/10-lime-banner.sh
+	$(INSTALL_DIR) $(1)/etc/lime-assets/community/
+	$(INSTALL_DIR) $(1)/etc/lime-assets/node/
+
+	$(LIME_VERSION_SED) $(1)/etc/lime_release
 endef
 
 define Package/$(PKG_NAME)/postinst
