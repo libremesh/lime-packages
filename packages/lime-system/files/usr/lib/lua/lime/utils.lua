@@ -243,34 +243,15 @@ function utils.is_valid_hostname(hostname)
 end
 
 function utils.file_exists(name)
-	local f = io.open(name, "r")
-	if f ~= nil then
-		io.close(f)
-		return true
-	else
-		return false
-	end
+	return fs.stat(name, "type") == "reg"
 end
 
 function utils.read_file(name)
-	local f = io.open(name, "r")
-	local ret = nil
-	if f ~= nil then
-		ret = f:read("*all")
-		f:close()
-	end
-	return ret
+	return fs.readfile(name)
 end
 
 function utils.write_file(name, content)
-	local f = io.open(name, "w")
-	local ret = false
-	if f ~= nil then
-		f:write(content)
-		f:close()
-		ret = true
-	end
-	return ret
+	return fs.writefile(name, content)
 end
 
 function utils.is_installed(pkg)
@@ -304,11 +285,7 @@ function utils.tableMelt(t1, t2)
 end
 
 function utils.tableLength(t)
-	local count = 0
-	for _ in pairs(t) do
-		count = count + 1
-	end
-	return count
+	return #t
 end
 
 function utils.indexFromName(name)

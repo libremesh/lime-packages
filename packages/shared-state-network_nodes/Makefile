@@ -9,7 +9,7 @@ define Package/$(PKG_NAME)
   TITLE:=$(PKG_NAME) provides data-type for network nodes marked as reliable by user
   MAINTAINER:=Asociacion Civil Altermundi <info@altermundi.net>
   DEPENDS:=+shared-state +shared-state-nodes_and_links +lime-system +luci-lib-jsonc \
-	   +libubus-lua
+	   +libubus-lua +lime-utils
   PKGARCH:=all
 endef
 

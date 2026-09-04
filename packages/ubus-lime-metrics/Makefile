@@ -7,7 +7,8 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
   SUBMENU:=3. Applications
   TITLE:=Metrics ubus module
-  DEPENDS:= +lua +libubox-lua +libubus-lua +luci-lib-jsonc +netperf +mtr +check-internet +lime-system +ubus-lime-utils
+  DEPENDS:= +lua +libubox-lua +libubus-lua +luci-lib-jsonc +netperf +mtr +check-internet +lime-system +ubus-lime-utils \
+    +lime-utils
   PKGARCH:=all
 endef
 
