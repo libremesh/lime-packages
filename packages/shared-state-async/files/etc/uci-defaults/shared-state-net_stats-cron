@@ -1,9 +1,4 @@
 #!/bin/sh
-
-unique_append() {
-	grep -qF "$1" "$2" || echo "$1" >>"$2"
-}
-
 mSc="net_stats"
 
 uci set shared-state.${mSc}=dataType
@@ -16,3 +11,5 @@ uci commit shared-state
 unique_append \
 	"*/3 * * * * ((sleep \$((RANDOM % 120)); shared-state-async insert net-stats < /tmp/shared-state/network_statistics.json &> /dev/null)&)" \
 	/etc/crontabs/root
+
+exit 0

@@ -11,7 +11,7 @@ define Package/$(PKG_NAME)
 	URL:=http://libremesh.org
 	DEPENDS:=+libuci-lua +lua \
 		+luci-lib-jsonc +shared-state +shared-state-dnsmasq_hosts \
-		+luci-lib-nixio
+		+luci-lib-nixio +lime-utils
 	PKGARCH:=all
 endef
 

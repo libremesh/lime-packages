@@ -1,0 +1,7 @@
+#!/bin/sh
+if [ -z "$1" ] || [ -z "$2" ]; then
+	printf "Usage: unique_append <string> <file>\nTwo arguments required."
+	exit 0
+fi
+[ ! -f "$2" ] && mkdir -p "$(dirname "$2")" && touch "$2"
+grep -qx "$1" "$2" || echo "$1" >>"$2"

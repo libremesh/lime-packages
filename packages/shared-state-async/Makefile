@@ -36,7 +36,7 @@ define Package/shared-state-async
   TITLE:=shared-state C++ async
   CATEGORY:=LibreMesh
   URL:=https://github.com/libremesh/shared-state-async
-  DEPENDS:=+!SHARED_STATE_ASYNC_STATIC:libstdcpp +shared-state
+  DEPENDS:=+!SHARED_STATE_ASYNC_STATIC:libstdcpp +shared-state +lime-utils
 endef
 
 define Package/shared-state-async/config
