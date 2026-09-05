@@ -33,8 +33,13 @@ network.protoParamsSeparator = ":"
 network.protoVlanSeparator = "_"
 network.limeIfNamePrefix = "lm_net_"
 
+--! Returns the mac address of the interface or raises an error if it does not exist
 function network.get_mac(ifname)
 	local _, macaddr = next(network.get_own_macs(ifname))
+	--! Fail if the MAC address for a non-existent device is requested
+	if macaddr == nil then
+		error("MAC address not found for the specified interface: " .. tostring(ifname), 2)
+	end
 	return utils.split(macaddr, ":")
 end
 
