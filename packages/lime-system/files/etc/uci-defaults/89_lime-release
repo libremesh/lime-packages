@@ -4,11 +4,18 @@
 . /etc/openwrt_release
 . /etc/lime_release
 
-sed -i -e s/"^DISTRIB_ID=.*"/"DISTRIB_ID='$LIME_ID'"/g \
-	-e s/"^DISTRIB_RELEASE=.*"/"DISTRIB_RELEASE='$LIME_RELEASE'"/g \
-	-e s/"^DISTRIB_REVISION=.*"/"DISTRIB_REVISION='$LIME_REVISION'"/g \
-	-e s/"^DISTRIB_CODENAME=.*"/"DISTRIB_CODENAME='$LIME_CODENAME'"/g \
-	-e s/"^DISTRIB_DESCRIPTION=.*"/"DISTRIB_DESCRIPTION='$LIME_DESCRIPTION'"/g \
-	/etc/openwrt_release
+LIME_VERSION_CODE="$LIME_RELEASE $LIME_REVISION $LIME_CODENAME"
+if [ -z "$LIME_RELEASE" ]; then
+	LIME_VERSION_CODE="$LIME_REVISION $LIME_CODENAME"
+fi
+
+LIME_DESCRIPTION="$LIME_ID $DISTRIB_RELEASE $LIME_VERSION_CODE"
+
+sed -i -e "s,^\(OPENWRT_RELEASE=\).*$,\1$LIME_DESCRIPTION,g" \
+	/etc/os-release
+
+sed -i -e "s,%LIME_DESCRIPTION%,$LIME_DESCRIPTION,g" \
+	/etc/profile.d/10-lime-banner.sh \
+	/etc/lime_release
 
 exit 0
