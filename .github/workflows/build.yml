@@ -40,26 +40,26 @@ jobs:
         run: |
           JSON='['
           FIRST_BUILD=1
-          versions=$(curl https://downloads.openwrt.org/.versions.json)
-          stable=$(echo $versions | jq | grep \"stable_ | sed 's|.*\"stable_version\": \"\(.*\)\",|\1|')
-          oldstable=$(echo $versions | jq | grep oldstable_ | sed 's|.*\"oldstable_version\": \"\(.*\)\",|\1|')
+          versions_json=$(curl -s https://downloads.openwrt.org/.versions.json)
+          stable_version=$(echo "$versions_json" | jq -r '.stable_version')
+          oldstable_version=$(echo "$versions_json" | jq -r '.oldstable_version')
+          upcoming_version=$(echo "$versions_json" | jq -r '.upcoming_version')
+          stable_branch=$(echo "$stable_version" | cut -d. -f1,2)
+          oldstable_branch=$(echo "$oldstable_version" | cut -d. -f1,2)
+          upcoming_branch=$(echo "$upcoming_version" | cut -d. -f1,2)
 
-          for version in "main" "${stable:0:5}" "${oldstable:0:5}"; do
+          for branch in "main" "$stable_branch" "$oldstable_branch" "$upcoming_branch"; do
+            if [ ! -z "$branch" ] && [ -n "$branch" ]; then
 
-            VERSION=$([ "$version" == "main" ] \
-              && echo "main" || echo "openwrt-$version")
-            echo $VERSION
+              VERSION=$([ "$branch" == "main" ] && echo "main" || echo "openwrt-$branch")
+              OPENWRT_BRANCH_PATH="openwrt-$branch"
+              echo $VERSION
 
-            OPENWRT_BRANCH_PATH="openwrt-$version"
-            echo $OPENWRT_BRANCH_PATH
-            
-            [[ $FIRST_BUILD -ne 1 ]] && JSON="$JSON"','
-            FIRST_BUILD=0
-
-            JSON="$JSON"'{"version": "'"$VERSION"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
+              [[ $FIRST_BUILD -ne 1 ]] && JSON="$JSON"','
+              FIRST_BUILD=0
+              JSON="$JSON"'{"version": "'"$VERSION"'", "openwrt_branch_path": "'"$OPENWRT_BRANCH_PATH"'" }'
+            fi
           done
-
-          echo $JSON
 
           matrix_include='{"include": '"$JSON"']}'
           echo "matrix_builds=${matrix_include}" >> "$GITHUB_OUTPUT"

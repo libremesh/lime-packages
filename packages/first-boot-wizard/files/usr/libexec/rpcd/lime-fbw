@@ -2,9 +2,7 @@
 
 local ubus = require "ubus"
 local fbw = require 'firstbootwizard'
-local nixio = require "nixio"
 local json = require 'luci.jsonc'
-local config = require "lime.config"
 local utils = require('lime.utils')
 
 
@@ -61,7 +59,7 @@ local methods = {
     stop =      {no_params = 0},
     status =    {no_params = 0},
     restart =   {no_params = 0},
-    
+
     set_network = { file = 'str', hostname = 'str' },
     create_network = {
         network =   'str',

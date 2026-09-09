@@ -1,0 +1,114 @@
+# CI targets for the build-firmware workflow.
+openwrt_releases:
+  - "24.10.6"
+  - "25.12.2"
+feed_branches:
+  "24.10.6": "openwrt-24.10"
+  "25.12.2": "openwrt-25.12"
+default_physical_releases:
+  - "24.10.6"
+
+packages: >-
+  lime-system lime-proto-babeld lime-proto-batadv lime-proto-anygw
+  lime-hwd-openwrt-wan lime-hwd-ground-routing lime-app
+  lime-debug lime-docs lime-docs-minimal
+  shared-state-babeld_hosts shared-state-bat_hosts
+  shared-state-dnsmasq_hosts shared-state-nodes_and_links
+  babeld-auto-gw-mode check-date-http batctl-default
+  -dnsmasq -odhcpd-ipv6only
+
+targets:
+  - device: linksys_e8450
+    imagebuilder: mediatek-mt7622
+    # The `linksys_e8450-ubi` profile (UBI-on-NAND) defines KERNEL_INITRAMFS
+    # and ships the kernel.bin + DTB build_image.sh needs to repack the FIT;
+    # the plain `linksys_e8450` profile does not.
+    profile: linksys_e8450-ubi
+    arch: aarch64_cortex-a53
+    sdk_arch: aarch64_cortex-a53-openwrt-24.10
+    index_imagebuilder: mediatek-filogic
+    build_initramfs: true
+    fit_arch: arm64
+    fit_kernel_loadaddr: "0x44000000"
+    fit_dts: mt7622-linksys-e8450-ubi
+    test_firmware: true
+    test_places:
+      - belkin_rt3200_1
+      - belkin_rt3200_2
+      - belkin_rt3200_3
+    # MT7622 BL2/BL31 take ~12s before U-Boot starts its 3s autoboot
+    # countdown; bump the interrupt-spam window so it covers both.
+    uboot_interrupt_spam_sec: 25
+    # mt7915e PCIe needs `swiotlb=512` to allocate DMA bounce buffers.
+    fit_bootargs: "console=ttyS0,115200n1 swiotlb=512 pci=pcie_bus_perf"
+    # OEM MAC lives in a UBI factory volume; mtk_eth_soc races UBI attach
+    # and gets stuck on -EPROBE_DEFER. Patch DTBs to inject the MAC.
+    dtb_patch_nvmem_mac: true
+    # Force the legacy 23.05 SPI-NAND layout so the kernel UBI MTD does
+    # not overwrite BL2/BL31/factory on units still on layout 1.0.
+    dtb_force_legacy_partitions: true
+
+  - device: openwrt_one
+    imagebuilder: mediatek-filogic
+    profile: openwrt_one
+    arch: aarch64_cortex-a53
+    sdk_arch: aarch64_cortex-a53-openwrt-24.10
+    index_imagebuilder: mediatek-filogic
+    build_initramfs: true
+    fit_arch: arm64
+    fit_kernel_loadaddr: "0x44000000"
+    fit_dts: mt7981b-openwrt-one
+
+  - device: qemu_x86_64
+    imagebuilder: x86-64
+    profile: generic
+    arch: x86_64
+    sdk_arch: x86_64-openwrt-24.10
+    index_imagebuilder: x86-64
+    build_initramfs: false
+    image_format: x86-combined
+    # vwifi packaging fork pinned by full SHA (smart-HTTP rejects short prefixes).
+    packages: >-
+      {{ packages_default }} kmod-mac80211-hwsim wpad-mesh-mbedtls vwifi
+    extra_feeds:
+      - "src-git|vwifi|https://github.com/fcefyn-testbed/vwifi_cli_package.git^8a57be2622053ca75e7e2c8c592cf62b9fad012f"
+    extra_packages:
+      - "vwifi"
+    test_firmware: false
+    test_qemu: true
+
+  - device: librerouter_v1
+    imagebuilder: ath79-generic
+    profile: librerouter_librerouter-v1
+    arch: mips_24kc
+    sdk_arch: mips_24kc-openwrt-24.10
+    index_imagebuilder: ath79-generic
+    build_initramfs: true
+    image_format: dual-tftp
+    test_firmware: true
+    test_places:
+      - librerouter_1
+
+  - device: bananapi_bpi-r4
+    imagebuilder: mediatek-filogic
+    profile: bananapi_bpi-r4
+    arch: aarch64_cortex-a53
+    sdk_arch: aarch64_cortex-a53-openwrt-24.10
+    index_imagebuilder: mediatek-filogic
+    build_initramfs: true
+    fit_arch: arm64
+    fit_kernel_loadaddr: "0x46000000"
+    fit_dts: mt7988a-bananapi-bpi-r4
+    # mt7996e on 24.10.x panics under hostapd; exclude wifi kmods until the
+    # mt76 backport lands. The board still mesh-routes over the wired DSA
+    # ports. Tracking: https://github.com/openwrt/openwrt/issues/21657
+    packages: >-
+      lime-system lime-proto-babeld lime-proto-batadv lime-proto-anygw
+      lime-hwd-openwrt-wan lime-hwd-ground-routing lime-app
+      lime-debug lime-docs lime-docs-minimal
+      shared-state-babeld_hosts shared-state-bat_hosts
+      shared-state-dnsmasq_hosts shared-state-nodes_and_links
+      babeld-auto-gw-mode check-date-http batctl-default
+      -dnsmasq -odhcpd-ipv6only
+      -kmod-mt7996e -kmod-mt7996-firmware -kmod-mt7996-firmware-common
+      -kmod-mt7996-233-firmware -mt7988-wo-firmware

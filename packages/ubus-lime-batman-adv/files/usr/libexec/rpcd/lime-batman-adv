@@ -3,7 +3,7 @@
 --!
 --! Copyright 2017 Marcos Gutierrez <gmarcos87@gmail.com>
 
-require "ubus"
+local ubus = require "ubus"
 local split = require 'lime.utils'.split
 local json = require 'luci.jsonc'
 
@@ -11,21 +11,13 @@ local function printJson (obj)
     print(json.stringify(obj))
 end
 
-local function shell(command)
-    --! TODO(nicoechaniz): sanitize or evaluate if this is a security risk
-    local handle = io.popen(command)
-    local result = handle:read("*a")
-    handle:close()
-    return result
-end
-
 local conn = ubus.connect()
 if not conn then
     error("Failed to connect to ubus")
 end
 
-local function get_gateways(msg)
-	local v, l, fd
+local function get_gateways()
+	local l, fd
 	local rv = {
 		gateways = {}
 	}
@@ -56,26 +48,31 @@ local function get_gateways(msg)
 	end
 end
 
-local function get_originators(msg)
+local function get_originators()
 	local fd, l
 	local rv = {
 		originators = {}
 	}
 	local originators_command = (
-        "batctl o -H 2>/dev/null ".. -- gets originators from batctl
-        "| tr -d '[]()' ".. -- removes brackets and parenthesis
-        "| sed 's/^  / -/g' ".. -- normalizes output, adding a minus when no asterisk is outputed in each line
-        "| sed 's/^ //g' "..  -- removes the space from the beginning of the line
-        "| sed -r 's/\\s+/,/g'".. -- replaces tabs for commas
-        "| sed -r 's/s,/,/g'" -- removes the 's' from the last_seen field referencing seconds
+		--! gets originators from batctl
+        "batctl o -H 2>/dev/null "..
+		--! removes brackets and parenthesis
+        "| tr -d '[]()' "..
+		--! normalizes output, adding a minus when no asterisk is outputed in each line
+        "| sed 's/^  / -/g' "..
+		--! removes the space from the beginning of the line
+        "| sed 's/^ //g' "..
+		--! replaces tabs for commas
+        "| sed -r 's/\\s+/,/g'"..
+		--! removes the 's' from the last_seen field referencing seconds
+        "| sed -r 's/s,/,/g'"
     )
 	fd = io.popen(originators_command)
 	if fd then
 		repeat
 			l = fd:read()
 			if l then
-				local asterisk, originator_name, last_seen, link_quality, next_hop, outgoing_if
-                                asterisk, originator_name, last_seen, link_quality, next_hop, outgoing_if = unpack(split(l, ","))
+				local _, originator_name, last_seen, link_quality, next_hop, outgoing_if = unpack(split(l, ","))
 				if originator_name and last_seen and link_quality then
 					rv.originators[#rv.originators+1] = {
 						originator_name,
@@ -92,7 +89,7 @@ local function get_originators(msg)
 	end
 end
 
-local function get_interfaces(msg)
+local function get_interfaces()
 	local fd, l
 	local rv = {
 		interfaces = {}
@@ -101,7 +98,7 @@ local function get_interfaces(msg)
 	if fd then
 		repeat
 			l = fd:read("*l")
-			v = l and l:match("^(.-):")
+			local v = l and l:match("^(.-):")
 			if v then
 				rv.interfaces[#rv.interfaces+1] = v
 			end

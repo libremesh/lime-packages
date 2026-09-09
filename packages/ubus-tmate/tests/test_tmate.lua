@@ -1,71 +1,76 @@
-local utils = require "lime.utils"
-local test_utils = require "tests.utils"
+local tmate = require("tmate")
 
-local tmate = require "tmate"
+describe("ubus-tmate tests #tmate", function()
+	it("get_session returns a valid session", function()
+		local expectedResponse = "ssh NnAR3Md9HJ7NTJhqVsxqW2P8m@nyc1.tmate.io"
+		stub(tmate, "cmd_as_str", function()
+			return expectedResponse .. "\n"
+		end)
 
-describe('ubus-tmate tests #tmate', function()
+		tmate.open_session()
+		tmate.wait_session_ready()
 
-    it('get_session returns a valid session', function()
-	expectedResponse = "ssh NnAR3Md9HJ7NTJhqVsxqW2P8m@nyc1.tmate.io"
-        stub(tmate, 'cmd_as_str', function () return expectedResponse.."\n" end)
+		local response = tmate.get_rw_session()
+		assert.is.equal(expectedResponse, response)
 
-	tmate.open_session()
-	tmate.wait_session_ready()
+		response = tmate.get_ro_session()
+		assert.is.equal(expectedResponse, response)
 
-	local response = tmate.get_rw_session()
-        assert.is.equal(expectedResponse, response)
+		tmate.close_session()
+	end)
 
-	local response = tmate.get_ro_session()
-        assert.is.equal(expectedResponse, response)
+	it("get_session returns an empty session when no open session", function()
+		local expectedResponse = ""
+		stub(tmate, "cmd_as_str", function()
+			return expectedResponse .. "\n"
+		end)
 
-	tmate.close_session()
-    end)
+		local response = tmate.get_rw_session()
+		assert.is.equal(expectedResponse, response)
 
-    it('get_session returns an empty session when no open session', function()
-	expectedResponse = ""
-        stub(tmate, 'cmd_as_str', function () return expectedResponse.."\n" end)
+		response = tmate.get_ro_session()
+		assert.is.equal(expectedResponse, response)
+	end)
 
-	local response = tmate.get_rw_session()
-        assert.is.equal(expectedResponse, response)
+	it("get_session returns an empty session when you close an open session", function()
+		local expectedResponse = ""
+		stub(tmate, "cmd_as_str", function()
+			return expectedResponse .. "\n"
+		end)
 
-	local response = tmate.get_ro_session()
-        assert.is.equal(expectedResponse, response)
-    end)
+		tmate.open_session()
+		tmate.wait_session_ready()
+		tmate.close_session()
 
-    it('get_session returns an empty session when you close an open session', function()
-	expectedResponse = ""
-        stub(tmate, 'cmd_as_str', function () return expectedResponse.."\n" end)
+		local response = tmate.get_rw_session()
+		assert.is.equal(expectedResponse, response)
 
-	tmate.open_session()
-	tmate.wait_session_ready()
-	tmate.close_session()
+		response = tmate.get_ro_session()
+		assert.is.equal(expectedResponse, response)
+	end)
 
-	local response = tmate.get_rw_session()
-        assert.is.equal(expectedResponse, response)
+	it("get_connected_clients returns empty string when no session exists", function()
+		local expectedResponse = ""
+		stub(tmate, "cmd_as_str", function()
+			return expectedResponse .. "\n"
+		end)
 
-	local response = tmate.get_ro_session()
-        assert.is.equal(expectedResponse, response)
-    end)
+		local response = tmate.get_connected_clients()
+		assert.is.equal(expectedResponse, response)
+	end)
 
-    it('get_connected_clients returns empty string when no session exists', function()
-	expectedResponse = ""
-        stub(tmate, 'cmd_as_str', function () return expectedResponse.."\n" end)
+	it("get_connected_clients returns number of connected clients when connected", function()
+		local expectedResponse = "0"
+		stub(tmate, "cmd_as_str", function()
+			return expectedResponse .. "\n"
+		end)
 
-	local response = tmate.get_connected_clients()
-        assert.is.equal(expectedResponse, response)
-    end)
+		tmate.open_session()
+		tmate.wait_session_ready()
 
-    it('get_connected_clients returns number of connected clients when connected', function()
-	expectedResponse = "0"
-        stub(tmate, 'cmd_as_str', function () return expectedResponse.."\n" end)
+		local response = tmate.get_connected_clients()
+		assert.is.equal(expectedResponse, response)
 
-	tmate.open_session()
-	tmate.wait_session_ready()
-
-	local response = tmate.get_connected_clients()
-        assert.is.equal(expectedResponse, response)
-
-	tmate.close_session()
-    end)
-
+		tmate.close_session()
+	end)
 end)

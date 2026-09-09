@@ -1,5 +1,5 @@
 #!/bin/sh
-cat << EOF >> /usr/bin/lime-apply
+cat <<EOF >>/usr/bin/lime-apply
 
 # Update title in lime-app
 [ -f /www/app/index.html ] && {

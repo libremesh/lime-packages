@@ -12,7 +12,9 @@ local utils = require('lime.utils')
 local config = require("lime.config")
 
 local hostname = utils.hostname()
-function get_node_info()
+local shared_state_publish_node_info = {}
+
+function shared_state_publish_node_info.get_node_info()
 	local uci = config.get_uci_cursor()
 	local coords = location.get_node() or location.get_community() or
 	{lat="FIXME", long="FIXME"}
@@ -30,5 +32,7 @@ function get_node_info()
 	 device = "Router" }
 end
 
-local result = { [hostname] = get_node_info() }
+local result = { [hostname] = shared_state_publish_node_info.get_node_info() }
 io.popen("shared-state-async insert node_info", "w"):write(JSON.stringify(result))
+
+return shared_state_publish_node_info

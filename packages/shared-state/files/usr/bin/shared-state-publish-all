@@ -1,5 +1,5 @@
 #!/bin/sh
 
-for publisher in /etc/shared-state/publishers/* ; do
-    [ -x "$publisher" ] && "$publisher";
+for publisher in /etc/shared-state/publishers/*; do
+	[ -x "$publisher" ] && "$publisher"
 done
