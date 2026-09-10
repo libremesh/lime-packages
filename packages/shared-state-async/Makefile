@@ -11,7 +11,7 @@ PKG_NAME:=shared-state-async
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/javierbrk/shared-state-async.git
-PKG_SOURCE_VERSION:=useStaticallyLinkedStdlib
+PKG_SOURCE_VERSION:=use-statically-linked-stdlib
 PKG_MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 PKG_LICENSE:=AGPL-3.0-only
 
