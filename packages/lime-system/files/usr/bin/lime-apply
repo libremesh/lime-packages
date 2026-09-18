@@ -1,4 +1,16 @@
 #!/bin/sh
+
+execute_hooks() {
+	local action="$1"
+	for filename in /etc/hotplug.d/lime-apply/*; do
+		printf "Executed hook:\tsh -c \"ACTION=%s %s\"" "$action" "$filename"
+		ACTION=$action ${filename} >/dev/null
+		printf "\t%s\n" "$?"
+	done
+}
+
+execute_hooks "pre"
+
 echo "Apply hostname"
 hostname="$(/sbin/uci get system.@system[0].hostname)"
 echo "$hostname" >/proc/sys/kernel/hostname
@@ -23,3 +35,5 @@ echo "Reload routing protocols"
 		sleep 1 && /etc/init.d/watchping start
 	fi
 }
+
+execute_hooks "post"
