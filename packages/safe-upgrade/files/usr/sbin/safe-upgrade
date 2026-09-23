@@ -10,16 +10,24 @@ local utils = require "lime.utils"
 local su = {}
 
 su.version = '1.0'
-local firmware_size_bytes = 7936*1024
+--! local firmware_size_bytes = 7936*1024
 --! Keep the fw addresses as strings beacause of https://gitlab.com/librerouter/librerouteros/-/issues/61
 local fw1_addr = '0x9f050000'
-local fw2_addr = '0x9f810000' -- fw1_addr + firmware_size_bytes
+--! fw1_addr + firmware_size_bytes
+local fw2_addr = '0x9f810000'
 
 su._supported_devices = {'librerouter-v1'}
 su._mtd_partitions_desc = '/proc/mtd'
 
 --! safe upgrade script, generated with bootscript.py, DO NOT edit here!
-local bootcmd = 'run preboot; boot_part=${stable_part}; if test ${testing_part} -ne 0; then echo Testing part ${testing_part}; boot_part=${testing_part}; set testing_part 0; saveenv; fi; if test ${boot_part} -eq 2; then fw_addr=${fw2_addr}; run boot_2; else fw_addr=${fw1_addr}; run boot_1; fi; run boot_1; bootm ${fw1_addr};'
+local bootcmd = 'run preboot; boot_part=${stable_part}; '..
+    'if test ${testing_part} -ne 0; then '..
+        'echo Testing part ${testing_part}; boot_part=${testing_part}; set testing_part 0; saveenv; '..
+    'fi; '..
+    'if test ${boot_part} -eq 2; then '..
+        'fw_addr=${fw2_addr}; run boot_2; else fw_addr=${fw1_addr}; run boot_1; '..
+    'fi; '..
+    'run boot_1; bootm ${fw1_addr};'
 
 su.STABLE_PARTITION_NAME = 'stable_part'
 su.TESTING_PARTITION_NAME = 'testing_part'
@@ -77,7 +85,7 @@ function su.get_uboot_env(key)
 
     if value:find('## Error:') == nil then
         --! remove EOL
-        local value = value:sub(1, -2)
+        value = value:sub(1, -2)
         return value
     else
         return nil
@@ -208,7 +216,7 @@ function su.preserve_files_to_new_partition(args)
     os.execute("ln -s ../init.d/safe_upgrade_auto_reboot /tmp/_to_sysupgradetgz/etc/rc.d/S11safe_upgrade_auto_reboot")
 
     if not args.disable_reboot_safety then
-        local f = io.open("/tmp/_to_sysupgradetgz/etc/safe_upgrade_auto_reboot_confirm_timeout_s", "w")
+        f = io.open("/tmp/_to_sysupgradetgz/etc/safe_upgrade_auto_reboot_confirm_timeout_s", "w")
         f:write(args.reboot_safety_timeout)
         f:close()
     end
@@ -233,7 +241,8 @@ function su.preserve_files_to_new_partition(args)
         end
     end
 
-    os.execute('find /tmp/_to_sysupgradetgz/ -type f -o -type l | sed "s|^\/tmp\/_to_sysupgradetgz\/||" | sort -u > /tmp/_to_persist')
+    os.execute('find /tmp/_to_sysupgradetgz/ -type f -o -type l | '..
+        'sed "s|^/tmp/_to_sysupgradetgz/||" | sort -u > /tmp/_to_persist')
     os.execute("tar cfz /tmp/sysupgrade.tgz -C /tmp/_to_sysupgradetgz/ -T /tmp/_to_persist 2>/dev/null")
 
     utils.log('List of files that are being preserved:')
@@ -327,13 +336,14 @@ local function upgrade(args)
                              args.firmware, partitions.other))
 
     --! TODO: load bootargs from acompaning image, here is hardcoded!!
-    local fw_mtd_str = ''
+    local fw_mtd_str
     if partitions.other == 2 then
         fw_mtd_str = '7936k(fw1),7936k(firmware)'
     else
         fw_mtd_str = '7936k(firmware),7936k(fw2)'
     end
-    local boot_script_tpl = 'set bootargs console=ttyS0,115200 board=LIBREROUTERV1 mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),%s,128k(res),64k(art); echo booting part %d; bootm ${fw_addr};'
+    local boot_script_tpl = 'set bootargs console=ttyS0,115200 board=LIBREROUTERV1 '..
+        'mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),%s,128k(res),64k(art); echo booting part %d; bootm ${fw_addr};'
     local boot_script = string.format(boot_script_tpl, fw_mtd_str, partitions.other)
     set_uboot_env(string.format('boot_%d', partitions.other), boot_script)
     set_testing_partition(partitions.other)
@@ -344,7 +354,7 @@ local function upgrade(args)
     end
 end
 
-local function confirm(args)
+local function confirm()
     assert_su_installed()
     local partitions = su.get_partitions()
     if partitions.current == partitions.stable then
@@ -360,11 +370,12 @@ local function confirm(args)
     print(string.format('Confirmed partition %d as stable partition', partitions.current))
 end
 
-local function test_other_partition(args)
+local function test_other_partition()
     assert_su_installed()
     local partitions = su.get_partitions()
     set_testing_partition(partitions.other)
-    print(string.format('Next boot will run partition: %d. You may confirm it if you like after reboot.', partitions.other))
+    print(string.format('Next boot will run partition: %d. '..
+        'You may confirm it if you like after reboot.', partitions.other))
 end
 
 
@@ -394,27 +405,27 @@ local function parse_args()
 
     parser:command('show', 'Show the status of the system partitions.')
 
-    local verify = parser:command('verify', 'Verify that the firmware is valid and can be installed.')
-    verify:argument("firmware", "firmware image (xxx-sysupgrade.bin)"):convert(validate_file_exists)
+    local verify_is_valid = parser:command('verify', 'Verify that the firmware is valid and can be installed.')
+    verify_is_valid:argument("firmware", "firmware image (xxx-sysupgrade.bin)"):convert(validate_file_exists)
 
-    local upgrade = parser:command('upgrade', 'Upgrade firmware in a non permanent way.')
-    upgrade:argument("firmware", "firmware image (xxx-sysupgrade.bin)"):convert(validate_file_exists)
-    upgrade:flag("-n --do-not-preserve-config", "Do not save configuration to the new partition")
-    upgrade:flag("--disable-reboot-safety", "Disable the automatic reboot safety mechanism")
-    upgrade:flag("--force", "Upgrade even if firmware is not valid")
-    upgrade:flag("--no-reboot", "Do not reboot automatically after flashing")
-    upgrade:option("--preserve-archive", [[Specify the files to be preserved as a tar.gz (Like the sysupgrade -f).
+    local upgrade_cmd = parser:command('upgrade', 'Upgrade firmware in a non permanent way.')
+    upgrade_cmd:argument("firmware", "firmware image (xxx-sysupgrade.bin)"):convert(validate_file_exists)
+    upgrade_cmd:flag("-n --do-not-preserve-config", "Do not save configuration to the new partition")
+    upgrade_cmd:flag("--disable-reboot-safety", "Disable the automatic reboot safety mechanism")
+    upgrade_cmd:flag("--force", "Upgrade even if firmware is not valid")
+    upgrade_cmd:flag("--no-reboot", "Do not reboot automatically after flashing")
+    upgrade_cmd:option("--preserve-archive", [[Specify the files to be preserved as a tar.gz (Like the sysupgrade -f).
     To preserve a full config you may use sysupgrade --create-backup and use this .tar.gz.]])
                    :convert(validate_file_exists)
-    upgrade:option("--reboot-safety-timeout",
+    upgrade_cmd:option("--reboot-safety-timeout",
                    "Set the timeout (in seconds) of the automatic reboot safety mechanism")
                    :default('600'):convert(validate_safety_timeout)
 
     parser:command('confirm', ('Confirm the current partition. Use when after an upgrade ' ..
                                'or after running "test-other-partition".'))
 
-    local bootstrap = parser:command('bootstrap', 'Install the safe-upgrade mechanism')
-    bootstrap:flag("--force", "Install even it is already installed.")
+    local bootstrap_cmd = parser:command('bootstrap', 'Install the safe-upgrade mechanism')
+    bootstrap_cmd:flag("--force", "Install even it is already installed.")
     parser:command('test-other-partition', 'Mark the other partition as testing partition.')
 
     parser:command('board-supported', 'Exits with 0 if board is supported')

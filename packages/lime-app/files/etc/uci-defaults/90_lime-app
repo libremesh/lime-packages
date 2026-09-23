@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2016
 uci add rpcd login
 uci set rpcd.@login[1].username='lime-app'
 uci set rpcd.@login[1].password='$1$$ta3C2yX4TvVObdaJyQ9Md1'

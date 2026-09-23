@@ -12,8 +12,9 @@ local ubus = require "ubus"
 local shared_state_links_info = require ("shared_state_links_info")
 
 local ifaceip = {}
+local sspbli = {}
 
-function get_interface_ip(ifname)
+function sspbli.get_interface_ip(ifname)
     if ifaceip[ifname] == nil then
         ifaceip[ifname] = string.gsub(utils.unsafe_shell("ip -6 address show "
                 .. ifname ..
@@ -23,16 +24,16 @@ function get_interface_ip(ifname)
     return ifaceip[ifname]
 end
 
-function get_babel_links_info()
+function sspbli.get_babel_links_info()
     local conn = ubus.connect()
     local links = {}
-    babelneigt_obj = ubus.call(conn, "babeld", "get_neighbours", {})
+    local babelneigt_obj = ubus.call(conn, "babeld", "get_neighbours", {})
     if babelneigt_obj ~= nil then
         for key, value in pairs(babelneigt_obj.IPv6) do
-            local key_table = {(string.gsub(get_interface_ip(value.dev),":","")),(string.gsub(key,":",""))}
+            local key_table = {(string.gsub(sspbli.get_interface_ip(value.dev),":","")),(string.gsub(key,":",""))}
 		    table.sort(key_table)
 		    links[table.concat(key_table)]= {
-                src_ip = get_interface_ip(value.dev),
+                src_ip = sspbli.get_interface_ip(value.dev),
                 dst_ip = key,
                 iface = value.dev
             }
@@ -41,4 +42,6 @@ function get_babel_links_info()
     return links
 end
 
-shared_state_links_info.insert_in_ss_with_location(get_babel_links_info(),"babel_links_info")
+shared_state_links_info.insert_in_ss_with_location(sspbli.get_babel_links_info(),"babel_links_info")
+
+return sspbli

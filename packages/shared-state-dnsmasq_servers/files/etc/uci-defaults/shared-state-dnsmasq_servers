@@ -4,11 +4,10 @@
 uci set dhcp.@dnsmasq[0].serversfile=/var/shared-state/dnsmasq_servers
 uci commit dhcp
 
-unique_append()
-{
-	grep -qF "$1" "$2" || echo "$1" >> "$2"
+unique_append() {
+	grep -qF "$1" "$2" || echo "$1" >>"$2"
 }
 
 unique_append \
-	'*/5 * * * * ((sleep $((RANDOM % 120)); shared-state sync dnsmasq-servers &> /dev/null)&)'\
+	"*/5 * * * * ((sleep \$((RANDOM % 120)); shared-state sync dnsmasq-servers &> /dev/null)&)" \
 	/etc/crontabs/root

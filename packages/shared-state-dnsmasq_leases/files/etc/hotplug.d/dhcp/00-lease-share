@@ -1,0 +1,4 @@
+#!/bin/sh
+if [ "$ACTION" = "add" ] || [ "$ACTION" = "del" ]; then
+	(shared-state-publish_dnsmasq_leases "$@" >/dev/null) &
+fi

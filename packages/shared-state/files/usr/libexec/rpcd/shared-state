@@ -6,18 +6,16 @@
 --! Copyright (C) 2023  Asociación Civil Altermundi <info@altermundi.net>
 --! SPDX-License-Identifier: AGPL-3.0-only
 
-local ubus = require "ubus"
 local utils = require('lime.utils')
 local shared_state = require("shared-state")
 local json = require 'luci.jsonc'
-
-require("nixio.util")
+local nixio = require "nixio"
 
 local response_template = {data = {}, error = 500}
 
 local function showData(sharedState)
     local resultTable = sharedState:get()
-    if next(resultTable) == nill then
+    if next(resultTable) == nil then
         response_template.error = 404
     else
         for k, v in pairs(resultTable) do
@@ -29,19 +27,19 @@ local function showData(sharedState)
 end
 
 local function getFromSharedState(msg)
-    local sharedState = shared_state.SharedState:new(msg.data_type,
+    local sharedState = shared_state.SharedState.new(msg.data_type,
         nixio.syslog)
     showData(sharedState)
 end
 
 local function getFromSharedStateMultiWriter(msg)
-    local sharedState = shared_state.SharedStateMultiWriter:new(msg.data_type,
+    local sharedState = shared_state.SharedStateMultiWriter.new(msg.data_type,
         nixio.syslog)
     showData(sharedState)
 end
 
 local function insertIntoSharedStateMultiWriter(msg)
-    local sharedState = shared_state.SharedStateMultiWriter:new(msg.data_type,
+    local sharedState = shared_state.SharedStateMultiWriter.new(msg.data_type,
         nixio.syslog)
     local inputTable = msg.json or {}
     sharedState:insert(inputTable)

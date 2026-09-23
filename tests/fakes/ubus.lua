@@ -1,14 +1,13 @@
 local ubus = {}
 
 function ubus.connect()
-    local conn = {}
+	local conn = {}
 
-    function conn.call()
-        return {}
-    end
+	function conn.call()
+		return {}
+	end
 
-    return conn
+	return conn
 end
 
 return ubus
-

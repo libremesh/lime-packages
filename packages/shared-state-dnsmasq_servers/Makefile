@@ -10,7 +10,7 @@ define Package/$(PKG_NAME)
 	MAINTAINER:=Gui iribarren <gui@altermundi.net>
 	URL:=http://libremesh.org
 	DEPENDS:=+lua +luci-lib-jsonc \
-		shared-state
+		+shared-state
 	PKGARCH:=all
 endef
 

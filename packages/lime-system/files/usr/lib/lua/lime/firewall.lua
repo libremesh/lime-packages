@@ -7,12 +7,9 @@
 --!
 --! SPDX-License-Identifier: AGPL-3.0-only
 
-
-local fs = require("nixio.fs")
-local utils = require("lime.utils")
 local config = require("lime.config")
 
-firewall = {}
+local firewall = {}
 
 function firewall.clean()
 	--! There could be things to cleanup here, but we don't do it as it would
@@ -21,37 +18,32 @@ function firewall.clean()
 end
 
 function firewall.configure()
-        local uci = config:get_uci_cursor()
-        local lanIfs = {}
-        uci:foreach("firewall", "defaults",
-            function(section)
-                uci:set("firewall", section[".name"], "input", "ACCEPT")
-                uci:set("firewall", section[".name"], "output", "ACCEPT")
-                uci:set("firewall", section[".name"], "forward", "ACCEPT")
-            end
-        )
+	local uci = config:get_uci_cursor()
+	local lanIfs = {}
+	uci:foreach("firewall", "defaults", function(section)
+		uci:set("firewall", section[".name"], "input", "ACCEPT")
+		uci:set("firewall", section[".name"], "output", "ACCEPT")
+		uci:set("firewall", section[".name"], "forward", "ACCEPT")
+	end)
 
-        uci:foreach("network", "interface",
-            function(section)
-                if "lan" == section[".name"] or
-                   "lm_" == string.sub(section[".name"], 1, 3) and
-                   "_if" == string.sub(section[".name"], -3) then
-                    table.insert(lanIfs, section[".name"])
-                end
-            end
-        )
-
-	uci:foreach("firewall", "zone",
-		function(section)
-			if uci:get("firewall", section[".name"], "name") == "lan" then
-				uci:set("firewall", section[".name"], "input", "ACCEPT")
-				uci:set("firewall", section[".name"], "output", "ACCEPT")
-				uci:set("firewall", section[".name"], "forward", "ACCEPT")
-				uci:set("firewall", section[".name"], "mtu_fix", "1")
-				uci:set("firewall", section[".name"], "network", lanIfs)
-			end
+	uci:foreach("network", "interface", function(section)
+		if
+			"lan" == section[".name"]
+			or "lm_" == string.sub(section[".name"], 1, 3) and "_if" == string.sub(section[".name"], -3)
+		then
+			table.insert(lanIfs, section[".name"])
 		end
-	)
+	end)
+
+	uci:foreach("firewall", "zone", function(section)
+		if uci:get("firewall", section[".name"], "name") == "lan" then
+			uci:set("firewall", section[".name"], "input", "ACCEPT")
+			uci:set("firewall", section[".name"], "output", "ACCEPT")
+			uci:set("firewall", section[".name"], "forward", "ACCEPT")
+			uci:set("firewall", section[".name"], "mtu_fix", "1")
+			uci:set("firewall", section[".name"], "network", lanIfs)
+		end
+	end)
 end
 
 return firewall
