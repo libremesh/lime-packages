@@ -7,7 +7,7 @@
 --!
 --! SPDX-License-Identifier: AGPL-3.0-only
 
-network = {}
+local network = {}
 
 local ip = require("luci.ip")
 local fs = require("nixio.fs")
@@ -15,20 +15,23 @@ local fs = require("nixio.fs")
 local config = require("lime.config")
 local utils = require("lime.utils")
 
-
-function network.PROTO_PARAM_SEPARATOR() return ":" end
-function network.PROTO_VLAN_SEPARATOR() return "_" end
-function network.LIME_UCI_IFNAME_PREFIX() return "lm_net_" end
-
+function network.PROTO_PARAM_SEPARATOR()
+	return ":"
+end
+function network.PROTO_VLAN_SEPARATOR()
+	return "_"
+end
+function network.LIME_UCI_IFNAME_PREFIX()
+	return "lm_net_"
+end
 
 network.MTU_ETH = 1500
 network.MTU_ETH_WITH_VLAN = network.MTU_ETH - 4
 
 --! Deprecated use corresponding functions instead
-network.protoParamsSeparator=":"
-network.protoVlanSeparator="_"
-network.limeIfNamePrefix="lm_net_"
-
+network.protoParamsSeparator = ":"
+network.protoVlanSeparator = "_"
+network.limeIfNamePrefix = "lm_net_"
 
 function network.get_mac(ifname)
 	local _, macaddr = next(network.get_own_macs(ifname))
@@ -38,13 +41,13 @@ end
 --! Return a table of macs based on the interface globing filter
 function network.get_own_macs(interface_filter)
 	if interface_filter == nil then
-		interface_filter = '*'
+		interface_filter = "*"
 	end
 
 	local macs = {}
 	local search_path = "/sys/class/net/" .. interface_filter .. "/address"
 	for address_path in fs.glob(search_path) do
-		mac = io.open(address_path):read("*l")
+		local mac = io.open(address_path):read("*l")
 		macs[mac] = 1
 	end
 
@@ -55,20 +58,70 @@ function network.get_own_macs(interface_filter)
 	return result
 end
 
+function network.interface_exists(ifname)
+	return fs.lstat("/sys/class/net/" .. ifname) and true or false
+end
+
+--! Extract network.<role>.device or the first network.<role>.ports if found in /etc/board.json
+function network.primary_interface_from_board_by_role(role)
+	local board = utils.getBoardAsTable()
+	local ifname = nil
+	if board["network"] and board["network"][role] then
+		ifname = board["network"][role]["device"]
+		if ifname == nil or ifname == "" then
+			local ports = board["network"][role]["ports"]
+			if ports == nil or ports == "" or next(ports) == nil then
+				print("network.primary_interface() could not determine ifname from " .. role .. " in /etc/board.json!")
+			else
+				ifname = ports[1]
+			end
+		end
+	end
+	return ifname
+end
 
 function network.assert_interface_exists(ifname)
-	assert( ifname ~= nil and ifname ~= "",
-	        "network.primary_interface() could not determine ifname!" )
+	assert(ifname ~= nil and ifname ~= "", "network.primary_interface() could not determine ifname!")
 
-	assert( fs.lstat("/sys/class/net/"..ifname),
-	        "network.primary_interface() "..ifname.." doesn't exists!" )
+	assert(network.interface_exists(ifname), "network.primary_interface() " .. ifname .. " doesn't exists!")
+end
+
+function network.primary_interface_from_board()
+	--! Scan the role network.lan from /etc/board.json
+	local ifname = network.primary_interface_from_board_by_role("lan")
+
+	--! Scan other roles
+	if ifname == nil or ifname == "" then
+		local board = utils.getBoardAsTable()
+		for role in pairs(board["network"] or {}) do
+			if role ~= "lan" then
+				ifname = network.primary_interface_from_board_by_role(role)
+				if ifname ~= nil and ifname ~= "" then
+					break
+				end
+			end
+		end
+	end
+
+	return ifname
 end
 
 function network.primary_interface()
 	local ifname = config.get("network", "primary_interface", "eth0")
+
+	--! Check if the autogen primary_interface or the fallback 'eth0' exists
+	--! Force a fallback to 'auto' otherwise
+	if ifname ~= "auto" then
+		if not network.interface_exists(ifname) then
+			print("network.primary_interface() " .. ifname .. " doesn't exists! Fallback to 'auto'.")
+			ifname = "auto"
+			local uci = config.get_uci_cursor()
+			uci:set(config.UCI_AUTOGEN_NAME, "network", "primary_interface", "auto")
+		end
+	end
+
 	if ifname == "auto" then
-		local board = utils.getBoardAsTable()
-		ifname = board['network']['lan']['device']
+		ifname = network.primary_interface_from_board()
 	end
 	network.assert_interface_exists(ifname)
 	return ifname
@@ -83,22 +136,22 @@ function network.generate_host(ipprefix, hexsuffix)
 	--! If it's a network prefix calculate offset to add
 	if ipprefix:equal(ipprefix:network()) then
 		local addr_len = ipprefix:is4() and 32 or ipprefix:is6() and 128
-		num = tonumber(hexsuffix,16) % 2^(addr_len - ipprefix:prefix())
+		num = tonumber(hexsuffix, 16) % 2 ^ (addr_len - ipprefix:prefix())
 	end
 
 	return ipprefix:add(num)
 end
 
-function network.primary_address(offset)
-	local offset = offset or 0
+function network.primary_address(offsetArg)
+	local offset = offsetArg or 0
 	local pm = network.primary_mac()
 	local ipv4_template = config.get("network", "main_ipv4_address")
 	local ipv6_template = config.get("network", "main_ipv6_address")
 
 	local ipv4_maskbits = ipv4_template:match("[^/]+/(%d+)")
-	ipv4_template = ipv4_template:gsub("/%d-/","/")
+	ipv4_template = ipv4_template:gsub("/%d-/", "/")
 	local ipv6_maskbits = ipv6_template:match("[^/]+/(%d+)")
-	ipv6_template = ipv6_template:gsub("/%d-/","/")
+	ipv6_template = ipv6_template:gsub("/%d-/", "/")
 
 	ipv4_template = utils.applyMacTemplate10(ipv4_template, pm)
 	ipv6_template = utils.applyMacTemplate16(ipv6_template, pm)
@@ -107,7 +160,7 @@ function network.primary_address(offset)
 	ipv6_template = utils.applyNetTemplate16(ipv6_template)
 
 	local m4, m5, m6 = tonumber(pm[4], 16), tonumber(pm[5], 16), tonumber(pm[6], 16)
-	local hexsuffix = utils.hex((m4 * 256*256 + m5 * 256 + m6) + offset)
+	local hexsuffix = utils.hex((m4 * 256 * 256 + m5 * 256 + m6) + offset)
 	ipv4_template = network.generate_host(ip.IPv4(ipv4_template), hexsuffix)
 	ipv6_template = network.generate_host(ip.IPv6(ipv6_template), hexsuffix)
 
@@ -118,8 +171,8 @@ function network.primary_address(offset)
 	--! If anygw enabled, generated address is the one reserved for anygw like 192.0.2.1/24 ?
 	if utils.isModuleAvailable("lime.proto.anygw") then
 		local generalProtocols = config.get("network", "protocols")
-		for _,protocol in pairs(generalProtocols) do
-			if protocol == 'anygw' then
+		for _, protocol in pairs(generalProtocols) do
+			if protocol == "anygw" then
 				invalid = invalid or ipv4_template:equal(mc:minhost()) and "ANYGW"
 				break
 			end
@@ -130,8 +183,14 @@ function network.primary_address(offset)
 	if invalid then
 		ipv4_template = mc:maxhost()
 		ipv4_template:prefix(tonumber(ipv4_maskbits))
-		utils.log("INVALID main_ipv4_address " ..tostring(mc).. " IDENTICAL TO RESERVED "
-			..invalid.. " ADDRESS. USING " ..tostring(ipv4_template))
+		utils.log(
+			"INVALID main_ipv4_address "
+				.. tostring(mc)
+				.. " IDENTICAL TO RESERVED "
+				.. invalid
+				.. " ADDRESS. USING "
+				.. tostring(ipv4_template)
+		)
 	end
 
 	ipv6_template:prefix(tonumber(ipv6_maskbits))
@@ -140,20 +199,22 @@ function network.primary_address(offset)
 end
 
 function network.setup_rp_filter()
-	local sysctl_file_path = "/etc/sysctl.conf";
-	local sysctl_options = "";
-	local sysctl_file = io.open(sysctl_file_path, "r");
+	local sysctl_file_path = "/etc/sysctl.conf"
+	local sysctl_options = ""
+	local sysctl_file = io.open(sysctl_file_path, "r")
 	while sysctl_file:read(0) do
-		local sysctl_line = sysctl_file:read();
-		if not string.find(sysctl_line, ".rp_filter") then sysctl_options = sysctl_options .. sysctl_line .. "\n" end 
+		local sysctl_line = sysctl_file:read()
+		if not string.find(sysctl_line, ".rp_filter") then
+			sysctl_options = sysctl_options .. sysctl_line .. "\n"
+		end
 	end
 	sysctl_file:close()
-	
-	sysctl_options = sysctl_options .. "net.ipv4.conf.default.rp_filter=2\nnet.ipv4.conf.all.rp_filter=2\n";
-	sysctl_file = io.open(sysctl_file_path, "w");
+
+	sysctl_options = sysctl_options .. "net.ipv4.conf.default.rp_filter=2\nnet.ipv4.conf.all.rp_filter=2\n"
+	sysctl_file = io.open(sysctl_file_path, "w")
 	if sysctl_file ~= nil then
-		sysctl_file:write(sysctl_options);
-		sysctl_file:close();
+		sysctl_file:write(sysctl_options)
+		sysctl_file:close()
 	end
 end
 
@@ -162,18 +223,16 @@ function network.setup_dns()
 	local resolvers = config.get("network", "resolvers")
 
 	local uci = config.get_uci_cursor()
-	uci:foreach("dhcp", "dnsmasq",
-		function(s)
-			uci:set("dhcp", s[".name"], "domain", cloudDomain)
-			uci:set("dhcp", s[".name"], "local", "/"..cloudDomain.."/")
-			uci:set("dhcp", s[".name"], "expandhosts", "1")
-			uci:set("dhcp", s[".name"], "domainneeded", "1")
-			--! allow queries from non-local ips (i.e. from other clouds)
-			uci:set("dhcp", s[".name"], "localservice", "0")
-			uci:set("dhcp", s[".name"], "server", resolvers)
-			uci:set("dhcp", s[".name"], "confdir", "/etc/dnsmasq.d")
-		end
-	)
+	uci:foreach("dhcp", "dnsmasq", function(s)
+		uci:set("dhcp", s[".name"], "domain", cloudDomain)
+		uci:set("dhcp", s[".name"], "local", "/" .. cloudDomain .. "/")
+		uci:set("dhcp", s[".name"], "expandhosts", "1")
+		uci:set("dhcp", s[".name"], "domainneeded", "1")
+		--! allow queries from non-local ips (i.e. from other clouds)
+		uci:set("dhcp", s[".name"], "localservice", "0")
+		uci:set("dhcp", s[".name"], "server", resolvers)
+		uci:set("dhcp", s[".name"], "confdir", "/etc/dnsmasq.d")
+	end)
 	uci:save("dhcp")
 
 	fs.mkdir("/etc/dnsmasq.d")
@@ -214,7 +273,9 @@ function network.clean()
 	end
 
 	utils.log("Cleaning dnsmasq")
-	uci:foreach("dhcp", "dnsmasq", function(s) uci:delete("dhcp", s[".name"], "server") end)
+	uci:foreach("dhcp", "dnsmasq", function(s)
+		uci:delete("dhcp", s[".name"], "server")
+	end)
 	uci:save("dhcp")
 
 	utils.log("Disabling 6relayd...")
@@ -222,24 +283,22 @@ function network.clean()
 end
 
 function network._get_lower(dev)
-    local lower_if_path = utils.unsafe_shell("ls /sys/class/net/" .. dev .. "/ | grep ^lower")
-    local lower_if_table = utils.split(lower_if_path, "_")
-    local lower_if = lower_if_table[#lower_if_table]
-    return lower_if and lower_if:gsub("\n", "")
+	local lower_if_path = utils.unsafe_shell("ls /sys/class/net/" .. dev .. "/ | grep ^lower")
+	local lower_if_table = utils.split(lower_if_path, "_")
+	local lower_if = lower_if_table[#lower_if_table]
+	return lower_if and lower_if:gsub("\n", "")
 end
 
 function network._is_dsa_conduit(dev)
 	return "reg" == fs.stat("/sys/class/net/" .. dev .. "/dsa/tagging", "type")
 end
 
-
 function network.scandevices(specificIfaces)
 	local devices = {}
-	local wireless = require("lime.wireless")
 	local cpu_ports = {}
 	local board = utils.getBoardAsTable()
 
-	function dev_parser(dev)
+	local function dev_parser(dev)
 		if dev == nil then
 			utils.log("network.scandevices.dev_parser got nil device")
 			return
@@ -249,27 +308,29 @@ function network.scandevices(specificIfaces)
 		--! See also:
 		--! https://www.kernel.org/doc/html/latest/networking/dsa/dsa.html#common-pitfalls-using-dsa-setups
 		if network._is_dsa_conduit(dev) then
-			utils.log( "network.scandevices.dev_parser ignored DSA conduit " ..
-			           "device %s", dev )
+			utils.log("network.scandevices.dev_parser ignored DSA conduit " .. "device %s", dev)
 			return
 		end
 
 		--! Filter out ethernet ports connected to switch in a swconfig device.
-		for cpu_port,_ in pairs(cpu_ports) do
+		for cpu_port, _ in pairs(cpu_ports) do
 			if cpu_port == dev then
-				utils.log( "network.scandevices.dev_parser ignored ethernet " ..
-				           "device %s connected to internal switch", dev )
+				utils.log(
+					"network.scandevices.dev_parser ignored ethernet " .. "device %s connected to internal switch",
+					dev
+				)
 				return
 			end
 		end
 
 		if dev:match("^eth%d+$") then
-			utils.log( "network.scandevices.dev_parser found plain Ethernet " ..
-			           "device %s", dev )
+			utils.log("network.scandevices.dev_parser found plain Ethernet " .. "device %s", dev)
 		elseif specificIfaces[dev] then
-			utils.log( "network.scandevices.dev_parser found device %s that " ..
-			           "matches the config net section %s", dev,
-			           specificIfaces[dev][".name"])
+			utils.log(
+				"network.scandevices.dev_parser found device %s that " .. "matches the config net section %s",
+				dev,
+				specificIfaces[dev][".name"]
+			)
 		else
 			return
 		end
@@ -279,33 +340,30 @@ function network.scandevices(specificIfaces)
 		devices[dev]["dsa"] = is_dsa
 	end
 
-	function owrt_ifname_parser(section)
+	local function owrt_ifname_parser(section)
 		local dev = section["ifname"]
-		if ( type(dev) == "string" ) then
+		if type(dev) == "string" then
 			local is_dsa = utils.is_dsa(dev)
 			devices[dev] = devices[dev] or {}
 			devices[dev]["dsa"] = is_dsa
-			utils.log( "network.scandevices.owrt_ifname_parser found ifname %s",
-			           dev )
+			utils.log("network.scandevices.owrt_ifname_parser found ifname %s", dev)
 		end
 	end
 
-	function board_port_parser(dev)
+	local function board_port_parser(dev)
 		local is_dsa = utils.is_dsa(dev)
 		devices[dev] = devices[dev] or {}
 		devices[dev]["dsa"] = is_dsa
 		if is_dsa then
-			utils.log( "network.scandevices.board_port_parser found " ..
-			           "DSA-port %s in board.json", dev )
+			utils.log("network.scandevices.board_port_parser found " .. "DSA-port %s in board.json", dev)
 		else
-			utils.log( "network.scandevices.board_port_parser found " ..
-			           "device %s in board.json", dev )
+			utils.log("network.scandevices.board_port_parser found " .. "device %s in board.json", dev)
 		end
 	end
 
 	--! Collect switch facing ethernet ports for swconfig devices from board.json
-	for switch, switch_table in pairs(board["switch"] or {}) do
-		for _,port_table in pairs(switch_table["ports"] or {}) do
+	for _, switch_table in pairs(board["switch"] or {}) do
+		for _, port_table in pairs(switch_table["ports"] or {}) do
 			local dev = port_table["device"]
 			if dev then
 				cpu_ports[dev] = true
@@ -314,7 +372,7 @@ function network.scandevices(specificIfaces)
 	end
 
 	--! Collect dsa ports and usable ethernet and vlan devices from board.json
-	for role, role_table in pairs(board["network"] or {}) do
+	for _, role_table in pairs(board["network"] or {}) do
 		--! "ports" and "device" fields may be specified at the same time.
 		--! In this case, "ports" must be used.
 		local ports = role_table["ports"]
@@ -326,7 +384,7 @@ function network.scandevices(specificIfaces)
 		--! Ethernet interfaces usually have protocol "dhcp" or "static",
 		--! depending on their role.
 		if protocol == "dhcp" or protocol == "static" then
-			for _,port in pairs(ports) do
+			for _, port in pairs(ports) do
 				board_port_parser(port)
 			end
 		end
@@ -338,7 +396,9 @@ function network.scandevices(specificIfaces)
 
 	--! Scrape from /sys/class/net/
 	local stdOut = io.popen("ls -1 /sys/class/net/")
-	for dev in stdOut:lines() do dev_parser(dev) end
+	for dev in stdOut:lines() do
+		dev_parser(dev)
+	end
 	stdOut:close()
 
 	return devices
@@ -360,49 +420,63 @@ function network.configure()
 	network.setup_dns()
 
 	local generalProtocols = config.get("network", "protocols")
-	for _,protocol in pairs(generalProtocols) do
-		local protoModule = "lime.proto."..utils.split(protocol,":")[1]
+	for _, protocol in pairs(generalProtocols) do
+		local protoModule = "lime.proto." .. utils.split(protocol, ":")[1]
 		if utils.isModuleAvailable(protoModule) then
 			local proto = require(protoModule)
-			xpcall(function() proto.configure(utils.split(protocol, network.protoParamsSeparator)) end,
-				   function(errmsg) print(errmsg) ; print(debug.traceback()) end)
+			xpcall(function()
+				proto.configure(utils.split(protocol, network.protoParamsSeparator))
+			end, function(errmsg)
+				print(errmsg)
+				print(debug.traceback())
+			end)
 		end
 	end
 
 	--! For each scanned fisical device, if there is a specific config apply that one otherwise apply general config
-	for device,flags in pairs(fisDevs) do
+	for device, flags in pairs(fisDevs) do
 		local owrtIf = specificIfaces[device]
 		local deviceProtos = generalProtocols
 		if owrtIf then
-			deviceProtos = owrtIf["protocols"] or {"manual"}
+			deviceProtos = owrtIf["protocols"] or { "manual" }
 			flags["specific"] = true
 			flags["_specific_section"] = owrtIf
 		end
 
-		for _,protoParams in pairs(deviceProtos) do
+		for _, protoParams in pairs(deviceProtos) do
 			local args = utils.split(protoParams, network.protoParamsSeparator)
 			local protoName = args[1]
-			if protoName == "manual" then break end -- If manual is specified do not configure interface
-			local protoModule = "lime.proto."..protoName
+			--! If manual is specified do not configure interface
+			if protoName == "manual" then
+				break
+			end
+			local protoModule = "lime.proto." .. protoName
 			local needsConfig = utils.isModuleAvailable(protoModule)
-			if protoName ~= 'lan' and not flags["specific"] then
+			if protoName ~= "lan" and not flags["specific"] then
 				--! Work around issue 1121. Do not configure any other
 				--! protocols than lime.proto.lan on dsa devices unless there
 				--! is a config net section for the device.
 				needsConfig = needsConfig and not utils.is_dsa(device)
 			end
 			if needsConfig then
-				for k,v in pairs(flags) do args[k] = v end
+				for k, v in pairs(flags) do
+					args[k] = v
+				end
 				local proto = require(protoModule)
-				xpcall(function() proto.configure(args) ; proto.setup_interface(device, args) end,
-					   function(errmsg) print(errmsg) ; print(debug.traceback()) end)
+				xpcall(function()
+					proto.configure(args)
+					proto.setup_interface(device, args)
+				end, function(errmsg)
+					print(errmsg)
+					print(debug.traceback())
+				end)
 			end
 		end
 	end
 end
 
 function network.sanitizeIfaceName(ifName)
-	return network.limeIfNamePrefix..ifName:gsub("[^%w_]", "_")
+	return network.limeIfNamePrefix .. ifName:gsub("[^%w_]", "_")
 end
 
 function network.createDevice(owrtDeviceName, baseIfname, linuxName, devType, args)
@@ -420,7 +494,7 @@ function network.createDevice(owrtDeviceName, baseIfname, linuxName, devType, ar
 	uci:set("network", owrtDeviceName, "type", devType)
 	uci:set("network", owrtDeviceName, "name", linuxName)
 	uci:set("network", owrtDeviceName, "ifname", baseIfname)
-	for k,v in pairs(args) do
+	for k, v in pairs(args) do
 		uci:set("network", owrtDeviceName, k, v)
 	end
 
@@ -430,8 +504,8 @@ end
 --! Creates a network Interface with static protocol
 --! ipAddr can be IPv4 or IPv6
 --! the function can be called twice to set both IPv4 and IPv6
-function network.createStaticIface(linuxBaseIfname, openwrtNameSuffix, ipAddr, gwAddr)
-	local openwrtNameSuffix = openwrtNameSuffix or ""
+function network.createStaticIface(linuxBaseIfname, openwrtNameSuffixArg, ipAddr, gwAddr)
+	local openwrtNameSuffix = openwrtNameSuffixArg or ""
 	local owrtInterfaceName = network.sanitizeIfaceName(linuxBaseIfname) .. openwrtNameSuffix
 	local uci = config.get_uci_cursor()
 
@@ -440,7 +514,7 @@ function network.createStaticIface(linuxBaseIfname, openwrtNameSuffix, ipAddr, g
 	uci:set("network", owrtInterfaceName, "auto", "1")
 	uci:set("network", owrtInterfaceName, "ifname", linuxBaseIfname)
 
-	local addr = luci.ip.new(ipAddr)
+	local addr = ip.new(ipAddr)
 	local host = addr:host():string()
 
 	if addr:is4() then
@@ -466,7 +540,7 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 	vlanProtocol = vlanProtocol or "8021ad"
 	openwrtNameSuffix = openwrtNameSuffix or ""
 	vid = tonumber(vid)
-	
+
 	--! sanitize passed linuxBaseIfName for constructing uci section name
 	--! because only alphanumeric and underscores are allowed
 	local owrtInterfaceName = network.sanitizeIfaceName(linuxBaseIfname)
@@ -475,23 +549,23 @@ function network.createVlanIface(linuxBaseIfname, vid, openwrtNameSuffix, vlanPr
 
 	local uci = config.get_uci_cursor()
 
-	owrtInterfaceName = owrtInterfaceName..openwrtNameSuffix.."_if"
+	owrtInterfaceName = owrtInterfaceName .. openwrtNameSuffix .. "_if"
 
 	if vid ~= 0 then
 		local vlanId = tostring(vid)
 		--! sanitize passed linuxBaseIfName for constructing uci section name
 		--! because only alphanumeric and underscores are allowed
-		owrtDeviceName = network.sanitizeIfaceName(linuxBaseIfname)..openwrtNameSuffix.."_dev"
+		owrtDeviceName = network.sanitizeIfaceName(linuxBaseIfname) .. openwrtNameSuffix .. "_dev"
 
 		if linuxBaseIfname:match("^wlan") then
-			linuxBaseIfname = "@"..network.sanitizeIfaceName(linuxBaseIfname)
+			linuxBaseIfname = "@" .. network.sanitizeIfaceName(linuxBaseIfname)
 		end
 
 		--! Do not use . as separator as this will make netifd create an 802.1q interface anyway
 		--! and sanitize linuxBaseIfName because it can contain dots as well (i.e. switch ports)
-		linuxVlanIfName = linuxVlanIfName:gsub("[^%w-]", "-")..network.protoVlanSeparator..vlanId
+		linuxVlanIfName = linuxVlanIfName:gsub("[^%w-]", "-") .. network.protoVlanSeparator .. vlanId
 
-		network.createDevice(owrtDeviceName, linuxBaseIfname, linuxVlanIfName, vlanProtocol, { vid=vlanId })
+		network.createDevice(owrtDeviceName, linuxBaseIfname, linuxVlanIfName, vlanProtocol, { vid = vlanId })
 	end
 
 	uci:set("network", owrtInterfaceName, "interface")
@@ -530,8 +604,8 @@ function network.createMacvlanIface(baseIfname, linuxName, argsDev, argsIf)
 
 	argsIf = argsIf or {}
 
-	local owrtDeviceName = network.sanitizeIfaceName(baseIfname.."_"..linuxName.."_dev")
-	local owrtInterfaceName = network.sanitizeIfaceName(baseIfname.."_"..linuxName.."_if")
+	local owrtDeviceName = network.sanitizeIfaceName(baseIfname .. "_" .. linuxName .. "_dev")
+	local owrtInterfaceName = network.sanitizeIfaceName(baseIfname .. "_" .. linuxName .. "_if")
 
 	network.createDevice(owrtDeviceName, baseIfname, linuxName, "macvlan", argsDev)
 
@@ -541,7 +615,7 @@ function network.createMacvlanIface(baseIfname, linuxName, argsDev, argsIf)
 	uci:set("network", owrtInterfaceName, "proto", "none")
 	uci:set("network", owrtInterfaceName, "device", linuxName)
 	uci:set("network", owrtInterfaceName, "auto", "1")
-	for k,v in pairs(argsIf) do
+	for k, v in pairs(argsIf) do
 		uci:set("network", owrtInterfaceName, k, v)
 	end
 
@@ -552,48 +626,47 @@ end
 
 --! Create a static interface at runtime via ubus
 function network.createStatic(linuxBaseIfname)
-	local ipv4, ipv6 = network.primary_address()
-	local ubusIfaceName = network.sanitizeIfaceName(
-		network.LIME_UCI_IFNAME_PREFIX()..linuxBaseIfname.."_static")
+	local ipv4, _ = network.primary_address()
+	local ubusIfaceName = network.sanitizeIfaceName(network.LIME_UCI_IFNAME_PREFIX() .. linuxBaseIfname .. "_static")
 	local ifaceConf = {
-		name    = ubusIfaceName,
-		proto   = "static",
-		auto    = "1",
-		ifname  = linuxBaseIfname,
-		ipaddr  = ipv4:host():string(),
-		netmask = "255.255.255.255"
+		name = ubusIfaceName,
+		proto = "static",
+		auto = "1",
+		ifname = linuxBaseIfname,
+		ipaddr = ipv4:host():string(),
+		netmask = "255.255.255.255",
 	}
 
 	local libubus = require("ubus")
 	local ubus = libubus.connect()
-	ubus:call('network', 'add_dynamic', ifaceConf)
-	ubus:call('network.interface.'..ifaceConf.name, 'up', {})
+	ubus:call("network", "add_dynamic", ifaceConf)
+	ubus:call("network.interface." .. ifaceConf.name, "up", {})
 
---! TODO: As of today ubus silently fails to properly setup the interface,
---! subsequent status query return NO_DEVICE error
---!  ubus -v call network.interface.lm_net_lm_net_wlan0_peer1_static status
---!  {
---!          "up": false,
---!          "pending": false,
---!          "available": false,
---!          "autostart": true,
---!          "dynamic": true,
---!          "proto": "static",
---!          "data": {
---!
---!          },
---!          "errors": [
---!                  {
---!                          "subsystem": "interface",
---!                          "code": "NO_DEVICE"
---!                  }
---!          ]
---!  }
---!
---! ATM work around the problem configuring IP addresses via ip command
+	--! TODO: As of today ubus silently fails to properly setup the interface,
+	--! subsequent status query return NO_DEVICE error
+	--!  ubus -v call network.interface.lm_net_lm_net_wlan0_peer1_static status
+	--!  {
+	--!          "up": false,
+	--!          "pending": false,
+	--!          "available": false,
+	--!          "autostart": true,
+	--!          "dynamic": true,
+	--!          "proto": "static",
+	--!          "data": {
+	--!
+	--!          },
+	--!          "errors": [
+	--!                  {
+	--!                          "subsystem": "interface",
+	--!                          "code": "NO_DEVICE"
+	--!                  }
+	--!          ]
+	--!  }
+	--!
+	--! ATM work around the problem configuring IP addresses via ip command
 
-	utils.unsafe_shell("ip link set up dev "..ifaceConf.ifname)
-	utils.unsafe_shell("ip address add "..ifaceConf.ipaddr.."/32 dev "..ifaceConf.ifname)
+	utils.unsafe_shell("ip link set up dev " .. ifaceConf.ifname)
+	utils.unsafe_shell("ip address add " .. ifaceConf.ipaddr .. "/32 dev " .. ifaceConf.ifname)
 
 	return ifaceConf.name
 end
@@ -601,10 +674,10 @@ end
 --! Create a vlan at runtime via ubus
 function network.createVlan(linuxBaseIfname, vid, vlanProtocol)
 	local vlanConf = {
-		name   = linuxBaseIfname .. network.PROTO_VLAN_SEPARATOR() .. vid,
-		type   = vlanProtocol or "8021ad",
+		name = linuxBaseIfname .. network.PROTO_VLAN_SEPARATOR() .. vid,
+		type = vlanProtocol or "8021ad",
 		ifname = linuxBaseIfname,
-		vid    = vid
+		vid = vid,
 	}
 
 	utils.log("lime.network.createVlan(%s, ...)", linuxBaseIfname)
@@ -612,11 +685,21 @@ function network.createVlan(linuxBaseIfname, vid, vlanProtocol)
 
 	local libubus = require("ubus")
 	local ubus = libubus.connect()
-	ubus:call('network', 'add_dynamic_device', vlanConf)
+	ubus:call("network", "add_dynamic_device", vlanConf)
 
---! TODO: as of today ubus silently fails to properly creating a device
---! dinamycally work around it by using ip command instead
-	utils.unsafe_shell("ip link add name "..vlanConf.name.." link "..vlanConf.ifname.." type vlan proto 802.1ad id "..vlanConf.vid)
+	--! TODO: as of today ubus silently fails to properly creating a device
+	--! dinamycally work around it by using ip command instead
+	utils.unsafe_shell(
+		"ip link add"
+			.. " name "
+			.. vlanConf.name
+			.. " link "
+			.. vlanConf.ifname
+			.. " type vlan"
+			.. " proto 802.1ad"
+			.. " id "
+			.. vlanConf.vid
+	)
 
 	return vlanConf.name
 end
@@ -626,13 +709,17 @@ end
 function network.runProtocols(linuxBaseIfname)
 	utils.log("lime.network.runProtocols(%s, ...)", linuxBaseIfname)
 	local protoConfs = config.get("network", "protocols")
-	for _,protoConf in pairs(protoConfs) do
+	for _, protoConf in pairs(protoConfs) do
 		local args = utils.split(protoConf, network.PROTO_PARAM_SEPARATOR())
-		local protoModule = "lime.proto."..args[1]
+		local protoModule = "lime.proto." .. args[1]
 		if utils.isModuleAvailable(protoModule) then
 			local proto = require(protoModule)
-			xpcall(function() proto.runOnDevice(linuxBaseIfname, args) end,
-				   function(errmsg) print(errmsg) ; print(debug.traceback()) end)
+			xpcall(function()
+				proto.runOnDevice(linuxBaseIfname, args)
+			end, function(errmsg)
+				print(errmsg)
+				print(debug.traceback())
+			end)
 		end
 	end
 end

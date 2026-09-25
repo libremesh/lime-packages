@@ -19,8 +19,8 @@ function limed.APUP_ENABLED()
 		return limed.__PRIVATE_APUP_ENABLED
 	end
 
-	function check_apup_mode_cb(section)
-		if(section['modes'] == null) then return end
+	local function check_apup_mode_cb(section)
+		if(section['modes'] == nil) then return end
 
 		for _,mode in pairs(section['modes']) do
 			if(mode == 'apup') then
@@ -78,7 +78,8 @@ function limed.waitForHostapd()
 		end
 		if not found then
 			utils.log("Waiting for 'hostapd' namespace...")
-			os.execute("sleep 1") -- Wait for 1 second before retrying
+			--! Wait for 1 second before retrying
+			os.execute("sleep 1")
 			else
 				utils.log(" 'hostapd' namespace exists...")
 		end

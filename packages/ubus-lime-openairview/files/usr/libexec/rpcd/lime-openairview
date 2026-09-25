@@ -3,8 +3,8 @@
 --!
 --! Copyright 2017 Marcos Gutierrez <gmarcos87@gmail.com>
 
-require "ubus"
-local nixio = require "nixio",require "nixio.fs"
+local ubus = require "ubus"
+local nixio = require "nixio"
 local json = require 'luci.jsonc'
 local utils = require("lime.utils")
 
@@ -12,59 +12,12 @@ local function printJson (obj)
     print(json.stringify(obj))
 end
 
-
 local conn = ubus.connect()
 if not conn then
     error("Failed to connect to ubus")
 end
 
-local function spectral_scan(msg)
-    if utils.is_installed("fft-eval") == false then
-        local result = { error = "fft-eval not installed" }
-        printJson(result)
-        return
-    end
-
-	local device = utils.shell_quote(msg.device)
-	local spectrum = msg.spectrum
-
-	local result = {
-		spectrum = {}
-	}
-	local fd = assert(io.open("/sys/class/net/" .. device .. "/phy80211/name"))
-    local phy = assert(fd:read("*l"))
-    fd:close()
-
-    local path_ath9k = "/sys/kernel/debug/ieee80211/" .. phy .. "/ath9k/"
-
-    local freqs = { }
-    freqs["2ghz"] = { 2412, 2422, 2432, 2442, 2452, 2462 }
-    freqs["5ghz"] = { } -- scan all possible channels
-
-    if spectrum == "2ghz" or spectrum == "5ghz" then
-        samples = sample_whole_spectrum(device, path_ath9k, freqs[spectrum])
-    elseif spectrum == "current" then
-        samples = sample_current_channel(path_ath9k)
-    end
-
-	samples = json.parse( samples )
-
-	--! Convert values to string (avoid ubus bug)
-	for _, dev in pairs(samples[1].data) do
-		samples[1].data[_][1] = tostring(samples[1].data[_][1])
-		samples[1].data[_][2] = tostring(samples[1].data[_][2])
-	end
-
-	local json_reply = {
-		samples = samples,
-		epoch = os.time()
-	}
-
-    result.spectrum = json_reply
-	printJson(result)
-end
-
-function sample_current_channel(path_ath9k)
+local function sample_current_channel(path_ath9k)
     --! sample current channel only, no freq hopping
     --! grab only one sample per trigger
     nixio.fs.writefile(path_ath9k .. "spectral_count", "1")
@@ -80,7 +33,7 @@ function sample_current_channel(path_ath9k)
     return samples
 end
 
-function sample_whole_spectrum(device, path_ath9k, freqs)
+local function sample_whole_spectrum(device, path_ath9k, freqs)
     --! grab samples over the whole spectrum
     --! grab only one sample per trigger
     nixio.fs.writefile(path_ath9k .. "spectral_count", "1")
@@ -97,6 +50,54 @@ function sample_whole_spectrum(device, path_ath9k, freqs)
     local samples = utils.unsafe_shell("fft_eval " .. path_ath9k .. "spectral_scan0")
 
     return samples
+end
+
+local function spectral_scan(msg)
+    if utils.is_installed("fft-eval") == false then
+        local result = { error = "fft-eval not installed" }
+        printJson(result)
+        return
+    end
+
+	local device = utils.shell_quote(msg.device)
+	local spectrum = msg.spectrum
+    local samples
+
+	local result = {
+		spectrum = {}
+	}
+	local fd = assert(io.open("/sys/class/net/" .. device .. "/phy80211/name"))
+    local phy = assert(fd:read("*l"))
+    fd:close()
+
+    local path_ath9k = "/sys/kernel/debug/ieee80211/" .. phy .. "/ath9k/"
+
+    local freqs = { }
+    freqs["2ghz"] = { 2412, 2422, 2432, 2442, 2452, 2462 }
+    --! scan all possible channels
+    freqs["5ghz"] = { }
+
+    if spectrum == "2ghz" or spectrum == "5ghz" then
+        samples = sample_whole_spectrum(device, path_ath9k, freqs[spectrum])
+    elseif spectrum == "current" then
+        samples = sample_current_channel(path_ath9k)
+    end
+
+	samples = json.parse( samples )
+
+	--! Convert values to string (avoid ubus bug)
+	for key, _ in pairs(samples[1].data) do
+		samples[1].data[key][1] = tostring(samples[1].data[key][1])
+		samples[1].data[key][2] = tostring(samples[1].data[key][2])
+	end
+
+	local json_reply = {
+		samples = samples,
+		epoch = os.time()
+	}
+
+    result.spectrum = json_reply
+	printJson(result)
 end
 
 local methods = {

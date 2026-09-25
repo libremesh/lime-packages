@@ -1,10 +1,8 @@
 #!/usr/bin/lua
 
 local network = require("lime.network")
-local config = require("lime.config")
 local fs = require("nixio.fs")
 local libuci = require("uci")
-local wireless = require("lime.wireless")
 local utils = require("lime.utils")
 local ip = require("luci.ip")
 
@@ -13,7 +11,9 @@ local olsr = {}
 olsr.configured = false
 
 function olsr.configure(args)
-	if olsr.configured then return end
+	if olsr.configured then
+		return
+	end
 	olsr.configured = true
 
 	local uci = libuci:cursor()
@@ -38,14 +38,16 @@ end
 
 function olsr.setup_interface(ifname, args)
 	if not args["specific"] then
-		if ifname:match("^wlan%d+.ap") then return end
+		if ifname:match("^wlan%d+.ap") then
+			return
+		end
 	end
 
 	local vlanId = tonumber(args[2]) or 14
 	local vlanProto = args[3] or "8021ad"
 	local nameSuffix = args[4] or "_olsr"
 	local ipPrefixTemplate = args[5] or "169.254.%M5.%M6/16"
-	local owrtInterfaceName, linux802adIfName, owrtDeviceName = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
+	local owrtInterfaceName, _, _ = network.createVlanIface(ifname, vlanId, nameSuffix, vlanProto)
 	local macAddr = network.get_mac(utils.split(ifname, ".")[1])
 	local ipAddr = ip.IPv4(utils.applyMacTemplate10(ipPrefixTemplate, macAddr))
 
@@ -59,6 +61,5 @@ function olsr.setup_interface(ifname, args)
 	uci:set("olsrd", owrtInterfaceName, "interface", owrtInterfaceName)
 	uci:save("olsrd")
 end
-
 
 return olsr

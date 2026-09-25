@@ -1,4 +1,4 @@
-#!/bin/sh 
+#!/bin/sh
 
 interface="${1:?}"
 timeout="${2:?}"
@@ -6,20 +6,24 @@ pinghosts="${3:?}"
 pinginterval="${4:?}"
 hookname="${5:?}"
 
-run_hooks () {
+run_hooks() {
 	reason="$1"
 	interface="$2"
 	last_hooks_run="$reason"
-	for hook in /etc/watchping/$interface-$reason.d/* ; do
+	for hook in "/etc/watchping/$interface-$reason.d/"*; do
 		[ -x "$hook" ] && $hook
 	done
 }
 
 watchping_ping() {
-	local ifname="$1"; local timeout="$2"; local pinghosts="$3"; local pinginterval="$4"; local hookname="$5"
+	local ifname="$1"
+	local timeout="$2"
+	local pinghosts="$3"
+	local pinginterval="$4"
+	local hookname="$5"
 	local last_hooks_run="undefined"
 
-	if [ ! -r "/sys/class/net/$ifname/ifindex" ] ; then
+	if [ ! -r "/sys/class/net/$ifname/ifindex" ]; then
 		echo "Interface $ifname unsupported or not found!"
 		exit 1
 	fi
@@ -30,14 +34,14 @@ watchping_ping() {
 	time_lastcheck="$time_now"
 	time_lastcheck_withinternet="$time_now"
 
-	while true ; do
+	while true; do
 		# account for the time ping took to return. With a ping interval of 5s, ping might take more than that, so it is important to avoid even more delay.
 		time_now="$(cat /proc/uptime)"
 		time_now="${time_now%%.*}"
-		time_diff="$((time_now-time_lastcheck))"
+		time_diff="$((time_now - time_lastcheck))"
 
 		[ "$time_diff" -lt "$pinginterval" ] && {
-			sleep_time="$((pinginterval-time_diff))"
+			sleep_time="$((pinginterval - time_diff))"
 			sleep "$sleep_time"
 		}
 
@@ -45,18 +49,18 @@ watchping_ping() {
 		time_now="${time_now%%.*}"
 		time_lastcheck="$time_now"
 
-		for host in "$pinghosts" ; do
-			if ping -I "$ifname" -c 1 "$host" &> /dev/null ; then
+		for host in $pinghosts; do
+			if ping -I "$ifname" -c 1 "$host" >/dev/null; then
 				time_lastcheck_withinternet="$time_now"
 			else
-				time_diff="$((time_now-time_lastcheck_withinternet))"
+				time_diff="$((time_now - time_lastcheck_withinternet))"
 			fi
 		done
-		
-		if [ "$time_diff" -ge "$timeout" ] && [ "$last_hooks_run" != "fail" ] ; then
+
+		if [ "$time_diff" -ge "$timeout" ] && [ "$last_hooks_run" != "fail" ]; then
 			logger -p daemon.info -t "watchping[$$]" "no ping reply for $time_diff seconds. Running $hookname-fail.d hooks..."
 			run_hooks fail "$hookname"
-		elif [ "$time_lastcheck_withinternet" == "$time_now" ] && [ "$last_hooks_run" != "ok" ] ; then 
+		elif [ "$time_lastcheck_withinternet" = "$time_now" ] && [ "$last_hooks_run" != "ok" ]; then
 			logger -p daemon.info -t "watchping[$$]" "ping reply. Running $hookname-ok.d hooks..."
 			run_hooks ok "$hookname"
 		fi

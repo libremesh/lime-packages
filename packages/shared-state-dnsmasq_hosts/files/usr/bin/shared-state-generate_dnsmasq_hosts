@@ -8,7 +8,7 @@ local JSON = require("luci.jsonc")
 
 local outputTable = {}
 
-for key,value in pairs(
+for key,_ in pairs(
 	JSON.parse(io.stdin:read("*all")) ) do
 		table.insert(outputTable, key)
 end

@@ -3,8 +3,7 @@
 USE_PROCD=1
 START=15
 
-start_service()
-{
+start_service() {
 	procd_open_instance
 	procd_set_param command /usr/bin/limed
 	procd_set_param respawn

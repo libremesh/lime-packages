@@ -26,7 +26,8 @@ define Package/$(PKG_NAME)
   MAINTAINER:=Gioacchino Mazzurco <gio@eigenlab.org>
   URL:=http://libremesh.org
   DEPENDS:=+firewall4 +libiwinfo-lua +lua +libuci-lua \
-    +luci-lib-ip +luci-lib-nixio +luci-lib-jsonc +jq +rpcd-mod-rpcsys
+    +luci-lib-ip +luci-lib-nixio +luci-lib-jsonc +jq +rpcd-mod-rpcsys \
+    +rpcd
   PKGARCH:=all
 endef
 
@@ -50,6 +51,7 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/
 	$(CP) ./files/* $(1)/
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/lime-config/
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/lime-apply/
 	$(LIME_VERSION_SED) \
 		$(1)/etc/lime_release \
 		$(1)/etc/profile.d/10-lime-banner.sh

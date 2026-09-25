@@ -1,0 +1,23 @@
+#!/bin/sh
+# Run the lint workflow from .github/workflows/lint.yml locally using 'act'
+# Requires: https://github.com/nektos/act (and Docker)
+#
+# Install act:
+#   curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash -s -- -b /usr/local/bin
+#   On first run, act will ask for an image size. Select "Medium" (~500MB), it is enough.
+#
+# Skip hook: git push --no-verify
+
+# Find act: check PATH first, then common local install locations
+ACT="$(command -v act 2>/dev/null)" \
+	|| ACT="$(git rev-parse --show-toplevel)/bin/act" \
+	|| ACT=""
+
+if [ ! -x "$ACT" ]; then
+	echo "Error: 'act' not found. Install it with:"
+	echo "  curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash -s -- -b /usr/local/bin"
+	exit 1
+fi
+
+echo "=== Running lint workflow locally ==="
+"$ACT" push -W .github/workflows/lint.yml

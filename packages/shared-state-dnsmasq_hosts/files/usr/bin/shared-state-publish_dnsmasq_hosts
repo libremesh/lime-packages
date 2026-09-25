@@ -11,7 +11,7 @@ local recordsTable = {}
 for line in io.input("/etc/hosts"):lines() do
 	if line ~= "" and
 		not line:match("^%s*$") and
-		not line:match("^%s*127\.") and
+		not line:match("^%s*127.") and
 		not line:match("^%s*::1%s") and
 		not line:match("^%s*ff02::1%s") and
 		not line:match("^%s*ff02::2%s") then

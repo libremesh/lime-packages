@@ -1,7 +1,7 @@
 #!/bin/sh
 
 uci -q get system.@watchping[0] || {
-        uci batch <<EOF
+	uci batch <<EOF
         set system.watchping=watchping
         set system.watchping.interface=wan
         set system.watchping.timeout=2m

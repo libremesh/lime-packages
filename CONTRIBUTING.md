@@ -104,11 +104,13 @@ The general workflow for branching is as follows:
 
 6. Make sure the tests are still running with success.
 
-7. Push the changes to `origin` (i.e. your fork)
+7. Run lint locally or set up the pre-push hook: to set up a git pre-push hook that runs lint locally, copy `tools/ci/lint/pre-push.sample` to `.git/hooks/pre-push` and make it executable.
+
+8. Push the changes to `origin` (i.e. your fork)
 
     ```git push origin <branch name>```
 
-8. Create a new Pull Request (see below).
+9. Create a new Pull Request (see below).
 
 #### Creating A Pull Request
 

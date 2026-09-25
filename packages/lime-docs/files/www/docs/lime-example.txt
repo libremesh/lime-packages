@@ -147,6 +147,7 @@ config lime wifi
                                                         # that rescan all available frequencies in active radios.
 
     option unstuck_timeout '300'                        # Timeout in seconds that defines how long the mentioned above workaround should go.
+    option distance_use_auto_if_available true
 
 #########################################################
 ### WiFi specific band options
