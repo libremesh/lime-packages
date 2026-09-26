@@ -63,8 +63,16 @@ if [[ -f "$KERNEL_FILE" && -f "$RAMDISK_FILE" ]]; then
 	echo "=== dual-tftp mode: kernel + rootfs ramdisk uImage ==="
 	echo "LG_IMAGE=$KERNEL_FILE" >>"${GITHUB_ENV:-/dev/null}"
 	echo "LG_IMAGE_INITRD=$RAMDISK_FILE" >>"${GITHUB_ENV:-/dev/null}"
+	# The dual-tftp target YAML is a sibling of the single-image default in
+	# libremesh-tests/targets/. See libremesh/libremesh-tests#5 for the split
+	# rationale. LG_ENV was pre-set to targets/<device>.yaml by the caller
+	# (build-firmware workflow); override with the -dual-tftp variant so
+	# labgrid resolves LG_IMAGE_INITRD and issues both TFTP loads.
+	DUAL_ENV="targets/${DEVICE}-dual-tftp.yaml"
+	echo "LG_ENV=$DUAL_ENV" >>"${GITHUB_ENV:-/dev/null}"
 	echo "Staged LG_IMAGE=$KERNEL_FILE"
 	echo "Staged LG_IMAGE_INITRD=$RAMDISK_FILE"
+	echo "Overrode LG_ENV=$DUAL_ENV"
 	echo "=== firmware sanity ==="
 	file "$KERNEL_FILE" || true
 	ls -la "$KERNEL_FILE"
