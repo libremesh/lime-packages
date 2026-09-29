@@ -116,6 +116,9 @@ export LG_IMAGE_MAP="$LG_IMAGE_MAP_VALUE"
 mkdir -p "$GITHUB_WORKSPACE/$LOGS_DIR"
 echo "LG_MESH_PLACES=$LG_MESH_PLACES"
 echo "LG_IMAGE_MAP=$LG_IMAGE_MAP"
+# Belkin BL2/BL31 needs ~12s before the U-Boot countdown; the strategy default
+# is 25s so mesh jobs cover it without per-device matrix plumbing.
+export LG_MESH_UBOOT_INTERRUPT_SPAM_SEC="${LG_MESH_UBOOT_INTERRUPT_SPAM_SEC:-25}"
 cd libremesh-tests
 uv run pytest tests/test_mesh.py \
 	--lg-log "$GITHUB_WORKSPACE/$LOGS_DIR/" \

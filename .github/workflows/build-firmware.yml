@@ -581,7 +581,7 @@ jobs:
         env:
           # LG_PLACE must be available before labgrid-client parses LG_ENV so
           # that !template "$LG_PLACE" in target YAMLs resolves correctly.
-          # (lab_stage_firmware.sh may override LG_ENV to a -dual-tftp variant
+          # (lab_stage_firmware.sh may set LG_ENV to a -dual-tftp variant
           # that still references $LG_PLACE in RemotePlace.)
           LG_PLACE: labgrid-fcefyn-${{ matrix.place }}
         run: |
@@ -595,8 +595,10 @@ jobs:
           }
           echo "$LOCK_OUT"
           echo "LG_PLACE=$PLACE" >> "$GITHUB_ENV"
-          echo "LG_ENV=targets/${{ matrix.device }}.yaml" >> "$GITHUB_ENV"
-          echo "Locked $PLACE for device=${{ matrix.device }}"
+          # LG_ENV is owned by lab_stage_firmware.sh (it knows whether the
+          # artifact is single-image or dual-tftp). Re-setting it here used to
+          # clobber the -dual-tftp override for the LibreRouter.
+          echo "Locked $PLACE for device=${{ matrix.device }} (LG_ENV=${LG_ENV:-unset})"
 
       - name: Run single-node LibreMesh tests
         working-directory: libremesh-tests
