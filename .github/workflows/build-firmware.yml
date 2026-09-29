@@ -568,6 +568,14 @@ jobs:
           cd libremesh-tests && uv sync
           echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ') uv sync finished"
 
+      # Single-node tests assume the DUT sits on its own isolated VLAN. A mesh
+      # run that was cancelled before its teardown leaves it on the mesh VLAN,
+      # where U-Boot DHCPs on the wrong subnet and the host cannot reach it.
+      # Restoring here is idempotent and keeps this job independent of state
+      # left behind by any earlier run.
+      - name: Ensure DUT is on its isolated VLAN
+        run: tools/ci/lab_restore_vlans.sh "${{ matrix.place }}"
+
       - name: Stage firmware on TFTP
         env:
           DEVICE: ${{ matrix.device }}
@@ -859,6 +867,13 @@ jobs:
           LOGS_DIR: mesh-logs
         run: tools/ci/lab_stage_mesh.sh
 
+      # pytest restores the VLANs from a fixture teardown that never runs when
+      # the job is cancelled, which strands the DUTs on the mesh VLAN and
+      # breaks every later job on them.
+      - name: Restore DUT VLANs
+        if: always()
+        run: tools/ci/lab_restore_vlans.sh ${{ join(matrix.places, ' ') }}
+
       - name: Cleanup TFTP on failure
         if: failure()
         run: rm -rf "/srv/tftp/firmwares/ci/${{ github.run_id }}/mesh/${{ matrix.openwrt_release }}" || true
@@ -971,6 +986,11 @@ jobs:
           SRC_DIR: fw-pair
           LOGS_DIR: mesh-pairs-logs
         run: tools/ci/lab_stage_mesh.sh
+
+      # See the same step in test-mesh: cancellation skips pytest's teardown.
+      - name: Restore DUT VLANs
+        if: always()
+        run: tools/ci/lab_restore_vlans.sh "${{ matrix.place_a }}" "${{ matrix.place_b }}"
 
       - name: Cleanup TFTP on failure
         if: failure()
