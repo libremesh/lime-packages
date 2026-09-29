@@ -100,7 +100,15 @@ else
 	fi
 
 	echo "LG_IMAGE=$LG_IMAGE" >>"${GITHUB_ENV:-/dev/null}"
+	# Set LG_ENV here too, so this script is the single place that decides
+	# which target YAML labgrid uses. A later workflow step must not re-set
+	# it: doing so clobbered the -dual-tftp override above, silently booting
+	# the LibreRouter with the single-image target (one TFTP + bare `bootm`),
+	# which loaded the CI kernel but left the stale on-flash rootfs mounted.
+	SINGLE_ENV="targets/${DEVICE}.yaml"
+	echo "LG_ENV=$SINGLE_ENV" >>"${GITHUB_ENV:-/dev/null}"
 	echo "Staged LG_IMAGE=$LG_IMAGE"
+	echo "Set LG_ENV=$SINGLE_ENV"
 	echo "=== firmware sanity ==="
 	file "$LG_IMAGE" || true
 	ls -la "$LG_IMAGE"
