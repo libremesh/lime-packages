@@ -22,11 +22,18 @@
 # config-mode timeouts. Killing it from outside can cut an SSH session while the
 # TP-Link is in config mode, which that firmware is slow to release and which
 # can leave the port half-configured.
+#
+# When a cancelled run's cleanup steps all power-off their DUTs at once,
+# the lock can be held for 6x ~20s = ~120s. The default 60s is not enough,
+# so we raise it to 180s.
 set -uo pipefail
 
 PLACE_PREFIX="${PLACE_PREFIX:-labgrid-fcefyn-}"
 PROXY="${LG_PROXY:-labgrid-fcefyn}"
 PROXY="${PROXY#ssh://}"
+
+# Cover the worst case: every DUT's cleanup step queued on the switch lock.
+LOCK_TIMEOUT="${SWITCH_LOCK_TIMEOUT:-180}"
 
 if [[ $# -eq 0 ]]; then
 	echo "usage: $0 --all | <place> [<place>...]" >&2
@@ -34,8 +41,9 @@ if [[ $# -eq 0 ]]; then
 fi
 
 if [[ "$1" == "--all" ]]; then
-	echo "Restoring every DUT port to its isolated VLAN"
-	if ssh "$PROXY" "switch-vlan --restore-all"; then
+	echo "Restoring every DUT port to its isolated VLAN (lock timeout ${LOCK_TIMEOUT}s)"
+	# shellcheck disable=SC2029
+	if ssh "$PROXY" "SWITCH_LOCK_TIMEOUT=$LOCK_TIMEOUT switch-vlan --restore-all"; then
 		exit 0
 	fi
 	echo "::warning::VLAN restore-all failed. DUTs may be stranded on the mesh VLAN; run 'switch-vlan --restore-all' on the lab host."
@@ -53,11 +61,11 @@ if [[ ${#duts[@]} -eq 0 ]]; then
 	exit 0
 fi
 
-echo "Restoring DUT ports to their isolated VLANs: ${duts[*]}"
+echo "Restoring DUT ports to their isolated VLANs: ${duts[*]} (lock timeout ${LOCK_TIMEOUT}s)"
 # SC2029: expanding the DUT names locally is the intent -- they come from the
 # workflow matrix, and the remote side must receive them already resolved.
 # shellcheck disable=SC2029
-if ssh "$PROXY" "switch-vlan ${duts[*]} --restore"; then
+if ssh "$PROXY" "SWITCH_LOCK_TIMEOUT=$LOCK_TIMEOUT switch-vlan ${duts[*]} --restore"; then
 	exit 0
 fi
 
