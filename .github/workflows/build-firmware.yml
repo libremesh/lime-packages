@@ -625,6 +625,12 @@ jobs:
           # clobber the -dual-tftp override for the LibreRouter.
           echo "Locked $PLACE for device=${{ matrix.device }} (LG_ENV=${LG_ENV:-unset})"
 
+      # Fallback: if restore-lab-vlans failed (switch lock contention from
+      # concurrent PoE cleanup), restore just this DUT now. After the labgrid
+      # lock there is no contention -- only this job touches this DUT.
+      - name: Ensure DUT is on its isolated VLAN
+        run: tools/ci/lab_restore_vlans.sh "${{ matrix.place }}"
+
       - name: Run single-node LibreMesh tests
         working-directory: libremesh-tests
         env:
