@@ -2,13 +2,13 @@
 	echo "LibreMesh version not found in /etc/lime_release - skipping" && exit 0
 }
 
-[ ! -f /usr/bin/apk ] && [ ! -f /bin/opkg ] &&
-	echo "No package manager found - skipping" && exit 0
+[ ! -d /etc/apk ] && [ ! -d /etc/opkg ] &&
+	echo "No package manager folder found - skipping" && exit 0
 
 . /etc/os-release
 . /etc/lime_release
 
-feed_host='http://feed.libremesh.org'
+feed_host='https://feed.libremesh.org'
 feed_ref=$([ $LIME_CODENAME == "development" ] &&
 	echo "master" || echo "$LIME_RELEASE")
 ow_branch=$( [ $VERSION == 'SNAPSHOT' ] &&
