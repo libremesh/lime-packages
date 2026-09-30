@@ -9,7 +9,8 @@ define Package/$(PKG_NAME)
   CATEGORY:=Utilities
   TITLE:=$(PKG_NAME) provides semi automated firmware upgrades
   MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
-  DEPENDS:=+lua +lime-system +luci-lib-jsonc +luci-lib-nixio +libubus-lua +libuci-lua
+  DEPENDS:=+lua +lime-system +luci-lib-jsonc +luci-lib-nixio +libubus-lua +libuci-lua \
+    +lime-utils
   PKGARCH:=all
 endef
 
