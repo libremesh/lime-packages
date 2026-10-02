@@ -1,3 +1,4 @@
+uci get attendedsysupgrade.owut.comments 2>/dev/null | grep -q "lime-owut firstrun" && exit 0
 uci batch <<EOF
 set attendedsysupgrade.server.url="https://sysupgrade.libremesh.org"
 set attendedsysupgrade.owut=owut
@@ -6,6 +7,7 @@ add_list attendedsysupgrade.owut.repository_aliases="SNAPSHOT main"
 add_list attendedsysupgrade.owut.ignored_defaults="odhcpd-ipv6only"
 add_list attendedsysupgrade.owut.ignored_defaults="ppp"
 add_list attendedsysupgrade.owut.ignored_defaults="ppp-mod-pppoe"
+add_list attendedsysupgrade.owut.comments="lime-owut firstrun"
 commit attendedsysupgrade
 EOF
 exit 0
