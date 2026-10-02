@@ -15,6 +15,12 @@ package.path = package.path .. ";packages/pirania/files/www/pirania-redirect/?;;
 
 describe("Pirania redirect request handler #portalredirect", function()
 	local snapshot
+	it("exposes handle_request as a global after loading, as uhttpd-mod-lua expects", function()
+		local chunk = loadfile(REDIRECT_PATH)
+		assert.is_truthy(chunk)
+		chunk()
+		assert.is_function(_G.handle_request)
+	end)
 
 	it("should redirect to url_auth when vouchers are active", function()
 		local handle_request = require("redirect")

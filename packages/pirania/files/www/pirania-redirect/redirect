@@ -1,9 +1,13 @@
 #!/usr/bin/lua
+-- luacheck: globals handle_request
 local utils = require('voucher.utils')
 local portal = require('portal.portal')
 local config = require('lime.config')
 
-local function handle_request (env)
+--! uhttpd-mod-lua runs this file and then looks up the GLOBAL handle_request.
+--! A local function (or a returned table) is invisible to it: uhttpd exits with
+--! "provides no handle_request() callback" and procd gives up after 5 retries.
+function handle_request (env)
   local uci_cursor = config.get_uci_cursor()
   local method = 'http://'
   local origin_url = utils.urlencode(method .. env.HTTP_HOST .. env.REQUEST_URI)
