@@ -1,0 +1,20 @@
+#!/bin/sh
+CRDT='odhcpd-leases'
+LEASEFILE='/tmp/ethers.mesh'
+TRIGGERFILE='/usr/share/shared-state/publishers/shared-state-publish_odhcpd_leases'
+mSc='odhcpd_leases'
+
+uci -q set shared-state.$mSc=dataType          
+uci -q set shared-state.$mSc.name="$CRDT"   
+uci -q set shared-state.$mSc.scope='community'      
+uci -q set shared-state.$mSc.update_interval='120'  
+uci -q set shared-state.$mSc.ttl='1200'             
+uci commit shared-state  
+
+uci -q set dhcp.odhcpd.leasetrigger="$TRIGGERFILE"
+uci -q set dhcp.odhcpd.maindhcp='1'
+uci commit dhcp
+
+[ -L /etc/ethers ] || ln -sf "$LEASEFILE" /etc/ethers
+
+/etc/init.d/odhcpd reload
