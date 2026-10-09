@@ -9,7 +9,7 @@ define Package/$(PKG_NAME)
   CATEGORY:=Utilities
   TITLE:=$(PKG_NAME) provides workarounds for radio bugs
   MAINTAINER:=Santiago Piccinini <spiccinini@altermundi.net>
-  DEPENDS:=+lua +lime-system +luci-lib-nixio
+  DEPENDS:=+lua +lime-system +luci-lib-nixio +lime-utils
   PKGARCH:=all
 endef
 

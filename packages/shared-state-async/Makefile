@@ -41,7 +41,7 @@ define Package/$(PKG_NAME)
 	# TODO: Statically linking libstdcpp instead of depending on it and then
 	# stripping unused symbols might reduce space usage, until this is the
 	# only package to use it
-	DEPENDS:=+libstdcpp
+	DEPENDS:=+libstdcpp +lime-utils
 endef
 
 define Package/$(PKG_NAME)/description
