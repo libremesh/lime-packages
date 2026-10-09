@@ -19,4 +19,14 @@ define Package/$(PKG_NAME)/description
 	stopped. Put your hooks into /etc/hotplug.d/initd/.
 endef
 
+define Package/$(PKG_NAME)/conffiles
+/etc/hotplug.d/initd/
+endef
+
+define Package/$(PKG_NAME)/install
+	$(INSTALL_DIR) $(1)/
+	[ ! -d ./build/files ] || $(CP) ./build/files/* $(1)/
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/initd/
+endef
+
 $(eval $(call BuildPackage,$(PKG_NAME)))

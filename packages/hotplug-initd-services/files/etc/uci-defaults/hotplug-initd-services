@@ -1,3 +1,0 @@
-#!/bin/sh
-
-mkdir -p /etc/hotplug.d/initd
