@@ -1,5 +1,5 @@
 #!/bin/sh
-
+# shellcheck disable=SC2086,SC3001
 FIRMWARE="$1"
 shift
 BACKUP_FILES="$*"
@@ -10,11 +10,9 @@ BACKUP_ARCHIVE="/tmp/upgrade.tar.gz"
 BACKUP_EXTRA_DIR="/tmp/lime-sysupgrade/preserve/"
 
 add_file() {
-	filebody=
-	filebody=$(sed -e s/#.*$// -e /^$/d "$1")
 	while read -r l; do
 		if [ -e "$l" ]; then BACKUP_FILES="$BACKUP_FILES $l"; else true; fi
-	done <"$filebody"
+	done <"$(echo $1 | sed -e s/#.*$// -e /^$/d)"
 }
 
 usage() {
@@ -41,10 +39,10 @@ rm -f $BACKUP_ARCHIVE
 
 if [ -d "$BACKUP_EXTRA_DIR" ]; then
 	cd $BACKUP_EXTRA_DIR || return
-	tar cvfz "$BACKUP_ARCHIVE" -C "$BACKUP_EXTRA_DIR" -- * "$BACKUP_FILES" || exit 1
+	tar cvfz "$BACKUP_ARCHIVE" -C "$BACKUP_EXTRA_DIR" $BACKUP_FILES || exit 1
 	cd - || return
 elif [ -n "$BACKUP_FILES" ]; then
-	tar czf "$BACKUP_ARCHIVE" "$BACKUP_FILES" || exit 1
+	tar czf "$BACKUP_ARCHIVE" $BACKUP_FILES || exit 1
 fi
 
 echo "Upgrading the system..."
