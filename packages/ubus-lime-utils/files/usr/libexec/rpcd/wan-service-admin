@@ -1,0 +1,37 @@
+#!/usr/bin/env lua
+--! SPDX-License-Identifier: AGPL-3.0-only
+--!
+--! Copyright (C) 2026 LibreMesh.org
+
+local json = require 'luci.jsonc'
+local utils = require 'lime.utils'
+local wan_service = require 'lime.wan_service'
+
+local function get_wan_status()
+    local data = wan_service.get_wan_status()
+    data.status = "ok"
+    return utils.printJson(data)
+end
+
+local function set_wan_interface(msg)
+    local result = wan_service.set_wan_interface(msg.ifname)
+    return utils.printJson(result)
+end
+
+local methods = {
+    get_wan_status    = { no_params = 0 },
+    set_wan_interface = { ifname = 'value' },
+}
+
+if arg[1] == 'list' then
+    utils.printJson(methods)
+end
+
+if arg[1] == 'call' then
+    local msg = utils.rpcd_readline()
+    msg = json.parse(msg)
+    if      arg[2] == 'get_wan_status'    then get_wan_status()
+    elseif  arg[2] == 'set_wan_interface' then set_wan_interface(msg)
+    else utils.printJson({ error = "Method not found" })
+    end
+end
