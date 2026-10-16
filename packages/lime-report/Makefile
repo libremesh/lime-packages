@@ -7,7 +7,6 @@ define Package/$(PKG_NAME)
 	CATEGORY:=LibreMesh
 	MAINTAINER:=Ilario Gelmetti <iochesonome@gmail.com>
 	URL:=https://libremesh.org
-	DEPENDS:=+jq
 	PKGARCH:=all
 endef
 
