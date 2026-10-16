@@ -274,8 +274,13 @@ function utils.write_file(name, content)
 end
 
 function utils.is_installed(pkg)
-	return utils.unsafe_shell("ubus call rpc-sys packagelist '{\"all\":true}' | \
-        jq -r .packages | jq -e 'has(\"" .. pkg .. "\")'")
+	local r = utils.unsafe_shell("ubus -S call rpc-sys packagelist '{\"all\":true}' | \
+		jsonfilter -e '@.packages[\"" .. pkg .. "\"]' 1>/dev/null && echo -n true || echo -n false ")
+	if r == "true" then
+		return true
+	else
+		return false
+	end
 end
 
 function utils.has_value(tab, val)
