@@ -12,7 +12,7 @@ define Package/$(PKG_NAME)
 	DEPENDS:=+bandwidth-test \
 		+busybox +ethtool +iwinfo +iw +mtr +ip \
 		+iputils-ping \
-		+sprunge +safe-reboot +netperf +pv +tcpdump-mini +bwm-ng \
+		+safe-reboot +netperf +pv +tcpdump-mini +bwm-ng \
 		+lime-report +iperf3 +jq
 	PKGARCH:=all
 endef
