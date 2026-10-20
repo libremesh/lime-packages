@@ -118,6 +118,16 @@ function anygw.configure(args)
 	fs.mkdirr(includeDir)
 	fs.symlink("/usr/share/lime/" .. nftFileName, includeDir .. nftFileName)
 
+	--! Add nft rules to prevent communication from(ingress) and to(egress) other anygateway address
+	--! It is applied to all cpu_ports
+	local cpu_ports = ""
+	for cpu_port in pairs(network.get_cpu_ports()) do
+		cpu_ports = cpu_ports .. '"' .. cpu_port .. '", '
+	end
+	cpu_ports = cpu_ports:sub(1, -3)
+	os.execute("sed -i 's|\\(define cpu_ports = \\).*|\\1{ " .. cpu_ports .. " }|' " .. includeDir .. nftFileName)
+	os.execute("sed -i 's|\\(define anygw_mac = \\).*|\\1" .. anygw_mac .. "|' " .. includeDir .. nftFileName)
+
 	local content = {}
 	table.insert(content, "enable-ra")
 	table.insert(content, "ra-param=anygw,mtu:" .. anygw.SAFE_CLIENT_MTU .. ",120")
