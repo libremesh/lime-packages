@@ -293,6 +293,59 @@ function network._is_dsa_conduit(dev)
 	return "reg" == fs.stat("/sys/class/net/" .. dev .. "/dsa/tagging", "type")
 end
 
+function network.get_cpu_ports()
+	local board = utils.getBoardAsTable()
+	local cpu_ports = {}
+
+	if utils.is_dsa() then
+		--! Scrape from /sys/class/net/
+		local stdOut = io.popen("ls -1 /sys/class/net/")
+		for dev in stdOut:lines() do
+			if network._is_dsa_conduit(dev) then
+				cpu_ports[dev] = true
+			end
+		end
+		stdOut:close()
+	else
+		--! Collect switch facing ethernet ports for swconfig devices from board.json
+		for _, switch_table in pairs(board["switch"] or {}) do
+			for _, port_table in pairs(switch_table["ports"] or {}) do
+				local dev = port_table["device"]
+				if dev then
+					cpu_ports[dev] = true
+				end
+			end
+		end
+
+		for _, role_table in pairs(board["network"] or {}) do
+			--! "ports" and "device" fields may be specified at the same time.
+			--! In this case, "ports" must be used.
+			local ports = role_table["ports"]
+			if ports == nil then
+				ports = { role_table["device"] }
+			end
+			local protocol = role_table["protocol"]
+			--! Protocol can be dhcp, static, pppoe, ncm, qmi, mbim.
+			--! Ethernet interfaces usually have protocol "dhcp" or "static",
+			--! depending on their role.
+			if protocol == "dhcp" or protocol == "static" then
+				for _, port in pairs(ports) do
+					cpu_ports[port] = true
+				end
+			end
+		end
+	end
+
+	for port in pairs(cpu_ports) do
+		local lower = os.execute("ls /sys/class/net/" .. port .. "/ | grep 'lower' | cut -d '_' -f2")
+		if lower ~= nil and lower ~= "" then
+			cpu_ports[port] = lower
+		end
+	end
+
+	return cpu_ports
+end
+
 function network.scandevices(specificIfaces)
 	local devices = {}
 	local cpu_ports = {}

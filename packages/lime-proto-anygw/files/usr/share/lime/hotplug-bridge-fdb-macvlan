@@ -1,0 +1,15 @@
+#!/bin/sh
+
+MACVLAN_INTERFACE="anygw"
+BRIDGE_INTERFACE="br-lan"
+DEVICE=${DEVICENAME:-$DEVICE}
+
+[ "$DEVICE" = "$BRIDGE_INTERFACE" ] || [ "$DEVICE" = "$MACVLAN_INTERFACE" ] || exit 0
+
+MACVLAN_MAC=$(cat /sys/class/net/$MACVLAN_INTERFACE/address)
+if [ -n "$MACVLAN_MAC" ]; then
+	bridge fdb replace "$MACVLAN_MAC" dev "$BRIDGE_INTERFACE" static local 2>/dev/null
+	logger -t bridge_fdb "Updated FDB hook: $HOTPLUG_TYPE, action: $ACTION, interface: $INTERFACE, device: $DEVICE, macvlan: $MACVLAN_MAC"
+else
+	logger -t bridge_fdb "Failed to update FDB hook: $HOTPLUG_TYPE. MAC address not found for $MACVLAN_INTERFACE"
+fi

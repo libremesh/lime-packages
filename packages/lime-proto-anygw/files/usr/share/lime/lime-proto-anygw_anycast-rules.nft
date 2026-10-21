@@ -1,6 +1,8 @@
 #!/usr/sbin/nft -f
 
 define anygw_macs = aa:aa:aa:00:00:00/24
+define anygw_mac = aa:aa:aa:0d:fe:aa
+define cpu_ports = { "eth0" }
 
 # delete if exists, do not fail if not
 add table bridge filter
@@ -34,4 +36,26 @@ table bridge nat {
                 # Filter rogue IPv6 router advertisement
                 oifname bat0 ether type ip6 icmpv6 type nd-router-advert counter drop
         }
+}
+
+add table netdev filter_anygw_ingress
+add chain netdev filter_anygw_ingress anygw_ingress
+delete chain netdev filter_anygw_ingress anygw_ingress
+
+table netdev filter_anygw_ingress {
+	chain anygw_ingress {
+		type filter hook ingress devices = $cpu_ports priority filter; policy accept
+		ether saddr $anygw_mac counter drop
+	}
+}
+
+add table netdev filter_anygw_egress
+add chain netdev filter_anygw_egress anygw_egress
+delete chain netdev filter_anygw_egress anygw_egress
+
+table netdev filter_anygw_egress {
+	chain anygw_egress {
+		type filter hook egress devices = $cpu_ports priority filter; policy accept
+		ether daddr $anygw_mac counter drop
+	}
 }
