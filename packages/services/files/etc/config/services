@@ -1,0 +1,2 @@
+config base_config 'base_config'
+    option enabled '0'
