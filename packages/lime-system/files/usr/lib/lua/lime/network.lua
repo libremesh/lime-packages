@@ -170,7 +170,7 @@ function network.primary_address(offsetArg)
 	local invalid = ipv4_template:equal(mc:network()) and "NETWORK"
 	--! If anygw enabled, generated address is the one reserved for anygw like 192.0.2.1/24 ?
 	if utils.isModuleAvailable("lime.proto.anygw") then
-		local generalProtocols = config.get("network", "protocols")
+		local generalProtocols = config.get("network", "protocols") or {}
 		for _, protocol in pairs(generalProtocols) do
 			if protocol == "anygw" then
 				invalid = invalid or ipv4_template:equal(mc:minhost()) and "ANYGW"
@@ -355,9 +355,9 @@ function network.scandevices(specificIfaces)
 		devices[dev] = devices[dev] or {}
 		devices[dev]["dsa"] = is_dsa
 		if is_dsa then
-			utils.log("network.scandevices.board_port_parser found " .. "DSA-port %s in board.json", dev)
+			utils.log("network.scandevices.board_port_parser found DSA-port %s in board.json", dev)
 		else
-			utils.log("network.scandevices.board_port_parser found " .. "device %s in board.json", dev)
+			utils.log("network.scandevices.board_port_parser found device %s in board.json", dev)
 		end
 	end
 
@@ -436,29 +436,32 @@ function network.configure()
 	--! For each scanned fisical device, if there is a specific config apply that one otherwise apply general config
 	for device, flags in pairs(fisDevs) do
 		local owrtIf = specificIfaces[device]
-		local deviceProtos = generalProtocols
+		local deviceProtos = generalProtocols or {}
 		if owrtIf then
-			deviceProtos = owrtIf["protocols"] or { "manual" }
+			deviceProtos = owrtIf["protocols"] or {}
 			flags["specific"] = true
 			flags["_specific_section"] = owrtIf
 		end
-
 		for _, protoParams in pairs(deviceProtos) do
-			local args = utils.split(protoParams, network.protoParamsSeparator)
-			local protoName = args[1]
 			--! If manual is specified do not configure interface
-			if protoName == "manual" then
+			if utils.has_value(deviceProtos, "manual") then
 				break
 			end
+			local args = utils.split(protoParams, network.protoParamsSeparator)
+			local protoName = args[1]
 			local protoModule = "lime.proto." .. protoName
-			local needsConfig = utils.isModuleAvailable(protoModule)
-			if protoName ~= "lan" and not flags["specific"] then
-				--! Work around issue 1121. Do not configure any other
-				--! protocols than lime.proto.lan on dsa devices unless there
-				--! is a config net section for the device.
-				needsConfig = needsConfig and not utils.is_dsa(device)
+			if protoName == "lan" and flags["dsa"] and 1 < #deviceProtos then
+				--! Hack to avoid offloading bridging to internal switch.
+				--! Necessary if lan is not the only protocol.
+				local owrtDeviceName = network.sanitizeIfaceName(
+					device .. "_macvlan_passthru_dev"
+				)
+				local upperDevice = device.."_0"
+				network.createDevice(owrtDeviceName, device, upperDevice,
+									 "macvlan", {mode="passthru"})
+				device = upperDevice
 			end
-			if needsConfig then
+			if utils.isModuleAvailable(protoModule) then
 				for k, v in pairs(flags) do
 					args[k] = v
 				end
