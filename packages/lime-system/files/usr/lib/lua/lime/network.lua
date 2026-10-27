@@ -453,12 +453,9 @@ function network.configure()
 			if protoName == "lan" and flags["dsa"] and 1 < #deviceProtos then
 				--! Hack to avoid offloading bridging to internal switch.
 				--! Necessary if lan is not the only protocol.
-				local owrtDeviceName = network.sanitizeIfaceName(
-					device .. "_macvlan_passthru_dev"
-				)
-				local upperDevice = device.."_0"
-				network.createDevice(owrtDeviceName, device, upperDevice,
-									 "macvlan", {mode="passthru"})
+				local owrtDeviceName = network.sanitizeIfaceName(device .. "_macvlan_passthru_dev")
+				local upperDevice = device .. "_0"
+				network.createDevice(owrtDeviceName, device, upperDevice, "macvlan", { mode = "passthru" })
 				device = upperDevice
 			end
 			if utils.isModuleAvailable(protoModule) then
