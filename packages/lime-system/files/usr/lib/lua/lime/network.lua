@@ -499,7 +499,7 @@ function network.macvlanPassthruHack(device)
 		.. "\n"
 		.. "add   rule  netdev macvlan_passthru_hack ingress_"
 		.. upperDevice
-		.. " meta pkttype set other\n"
+		.. " meta pkttype host meta pkttype set other\n"
 	fs.writefile(network.MACVLAN_HACK_FW4_INCLUDE_PREFIX .. upperDevice .. ".nft", nft)
 	return upperDevice
 end
