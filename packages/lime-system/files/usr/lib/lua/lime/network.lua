@@ -457,8 +457,11 @@ function network.configure()
 			local args = utils.split(protoParams, network.protoParamsSeparator)
 			local protoName = args[1]
 			local protoModule = "lime.proto." .. protoName
+			local upperDevice
 			if protoName == "lan" and flags["dsa"] and 1 < #deviceProtos then
-				device = network.macvlanPassthruHack(device)
+				upperDevice = network.macvlanPassthruHack(device)
+			else
+				upperDevice = device
 			end
 			if utils.isModuleAvailable(protoModule) then
 				for k, v in pairs(flags) do
@@ -467,7 +470,7 @@ function network.configure()
 				local proto = require(protoModule)
 				xpcall(function()
 					proto.configure(args)
-					proto.setup_interface(device, args)
+					proto.setup_interface(upperDevice, args)
 				end, function(errmsg)
 					print(errmsg)
 					print(debug.traceback())
