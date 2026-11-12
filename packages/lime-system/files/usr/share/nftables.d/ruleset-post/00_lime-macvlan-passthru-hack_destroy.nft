@@ -1,0 +1,5 @@
+#!/usr/sbin/nft -f
+
+# destroy command is requires linux >= 6.3. Use add delete as workaround.
+add table netdev macvlan_passthru_hack
+delete table netdev macvlan_passthru_hack

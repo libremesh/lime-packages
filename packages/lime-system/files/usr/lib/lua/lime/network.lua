@@ -28,7 +28,7 @@ end
 network.MTU_ETH = 1500
 network.MTU_ETH_WITH_VLAN = network.MTU_ETH - 4
 
-network.MACVLAN_HACK_FW4_INCLUDE_PREFIX = "/usr/share/nftables.d/ruleset-post/lime-macvlan-passthru-hack_"
+network.MACVLAN_HACK_FW4_INCLUDE_PREFIX = "/usr/share/nftables.d/ruleset-post/50_lime-macvlan-passthru-hack_"
 
 --! Deprecated use corresponding functions instead
 network.protoParamsSeparator = ":"
@@ -491,16 +491,13 @@ function network.macvlanPassthruHack(device)
 	local upperDevice = device .. "_0"
 	network.createDevice(owrtDeviceName, device, upperDevice, "macvlan", { mode = "passthru" })
 	local nft = "#!/usr/sbin/nft -f\n"
-		.. "add   table netdev macvlan_passthru_hack\n"
-		.. "add   chain netdev macvlan_passthru_hack ingress_"
+		.. "add table netdev macvlan_passthru_hack\n"
+		.. "add chain netdev macvlan_passthru_hack ingress_"
 		.. upperDevice
 		.. " { type filter hook ingress device "
 		.. upperDevice
 		.. " priority -450; policy accept; }\n"
-		.. "flush chain netdev macvlan_passthru_hack ingress_"
-		.. upperDevice
-		.. "\n"
-		.. "add   rule  netdev macvlan_passthru_hack ingress_"
+		.. "add rule  netdev macvlan_passthru_hack ingress_"
 		.. upperDevice
 		.. " meta pkttype host meta pkttype set other\n"
 	fs.writefile(network.MACVLAN_HACK_FW4_INCLUDE_PREFIX .. upperDevice .. ".nft", nft)
