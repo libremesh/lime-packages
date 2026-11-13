@@ -72,9 +72,6 @@ function lan.setup_interface(ifname, args)
 	if ifname:match("^wlan") then
 		return
 	end
-	if ifname:match(network.protoVlanSeparator .. "%d+$") then
-		return
-	end
 
 	local uci = config.get_uci_cursor()
 	local bridgedIfs = {}
