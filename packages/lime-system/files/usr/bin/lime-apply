@@ -3,7 +3,7 @@
 execute_hooks() {
 	local action="$1"
 	for file in /etc/hotplug.d/lime-apply/*; do
-		[ -f "$file" ] || return
+		[ -f "$file" ] || return 0
 		printf "Executed hook:\tsh -c \"ACTION=%s %s\"" "$action" "$file"
 		sh -c "ACTION=$action $file" >/dev/null
 		printf "\t%s\n" "$?"
@@ -17,6 +17,8 @@ hostname="$(/sbin/uci get system.@system[0].hostname)"
 echo "$hostname" >/proc/sys/kernel/hostname
 echo "Reload network config"
 /sbin/reload_config
+/etc/init.d/network reload
+/etc/init.d/firewall reload
 
 [ -x /etc/init.d/alfred ] && {
 	echo "Reload ALFRED"
