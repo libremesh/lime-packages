@@ -54,7 +54,7 @@ echo "------------------"
 echo ""
 echo "The device model is $(cat /tmp/sysinfo/model)"
 echo "The md5sum of the new firmware is $(md5sum "$FIRMWARE" | awk '{print $1}')"
-if [ "$(command -v sha256sum >/dev/null)" ]; then
+if [ "$(command -v sha256sum)" ]; then
 	echo "Its sha256sum is $(sha256sum "$FIRMWARE" | awk '{print $1}')"
 else
 	true
