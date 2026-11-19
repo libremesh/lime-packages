@@ -170,7 +170,7 @@ function network.primary_address(offsetArg)
 	local invalid = ipv4_template:equal(mc:network()) and "NETWORK"
 	--! If anygw enabled, generated address is the one reserved for anygw like 192.0.2.1/24 ?
 	if utils.isModuleAvailable("lime.proto.anygw") then
-		local generalProtocols = config.get("network", "protocols")
+		local generalProtocols = config.get("network", "protocols") or {}
 		for _, protocol in pairs(generalProtocols) do
 			if protocol == "anygw" then
 				invalid = invalid or ipv4_template:equal(mc:minhost()) and "ANYGW"
@@ -355,9 +355,9 @@ function network.scandevices(specificIfaces)
 		devices[dev] = devices[dev] or {}
 		devices[dev]["dsa"] = is_dsa
 		if is_dsa then
-			utils.log("network.scandevices.board_port_parser found " .. "DSA-port %s in board.json", dev)
+			utils.log("network.scandevices.board_port_parser found DSA-port %s in board.json", dev)
 		else
-			utils.log("network.scandevices.board_port_parser found " .. "device %s in board.json", dev)
+			utils.log("network.scandevices.board_port_parser found device %s in board.json", dev)
 		end
 	end
 
@@ -436,9 +436,9 @@ function network.configure()
 	--! For each scanned fisical device, if there is a specific config apply that one otherwise apply general config
 	for device, flags in pairs(fisDevs) do
 		local owrtIf = specificIfaces[device]
-		local deviceProtos = generalProtocols
+		local deviceProtos = generalProtocols or {}
 		if owrtIf then
-			deviceProtos = owrtIf["protocols"] or { "manual" }
+			deviceProtos = owrtIf["protocols"] or {}
 			flags["specific"] = true
 			flags["_specific_section"] = owrtIf
 		end
