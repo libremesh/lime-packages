@@ -1,0 +1,34 @@
+#!/bin/sh
+uci batch <<'EOF'
+add rpcd login
+set rpcd.@login[1].username='lime-app'
+set rpcd.@login[1].password='$1$$ta3C2yX4TvVObdaJyQ9Md1'
+add_list rpcd.@login[1].read='lime-app'
+add_list rpcd.@login[1].write='lime-app'
+add_list rpcd.@login[1].read='unauthenticated'
+add_list rpcd.@login[1].write='unauthenticated'
+commit rpcd
+set uhttpd.main.ubus_cors='1'
+set uhttpd.main.index_page=lime_app_index.html
+commit uhttpd
+EOF
+
+cat <<EOF >/usr/share/rpcd/acl.d/unauthenticated.json
+{
+	"unauthenticated": {
+		"description": "Access controls for unauthenticated requests",
+		"read": {
+			"ubus": {
+				"session": [
+					"access",
+					"login"
+				]
+			}
+		}
+	}
+}
+EOF
+
+ACTION="post" /etc/hotplug.d/lime-apply/99-lime-app-title
+
+exit 0

@@ -500,9 +500,34 @@ jobs:
   # pull_request (every place; gated by the physical-lab environment).
   # A single approval here covers test-mesh too (test-mesh needs:
   # test-firmware, so it waits for this job to finish).
+  # Single-node tests assume each DUT sits on its own isolated VLAN. A mesh run
+  # cancelled before its teardown leaves DUTs on the mesh VLAN, where U-Boot
+  # DHCPs on the wrong subnet and the host cannot reach them.
+  #
+  # This is one job rather than a step inside the test-firmware matrix on
+  # purpose: switch-vlan serialises on /tmp/switch.lock, the same lock every
+  # PoE operation takes, so six matrix jobs restoring concurrently would queue
+  # behind each other and stall the power cycles they are meant to protect.
+  restore-lab-vlans:
+    name: restore-lab-vlans
+    needs: prepare-matrix
+    if: |
+      (
+        github.event_name == 'schedule'
+        || (github.event_name == 'workflow_dispatch' && github.event.inputs.physical_single == 'true')
+        || github.event_name == 'pull_request'
+      )
+      && fromJson(needs.prepare-matrix.outputs.test_targets_matrix).include[0] != null
+    environment:
+      name: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request') && 'physical-lab' || '' }}
+    runs-on: [self-hosted, testbed-fcefyn]
+    steps:
+      - uses: actions/checkout@v6
+      - run: tools/ci/lab_restore_vlans.sh --all
+
   test-firmware:
     name: test-firmware (${{ matrix.place }} / ${{ matrix.openwrt_release }})
-    needs: [prepare-matrix, build-image]
+    needs: [prepare-matrix, build-image, restore-lab-vlans]
     if: |
       (
         github.event_name == 'schedule'
@@ -544,7 +569,23 @@ jobs:
         run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        # Use the standalone installer instead of astral-sh/setup-uv to avoid a
+        # hard dependency on raw.githubusercontent.com/astral-sh/versions/.../uv.ndjson
+        # for version resolution. That endpoint went 503 (Backend.max_conn /
+        # Varnish) during runs 34356587946 and 34368726582, killing every
+        # physical-DUT job at "Install uv" before any stage/lock/test ran.
+        # setup-uv@v10 added retries only for thrown network errors, not for
+        # HTTP error statuses like 503 (see astral-sh/setup-uv#1016).
+        #
+        # The standalone installer resolves the pinned UV_VERSION directly from
+        # releases.astral.sh (mirror) with github.com/astral-sh/uv/releases as
+        # fallback, both of which skip the ndjson manifest entirely.
+        env:
+          UV_VERSION: "0.12.11"
+        run: |
+          set -euo pipefail
+          curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Sync libremesh-tests environment
         run: |
@@ -562,6 +603,12 @@ jobs:
 
       - name: Lock labgrid place
         working-directory: libremesh-tests
+        env:
+          # LG_PLACE must be available before labgrid-client parses LG_ENV so
+          # that !template "$LG_PLACE" in target YAMLs resolves correctly.
+          # (lab_stage_firmware.sh may set LG_ENV to a -dual-tftp variant
+          # that still references $LG_PLACE in RemotePlace.)
+          LG_PLACE: labgrid-fcefyn-${{ matrix.place }}
         run: |
           set -euo pipefail
           echo "LG_PROXY=labgrid-fcefyn" >> "$GITHUB_ENV"
@@ -573,8 +620,16 @@ jobs:
           }
           echo "$LOCK_OUT"
           echo "LG_PLACE=$PLACE" >> "$GITHUB_ENV"
-          echo "LG_ENV=targets/${{ matrix.device }}.yaml" >> "$GITHUB_ENV"
-          echo "Locked $PLACE for device=${{ matrix.device }}"
+          # LG_ENV is owned by lab_stage_firmware.sh (it knows whether the
+          # artifact is single-image or dual-tftp). Re-setting it here used to
+          # clobber the -dual-tftp override for the LibreRouter.
+          echo "Locked $PLACE for device=${{ matrix.device }} (LG_ENV=${LG_ENV:-unset})"
+
+      # Fallback: if restore-lab-vlans failed (switch lock contention from
+      # concurrent PoE cleanup), restore just this DUT now. After the labgrid
+      # lock there is no contention -- only this job touches this DUT.
+      - name: Ensure DUT is on its isolated VLAN
+        run: tools/ci/lab_restore_vlans.sh "${{ matrix.place }}"
 
       - name: Run single-node LibreMesh tests
         working-directory: libremesh-tests
@@ -779,7 +834,23 @@ jobs:
         run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        # Use the standalone installer instead of astral-sh/setup-uv to avoid a
+        # hard dependency on raw.githubusercontent.com/astral-sh/versions/.../uv.ndjson
+        # for version resolution. That endpoint went 503 (Backend.max_conn /
+        # Varnish) during runs 34356587946 and 34368726582, killing every
+        # physical-DUT job at "Install uv" before any stage/lock/test ran.
+        # setup-uv@v10 added retries only for thrown network errors, not for
+        # HTTP error statuses like 503 (see astral-sh/setup-uv#1016).
+        #
+        # The standalone installer resolves the pinned UV_VERSION directly from
+        # releases.astral.sh (mirror) with github.com/astral-sh/uv/releases as
+        # fallback, both of which skip the ndjson manifest entirely.
+        env:
+          UV_VERSION: "0.12.11"
+        run: |
+          set -euo pipefail
+          curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Sync libremesh-tests environment
         run: cd libremesh-tests && uv sync
@@ -818,6 +889,13 @@ jobs:
           SRC_DIR: fw-mesh
           LOGS_DIR: mesh-logs
         run: tools/ci/lab_stage_mesh.sh
+
+      # pytest restores the VLANs from a fixture teardown that never runs when
+      # the job is cancelled, which strands the DUTs on the mesh VLAN and
+      # breaks every later job on them.
+      - name: Restore DUT VLANs
+        if: always()
+        run: tools/ci/lab_restore_vlans.sh ${{ join(matrix.places, ' ') }}
 
       - name: Cleanup TFTP on failure
         if: failure()
@@ -882,7 +960,23 @@ jobs:
         run: echo "OPENWRT_TESTS_DIR=$GITHUB_WORKSPACE/openwrt-tests" >> "$GITHUB_ENV"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        # Use the standalone installer instead of astral-sh/setup-uv to avoid a
+        # hard dependency on raw.githubusercontent.com/astral-sh/versions/.../uv.ndjson
+        # for version resolution. That endpoint went 503 (Backend.max_conn /
+        # Varnish) during runs 34356587946 and 34368726582, killing every
+        # physical-DUT job at "Install uv" before any stage/lock/test ran.
+        # setup-uv@v10 added retries only for thrown network errors, not for
+        # HTTP error statuses like 503 (see astral-sh/setup-uv#1016).
+        #
+        # The standalone installer resolves the pinned UV_VERSION directly from
+        # releases.astral.sh (mirror) with github.com/astral-sh/uv/releases as
+        # fallback, both of which skip the ndjson manifest entirely.
+        env:
+          UV_VERSION: "0.12.11"
+        run: |
+          set -euo pipefail
+          curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Sync libremesh-tests environment
         run: cd libremesh-tests && uv sync
@@ -915,6 +1009,11 @@ jobs:
           SRC_DIR: fw-pair
           LOGS_DIR: mesh-pairs-logs
         run: tools/ci/lab_stage_mesh.sh
+
+      # See the same step in test-mesh: cancellation skips pytest's teardown.
+      - name: Restore DUT VLANs
+        if: always()
+        run: tools/ci/lab_restore_vlans.sh "${{ matrix.place_a }}" "${{ matrix.place_b }}"
 
       - name: Cleanup TFTP on failure
         if: failure()
@@ -974,7 +1073,23 @@ jobs:
           sudo apt-get install -y --no-install-recommends qemu-system-x86 ovmf
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        # Use the standalone installer instead of astral-sh/setup-uv to avoid a
+        # hard dependency on raw.githubusercontent.com/astral-sh/versions/.../uv.ndjson
+        # for version resolution. That endpoint went 503 (Backend.max_conn /
+        # Varnish) during runs 34356587946 and 34368726582, killing every
+        # physical-DUT job at "Install uv" before any stage/lock/test ran.
+        # setup-uv@v10 added retries only for thrown network errors, not for
+        # HTTP error statuses like 503 (see astral-sh/setup-uv#1016).
+        #
+        # The standalone installer resolves the pinned UV_VERSION directly from
+        # releases.astral.sh (mirror) with github.com/astral-sh/uv/releases as
+        # fallback, both of which skip the ndjson manifest entirely.
+        env:
+          UV_VERSION: "0.12.11"
+        run: |
+          set -euo pipefail
+          curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Sync libremesh-tests environment
         run: |
@@ -1106,7 +1221,23 @@ jobs:
           vwifi-server --help || vwifi-server -h || true
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        # Use the standalone installer instead of astral-sh/setup-uv to avoid a
+        # hard dependency on raw.githubusercontent.com/astral-sh/versions/.../uv.ndjson
+        # for version resolution. That endpoint went 503 (Backend.max_conn /
+        # Varnish) during runs 34356587946 and 34368726582, killing every
+        # physical-DUT job at "Install uv" before any stage/lock/test ran.
+        # setup-uv@v10 added retries only for thrown network errors, not for
+        # HTTP error statuses like 503 (see astral-sh/setup-uv#1016).
+        #
+        # The standalone installer resolves the pinned UV_VERSION directly from
+        # releases.astral.sh (mirror) with github.com/astral-sh/uv/releases as
+        # fallback, both of which skip the ndjson manifest entirely.
+        env:
+          UV_VERSION: "0.12.11"
+        run: |
+          set -euo pipefail
+          curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Sync libremesh-tests environment
         run: |

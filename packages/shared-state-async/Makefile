@@ -32,12 +32,14 @@ define Package/shared-state-async/Default
   TITLE:=shared-state C++ async 
   CATEGORY:=LibreMesh
   URL:=https://github.com/libremesh/shared-state-async
+  # TODO: Remove dependency on shared-state-get_candidates_neigh once
+	# discovery is reimplemented in C++
 endef
 
 define Package/shared-state-async
   $(call Package/shared-state-async/Default)
   TITLE+= (dynamic linking)
-  DEPENDS:=+libstdcpp
+  DEPENDS:=+libstdcpp +shared-state
   VARIANT:=dynamic
   CONFLICTS:=shared-state-async-static
 endef
@@ -45,6 +47,7 @@ endef
 define Package/shared-state-async-static
   $(call Package/shared-state-async/Default)
   TITLE+= (static linking)
+  DEPENDS:=shared-state
   VARIANT:=static
   PROVIDES:=shared-state-async
   CONFLICTS:=shared-state-async
@@ -85,9 +88,6 @@ define Package/shared-state-async/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/shared-state-async $(1)/usr/bin/
 	$(CP) ./files/* $(1)/
-
-	# TODO: Remove this line once discovery is reimplemented in C++
-	$(CP) ../shared-state/files/usr/bin/shared-state-get_candidates_neigh $(1)/usr/bin/shared-state-async-discover
 endef
 
 Package/shared-state-async-static/install = $(Package/shared-state-async/install)
