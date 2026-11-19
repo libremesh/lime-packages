@@ -28,6 +28,8 @@ end
 network.MTU_ETH = 1500
 network.MTU_ETH_WITH_VLAN = network.MTU_ETH - 4
 
+network.MACVLAN_HACK_FW4_INCLUDE_PREFIX = "/usr/share/nftables.d/ruleset-post/50_lime-macvlan-passthru-hack_"
+
 --! Deprecated use corresponding functions instead
 network.protoParamsSeparator = ":"
 network.protoVlanSeparator = "_"
@@ -280,6 +282,11 @@ function network.clean()
 
 	utils.log("Disabling 6relayd...")
 	fs.writefile("/etc/config/6relayd", "")
+
+	utils.log("Removing fw4 includes...")
+	for path in fs.glob(network.MACVLAN_HACK_FW4_INCLUDE_PREFIX .. "*.nft") do
+		fs.unlink(path)
+	end
 end
 
 function network._get_lower(dev)
@@ -450,21 +457,20 @@ function network.configure()
 			local args = utils.split(protoParams, network.protoParamsSeparator)
 			local protoName = args[1]
 			local protoModule = "lime.proto." .. protoName
-			local needsConfig = utils.isModuleAvailable(protoModule)
-			if protoName ~= "lan" and not flags["specific"] then
-				--! Work around issue 1121. Do not configure any other
-				--! protocols than lime.proto.lan on dsa devices unless there
-				--! is a config net section for the device.
-				needsConfig = needsConfig and not utils.is_dsa(device)
+			local upperDevice
+			if protoName == "lan" and flags["dsa"] and 1 < #deviceProtos then
+				upperDevice = network.macvlanPassthruHack(device)
+			else
+				upperDevice = device
 			end
-			if needsConfig then
+			if utils.isModuleAvailable(protoModule) then
 				for k, v in pairs(flags) do
 					args[k] = v
 				end
 				local proto = require(protoModule)
 				xpcall(function()
 					proto.configure(args)
-					proto.setup_interface(device, args)
+					proto.setup_interface(upperDevice, args)
 				end, function(errmsg)
 					print(errmsg)
 					print(debug.traceback())
@@ -476,6 +482,26 @@ end
 
 function network.sanitizeIfaceName(ifName)
 	return network.limeIfNamePrefix .. ifName:gsub("[^%w_]", "_")
+end
+
+function network.macvlanPassthruHack(device)
+	--! Hack to avoid offloading bridging to internal switch.
+	--! Necessary if lan is not the only protocol.
+	local owrtDeviceName = network.sanitizeIfaceName(device .. "_macvlan_passthru_dev")
+	local upperDevice = device .. "_0"
+	network.createDevice(owrtDeviceName, device, upperDevice, "macvlan", { mode = "passthru" })
+	local nft = "#!/usr/sbin/nft -f\n"
+		.. "add table netdev macvlan_passthru_hack\n"
+		.. "add chain netdev macvlan_passthru_hack ingress_"
+		.. upperDevice
+		.. " { type filter hook ingress device "
+		.. upperDevice
+		.. " priority -450; policy accept; }\n"
+		.. "add rule  netdev macvlan_passthru_hack ingress_"
+		.. upperDevice
+		.. " meta pkttype host meta pkttype set other\n"
+	fs.writefile(network.MACVLAN_HACK_FW4_INCLUDE_PREFIX .. upperDevice .. ".nft", nft)
+	return upperDevice
 end
 
 function network.createDevice(owrtDeviceName, baseIfname, linuxName, devType, args)
