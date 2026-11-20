@@ -640,6 +640,26 @@ function utils.is_dsa(port)
 	return 0 == os.execute("grep -sq DEVTYPE=dsa /sys/class/net/" .. port .. "/uevent")
 end
 
+function utils.is_single_eth()
+	local board = utils.getBoardAsTable()
+
+	--! Filter devices with a single network role 'lan' or 'wan'
+	if 1 == utils.tableLength(board["network"]) then
+		--! Filter swconfig devices which on top of a single network.lan.device have multiple ports
+		if board["switch"] ~= nil then
+			return false
+		end
+
+		--! Filter dsa devices which have network.lan.device and not network.lan.ports
+		for _, role_table in pairs(board["network"]) do
+			if role_table["device"] ~= nil then
+				return true
+			end
+		end
+	end
+	return false
+end
+
 function utils.dumptable(table, nestingArg)
 	local nesting = nestingArg or 1
 	if type(table) ~= "table" then
