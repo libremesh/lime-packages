@@ -11,7 +11,6 @@ define Package/$(PKG_NAME)
 	URL:=http://libremesh.org
 	DEPENDS:=+bandwidth-test \
 		+busybox +ethtool +iwinfo +iw +mtr +ip \
-		+iputils-ping \
 		+safe-reboot +netperf +pv +tcpdump-mini +bwm-ng \
 		+lime-report +iperf3
 	PKGARCH:=all
