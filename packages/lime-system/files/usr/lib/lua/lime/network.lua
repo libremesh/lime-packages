@@ -342,9 +342,7 @@ function network.scandevices(specificIfaces)
 			return
 		end
 
-		local is_dsa = utils.is_dsa(dev)
 		devices[dev] = devices[dev] or {}
-		devices[dev]["dsa"] = is_dsa
 	end
 
 	local function owrt_ifname_parser(section)
@@ -440,6 +438,9 @@ function network.configure()
 		end
 	end
 
+	local is_dsa = utils.is_dsa()
+	local is_single_eth = utils.is_single_eth()
+
 	--! For each scanned fisical device, if there is a specific config apply that one otherwise apply general config
 	for device, flags in pairs(fisDevs) do
 		local owrtIf = specificIfaces[device]
@@ -449,6 +450,13 @@ function network.configure()
 			flags["specific"] = true
 			flags["_specific_section"] = owrtIf
 		end
+
+		--! Exclude the names of wireless network devices, since ethernet device names may vary more
+		if not device:match("^wlan") and not device:match("^phy") then
+			flags["dsa"] = is_dsa
+			flags["single_eth"] = is_single_eth
+		end
+
 		for _, protoParams in pairs(deviceProtos) do
 			--! If manual is specified do not configure interface
 			if utils.has_value(deviceProtos, "manual") then
@@ -458,7 +466,7 @@ function network.configure()
 			local protoName = args[1]
 			local protoModule = "lime.proto." .. protoName
 			local upperDevice
-			if protoName == "lan" and flags["dsa"] and 1 < #deviceProtos then
+			if protoName == "lan" and flags["dsa"] and not flags["single_eth"] and 1 < #deviceProtos then
 				upperDevice = network.macvlanPassthruHack(device)
 			else
 				upperDevice = device
