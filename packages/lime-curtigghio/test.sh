@@ -163,7 +163,7 @@ dflash() {
 	origHash="$(sha256sum "$dImage" | awk '{print $1}')"
 	copiedHash="$(ssh root@"$dDevice" sha256sum /tmp/"$imgName" | awk '{print "$1"}')"
 
-	if [ "X$origHash" != "X$copiedHash" ]; then echo "Hash mismatch"; else return 1; fi
+	if [ "$origHash" != "$copiedHash" ]; then echo "Hash mismatch"; else return 1; fi
 
 	# Do not use -n as this will erease IP confifuration for hilink_hlk-7621a-evb
 	ssh root@"$dDevice" sysupgrade /tmp/"$imgName"
