@@ -52,11 +52,11 @@ describe("Test utils tests #testutils", function()
 
 	it("test setup and teardown _test_dir", function()
 		local dir = test_utils.setup_test_dir()
-		assert.is_true(utils.file_exists(dir))
+		assert.is_true(utils.dir_exists(dir))
 		assert.is_true(utils.stringStarts(dir, "/tmp/"))
 		assert.is_true(utils.stringEnds(dir, "/"))
 		test_utils.teardown_test_dir()
-		assert.is_false(utils.file_exists(dir))
+		assert.is_false(utils.dir_exists(dir))
 	end)
 
 	before_each("", function()
