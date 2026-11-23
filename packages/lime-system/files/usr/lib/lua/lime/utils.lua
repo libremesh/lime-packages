@@ -300,7 +300,11 @@ function utils.tableMelt(t1, t2)
 end
 
 function utils.tableLength(t)
-	return #t
+	local count = 0
+	for _ in pairs(t) do
+		count = count + 1
+	end
+	return count
 end
 
 function utils.indexFromName(name)
