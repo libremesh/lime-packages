@@ -11,23 +11,20 @@ PKG_NAME:=shared-state-async
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/libremesh/shared-state-async.git
-PKG_SOURCE_DATE:=2024-05-13
-PKG_SOURCE_VERSION:=db58e3d16e8658417956f9bb42e7e87f6aadcd4d
+PKG_SOURCE_DATE:=2026-11-19
+PKG_SOURCE_VERSION:=1a20921704184fa83af6f661dded2cb4a40b34d9
+PKG_MIRROR_HASH:=06d2ce1a21d9b1af801fd36d6a6db3a6292d94fdeea57e1f4627a16f983780f0
 PKG_MAINTAINER:=Asociación Civil Altermundi <info@altermundi.net>
 PKG_LICENSE:=AGPL-3.0-only
 
-# tar.xz or tar.zst
-PKG_XZ=$(shell top="$(TOPDIR)" && grep -q openwrt-23.05 $${top}/feeds.conf.default && echo true)
-ifeq ($(PKG_XZ),true)
-PKG_MIRROR_HASH:=35884a57e26058c6534b25c50b9aef14df81da501be1d153a9bb7923a47154dd
-else
-PKG_MIRROR_HASH:=649c977e5d32fe232c8d0cb617ec04c6e4bd767dfac40ebcdb1630ab990fcd8f
-endif
+
 
 GIT_COMMIT_DATE:=$(shell psd="$(PKG_SOURCE_DATE)" && echo $${psd} | sed 's|-|.|g' )
 GIT_COMMIT_SHORTHASH:=$(shell psv="$(PKG_SOURCE_VERSION)" && echo $${psv:0:7} )
 PKG_VERSION:=$(GIT_COMMIT_DATE)~$(GIT_COMMIT_SHORTHASH)
 PKG_RELEASE:=1
+
+PKG_CONFIG_DEPENDS:=CONFIG_SHARED_STATE_ASYNC_STATIC
 
 HOST_BUILD_PREFIX:=$(STAGING_DIR_HOST)
 
@@ -35,19 +32,25 @@ include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 include $(INCLUDE_DIR)/host-build.mk
 
-define Package/$(PKG_NAME)
-	TITLE:=shared-state C++ async re-implementation
-	CATEGORY:=LibreMesh
-	# TODO: Statically linking libstdcpp instead of depending on it and then
-	# stripping unused symbols might reduce space usage, until this is the
-	# only package to use it
-	# TODO: Remove dependency on shared-state-get_candidates_neigh once
-	# discovery is reimplemented in C++
-	DEPENDS:=+libstdcpp +shared-state
+define Package/shared-state-async
+  TITLE:=shared-state C++ async
+  CATEGORY:=LibreMesh
+  URL:=https://github.com/libremesh/shared-state-async
+  DEPENDS:=+!SHARED_STATE_ASYNC_STATIC:libstdcpp +shared-state
 endef
 
-define Package/$(PKG_NAME)/description
-	shared-state re-written in C++20 and corotuines to handle information exchange between network nodes more efficiently.
+define Package/shared-state-async/config
+	config SHARED_STATE_ASYNC_STATIC
+		bool "Link libstdc++ statically"
+		depends on PACKAGE_shared-state-async
+		default y
+		help
+		  Build shared-state-async with -static-libstdc++ so the
+		  libstdcpp package is not required on the device.
+endef
+
+define Package/shared-state-async/description
+	shared-state re-written in C++20 and coroutines to handle information exchange between network nodes more efficiently.
 endef
 
 # Otherwise OpenWrt's CPPFLAGS are ignored
@@ -63,11 +66,20 @@ CMAKE_OPTIONS += -DCMAKE_VERBOSE_MAKEFILE=ON
 # #2 0x00000000
 CMAKE_OPTIONS += -DSS_CPPTRACE_STACKTRACE=OFF
 
+# Link libstdc++ statically or dynamically depending on the config option
+ifeq ($(CONFIG_SHARED_STATE_ASYNC_STATIC),y)
+  CMAKE_OPTIONS += -DSS_STATIC_LIBSTDCPP=ON
+else
+  CMAKE_OPTIONS += -DSS_STATIC_LIBSTDCPP=OFF
+endif
 
-define Package/$(PKG_NAME)/install
+# Let OpenWrt strip the binary according to CONFIG_USE_STRIP/SSTRIP
+CMAKE_OPTIONS += -DSS_STRIP_SYMBOLS=OFF
+
+define Package/shared-state-async/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/shared-state-async $(1)/usr/bin/
 	$(CP) ./files/* $(1)/
 endef
 
-$(eval $(call BuildPackage,$(PKG_NAME)))
+$(eval $(call BuildPackage,shared-state-async))
