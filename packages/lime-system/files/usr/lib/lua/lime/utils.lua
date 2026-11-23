@@ -246,6 +246,10 @@ function utils.file_exists(name)
 	return fs.stat(name, "type") == "reg"
 end
 
+function utils.dir_exists(name)
+	return fs.stat(name, "type") == "dir"
+end
+
 function utils.read_file(name)
 	return fs.readfile(name)
 end
@@ -416,7 +420,7 @@ function utils.keep_on_upgrade_files()
 		if not utils.stringStarts(list, "/") then
 			list = utils.KEEP_ON_UPGRADE_FILES_BASE_PATH .. list
 		end
-		if utils.file_exists(list) then
+		if utils.file_exists(list) or utils.dir_exists(list) then
 			for file_name in io.lines(list) do
 				--! exclude comments, blank lines, etc
 				if utils.stringStarts(file_name, "/") then

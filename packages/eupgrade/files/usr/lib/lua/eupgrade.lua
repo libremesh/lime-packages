@@ -13,7 +13,7 @@ eup.STATUS_DOWNLOAD_FAILED = "download-failed"
 local uci = libuci.cursor()
 
 function eup.set_workdir(workdir)
-	if not utils.file_exists(workdir) then
+	if not utils.dir_exists(workdir) then
 		os.execute("mkdir -p " .. workdir)
 	end
 	if fs.stat(workdir, "type") ~= "dir" then
